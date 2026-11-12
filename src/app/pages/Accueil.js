@@ -105,12 +105,7 @@ export default class Accueil extends DCLogic {
             $h("div", { "style": "position: absolute; left: calc(50% - 560px); top: -300px; width: 1120px; height: 780px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.30), transparent); animation: sw-drift 16s ease-in-out infinite;" }),
             $h("div", { "class": "sw-grid-bg", "style": "position: absolute; inset: 0; -webkit-mask-image: radial-gradient(44% 38% at 50% 30%, #000, transparent); mask-image: radial-gradient(44% 38% at 50% 30%, #000, transparent);" })
           ),
-          $h("div", { "style": "position: relative; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px; padding: 20px 32px;" },
-            $h("span", { "class": "sw-badge", "style": "height: 34px; padding: 0 14px; gap: 8px; background: var(--glass-fill); box-shadow: inset 0 0 0 1px var(--glass-edge); color: var(--ink-soft);" },
-              "Relevé du 12/11"
-            )
-          ),
-          $h("section", { "style": "position: relative; width: 100%; max-width: 940px; margin: 0 auto; padding: 48px 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; text-align: center;" },
+          $h("section", { "style": "position: relative; width: 100%; max-width: 940px; margin: 0 auto; padding: 122px 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; text-align: center;" },
             $h("span", { "class": "sw-app-tile sw-enter", "style": "width: 64px; height: 64px; border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 0 0 10px rgba(76,154,255,0.08), 0 18px 44px rgba(11,111,224,0.50);" },
               $h("svg", { "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "width: 38px; height: 38px;" },
                 $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#FFFFFF" }),
@@ -236,7 +231,7 @@ export default class Accueil extends DCLogic {
                           $t(r?.sub)
                         )
                       ),
-                      $h("span", { "style": "font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums;" },
+                      $h("span", { "style": "flex-shrink: 0; white-space: nowrap; font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums;" },
                         $t(r?.v)
                       )
                     )

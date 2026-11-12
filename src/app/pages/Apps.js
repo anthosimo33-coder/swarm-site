@@ -443,7 +443,7 @@ return {};
           ),
           $h("footer", { "style": "margin-top: auto; padding: 28px 32px 32px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;" },
             $h("p", { "class": "sw-calc", "style": "margin: 0;" },
-              "Vues des vidéos publiées par les comptes de l'app, relevées le 12/11."
+              "Vues des vidéos publiées par les comptes de l'app."
             ),
             $h("p", { "class": "sw-calc", "style": "margin: 0;" },
               "Meilleure = sa meilleure vidéo de la semaine face à la normale de son compte."

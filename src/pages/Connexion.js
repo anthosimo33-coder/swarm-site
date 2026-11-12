@@ -157,7 +157,7 @@ export default class Connexion extends DCLogic {
               ])
             ),
             $h("span", { "class": "sw-calc auth-x2", "style": "position: relative;" },
-              "Exemples relevés par le Radar entre le 7 et le 12/11."
+              "Exemples relevés par le Radar."
             )
           )
         )

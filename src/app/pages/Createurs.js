@@ -30,7 +30,7 @@ export default class Createurs extends DCLogic {
     const pool = (xs) => (market === 'FR' ? (xs || []) : []).filter((c) => !active || c.active);
     const rows = pool(b.rows).map((c, i) => Object.assign({}, c, { rank: String(i + 1).padStart(2, '0') }));
     const name = (b.mkt || []).filter((m) => m.c === market).map((m) => m.l)[0] || market;
-    return { mkt, rows, cards: pool(b.cards), live: pool(b.live), none: (market !== 'FR'), noneLabel: 'Aucun compte relevé pour ce marché le 12/11.',
+    return { mkt, rows, cards: pool(b.cards), live: pool(b.live), none: (market !== 'FR'), noneLabel: 'Aucun compte relevé pour ce marché.',
       activeOn: active ? 'true' : 'false', toggleActive: () => this.setState({ active: !active }),
       countLabel: market === 'FR' ? (rows.length + ' comptes suivis en France') : ('0 compte relevé pour ce marché') };
   }

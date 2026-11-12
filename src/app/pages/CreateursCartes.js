@@ -30,7 +30,7 @@ export default class CreateursCartes extends DCLogic {
     const pool = (xs) => (market === 'FR' ? (xs || []) : []).filter((c) => !active || c.active);
     const rows = pool(b.rows).map((c, i) => Object.assign({}, c, { rank: String(i + 1).padStart(2, '0') }));
     const name = (b.mkt || []).filter((m) => m.c === market).map((m) => m.l)[0] || market;
-    return { mkt, rows, cards: pool(b.cards), live: pool(b.live), none: (market !== 'FR'), noneLabel: 'Aucun compte relevé pour ce marché le 12/11.',
+    return { mkt, rows, cards: pool(b.cards), live: pool(b.live), none: (market !== 'FR'), noneLabel: 'Aucun compte relevé pour ce marché.',
       activeOn: active ? 'true' : 'false', toggleActive: () => this.setState({ active: !active }),
       countLabel: market === 'FR' ? (pool(b.cards).length + ' comptes suivis en France') : ('0 compte relevé pour ce marché') };
   }
@@ -168,7 +168,7 @@ export default class CreateursCartes extends DCLogic {
           $h("section", { "style": "margin: 20px 32px 0; padding: 16px 20px; border-radius: 20px; background: var(--surface-raised); border: 1px solid var(--line); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;" },
             $h("span", { "class": "sw-live" },
               $h("span", { "aria-hidden": "true", "style": "width: 8px; height: 8px; border-radius: 50%; background: var(--accent);" }),
-              "Actifs au relevé du 12/11"
+              "Actifs cette semaine"
             ),
             ($l($v.live)).map((c) => [
               $h("a", { "href": "/app/createurs/zinedine-gsbb", "style": "display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;" },

@@ -316,7 +316,7 @@ export default class FicheApp extends DCLogic {
                 ])
               ),
               $h("span", { "class": "sw-calc", "style": "font-size: 11px;" },
-                "Vues des vidéos publiées chaque semaine, relevées le 12/11. Suivi des comptes depuis le 06/11 : les semaines d'avant comptent les vidéos encore visibles."
+                "Vues des vidéos publiées chaque semaine. Suivi des comptes depuis le 06/11 : les semaines d'avant comptent les vidéos encore visibles."
               )
             ),
             $h("section", { "class": "sw-card", "aria-labelledby": "fa-res", "style": "padding: 24px; display: flex; flex-direction: column; gap: 18px;" },
