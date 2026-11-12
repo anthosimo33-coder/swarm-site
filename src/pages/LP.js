@@ -234,11 +234,11 @@ export default class LP extends DCLogic {
               h("a", { "href": "#connexion", "class": "nh", "style": "display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                 "Se connecter"
               ),
-              h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; gap: 12px; height: 42px; box-sizing: border-box; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; border-radius: 999px; padding: 0 4px 0 18px; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 8px 18px rgba(11,111,224,0.32), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 42px; box-sizing: border-box; padding: 0 4px 0 18px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
-                h("span", { "style": "width: 34px; height: 34px; border-radius: 50%; background: #FFFFFF; color: #0B6FE0; display: inline-flex; align-items: center; justify-content: center;" },
-                  h("svg", { "width": "14", "height": "14", "viewbox": "0 0 18 18", "aria-hidden": "true" },
-                    h("path", { "d": "M4 9h10M10 5l4 4-4 4", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                h("span", { "aria-hidden": "true", "style": "width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                  h("svg", { "width": "15", "height": "15", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               )
@@ -338,11 +338,11 @@ export default class LP extends DCLogic {
               ),
               h("span", { "style": `display: inline-block; width: 2px; height: 1.1em; background: ${$t($v.blue)}; vertical-align: -0.2em; margin-left: 2px; animation: lp-caret 1s steps(1) infinite;` })
             ),
-            h("span", { "style": "display: inline-flex; align-items: center; gap: 14px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); color: #FFFFFF; border-radius: 999px; padding: 6px 6px 6px 22px; font-size: 16px; font-weight: 600; white-space: nowrap; flex-shrink: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 8px 18px rgba(11,111,224,0.32);" },
+            h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
               "Trouver mon app",
-              h("span", { "style": "width: 42px; height: 42px; border-radius: 50%; background: #FFFFFF; color: #0B6FE0; display: inline-flex; align-items: center; justify-content: center;" },
-                h("svg", { "width": "16", "height": "16", "viewbox": "0 0 18 18", "aria-hidden": "true" },
-                  h("path", { "d": "M4 9h10M10 5l4 4-4 4", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               )
             )
@@ -432,11 +432,11 @@ export default class LP extends DCLogic {
                   "Plus de 1 000 apps et 100 000 comptes suivis en continu sur TikTok, Instagram et YouTube Shorts, sur tous les marchés. Choisis un marché, une niche, et plonge dans les formats et les créateurs de n'importe quelle app."
                 )
               ),
-              h("a", { "href": "/tarifs", "style": `display: inline-flex; align-items: center; gap: 18px; height: 64px; box-sizing: border-box; padding: 0 10px 0 30px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, ${$t($v.blue)} 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 19px; font-weight: 600; white-space: nowrap; animation: lp-glow 3s ease-in-out infinite;` },
+              h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir ce qui explose",
-                h("span", { "style": "width: 42px; height: 42px; border-radius: 13px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center;" },
-                  h("svg", { "width": "16", "height": "16", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                    h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               )
@@ -672,11 +672,11 @@ export default class LP extends DCLogic {
               h("p", { "style": "margin: 0; max-width: 640px; font-size: 20px; line-height: 1.55; color: #4A4F57;" },
                 "Les hooks, les sons et les formats qui font exploser les vues en ce moment, et les créateurs qui les tournent. Tu sais quoi poster dès demain."
               ),
-              h("a", { "href": "/tarifs", "style": `margin-top: 16px; display: inline-flex; align-items: center; gap: 18px; height: 64px; box-sizing: border-box; padding: 0 10px 0 30px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, ${$t($v.blue)} 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 19px; font-weight: 600; white-space: nowrap; animation: lp-glow 3s ease-in-out infinite;` },
+              h("a", { "href": "/tarifs", "class": "cta", "style": "margin-top: 16px; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir les formats",
-                h("span", { "style": "width: 42px; height: 42px; border-radius: 13px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center;" },
-                  h("svg", { "width": "16", "height": "16", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                    h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               )
@@ -868,8 +868,13 @@ export default class LP extends DCLogic {
                         )
                       )
                     ),
-                    h("a", { "href": "/tarifs", "style": "display: inline-flex; align-items: center; height: 50px; box-sizing: border-box; padding: 0 20px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);" },
-                      "Trouver mon app"
+                    h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 4px 0 20px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                      "Trouver mon app",
+                      h("span", { "aria-hidden": "true", "style": "width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                        h("svg", { "width": "16", "height": "16", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                          h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      )
                     )
                   )
                 )
@@ -922,11 +927,11 @@ export default class LP extends DCLogic {
                   )
                 ),
                 h("div", { "style": "position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 12px;" },
-                  h("a", { "href": "/tarifs", "style": "display: inline-flex; align-items: center; gap: 18px; height: 64px; box-sizing: border-box; padding: 0 10px 0 30px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 19px; font-weight: 600; white-space: nowrap; animation: lp-glowDk 3s ease-in-out infinite;" },
+                  h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Trouver mon app",
-                    h("span", { "style": "width: 42px; height: 42px; border-radius: 13px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center;" },
-                      h("svg", { "width": "16", "height": "16", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                        h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                      h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                        h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     )
                   )

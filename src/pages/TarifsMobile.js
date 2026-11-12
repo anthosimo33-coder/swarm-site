@@ -62,8 +62,6 @@ export default class TarifsMobile extends DCLogic {
       toY: () => this.setState({ bill: 'y' }),
       oM: annual ? 0 : 1, trM: annual ? 'translateY(-12px)' : 'translateY(0)',
       oY: annual ? 1 : 0, trY: annual ? 'translateY(0)' : 'translateY(12px)',
-      barPrice: annual ? '32,50 € / mois' : '49 € / mois',
-      barNote: annual ? '390 € par an · annulable' : 'Sans engagement · annulable',
       groups,
       nums: [
         { v: '+' + fmt(1000 * k), l: 'apps suivies', line: '0', pl: '0px' },
@@ -218,11 +216,11 @@ export default class TarifsMobile extends DCLogic {
                       )
                     )
                   ),
-                  h("a", { "href": "#paiement", "class": "tap", "style": "position: relative; display: flex; align-items: center; justify-content: center; gap: 14px; height: 58px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; animation: tfm-glowDk 3s ease-in-out infinite;" },
+                  h("a", { "href": "#paiement", "class": "tap", "style": "position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Passer Pro",
-                    h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                      h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                        h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                      h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                        h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     )
                   ),
@@ -296,7 +294,7 @@ export default class TarifsMobile extends DCLogic {
               ])
             )
           ),
-          h("section", { "aria-labelledby": "qt", "style": "padding: 64px 20px 120px; display: flex; flex-direction: column; gap: 14px;" },
+          h("section", { "aria-labelledby": "qt", "style": "padding: 64px 20px 72px; display: flex; flex-direction: column; gap: 14px;" },
             h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #5F656E;" },
               h("span", { "style": "color: #0B6FE0;" },
                 "["
@@ -331,24 +329,6 @@ export default class TarifsMobile extends DCLogic {
                   )
                 )
               ])
-            )
-          ),
-          h("div", { "style": "position: sticky; bottom: 0; z-index: 40; margin-top: -100px; height: 100px; box-sizing: border-box; padding: 0 12px 14px; display: flex; align-items: flex-end; pointer-events: none;" },
-            h("div", { "style": "pointer-events: auto; flex: 1 1 auto; display: flex; align-items: center; gap: 12px; height: 72px; box-sizing: border-box; padding: 0 8px 0 18px; border-radius: 24px; background: rgba(255,255,255,0.86); border: 1px solid #FFFFFF; backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 18px 44px rgba(16,24,40,0.20), inset 0 1px 0 #FFFFFF;" },
-              h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;" },
-                h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15;" },
-                  $t($v.barPrice)
-                ),
-                h("span", { "style": "font-size: 12px; color: #5F656E; white-space: nowrap;" },
-                  $t($v.barNote)
-                )
-              ),
-              h("a", { "href": "#paiement", "class": "tap", "style": "display: inline-flex; align-items: center; gap: 10px; height: 56px; box-sizing: border-box; padding: 0 20px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 600; white-space: nowrap; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 24px rgba(11,111,224,0.35);" },
-                "Passer Pro",
-                h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                  h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              )
             )
           )
         ),
@@ -458,11 +438,11 @@ export default class TarifsMobile extends DCLogic {
                 ])
               ),
               h("div", { "style": "display: flex; flex-direction: column; gap: 8px; padding: 16px 10px 0;" },
-                h("a", { "href": "/", "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; gap: 14px; height: 56px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; box-shadow: 0 10px 24px rgba(11,111,224,0.30), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                h("a", { "href": "/", "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                   "Trouver mon app",
-                  h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                    h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                      h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                    h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                      h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ),

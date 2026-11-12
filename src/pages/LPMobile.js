@@ -231,11 +231,11 @@ export default class LPMobile extends DCLogic {
                   h("span", { "style": "display: inline-block; width: 2px; height: 1.1em; background: #0B6FE0; vertical-align: -0.2em; margin-left: 2px; animation: lpm-caret 1s steps(1) infinite;" })
                 )
               ),
-              h("span", { "style": "display: flex; align-items: center; justify-content: center; gap: 14px; height: 54px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-size: 16px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 24px rgba(11,111,224,0.30);" },
+              h("span", { "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
-                h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                  h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                    h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               )
@@ -432,11 +432,11 @@ export default class LPMobile extends DCLogic {
               )
             ),
             h("div", { "style": "padding: 12px 20px 0;" },
-              h("a", { "href": "/tarifs", "class": "tap", "style": "display: flex; align-items: center; justify-content: center; gap: 14px; height: 58px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; animation: lpm-glow 3s ease-in-out infinite;" },
+              h("a", { "href": "/tarifs", "class": "tap", "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir ce qui explose",
-                h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                  h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                    h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               )
@@ -504,11 +504,11 @@ export default class LPMobile extends DCLogic {
               )
             ),
             h("div", { "style": "padding: 8px 20px 0;" },
-              h("a", { "href": "/tarifs", "class": "tap", "style": "display: flex; align-items: center; justify-content: center; gap: 14px; height: 58px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; animation: lpm-glow 3s ease-in-out infinite;" },
+              h("a", { "href": "/tarifs", "class": "tap", "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir les formats",
-                h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                  h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                    h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               )
@@ -581,7 +581,7 @@ export default class LPMobile extends DCLogic {
               )
             )
           ),
-          h("section", { "class": "dk", "id": "faq", "aria-labelledby": "faq-t", "style": "position: relative; padding: 24px 20px 128px; background-color: #05070C; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px); color: #FFFFFF; display: flex; flex-direction: column; gap: 14px;" },
+          h("section", { "class": "dk", "id": "faq", "aria-labelledby": "faq-t", "style": "position: relative; padding: 24px 20px 72px; background-color: #05070C; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px); color: #FFFFFF; display: flex; flex-direction: column; gap: 14px;" },
             h("div", { "style": "border-top: 1px solid rgba(255,255,255,0.08); padding-top: 56px; display: flex; flex-direction: column; gap: 14px;" },
               h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #9AA3B2;" },
                 h("span", { "style": "color: #4C9AFF;" },
@@ -627,16 +627,6 @@ export default class LPMobile extends DCLogic {
                 "Écris-nous"
               )
             )
-          ),
-          h("div", { "style": "position: sticky; bottom: 0; z-index: 40; margin-top: -96px; height: 96px; box-sizing: border-box; padding: 0 12px 16px; display: flex; align-items: flex-end; pointer-events: none;" },
-            h("a", { "href": "/tarifs", "class": "tap", "style": "pointer-events: auto; flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 14px; height: 60px; box-sizing: border-box; padding: 0 16px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; box-shadow: 0 10px 24px rgba(5,7,12,0.35), inset 0 1px 0 rgba(255,255,255,0.45);" },
-              "Trouver mon app",
-              h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                  h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              )
-            )
           )
         ),
         h("footer", { "class": "dk", "style": "position: relative; overflow: hidden; flex: 1 0 auto; display: flex; flex-direction: column; background-color: #05070C; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px); color: #FFFFFF; border-top: 1px solid rgba(255,255,255,0.08);" },
@@ -658,11 +648,11 @@ export default class LPMobile extends DCLogic {
               h("p", { "style": "position: relative; margin: 0; font-size: 16px; color: #9AA3B2;" },
                 "Trouve-la avant les autres."
               ),
-              h("a", { "href": "/tarifs", "class": "tap", "style": "position: relative; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 14px; height: 58px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; animation: lpm-glow 3s ease-in-out infinite;" },
+              h("a", { "href": "/tarifs", "class": "tap", "style": "position: relative; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
-                h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                  h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                    h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               )
@@ -771,11 +761,11 @@ export default class LPMobile extends DCLogic {
                 ])
               ),
               h("div", { "style": "display: flex; flex-direction: column; gap: 8px; padding: 16px 10px 0;" },
-                h("a", { "href": "/tarifs", "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; gap: 14px; height: 56px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; box-shadow: 0 10px 24px rgba(11,111,224,0.30), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                h("a", { "href": "/tarifs", "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                   "Trouver mon app",
-                  h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                    h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
-                      h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                    h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                      h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ),
