@@ -71,7 +71,11 @@ function App() {
     };
   }, []);
 
-  // Écran de l'adresse courante, chargé à la demande.
+  const user = useMemo(() => (viewer ? toUser(viewer) : null), [viewer]);
+  const known = user !== null;
+
+  // Écran de l'adresse courante, chargé à la demande, une fois la personne reconnue
+  // (rien à charger pour quelqu'un que la garde renvoie à la connexion).
   useEffect(() => {
     if (path === SIGN_OUT) {
       void leave();
@@ -83,19 +87,24 @@ function App() {
       setPath(HOME);
       return undefined;
     }
+    if (!known) return undefined;
     let current = true;
-    route.load().then((module) => {
-      if (!current) return;
-      document.title = `${route.title} · Swarm`;
-      setScreen({ path, Page: module.default });
-      window.scrollTo(0, 0);
-    });
+    route.load().then(
+      (module) => {
+        if (!current) return;
+        document.title = `${route.title} · Swarm`;
+        setScreen({ path, Page: module.default });
+        window.scrollTo(0, 0);
+      },
+      () => {
+        // Fichier de l'écran introuvable (un déploiement est passé depuis l'ouverture) : on recharge.
+        if (current && !leaving.current) window.location.assign(window.location.href);
+      },
+    );
     return () => {
       current = false;
     };
-  }, [path]);
-
-  const user = useMemo(() => (viewer ? toUser(viewer) : null), [viewer]);
+  }, [path, known]);
 
   // Rien tant qu'on ne sait pas qui est là : pas d'écran qui clignote.
   if (!user || !screen) return null;
