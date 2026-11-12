@@ -32,7 +32,7 @@ export default class CreateursCartes extends DCLogic {
     const name = (b.mkt || []).filter((m) => m.c === market).map((m) => m.l)[0] || market;
     return { mkt, rows, cards: pool(b.cards), live: pool(b.live), none: (market !== 'FR'), noneLabel: 'Aucun compte relevé pour ce marché le 12/11.',
       activeOn: active ? 'true' : 'false', toggleActive: () => this.setState({ active: !active }),
-      countLabel: market === 'FR' ? (rows.length + ' comptes suivis en France') : ('0 compte relevé pour ce marché') };
+      countLabel: market === 'FR' ? (pool(b.cards).length + ' comptes suivis en France') : ('0 compte relevé pour ce marché') };
   }
 
   baseVals() {
@@ -122,7 +122,12 @@ export default class CreateursCartes extends DCLogic {
                 )
               ])
             ),
-            $h("div", { "style": "display: flex; gap: 8px; flex-wrap: wrap; align-items: center;" },
+            $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
+              $t($v.countLabel)
+            )
+          ),
+          $h("div", { "style": "padding: 16px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
+            $h("div", { "style": "display: flex; gap: 8px; flex-wrap: wrap;" },
               ($l($v.filters)).map((f) => [
                 $h("button", { "class": "sw-pill", "type": "button", "aria-haspopup": "listbox", "style": "height: 40px; padding: 0 12px 0 14px; gap: 6px; background: var(--track); border-color: var(--line);" },
                   $h("span", { "style": "color: var(--ink-faint);" },
@@ -135,7 +140,15 @@ export default class CreateursCartes extends DCLogic {
                     $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
-              ]),
+              ])
+            ),
+            $h("div", { "style": "display: flex; align-items: center; gap: 16px;" },
+              $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
+                "Trier par ",
+                $h("span", { "style": "color: var(--ink); font-weight: 600;" },
+                  "vues médianes"
+                )
+              ),
               $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Affichage" },
                 $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": "/app/createurs", "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
                   $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -194,14 +207,14 @@ export default class CreateursCartes extends DCLogic {
                     $h("span", { "style": "position: relative; overflow: hidden; display: block;" },
                       $h("img", { "class": "sw-cover", "src": v?.src, "alt": "" }),
                       $h("span", { "class": "sw-video-shade" }),
-                      $h("span", { "style": "position: absolute; left: 10px; bottom: 10px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #FFFFFF;" },
+                      $h("span", { "style": "position: absolute; right: 10px; bottom: 10px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #FFFFFF;" },
                         $t(v?.v)
                       )
                     )
                   ])
                 ),
                 $h("div", { "style": "padding: 0 22px 22px; display: flex; flex-direction: column; gap: 14px;" },
-                  $h("div", { "style": "display: flex; align-items: flex-end; justify-content: space-between; margin-top: -30px;" },
+                  $h("div", { "style": "position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; margin-top: -30px;" },
                     $h("span", { "style": "width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised), 0 8px 24px rgba(0,0,0,0.4);" },
                       (c?.av) ? [
                         $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;" })
@@ -226,7 +239,7 @@ export default class CreateursCartes extends DCLogic {
                       $t(c?.bio)
                     )
                   ),
-                  $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
+                  $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 0.85fr) minmax(0, 1.3fr); gap: 8px;" },
                     $h("span", { "class": "sw-tile", "style": "padding: 10px 12px;" },
                       $h("span", { "class": "sw-tile-label" },
                         "Abonnés"
@@ -247,7 +260,7 @@ export default class CreateursCartes extends DCLogic {
                       $h("span", { "class": "sw-tile-label" },
                         "Par vidéo"
                       ),
-                      $h("span", { "class": "sw-tile-value", "style": "font-size: 13px; line-height: 1.35; padding-top: 3px;" },
+                      $h("span", { "class": "sw-tile-value", "style": "font-size: 13px; line-height: 1.35; padding-top: 3px; white-space: nowrap;" },
                         $t(c?.rev)
                       )
                     )

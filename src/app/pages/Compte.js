@@ -118,7 +118,7 @@ export default class Compte extends DCLogic {
                     "Profil"
                   ),
                   $h("span", { "style": "font-size: 14px; color: var(--ink-muted);" },
-                    "Ce qui apparaît dans tes e-mails et tes factures."
+                    "Ce qui apparaît dans tes e-mails."
                   )
                 ),
                 $h("div", { "style": "display: flex; align-items: center; gap: 18px;" },

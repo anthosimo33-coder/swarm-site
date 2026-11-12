@@ -53,7 +53,7 @@ export default class FicheApp extends DCLogic {
     const line = 'M' + P.map((p) => p[0] + ' ' + p[1].toFixed(1)).join(' L');
     const chart = {
       line, area: line + ' L620 200 L70 200 Z',
-      pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + ' M', label: 'sem. du ' + L[j], r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
+      pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + ' M', label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
     };
     const vids = [
       ['t-navy', 'Who made this?', '2,6 M', '@ivylearns8', 'US', 'il y a 19 j'],
@@ -240,7 +240,7 @@ export default class FicheApp extends DCLogic {
                   )
                 )
               ),
-              $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--line); padding-bottom: 18px;" },
+              $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); border-bottom: 1px solid var(--line); padding-bottom: 18px;" },
                 $h("div", { "style": "display: flex; flex-direction: column; gap: 4px;" },
                   $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted);" },
                     $h("span", { "style": "width: 8px; height: 8px; border-radius: 50%; background: #4C9AFF;" }),
@@ -258,12 +258,12 @@ export default class FicheApp extends DCLogic {
                     $h("span", { "style": "width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF;" }),
                     "Revenus estimés"
                   ),
-                  $h("span", { "class": "sw-stat", "style": "font-size: 26px; white-space: nowrap;" },
-                    $h("span", { "style": "font-size: 15px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
+                  $h("span", { "class": "sw-stat", "style": "font-size: 24px; white-space: nowrap;" },
+                    $h("span", { "style": "font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
                       "Entre "
                     ),
                     "144",
-                    $h("span", { "style": "font-size: 15px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
+                    $h("span", { "style": "font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
                       " et "
                     ),
                     "202 k€"
@@ -310,7 +310,7 @@ export default class FicheApp extends DCLogic {
                   $h("text", { "x": p?.x, "y": p?.ty, "text-anchor": "middle", "fill": p?.ink, "font-family": "Inter, sans-serif", "font-size": "12", "font-weight": p?.fw },
                     $t(p?.v)
                   ),
-                  $h("text", { "x": p?.x, "y": "226", "text-anchor": "middle", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "10" },
+                  $h("text", { "x": p?.lx, "y": "226", "text-anchor": p?.anchor, "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "10" },
                     $t(p?.label)
                   )
                 ])

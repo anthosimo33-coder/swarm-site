@@ -147,7 +147,8 @@ class Component extends DCLogic {
   componentDidUpdate(pp, ps) {
     const st = this.state || {};
     ps = ps || {};
-    if (st.open && st.open !== ps.open && this.menuInput) this.menuInput.focus();
+    // Menu ouvert : le focus y reste (Safari ne le donne pas au bouton cliqué), pour qu'Échap le ferme.
+    if (st.open && this.menuInput && (st.open !== ps.open || !(this.menuEl && this.menuEl.contains(document.activeElement)))) this.menuInput.focus();
     if (st.pv && st.pv !== ps.pv && this.pvClose) this.pvClose.focus();
   }
   renderVals() {

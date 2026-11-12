@@ -169,7 +169,7 @@ export default class Alertes extends DCLogic {
                           $t(a?.when)
                         )
                       ),
-                      $h("span", { "style": "display: flex; flex-shrink: 0;" },
+                      $h("span", { "style": "display: flex; flex-shrink: 0; width: 92px; box-sizing: border-box; padding-left: 10px; justify-content: flex-end;" },
                         ($l(a?.covs)).map((c) => [
                           $h("span", { "class": "sw-video", "style": "display: block; width: 34px; margin-left: -10px; border-radius: 8px; box-shadow: 0 0 0 2px var(--surface);" },
                             $h("img", { "class": "sw-cover", "src": c?.src, "alt": "" })

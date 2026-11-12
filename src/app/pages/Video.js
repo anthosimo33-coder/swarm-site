@@ -25,7 +25,8 @@ export default class Video extends DCLogic {
   }
   extraVals(b) {
     const st = this.state || {};
-return {};
+    // Fermer : retour à l'écran d'où l'on vient, sinon à la fiche de l'app.
+    return { close: () => { if (window.history.length > 1) window.history.back(); else window.location.href = '/app/apps/astra-ai'; } };
   }
 
   baseVals() {
@@ -69,6 +70,12 @@ return {};
               $h("span", { "style": "display: block; width: 7%; height: 4px; background: var(--accent); border-radius: 2px;" })
             ),
             $h("span", { "style": "display: flex; gap: 6px;" },
+              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "title": "Chercher (⌘ K)", "style": "width: 40px; height: 40px; background: var(--track);" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              ),
+              $h("span", { "aria-hidden": "true", "style": "width: 1px; height: 24px; margin: 8px 4px; background: var(--line);" }),
               $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Vidéo précédente", "style": "width: 40px; height: 40px; background: var(--track);" },
                 $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M19 12H5M11 18l-6-6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -79,7 +86,7 @@ return {};
                   $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               ),
-              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Fermer", "style": "width: 40px; height: 40px;" },
+              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.close, "aria-label": "Fermer", "style": "width: 40px; height: 40px;" },
                 $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round" })
                 )
@@ -106,11 +113,6 @@ return {};
                   $h("span", null,
                     "0:49"
                   )
-                )
-              ),
-              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K" },
-                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               ),
               $h("a", { "class": "sw-link", "href": "https://www.tiktok.com/@learnwithjoel1/video/7705929733220994337", "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 14px;" },
