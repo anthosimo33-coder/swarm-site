@@ -11,4 +11,5 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 .auth-side h2{font-size:34px !important}
 .auth-side .sw-stat{font-size:22px !important}
 .auth-shift{margin-left:0 !important}
+.auth-form .sw-btn-primary{width:auto !important;align-self:center;padding:0 5px 0 26px !important}
 }
