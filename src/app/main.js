@@ -84,6 +84,16 @@ function App() {
     };
   }, []);
 
+  // Une fois le premier écran affiché, les autres se téléchargent en arrière-plan :
+  // la navigation devient instantanée (sans ça, un premier passage attend son fichier).
+  const prefetched = useRef(false);
+  useEffect(() => {
+    if (!screen || prefetched.current) return undefined;
+    prefetched.current = true;
+    const timer = setTimeout(() => Object.values(ROUTES).forEach((route) => route.load().catch(() => {})), 1200);
+    return () => clearTimeout(timer);
+  }, [screen]);
+
   // Arrivée sur un écran : en haut, ou sur l'ancre demandée (ex. /app/apps/astra-ai#fa-vid).
   useEffect(() => {
     if (!screen) return;
