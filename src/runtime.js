@@ -1,0 +1,40 @@
+import { Component, h } from 'preact';
+
+// Équivalent de DCLogic (le moteur des maquettes du canevas) : un composant à état
+// dont setState fusionne l'état, comme dans le canevas.
+export class DCLogic extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {};
+  }
+}
+
+// Valeur d'un trou {{…}} : rien plutôt que « undefined ».
+export const $t = (x) => (x === undefined || x === null ? '' : x);
+// Liste d'un <sc-for> : tableau vide si la valeur manque.
+export const $l = (x) => (Array.isArray(x) ? x : []);
+
+// Monte la version mobile sous 860 px, la version desktop au-dessus,
+// et bascule si la fenêtre change de taille.
+const QUERY = '(max-width: 860px)';
+
+export class Responsive extends Component {
+  constructor(props) {
+    super(props);
+    this.mq = window.matchMedia(QUERY);
+    this.state = { mobile: this.mq.matches };
+    this.onChange = (e) => this.setState({ mobile: e.matches });
+  }
+
+  componentDidMount() {
+    this.mq.addEventListener('change', this.onChange);
+  }
+
+  componentWillUnmount() {
+    this.mq.removeEventListener('change', this.onChange);
+  }
+
+  render({ desktop, mobile }, { mobile: isMobile }) {
+    return h(isMobile ? mobile : desktop, null);
+  }
+}

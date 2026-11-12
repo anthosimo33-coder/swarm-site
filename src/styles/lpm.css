@@ -1,0 +1,27 @@
+/* Généré par scripts/dc2preact.py depuis design/LPMobile.dc.html */
+body{margin:0;background:#05070C}
+a{color:#111216}a:hover{color:#0B6FE0}
+.dk a{color:#9AA3B2}.dk a:hover{color:#FFFFFF}
+.snap::-webkit-scrollbar{display:none}
+.tap{transition:transform 0.15s ease}
+.tap:active{transform:scale(0.97)}
+@keyframes lpm-blurIn{from{opacity:0;filter:blur(10px);transform:translateY(12px)}to{opacity:1;filter:blur(0);transform:translateY(0)}}
+@keyframes lpm-fanA{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(-18deg) translateY(-0.03em)}}
+@keyframes lpm-fanB{0%,100%{transform:rotate(0deg)}50%{transform:rotate(0deg) translateY(-0.06em)}}
+@keyframes lpm-fanC{0%,100%{transform:rotate(12deg)}50%{transform:rotate(18deg) translateY(-0.03em)}}
+@keyframes lpm-drawS{0%{stroke-dashoffset:60}45%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:0}}
+@keyframes lpm-caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes lpm-pulse{0%{box-shadow:0 0 0 0 rgba(11,111,224,0.55)}70%{box-shadow:0 0 0 9px rgba(11,111,224,0)}100%{box-shadow:0 0 0 0 rgba(11,111,224,0)}}
+@keyframes lpm-pulseDk{0%{box-shadow:0 0 0 0 rgba(76,154,255,0.6)}70%{box-shadow:0 0 0 9px rgba(76,154,255,0)}100%{box-shadow:0 0 0 0 rgba(76,154,255,0)}}
+@keyframes lpm-tiltInM{from{opacity:0;transform:perspective(1600px) rotateX(16deg) translateY(40px)}to{opacity:1;transform:perspective(1600px) rotateX(0deg) translateY(0)}}
+@keyframes lpm-sheetDown{from{opacity:0;transform:translateY(-14px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes lpm-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes lpm-rowLeft{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes lpm-pan{from{background-position:0% 0%}to{background-position:100% 100%}}
+@keyframes lpm-draw{0%{stroke-dashoffset:520}50%,100%{stroke-dashoffset:0}}
+@keyframes lpm-areaIn{0%,25%{opacity:0}55%,100%{opacity:1}}
+@keyframes lpm-glow{0%,100%{box-shadow:0 0 0 6px rgba(11,111,224,0.08),0 12px 30px rgba(11,111,224,0.35),inset 0 1px 0 rgba(255,255,255,0.45)}50%{box-shadow:0 0 0 10px rgba(11,111,224,0.05),0 16px 38px rgba(11,111,224,0.45),inset 0 1px 0 rgba(255,255,255,0.45)}}
+@keyframes lpm-spinC{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes lpm-driftA{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-14px)}}
+@keyframes lpm-driftB{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,14px)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}

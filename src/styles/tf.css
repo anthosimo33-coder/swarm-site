@@ -1,0 +1,22 @@
+/* Généré par scripts/dc2preact.py depuis design/Tarifs.dc.html */
+body{margin:0;background:#05070C}
+a{color:#111216}a:hover{color:#0B6FE0}
+.dk a{color:#9AA3B2}.dk a:hover{color:#FFFFFF}
+.nh{transition:background 0.25s ease,color 0.25s ease}
+.nh:hover{background:rgba(255,255,255,0.85) !important;color:#0E0F12 !important}
+.cta{transition:transform 0.25s ease,box-shadow 0.25s ease}
+.cta:hover{transform:translateY(-1px)}
+.mi{transition:background 0.25s ease}
+.mi:hover{background:rgba(255,255,255,0.85)}
+@keyframes tf-blurIn{from{opacity:0;filter:blur(12px);transform:translateY(14px)}to{opacity:1;filter:blur(0);transform:translateY(0)}}
+@keyframes tf-riseIn{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tf-spinC{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes tf-glow{0%,100%{box-shadow:0 0 0 8px rgba(11,111,224,0.07),0 14px 36px rgba(11,111,224,0.35),inset 0 1px 0 rgba(255,255,255,0.45)}50%{box-shadow:0 0 0 14px rgba(11,111,224,0.05),0 18px 44px rgba(11,111,224,0.45),inset 0 1px 0 rgba(255,255,255,0.45)}}
+@keyframes tf-glowDk{0%,100%{box-shadow:0 0 0 8px rgba(76,154,255,0.08),0 14px 36px rgba(11,111,224,0.40),inset 0 1px 0 rgba(255,255,255,0.45)}50%{box-shadow:0 0 0 14px rgba(76,154,255,0.05),0 18px 44px rgba(11,111,224,0.55),inset 0 1px 0 rgba(255,255,255,0.45)}}
+@keyframes tf-pulse{0%{box-shadow:0 0 0 0 rgba(11,111,224,0.55)}70%{box-shadow:0 0 0 9px rgba(11,111,224,0)}100%{box-shadow:0 0 0 0 rgba(11,111,224,0)}}
+@keyframes tf-pulseDk{0%{box-shadow:0 0 0 0 rgba(76,154,255,0.6)}70%{box-shadow:0 0 0 9px rgba(76,154,255,0)}100%{box-shadow:0 0 0 0 rgba(76,154,255,0)}}
+@keyframes tf-driftA{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+@keyframes tf-driftB{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,20px)}}
+@keyframes tf-menuIn{from{opacity:0;transform:translateX(-50%) translateY(-8px) scale(0.98)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@keyframes tf-pan{from{background-position:0% 0%}to{background-position:100% 100%}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}

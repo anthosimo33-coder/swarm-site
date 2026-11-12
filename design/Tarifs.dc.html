@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Swarm, tarifs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#05070C}
+a{color:#111216}a:hover{color:#0B6FE0}
+.dk a{color:#9AA3B2}.dk a:hover{color:#FFFFFF}
+.nh{transition:background 0.25s ease,color 0.25s ease}
+.nh:hover{background:rgba(255,255,255,0.85) !important;color:#0E0F12 !important}
+.cta{transition:transform 0.25s ease,box-shadow 0.25s ease}
+.cta:hover{transform:translateY(-1px)}
+.mi{transition:background 0.25s ease}
+.mi:hover{background:rgba(255,255,255,0.85)}
+@keyframes blurIn{from{opacity:0;filter:blur(12px);transform:translateY(14px)}to{opacity:1;filter:blur(0);transform:translateY(0)}}
+@keyframes riseIn{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spinC{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 8px rgba(11,111,224,0.07),0 14px 36px rgba(11,111,224,0.35),inset 0 1px 0 rgba(255,255,255,0.45)}50%{box-shadow:0 0 0 14px rgba(11,111,224,0.05),0 18px 44px rgba(11,111,224,0.45),inset 0 1px 0 rgba(255,255,255,0.45)}}
+@keyframes glowDk{0%,100%{box-shadow:0 0 0 8px rgba(76,154,255,0.08),0 14px 36px rgba(11,111,224,0.40),inset 0 1px 0 rgba(255,255,255,0.45)}50%{box-shadow:0 0 0 14px rgba(76,154,255,0.05),0 18px 44px rgba(11,111,224,0.55),inset 0 1px 0 rgba(255,255,255,0.45)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(11,111,224,0.55)}70%{box-shadow:0 0 0 9px rgba(11,111,224,0)}100%{box-shadow:0 0 0 0 rgba(11,111,224,0)}}
+@keyframes pulseDk{0%{box-shadow:0 0 0 0 rgba(76,154,255,0.6)}70%{box-shadow:0 0 0 9px rgba(76,154,255,0)}100%{box-shadow:0 0 0 0 rgba(76,154,255,0)}}
+@keyframes driftA{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+@keyframes driftB{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,20px)}}
+@keyframes menuIn{from{opacity:0;transform:translateX(-50%) translateY(-8px) scale(0.98)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@keyframes pan{from{background-position:0% 0%}to{background-position:100% 100%}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; flex-direction: column; min-height: 100vh; background: linear-gradient(180deg, #B9DCFF 0px, #DCEDFF 420px, #EEF4FB 780px, #F5F6F8 1180px, #F3F3F5 1480px); font-family: Inter, system-ui, sans-serif; color: #111216; font-size: 16px; line-height: 1.5; overflow-x: clip;">
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 1300px; overflow: hidden; pointer-events: none;">
+<div style="position: absolute; left: 6%; top: 120px; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.80), transparent); animation: driftA 18s ease-in-out infinite;"></div>
+<div style="position: absolute; right: 4%; top: 40px; width: 580px; height: 580px; border-radius: 50%; background: radial-gradient(closest-side, rgba(76,154,255,0.28), transparent); animation: driftB 15s ease-in-out infinite;"></div>
+<div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(11,111,224,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(11,111,224,0.06) 1px, transparent 1px); background-size: 64px 64px; -webkit-mask-image: radial-gradient(46% 34% at 50% 22%, #000, transparent); mask-image: radial-gradient(46% 34% at 50% 22%, #000, transparent);"></div>
+</div>
+
+<header style="position: sticky; top: 0; z-index: 50; padding: 22px 24px 0;">
+<div style="position: relative; max-width: 1240px; margin: 0 auto; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+<a href="LP.dc.html" style="display: flex; align-items: center; gap: 9px; text-decoration: none; height: 52px; padding: 0 20px 0 16px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#0B6FE0"></circle><circle cx="11" cy="5" r="2.3" fill="#0B6FE0"></circle><circle cx="17" cy="8" r="2.3" fill="#0B6FE0"></circle><circle cx="8" cy="14" r="2.3" fill="#0E0F12"></circle><circle cx="14" cy="13" r="2.3" fill="#0E0F12"></circle><circle cx="19" cy="17" r="2.3" fill="#0E0F12"></circle><circle cx="11" cy="20" r="2.3" fill="#0E0F12"></circle></svg>
+<span style="font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -0.03em; color: #0E0F12;">swarm</span>
+</a>
+<nav aria-label="Principal" style="display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;">
+<button type="button" class="nh" onClick="{{toggleMenu}}" aria-expanded="{{menuOpen}}" style="display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 16px; border: 0; border-radius: 999px; background: {{prodBg}}; color: #0E0F12; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer;">Produit<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style="transform: {{chev}}; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);"><path d="M3 4.5l3 3 3-3" fill="none" stroke="#0E0F12" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<a href="LP.dc.html" class="nh" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; color: #4A4F57; text-decoration: none; font-size: 15px; font-weight: 500;">Exemple</a>
+<a href="Tarifs.dc.html" aria-current="page" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: rgba(255,255,255,0.95); box-shadow: 0 1px 2px rgba(16,24,40,0.08); color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600;">Tarifs</a>
+<a href="LP.dc.html" class="nh" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; color: #4A4F57; text-decoration: none; font-size: 15px; font-weight: 500;">FAQ</a>
+</nav>
+<div style="display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;">
+<a href="#connexion" class="nh" style="display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;">Se connecter</a>
+<a href="LP.dc.html" class="cta" style="display: inline-flex; align-items: center; gap: 12px; height: 42px; box-sizing: border-box; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; border-radius: 999px; padding: 0 4px 0 18px; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 8px 18px rgba(11,111,224,0.32), inset 0 1px 0 rgba(255,255,255,0.45);">Trouver mon app<span style="width: 34px; height: 34px; border-radius: 50%; background: #FFFFFF; color: #0B6FE0; display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 9h10M10 5l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a>
+</div>
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: absolute; top: calc(100% + 12px); left: 50%; width: 700px; max-width: calc(100vw - 48px); transform: translateX(-50%); box-sizing: border-box; border-radius: 24px; padding: 10px; background: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%); box-shadow: 0 30px 70px rgba(16,24,40,0.20), inset 0 1px 0 #FFFFFF; display: flex; flex-wrap: wrap; gap: 10px; animation: menuIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;">
+<div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 2px;">
+<sc-for list="{{menu}}" as="m" hint-placeholder-count="3">
+<a href="LP.dc.html" class="mi" onClick="{{closeMenu}}" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px; border-radius: 16px; text-decoration: none;">
+<span style="width: 40px; height: 40px; border-radius: 12px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="{{m.d}}" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 15px; font-weight: 600; color: #0E0F12;">{{m.t}}</span><span style="font-size: 13px; color: #4A4F57; line-height: 1.45;">{{m.sub}}</span></span>
+</a>
+</sc-for>
+</div>
+<div style="flex: 0 0 220px; position: relative; border-radius: 18px; overflow: hidden; background: linear-gradient(150deg, #5A2E45 0%, #16090F 55%, #3A1D2C 100%); background-size: 220% 220%; animation: pan 8s ease-in-out infinite alternate; color: #FFFFFF; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; min-height: 236px;">
+<span style="align-self: flex-start; background: rgba(0,0,0,0.45); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 600;">Repérée à H+26</span>
+<span style="display: flex; flex-direction: column;"><span style="font-size: 13px; color: #E4E7EC;">Luv or Pop</span><span style="font-family: 'Inter Tight', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1;">7,5 M vues</span></span>
+</div>
+</div>
+</sc-if>
+</div>
+</header>
+
+<section style="position: relative; padding: 88px 24px 64px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 22px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 0.04em; color: #3A3F47; animation: blurIn 0.8s ease-out both;"><span style="color: #0B6FE0;">[</span> TARIFS <span style="color: #0B6FE0;">]</span></span>
+<h1 style="margin: 0; max-width: 1100px; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(44px, 5.6vw, 84px); line-height: 1.02; letter-spacing: -0.05em; animation: blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.12s;">Un seul plan. <span style="color: #0B6FE0;">Tout Swarm.</span></h1>
+<p style="margin: 0; max-width: 620px; font-size: 19px; line-height: 1.55; color: #3A3F47; animation: blurIn 0.9s ease-out both; animation-delay: 0.3s;">Les apps et les formats qui explosent en ce moment sur TikTok, Instagram et YouTube Shorts, sur n’importe quel marché, et les créateurs derrière. Pour un seul prix.</p>
+<div role="group" aria-label="Facturation" style="position: relative; margin-top: 10px; display: inline-flex; padding: 5px; border-radius: 999px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 24px rgba(16,24,40,0.08); animation: blurIn 0.9s ease-out both; animation-delay: 0.45s;">
+<span aria-hidden="true" style="position: absolute; top: 5px; bottom: 5px; left: {{thumbL}}; width: 180px; border-radius: 999px; background: #0E0F12; box-shadow: 0 6px 16px rgba(14,15,18,0.25); transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);"></span>
+<button type="button" aria-pressed="{{isM}}" onClick="{{toM}}" style="position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: {{inkM}}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: color 0.3s ease;">Mensuel</button>
+<button type="button" aria-pressed="{{isY}}" onClick="{{toY}}" style="position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: {{inkY}}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: color 0.3s ease;">Annuel<span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 8px;">−33 %</span></button>
+</div>
+</section>
+
+<section aria-label="Swarm Pro" style="position: relative; padding: 0 24px;">
+<div style="position: relative; max-width: 1120px; margin: 0 auto; border-radius: 32px; padding: 1.5px; overflow: hidden; box-shadow: 0 2px 4px rgba(16,24,40,0.06), 0 50px 110px rgba(11,40,90,0.22); animation: riseIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.55s;">
+<span aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 140%; aspect-ratio: 1 / 1; background: conic-gradient(from 0deg, rgba(11,111,224,0.18) 0deg, rgba(11,111,224,0.18) 230deg, #4C9AFF 300deg, #FFFFFF 335deg, rgba(11,111,224,0.18) 360deg); animation: spinC 6s linear infinite;"></span>
+<div style="position: relative; border-radius: 30.5px; overflow: hidden; background: #FFFFFF; display: flex; flex-wrap: wrap;">
+
+<div class="dk" style="position: relative; overflow: hidden; flex: 1 1 400px; box-sizing: border-box; padding: 48px 44px 40px; background: linear-gradient(180deg, #0E1730 0%, #090D17 100%); color: #FFFFFF; display: flex; flex-direction: column; gap: 28px;">
+<div aria-hidden="true" style="position: absolute; left: 100%; top: 100%; width: 820px; height: 820px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, transparent 290deg, rgba(76,154,255,0.05) 300deg, rgba(76,154,255,0.30) 360deg); animation: spinC 9s linear infinite; pointer-events: none;"></div>
+<div aria-hidden="true" style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 40px 40px; -webkit-mask-image: radial-gradient(70% 60% at 100% 100%, #000, transparent); mask-image: radial-gradient(70% 60% at 100% 100%, #000, transparent); pointer-events: none;"></div>
+<div style="position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+<span style="display: inline-flex; align-items: center; gap: 10px;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"></circle><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"></circle></svg><span style="font-family: 'Inter Tight', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.03em;">Swarm Pro</span></span>
+<span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); border-radius: 999px; padding: 5px 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);">Tout inclus</span>
+</div>
+<div style="position: relative; height: 122px;">
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; opacity: {{oM}}; transform: {{trM}}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);"><span style="display: flex; align-items: baseline; gap: 10px;"><span style="font-family: 'Inter Tight', sans-serif; font-size: 80px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;">49 €</span><span style="font-size: 17px; color: #9AA3B2;">/ mois</span></span><span style="font-size: 15px; color: #9AA3B2;">Facturé chaque mois.</span></div>
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; opacity: {{oY}}; transform: {{trY}}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);"><span style="display: flex; align-items: baseline; gap: 10px;"><span style="font-family: 'Inter Tight', sans-serif; font-size: 80px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;">32,50 €</span><span style="font-size: 17px; color: #9AA3B2;">/ mois</span></span><span style="font-size: 15px; color: #9AA3B2;">Facturé 390 € par an au lieu de 588 €.</span></div>
+</div>
+<a href="#paiement" style="position: relative; display: flex; align-items: center; justify-content: space-between; height: 62px; box-sizing: border-box; padding: 0 8px 0 26px; border-radius: 18px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; animation: glowDk 3s ease-in-out infinite;">Passer Pro<span style="width: 46px; height: 46px; border-radius: 13px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a>
+<div style="position: relative; margin-top: auto; border-top: 1px dashed rgba(255,255,255,0.14); padding-top: 22px; display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; color: #C9CED6;">
+<span style="display: inline-flex; align-items: center; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#4C9AFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>Annulable en un clic</span>
+<span style="display: inline-flex; align-items: center; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#4C9AFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>Sans engagement</span>
+<span style="display: inline-flex; align-items: center; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#4C9AFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>Paiement sécurisé</span>
+</div>
+</div>
+
+<div style="flex: 1.25 1 480px; box-sizing: border-box; padding: 44px 48px 36px; background: #FFFFFF; display: flex; flex-direction: column;">
+<span style="font-size: 15px; font-weight: 600; color: #111216; padding-bottom: 6px;">Tout ce que tu débloques</span>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<div style="padding: 20px 0; border-top: {{g.line}}; display: flex; flex-direction: column; gap: 14px;">
+<span style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #0B6FE0;">{{g.n}}</span><span style="font-size: 15px; font-weight: 700;">{{g.title}}</span><span style="font-size: 14px; color: #5F656E;">{{g.sub}}</span></span>
+<sc-for list="{{g.items}}" as="f" hint-placeholder-count="3">
+<div style="display: flex; align-items: flex-start; gap: 14px;">
+<span style="width: 34px; height: 34px; border-radius: 10px; background: #EEF4FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="{{f.d}}" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0;"><span style="font-size: 16px; font-weight: 600;">{{f.t}}</span><span style="font-size: 14px; color: #5F656E;">{{f.d2}}</span></span>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+
+</div>
+</div>
+</section>
+
+<section aria-labelledby="radar" style="padding: 104px 24px 0;">
+<div style="max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px;">
+<span id="radar" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.04em; color: #5F656E;"><span style="color: #0B6FE0;">[</span> LE RADAR <span style="color: #0B6FE0;">]</span></span>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); border-top: 1px solid #E2E4E9; border-bottom: 1px solid #E2E4E9;">
+<sc-for list="{{nums}}" as="n" hint-placeholder-count="4">
+<div style="padding: 30px 28px 30px {{n.pl}}; border-left: {{n.line}}; display: flex; flex-direction: column; gap: 10px;">
+<span style="font-family: 'Inter Tight', sans-serif; font-size: 52px; font-weight: 700; letter-spacing: -0.05em; line-height: 1;">{{n.v}}</span>
+<span style="font-size: 15px; color: #5F656E;">{{n.l}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="qt" style="padding: 112px 24px 120px;">
+<div style="max-width: 1120px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 40px 80px; align-items: flex-start;">
+<div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.04em; color: #5F656E;"><span style="color: #0B6FE0;">[</span> QUESTIONS <span style="color: #0B6FE0;">]</span></span>
+<h2 id="qt" style="margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(36px, 3.6vw, 52px); letter-spacing: -0.04em; line-height: 1.05;">Avant de passer Pro.</h2>
+</div>
+<div style="flex: 1.6 1 560px; border-top: 1px dashed #D3D7DE;">
+<sc-for list="{{qs}}" as="f" hint-placeholder-count="4">
+<div style="border-bottom: 1px dashed #D3D7DE;">
+<button type="button" onClick="{{f.toggle}}" aria-expanded="{{f.open}}" style="width: 100%; min-height: 76px; background: transparent; border: 0; padding: 20px 0; box-sizing: border-box; display: flex; align-items: center; gap: 20px; font: inherit; color: #111216; text-align: left; cursor: pointer;">
+<span style="flex: 1 1 auto; font-size: 19px; font-weight: 500;">{{f.q}}</span>
+<span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: {{f.iconBg}}; transition: background 0.3s ease;"><svg width="13" height="13" viewBox="0 0 14 14" style="transform: {{f.rot}}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);"><path d="M7 2v10M2 7h10" stroke="{{f.iconInk}}" stroke-width="1.8" stroke-linecap="round"></path></svg></span>
+</button>
+<div style="display: grid; grid-template-rows: {{f.rows}}; transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);"><div style="overflow: hidden;"><p style="margin: 0; padding: 0 56px 24px 0; font-size: 17px; line-height: 1.65; color: #4A4F57;">{{f.a}}</p></div></div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<footer class="dk" style="position: relative; overflow: hidden; flex: 1 0 auto; display: flex; flex-direction: column; background-color: #05070C; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px); color: #FFFFFF;">
+<div style="position: relative; flex: 1 0 auto; width: 100%; max-width: 1320px; margin: 0 auto; background: rgba(8,11,18,0.94); border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); box-sizing: border-box;">
+<div style="padding: 88px 56px 0;">
+<div style="position: relative; overflow: hidden; border-radius: 32px; padding: 64px; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015)); border: 1px solid rgba(255,255,255,0.10); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 40px 90px rgba(0,0,0,0.45); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 40px;">
+<div aria-hidden="true" style="position: absolute; left: 82%; top: 50%; width: 820px; height: 820px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, transparent 290deg, rgba(76,154,255,0.04) 300deg, rgba(76,154,255,0.32) 360deg); animation: spinC 8s linear infinite; pointer-events: none;"></div>
+<div aria-hidden="true" style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px); background-size: 48px 48px; -webkit-mask-image: radial-gradient(60% 80% at 80% 50%, #000, transparent); mask-image: radial-gradient(60% 80% at 80% 50%, #000, transparent); pointer-events: none;"></div>
+<div style="position: relative; flex: 1 1 520px; display: flex; flex-direction: column; gap: 16px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.04em; color: #9AA3B2;"><span style="color: #4C9AFF;">[</span> DERNIER APPEL <span style="color: #4C9AFF;">]</span></span>
+<h2 style="margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(40px, 4.6vw, 64px); line-height: 1.03; letter-spacing: -0.05em;">Ta prochaine app explose déjà sur les réseaux.</h2>
+<p style="margin: 0; font-size: 19px; color: #9AA3B2;">Trouve-la avant les autres.</p>
+</div>
+<div style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 12px;">
+<a href="#paiement" style="display: inline-flex; align-items: center; gap: 18px; height: 64px; box-sizing: border-box; padding: 0 10px 0 30px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 19px; font-weight: 600; white-space: nowrap; animation: glowDk 3s ease-in-out infinite;">Passer Pro<span style="width: 42px; height: 42px; border-radius: 13px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.40); display: inline-flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a>
+<span style="font-size: 14px; color: #9AA3B2;">{{lastNote}}</span>
+</div>
+</div>
+</div>
+<div style="padding: 72px 72px 48px; display: flex; flex-wrap: wrap; gap: 48px 64px; justify-content: space-between;">
+<div style="flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 18px;">
+<a href="LP.dc.html" style="display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;"><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"></circle><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"></circle></svg><span style="font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: #FFFFFF;">swarm</span></a>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #9AA3B2;">Les apps et les formats qui explosent sur TikTok, Instagram et YouTube Shorts, et les créateurs derrière.</p>
+</div>
+<nav aria-label="Pied de page" style="flex: 1 1 600px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 40px;">
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 14px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A93A3;">{{c.title}}</span>
+<sc-for list="{{c.links}}" as="l" hint-placeholder-count="5">
+<a href="{{l.href}}" style="font-size: 15px; text-decoration: none; min-height: 28px; display: inline-flex; align-items: center;">{{l.t}}</a>
+</sc-for>
+</div>
+</sc-for>
+</nav>
+</div>
+<div style="margin: 0 72px; border-top: 1px solid rgba(255,255,255,0.08); padding: 22px 0 30px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 14px; color: #8A93A3;">
+<span>© 2026 Swarm</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #8A93A3;">Spot it. Copy it. Launch it.</span>
+</div>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3260}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    this.t0 = Date.now();
+    this.timer = setInterval(() => this.setState({ now: Date.now() }), 100);
+  }
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+  renderVals() {
+    const st = this.state || {};
+    const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
+    const annual = st.bill === 'y';
+    const menuOpen = !!st.menu;
+    const openQ = st.q === undefined ? 0 : st.q;
+    const ic = {
+      apps: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+      radar: 'M12 4a8 8 0 1 0 8 8M12 8a4 4 0 1 0 4 4M12 12l6-6',
+      alertes: 'M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0',
+      fiche: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5',
+      videos: 'M4 5h16v14H4zM10 9l5 3-5 3z',
+      revenus: 'M17 6.5A6.5 6.5 0 1 0 17 17.5M5 10h9M5 14h9',
+      marches: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9s1.3-6.2 3.8-9z',
+      createurs: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
+      export: 'M12 4v11M7 10l5 5 5-5M5 20h14'
+    };
+    const spec = [
+      ['01', 'Spot it', 'repérer ce qui explose', [
+        ['apps', 'Les apps qui explosent', 'En ce moment, parmi plus de 1 000 apps suivies.'],
+        ['radar', 'Nouvelles apps repérées', 'Celles qui démarrent, avant qu’elles saturent.'],
+        ['alertes', 'Alertes « vidéo qui explose »', 'Une vidéo part très au-dessus de sa normale, tu es prévenu.']
+      ]],
+      ['02', 'Copy it', 'copier ce qui marche', [
+        ['videos', 'Les formats qui explosent', 'Les hooks, les sons et les formats qui font les vues.'],
+        ['fiche', 'Fiches d’app décortiquées', 'Comptes, formats et rythme de publication.'],
+        ['revenus', 'Revenus estimés', 'Vues × RPM, avec la fourchette et le calcul.']
+      ]],
+      ['03', 'Launch it', 'lancer la tienne', [
+        ['createurs', 'Les créateurs derrière chaque app', 'Leurs comptes et leurs vidéos, pour les recruter.'],
+        ['marches', 'Tous les marchés', 'Choisis le pays où lancer, vois ce qui y explose déjà.'],
+        ['export', 'Export CSV', 'Apps, vidéos et comptes, dans ton tableur.']
+      ]]
+    ];
+    const groups = spec.map((g, gi) => ({
+      n: g[0], title: g[1], sub: g[2],
+      line: gi === 0 ? '0' : '1px solid #EEF0F3',
+      items: g[3].map((f) => ({ d: ic[f[0]], t: f[1], d2: f[2] }))
+    }));
+    const p = Math.min(1, el / 1600);
+    const k = 1 - Math.pow(1 - p, 3);
+    const fmt = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const nums = [
+      ['+' + fmt(1000 * k), 'apps qui poussent sur les réseaux'],
+      ['+' + fmt(100000 * k), 'comptes passés au crible chaque jour'],
+      ['Tous', 'les marchés, toutes les langues']
+    ].map((x, i) => ({ v: x[0], l: x[1], line: i === 0 ? '0' : '1px solid #E2E4E9', pl: i === 0 ? '0px' : '28px' }));
+    const faq = [
+      ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Swarm, sans palier ni option.'],
+      ['Je peux annuler quand je veux ?', 'Oui, en un clic depuis ton compte. Tu gardes l’accès jusqu’à la fin de la période déjà payée.'],
+      ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.'],
+      ['Les revenus affichés sont garantis ?', 'Non. Ce sont des estimations : vues relevées × un RPM de 3 € pour 1 000 vues, dans une fourchette de 2,50 à 3,50 €. Le calcul est toujours affiché.']
+    ];
+    const qs = faq.map((f, i) => {
+      const o = openQ === i;
+      return {
+        q: f[0], a: f[1], open: o,
+        rows: o ? '1fr' : '0fr',
+        rot: o ? 'rotate(45deg)' : 'rotate(0deg)',
+        iconBg: o ? '#0B6FE0' : '#E9EBEF',
+        iconInk: o ? '#FFFFFF' : '#111216',
+        toggle: () => this.setState({ q: o ? -1 : i })
+      };
+    });
+    const ticks = [
+      { app: 'Luv or Pop', text: 'repérée à H+26' },
+      { app: 'Love8', text: '+69 comptes' },
+      { app: 'Astra AI', text: 'une vidéo à 2 333× sa normale' },
+      { app: 'DJ Kartier', text: 'repérée à H+43' }
+    ];
+    const mk = (title, links) => ({ title, links: links.map((l) => ({ t: l[0], href: l[1] })) });
+    return {
+      menuOpen,
+      prodBg: menuOpen ? 'rgba(255,255,255,0.90)' : 'transparent',
+      chev: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+      toggleMenu: () => this.setState({ menu: !menuOpen }),
+      closeMenu: () => this.setState({ menu: false }),
+      menu: [
+        { t: 'Apps qui explosent', sub: 'En ce moment, sur n’importe quel marché', d: ic.apps },
+        { t: 'Formats qui explosent', sub: 'Les hooks, les sons et les formats qui font les vues', d: ic.videos },
+        { t: 'Créateurs', sub: 'Les comptes qui font exploser chaque app', d: ic.createurs }
+      ],
+      thumbL: annual ? '185px' : '5px',
+      isM: !annual, isY: annual,
+      inkM: annual ? '#3A3F47' : '#FFFFFF',
+      inkY: annual ? '#FFFFFF' : '#3A3F47',
+      toM: () => this.setState({ bill: 'm' }),
+      toY: () => this.setState({ bill: 'y' }),
+      oM: annual ? 0 : 1, trM: annual ? 'translateY(-12px)' : 'translateY(0)',
+      oY: annual ? 1 : 0, trY: annual ? 'translateY(0)' : 'translateY(12px)',
+      lastNote: annual ? '32,50 € par mois · annulable en un clic' : '49 € par mois · annulable en un clic',
+      groups, nums, qs,
+      tick: ticks[Math.floor(el / 3200) % ticks.length],
+      tickO: (el % 3200) < 2900 ? 1 : 0,
+      cols: [
+        mk('Produit', [['Comment ça marche', 'LP.dc.html'], ['Exemple', 'LP.dc.html'], ['Tarifs', 'Tarifs.dc.html'], ['FAQ', 'LP.dc.html']]),
+        mk('Fonctionnalités', [['Apps qui explosent', 'LP.dc.html'], ['Formats qui explosent', 'LP.dc.html'], ['Créateurs derrière chaque app', 'LP.dc.html'], ['Tous les marchés', 'LP.dc.html'], ['Revenus estimés', 'LP.dc.html']]),
+        mk('Légal', [['CGV', '#cgv'], ['Confidentialité', '#confidentialite'], ['Mentions légales', '#mentions'], ['Contact', '#contact']])
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
