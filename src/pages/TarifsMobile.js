@@ -108,7 +108,7 @@ export default class TarifsMobile extends DCLogic {
           h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 10px 12px 0;" },
             h("div", { "style": "display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 6px 0 14px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.64); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.10), inset 0 1px 0 #FFFFFF;" },
               h("a", { "href": "/", "aria-label": "Swarm, accueil", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
-                h("svg", { "width": "24", "height": "24", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
                   h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
                   h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
@@ -124,8 +124,8 @@ export default class TarifsMobile extends DCLogic {
               h("a", { "href": "#connexion", "class": "tap", "style": "display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                 "Se connecter"
               ),
-              h("button", { "type": "button", "class": "tap", "onclick": $v.openMenu, "aria-label": "Ouvrir le menu", "aria-expanded": $v.menuOpen, "style": "width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%; background: #0E0F12; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 14px rgba(14,15,18,0.22);" },
-                h("svg", { "width": "18", "height": "18", "viewbox": "0 0 18 18", "aria-hidden": "true" },
+              h("button", { "type": "button", "class": "tap", "onClick": $v.openMenu, "aria-label": "Ouvrir le menu", "aria-expanded": $v.menuOpen, "style": "width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%; background: #0E0F12; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 14px rgba(14,15,18,0.22);" },
+                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 18 18", "aria-hidden": "true" },
                   h("path", { "d": "M3 6.5h12M3 11.5h12", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round" })
                 )
               )
@@ -152,10 +152,10 @@ export default class TarifsMobile extends DCLogic {
             ),
             h("div", { "role": "group", "aria-label": "Facturation", "style": "position: relative; width: 100%; margin-top: 6px; display: flex; padding: 5px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 24px rgba(16,24,40,0.08); animation: tfm-blurIn 0.9s ease-out both; animation-delay: 0.4s;" },
               h("span", { "aria-hidden": "true", "style": `position: absolute; top: 5px; bottom: 5px; left: ${$t($v.thumbL)}; width: calc(50% - 5px); border-radius: 999px; background: #0E0F12; box-shadow: 0 6px 16px rgba(14,15,18,0.25); transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);` }),
-              h("button", { "type": "button", "aria-pressed": $v.isM, "onclick": $v.toM, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkM)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: color 0.3s ease;` },
+              h("button", { "type": "button", "aria-pressed": $v.isM, "onClick": $v.toM, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkM)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: color 0.3s ease;` },
                 "Mensuel"
               ),
-              h("button", { "type": "button", "aria-pressed": $v.isY, "onclick": $v.toY, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: color 0.3s ease;` },
+              h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: color 0.3s ease;` },
                 "Annuel",
                 h("span", { "style": "font-size: 11px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 7px;" },
                   "−33 %"
@@ -171,7 +171,7 @@ export default class TarifsMobile extends DCLogic {
                   h("div", { "aria-hidden": "true", "style": "position: absolute; left: 100%; top: 100%; width: 560px; height: 560px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, transparent 290deg, rgba(76,154,255,0.05) 300deg, rgba(76,154,255,0.30) 360deg); animation: tfm-spinC 9s linear infinite; pointer-events: none;" }),
                   h("div", { "style": "position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px;" },
                     h("span", { "style": "display: inline-flex; align-items: center; gap: 9px;" },
-                      h("svg", { "width": "22", "height": "22", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                      h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
                         h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
                         h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
@@ -219,26 +219,26 @@ export default class TarifsMobile extends DCLogic {
                   h("a", { "href": "#paiement", "class": "tap", "style": "position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Passer Pro",
                     h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                      h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                      h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                         h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     )
                   ),
                   h("div", { "style": "position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; font-size: 13px; color: #C9CED6;" },
                     h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                      h("svg", { "width": "13", "height": "13", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                      h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       ),
                       "Annulable en un clic"
                     ),
                     h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                      h("svg", { "width": "13", "height": "13", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                      h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       ),
                       "Sans engagement"
                     ),
                     h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                      h("svg", { "width": "13", "height": "13", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                      h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       ),
                       "Paiement sécurisé"
@@ -265,7 +265,7 @@ export default class TarifsMobile extends DCLogic {
                       ($l(g?.items)).map((f) => [
                         h("div", { "style": "display: flex; align-items: center; gap: 12px; min-height: 44px;" },
                           h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; background: #EEF4FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                            h("svg", { "width": "16", "height": "16", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                            h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                               h("path", { "d": f?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                             )
                           ),
@@ -310,12 +310,12 @@ export default class TarifsMobile extends DCLogic {
             h("div", { "style": "margin-top: 6px; border-top: 1px dashed #D3D7DE;" },
               ($l($v.qs)).map((f) => [
                 h("div", { "style": "border-bottom: 1px dashed #D3D7DE;" },
-                  h("button", { "type": "button", "onclick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; min-height: 64px; background: transparent; border: 0; padding: 16px 0; box-sizing: border-box; display: flex; align-items: center; gap: 14px; font: inherit; color: #111216; text-align: left; cursor: pointer;" },
+                  h("button", { "type": "button", "onClick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; min-height: 64px; background: transparent; border: 0; padding: 16px 0; box-sizing: border-box; display: flex; align-items: center; gap: 14px; font: inherit; color: #111216; text-align: left; cursor: pointer;" },
                     h("span", { "style": "flex: 1 1 auto; font-size: 17px; font-weight: 500; line-height: 1.35;" },
                       $t(f?.q)
                     ),
                     h("span", { "aria-hidden": "true", "style": `width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: ${$t(f?.iconBg)}; transition: background 0.3s ease;` },
-                      h("svg", { "width": "12", "height": "12", "viewbox": "0 0 14 14", "style": `transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                      h("svg", { "width": "12", "height": "12", "viewBox": "0 0 14 14", "style": `transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                         h("path", { "d": "M7 2v10M2 7h10", "stroke": f?.iconInk, "stroke-width": "1.8", "stroke-linecap": "round" })
                       )
                     )
@@ -336,7 +336,7 @@ export default class TarifsMobile extends DCLogic {
           h("div", { "style": "flex: 1 0 auto; padding: 48px 20px 24px; display: flex; flex-direction: column; gap: 36px;" },
             h("div", { "style": "display: flex; flex-direction: column; gap: 12px;" },
               h("a", { "href": "/", "style": "display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;" },
-                h("svg", { "width": "26", "height": "26", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
                   h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
                   h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
@@ -396,7 +396,7 @@ export default class TarifsMobile extends DCLogic {
             h("div", { "role": "dialog", "aria-modal": "true", "aria-label": "Menu", "style": "margin: 10px 12px 0; border-radius: 28px; background: rgba(255,255,255,0.97); box-shadow: 0 30px 70px rgba(16,24,40,0.28); padding: 6px 6px 16px; animation: tfm-sheetDown 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
               h("div", { "style": "display: flex; align-items: center; height: 56px; padding: 0 0 0 14px;" },
                 h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto;" },
-                  h("svg", { "width": "24", "height": "24", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                  h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
                     h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
                     h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
@@ -409,17 +409,17 @@ export default class TarifsMobile extends DCLogic {
                     "swarm"
                   )
                 ),
-                h("button", { "type": "button", "class": "tap", "onclick": $v.closeMenu, "aria-label": "Fermer le menu", "style": "width: 44px; height: 44px; border: 0; border-radius: 50%; background: #F1F3F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" },
-                  h("svg", { "width": "14", "height": "14", "viewbox": "0 0 14 14", "aria-hidden": "true" },
+                h("button", { "type": "button", "class": "tap", "onClick": $v.closeMenu, "aria-label": "Fermer le menu", "style": "width: 44px; height: 44px; border: 0; border-radius: 50%; background: #F1F3F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" },
+                  h("svg", { "width": "14", "height": "14", "viewBox": "0 0 14 14", "aria-hidden": "true" },
                     h("path", { "d": "M3 3l8 8M11 3l-8 8", "stroke": "#0E0F12", "stroke-width": "1.8", "stroke-linecap": "round" })
                   )
                 )
               ),
               h("nav", { "aria-label": "Menu", "style": "display: flex; flex-direction: column; padding: 4px 10px 0;" },
                 ($l($v.mnav)).map((m) => [
-                  h("a", { "href": m?.href, "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
+                  h("a", { "href": m?.href, "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
                     h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                      h("svg", { "width": "18", "height": "18", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                      h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         h("path", { "d": m?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     ),
@@ -431,22 +431,22 @@ export default class TarifsMobile extends DCLogic {
                         $t(m?.sub)
                       )
                     ),
-                    h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
+                    h("svg", { "width": "14", "height": "14", "viewBox": "0 0 16 16", "aria-hidden": "true" },
                       h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#9AA0A8", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ])
               ),
               h("div", { "style": "display: flex; flex-direction: column; gap: 8px; padding: 16px 10px 0;" },
-                h("a", { "href": "/", "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                h("a", { "href": "/", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                   "Trouver mon app",
                   h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                    h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                       h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ),
-                h("a", { "href": "#connexion", "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 18px; border: 1px solid #D3D7DE; color: #0E0F12; text-decoration: none; font-size: 16px; font-weight: 600;" },
+                h("a", { "href": "#connexion", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 18px; border: 1px solid #D3D7DE; color: #0E0F12; text-decoration: none; font-size: 16px; font-weight: 600;" },
                   "Se connecter"
                 )
               )

@@ -8,6 +8,8 @@ for (const name of pages) {
   const { default: Page } = await import(`../src/pages/${name}.js`);
   const html = renderToString(h(Page, null));
   const bad = ['undefined', '[object Object]', 'NaN'].filter((w) => html.includes(w));
+  // La casse SVG doit survivre à la conversion (viewBox, linearGradient…).
+  for (const w of ['viewbox=', 'preserveaspectratio=', '<lineargradient', '<radialgradient']) if (html.includes(w)) bad.push(w);
   const text = html.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<[^>]+>/g, ' ');
   console.log(`${name.padEnd(13)} ${String(html.length).padStart(7)} car. HTML · ${text.split(/\s+/).filter(Boolean).length} mots${bad.length ? ' · PROBLÈME : ' + bad.join(', ') : ''}`);
   if (bad.length) failed = true;

@@ -70,9 +70,24 @@ class Parser(HTMLParser):
         self.stack[-1].children.append(data)
 
 
-def attr_name(tag_in_svg, name):
-    # Preact accepte `class`, `onClick` et les attributs SVG en kebab-case tels quels.
-    return name
+# HTMLParser met tous les noms en minuscules. En SVG la casse compte : sans `viewBox`
+# l'icône n'est plus mise à l'échelle, sans `linearGradient` le dégradé disparaît.
+SVG_TAGS = {t.lower(): t for t in [
+    'linearGradient', 'radialGradient', 'clipPath', 'foreignObject', 'textPath', 'animateTransform',
+    'animateMotion', 'feGaussianBlur', 'feOffset', 'feMerge', 'feMergeNode', 'feColorMatrix', 'feBlend',
+    'feFlood', 'feComposite', 'feDropShadow', 'feTurbulence', 'feDisplacementMap']}
+SVG_ATTRS = {a.lower(): a for a in [
+    'viewBox', 'preserveAspectRatio', 'gradientUnits', 'gradientTransform', 'spreadMethod', 'patternUnits',
+    'patternContentUnits', 'patternTransform', 'clipPathUnits', 'maskUnits', 'maskContentUnits', 'filterUnits',
+    'primitiveUnits', 'stdDeviation', 'textLength', 'lengthAdjust', 'startOffset', 'markerWidth', 'markerHeight',
+    'markerUnits', 'refX', 'refY', 'pathLength', 'baseFrequency', 'numOctaves', 'attributeName', 'repeatCount',
+    'keyTimes', 'keySplines', 'calcMode', 'xChannelSelector', 'yChannelSelector']}
+EVENTS = {'onclick': 'onClick', 'oninput': 'onInput', 'onchange': 'onChange', 'onsubmit': 'onSubmit',
+          'onmouseenter': 'onMouseEnter', 'onmouseleave': 'onMouseLeave', 'onkeydown': 'onKeyDown'}
+
+
+def attr_name(name):
+    return SVG_ATTRS.get(name) or EVENTS.get(name) or name
 
 
 def path_expr(path, scope):
@@ -169,14 +184,15 @@ def gen(node, scope, ind):
             continue
         if name == 'href':
             val = rewrite_links(val, text_of(node))
-        props.append(f'{json.dumps(name)}: {value_expr(val, scope)}')
+        props.append(f'{json.dumps(attr_name(name))}: {value_expr(val, scope)}')
     props_js = '{ ' + ', '.join(props) + ' }' if props else 'null'
+    tag = json.dumps(SVG_TAGS.get(node.tag, node.tag))
     if node.tag in VOID or not node.children:
-        return f'{pad}h({json.dumps(node.tag)}, {props_js})'
+        return f'{pad}h({tag}, {props_js})'
     inner = gen_children(node, scope, ind + 1)
     if not inner.strip():
-        return f'{pad}h({json.dumps(node.tag)}, {props_js})'
-    return f'{pad}h({json.dumps(node.tag)}, {props_js},\n{inner}\n{pad})'
+        return f'{pad}h({tag}, {props_js})'
+    return f'{pad}h({tag}, {props_js},\n{inner}\n{pad})'
 
 
 def gen_children(node, scope, ind):

@@ -150,7 +150,7 @@ export default class LPMobile extends DCLogic {
           h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 10px 12px 0;" },
             h("div", { "style": "display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 6px 0 14px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.64); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.10), inset 0 1px 0 #FFFFFF;" },
               h("a", { "href": "#top", "aria-label": "Swarm, haut de page", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
-                h("svg", { "width": "24", "height": "24", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
                   h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
                   h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
@@ -166,8 +166,8 @@ export default class LPMobile extends DCLogic {
               h("a", { "href": "#connexion", "class": "tap", "style": "display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                 "Se connecter"
               ),
-              h("button", { "type": "button", "class": "tap", "onclick": $v.openMenu, "aria-label": "Ouvrir le menu", "aria-expanded": $v.menuOpen, "style": "width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%; background: #0E0F12; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 14px rgba(14,15,18,0.22);" },
-                h("svg", { "width": "18", "height": "18", "viewbox": "0 0 18 18", "aria-hidden": "true" },
+              h("button", { "type": "button", "class": "tap", "onClick": $v.openMenu, "aria-label": "Ouvrir le menu", "aria-expanded": $v.menuOpen, "style": "width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%; background: #0E0F12; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 14px rgba(14,15,18,0.22);" },
+                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 18 18", "aria-hidden": "true" },
                   h("path", { "d": "M3 6.5h12M3 11.5h12", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round" })
                 )
               )
@@ -204,7 +204,7 @@ export default class LPMobile extends DCLogic {
               ),
               "qui explose en ce moment",
               h("span", { "aria-hidden": "true", "style": "display: inline-flex; align-items: center; gap: 0.1em; vertical-align: 0.08em; margin-left: 0.16em; height: 0.74em; padding: 0 0.24em 0 0.18em; border-radius: 999px; background: #0B6FE0; color: #FFFFFF; box-shadow: 0 0.1em 0.3em rgba(11,111,224,0.35);" },
-                h("svg", { "viewbox": "0 0 40 20", "style": "height: 0.4em; width: 0.8em;" },
+                h("svg", { "viewBox": "0 0 40 20", "style": "height: 0.4em; width: 0.8em;" },
                   h("path", { "d": "M2 16 L12 11 L20 13 L30 5 L38 3", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "3.2", "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-dasharray": "60", "style": "animation: lpm-drawS 3.2s ease-in-out infinite;" })
                 ),
                 h("span", { "style": "font-family: Inter, sans-serif; font-size: 0.32em; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;" },
@@ -217,7 +217,7 @@ export default class LPMobile extends DCLogic {
             ),
             h("a", { "href": "/tarifs", "aria-label": "Trouver mon app", "class": "tap", "style": "width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; border-radius: 26px; background: rgba(255,255,255,0.72); border: 1px solid #FFFFFF; backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 24px 60px rgba(16,24,40,0.14), 0 0 0 5px rgba(255,255,255,0.35), inset 0 1px 0 #FFFFFF; text-decoration: none; color: #0E0F12; animation: lpm-blurIn 0.9s ease-out both; animation-delay: 0.45s;" },
               h("span", { "aria-hidden": "true", "style": "display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px; text-align: left; font-size: 16px; color: #656B74; white-space: nowrap; overflow: hidden;" },
-                h("svg", { "width": "18", "height": "18", "viewbox": "0 0 20 20", "style": "flex-shrink: 0;" },
+                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "style": "flex-shrink: 0;" },
                   h("circle", { "cx": "9", "cy": "9", "r": "5.8", "fill": "none", "stroke": "#656B74", "stroke-width": "1.8" }),
                   h("path", { "d": "M13.4 13.4L17 17", "stroke": "#656B74", "stroke-width": "1.8", "stroke-linecap": "round" })
                 ),
@@ -232,7 +232,7 @@ export default class LPMobile extends DCLogic {
               h("span", { "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                     h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -243,7 +243,7 @@ export default class LPMobile extends DCLogic {
             h("div", { "style": "position: relative; padding: 6px; border-radius: 28px; background: linear-gradient(180deg, #1C2230 0%, #0B0E15 100%); box-shadow: 0 2px 4px rgba(16,24,40,0.10), 0 30px 70px rgba(16,24,40,0.26), inset 0 1px 0 rgba(255,255,255,0.12); animation: lpm-blurIn 1s ease-out both; animation-delay: 0.55s;" },
               h("div", { "role": "img", "aria-label": "Emplacement de la vidéo motion, à venir", "style": "position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: radial-gradient(70% 70% at 50% 62%, #FFFFFF 0%, #F1F3F6 55%, #E2E5EA 100%); display: flex; align-items: center; justify-content: center;" },
                 h("span", { "style": "position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgba(14,15,18,0.30); color: #FFFFFF; font-size: 12px; font-weight: 500; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
-                  h("svg", { "width": "14", "height": "14", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                  h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     h("path", { "d": "M4 9h4l5-4v14l-5-4H4z", "fill": "#FFFFFF" }),
                     h("path", { "d": "M17 9.5l4 5M21 9.5l-4 5", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round" })
                   ),
@@ -267,7 +267,7 @@ export default class LPMobile extends DCLogic {
             ),
             h("div", { "style": "display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 14px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: #0E0F12; white-space: nowrap;" },
               h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                h("svg", { "width": "18", "height": "18", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#25F4EE", "transform": "translate(-0.7 -0.7)" }),
                   h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#FE2C55", "transform": "translate(0.7 0.7)" }),
                   h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#0E0F12" })
@@ -275,9 +275,9 @@ export default class LPMobile extends DCLogic {
                 "TikTok"
               ),
               h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                h("svg", { "width": "18", "height": "18", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   h("defs", null,
-                    h("lineargradient", { "id": "igM", "x1": "0", "y1": "1", "x2": "1", "y2": "0" },
+                    h("linearGradient", { "id": "igM", "x1": "0", "y1": "1", "x2": "1", "y2": "0" },
                       h("stop", { "offset": "0%", "stop-color": "#FEDA75" }),
                       h("stop", { "offset": "30%", "stop-color": "#FA7E1E" }),
                       h("stop", { "offset": "60%", "stop-color": "#D62976" }),
@@ -291,7 +291,7 @@ export default class LPMobile extends DCLogic {
                 "Instagram"
               ),
               h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                h("svg", { "width": "20", "height": "20", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   h("rect", { "x": "2", "y": "5", "width": "20", "height": "14", "rx": "4.5", "fill": "#FF0033" }),
                   h("path", { "d": "M10 9l5.2 3-5.2 3z", "fill": "#FFFFFF" })
                 ),
@@ -322,7 +322,7 @@ export default class LPMobile extends DCLogic {
                 h("div", { "aria-hidden": "true", "style": "height: 224px; box-sizing: border-box; padding: 16px; background: linear-gradient(180deg, #F4F7FC, #FFFFFF); display: flex; flex-direction: column; gap: 8px;" },
                   h("span", { "style": "align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #0E0F12; color: #FFFFFF; font-size: 11px; font-weight: 600;" },
                     "Tous les marchés",
-                    h("svg", { "width": "9", "height": "9", "viewbox": "0 0 12 12" },
+                    h("svg", { "width": "9", "height": "9", "viewBox": "0 0 12 12" },
                       h("path", { "d": "M3 4.5l3 3 3-3", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "1.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   ),
@@ -392,9 +392,9 @@ export default class LPMobile extends DCLogic {
                       "2,0 M à H+114"
                     )
                   ),
-                  h("svg", { "viewbox": "0 0 360 150", "width": "100%", "height": "100", "preserveaspectratio": "none" },
+                  h("svg", { "viewBox": "0 0 360 150", "width": "100%", "height": "100", "preserveAspectRatio": "none" },
                     h("defs", null,
-                      h("lineargradient", { "id": "mA", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                      h("linearGradient", { "id": "mA", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
                         h("stop", { "offset": "0%", "stop-color": "#0B6FE0", "stop-opacity": "0.22" }),
                         h("stop", { "offset": "100%", "stop-color": "#0B6FE0", "stop-opacity": "0" })
                       )
@@ -433,7 +433,7 @@ export default class LPMobile extends DCLogic {
               h("a", { "href": "/tarifs", "class": "tap", "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir ce qui explose",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                     h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -505,7 +505,7 @@ export default class LPMobile extends DCLogic {
               h("a", { "href": "/tarifs", "class": "tap", "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir les formats",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                     h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -539,19 +539,19 @@ export default class LPMobile extends DCLogic {
                 ($l($v.avis)).map((r) => [
                   h("figure", { "style": "margin: 0; box-sizing: border-box; border-radius: 28px; padding: 24px 22px; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.09); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07); display: flex; flex-direction: column; gap: 18px;" },
                     h("span", { "role": "img", "aria-label": "5 étoiles sur 5", "style": "display: flex; gap: 4px;" },
-                      h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                      h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                         h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
                       ),
-                      h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                      h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                         h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
                       ),
-                      h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                      h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                         h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
                       ),
-                      h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                      h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                         h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
                       ),
-                      h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                      h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                         h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
                       )
                     ),
@@ -573,7 +573,7 @@ export default class LPMobile extends DCLogic {
                 ])
               ),
               h("div", { "style": `position: relative; z-index: 2; margin-top: ${$t($v.avisBtnMt)}; display: flex; justify-content: center; transition: margin-top 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);` },
-                h("button", { "type": "button", "class": "tap", "onclick": $v.toggleAvis, "aria-expanded": $v.avisOpen, "style": "height: 48px; padding: 0 22px; border-radius: 999px; background: rgba(22,26,36,0.94); border: 1px solid rgba(255,255,255,0.16); color: #FFFFFF; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 12px 30px rgba(0,0,0,0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
+                h("button", { "type": "button", "class": "tap", "onClick": $v.toggleAvis, "aria-expanded": $v.avisOpen, "style": "height: 48px; padding: 0 22px; border-radius: 999px; background: rgba(22,26,36,0.94); border: 1px solid rgba(255,255,255,0.16); color: #FFFFFF; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 12px 30px rgba(0,0,0,0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
                   $t($v.avisBtn)
                 )
               )
@@ -601,11 +601,11 @@ export default class LPMobile extends DCLogic {
             h("div", { "style": "margin-top: 10px; display: flex; flex-direction: column; gap: 8px;" },
               ($l($v.faqs)).map((f) => [
                 h("div", { "style": `border-radius: 18px; background: ${$t(f?.bg)}; border: 1px solid ${$t(f?.border)}; transition: background 0.35s ease, border-color 0.35s ease;` },
-                  h("button", { "type": "button", "onclick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; min-height: 60px; background: transparent; border: 0; padding: 16px 18px; box-sizing: border-box; display: flex; align-items: center; gap: 14px; font: inherit; color: #FFFFFF; text-align: left; cursor: pointer;" },
+                  h("button", { "type": "button", "onClick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; min-height: 60px; background: transparent; border: 0; padding: 16px 18px; box-sizing: border-box; display: flex; align-items: center; gap: 14px; font: inherit; color: #FFFFFF; text-align: left; cursor: pointer;" },
                     h("span", { "style": "flex: 1 1 auto; font-size: 16px; font-weight: 500; line-height: 1.35;" },
                       $t(f?.q)
                     ),
-                    h("svg", { "width": "16", "height": "16", "viewbox": "0 0 18 18", "aria-hidden": "true", "style": `flex-shrink: 0; transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                    h("svg", { "width": "16", "height": "16", "viewBox": "0 0 18 18", "aria-hidden": "true", "style": `flex-shrink: 0; transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                       h("path", { "d": "M4.5 7l4.5 4.5L13.5 7", "fill": "none", "stroke": f?.chev, "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   ),
@@ -649,7 +649,7 @@ export default class LPMobile extends DCLogic {
               h("a", { "href": "/tarifs", "class": "tap", "style": "position: relative; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                     h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -657,7 +657,7 @@ export default class LPMobile extends DCLogic {
             ),
             h("div", { "style": "display: flex; flex-direction: column; gap: 12px;" },
               h("a", { "href": "#top", "style": "display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;" },
-                h("svg", { "width": "26", "height": "26", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
                   h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
                   h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
@@ -717,7 +717,7 @@ export default class LPMobile extends DCLogic {
             h("div", { "role": "dialog", "aria-modal": "true", "aria-label": "Menu", "style": "margin: 10px 12px 0; border-radius: 28px; background: rgba(255,255,255,0.97); box-shadow: 0 30px 70px rgba(16,24,40,0.28); padding: 6px 6px 16px; animation: lpm-sheetDown 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
               h("div", { "style": "display: flex; align-items: center; height: 56px; padding: 0 0 0 14px;" },
                 h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto;" },
-                  h("svg", { "width": "24", "height": "24", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                  h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
                     h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
                     h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
@@ -730,17 +730,17 @@ export default class LPMobile extends DCLogic {
                     "swarm"
                   )
                 ),
-                h("button", { "type": "button", "class": "tap", "onclick": $v.closeMenu, "aria-label": "Fermer le menu", "style": "width: 44px; height: 44px; border: 0; border-radius: 50%; background: #F1F3F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" },
-                  h("svg", { "width": "14", "height": "14", "viewbox": "0 0 14 14", "aria-hidden": "true" },
+                h("button", { "type": "button", "class": "tap", "onClick": $v.closeMenu, "aria-label": "Fermer le menu", "style": "width: 44px; height: 44px; border: 0; border-radius: 50%; background: #F1F3F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" },
+                  h("svg", { "width": "14", "height": "14", "viewBox": "0 0 14 14", "aria-hidden": "true" },
                     h("path", { "d": "M3 3l8 8M11 3l-8 8", "stroke": "#0E0F12", "stroke-width": "1.8", "stroke-linecap": "round" })
                   )
                 )
               ),
               h("nav", { "aria-label": "Menu", "style": "display: flex; flex-direction: column; padding: 4px 10px 0;" },
                 ($l($v.mnav)).map((m) => [
-                  h("a", { "href": m?.href, "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
+                  h("a", { "href": m?.href, "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
                     h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                      h("svg", { "width": "18", "height": "18", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                      h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         h("path", { "d": m?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     ),
@@ -752,22 +752,22 @@ export default class LPMobile extends DCLogic {
                         $t(m?.sub)
                       )
                     ),
-                    h("svg", { "width": "14", "height": "14", "viewbox": "0 0 16 16", "aria-hidden": "true" },
+                    h("svg", { "width": "14", "height": "14", "viewBox": "0 0 16 16", "aria-hidden": "true" },
                       h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#9AA0A8", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ])
               ),
               h("div", { "style": "display: flex; flex-direction: column; gap: 8px; padding: 16px 10px 0;" },
-                h("a", { "href": "/tarifs", "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                h("a", { "href": "/tarifs", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                   "Trouver mon app",
                   h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                    h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                       h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ),
-                h("a", { "href": "#connexion", "class": "tap", "onclick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 18px; border: 1px solid #D3D7DE; color: #0E0F12; text-decoration: none; font-size: 16px; font-weight: 600;" },
+                h("a", { "href": "#connexion", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 18px; border: 1px solid #D3D7DE; color: #0E0F12; text-decoration: none; font-size: 16px; font-weight: 600;" },
                   "Se connecter"
                 )
               )

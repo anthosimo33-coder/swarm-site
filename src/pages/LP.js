@@ -198,7 +198,7 @@ export default class LP extends DCLogic {
         h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 22px 24px 0;" },
           h("div", { "style": "position: relative; max-width: 1240px; margin: 0 auto; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;" },
             h("a", { "href": "#top", "style": "display: flex; align-items: center; gap: 9px; text-decoration: none; height: 52px; padding: 0 20px 0 16px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;" },
-              h("svg", { "width": "26", "height": "26", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+              h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
                 h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
                 h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
@@ -212,9 +212,9 @@ export default class LP extends DCLogic {
               )
             ),
             h("nav", { "aria-label": "Principal", "style": "display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;" },
-              h("button", { "type": "button", "class": "nh", "onclick": $v.toggleMenu, "aria-expanded": $v.menuOpen, "style": `display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 16px; border: 0; border-radius: 999px; background: ${$t($v.prodBg)}; color: #0E0F12; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer;` },
+              h("button", { "type": "button", "class": "nh", "onClick": $v.toggleMenu, "aria-expanded": $v.menuOpen, "style": `display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 16px; border: 0; border-radius: 999px; background: ${$t($v.prodBg)}; color: #0E0F12; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer;` },
                 "Produit",
-                h("svg", { "width": "12", "height": "12", "viewbox": "0 0 12 12", "aria-hidden": "true", "style": `transform: ${$t($v.chev)}; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                h("svg", { "width": "12", "height": "12", "viewBox": "0 0 12 12", "aria-hidden": "true", "style": `transform: ${$t($v.chev)}; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                   h("path", { "d": "M3 4.5l3 3 3-3", "fill": "none", "stroke": "#0E0F12", "stroke-width": "1.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               ),
@@ -235,7 +235,7 @@ export default class LP extends DCLogic {
               h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 42px; box-sizing: border-box; padding: 0 4px 0 18px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
                 h("span", { "aria-hidden": "true", "style": "width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                  h("svg", { "width": "15", "height": "15", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                     h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -245,9 +245,9 @@ export default class LP extends DCLogic {
               h("div", { "style": "position: absolute; top: calc(100% + 12px); left: 50%; width: 700px; max-width: calc(100vw - 48px); transform: translateX(-50%); box-sizing: border-box; border-radius: 24px; padding: 10px; background: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%); box-shadow: 0 30px 70px rgba(16,24,40,0.20), inset 0 1px 0 #FFFFFF; display: flex; flex-wrap: wrap; gap: 10px; animation: lp-menuIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
                 h("div", { "style": "flex: 1 1 320px; display: flex; flex-direction: column; gap: 2px;" },
                   ($l($v.menu)).map((m) => [
-                    h("a", { "href": m?.href, "class": "mi", "onclick": $v.closeMenu, "style": "display: flex; align-items: flex-start; gap: 14px; padding: 14px; border-radius: 16px; text-decoration: none;" },
+                    h("a", { "href": m?.href, "class": "mi", "onClick": $v.closeMenu, "style": "display: flex; align-items: flex-start; gap: 14px; padding: 14px; border-radius: 16px; text-decoration: none;" },
                       h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                        h("svg", { "width": "20", "height": "20", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                        h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                           h("path", { "d": m?.d, "fill": "none", "stroke": $v.blue, "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         )
                       ),
@@ -310,7 +310,7 @@ export default class LP extends DCLogic {
             ),
             "qui explose en ce moment",
             h("span", { "aria-hidden": "true", "style": `display: inline-flex; align-items: center; gap: 0.1em; vertical-align: 0.08em; margin-left: 0.16em; height: 0.74em; padding: 0 0.24em 0 0.18em; border-radius: 999px; background: ${$t($v.blue)}; color: #FFFFFF; box-shadow: 0 0.1em 0.3em rgba(11,111,224,0.35);` },
-              h("svg", { "viewbox": "0 0 40 20", "style": "height: 0.4em; width: 0.8em;" },
+              h("svg", { "viewBox": "0 0 40 20", "style": "height: 0.4em; width: 0.8em;" },
                 h("path", { "d": "M2 16 L12 11 L20 13 L30 5 L38 3", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "3.2", "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-dasharray": "60", "style": "animation: lp-drawS 3.2s ease-in-out infinite;" })
               ),
               h("span", { "style": "font-family: Inter, sans-serif; font-size: 0.3em; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;" },
@@ -325,7 +325,7 @@ export default class LP extends DCLogic {
             )
           ),
           h("a", { "href": "/tarifs", "aria-label": "Trouver mon app", "style": "width: 100%; max-width: 680px; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 24px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.66); border: 1px solid rgba(255,255,255,0.98); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 24px 60px rgba(16,24,40,0.14), 0 0 0 6px rgba(255,255,255,0.35), inset 0 1px 0 #FFFFFF; text-decoration: none; color: #0E0F12; animation: lp-blurIn 0.9s ease-out both; animation-delay: 0.5s;" },
-            h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+            h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true", "style": "flex-shrink: 0;" },
               h("circle", { "cx": "9", "cy": "9", "r": "5.8", "fill": "none", "stroke": "#656B74", "stroke-width": "1.8" }),
               h("path", { "d": "M13.4 13.4L17 17", "stroke": "#656B74", "stroke-width": "1.8", "stroke-linecap": "round" })
             ),
@@ -339,7 +339,7 @@ export default class LP extends DCLogic {
             h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
               "Trouver mon app",
               h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                   h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               )
@@ -351,7 +351,7 @@ export default class LP extends DCLogic {
           h("div", { "style": "position: relative; max-width: 1160px; margin: 0 auto; padding: 10px; border-radius: 36px; background: linear-gradient(180deg, #1C2230 0%, #0B0E15 100%); box-shadow: 0 2px 4px rgba(16,24,40,0.10), 0 50px 110px rgba(16,24,40,0.28), inset 0 1px 0 rgba(255,255,255,0.12); animation: lp-blurIn 1s ease-out both; animation-delay: 0.7s;" },
             h("div", { "role": "img", "aria-label": "Emplacement de la vidéo motion, à venir", "style": "position: relative; aspect-ratio: 16 / 9; border-radius: 27px; overflow: hidden; background: radial-gradient(70% 70% at 50% 62%, #FFFFFF 0%, #F1F3F6 55%, #E2E5EA 100%); display: flex; align-items: center; justify-content: center;" },
               h("span", { "style": "position: absolute; top: 22px; right: 22px; display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 18px 0 14px; border-radius: 999px; background: rgba(14,15,18,0.30); color: #FFFFFF; font-size: 15px; font-weight: 500; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
-                h("svg", { "width": "18", "height": "18", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   h("path", { "d": "M4 9h4l5-4v14l-5-4H4z", "fill": "#FFFFFF" }),
                   h("path", { "d": "M17 9.5l4 5M21 9.5l-4 5", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round" })
                 ),
@@ -378,7 +378,7 @@ export default class LP extends DCLogic {
           ),
           h("div", { "style": "display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px 44px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: #0E0F12;" },
             h("span", { "style": "display: inline-flex; align-items: center; gap: 12px;" },
-              h("svg", { "width": "28", "height": "28", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+              h("svg", { "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#25F4EE", "transform": "translate(-0.7 -0.7)" }),
                 h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#FE2C55", "transform": "translate(0.7 0.7)" }),
                 h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#0E0F12" })
@@ -386,9 +386,9 @@ export default class LP extends DCLogic {
               "TikTok"
             ),
             h("span", { "style": "display: inline-flex; align-items: center; gap: 12px;" },
-              h("svg", { "width": "28", "height": "28", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+              h("svg", { "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 h("defs", null,
-                  h("lineargradient", { "id": "igD", "x1": "0", "y1": "1", "x2": "1", "y2": "0" },
+                  h("linearGradient", { "id": "igD", "x1": "0", "y1": "1", "x2": "1", "y2": "0" },
                     h("stop", { "offset": "0%", "stop-color": "#FEDA75" }),
                     h("stop", { "offset": "30%", "stop-color": "#FA7E1E" }),
                     h("stop", { "offset": "60%", "stop-color": "#D62976" }),
@@ -402,7 +402,7 @@ export default class LP extends DCLogic {
               "Instagram"
             ),
             h("span", { "style": "display: inline-flex; align-items: center; gap: 12px;" },
-              h("svg", { "width": "30", "height": "30", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+              h("svg", { "width": "30", "height": "30", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 h("rect", { "x": "2", "y": "5", "width": "20", "height": "14", "rx": "4.5", "fill": "#FF0033" }),
                 h("path", { "d": "M10 9l5.2 3-5.2 3z", "fill": "#FFFFFF" })
               ),
@@ -433,7 +433,7 @@ export default class LP extends DCLogic {
               h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir ce qui explose",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                     h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -474,7 +474,7 @@ export default class LP extends DCLogic {
                       ])
                     ),
                     h("div", { "style": `position: absolute; left: -48px; top: -48px; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(180deg, #4C9AFF 0%, ${$t($v.blue)} 100%); box-shadow: 0 0 0 10px rgba(11,111,224,0.08), 0 22px 50px rgba(11,111,224,0.45), inset 0 1px 0 rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center;` },
-                      h("svg", { "width": "44", "height": "44", "viewbox": "0 0 24 24" },
+                      h("svg", { "width": "44", "height": "44", "viewBox": "0 0 24 24" },
                         h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#FFFFFF" }),
                         h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#FFFFFF" }),
                         h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#FFFFFF" }),
@@ -499,7 +499,7 @@ export default class LP extends DCLogic {
                 h("div", { "aria-hidden": "true", "style": "height: 460px; background: #FFFFFF; border: 1px solid #E6E6EA; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 20px 50px rgba(16,24,40,0.06);" },
                   h("div", { "style": "height: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid #F0F0F3;" },
                     h("span", { "style": `width: 26px; height: 26px; border-radius: 8px; background: ${$t($v.blue)}; display: inline-flex; align-items: center; justify-content: center;` },
-                      h("svg", { "width": "16", "height": "16", "viewbox": "0 0 24 24" },
+                      h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24" },
                         h("circle", { "cx": "5", "cy": "8", "r": "2.4", "fill": "#FFFFFF" }),
                         h("circle", { "cx": "11", "cy": "5", "r": "2.4", "fill": "#FFFFFF" }),
                         h("circle", { "cx": "17", "cy": "8", "r": "2.4", "fill": "#FFFFFF" }),
@@ -529,9 +529,9 @@ export default class LP extends DCLogic {
                             "2,0 M"
                           )
                         ),
-                        h("svg", { "viewbox": "0 0 360 150", "width": "100%", "height": "170", "preserveaspectratio": "none" },
+                        h("svg", { "viewBox": "0 0 360 150", "width": "100%", "height": "170", "preserveAspectRatio": "none" },
                           h("defs", null,
-                            h("lineargradient", { "id": "lpA", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                            h("linearGradient", { "id": "lpA", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
                               h("stop", { "offset": "0%", "stop-color": "#0B6FE0", "stop-opacity": "0.22" }),
                               h("stop", { "offset": "100%", "stop-color": "#0B6FE0", "stop-opacity": "0" })
                             )
@@ -621,7 +621,7 @@ export default class LP extends DCLogic {
             ),
             h("div", { "style": "border-top: 1px solid #E6E6EA; padding: 28px 40px; display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;" },
               h("span", { "style": "display: inline-flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid #EDEDF0; border-radius: 14px; padding: 12px 20px; font-size: 17px; font-weight: 500; box-shadow: 0 6px 16px rgba(16,24,40,0.05);" },
-                h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                   h("rect", { "x": "3", "y": "3", "width": "5.5", "height": "5.5", "rx": "1.5", "fill": $v.blue }),
                   h("rect", { "x": "11.5", "y": "3", "width": "5.5", "height": "5.5", "rx": "1.5", "fill": $v.blue, "fill-opacity": "0.45" }),
                   h("rect", { "x": "3", "y": "11.5", "width": "5.5", "height": "5.5", "rx": "1.5", "fill": $v.blue, "fill-opacity": "0.45" }),
@@ -630,20 +630,20 @@ export default class LP extends DCLogic {
                 "+1 000 apps, +100 000 comptes"
               ),
               h("span", { "style": "display: inline-flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid #EDEDF0; border-radius: 14px; padding: 12px 20px; font-size: 17px; font-weight: 500; box-shadow: 0 6px 16px rgba(16,24,40,0.05);" },
-                h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                   h("path", { "d": "M3 4h14l-5.5 6.5V16l-3-1.5v-4z", "fill": "none", "stroke": $v.blue, "stroke-width": "1.8", "stroke-linejoin": "round" })
                 ),
                 "Tous les marchés"
               ),
               h("span", { "style": "display: inline-flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid #EDEDF0; border-radius: 14px; padding: 12px 20px; font-size: 17px; font-weight: 500; box-shadow: 0 6px 16px rgba(16,24,40,0.05);" },
-                h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                   h("path", { "d": "M16 10a6 6 0 1 1-1.8-4.3", "fill": "none", "stroke": $v.blue, "stroke-width": "1.8", "stroke-linecap": "round" }),
                   h("path", { "d": "M16 3.5v3.2h-3.2", "fill": "none", "stroke": $v.blue, "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 ),
                 "En ce moment, en continu"
               ),
               h("span", { "style": "display: inline-flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid #EDEDF0; border-radius: 14px; padding: 12px 20px; font-size: 17px; font-weight: 500; box-shadow: 0 6px 16px rgba(16,24,40,0.05);" },
-                h("svg", { "width": "20", "height": "20", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                   h("path", { "d": "M3 15l4.5-4.5 3 3L17 7", "fill": "none", "stroke": $v.blue, "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" }),
                   h("path", { "d": "M12.5 7H17v4.5", "fill": "none", "stroke": $v.blue, "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 ),
@@ -673,7 +673,7 @@ export default class LP extends DCLogic {
               h("a", { "href": "/tarifs", "class": "cta", "style": "margin-top: 16px; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir les formats",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                  h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                     h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -700,7 +700,7 @@ export default class LP extends DCLogic {
                       ),
                       h("div", { "style": "position: absolute; left: 14px; right: 14px; bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #FFFFFF;" },
                         h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-family: 'Inter Tight', sans-serif; font-size: 21px; font-weight: 700;" },
-                          h("svg", { "width": "12", "height": "12", "viewbox": "0 0 12 12" },
+                          h("svg", { "width": "12", "height": "12", "viewBox": "0 0 12 12" },
                             h("path", { "d": "M3 1.5v9l7-4.5z", "fill": "#FFFFFF" })
                           ),
                           $t(v?.views)
@@ -763,19 +763,19 @@ export default class LP extends DCLogic {
                     ($l(c?.cards)).map((r) => [
                       h("figure", { "style": `margin: 0; border-radius: 24px; padding: 28px; background: linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.02)); border: 1px solid ${$t(r?.border)}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), ${$t(r?.glow)}; display: flex; flex-direction: column; gap: 20px;` },
                         h("span", { "role": "img", "aria-label": "5 étoiles sur 5", "style": "display: flex; gap: 4px;" },
-                          h("svg", { "width": "18", "height": "18", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                          h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                             h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
                           ),
-                          h("svg", { "width": "18", "height": "18", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                          h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                             h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
                           ),
-                          h("svg", { "width": "18", "height": "18", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                          h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                             h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
                           ),
-                          h("svg", { "width": "18", "height": "18", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                          h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                             h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
                           ),
-                          h("svg", { "width": "18", "height": "18", "viewbox": "0 0 20 20", "aria-hidden": "true" },
+                          h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
                             h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
                           )
                         ),
@@ -784,7 +784,7 @@ export default class LP extends DCLogic {
                         ),
                         h("figcaption", { "style": "display: flex; align-items: center; gap: 12px;" },
                           h("span", { "aria-hidden": "true", "style": "width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(180deg, #1B2333, #111724); border: 1px solid rgba(255,255,255,0.10); display: inline-flex; align-items: center; justify-content: center;" },
-                            h("svg", { "width": "22", "height": "22", "viewbox": "0 0 24 24" },
+                            h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24" },
                               h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
                               h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
                             )
@@ -861,7 +861,7 @@ export default class LP extends DCLogic {
                     h("a", { "href": "#contact", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 4px 0 20px; border-radius: 999px; background: #FFFFFF; border: 1px solid #FFFFFF; color: #05070C; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                       "Écrire à l'équipe",
                       h("span", { "aria-hidden": "true", "style": "width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #05070C; display: grid; place-items: center;" },
-                        h("svg", { "width": "16", "height": "16", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                        h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                           h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         )
                       )
@@ -869,7 +869,7 @@ export default class LP extends DCLogic {
                     h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 4px 0 20px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                       "Trouver mon app",
                       h("span", { "aria-hidden": "true", "style": "width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                        h("svg", { "width": "16", "height": "16", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                        h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                           h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         )
                       )
@@ -880,11 +880,11 @@ export default class LP extends DCLogic {
               h("div", { "style": "flex: 1.45 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 10px;" },
                 ($l($v.faqs)).map((f) => [
                   h("div", { "style": `border-radius: 18px; background: ${$t(f?.bg)}; border: 1px solid ${$t(f?.border)}; box-shadow: ${$t(f?.shadow)}; transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;` },
-                    h("button", { "type": "button", "onclick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; background: transparent; border: 0; padding: 22px 24px; display: flex; align-items: center; gap: 18px; font: inherit; color: #FFFFFF; text-align: left; cursor: pointer;" },
+                    h("button", { "type": "button", "onClick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; background: transparent; border: 0; padding: 22px 24px; display: flex; align-items: center; gap: 18px; font: inherit; color: #FFFFFF; text-align: left; cursor: pointer;" },
                       h("span", { "style": "flex: 1 1 auto; font-size: 19px; font-weight: 500; letter-spacing: -0.01em;" },
                         $t(f?.q)
                       ),
-                      h("svg", { "width": "18", "height": "18", "viewbox": "0 0 18 18", "aria-hidden": "true", "style": `flex-shrink: 0; transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                      h("svg", { "width": "18", "height": "18", "viewBox": "0 0 18 18", "aria-hidden": "true", "style": `flex-shrink: 0; transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                         h("path", { "d": "M4.5 7l4.5 4.5L13.5 7", "fill": "none", "stroke": f?.chev, "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     ),
@@ -928,7 +928,7 @@ export default class LP extends DCLogic {
                   h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Trouver mon app",
                     h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                      h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                      h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                         h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     )
@@ -939,7 +939,7 @@ export default class LP extends DCLogic {
             h("div", { "style": "padding: 72px 72px 48px; display: flex; flex-wrap: wrap; gap: 48px 64px; justify-content: space-between;" },
               h("div", { "style": "flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 18px;" },
                 h("a", { "href": "#top", "style": "display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;" },
-                  h("svg", { "width": "28", "height": "28", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                  h("svg", { "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
                     h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
                     h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),

@@ -124,7 +124,7 @@ export default class Tarifs extends DCLogic {
         h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 22px 24px 0;" },
           h("div", { "style": "position: relative; max-width: 1240px; margin: 0 auto; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;" },
             h("a", { "href": "/", "style": "display: flex; align-items: center; gap: 9px; text-decoration: none; height: 52px; padding: 0 20px 0 16px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;" },
-              h("svg", { "width": "26", "height": "26", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+              h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
                 h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
                 h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
@@ -138,9 +138,9 @@ export default class Tarifs extends DCLogic {
               )
             ),
             h("nav", { "aria-label": "Principal", "style": "display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;" },
-              h("button", { "type": "button", "class": "nh", "onclick": $v.toggleMenu, "aria-expanded": $v.menuOpen, "style": `display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 16px; border: 0; border-radius: 999px; background: ${$t($v.prodBg)}; color: #0E0F12; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer;` },
+              h("button", { "type": "button", "class": "nh", "onClick": $v.toggleMenu, "aria-expanded": $v.menuOpen, "style": `display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 16px; border: 0; border-radius: 999px; background: ${$t($v.prodBg)}; color: #0E0F12; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer;` },
                 "Produit",
-                h("svg", { "width": "12", "height": "12", "viewbox": "0 0 12 12", "aria-hidden": "true", "style": `transform: ${$t($v.chev)}; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                h("svg", { "width": "12", "height": "12", "viewBox": "0 0 12 12", "aria-hidden": "true", "style": `transform: ${$t($v.chev)}; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                   h("path", { "d": "M3 4.5l3 3 3-3", "fill": "none", "stroke": "#0E0F12", "stroke-width": "1.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               ),
@@ -161,7 +161,7 @@ export default class Tarifs extends DCLogic {
               h("a", { "href": "/", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 42px; box-sizing: border-box; padding: 0 4px 0 18px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
                 h("span", { "aria-hidden": "true", "style": "width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                  h("svg", { "width": "15", "height": "15", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                  h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                     h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -171,9 +171,9 @@ export default class Tarifs extends DCLogic {
               h("div", { "style": "position: absolute; top: calc(100% + 12px); left: 50%; width: 700px; max-width: calc(100vw - 48px); transform: translateX(-50%); box-sizing: border-box; border-radius: 24px; padding: 10px; background: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%); box-shadow: 0 30px 70px rgba(16,24,40,0.20), inset 0 1px 0 #FFFFFF; display: flex; flex-wrap: wrap; gap: 10px; animation: tf-menuIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
                 h("div", { "style": "flex: 1 1 320px; display: flex; flex-direction: column; gap: 2px;" },
                   ($l($v.menu)).map((m) => [
-                    h("a", { "href": "/", "class": "mi", "onclick": $v.closeMenu, "style": "display: flex; align-items: flex-start; gap: 14px; padding: 14px; border-radius: 16px; text-decoration: none;" },
+                    h("a", { "href": "/", "class": "mi", "onClick": $v.closeMenu, "style": "display: flex; align-items: flex-start; gap: 14px; padding: 14px; border-radius: 16px; text-decoration: none;" },
                       h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                        h("svg", { "width": "20", "height": "20", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                        h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                           h("path", { "d": m?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         )
                       ),
@@ -226,10 +226,10 @@ export default class Tarifs extends DCLogic {
           ),
           h("div", { "role": "group", "aria-label": "Facturation", "style": "position: relative; margin-top: 10px; display: inline-flex; padding: 5px; border-radius: 999px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 24px rgba(16,24,40,0.08); animation: tf-blurIn 0.9s ease-out both; animation-delay: 0.45s;" },
             h("span", { "aria-hidden": "true", "style": `position: absolute; top: 5px; bottom: 5px; left: ${$t($v.thumbL)}; width: 180px; border-radius: 999px; background: #0E0F12; box-shadow: 0 6px 16px rgba(14,15,18,0.25); transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);` }),
-            h("button", { "type": "button", "aria-pressed": $v.isM, "onclick": $v.toM, "style": `position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: ${$t($v.inkM)}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: color 0.3s ease;` },
+            h("button", { "type": "button", "aria-pressed": $v.isM, "onClick": $v.toM, "style": `position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: ${$t($v.inkM)}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: color 0.3s ease;` },
               "Mensuel"
             ),
-            h("button", { "type": "button", "aria-pressed": $v.isY, "onclick": $v.toY, "style": `position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: color 0.3s ease;` },
+            h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: color 0.3s ease;` },
               "Annuel",
               h("span", { "style": "font-size: 12px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 8px;" },
                 "−33 %"
@@ -246,7 +246,7 @@ export default class Tarifs extends DCLogic {
                 h("div", { "aria-hidden": "true", "style": "position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 40px 40px; -webkit-mask-image: radial-gradient(70% 60% at 100% 100%, #000, transparent); mask-image: radial-gradient(70% 60% at 100% 100%, #000, transparent); pointer-events: none;" }),
                 h("div", { "style": "position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px;" },
                   h("span", { "style": "display: inline-flex; align-items: center; gap: 10px;" },
-                    h("svg", { "width": "26", "height": "26", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                    h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
                       h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
                       h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
@@ -294,26 +294,26 @@ export default class Tarifs extends DCLogic {
                 h("a", { "href": "#paiement", "class": "cta", "style": "position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                   "Passer Pro",
                   h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                    h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                       h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ),
                 h("div", { "style": "position: relative; margin-top: auto; border-top: 1px dashed rgba(255,255,255,0.14); padding-top: 22px; display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; color: #C9CED6;" },
                   h("span", { "style": "display: inline-flex; align-items: center; gap: 8px;" },
-                    h("svg", { "width": "15", "height": "15", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                    h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
                     "Annulable en un clic"
                   ),
                   h("span", { "style": "display: inline-flex; align-items: center; gap: 8px;" },
-                    h("svg", { "width": "15", "height": "15", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                    h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
                     "Sans engagement"
                   ),
                   h("span", { "style": "display: inline-flex; align-items: center; gap: 8px;" },
-                    h("svg", { "width": "15", "height": "15", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                    h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
                     "Paiement sécurisé"
@@ -340,7 +340,7 @@ export default class Tarifs extends DCLogic {
                     ($l(g?.items)).map((f) => [
                       h("div", { "style": "display: flex; align-items: flex-start; gap: 14px;" },
                         h("span", { "style": "width: 34px; height: 34px; border-radius: 10px; background: #EEF4FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                          h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                          h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                             h("path", { "d": f?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                           )
                         ),
@@ -404,12 +404,12 @@ export default class Tarifs extends DCLogic {
             h("div", { "style": "flex: 1.6 1 560px; border-top: 1px dashed #D3D7DE;" },
               ($l($v.qs)).map((f) => [
                 h("div", { "style": "border-bottom: 1px dashed #D3D7DE;" },
-                  h("button", { "type": "button", "onclick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; min-height: 76px; background: transparent; border: 0; padding: 20px 0; box-sizing: border-box; display: flex; align-items: center; gap: 20px; font: inherit; color: #111216; text-align: left; cursor: pointer;" },
+                  h("button", { "type": "button", "onClick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; min-height: 76px; background: transparent; border: 0; padding: 20px 0; box-sizing: border-box; display: flex; align-items: center; gap: 20px; font: inherit; color: #111216; text-align: left; cursor: pointer;" },
                     h("span", { "style": "flex: 1 1 auto; font-size: 19px; font-weight: 500;" },
                       $t(f?.q)
                     ),
                     h("span", { "aria-hidden": "true", "style": `width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: ${$t(f?.iconBg)}; transition: background 0.3s ease;` },
-                      h("svg", { "width": "13", "height": "13", "viewbox": "0 0 14 14", "style": `transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                      h("svg", { "width": "13", "height": "13", "viewBox": "0 0 14 14", "style": `transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                         h("path", { "d": "M7 2v10M2 7h10", "stroke": f?.iconInk, "stroke-width": "1.8", "stroke-linecap": "round" })
                       )
                     )
@@ -453,7 +453,7 @@ export default class Tarifs extends DCLogic {
                   h("a", { "href": "#paiement", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Passer Pro",
                     h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                      h("svg", { "width": "17", "height": "17", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                      h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                         h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     )
@@ -467,7 +467,7 @@ export default class Tarifs extends DCLogic {
             h("div", { "style": "padding: 72px 72px 48px; display: flex; flex-wrap: wrap; gap: 48px 64px; justify-content: space-between;" },
               h("div", { "style": "flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 18px;" },
                 h("a", { "href": "/", "style": "display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;" },
-                  h("svg", { "width": "28", "height": "28", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+                  h("svg", { "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
                     h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
                     h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
