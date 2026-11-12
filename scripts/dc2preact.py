@@ -212,8 +212,14 @@ def prefix_keyframes(css, template, script, prefix):
     return css, template, script
 
 
+# Images : le canevas les sert sous /_blob/<id> ; le site les sert depuis public/media/.
+MEDIA = json.loads((ROOT / 'design' / 'media.json').read_text())
+
+
 def convert(src, name, prefix):
     text = (ROOT / 'design' / src).read_text()
+    for blob, local in MEDIA.items():
+        text = text.replace(blob, local)
     xdc = text.split('<x-dc>', 1)[1].split('</x-dc>', 1)[0]
     helmet = re.search(r'<helmet>(.*?)</helmet>', xdc, re.S).group(1)
     template = re.sub(r'<helmet>.*?</helmet>', '', xdc, flags=re.S)

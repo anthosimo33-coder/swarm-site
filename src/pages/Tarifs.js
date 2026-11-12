@@ -188,11 +188,14 @@ export default class Tarifs extends DCLogic {
                     )
                   ])
                 ),
-                h("div", { "style": "flex: 0 0 220px; position: relative; border-radius: 18px; overflow: hidden; background: linear-gradient(150deg, #5A2E45 0%, #16090F 55%, #3A1D2C 100%); background-size: 220% 220%; animation: tf-pan 8s ease-in-out infinite alternate; color: #FFFFFF; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; min-height: 236px;" },
-                  h("span", { "style": "align-self: flex-start; background: rgba(0,0,0,0.45); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 600;" },
+                h("div", { "style": "flex: 0 0 220px; position: relative; border-radius: 18px; overflow: hidden; background: #111216; color: #FFFFFF; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; min-height: 236px;" },
+                  h("img", { "src": "/media/v-7705876324832791821.jpg", "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                  h("span", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 35%, transparent 50%, rgba(0,0,0,0.78));" }),
+                  h("span", { "style": "position: relative; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.92); color: #111216; border-radius: 999px; padding: 3px 10px 3px 3px; font-size: 11px; font-weight: 700;" },
+                    h("img", { "src": "/media/app-luv-or-pop.jpg", "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block;" }),
                     "Repérée à H+26"
                   ),
-                  h("span", { "style": "display: flex; flex-direction: column;" },
+                  h("span", { "style": "position: relative; display: flex; flex-direction: column;" },
                     h("span", { "style": "font-size: 13px; color: #E4E7EC;" },
                       "Luv or Pop"
                     ),

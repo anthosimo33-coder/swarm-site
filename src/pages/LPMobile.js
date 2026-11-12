@@ -32,17 +32,36 @@ export default class LPMobile extends DCLogic {
 
 
     // Playbook : vidéos qui défilent + celle décortiquée
+    const ICON = {
+      'Astra AI': '/media/app-astra-ai.jpg',
+      'Love8': '/media/app-love8.jpg',
+      'Luv or Pop': '/media/app-luv-or-pop.jpg',
+      'Knowunity': '/media/app-knowunity.jpg',
+      'DJ Kartier': '/media/app-dj-kartier.jpg',
+      'SSME': '/media/app-ssme.jpg',
+      'Snitchy': '/media/app-snitchy.jpg',
+      'The Cringe': '/media/app-the-cringe.jpg',
+      'Retain Cards': '/media/app-retain-cards.jpg',
+      'Praktika': '/media/app-praktika.jpg',
+      'Plug AI': '/media/app-plug-ai.jpg',
+      'Flo': '/media/app-flo.jpg',
+      'Creed': '/media/app-creed.jpg'
+    };
     const arcData = [
-      ['Luv or Pop', 'One question turned into a whole debate…', '7,5 M', '@luvorpop', 'Repérée à', 'H+26'],
-      ['Knowunity', 'cuando me dan el examen y es igual a lo que estudié', '5,7 M', '@estudio2bach', 'Un compte de', '592 abonnés'],
-      ['Astra AI', 'Sur AstraAi il y a tout sur le corps humain', '2,4 M', '@isskos_ia', 'Enregistrée', '47 k fois'],
-      ['What Brandon Thinks', 'Desde cuándo WhatsApp tiene esto??', '3,1 M', '@maris_ecret4', 'Fois sa normale', '751×'],
-      ['DJ Kartier', 'That moment when the synth sounds familiar…', '5,5 M', '@djkartierapp', 'Repérée à', 'H+43'],
-      ['Ora AI', 'Je fais croire à ma mère que mamie s’est envolée', '3,0 M', '@evanorthh', 'Langue', 'français'],
-      ['Snitchy', 'a game where you stalk a missing girl’s phone', '2,2 M', '@_miasecrets', 'Un compte de', '339 abonnés'],
-      ['Astra AI', 'Belajar TKA dari mana??', '5,6 M', '@studyclubbyinda', 'Enregistrée', '253 k fois'],
-      ['SSME', 'Get this live wallpaper immediately', '3,2 M', '@zoe264472', 'En 3 jours', '× 3,7'],
-      ['Love8', 'His status, location, battery, all in one', '2,6 M', '@yuyoyouu', 'Partagée', '32 k fois']
+      ['Luv or Pop', '', '7,5 M', '@luvorpop', 'Repérée à', 'H+26', '/media/v-7705876324832791821.jpg'],
+      ['Praktika', '', '6,0 M', '@englishbarengfajar', 'Fois ses abonnés', '222×', '/media/v-7699904064636783880.jpg'],
+      ['Astra AI', '', '2,0 M', '@belajarbersamaespi', 'Fois sa normale', '2 333×', '/media/v-7705368869250075925.jpg'],
+      ['Knowunity', '', '5,7 M', '@estudio2bach', 'Un compte de', '592 abonnés', '/media/v-7699151144400244000.jpg'],
+      ['The Cringe', '', '2,5 M', '@foodandlu', 'Enregistrée', '80 k fois', '/media/v-7703301496879861014.jpg'],
+      ['DJ Kartier', '', '5,5 M', '@djkartierapp', 'Repérée à', 'H+43', '/media/v-7704497663609244958.jpg'],
+      ['Snitchy', '', '2,4 M', '@_miasecrets', 'Fois sa normale', '432×', '/media/v-7704060808094829846.jpg'],
+      ['Love8', '', '1,8 M', '@hg_love8', 'Fois sa normale', '2 140×', '/media/v-7701914062296337685.jpg'],
+      ['Astra AI', '', '2,4 M', '@isskos_ia', 'Enregistrée', '47 k fois', '/media/v-7697326930328030497.jpg'],
+      ['Creed', '', '2,1 M', '@victoria.blessed70', 'Fois ses abonnés', '235×', '/media/v-7696972755480169741.jpg'],
+      ['Retain Cards', '', '106 k', '@studywithdenise', 'Fois ses abonnés', '408×', '/media/v-7706579888727231777.jpg'],
+      ['Astra AI', '', '2,6 M', '@ira.belajaryuk', 'Fois sa normale', '4 682×', '/media/v-7697654738124442896.jpg'],
+      ['Knowunity', '', '1,5 M', '@mahekstudies', 'Fois sa normale', '147×', '/media/v-7701821196131634445.jpg'],
+      ['Astra AI', '', '2,7 M', '@ivylearns8', 'Fois sa normale', '133×', '/media/v-7700392351268752661.jpg']
     ];
     const bgs = [
       'linear-gradient(150deg, #5A2E45 0%, #16090F 55%, #3A1D2C 100%)',
@@ -52,7 +71,7 @@ export default class LPMobile extends DCLogic {
       'linear-gradient(150deg, #4A3F6E 0%, #120E1F 55%, #2E2747 100%)',
       'linear-gradient(150deg, #6A4A2B 0%, #170F08 55%, #43301C 100%)'
     ];
-    const reelOne = arcData.map((d, i) => ({ app: d[0], hook: d[1], views: d[2] + ' vues', handle: d[3], bg: bgs[i % bgs.length] }));
+    const reelOne = arcData.map((d) => ({ app: d[0], views: d[2] + ' vues', handle: d[3], img: d[6], icon: ICON[d[0]] }));
     const ci = Math.floor(el / 2600) % arcData.length;
     const c = arcData[ci];
 
@@ -89,15 +108,15 @@ export default class LPMobile extends DCLogic {
     return {
       typed: w.slice(0, Math.max(0, n)),
       miniApps: [
-        { ini: 'L', name: 'Luv or Pop', v: '7,5 M · H+26', bg: '#0E0F12', chip: blue, ink: '#FFFFFF' },
-        { ini: 'D', name: 'DJ Kartier', v: '5,5 M · H+43', bg: '#3D4450', chip: '#EEF4FF', ink: blue },
-        { ini: 'A', name: 'Astra AI', v: '2 333×', bg: blue, chip: '#EEF4FF', ink: blue },
-        { ini: 'W', name: 'What Brandon Thinks', v: '751×', bg: '#28405E', chip: '#EEF4FF', ink: blue }
+        { icon: ICON['Luv or Pop'], name: 'Luv or Pop', v: '7,5 M · H+26', chip: blue, ink: '#FFFFFF' },
+        { icon: ICON['DJ Kartier'], name: 'DJ Kartier', v: '5,5 M · H+43', chip: '#EEF4FF', ink: blue },
+        { icon: ICON['Astra AI'], name: 'Astra AI', v: '2 333×', chip: '#EEF4FF', ink: blue },
+        { icon: ICON['Love8'], name: 'Love8', v: '2 140×', chip: '#EEF4FF', ink: blue }
       ],
       creators: [
-        { ini: 'S', handle: '@studyclubbyinda', note: 'Enregistrée 253 k fois', v: '5,6 M', bg: '#4A3F6E' },
-        { ini: 'I', handle: '@ivylearns8', note: '145× sa normale', v: '2,6 M', bg: '#28405E' },
-        { ini: 'I', handle: '@isskos_ia', note: 'Enregistrée 47 k fois', v: '2,4 M', bg: '#5A2E45' }
+        { img: '/media/v-7697654738124442896.jpg', handle: '@ira.belajaryuk', note: '4 682× sa normale', v: '2,6 M' },
+        { img: '/media/v-7700392351268752661.jpg', handle: '@ivylearns8', note: '133× sa normale', v: '2,7 M' },
+        { img: '/media/v-7702743575934684437.jpg', handle: '@studywithruney', note: '5 612× sa normale', v: '2,3 M' }
       ],
       reel: reelOne.concat(reelOne),
       cur: { app: c[0], label: c[4], value: c[5] },
@@ -187,19 +206,13 @@ export default class LPMobile extends DCLogic {
               "Lance ton premier business en copiant une app",
               h("span", { "aria-hidden": "true", "style": "display: inline-block; position: relative; vertical-align: -0.06em; width: 1.5em; height: 0.82em; margin: 0 0.12em;" },
                 h("span", { "style": "position: absolute; left: 0; top: 0; width: 0.82em; height: 0.82em; border-radius: 0.22em; background: #0E0F12; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 0.08em 0.22em rgba(16,24,40,0.28); animation: lpm-fanA 4s ease-in-out infinite;" },
-                  h("span", { "style": "font-size: 0.4em; font-weight: 800; letter-spacing: 0;" },
-                    "A"
-                  )
+                  h("img", { "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 100%; height: 100%; display: block; border-radius: 0.22em; object-fit: cover;" })
                 ),
                 h("span", { "style": "position: absolute; left: 0.34em; top: 0; width: 0.82em; height: 0.82em; border-radius: 0.22em; background: #0B6FE0; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 0.08em 0.22em rgba(11,111,224,0.35); animation: lpm-fanB 4s ease-in-out infinite;" },
-                  h("span", { "style": "font-size: 0.4em; font-weight: 800; letter-spacing: 0;" },
-                    "R"
-                  )
+                  h("img", { "src": "/media/app-love8.jpg", "alt": "", "style": "width: 100%; height: 100%; display: block; border-radius: 0.22em; object-fit: cover;" })
                 ),
                 h("span", { "style": "position: absolute; left: 0.68em; top: 0; width: 0.82em; height: 0.82em; border-radius: 0.22em; background: #3D4450; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 0.08em 0.22em rgba(16,24,40,0.28); animation: lpm-fanC 4s ease-in-out infinite;" },
-                  h("span", { "style": "font-size: 0.4em; font-weight: 800; letter-spacing: 0;" },
-                    "L"
-                  )
+                  h("img", { "src": "/media/app-luv-or-pop.jpg", "alt": "", "style": "width: 100%; height: 100%; display: block; border-radius: 0.22em; object-fit: cover;" })
                 )
               ),
               "qui explose en ce moment",
@@ -328,9 +341,7 @@ export default class LPMobile extends DCLogic {
                   ),
                   ($l($v.miniApps)).map((m) => [
                     h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 36px;" },
-                      h("span", { "style": `width: 28px; height: 28px; border-radius: 8px; background: ${$t(m?.bg)}; color: #FFFFFF; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;` },
-                        $t(m?.ini)
-                      ),
+                      h("img", { "src": m?.icon, "alt": "", "style": "width: 28px; height: 28px; border-radius: 8px; display: block; flex-shrink: 0;" }),
                       h("span", { "style": "flex: 1 1 auto; font-size: 13px; font-weight: 600;" },
                         $t(m?.name)
                       ),
@@ -351,14 +362,13 @@ export default class LPMobile extends DCLogic {
               ),
               h("article", { "role": "listitem", "style": "flex: 0 0 84%; scroll-snap-align: start; border-radius: 24px; background: #FFFFFF; border: 1px solid #E6E6EA; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 16px 40px rgba(16,24,40,0.06); overflow: hidden; display: flex; flex-direction: column;" },
                 h("div", { "aria-hidden": "true", "style": "height: 224px; box-sizing: border-box; padding: 16px; background: linear-gradient(180deg, #F4F7FC, #FFFFFF); display: flex; flex-direction: column; gap: 6px;" },
-                  h("span", { "style": "font-size: 12px; color: #5F656E;" },
+                  h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5F656E;" },
+                    h("img", { "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
                     "Les créateurs d'Astra AI"
                   ),
                   ($l($v.creators)).map((c) => [
                     h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 10px; border-radius: 14px; background: #FFFFFF; border: 1px solid #EEF0F3;" },
-                      h("span", { "style": `width: 32px; height: 32px; border-radius: 50%; background: ${$t(c?.bg)}; color: #FFFFFF; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;` },
-                        $t(c?.ini)
-                      ),
+                      h("img", { "src": c?.img, "alt": "", "style": "width: 30px; height: 40px; border-radius: 7px; object-fit: cover; display: block; flex-shrink: 0;" }),
                       h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;" },
                         h("span", { "style": "font-size: 13px; font-weight: 600;" },
                           $t(c?.handle)
@@ -385,7 +395,8 @@ export default class LPMobile extends DCLogic {
               h("article", { "role": "listitem", "style": "flex: 0 0 84%; scroll-snap-align: start; border-radius: 24px; background: #FFFFFF; border: 1px solid #E6E6EA; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 16px 40px rgba(16,24,40,0.06); overflow: hidden; display: flex; flex-direction: column;" },
                 h("div", { "aria-hidden": "true", "style": "height: 224px; box-sizing: border-box; padding: 16px; background: linear-gradient(180deg, #F4F7FC, #FFFFFF); display: flex; flex-direction: column; gap: 8px;" },
                   h("span", { "style": "display: flex; justify-content: space-between; align-items: center;" },
-                    h("span", { "style": "font-size: 13px; font-weight: 700;" },
+                    h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;" },
+                      h("img", { "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 22px; height: 22px; border-radius: 6px; display: block;" }),
                       "Astra AI"
                     ),
                     h("span", { "style": "font-size: 11px; font-weight: 700; color: #0B6FE0; background: #EEF4FF; border-radius: 999px; padding: 2px 8px;" },
@@ -461,15 +472,12 @@ export default class LPMobile extends DCLogic {
             h("div", { "aria-hidden": "true", "style": "margin-top: 12px; overflow: hidden; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%); mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);" },
               h("div", { "style": "display: flex; width: max-content; animation: lpm-rowLeft 80s linear infinite;" },
                 ($l($v.reel)).map((v) => [
-                  h("div", { "style": `position: relative; flex: 0 0 auto; width: 168px; height: 298px; margin-right: 12px; border-radius: 20px; overflow: hidden; background: ${$t(v?.bg)}; background-size: 220% 220%; animation: lpm-pan 8s ease-in-out infinite alternate; box-shadow: 0 16px 34px rgba(16,24,40,0.18);` },
-                    h("div", { "style": "position: absolute; inset: 0; background: radial-gradient(55% 34% at 50% 72%, rgba(255,255,255,0.18), transparent 70%), linear-gradient(to bottom, rgba(0,0,0,0.28), transparent 30%, transparent 60%, rgba(0,0,0,0.62));" }),
-                    h("span", { "style": "position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); box-sizing: border-box; background: rgba(255,255,255,0.92); color: #111216; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                  h("div", { "style": "position: relative; flex: 0 0 auto; width: 168px; height: 298px; margin-right: 12px; border-radius: 20px; overflow: hidden; background: #111216; box-shadow: 0 16px 34px rgba(16,24,40,0.18);" },
+                    h("img", { "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                    h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 28%, transparent 58%, rgba(0,0,0,0.65));" }),
+                    h("span", { "style": "position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); box-sizing: border-box; background: rgba(255,255,255,0.92); color: #111216; border-radius: 999px; padding: 3px 9px 3px 3px; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; gap: 6px;" },
+                      h("img", { "src": v?.icon, "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block; flex-shrink: 0;" }),
                       $t(v?.app)
-                    ),
-                    h("div", { "style": "position: absolute; left: 10px; right: 10px; top: 32%; text-align: center; line-height: 1.7;" },
-                      h("span", { "style": "background: #FFFFFF; color: #111216; font-weight: 700; font-size: 12px; padding: 2px 6px; border-radius: 5px; -webkit-box-decoration-break: clone; box-decoration-break: clone;" },
-                        $t(v?.hook)
-                      )
                     ),
                     h("div", { "style": "position: absolute; left: 10px; right: 10px; bottom: 12px; display: flex; flex-direction: column; color: #FFFFFF;" },
                       h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1;" },

@@ -26,7 +26,10 @@ npm run check   # rend chaque page et signale les trous vides
 npm run build
 ```
 
+Les images (logos des apps, couvertures des vidéos) sont envoyées sur le canevas et servies sous `/_blob/<id>`. Le site sert les mêmes fichiers depuis `public/media/`, et `design/media.json` fait le lien entre les deux.
+
 Ce que fait la conversion :
+- les adresses d'images `/_blob/<id>` du canevas deviennent `/media/<fichier>` ;
 - les liens entre artboards deviennent des routes (`/`, `/tarifs`), et depuis les tarifs, les liens vers la LP pointent sur la bonne section ;
 - `#quiz` mène à `/tarifs`, puisqu'il n'y a pas de diagnostic gratuit ;
 - les keyframes sont préfixées par page (`lp-`, `lpm-`, `tf-`, `tfm-`) pour qu'elles ne se marchent pas dessus.
@@ -47,4 +50,5 @@ Vercel, projet relié à ce dépôt : chaque push sur `main` déploie en product
 - La vidéo motion sous le hero (l'encart 16:9 l'attend).
 - La connexion (`#connexion`), le paiement (`#paiement`) et les pages légales (`#cgv`, `#confidentialite`, `#mentions`, `#contact`).
 - Les avis : emplacements entre crochets, à remplacer par de vrais avis.
+- Les couvertures de vidéos montrent des créateurs tiers et les logos sont des marques : à valider (droit à l'image, usage des marques) avant d'en faire de la publicité.
 - Les chiffres affichés (+1 000 apps, +100 000 comptes, TikTok + Instagram + YouTube Shorts) doivent être vrais au lancement.

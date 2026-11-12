@@ -39,7 +39,7 @@ export default class LP extends DCLogic {
       { bg: blue, ink: '#FFFFFF' },
       { bg: '#3D4450', ink: '#FFFFFF' }
     ];
-    const mkO = (list, offset) => list.map((x, i) => Object.assign({ t: x[0] }, pos(x[1]), styles[(i + offset) % styles.length]));
+    const mkO = (list) => list.map((x) => Object.assign({ t: x[0], icon: ICON[x[0]] }, pos(x[1])));
     const bgs = [
       'linear-gradient(150deg, #5A2E45 0%, #16090F 55%, #3A1D2C 100%)',
       'linear-gradient(150deg, #28405E 0%, #0B1424 55%, #1B2C44 100%)',
@@ -50,21 +50,36 @@ export default class LP extends DCLogic {
     ];
     const thumbViews = ['5,6 M', '2,6 M', '2,6 M', '2,4 M', '2,3 M', '2,0 M', '1,2 M', '809 k'];
 
+    const ICON = {
+      'Astra AI': '/media/app-astra-ai.jpg',
+      'Love8': '/media/app-love8.jpg',
+      'Luv or Pop': '/media/app-luv-or-pop.jpg',
+      'Knowunity': '/media/app-knowunity.jpg',
+      'DJ Kartier': '/media/app-dj-kartier.jpg',
+      'SSME': '/media/app-ssme.jpg',
+      'Snitchy': '/media/app-snitchy.jpg',
+      'The Cringe': '/media/app-the-cringe.jpg',
+      'Retain Cards': '/media/app-retain-cards.jpg',
+      'Praktika': '/media/app-praktika.jpg',
+      'Plug AI': '/media/app-plug-ai.jpg',
+      'Flo': '/media/app-flo.jpg',
+      'Creed': '/media/app-creed.jpg'
+    };
     const arcData = [
-      ['Luv or Pop', 'One question turned into a whole debate…', '7,5 M', '@luvorpop', 'Repérée à', 'H+26'],
-      ['Knowunity', 'cuando me dan el examen y es igual a lo que estudié', '5,7 M', '@estudio2bach', 'Un compte de', '592 abonnés'],
-      ['Astra AI', 'Sur AstraAi il y a tout sur le corps humain', '2,4 M', '@isskos_ia', 'Enregistrée', '47 k fois'],
-      ['What Brandon Thinks', 'Desde cuándo WhatsApp tiene esto??', '3,1 M', '@maris_ecret4', 'Fois sa normale', '751×'],
-      ['DJ Kartier', 'That moment when the synth sounds familiar…', '5,5 M', '@djkartierapp', 'Repérée à', 'H+43'],
-      ['Retain Cards', 'Ich lösche das in 2h', '106 k', '@studywithdenise', 'Hook gagnant', '3 fois sur 4'],
-      ['Ora AI', 'Je fais croire à ma mère que mamie s’est envolée', '3,0 M', '@evanorthh', 'Langue', 'français'],
-      ['Snitchy', 'a game where you stalk a missing girl’s phone', '2,2 M', '@_miasecrets', 'Un compte de', '339 abonnés'],
-      ['The Cringe', 'prepare to be sick of me', '2,5 M', '@foodandlu', 'Enregistrée', '80 k fois'],
-      ['Astra AI', 'Belajar TKA dari mana??', '5,6 M', '@studyclubbyinda', 'Enregistrée', '253 k fois'],
-      ['SSME', 'Get this live wallpaper immediately', '3,2 M', '@zoe264472', 'En 3 jours', '× 3,7'],
-      ['Love8', 'His status, location, battery, all in one', '2,6 M', '@yuyoyouu', 'Partagée', '32 k fois'],
-      ['Rizz App', '#textstory #storytime', '2,6 M', '@universe.texts', 'Durée', '8 min 14 s'],
-      ['Astra AI', 'Who made this?', '2,6 M', '@ivylearns8', 'Fois sa normale', '145×']
+      ['Luv or Pop', '', '7,5 M', '@luvorpop', 'Repérée à', 'H+26', '/media/v-7705876324832791821.jpg'],
+      ['Praktika', '', '6,0 M', '@englishbarengfajar', 'Fois ses abonnés', '222×', '/media/v-7699904064636783880.jpg'],
+      ['Astra AI', '', '2,0 M', '@belajarbersamaespi', 'Fois sa normale', '2 333×', '/media/v-7705368869250075925.jpg'],
+      ['Knowunity', '', '5,7 M', '@estudio2bach', 'Un compte de', '592 abonnés', '/media/v-7699151144400244000.jpg'],
+      ['The Cringe', '', '2,5 M', '@foodandlu', 'Enregistrée', '80 k fois', '/media/v-7703301496879861014.jpg'],
+      ['DJ Kartier', '', '5,5 M', '@djkartierapp', 'Repérée à', 'H+43', '/media/v-7704497663609244958.jpg'],
+      ['Snitchy', '', '2,4 M', '@_miasecrets', 'Fois sa normale', '432×', '/media/v-7704060808094829846.jpg'],
+      ['Love8', '', '1,8 M', '@hg_love8', 'Fois sa normale', '2 140×', '/media/v-7701914062296337685.jpg'],
+      ['Astra AI', '', '2,4 M', '@isskos_ia', 'Enregistrée', '47 k fois', '/media/v-7697326930328030497.jpg'],
+      ['Creed', '', '2,1 M', '@victoria.blessed70', 'Fois ses abonnés', '235×', '/media/v-7696972755480169741.jpg'],
+      ['Retain Cards', '', '106 k', '@studywithdenise', 'Fois ses abonnés', '408×', '/media/v-7706579888727231777.jpg'],
+      ['Astra AI', '', '2,6 M', '@ira.belajaryuk', 'Fois sa normale', '4 682×', '/media/v-7697654738124442896.jpg'],
+      ['Knowunity', '', '1,5 M', '@mahekstudies', 'Fois sa normale', '147×', '/media/v-7701821196131634445.jpg'],
+      ['Astra AI', '', '2,7 M', '@ivylearns8', 'Fois sa normale', '133×', '/media/v-7700392351268752661.jpg']
     ];
     const N = arcData.length;
     const D = 106;
@@ -76,7 +91,7 @@ export default class LP extends DCLogic {
       const dist = Math.abs(ph - 0.5);
       if (dist < bestD) { bestD = dist; best = i; }
       return {
-        app: d[0], i: d[0].charAt(0), hook: d[1], views: d[2], handle: d[3],
+        app: d[0], views: d[2], handle: d[3], img: d[6], icon: ICON[d[0]],
         bg: bgs[i % bgs.length],
         dur: (8 + (i % 4) * 3) + 's',
         delay: '-' + (ph0 * D).toFixed(2) + 's'
@@ -167,10 +182,19 @@ export default class LP extends DCLogic {
       closeMenu: () => this.setState({ menu: false }),
       typed: w.slice(0, Math.max(0, n)),
       niches: [{ t: 'Couple' }, { t: 'Études' }, { t: 'Séduction IA' }, { t: 'Foi' }, { t: 'Sport' }, { t: 'IA & productivité' }],
-      o1: mkO([['Astra AI', 300], ['Love8', 60]], 0),
-      o2: mkO([['Rizz App', 320], ['Praktika', 20], ['Plug AI', 75]], 1),
-      o3: mkO([['Knowunity', 295], ['Flo', 335], ['Airbuds', 15], ['Creed', 55]], 2),
-      thumbs: thumbViews.map((v, i) => ({ v, bg: bgs[i % 4] })),
+      o1: mkO([['Astra AI', 300], ['Luv or Pop', 60]]),
+      o2: mkO([['Love8', 320], ['Praktika', 20], ['Plug AI', 75]]),
+      o3: mkO([['Knowunity', 295], ['Flo', 335], ['DJ Kartier', 15], ['Creed', 55]]),
+      thumbs: [
+        { v: '2,7 M', img: '/media/v-7700392351268752661.jpg' },
+        { v: '2,6 M', img: '/media/v-7697654738124442896.jpg' },
+        { v: '2,4 M', img: '/media/v-7697326930328030497.jpg' },
+        { v: '2,3 M', img: '/media/v-7702743575934684437.jpg' },
+        { v: '2,0 M', img: '/media/v-7705368869250075925.jpg' },
+        { v: '1,9 M', img: '/media/v-7696248791560703252.jpg' },
+        { v: '1,9 M', img: '/media/v-7705929733220994337.jpg' },
+        { v: '1,2 M', img: '/media/v-7704074126801046804.jpg' }
+      ],
       pills: [{ t: '+1 000 apps, +100 000 comptes' }, { t: 'Tous les marchés' }, { t: 'En ce moment, en continu' }, { t: 'Les créateurs derrière chaque app' }],
       arc,
       cur: { app: c[0], label: c[4], value: c[5] },
@@ -262,11 +286,14 @@ export default class LP extends DCLogic {
                     )
                   ])
                 ),
-                h("div", { "style": "flex: 0 0 220px; position: relative; border-radius: 18px; overflow: hidden; background: linear-gradient(150deg, #5A2E45 0%, #16090F 55%, #3A1D2C 100%); background-size: 220% 220%; animation: lp-pan 8s ease-in-out infinite alternate; color: #FFFFFF; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; min-height: 236px;" },
-                  h("span", { "style": "align-self: flex-start; background: rgba(0,0,0,0.45); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 600;" },
+                h("div", { "style": "flex: 0 0 220px; position: relative; border-radius: 18px; overflow: hidden; background: #111216; color: #FFFFFF; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; min-height: 236px;" },
+                  h("img", { "src": "/media/v-7705876324832791821.jpg", "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                  h("span", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 35%, transparent 50%, rgba(0,0,0,0.78));" }),
+                  h("span", { "style": "position: relative; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.92); color: #111216; border-radius: 999px; padding: 3px 10px 3px 3px; font-size: 11px; font-weight: 700;" },
+                    h("img", { "src": "/media/app-luv-or-pop.jpg", "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block;" }),
                     "Repérée à H+26"
                   ),
-                  h("span", { "style": "display: flex; flex-direction: column;" },
+                  h("span", { "style": "position: relative; display: flex; flex-direction: column;" },
                     h("span", { "style": "font-size: 13px; color: #E4E7EC;" },
                       "Luv or Pop"
                     ),
@@ -293,19 +320,13 @@ export default class LP extends DCLogic {
             "Lance ton premier business en copiant une app",
             h("span", { "aria-hidden": "true", "style": "display: inline-block; position: relative; vertical-align: -0.06em; width: 1.5em; height: 0.82em; margin: 0 0.14em;" },
               h("span", { "style": "position: absolute; left: 0; top: 0; width: 0.82em; height: 0.82em; border-radius: 0.22em; background: #0E0F12; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 0.08em 0.22em rgba(16,24,40,0.28); animation: lp-fanA 4s ease-in-out infinite;" },
-                h("span", { "style": "font-size: 0.4em; font-weight: 800; letter-spacing: 0;" },
-                  "A"
-                )
+                h("img", { "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 100%; height: 100%; display: block; border-radius: 0.22em; object-fit: cover;" })
               ),
               h("span", { "style": `position: absolute; left: 0.34em; top: 0; width: 0.82em; height: 0.82em; border-radius: 0.22em; background: ${$t($v.blue)}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 0.08em 0.22em rgba(11,111,224,0.35); animation: lp-fanB 4s ease-in-out infinite;` },
-                h("span", { "style": "font-size: 0.4em; font-weight: 800; letter-spacing: 0;" },
-                  "R"
-                )
+                h("img", { "src": "/media/app-love8.jpg", "alt": "", "style": "width: 100%; height: 100%; display: block; border-radius: 0.22em; object-fit: cover;" })
               ),
               h("span", { "style": "position: absolute; left: 0.68em; top: 0; width: 0.82em; height: 0.82em; border-radius: 0.22em; background: #3D4450; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 0.08em 0.22em rgba(16,24,40,0.28); animation: lp-fanC 4s ease-in-out infinite;" },
-                h("span", { "style": "font-size: 0.4em; font-weight: 800; letter-spacing: 0;" },
-                  "L"
-                )
+                h("img", { "src": "/media/app-luv-or-pop.jpg", "alt": "", "style": "width: 100%; height: 100%; display: block; border-radius: 0.22em; object-fit: cover;" })
               )
             ),
             "qui explose en ce moment",
@@ -449,8 +470,8 @@ export default class LP extends DCLogic {
                     h("div", { "style": "position: absolute; left: -160px; top: -160px; width: 320px; height: 320px; animation: lp-spin 46s linear infinite;" },
                       ($l($v.o1)).map((b) => [
                         h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
-                          h("div", { "style": `width: 60px; height: 60px; border-radius: 50%; border: 3px solid #FFFFFF; box-sizing: border-box; background: ${$t(b?.bg)}; color: ${$t(b?.ink)}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; letter-spacing: -0.01em; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 46s linear infinite;` },
-                            $t(b?.t)
+                          h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 46s linear infinite;" },
+                            h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -458,8 +479,8 @@ export default class LP extends DCLogic {
                     h("div", { "style": "position: absolute; left: -280px; top: -280px; width: 560px; height: 560px; animation: lp-spinRev 70s linear infinite;" },
                       ($l($v.o2)).map((b) => [
                         h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
-                          h("div", { "style": `width: 60px; height: 60px; border-radius: 50%; border: 3px solid #FFFFFF; box-sizing: border-box; background: ${$t(b?.bg)}; color: ${$t(b?.ink)}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; letter-spacing: -0.01em; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spin 70s linear infinite;` },
-                            $t(b?.t)
+                          h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spin 70s linear infinite;" },
+                            h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -467,8 +488,8 @@ export default class LP extends DCLogic {
                     h("div", { "style": "position: absolute; left: -410px; top: -410px; width: 820px; height: 820px; animation: lp-spin 96s linear infinite;" },
                       ($l($v.o3)).map((b) => [
                         h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
-                          h("div", { "style": `width: 60px; height: 60px; border-radius: 50%; border: 3px solid #FFFFFF; box-sizing: border-box; background: ${$t(b?.bg)}; color: ${$t(b?.ink)}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; letter-spacing: -0.01em; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 96s linear infinite;` },
-                            $t(b?.t)
+                          h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 96s linear infinite;" },
+                            h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -600,8 +621,12 @@ export default class LP extends DCLogic {
                         ),
                         h("div", { "style": "display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;" },
                           ($l($v.thumbs)).map((t) => [
-                            h("span", { "style": `aspect-ratio: 3 / 4; border-radius: 8px; background: ${$t(t?.bg)}; background-size: 220% 220%; animation: lp-pan 7s ease-in-out infinite alternate; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; box-sizing: border-box; color: #FFFFFF; font-size: 9px; font-weight: 700;` },
-                              $t(t?.v)
+                            h("span", { "style": "position: relative; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; background: #111216; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; box-sizing: border-box; color: #FFFFFF; font-size: 9px; font-weight: 700;" },
+                              h("img", { "src": t?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                              h("span", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 45%, rgba(0,0,0,0.7));" }),
+                              h("span", { "style": "position: relative;" },
+                                $t(t?.v)
+                              )
                             )
                           ])
                         )
@@ -685,18 +710,12 @@ export default class LP extends DCLogic {
               h("div", { "style": "position: absolute; inset: 0; transform-style: preserve-3d;" },
                 ($l($v.arc)).map((v) => [
                   h("div", { "style": `position: absolute; left: 50%; top: 50%; width: 236px; height: 420px; margin-left: -118px; margin-top: -210px; animation: lp-arcMove 106s linear infinite; animation-delay: ${$t(v?.delay)};` },
-                    h("div", { "style": `position: relative; width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: ${$t(v?.bg)}; background-size: 220% 220%; outline: 2px solid rgba(11,111,224,0); outline-offset: 4px; animation: lp-arcRing 106s linear infinite, lp-pan 10s ease-in-out infinite alternate; animation-delay: ${$t(v?.delay)}, 0s;` },
-                      h("div", { "style": "position: absolute; inset: 0; background: radial-gradient(55% 34% at 50% 72%, rgba(255,255,255,0.20), transparent 70%), linear-gradient(to bottom, rgba(0,0,0,0.28), transparent 30%, transparent 62%, rgba(0,0,0,0.6));" }),
+                    h("div", { "style": `position: relative; width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: #111216; outline: 2px solid rgba(11,111,224,0); outline-offset: 4px; animation: lp-arcRing 106s linear infinite; animation-delay: ${$t(v?.delay)};` },
+                      h("img", { "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                      h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 28%, transparent 58%, rgba(0,0,0,0.65));" }),
                       h("span", { "style": "position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.9); color: #111216; border-radius: 999px; padding: 4px 10px 4px 4px; font-size: 12px; font-weight: 600;" },
-                        h("span", { "style": "width: 20px; height: 20px; border-radius: 6px; background: #111216; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800;" },
-                          $t(v?.i)
-                        ),
+                        h("img", { "src": v?.icon, "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
                         $t(v?.app)
-                      ),
-                      h("div", { "style": "position: absolute; left: 10%; right: 10%; top: 30%; text-align: center; line-height: 1.75;" },
-                        h("span", { "style": "background: #FFFFFF; color: #111216; font-weight: 700; font-size: 13px; padding: 3px 7px; border-radius: 6px; -webkit-box-decoration-break: clone; box-decoration-break: clone;" },
-                          $t(v?.hook)
-                        )
                       ),
                       h("div", { "style": "position: absolute; left: 14px; right: 14px; bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #FFFFFF;" },
                         h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-family: 'Inter Tight', sans-serif; font-size: 21px; font-weight: 700;" },
@@ -827,7 +846,7 @@ export default class LP extends DCLogic {
           h("div", { "style": "position: relative; max-width: 1320px; margin: 0 auto; background: rgba(8,11,18,0.92); border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-top: 1px solid rgba(255,255,255,0.06); box-sizing: border-box;" },
             h("div", { "aria-hidden": "true", "style": "position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px); background-size: 64px 64px; -webkit-mask-image: radial-gradient(70% 60% at 70% 30%, #000, transparent); mask-image: radial-gradient(70% 60% at 70% 30%, #000, transparent); pointer-events: none;" }),
             h("section", { "id": "faq", "style": "position: relative; padding: 112px 72px 120px; display: flex; flex-wrap: wrap; gap: 56px 80px; align-items: flex-start;" },
-              h("div", { "style": "flex: 1 1 470px; min-width: 0; display: flex; flex-direction: column; gap: 22px;" },
+              h("div", { "style": "flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 22px;" },
                 h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 0.04em; color: #9AA3B2;" },
                   h("span", { "style": "color: #4C9AFF;" },
                     "["
@@ -847,7 +866,7 @@ export default class LP extends DCLogic {
                 h("p", { "style": "margin: 0; max-width: 420px; font-size: 19px; line-height: 1.55; color: #9AA3B2;" },
                   "Tout ce qu'il faut savoir avant de trouver ton app. Le reste, on en parle par e-mail."
                 ),
-                h("div", { "style": "margin-top: 28px; max-width: 460px; border-radius: 22px; padding: 24px; background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 18px;" },
+                h("div", { "style": "margin-top: 28px; max-width: 420px; border-radius: 22px; padding: 24px; background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 18px;" },
                   h("div", { "style": "display: flex; align-items: center; gap: 12px;" },
                     h("span", { "style": "width: 10px; height: 10px; border-radius: 50%; background: #4C9AFF; animation: lp-pulseDk 1.8s infinite;" }),
                     h("span", { "style": "font-weight: 600; font-size: 17px;" },
@@ -861,14 +880,6 @@ export default class LP extends DCLogic {
                     h("a", { "href": "#contact", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 4px 0 20px; border-radius: 999px; background: #FFFFFF; border: 1px solid #FFFFFF; color: #05070C; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                       "Écrire à l'équipe",
                       h("span", { "aria-hidden": "true", "style": "width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #05070C; display: grid; place-items: center;" },
-                        h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
-                          h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                        )
-                      )
-                    ),
-                    h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 4px 0 20px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
-                      "Trouver mon app",
-                      h("span", { "aria-hidden": "true", "style": "width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                         h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
                           h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         )
