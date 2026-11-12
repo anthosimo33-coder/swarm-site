@@ -20,17 +20,18 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 
 <nav class="sw-sidebar" aria-label="Navigation principale">
 <a class="sw-side-logo" href="Main.dc.html" aria-label="Swarm, accueil"><span class="sw-app-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span></a>
-<sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+<button class="sw-side-item" type="button" data-cmdk="true" onClick="{{openPal}}" aria-label="Chercher, raccourci Commande K" style="border: 0; background: transparent; font-family: inherit; cursor: pointer;"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Chercher</button>
+<sc-for list="{{sb}}" as="n" hint-placeholder-count="6">
 <a class="sw-side-item" href="{{n.href}}" aria-current="{{n.cur}}"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{n.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>
 </sc-for>
 <div class="sw-side-foot">
 <button class="sw-btn sw-btn-icon" type="button" aria-label="Passer au thème clair"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
-<a class="sw-avatar" href="#" aria-label="Mon compte" style="text-decoration: none;">A</a>
+<a class="sw-avatar" href="CompteA.dc.html" aria-label="Mon compte" style="text-decoration: none;">{{me.initiale}}</a>
 </div>
 </nav>
 
 <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; background: var(--surface);">
-<nav aria-label="Fil d’Ariane" style="padding: 28px 32px 0; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-faint);"><a class="sw-link-quiet" href="FormatsA.dc.html">Formats</a><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color: var(--ink-soft);">Accroche</span></nav>
+<nav aria-label="Fil d’Ariane" style="padding: 28px 32px 0; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-faint);"><a class="sw-link-quiet" href="FormatsB.dc.html">Formats</a><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color: var(--ink-soft);">Accroche</span></nav>
 <section class="sw-card" style="margin: 18px 32px 0; padding: 36px 40px; border-radius: 28px; overflow: hidden; display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap;">
 <div aria-hidden="true" class="sw-dots-bg" style="position: absolute; inset: 0; -webkit-mask-image: radial-gradient(60% 90% at 85% 0%, #000, transparent); mask-image: radial-gradient(60% 90% at 85% 0%, #000, transparent);"></div>
 <div style="position: relative; display: flex; flex-direction: column; gap: 22px; min-width: 0; max-width: 760px;">
@@ -38,7 +39,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <span style="line-height: 1.55;"><span style="background: #FFFFFF; color: #111216; font-family: var(--font-body); font-size: 44px; font-weight: 800; letter-spacing: -0.01em; padding: 6px 14px; border-radius: 12px; -webkit-box-decoration-break: clone; box-decoration-break: clone;">{{f.quote}}</span></span>
 <span style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);">En français</span><span style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-soft);">« {{f.fr}} »</span><span style="font-size: 15px; color: var(--ink-muted);">Le principe : la vidéo va disparaître, il faut la regarder maintenant.</span></span>
 </div>
-<div style="position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 14px;"><a class="sw-btn sw-btn-primary sw-btn-lg" href="#">Copier l’accroche<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a><span style="display: flex; gap: 4px;"><button class="sw-btn sw-btn-icon" type="button" aria-label="Suivre ce format"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button class="sw-btn sw-btn-icon" type="button" aria-label="Ajouter à un dossier"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button class="sw-btn sw-btn-icon" type="button" aria-label="Ouvrir sur TikTok"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span></div>
+<div style="position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 14px;"><button class="sw-btn sw-btn-primary sw-btn-lg" type="button" onClick="{{copyHook}}">{{copyLabel}}<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button><span style="display: flex; gap: 4px;"><button class="sw-btn sw-btn-icon" type="button" onClick="{{toggleFollow}}" aria-pressed="{{followOn}}" aria-label="{{followAria}}" style="color: {{followInk}};"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><span style="position: relative; display: inline-flex;"><button data-aj-trigger="true" onClick="{{toggleAj}}" aria-expanded="{{ajOpen}}" aria-haspopup="dialog" class="sw-btn sw-btn-icon" type="button" aria-label="Ajouter à un dossier"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><sc-if value="{{aj}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: calc(100% + 10px); right: 0; z-index: 45;"><dc-import name="AjoutDossier" on-close="{{closeAj}}" hint-size="360px,420px"></dc-import></span></sc-if></span></span></div>
 </section>
 
 <div style="margin: 16px 32px 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;">
@@ -54,11 +55,39 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <sc-for list="{{common}}" as="c" hint-placeholder-count="3"><div class="sw-card" style="padding: 22px 24px; border-radius: 20px; display: flex; gap: 16px; align-items: flex-start;"><span style="width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="{{c.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 16px; font-weight: 700; letter-spacing: -0.01em;">{{c.t}}</span><span style="font-size: 14px; line-height: 1.5; color: var(--ink-muted);">{{c.s}}</span></span></div></sc-for>
 </div>
 </main>
+
+<sc-if value="{{pal}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 60;"><dc-import name="Palette" on-close="{{closePal}}" hint-size="100%,100%"></dc-import></div></sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":1440,"height":1400}}'>
 class Component extends DCLogic {
+
   renderVals() {
+    const b = this.baseVals();
+    return Object.assign({}, b, this.shellVals(), this.extraVals(b));
+  }
+  shellVals() {
+    const st = this.state || {};
+    const u = this.props.user;
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
+                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
+    const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
+    const sb = [["accueil", "Accueil", "Main.dc.html"], ["apps", "Apps", "AppsA.dc.html"], ["formats", "Formats", "FormatsB.dc.html"], ["createurs", "Créateurs", "CreateursA.dc.html"], ["alertes", "Alertes", "AlertesA.dc.html"], ["dossiers", "Dossiers", "DossiersA.dc.html"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'formats' ? 'page' : 'false' }));
+    return {
+      sb, me,
+      pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
+      aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
+    };
+  }
+  extraVals(b) {
+    const st = this.state || {};
+    const f = !!st.follow;
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow: () => this.setState({ follow: !f }) }, { followAria: f ? 'Ne plus suivre ce format' : 'Suivre ce format', followInk: f ? 'var(--accent)' : 'var(--ink-muted)',
+      copyLabel: st.copied ? 'Accroche copiée' : 'Copier l’accroche',
+      copyHook: () => { try { navigator.clipboard.writeText('Ich lösche das in 2h‼️'); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } });
+  }
+
+  baseVals() {
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "Main.dc.html", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "AppsA.dc.html", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "FormatsA.dc.html", "cur": "page"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "CreateursA.dc.html", "cur": "false"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
     const f = {"quote": "Ich lösche das in 2h‼️", "fr": "Je supprime ça dans 2 h ‼️", "app0": {"name": "Retain Cards", "logo": "/_blob/94df25941a406044de3ea3d0a41a7f26", "nologo": false, "blank": ""}, "mk": [{"c": "DE"}], "med": "39×", "okText": "3 sur 4", "n": 3, "max": "106 k", "rev": "Entre 500 et 710 €", "niche": "Études", "last": "vu le 10/11"};
     const tiles = [{"l": "Repris par", "v": "3 comptes", "s": "en 4 jours", "ink": "var(--ink)"}, {"l": "Réussite", "v": "3 sur 4", "s": "au-dessus de leur normale", "ink": "var(--ink)"}, {"l": "× la normale", "v": "39×", "s": "médiane des reprises", "ink": "var(--accent)"}, {"l": "Meilleure reprise", "v": "106 k vues", "s": "@studywithdenise, 10/11", "ink": "var(--ink)"}, {"l": "Revenus estimés", "v": "Entre 500 et 710 €", "s": "pour les 4 reprises", "ink": "var(--ink)"}];

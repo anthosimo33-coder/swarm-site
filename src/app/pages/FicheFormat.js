@@ -1,9 +1,37 @@
 // Généré par scripts/dc2preact.py depuis design/app/FormatFicheA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
 import { DCLogic, $t, $l } from '../../runtime.js';
+import AjoutDossier from './AjoutDossier.js';
+import Palette from './Palette.js';
 
 export default class FicheFormat extends DCLogic {
+
   renderVals() {
+    const b = this.baseVals();
+    return Object.assign({}, b, this.shellVals(), this.extraVals(b));
+  }
+  shellVals() {
+    const st = this.state || {};
+    const u = this.props.user;
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
+                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
+    const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
+    const sb = [["accueil", "Accueil", "/app"], ["apps", "Apps", "/app/apps"], ["formats", "Formats", "/app/formats"], ["createurs", "Créateurs", "/app/createurs"], ["alertes", "Alertes", "/app/alertes"], ["dossiers", "Dossiers", "/app/dossiers"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'formats' ? 'page' : 'false' }));
+    return {
+      sb, me,
+      pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
+      aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
+    };
+  }
+  extraVals(b) {
+    const st = this.state || {};
+    const f = !!st.follow;
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow: () => this.setState({ follow: !f }) }, { followAria: f ? 'Ne plus suivre ce format' : 'Suivre ce format', followInk: f ? 'var(--accent)' : 'var(--ink-muted)',
+      copyLabel: st.copied ? 'Accroche copiée' : 'Copier l’accroche',
+      copyHook: () => { try { navigator.clipboard.writeText('Ich lösche das in 2h‼️'); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } });
+  }
+
+  baseVals() {
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "/app", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "/app/apps", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "/app/formats", "cur": "page"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "/app/createurs", "cur": "false"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
     const f = {"quote": "Ich lösche das in 2h‼️", "fr": "Je supprime ça dans 2 h ‼️", "app0": {"name": "Retain Cards", "logo": "/media/app/retain-cards.jpg", "nologo": false, "blank": ""}, "mk": [{"c": "DE"}], "med": "39×", "okText": "3 sur 4", "n": 3, "max": "106 k", "rev": "Entre 500 et 710 €", "niche": "Études", "last": "vu le 10/11"};
     const tiles = [{"l": "Repris par", "v": "3 comptes", "s": "en 4 jours", "ink": "var(--ink)"}, {"l": "Réussite", "v": "3 sur 4", "s": "au-dessus de leur normale", "ink": "var(--ink)"}, {"l": "× la normale", "v": "39×", "s": "médiane des reprises", "ink": "var(--accent)"}, {"l": "Meilleure reprise", "v": "106 k vues", "s": "@studywithdenise, 10/11", "ink": "var(--ink)"}, {"l": "Revenus estimés", "v": "Entre 500 et 710 €", "s": "pour les 4 reprises", "ink": "var(--ink)"}];
@@ -30,7 +58,15 @@ export default class FicheFormat extends DCLogic {
               )
             )
           ),
-          ($l($v.nav)).map((n) => [
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+            $h("span", { "class": "sw-side-ico" },
+              $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
+            ),
+            "Chercher"
+          ),
+          ($l($v.sb)).map((n) => [
             $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -46,8 +82,8 @@ export default class FicheFormat extends DCLogic {
                 $h("path", { "d": "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
             ),
-            $h("a", { "class": "sw-avatar", "href": "#", "aria-label": "Mon compte", "style": "text-decoration: none;" },
-              "A"
+            $h("a", { "class": "sw-avatar", "href": "/app/compte", "aria-label": "Mon compte", "style": "text-decoration: none;" },
+              $t($v.me?.initiale)
             )
           )
         ),
@@ -116,8 +152,8 @@ export default class FicheFormat extends DCLogic {
               )
             ),
             $h("div", { "style": "position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 14px;" },
-              $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": "#" },
-                "Copier l’accroche",
+              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.copyHook },
+                $t($v.copyLabel),
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -125,20 +161,22 @@ export default class FicheFormat extends DCLogic {
                 )
               ),
               $h("span", { "style": "display: flex; gap: 4px;" },
-                $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Suivre ce format" },
+                $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": $v.followOn, "aria-label": $v.followAria, "style": `color: ${$t($v.followInk)};` },
                   $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 ),
-                $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Ajouter à un dossier" },
-                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  )
-                ),
-                $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Ouvrir sur TikTok" },
-                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  )
+                $h("span", { "style": "position: relative; display: inline-flex;" },
+                  $h("button", { "data-aj-trigger": "true", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Ajouter à un dossier" },
+                    $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  ),
+                  ($v.aj) ? [
+                    $h("span", { "style": "position: absolute; top: calc(100% + 10px); right: 0; z-index: 45;" },
+                      $h(AjoutDossier, { "onClose": $v.closeAj })
+                    )
+                  ] : null
                 )
               )
             )
@@ -211,7 +249,12 @@ export default class FicheFormat extends DCLogic {
               )
             ])
           )
-        )
+        ),
+        ($v.pal) ? [
+          $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
+            $h(Palette, { "onClose": $v.closePal })
+          )
+        ] : null
       )
     ];
   }

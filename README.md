@@ -69,11 +69,15 @@ Vercel construit le site avec `scripts/vercel-build.mjs`. Si `CONVEX_DEPLOY_KEY`
 
 ## L'app
 
-Les écrans retenus sur le canevas de l'app (https://claude.ai/artifact/FLjy3nFCy6GKVLEnokWv3u) sont copiés dans `design/app/`, leurs images dans `public/media/app/` (`design/app/media.json` fait le lien avec les `/_blob/…` du canevas). `npm run gen` les convertit dans `src/app/pages/` et écrit `src/app/routes.js` depuis la table `APP_PAGES` de `scripts/dc2preact.py` (artboard → adresse → titre de l'onglet). Un lien vers un artboard sans adresse fait échouer la conversion.
+Les écrans retenus sur le canevas de l'app (https://claude.ai/artifact/FLjy3nFCy6GKVLEnokWv3u) sont copiés dans `design/app/`, leurs images dans `public/media/app/` (`design/app/media.json` fait le lien avec les `/_blob/…` du canevas). `npm run gen` les convertit dans `src/app/pages/` et écrit `src/app/routes.js` depuis les tables de `scripts/dc2preact.py` :
+- `APP_PAGES` : les 13 écrans routés (artboard → adresse → titre de l'onglet) ;
+- `APP_COMPONENTS` : les composants que les écrans importent par `<dc-import name="…">` (palette de recherche, ajout à un dossier, nouvelle alerte). Leurs props `on-close` deviennent `onClose`.
 
-`app.html` + `src/app/main.js` : une seule page (Vercel réécrit `/app/…` vers `app.html`). La session n'est vérifiée qu'une fois ; les liens internes changent d'écran sans recharger ; chaque écran se charge à la demande. Les écrans reçoivent `user` ({ prenom, email, initiale }) et `signOut` par leurs props.
+La conversion fait aussi : liens `X.dc.html#ancre` → adresse + ancre ; `onChange` d'un champ texte → `onInput` (à chaque frappe, comme sur le canevas) ; échec si un lien vise un artboard sans adresse.
 
-Données : celles des maquettes, c'est-à-dire le relevé du Radar au 12/11, figé. Chaque fiche (app, format, créateur, vidéo, dossier) montre un exemple. Pas encore de version mobile.
+`app.html` + `src/app/main.js` : une seule page (Vercel réécrit `/app/…` vers `/app`). La session n'est vérifiée qu'une fois ; les liens internes changent d'écran sans recharger ; chaque écran se charge à la demande avec son CSS et celui de ses composants ; ⌘K / Ctrl+K clique le déclencheur `[data-cmdk]` de l'écran (la palette) ; une ancre dans l'adresse fait défiler jusqu'à elle. Les écrans reçoivent `user` ({ prenom, email, initiale }) et `signOut` par leurs props.
+
+Données : celles des maquettes, c'est-à-dire le relevé du Radar au 12/11, figé. Chaque fiche (app, format, créateur, vidéo, dossier) montre un exemple. Rien de ce qu'on fait dans l'app n'est enregistré (prénom, dossiers, alertes, réglages) : tout repart à zéro au rechargement. Pas encore de version mobile.
 
 ## Lancer en local
 
@@ -92,6 +96,7 @@ Vercel, projet relié à ce dépôt : chaque push sur `main` déploie en product
 - La vidéo motion sous le hero (l'encart 16:9 l'attend).
 - « Mot de passe oublié » : il faut un service d'envoi d'e-mails (le lien affiche pour l'instant que la réinitialisation n'est pas ouverte).
 - Les données de l'app en direct (aujourd'hui, le relevé figé du 12/11) et une fiche par app, format, créateur.
+- L'enregistrement de ce qu'on fait dans l'app : prénom, dossiers, alertes, réglages.
 - La version mobile de l'app.
 - Le paiement et les pages légales (`#cgv`, `#confidentialite`, `#mentions`, `#contact`).
 - Les avis : emplacements entre crochets, à remplacer par de vrais avis.

@@ -43,8 +43,7 @@ LINKS = {
     '#paiement': '/inscription',  # « Passer Pro » : on crée d'abord le compte
 }
 
-# L'app : artboard retenu -> (composant, préfixe CSS, adresse, titre de l'onglet). Une adresse None : écran
-# converti mais pas encore routé (interaction que la session app intègre à son écran hôte).
+# L'app : artboard retenu -> (composant, préfixe CSS, adresse, titre de l'onglet).
 APP_PAGES = [
     ('Main.dc.html', 'Accueil', 'a-acc', '/app', 'Accueil'),
     ('AppsA.dc.html', 'Apps', 'a-apps', '/app/apps', 'Apps'),
@@ -58,14 +57,17 @@ APP_PAGES = [
     ('DossiersA.dc.html', 'Dossiers', 'a-dos', '/app/dossiers', 'Dossiers'),
     ('DossiersB.dc.html', 'Dossier', 'a-dosb', '/app/dossiers/etudes', 'Dossier'),
     ('AlertesA.dc.html', 'Alertes', 'a-ale', '/app/alertes', 'Alertes'),
-    ('CreerAlerteA.dc.html', 'CreerAlerte', 'a-cale', '/app/alertes/nouvelle', 'Nouvelle alerte'),
-    ('RechercheB.dc.html', 'Recherche', 'a-rech', '/app/recherche', 'Recherche'),
     ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte'),
-    ('CompteB.dc.html', 'Abonnement', 'a-abo', '/app/compte/abonnement', 'Abonnement'),
+]
+# Composants partagés, importés par <dc-import name="…"> (pas des routes) : fichier, composant, préfixe CSS.
+APP_COMPONENTS = [
+    ('Palette.dc.html', 'Palette', 'a-pal'),
+    ('AjoutDossier.dc.html', 'AjoutDossier', 'a-ajd'),
+    ('NouvelleAlerte.dc.html', 'NouvelleAlerte', 'a-nal'),
 ]
 APP_LINKS = {src: route for src, _, _, route, _ in APP_PAGES if route}
 APP_LINKS.update({
-    'FormatsA.dc.html': '/app/formats',        # ancien écran Formats, remplacé par FormatsB
+    'FormatsA.dc.html': '/app/formats',        # ancien écran Formats (restes de données), remplacé par FormatsB
     'ConnexionA.dc.html': '/app/deconnexion',  # « Se déconnecter » du compte : le routeur déconnecte puis renvoie à l'accueil du site
 })
 
@@ -160,8 +162,9 @@ LP_FILES = ('LP.dc.html', 'LPMobile.dc.html')
 def rewrite_links(value, label=None, links=LINKS):
     if links is LINKS and value in LP_FILES and label in ANCHORS:
         return '/' + ANCHORS[label]
-    if value in links:
-        return links[value]
+    page, sep, anchor = value.partition('#')
+    if page in links:
+        return links[page] + sep + anchor
     return value
 
 
@@ -172,10 +175,11 @@ def rewrite_script_links(script, links=LINKS):
             lab = re.escape(label)
             script = re.sub(r"\['" + lab + r"', '(?:" + files + r")'\]", f"['{label}', '/{anchor}']", script)
             script = re.sub(r"(t: '" + lab + r"'[^}]*?href: )'(?:" + files + r")'", r"\g<1>'/" + anchor + "'", script)
-    for old, new in links.items():
-        if old.endswith('.dc.html'):
-            script = script.replace(f"'{old}'", f"'{new}'").replace(f'"{old}"', f'"{new}"')
-    return script
+    # 'X.dc.html' ou "X.dc.html#ancre" dans le script -> adresse (+ ancre)
+    def to_route(m):
+        q, page, anchor = m.group(1), m.group(2), m.group(3) or ''
+        return f'{q}{links[page]}{anchor}{q}' if page in links else m.group(0)
+    return re.sub(r'([\'"])([A-Za-z]+\.dc\.html)(#[\w-]*)?\1', to_route, script)
 
 
 def text_of(node):
@@ -212,8 +216,23 @@ def gen(node, scope, ind):
         inner = gen_children(node, scope, ind + 1)
         return f'{pad}({cond}) ? [\n{inner}\n{pad}] : null'
 
+    if node.tag == 'dc-import':
+        comp = attrs['name']
+        CURRENT['imports'].add(comp)
+        cprops = []
+        for name, val in node.attrs:
+            if name == 'name' or name.startswith('hint-'):
+                continue
+            camel = re.sub(r'-([a-z])', lambda m: m.group(1).upper(), name)  # on-close -> onClose
+            cprops.append(f'{json.dumps(camel)}: {value_expr(val, scope) if val is not None else "true"}')
+        return f'{pad}$h({comp}, {{ {", ".join(cprops)} }})'
+
+    # Sur un champ texte, onChange du canevas = à chaque frappe ; en Preact c'est onInput.
+    text_field = node.tag == 'textarea' or (node.tag == 'input' and attrs.get('type', 'text') not in ('checkbox', 'radio', 'file', 'range', 'color'))
     props = []
     for name, val in node.attrs:
+        if text_field and name.lower() == 'onchange':
+            name = 'oninput'
         if name.startswith('hint-'):
             continue
         if val is None:
@@ -259,12 +278,14 @@ GROUPS = {
     'app': {'src': ROOT / 'design' / 'app', 'pages': ROOT / 'src' / 'app' / 'pages', 'styles': ROOT / 'src' / 'app' / 'styles',
             'runtime': '../../runtime.js', 'links': APP_LINKS, 'css_import': False},  # CSS chargé par routes.js
 }
-CURRENT = {'links': LINKS}
+CURRENT = {'links': LINKS, 'imports': set()}
+IMPORTS = {}  # composant généré -> composants qu'il importe (<dc-import>)
 
 
 def convert(src, name, prefix, group='site'):
     g = GROUPS[group]
     CURRENT['links'] = g['links']
+    CURRENT['imports'] = set()
     text = (g['src'] / src).read_text()
     for blob, local in MEDIA.items():
         text = text.replace(blob, local)
@@ -290,6 +311,8 @@ def convert(src, name, prefix, group='site'):
 
     rel = src if group == 'site' else f'app/{src}'
     css_import = f"import '../styles/{prefix}.css';\n" if g['css_import'] else ''
+    css_import += ''.join(f"import {c} from './{c}.js';\n" for c in sorted(CURRENT['imports']))
+    IMPORTS[name] = sorted(CURRENT['imports'])
     js = f"""// Généré par scripts/dc2preact.py depuis design/{rel} — ne pas modifier à la main.
 import {{ h as $h }} from 'preact';  // $h : jamais masqué par une variable de boucle
 import {{ DCLogic, $t, $l }} from '{g['runtime']}';
@@ -318,10 +341,18 @@ export default class {name} extends DCLogic {{{cls_body}
 def write_app_routes():
     lines = ['// Généré par scripts/dc2preact.py — ne pas modifier à la main.',
              '// Adresse de l\'app -> titre de l\'onglet et écran (chargé à la demande).', 'export const ROUTES = {']
+    prefixes = {name: prefix for _, name, prefix, *_ in APP_PAGES + APP_COMPONENTS}
+
+    def css_of(name, seen=()):  # le CSS de l'écran et celui des composants qu'il importe
+        out = [prefixes[name]]
+        for c in IMPORTS.get(name, []):
+            if c not in seen:
+                out += [x for x in css_of(c, seen + (name,)) if x not in out]
+        return out
     for _, name, prefix, route, title in APP_PAGES:
-        if route:
-            load = f"Promise.all([import('./pages/{name}.js'), import('./styles/{prefix}.css')]).then(([m]) => m)"
-            lines.append(f"  '{route}': {{ title: {json.dumps(title, ensure_ascii=False)}, load: () => {load} }},")
+        css = ', '.join(f"import('./styles/{x}.css')" for x in css_of(name))
+        load = f"Promise.all([import('./pages/{name}.js'), {css}]).then(([m]) => m)"
+        lines.append(f"  '{route}': {{ title: {json.dumps(title, ensure_ascii=False)}, load: () => {load} }},")
     lines.append('};')
     (ROOT / 'src' / 'app' / 'routes.js').write_text('\n'.join(lines) + '\n')
     print('src/app/routes.js')
@@ -330,6 +361,8 @@ def write_app_routes():
 if __name__ == '__main__':
     for args in PAGES:
         convert(*args)
+    for src, name, prefix in APP_COMPONENTS:
+        convert(src, name, prefix, 'app')
     for src, name, prefix, _, _ in APP_PAGES:
         convert(src, name, prefix, 'app')
     write_app_routes()

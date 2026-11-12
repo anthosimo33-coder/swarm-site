@@ -63,13 +63,35 @@ function App() {
       setPath(next);
     };
     const onPop = () => setPath(clean(window.location.pathname));
+    // ⌘K / Ctrl+K : chaque écran a un déclencheur [data-cmdk] qui ouvre la palette de recherche
+    // (un artboard n'a pas le droit d'écouter le clavier globalement, l'app le fait pour lui).
+    const onKey = (event) => {
+      if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'k') {
+        const trigger = document.querySelector('[data-cmdk]');
+        if (trigger) {
+          event.preventDefault();
+          trigger.click();
+        }
+      }
+    };
     document.addEventListener('click', onClick);
+    document.addEventListener('keydown', onKey);
     window.addEventListener('popstate', onPop);
     return () => {
       document.removeEventListener('click', onClick);
+      document.removeEventListener('keydown', onKey);
       window.removeEventListener('popstate', onPop);
     };
   }, []);
+
+  // Arrivée sur un écran : en haut, ou sur l'ancre demandée (ex. /app/apps/astra-ai#fa-vid).
+  useEffect(() => {
+    if (!screen) return;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = id && document.getElementById(id);
+    if (target) target.scrollIntoView();
+    else window.scrollTo(0, 0);
+  }, [screen]);
 
   const user = useMemo(() => (viewer ? toUser(viewer) : null), [viewer]);
   const known = user !== null;
@@ -94,7 +116,6 @@ function App() {
         if (!current) return;
         document.title = `${route.title} · Swarm`;
         setScreen({ path, Page: module.default });
-        window.scrollTo(0, 0);
       },
       () => {
         // Fichier de l'écran introuvable (un déploiement est passé depuis l'ouverture) : on recharge.

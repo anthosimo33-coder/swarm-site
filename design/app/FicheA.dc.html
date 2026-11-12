@@ -20,19 +20,20 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 
 <nav class="sw-sidebar" aria-label="Navigation principale">
 <a class="sw-side-logo" href="Main.dc.html" aria-label="Swarm, accueil"><span class="sw-app-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span></a>
-<sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
-<a class="sw-side-item" href="#" aria-current="{{n.cur}}"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{n.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>
+<button class="sw-side-item" type="button" data-cmdk="true" onClick="{{openPal}}" aria-label="Chercher, raccourci Commande K" style="border: 0; background: transparent; font-family: inherit; cursor: pointer;"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Chercher</button>
+<sc-for list="{{sb}}" as="n" hint-placeholder-count="6">
+<a class="sw-side-item" href="{{n.href}}" aria-current="{{n.cur}}"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{n.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>
 </sc-for>
 <div class="sw-side-foot">
 <button class="sw-btn sw-btn-icon" type="button" aria-label="Passer au thème clair"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
-<a class="sw-avatar" href="#" aria-label="Mon compte" style="text-decoration: none;">A</a>
+<a class="sw-avatar" href="CompteA.dc.html" aria-label="Mon compte" style="text-decoration: none;">{{me.initiale}}</a>
 </div>
 </nav>
 
 <aside aria-label="Sections de la fiche" style="flex: 0 0 248px; box-sizing: border-box; padding: 24px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px;">
 <a class="sw-more" href="AppsA.dc.html" style="padding: 6px 10px 18px; font-size: 14px;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Apps</a>
 <sc-for list="{{sections}}" as="s" hint-placeholder-count="5">
-<a href="#" aria-current="{{s.cur}}" style="display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; background: {{s.bg}}; color: {{s.ink}}; text-decoration: none; font-size: 14px; font-weight: {{s.w}};"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="{{s.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex: 1;">{{s.label}}</span><span style="font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;">{{s.n}}</span></a>
+<a href="{{s.href}}" aria-current="{{s.cur}}" style="display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; background: {{s.bg}}; color: {{s.ink}}; text-decoration: none; font-size: 14px; font-weight: {{s.w}};"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="{{s.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex: 1;">{{s.label}}</span><span style="font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;">{{s.n}}</span></a>
 </sc-for>
 <div style="margin-top: 22px; padding: 16px 12px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px;">
 <span style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);">Dans tes dossiers</span>
@@ -46,13 +47,13 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <span class="sw-app-icon" style="width: 72px; height: 72px; border-radius: 20px; box-shadow: 0 14px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08);"><img class="sw-logo-img" src="/_blob/8786a14b5a2e9593ed85c3dd97461c2b" alt=""></span>
 <div style="display: flex; flex-direction: column; gap: 8px;">
 <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;"><h1 style="margin: 0; font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;">Astra AI</h1><span class="sw-badge">Études</span><span class="sw-badge sw-badge-accent">+6 % cette semaine</span></div>
-<span style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink-muted);">Aide aux révisions par IA<span aria-hidden="true">·</span>Suivie depuis le 06/11<span aria-hidden="true">·</span><a class="sw-link-quiet" href="#">App Store</a><a class="sw-link-quiet" href="#">Google Play</a><a class="sw-link-quiet" href="#">Site</a></span>
+<span style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink-muted);">Aide aux révisions par IA<span aria-hidden="true">·</span>Suivie depuis le 06/11<span aria-hidden="true">·</span><a class="sw-link-quiet" href="https://apps.apple.com/fr/app/astra-ai-r%C3%A9vision-examens/id6751030141" target="_blank" rel="noopener">App Store</a><a class="sw-link-quiet" href="https://play.google.com/store/search?q=Astra%20AI&amp;c=apps" target="_blank" rel="noopener">Google Play</a><a class="sw-link-quiet" href="https://astra-ai.fr" target="_blank" rel="noopener">Site</a></span>
 </div>
 </div>
 <div style="display: flex; gap: 8px; align-items: center;">
 <button class="sw-btn sw-btn-icon" type="button" aria-label="Copier le lien de la fiche" title="Copier le lien" style="background: var(--track);"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
-<button class="sw-btn sw-btn-icon" type="button" aria-label="Garder dans un dossier" title="Garder" style="background: var(--track);"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-3.5L7 20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg></button>
-<button class="sw-btn sw-btn-primary sw-btn-sm" type="button">Suivre Astra AI<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+<span style="position: relative; display: inline-flex;"><button data-aj-trigger="true" onClick="{{toggleAj}}" aria-expanded="{{ajOpen}}" aria-haspopup="dialog" class="sw-btn sw-btn-icon" type="button" aria-label="Garder dans un dossier" title="Garder" style="background: var(--track);"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-3.5L7 20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg></button><sc-if value="{{aj}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: calc(100% + 10px); right: 0; z-index: 45;"><dc-import name="AjoutDossier" on-close="{{closeAj}}" hint-size="360px,420px"></dc-import></span></sc-if></span>
+<button class="sw-btn sw-btn-primary sw-btn-sm" type="button" onClick="{{toggleFollow}}" aria-pressed="{{followOn}}">{{followLabel}}<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
 </div>
 </header>
 
@@ -106,7 +107,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 
 <div style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px;">
 <section class="sw-card" aria-labelledby="fa-fmt" style="padding: 24px; display: flex; flex-direction: column;">
-<div class="sw-card-head" style="margin-bottom: 8px;"><h2 id="fa-fmt" class="sw-card-title">Les formats qui marchent chez elle</h2><a class="sw-more" href="#">Tous<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
+<div class="sw-card-head" style="margin-bottom: 8px;"><h2 id="fa-fmt" class="sw-card-title">Les formats qui marchent chez elle</h2><a class="sw-more" href="FormatsB.dc.html">Tous<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
 <sc-for list="{{formats}}" as="f" hint-placeholder-count="4">
 <div style="display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line);">
 <span style="width: 32px; height: 32px; border-radius: 10px; background: var(--track); color: var(--ink-muted); display: inline-flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="{{f.icon}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
@@ -128,7 +129,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 
 <section class="sw-card" aria-labelledby="fa-cr" style="padding: 8px 24px 12px;">
-<div class="sw-card-head" style="padding: 16px 0 6px;"><h2 id="fa-cr" class="sw-card-title">Les créateurs qui la poussent</h2><a class="sw-more" href="#">Les 269 comptes<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
+<div class="sw-card-head" style="padding: 16px 0 6px;"><h2 id="fa-cr" class="sw-card-title">Les créateurs qui la poussent</h2><a class="sw-more" href="CreateursA.dc.html">Les 269 comptes<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
 <table class="sw-table">
 <thead><tr><th style="padding-left: 0;">Compte</th><th>Marché</th><th class="sw-num">Abonnés</th><th class="sw-num">Vues 30 j</th><th class="sw-num">Vues d'habitude</th><th class="sw-num" style="padding-right: 0;"></th></tr></thead>
 <tbody>
@@ -141,11 +142,38 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </table>
 </section>
 </main>
+
+<sc-if value="{{pal}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 60;"><dc-import name="Palette" on-close="{{closePal}}" hint-size="100%,100%"></dc-import></div></sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1960}}'>
+<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":1440,"height":1960}}'>
 class Component extends DCLogic {
+
   renderVals() {
+    const b = this.baseVals();
+    return Object.assign({}, b, this.shellVals(), this.extraVals(b));
+  }
+  shellVals() {
+    const st = this.state || {};
+    const u = this.props.user;
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
+                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
+    const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
+    const sb = [["accueil", "Accueil", "Main.dc.html"], ["apps", "Apps", "AppsA.dc.html"], ["formats", "Formats", "FormatsB.dc.html"], ["createurs", "Créateurs", "CreateursA.dc.html"], ["alertes", "Alertes", "AlertesA.dc.html"], ["dossiers", "Dossiers", "DossiersA.dc.html"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'apps' ? 'page' : 'false' }));
+    return {
+      sb, me,
+      pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
+      aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
+    };
+  }
+  extraVals(b) {
+    const st = this.state || {};
+    const f = !!st.follow;
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow: () => this.setState({ follow: !f }) }, { followLabel: f ? 'Suivie' : 'Suivre Astra AI',
+      sections: (b.sections || []).map((s, i) => Object.assign({}, s, { href: ['#fa-vr', '#fa-vid', '#fa-fmt', '#fa-cr', '#fa-res'][i] || '#fa-vr' })) });
+  }
+
+  baseVals() {
     const ic = {
       accueil: 'M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z',
       apps: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',

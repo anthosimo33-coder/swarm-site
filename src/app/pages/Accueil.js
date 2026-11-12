@@ -1,9 +1,35 @@
 // Généré par scripts/dc2preact.py depuis design/app/Main.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
 import { DCLogic, $t, $l } from '../../runtime.js';
+import Palette from './Palette.js';
 
 export default class Accueil extends DCLogic {
+
   renderVals() {
+    const b = this.baseVals();
+    return Object.assign({}, b, this.shellVals(), this.extraVals(b));
+  }
+  shellVals() {
+    const st = this.state || {};
+    const u = this.props.user;
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
+                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
+    const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
+    const sb = [["accueil", "Accueil", "/app"], ["apps", "Apps", "/app/apps"], ["formats", "Formats", "/app/formats"], ["createurs", "Créateurs", "/app/createurs"], ["alertes", "Alertes", "/app/alertes"], ["dossiers", "Dossiers", "/app/dossiers"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'accueil' ? 'page' : 'false' }));
+    return {
+      sb, me,
+      pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
+      aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
+    };
+  }
+  extraVals(b) {
+    const st = this.state || {};
+    const u = this.props.user;
+    const p = u ? (u.prenom || null) : 'Anthony';
+    return { greet: p ? 'Bon retour, ' + p + '.' : 'Bon retour.' };
+  }
+
+  baseVals() {
     const ic = {
       accueil: 'M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z',
       apps: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
@@ -32,7 +58,7 @@ export default class Accueil extends DCLogic {
     return [
       $h("div", { "class": "sw", "style": "display: flex; flex-wrap: wrap; min-height: 1120px; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("nav", { "class": "sw-sidebar", "aria-label": "Navigation principale" },
-          $h("a", { "class": "sw-side-logo", "href": "#", "aria-label": "Swarm, accueil" },
+          $h("a", { "class": "sw-side-logo", "href": "/app", "aria-label": "Swarm, accueil" },
             $h("span", { "class": "sw-app-tile" },
               $h("svg", { "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#FFFFFF" }),
@@ -45,8 +71,16 @@ export default class Accueil extends DCLogic {
               )
             )
           ),
-          ($l($v.nav)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": "#", "aria-current": n?.cur },
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+            $h("span", { "class": "sw-side-ico" },
+              $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
+            ),
+            "Chercher"
+          ),
+          ($l($v.sb)).map((n) => [
+            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -61,8 +95,8 @@ export default class Accueil extends DCLogic {
                 $h("path", { "d": "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
             ),
-            $h("a", { "class": "sw-avatar", "href": "#", "aria-label": "Mon compte", "style": "text-decoration: none;" },
-              "A"
+            $h("a", { "class": "sw-avatar", "href": "/app/compte", "aria-label": "Mon compte", "style": "text-decoration: none;" },
+              $t($v.me?.initiale)
             )
           )
         ),
@@ -73,14 +107,7 @@ export default class Accueil extends DCLogic {
           ),
           $h("div", { "style": "position: relative; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px; padding: 20px 32px;" },
             $h("span", { "class": "sw-badge", "style": "height: 34px; padding: 0 14px; gap: 8px; background: var(--glass-fill); box-shadow: inset 0 0 0 1px var(--glass-edge); color: var(--ink-soft);" },
-              $h("span", { "class": "sw-dot" }),
-              "Radar en ligne · relevé à 15:57"
-            ),
-            $h("a", { "class": "sw-more", "href": "#", "style": "gap: 8px; padding: 0 8px; font-size: 14px;" },
-              $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M4 10h16v10H4zM3 7h18v3H3zM12 7v13M12 7c-2-3-6-3-6-1s3 1 6 1zM12 7c2-3 6-3 6-1s-3 1-6 1z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              ),
-              "Inviter un ami"
+              "Relevé du 12/11"
             )
           ),
           $h("section", { "style": "position: relative; width: 100%; max-width: 940px; margin: 0 auto; padding: 48px 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; text-align: center;" },
@@ -96,20 +123,20 @@ export default class Accueil extends DCLogic {
               )
             ),
             $h("h1", { "class": "sw-enter", "style": "margin: 28px 0 0; font-family: var(--font-display); font-size: 64px; line-height: 1.03; font-weight: 700; letter-spacing: -0.05em; color: var(--ink); animation-delay: 0.1s;" },
-              "Bon retour, Anthony."
+              $t($v.greet)
             ),
             $h("p", { "class": "sw-enter", "style": "margin: 14px 0 0; font-size: 19px; line-height: 1.55; color: var(--ink-muted); animation-delay: 0.2s;" },
-              "Ce qui explose sur TikTok en ce moment, app par app, marché par marché."
+              "Ce qui explose sur TikTok, Instagram et YouTube Shorts, app par app, marché par marché."
             ),
             $h("div", { "role": "search", "class": "sw-search sw-enter", "style": "margin-top: 40px; width: 100%; height: 72px; padding: 0 10px 0 26px; box-sizing: border-box; box-shadow: var(--shadow-float), 0 0 0 8px rgba(76,154,255,0.07); animation-delay: 0.3s;" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
-              $h("input", { "class": "sw-search-input", "id": "q", "type": "search", "aria-label": "Chercher une app, un format ou un créateur", "placeholder": "Cherche une app, un format, un créateur…", "style": "font-size: 18px;" }),
+              $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "q", "type": "search", "aria-label": "Chercher une app, un format ou un créateur", "placeholder": "Cherche une app, un format, un créateur…", "style": "font-size: 18px;" }),
               $h("span", { "class": "sw-kbd" },
                 "⌘ K"
               ),
-              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Chercher avec une capture d'écran" },
+              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openPal, "aria-label": "Chercher avec une capture d'écran" },
                 $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
@@ -127,13 +154,6 @@ export default class Accueil extends DCLogic {
             $h("div", { "class": "sw-enter", "style": "margin-top: 22px; display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 16px; font-size: 15px; color: var(--ink-muted); animation-delay: 0.4s;" },
               $h("span", null,
                 "Aucune app consultée récemment."
-              ),
-              $h("span", { "aria-hidden": "true", "style": "width: 1px; height: 20px; background: var(--line);" }),
-              $h("a", { "class": "sw-more", "href": "#", "style": "gap: 8px; font-size: 15px;" },
-                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                ),
-                "Historique"
               )
             ),
             $h("div", { "class": "sw-enter", "style": "margin-top: 28px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; animation-delay: 0.5s;" },
@@ -141,7 +161,7 @@ export default class Accueil extends DCLogic {
                 "Ça explose cette semaine :"
               ),
               ($l($v.niches)).map((t) => [
-                $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": "false" },
+                $h("a", { "class": "sw-pill", "href": "/app/apps" },
                   $t(t?.label)
                 )
               ])
@@ -193,7 +213,7 @@ export default class Accueil extends DCLogic {
                   $h("span", { "class": "sw-eyebrow", "style": "font-size: 12px; letter-spacing: 0.08em;" },
                     "Dossiers"
                   ),
-                  $h("a", { "class": "sw-more", "href": "#" },
+                  $h("a", { "class": "sw-more", "href": "/app/dossiers" },
                     "Tout voir",
                     $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -204,7 +224,7 @@ export default class Accueil extends DCLogic {
               $h("article", { "class": "sw-card", "style": "flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;" },
                 $h("div", { "style": "flex: 1 1 auto; border-radius: 16px; background: var(--track); padding: 8px 14px; display: flex; flex-direction: column;" },
                   ($l($v.look)).map((r) => [
-                    $h("a", { "href": "#", "style": `height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid ${$t(r?.sep)};` },
+                    $h("a", { "href": "/app/apps/astra-ai", "style": `height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid ${$t(r?.sep)};` },
                       $h("span", { "class": "sw-app-icon", "style": "width: 30px; height: 30px; border-radius: 9px;" },
                         $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "" })
                       ),
@@ -226,7 +246,7 @@ export default class Accueil extends DCLogic {
                   $h("span", { "class": "sw-eyebrow", "style": "font-size: 12px; letter-spacing: 0.08em;" },
                     "Ça explose"
                   ),
-                  $h("a", { "class": "sw-more", "href": "#" },
+                  $h("a", { "class": "sw-more", "href": "/app/apps" },
                     "Tout voir",
                     $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -273,14 +293,14 @@ export default class Accueil extends DCLogic {
                   )
                 ),
                 $h("div", { "style": "height: 52px; display: flex; align-items: center; padding: 0 12px;" },
-                  $h("span", { "style": "font-size: 15px; font-weight: 600; color: var(--ink);" },
+                  $h("a", { "href": "/app/alertes", "style": "font-size: 15px; font-weight: 600; color: var(--ink); text-decoration: none;" },
                     "Ne rate plus une vidéo qui décolle"
                   )
                 )
               ),
               $h("article", { "class": "sw-card", "style": "flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;" },
                 $h("div", { "style": "position: relative; flex: 1 1 auto; border-radius: 16px; overflow: hidden; background: var(--track); box-shadow: inset 0 0 0 1px var(--line-strong); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;" },
-                  $h("a", { "href": "#", "aria-label": "Lire la vidéo de prise en main", "style": "width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF;" },
+                  $h("span", { "role": "img", "aria-label": "Vidéo de prise en main à venir", "style": "width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF;" },
                     $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 12 12", "aria-hidden": "true" },
                       $h("path", { "d": "M4 2.5v7l5.5-3.5z", "fill": "currentColor" })
                     )
@@ -302,7 +322,12 @@ export default class Accueil extends DCLogic {
               )
             )
           )
-        )
+        ),
+        ($v.pal) ? [
+          $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
+            $h(Palette, { "onClose": $v.closePal })
+          )
+        ] : null
       )
     ];
   }

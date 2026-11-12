@@ -1,9 +1,36 @@
 // Généré par scripts/dc2preact.py depuis design/app/FicheA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
 import { DCLogic, $t, $l } from '../../runtime.js';
+import AjoutDossier from './AjoutDossier.js';
+import Palette from './Palette.js';
 
 export default class FicheApp extends DCLogic {
+
   renderVals() {
+    const b = this.baseVals();
+    return Object.assign({}, b, this.shellVals(), this.extraVals(b));
+  }
+  shellVals() {
+    const st = this.state || {};
+    const u = this.props.user;
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
+                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
+    const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
+    const sb = [["accueil", "Accueil", "/app"], ["apps", "Apps", "/app/apps"], ["formats", "Formats", "/app/formats"], ["createurs", "Créateurs", "/app/createurs"], ["alertes", "Alertes", "/app/alertes"], ["dossiers", "Dossiers", "/app/dossiers"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'apps' ? 'page' : 'false' }));
+    return {
+      sb, me,
+      pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
+      aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
+    };
+  }
+  extraVals(b) {
+    const st = this.state || {};
+    const f = !!st.follow;
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow: () => this.setState({ follow: !f }) }, { followLabel: f ? 'Suivie' : 'Suivre Astra AI',
+      sections: (b.sections || []).map((s, i) => Object.assign({}, s, { href: ['#fa-vr', '#fa-vid', '#fa-fmt', '#fa-cr', '#fa-res'][i] || '#fa-vr' })) });
+  }
+
+  baseVals() {
     const ic = {
       accueil: 'M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z',
       apps: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
@@ -73,8 +100,16 @@ export default class FicheApp extends DCLogic {
               )
             )
           ),
-          ($l($v.nav)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": "#", "aria-current": n?.cur },
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+            $h("span", { "class": "sw-side-ico" },
+              $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
+            ),
+            "Chercher"
+          ),
+          ($l($v.sb)).map((n) => [
+            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -89,8 +124,8 @@ export default class FicheApp extends DCLogic {
                 $h("path", { "d": "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
             ),
-            $h("a", { "class": "sw-avatar", "href": "#", "aria-label": "Mon compte", "style": "text-decoration: none;" },
-              "A"
+            $h("a", { "class": "sw-avatar", "href": "/app/compte", "aria-label": "Mon compte", "style": "text-decoration: none;" },
+              $t($v.me?.initiale)
             )
           )
         ),
@@ -102,7 +137,7 @@ export default class FicheApp extends DCLogic {
             "Apps"
           ),
           ($l($v.sections)).map((s) => [
-            $h("a", { "href": "#", "aria-current": s?.cur, "style": `display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; background: ${$t(s?.bg)}; color: ${$t(s?.ink)}; text-decoration: none; font-size: 14px; font-weight: ${$t(s?.w)};` },
+            $h("a", { "href": s?.href, "aria-current": s?.cur, "style": `display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; background: ${$t(s?.bg)}; color: ${$t(s?.ink)}; text-decoration: none; font-size: 14px; font-weight: ${$t(s?.w)};` },
               $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": s?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
@@ -150,13 +185,13 @@ export default class FicheApp extends DCLogic {
                   $h("span", { "aria-hidden": "true" },
                     "·"
                   ),
-                  $h("a", { "class": "sw-link-quiet", "href": "#" },
+                  $h("a", { "class": "sw-link-quiet", "href": "https://apps.apple.com/fr/app/astra-ai-r%C3%A9vision-examens/id6751030141", "target": "_blank", "rel": "noopener" },
                     "App Store"
                   ),
-                  $h("a", { "class": "sw-link-quiet", "href": "#" },
+                  $h("a", { "class": "sw-link-quiet", "href": "https://play.google.com/store/search?q=Astra%20AI&c=apps", "target": "_blank", "rel": "noopener" },
                     "Google Play"
                   ),
-                  $h("a", { "class": "sw-link-quiet", "href": "#" },
+                  $h("a", { "class": "sw-link-quiet", "href": "https://astra-ai.fr", "target": "_blank", "rel": "noopener" },
                     "Site"
                   )
                 )
@@ -168,13 +203,20 @@ export default class FicheApp extends DCLogic {
                   $h("path", { "d": "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round" })
                 )
               ),
-              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Garder dans un dossier", "title": "Garder", "style": "background: var(--track);" },
-                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
-                )
+              $h("span", { "style": "position: relative; display: inline-flex;" },
+                $h("button", { "data-aj-trigger": "true", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Garder dans un dossier", "title": "Garder", "style": "background: var(--track);" },
+                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                  )
+                ),
+                ($v.aj) ? [
+                  $h("span", { "style": "position: absolute; top: calc(100% + 10px); right: 0; z-index: 45;" },
+                    $h(AjoutDossier, { "onClose": $v.closeAj })
+                  )
+                ] : null
               ),
-              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button" },
-                "Suivre Astra AI",
+              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": $v.followOn },
+                $t($v.followLabel),
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -386,7 +428,7 @@ export default class FicheApp extends DCLogic {
                 $h("h2", { "id": "fa-fmt", "class": "sw-card-title" },
                   "Les formats qui marchent chez elle"
                 ),
-                $h("a", { "class": "sw-more", "href": "#" },
+                $h("a", { "class": "sw-more", "href": "/app/formats" },
                   "Tous",
                   $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -458,7 +500,7 @@ export default class FicheApp extends DCLogic {
               $h("h2", { "id": "fa-cr", "class": "sw-card-title" },
                 "Les créateurs qui la poussent"
               ),
-              $h("a", { "class": "sw-more", "href": "#" },
+              $h("a", { "class": "sw-more", "href": "/app/createurs" },
                 "Les 269 comptes",
                 $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -539,7 +581,12 @@ export default class FicheApp extends DCLogic {
               )
             )
           )
-        )
+        ),
+        ($v.pal) ? [
+          $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
+            $h(Palette, { "onClose": $v.closePal })
+          )
+        ] : null
       )
     ];
   }
