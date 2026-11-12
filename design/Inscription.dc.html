@@ -19,12 +19,15 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 .auth-notice{margin:0;border-radius:14px;padding:10px 14px;background:var(--accent-soft);border:1px solid var(--accent-edge);color:var(--ink-soft);font-size:14px;line-height:1.5}
 .auth-form .sw-input{height:50px}
 .auth-form .sw-btn-provider{height:50px}
+.auth-bg{display:none}
 @media (max-height: 820px){.auth-x2{display:none !important}}
 @media (max-height: 740px){.auth-x1{display:none !important}}
 @media (max-width: 860px){
 .auth-root{padding:16px 20px 20px !important}
 .auth-card{display:flex !important;background:none !important;border:0 !important;box-shadow:none !important;padding:0 !important;border-radius:0 !important}
 .auth-side{display:none !important}
+.auth-bg{display:block !important}
+.auth-form .sw-btn-provider{background:var(--field)}
 .auth-form{padding:0 !important;flex:1 1 auto}
 .auth-form form{gap:14px !important}
 .auth-form h1{font-size:23px !important;margin:0 !important}
@@ -33,7 +36,8 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 @media (max-height: 520px){html,body{overflow:auto}.auth-root{height:auto !important;min-height:100vh;overflow:visible !important}}
 </style>
 </helmet>
-<div class="sw sw-ground auth-root" style="height: 100vh; height: 100dvh; overflow: hidden; box-sizing: border-box; padding: clamp(16px, 3vh, 32px) 24px; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vh, 24px); color: var(--ink); font-family: var(--font-body);">
+<div class="sw sw-ground auth-root" style="position: relative; isolation: isolate; height: 100vh; height: 100dvh; overflow: hidden; box-sizing: border-box; padding: clamp(16px, 3vh, 32px) 24px; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vh, 24px); color: var(--ink); font-family: var(--font-body);">
+<div aria-hidden="true" class="auth-bg" style="position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: linear-gradient(180deg, #0A1A35 0%, #071329 46%, #05070C 100%);"><div class="sw-dots-bg" style="position: absolute; inset: 0; -webkit-mask-image: radial-gradient(95% 60% at 75% 8%, #000, transparent); mask-image: radial-gradient(95% 60% at 75% 8%, #000, transparent);"></div><div style="position: absolute; right: -170px; top: -190px; width: 540px; height: 540px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.40), transparent); animation: sw-drift 16s ease-in-out infinite;"></div><div style="position: absolute; left: -220px; bottom: -240px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent);"></div></div>
 <a class="sw-logo" href="LP.dc.html" aria-label="Swarm, page d'accueil" style="flex-shrink: 0;"><svg class="sw-logo-mark on-dark" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px;"><circle class="d-a" cx="5" cy="8" r="2.3"></circle><circle class="d-a" cx="11" cy="5" r="2.3"></circle><circle class="d-a" cx="17" cy="8" r="2.3"></circle><circle class="d-b" cx="8" cy="14" r="2.3"></circle><circle class="d-b" cx="14" cy="13" r="2.3"></circle><circle class="d-b" cx="19" cy="17" r="2.3"></circle><circle class="d-b" cx="11" cy="20" r="2.3"></circle></svg><span class="sw-wordmark" style="font-size: 24px;">swarm</span></a>
 <div class="auth-card" style="flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;">
 <section class="auth-form" style="min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;">
