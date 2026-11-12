@@ -26,6 +26,7 @@ PAGES = [
     ('TarifsMobile.dc.html', 'TarifsMobile', 'tfm'),
     ('Connexion.dc.html', 'Connexion', 'cx'),
     ('Inscription.dc.html', 'Inscription', 'ins'),
+    ('Compte.dc.html', 'Compte', 'cpt'),
 ]
 # Liens entre artboards du canevas -> routes du site
 LINKS = {
@@ -35,6 +36,7 @@ LINKS = {
     'TarifsMobile.dc.html': '/tarifs',
     'Connexion.dc.html': '/connexion',
     'Inscription.dc.html': '/inscription',
+    'Compte.dc.html': '/compte',
     '#quiz': '/inscription',      # « Trouver mon app » : création du compte
     '#connexion': '/connexion',   # « Se connecter »
     '#paiement': '/inscription',  # « Passer Pro » : on crée d'abord le compte

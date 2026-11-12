@@ -3,7 +3,7 @@ import { h } from 'preact';
 import { renderToString } from 'preact-render-to-string';
 import { existsSync } from 'node:fs';
 
-const pages = ['LP', 'LPMobile', 'Tarifs', 'TarifsMobile', 'Connexion', 'Inscription'];
+const pages = ['LP', 'LPMobile', 'Tarifs', 'TarifsMobile', 'Connexion', 'Inscription', 'Compte'];
 let failed = false;
 for (const name of pages) {
   const { default: Page } = await import(`../src/pages/${name}.js`);

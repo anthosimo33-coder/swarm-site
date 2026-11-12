@@ -10,13 +10,32 @@ export default class Inscription extends DCLogic {
       ['« [Pourquoi Swarm plutôt qu’une formation à 1 000 €] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]']
     ].map((a, i) => ({ q: a[0], name: a[1], role: a[2], cls: (i === 1 ? 'is-featured ' : '') + (i === 2 ? 'auth-x2' : i === 1 ? 'auth-x1' : ''), delay: (0.2 + i * 0.12).toFixed(2) + 's' }));
     const q = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '').trim().slice(0, 80) : '';
-    const next = () => { window.location.href = '/tarifs'; };
+    const st = this.state || {};
+    // Sur le site, src/auth.js passe `auth` (Convex Auth). Sur le canevas, il n'y a
+    // pas de backend : le formulaire mène directement aux tarifs.
+    const auth = this.props && this.props.auth;
+    const run = async (action) => {
+      if (!auth) { window.location.href = '/tarifs'; return; }
+      this.setState({ busy: true, error: '', errorCode: '' });
+      const failed = await action();
+      // Réussi : le pont emmène la personne aux tarifs, le bouton reste désactivé d'ici là.
+      if (failed) this.setState({ busy: false, error: failed.message, errorCode: failed.code || '' });
+    };
     return {
       avis,
       q,
-      hasQ: !!q,
-      next,
-      submit: (e) => { e.preventDefault(); next(); }
+      // Le rappel de la recherche cède la place au message d'erreur : les deux ne tiennent pas sur un petit écran.
+      showQ: !!q && !st.error,
+      busy: !!st.busy,
+      error: st.error || '',
+      hasError: !!st.error,
+      exists: st.errorCode === 'COMPTE_EXISTANT',
+      google: () => run(() => auth.google()),
+      submit: (e) => {
+        e.preventDefault();
+        const form = new FormData(e.currentTarget);
+        run(() => auth.password('signUp', form.get('email'), form.get('password')));
+      }
     };
   }
 
@@ -44,21 +63,24 @@ export default class Inscription extends DCLogic {
           )
         ),
         h("div", { "class": "auth-card", "style": "flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;" },
-          h("section", { "class": "auth-form", "style": "min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;" },
-            h("form", { "onSubmit": $v.submit, "aria-labelledby": "t-signup", "style": "width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);" },
+          h("section", { "class": "auth-form", "style": "min-height: 0; display: flex; align-items: flex-start; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;" },
+            h("form", { "onSubmit": $v.submit, "aria-labelledby": "t-signup", "style": "width: 100%; max-width: 400px; margin: auto 0; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);" },
               h("h1", { "id": "t-signup", "style": "margin: 0 0 4px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;" },
                 "Créer un compte"
               ),
-              ($v.hasQ) ? [
+              ($v.showQ) ? [
                 h("p", { "class": "auth-notice" },
                   "Ta recherche : ",
                   h("span", { "style": "color: var(--ink); font-weight: 600;" },
                     "« ", $t($v.q), " »"
                   ),
-                  ". Crée ton compte pour voir ce qui explose dans ce créneau."
+                  ".",
+                  h("span", { "class": "auth-q-more" },
+                    " Crée ton compte pour voir ce qui explose dans ce créneau."
+                  )
                 )
               ] : null,
-              h("button", { "class": "sw-btn sw-btn-provider", "type": "button", "onClick": $v.next },
+              h("button", { "class": "sw-btn sw-btn-provider", "type": "button", "onClick": $v.google, "disabled": $v.busy },
                 h("svg", { "width": "18", "height": "18", "viewBox": "0 0 48 48", "aria-hidden": "true" },
                   h("path", { "fill": "#FFC107", "d": "M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" }),
                   h("path", { "fill": "#FF3D00", "d": "M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" }),
@@ -76,7 +98,24 @@ export default class Inscription extends DCLogic {
                 ),
                 h("input", { "class": "sw-input", "id": "sa-mail", "name": "email", "type": "email", "required": true, "autocomplete": "email", "placeholder": "toi@exemple.fr" })
               ),
-              h("button", { "type": "submit", "class": "cta", "style": "align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("div", { "class": "sw-field" },
+                h("label", { "class": "sw-label", "for": "sa-pass" },
+                  "Mot de passe"
+                ),
+                h("input", { "class": "sw-input", "id": "sa-pass", "name": "password", "type": "password", "required": true, "minlength": "8", "autocomplete": "new-password", "placeholder": "8 caractères minimum" })
+              ),
+              ($v.hasError) ? [
+                h("p", { "class": "auth-error", "role": "alert" },
+                  $t($v.error),
+                  ($v.exists) ? [
+                    " ",
+                    h("a", { "class": "sw-link", "href": "/connexion" },
+                      "Se connecter"
+                    )
+                  ] : null
+                )
+              ] : null,
+              h("button", { "type": "submit", "class": "cta", "disabled": $v.busy, "aria-busy": $v.busy, "style": "align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Créer mon compte",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },

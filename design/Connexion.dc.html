@@ -20,6 +20,8 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 .auth-form .sw-input{height:50px}
 .auth-form .sw-btn-provider{height:50px}
 .auth-bg{display:none}
+.auth-error{margin:0;border-radius:14px;padding:10px 14px;background:rgba(255,122,122,0.10);border:1px solid rgba(255,122,122,0.40);color:var(--ink-soft);font-size:14px;line-height:1.5}
+.cta:disabled{opacity:0.7;cursor:progress;transform:none}
 @media (max-height: 820px){.auth-x2{display:none !important}}
 @media (max-height: 740px){.auth-x1{display:none !important}}
 @media (max-width: 860px){
@@ -33,6 +35,14 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 .auth-form h1{font-size:23px !important;margin:0 !important}
 .auth-form .sw-input,.auth-form .sw-btn-provider{height:48px}
 }
+@media (max-width: 860px) and (max-height: 700px){
+.auth-root{gap:10px !important;padding-top:12px !important;padding-bottom:12px !important}
+.auth-form form{gap:10px !important}
+.auth-form h1{font-size:21px !important}
+.auth-form .sw-field{gap:5px}
+.auth-form .sw-input,.auth-form .sw-btn-provider{height:44px}
+.auth-notice,.auth-error{padding:8px 12px;font-size:13px}
+}
 @media (max-height: 520px){html,body{overflow:auto}.auth-root{height:auto !important;min-height:100vh;overflow:visible !important}}
 </style>
 </helmet>
@@ -40,15 +50,16 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <div aria-hidden="true" class="auth-bg" style="position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: linear-gradient(180deg, #0A1A35 0%, #071329 46%, #05070C 100%);"><div class="sw-dots-bg" style="position: absolute; inset: 0; -webkit-mask-image: radial-gradient(95% 60% at 75% 8%, #000, transparent); mask-image: radial-gradient(95% 60% at 75% 8%, #000, transparent);"></div><div style="position: absolute; right: -170px; top: -190px; width: 540px; height: 540px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.40), transparent); animation: sw-drift 16s ease-in-out infinite;"></div><div style="position: absolute; left: -220px; bottom: -240px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent);"></div></div>
 <a class="sw-logo" href="LP.dc.html" aria-label="Swarm, page d'accueil" style="flex-shrink: 0;"><svg class="sw-logo-mark on-dark" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px;"><circle class="d-a" cx="5" cy="8" r="2.3"></circle><circle class="d-a" cx="11" cy="5" r="2.3"></circle><circle class="d-a" cx="17" cy="8" r="2.3"></circle><circle class="d-b" cx="8" cy="14" r="2.3"></circle><circle class="d-b" cx="14" cy="13" r="2.3"></circle><circle class="d-b" cx="19" cy="17" r="2.3"></circle><circle class="d-b" cx="11" cy="20" r="2.3"></circle></svg><span class="sw-wordmark" style="font-size: 24px;">swarm</span></a>
 <div class="auth-card" style="flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;">
-<section class="auth-form" style="min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;">
-<form onSubmit="{{submit}}" aria-labelledby="t-login" style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);">
+<section class="auth-form" style="min-height: 0; display: flex; align-items: flex-start; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;">
+<form onSubmit="{{submit}}" aria-labelledby="t-login" style="width: 100%; max-width: 400px; margin: auto 0; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);">
 <h1 id="t-login" style="margin: 0 0 4px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;">Content de te revoir</h1>
-<button class="sw-btn sw-btn-provider" type="button" onClick="{{closed}}"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"></path><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"></path><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"></path><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"></path></svg>Se connecter avec Google</button>
+<button class="sw-btn sw-btn-provider" type="button" onClick="{{google}}" disabled="{{busy}}"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"></path><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"></path><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"></path><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"></path></svg>Se connecter avec Google</button>
 <div class="sw-divider">Ou avec ton e-mail</div>
 <div class="sw-field"><label class="sw-label" for="a-mail">E-mail</label><input class="sw-input" id="a-mail" name="email" type="email" required autocomplete="email" placeholder="toi@exemple.fr"></div>
-<div class="sw-field"><label class="sw-label" for="a-pass">Mot de passe</label><input class="sw-input" id="a-pass" name="password" type="password" required autocomplete="current-password"><a class="sw-link-quiet" href="#" style="align-self: flex-end; font-size: 13px; margin-top: 2px;">Mot de passe oublié ?</a></div>
-<button type="submit" class="cta" style="align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);">Se connecter<span aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" style="display: block;"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
-<sc-if value="{{showNotice}}" hint-placeholder-val="{{false}}"><p class="auth-notice" role="status">L'espace membre n'est pas encore ouvert. <a class="sw-link" href="Inscription.dc.html">Crée ton compte</a> pour être prévenu de l'ouverture.</p></sc-if>
+<div class="sw-field"><label class="sw-label" for="a-pass">Mot de passe</label><input class="sw-input" id="a-pass" name="password" type="password" required autocomplete="current-password"><a class="sw-link-quiet" href="#" onClick="{{forgot}}" style="align-self: flex-end; font-size: 13px; margin-top: 2px;">Mot de passe oublié ?</a></div>
+<sc-if value="{{hasError}}" hint-placeholder-val="{{false}}"><p class="auth-error" role="alert">{{error}}</p></sc-if>
+<button type="submit" class="cta" disabled="{{busy}}" aria-busy="{{busy}}" style="align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);">Se connecter<span aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" style="display: block;"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+<sc-if value="{{hasNotice}}" hint-placeholder-val="{{false}}"><p class="auth-notice" role="status">{{notice}}</p></sc-if>
 <p style="margin: 0; text-align: center; font-size: 14px; color: var(--ink-muted);">Pas encore de compte ? <a class="sw-link" href="Inscription.dc.html">En créer un</a></p>
 </form>
 </section>
@@ -89,12 +100,30 @@ class Component extends DCLogic {
       ['alertes', '+69 comptes', 'dans le réseau de Love8']
     ].map((t, i) => ({ d: ic[t[0]], v: t[1], l: t[2], cls: i >= 4 ? 'auth-x1' : '', delay: (0.15 + i * 0.08).toFixed(2) + 's' }));
     const st = this.state || {};
-    const closed = () => this.setState({ notice: true });
+    // Sur le site, src/auth.js passe `auth` (Convex Auth). Sur le canevas, il n'y a
+    // pas de backend : le formulaire mène directement à la page Mon compte.
+    const auth = this.props && this.props.auth;
+    const run = async (action) => {
+      if (!auth) { window.location.href = 'Compte.dc.html'; return; }
+      this.setState({ busy: true, error: '', notice: '' });
+      const failed = await action();
+      // Réussi : le pont emmène la personne sur sa page, le bouton reste désactivé d'ici là.
+      if (failed) this.setState({ busy: false, error: failed.message });
+    };
     return {
       tiles,
-      showNotice: !!st.notice,
-      closed,
-      submit: (e) => { e.preventDefault(); closed(); }
+      busy: !!st.busy,
+      error: st.error || '',
+      hasError: !!st.error,
+      notice: st.notice || '',
+      hasNotice: !!st.notice,
+      google: () => run(() => auth.google()),
+      forgot: (e) => { e.preventDefault(); this.setState({ error: '', notice: 'La réinitialisation du mot de passe par e-mail n’est pas encore ouverte.' }); },
+      submit: (e) => {
+        e.preventDefault();
+        const form = new FormData(e.currentTarget);
+        run(() => auth.password('signIn', form.get('email'), form.get('password')));
+      }
     };
   }
 }

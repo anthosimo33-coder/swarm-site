@@ -21,12 +21,30 @@ export default class Connexion extends DCLogic {
       ['alertes', '+69 comptes', 'dans le réseau de Love8']
     ].map((t, i) => ({ d: ic[t[0]], v: t[1], l: t[2], cls: i >= 4 ? 'auth-x1' : '', delay: (0.15 + i * 0.08).toFixed(2) + 's' }));
     const st = this.state || {};
-    const closed = () => this.setState({ notice: true });
+    // Sur le site, src/auth.js passe `auth` (Convex Auth). Sur le canevas, il n'y a
+    // pas de backend : le formulaire mène directement à la page Mon compte.
+    const auth = this.props && this.props.auth;
+    const run = async (action) => {
+      if (!auth) { window.location.href = '/compte'; return; }
+      this.setState({ busy: true, error: '', notice: '' });
+      const failed = await action();
+      // Réussi : le pont emmène la personne sur sa page, le bouton reste désactivé d'ici là.
+      if (failed) this.setState({ busy: false, error: failed.message });
+    };
     return {
       tiles,
-      showNotice: !!st.notice,
-      closed,
-      submit: (e) => { e.preventDefault(); closed(); }
+      busy: !!st.busy,
+      error: st.error || '',
+      hasError: !!st.error,
+      notice: st.notice || '',
+      hasNotice: !!st.notice,
+      google: () => run(() => auth.google()),
+      forgot: (e) => { e.preventDefault(); this.setState({ error: '', notice: 'La réinitialisation du mot de passe par e-mail n’est pas encore ouverte.' }); },
+      submit: (e) => {
+        e.preventDefault();
+        const form = new FormData(e.currentTarget);
+        run(() => auth.password('signIn', form.get('email'), form.get('password')));
+      }
     };
   }
 
@@ -54,12 +72,12 @@ export default class Connexion extends DCLogic {
           )
         ),
         h("div", { "class": "auth-card", "style": "flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;" },
-          h("section", { "class": "auth-form", "style": "min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;" },
-            h("form", { "onSubmit": $v.submit, "aria-labelledby": "t-login", "style": "width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);" },
+          h("section", { "class": "auth-form", "style": "min-height: 0; display: flex; align-items: flex-start; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;" },
+            h("form", { "onSubmit": $v.submit, "aria-labelledby": "t-login", "style": "width: 100%; max-width: 400px; margin: auto 0; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);" },
               h("h1", { "id": "t-login", "style": "margin: 0 0 4px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;" },
                 "Content de te revoir"
               ),
-              h("button", { "class": "sw-btn sw-btn-provider", "type": "button", "onClick": $v.closed },
+              h("button", { "class": "sw-btn sw-btn-provider", "type": "button", "onClick": $v.google, "disabled": $v.busy },
                 h("svg", { "width": "18", "height": "18", "viewBox": "0 0 48 48", "aria-hidden": "true" },
                   h("path", { "fill": "#FFC107", "d": "M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" }),
                   h("path", { "fill": "#FF3D00", "d": "M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" }),
@@ -82,11 +100,16 @@ export default class Connexion extends DCLogic {
                   "Mot de passe"
                 ),
                 h("input", { "class": "sw-input", "id": "a-pass", "name": "password", "type": "password", "required": true, "autocomplete": "current-password" }),
-                h("a", { "class": "sw-link-quiet", "href": "#", "style": "align-self: flex-end; font-size: 13px; margin-top: 2px;" },
+                h("a", { "class": "sw-link-quiet", "href": "#", "onClick": $v.forgot, "style": "align-self: flex-end; font-size: 13px; margin-top: 2px;" },
                   "Mot de passe oublié ?"
                 )
               ),
-              h("button", { "type": "submit", "class": "cta", "style": "align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              ($v.hasError) ? [
+                h("p", { "class": "auth-error", "role": "alert" },
+                  $t($v.error)
+                )
+              ] : null,
+              h("button", { "type": "submit", "class": "cta", "disabled": $v.busy, "aria-busy": $v.busy, "style": "align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Se connecter",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -94,13 +117,9 @@ export default class Connexion extends DCLogic {
                   )
                 )
               ),
-              ($v.showNotice) ? [
+              ($v.hasNotice) ? [
                 h("p", { "class": "auth-notice", "role": "status" },
-                  "L'espace membre n'est pas encore ouvert. ",
-                  h("a", { "class": "sw-link", "href": "/inscription" },
-                    "Crée ton compte"
-                  ),
-                  " pour être prévenu de l'ouverture."
+                  $t($v.notice)
                 )
               ] : null,
               h("p", { "style": "margin: 0; text-align: center; font-size: 14px; color: var(--ink-muted);" },
