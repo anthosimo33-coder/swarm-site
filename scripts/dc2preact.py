@@ -59,6 +59,24 @@ APP_PAGES = [
     ('AlertesA.dc.html', 'Alertes', 'a-ale', '/app/alertes', 'Alertes'),
     ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte'),
 ]
+# Version mobile (sous 860 px) des mêmes adresses : artboard M* -> (composant, préfixe CSS, adresse).
+# Une adresse sans version mobile garde l'écran desktop.
+APP_MOBILE_PAGES = [
+    ('MAccueil.dc.html', 'MAccueil', 'm-acc', '/app'),
+    ('MApps.dc.html', 'MApps', 'm-apps', '/app/apps'),
+    ('MFiche.dc.html', 'MFicheApp', 'm-fapp', '/app/apps/astra-ai'),
+    ('MVideo.dc.html', 'MVideo', 'm-vid', '/app/videos/learnwithjoel1'),
+    ('MFormats.dc.html', 'MFormats', 'm-fmts', '/app/formats'),
+    ('MFormatFiche.dc.html', 'MFicheFormat', 'm-ffmt', '/app/formats/ich-losche-das-in-2h'),
+    ('MCreateurs.dc.html', 'MCreateurs', 'm-crea', '/app/createurs'),
+    ('MCreateursCartes.dc.html', 'MCreateursCartes', 'm-creb', '/app/createurs/cartes'),
+    ('MCreateurFiche.dc.html', 'MFicheCreateur', 'm-fcre', '/app/createurs/zinedine-gsbb'),
+    ('MDossiers.dc.html', 'MDossiers', 'm-dos', '/app/dossiers'),
+    ('MDossier.dc.html', 'MDossier', 'm-dosb', '/app/dossiers/etudes'),
+    ('MAlertes.dc.html', 'MAlertes', 'm-ale', '/app/alertes'),
+    ('MCompte.dc.html', 'MCompte', 'm-cpt', '/app/compte'),
+]
+
 # Composants partagés, importés par <dc-import name="…"> (pas des routes) : fichier, composant, préfixe CSS.
 APP_COMPONENTS = [
     ('Palette.dc.html', 'Palette', 'a-pal'),
@@ -66,7 +84,12 @@ APP_COMPONENTS = [
     ('NouvelleAlerte.dc.html', 'NouvelleAlerte', 'a-nal'),
 ]
 APP_LINKS = {src: route for src, _, _, route, _ in APP_PAGES if route}
+APP_LINKS.update({src: route for src, _, _, route in APP_MOBILE_PAGES})
 APP_LINKS.update({
+    # Écrans d'interaction mobiles : s'il en reste un lien, il mène à l'écran hôte.
+    'MFiltres.dc.html': '/app/apps', 'MApercu.dc.html': '/app/apps/astra-ai', 'MCreerAlerte.dc.html': '/app/alertes',
+    'MRecherche.dc.html': '/app', 'MAbonnement.dc.html': '/app/compte', 'MConnexion.dc.html': '/app/deconnexion',
+
     'FormatsA.dc.html': '/app/formats',        # ancien écran Formats (restes de données), remplacé par FormatsB
     'ConnexionA.dc.html': '/app/deconnexion',  # « Se déconnecter » du compte : le routeur déconnecte puis renvoie à l'accueil du site
 })
@@ -340,8 +363,10 @@ export default class {name} extends DCLogic {{{cls_body}
 
 def write_app_routes():
     lines = ['// Généré par scripts/dc2preact.py — ne pas modifier à la main.',
-             '// Adresse de l\'app -> titre de l\'onglet et écran (chargé à la demande).', 'export const ROUTES = {']
-    prefixes = {name: prefix for _, name, prefix, *_ in APP_PAGES + APP_COMPONENTS}
+             '// Adresse de l\'app -> titre de l\'onglet, écran desktop (load) et, s\'il existe, écran mobile (loadMobile).',
+             'export const ROUTES = {']
+    prefixes = {name: prefix for _, name, prefix, *_ in APP_PAGES + APP_COMPONENTS + APP_MOBILE_PAGES}
+    mobile = {route: (name, prefix) for _, name, prefix, route in APP_MOBILE_PAGES}
 
     def css_of(name, seen=()):  # le CSS de l'écran et celui des composants qu'il importe
         out = [prefixes[name]]
@@ -352,7 +377,12 @@ def write_app_routes():
     for _, name, prefix, route, title in APP_PAGES:
         css = ', '.join(f"import('./styles/{x}.css')" for x in css_of(name))
         load = f"Promise.all([import('./pages/{name}.js'), {css}]).then(([m]) => m)"
-        lines.append(f"  '{route}': {{ title: {json.dumps(title, ensure_ascii=False)}, load: () => {load} }},")
+        extra = ''
+        if route in mobile:
+            mname = mobile[route][0]
+            mcss = ', '.join(f"import('./styles/{x}.css')" for x in css_of(mname))
+            extra = f", loadMobile: () => Promise.all([import('./pages/{mname}.js'), {mcss}]).then(([m]) => m)"
+        lines.append(f"  '{route}': {{ title: {json.dumps(title, ensure_ascii=False)}, load: () => {load}{extra} }},")
     lines.append('};')
     (ROOT / 'src' / 'app' / 'routes.js').write_text('\n'.join(lines) + '\n')
     print('src/app/routes.js')
@@ -365,4 +395,10 @@ if __name__ == '__main__':
         convert(src, name, prefix, 'app')
     for src, name, prefix, _, _ in APP_PAGES:
         convert(src, name, prefix, 'app')
+    for src, name, prefix, _ in APP_MOBILE_PAGES:
+        if (GROUPS['app']['src'] / src).exists():
+            convert(src, name, prefix, 'app')
+        else:
+            print(f'(mobile) app/{src} absent : l\'adresse garde l\'écran desktop')
+    APP_MOBILE_PAGES[:] = [m for m in APP_MOBILE_PAGES if (GROUPS['app']['src'] / m[0]).exists()]
     write_app_routes()

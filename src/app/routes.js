@@ -1,5 +1,5 @@
 // Généré par scripts/dc2preact.py — ne pas modifier à la main.
-// Adresse de l'app -> titre de l'onglet et écran (chargé à la demande).
+// Adresse de l'app -> titre de l'onglet, écran desktop (load) et, s'il existe, écran mobile (loadMobile).
 export const ROUTES = {
   '/app': { title: "Accueil", load: () => Promise.all([import('./pages/Accueil.js'), import('./styles/a-acc.css'), import('./styles/a-pal.css')]).then(([m]) => m) },
   '/app/apps': { title: "Apps", load: () => Promise.all([import('./pages/Apps.js'), import('./styles/a-apps.css'), import('./styles/a-ajd.css'), import('./styles/a-pal.css')]).then(([m]) => m) },

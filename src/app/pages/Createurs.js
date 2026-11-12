@@ -182,7 +182,7 @@ export default class Createurs extends DCLogic {
             )
           ),
           $h("div", { "style": "margin: 0 32px 48px; overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom));" },
-            $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1200px;" },
+            $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1050px;" },
               $h("thead", null,
                 $h("tr", null,
                   $h("th", { "style": "width: 44px; padding-left: 20px;" },
@@ -199,9 +199,6 @@ export default class Createurs extends DCLogic {
                   ),
                   $h("th", { "class": "sw-num", "style": "width: 110px;" },
                     "Vues médianes"
-                  ),
-                  $h("th", { "class": "sw-num", "style": "width: 150px;" },
-                    "Revenus par vidéo"
                   ),
                   $h("th", { "style": "width: 150px;" },
                     "Rythme"
@@ -270,11 +267,6 @@ export default class Createurs extends DCLogic {
                     $h("td", { "class": "sw-num" },
                       $h("span", { "style": "font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink);" },
                         $t(c?.med)
-                      )
-                    ),
-                    $h("td", { "class": "sw-num" },
-                      $h("span", { "style": "font-size: 13px; font-weight: 600; color: var(--ink);" },
-                        $t(c?.rev)
                       )
                     ),
                     $h("td", null,

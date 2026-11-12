@@ -558,7 +558,7 @@ return {};
                 ),
                 $h("div", { "class": "sw-tile" },
                   $h("span", { "class": "sw-tile-label" },
-                    "Comptes actifs"
+                    "Comptes qui la poussent"
                   ),
                   $h("span", { "class": "sw-tile-value" },
                     $t($v.pv?.acc)

@@ -239,7 +239,7 @@ export default class CreateursCartes extends DCLogic {
                       $t(c?.bio)
                     )
                   ),
-                  $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 0.85fr) minmax(0, 1.3fr); gap: 8px;" },
+                  $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;" },
                     $h("span", { "class": "sw-tile", "style": "padding: 10px 12px;" },
                       $h("span", { "class": "sw-tile-label" },
                         "Abonnés"
@@ -254,14 +254,6 @@ export default class CreateursCartes extends DCLogic {
                       ),
                       $h("span", { "class": "sw-tile-value", "style": "font-size: 17px;" },
                         $t(c?.med)
-                      )
-                    ),
-                    $h("span", { "class": "sw-tile", "style": "padding: 10px 12px;" },
-                      $h("span", { "class": "sw-tile-label" },
-                        "Par vidéo"
-                      ),
-                      $h("span", { "class": "sw-tile-value", "style": "font-size: 13px; line-height: 1.35; padding-top: 3px; white-space: nowrap;" },
-                        $t(c?.rev)
                       )
                     )
                   ),

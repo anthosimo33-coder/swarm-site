@@ -55,9 +55,9 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 
 <div style="margin: 0 32px 48px; overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom));">
-<table class="sw-table" style="table-layout: fixed; min-width: 1200px;">
+<table class="sw-table" style="table-layout: fixed; min-width: 1050px;">
 <thead><tr>
-<th style="width: 44px; padding-left: 20px;">#</th><th style="width: 306px;">Créateur</th><th style="width: 150px;">Pousse</th><th class="sw-num" style="width: 90px;">Abonnés</th><th class="sw-num" style="width: 110px;">Vues médianes</th><th class="sw-num" style="width: 150px;">Revenus par vidéo</th><th style="width: 150px;">Rythme</th><th style="width: 140px; padding-right: 20px;">Ses meilleures</th>
+<th style="width: 44px; padding-left: 20px;">#</th><th style="width: 306px;">Créateur</th><th style="width: 150px;">Pousse</th><th class="sw-num" style="width: 90px;">Abonnés</th><th class="sw-num" style="width: 110px;">Vues médianes</th><th style="width: 150px;">Rythme</th><th style="width: 140px; padding-right: 20px;">Ses meilleures</th>
 </tr></thead>
 <tbody>
 <sc-for list="{{rows}}" as="c" hint-placeholder-count="11">
@@ -67,7 +67,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <td><span style="display: inline-flex; align-items: center; gap: 8px;"><span class="sw-app-icon {{c.app.blank}}" style="width: 20px; height: 20px; border-radius: 6px;"><sc-if value="{{c.app.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{c.app.logo}}" alt=""></sc-if><sc-if value="{{c.app.nologo}}" hint-placeholder-val="{{false}}"><svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span><span style="display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 13px; font-weight: 600; color: var(--ink);">{{c.appName}}</span><span style="font-size: 11px; color: var(--ink-faint);">{{c.niche}}</span></span></span></td>
 <td class="sw-num"><span style="font-size: 14px; color: var(--ink-soft); font-weight: 500;">{{c.fans}}</span></td>
 <td class="sw-num"><span style="font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink);">{{c.med}}</span></td>
-<td class="sw-num"><span style="font-size: 13px; font-weight: 600; color: var(--ink);">{{c.rev}}</span></td>
+
 <td><span style="display: flex; flex-direction: column; gap: 3px;"><span style="display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--ink);"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{c.dot}};"></span>{{c.rythme}}</span><span style="font-size: 12px; color: var(--ink-faint);">{{c.last}}</span></span></td>
 <td style="padding-right: 20px;"><span style="display: flex; gap: 5px;"><sc-for list="{{c.cov}}" as="v" hint-placeholder-count="3"><span class="sw-video" style="display: block; width: 40px; border-radius: 8px; flex-shrink: 0;"><img class="sw-cover" src="{{v.src}}" alt=""><span class="sw-video-shade"></span><span style="position: absolute; left: 4px; bottom: 3px; font-size: 9px; font-weight: 700;">{{v.v}}</span></span></sc-for></span></td>
 </tr>

@@ -1,3 +1,5 @@
 /* Fond de l'app : la couleur des écrans (--surface), y compris sous un écran plus court
    que la fenêtre et pendant le chargement d'un écran. Jamais de blanc ni de bande. */
 html, body { margin: 0; background: #080B12; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Jamais de défilement horizontal de la page (iOS) ; clip et non hidden, pour garder les en-têtes sticky. */
+html, body { overflow-x: clip; max-width: 100%; }

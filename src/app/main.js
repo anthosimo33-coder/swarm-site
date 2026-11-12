@@ -14,6 +14,9 @@ import '../styles/ds/bundle.css';
 import './app.css';
 
 const HOME = '/app';
+// Sous 860 px, l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop.
+const MOBILE = window.matchMedia('(max-width: 860px)');
+const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
 const SIGN_OUT = '/app/deconnexion';
 const clean = (path) => (path.length > 1 ? path.replace(/\/+$/, '') : path);
 
@@ -30,6 +33,7 @@ function App() {
   const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : 'skip');
   const [path, setPath] = useState(clean(window.location.pathname));
   const [screen, setScreen] = useState(null);
+  const [mobile, setMobile] = useState(MOBILE.matches);
   const leaving = useRef(false);
 
   const leave = async () => {
@@ -74,10 +78,13 @@ function App() {
         }
       }
     };
+    const onWidth = (event) => setMobile(event.matches);
+    MOBILE.addEventListener('change', onWidth);
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKey);
     window.addEventListener('popstate', onPop);
     return () => {
+      MOBILE.removeEventListener('change', onWidth);
       document.removeEventListener('click', onClick);
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('popstate', onPop);
@@ -90,7 +97,7 @@ function App() {
   useEffect(() => {
     if (!screen || prefetched.current) return undefined;
     prefetched.current = true;
-    const timer = setTimeout(() => Object.values(ROUTES).forEach((route) => route.load().catch(() => {})), 1200);
+    const timer = setTimeout(() => Object.values(ROUTES).forEach((route) => loaderOf(route, MOBILE.matches)().catch(() => {})), 1200);
     return () => clearTimeout(timer);
   }, [screen]);
 
@@ -121,11 +128,11 @@ function App() {
     }
     if (!known) return undefined;
     let current = true;
-    route.load().then(
+    loaderOf(route, mobile)().then(
       (module) => {
         if (!current) return;
         document.title = `${route.title} · Swarm`;
-        setScreen({ path, Page: module.default });
+        setScreen({ path, mobile, Page: module.default });
       },
       () => {
         // Fichier de l'écran introuvable (un déploiement est passé depuis l'ouverture) : on recharge.
@@ -135,11 +142,11 @@ function App() {
     return () => {
       current = false;
     };
-  }, [path, known]);
+  }, [path, known, mobile]);
 
   // Rien tant qu'on ne sait pas qui est là : pas d'écran qui clignote.
   if (!user || !screen) return null;
-  return h(screen.Page, { key: screen.path, user, signOut: leave });
+  return h(screen.Page, { key: `${screen.mobile ? 'm' : 'd'}${screen.path}`, user, signOut: leave });
 }
 
 mount(h(App, null));
