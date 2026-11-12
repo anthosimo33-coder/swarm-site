@@ -1,5 +1,5 @@
 /* Généré par scripts/dc2preact.py depuis design/TarifsMobile.dc.html */
-body{margin:0;background:#05070C}
+html,body{overflow-x:clip;max-width:100%}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}body{margin:0;background:#05070C}
 a{color:#111216}a:hover{color:#0B6FE0}
 .dk a{color:#9AA3B2}.dk a:hover{color:#FFFFFF}
 .tap{transition:transform 0.15s ease}

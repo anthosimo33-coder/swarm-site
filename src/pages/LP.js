@@ -705,7 +705,7 @@ export default class LP extends DCLogic {
               )
             )
           ),
-          h("div", { "style": "position: relative; background: radial-gradient(900px 420px at 50% 40%, rgba(11,111,224,0.07), transparent 70%), #FAFAFA; border-top: 1px solid #E6E6EA; border-bottom: 1px solid #E6E6EA; padding: 24px 0 120px;" },
+          h("div", { "style": "position: relative; background: radial-gradient(900px 420px at 50% 40%, rgba(11,111,224,0.07), transparent 70%), #FAFAFA; border-top: 1px solid #E6E6EA; border-bottom: 1px solid #E6E6EA; padding: 24px 0 72px;" },
             h("div", { "aria-hidden": "true", "style": "position: relative; height: 520px; perspective: 1400px; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%); mask-image: linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);" },
               h("div", { "style": "position: absolute; inset: 0; transform-style: preserve-3d;" },
                 ($l($v.arc)).map((v) => [
@@ -732,22 +732,6 @@ export default class LP extends DCLogic {
                     )
                   )
                 ])
-              )
-            ),
-            h("div", { "role": "status", "style": "position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: #FFFFFF; border: 1px solid #E6E6EA; border-radius: 18px; padding: 12px 18px 12px 12px; box-shadow: 0 20px 50px rgba(16,24,40,0.12); white-space: nowrap;" },
-              h("span", { "style": "width: 38px; height: 38px; border-radius: 11px; background: #EEF4FF; display: inline-flex; align-items: center; justify-content: center;" },
-                h("span", { "style": `width: 9px; height: 9px; border-radius: 50%; background: ${$t($v.blue)}; animation: lp-pulse 1.8s infinite;` })
-              ),
-              h("span", { "style": "display: flex; flex-direction: column;" },
-                h("span", { "style": "font-size: 12px; color: #5F656E;" },
-                  "Décortiquée · ", $t($v.cur?.app)
-                ),
-                h("span", { "style": "font-size: 16px; font-weight: 700;" },
-                  $t($v.cur?.label), " ",
-                  h("span", { "style": `color: ${$t($v.blue)};` },
-                    $t($v.cur?.value)
-                  )
-                )
               )
             )
           )
