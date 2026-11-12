@@ -827,7 +827,7 @@ export default class LP extends DCLogic {
           h("div", { "style": "position: relative; max-width: 1320px; margin: 0 auto; background: rgba(8,11,18,0.92); border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-top: 1px solid rgba(255,255,255,0.06); box-sizing: border-box;" },
             h("div", { "aria-hidden": "true", "style": "position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px); background-size: 64px 64px; -webkit-mask-image: radial-gradient(70% 60% at 70% 30%, #000, transparent); mask-image: radial-gradient(70% 60% at 70% 30%, #000, transparent); pointer-events: none;" }),
             h("section", { "id": "faq", "style": "position: relative; padding: 112px 72px 120px; display: flex; flex-wrap: wrap; gap: 56px 80px; align-items: flex-start;" },
-              h("div", { "style": "flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 22px;" },
+              h("div", { "style": "flex: 1 1 470px; min-width: 0; display: flex; flex-direction: column; gap: 22px;" },
                 h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 0.04em; color: #9AA3B2;" },
                   h("span", { "style": "color: #4C9AFF;" },
                     "["
