@@ -14,12 +14,12 @@ export default class Connexion extends DCLogic {
     };
     const tiles = [
       ['apps', '+1 000', 'apps suivies'],
-      ['createurs', '+100 000', 'comptes passés au crible chaque jour'],
-      ['marche', 'Tous', 'les marchés, toutes les langues'],
+      ['createurs', '+100 000', 'comptes passés au crible'],
       ['tendance', '7,5 M vues', 'Luv or Pop, repérée à H+26'],
       ['radar', '2 333×', 'une vidéo d’Astra AI face à sa normale'],
-      ['alertes', '+69 comptes', 'dans le réseau de Love8, en une recherche']
-    ].map((t, i) => ({ d: ic[t[0]], v: t[1], l: t[2], delay: (0.15 + i * 0.08).toFixed(2) + 's' }));
+      ['marche', 'Tous', 'les marchés, toutes les langues'],
+      ['alertes', '+69 comptes', 'dans le réseau de Love8']
+    ].map((t, i) => ({ d: ic[t[0]], v: t[1], l: t[2], cls: i >= 4 ? 'auth-x1' : '', delay: (0.15 + i * 0.08).toFixed(2) + 's' }));
     const st = this.state || {};
     const closed = () => this.setState({ notice: true });
     return {
@@ -33,9 +33,9 @@ export default class Connexion extends DCLogic {
   render() {
     const $v = this.renderVals();
     return [
-      h("div", { "class": "sw sw-ground auth-root", "style": "min-height: 100vh; box-sizing: border-box; padding: 32px 24px 48px; display: flex; flex-direction: column; align-items: center; gap: 28px; color: var(--ink); font-family: var(--font-body);" },
-        h("a", { "class": "sw-logo", "href": "/", "aria-label": "Swarm, page d'accueil" },
-          h("svg", { "class": "sw-logo-mark on-dark", "width": "30", "height": "30", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "width: 30px; height: 30px;" },
+      h("div", { "class": "sw sw-ground auth-root", "style": "height: 100vh; height: 100dvh; overflow: hidden; box-sizing: border-box; padding: clamp(16px, 3vh, 32px) 24px; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vh, 24px); color: var(--ink); font-family: var(--font-body);" },
+        h("a", { "class": "sw-logo", "href": "/", "aria-label": "Swarm, page d'accueil", "style": "flex-shrink: 0;" },
+          h("svg", { "class": "sw-logo-mark on-dark", "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "width: 28px; height: 28px;" },
             h("circle", { "class": "d-a", "cx": "5", "cy": "8", "r": "2.3" }),
             h("circle", { "class": "d-a", "cx": "11", "cy": "5", "r": "2.3" }),
             h("circle", { "class": "d-a", "cx": "17", "cy": "8", "r": "2.3" }),
@@ -44,14 +44,14 @@ export default class Connexion extends DCLogic {
             h("circle", { "class": "d-b", "cx": "19", "cy": "17", "r": "2.3" }),
             h("circle", { "class": "d-b", "cx": "11", "cy": "20", "r": "2.3" })
           ),
-          h("span", { "class": "sw-wordmark", "style": "font-size: 25px;" },
+          h("span", { "class": "sw-wordmark", "style": "font-size: 24px;" },
             "swarm"
           )
         ),
-        h("div", { "class": "auth-card", "style": "width: 100%; max-width: 1320px; box-sizing: border-box; padding: 20px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 20px;" },
-          h("section", { "class": "auth-form", "style": "display: flex; align-items: center; justify-content: center; padding: 56px 40px;" },
-            h("form", { "onSubmit": $v.submit, "style": "width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 22px;", "aria-labelledby": "t-login" },
-              h("h1", { "id": "t-login", "style": "margin: 0 0 6px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;" },
+        h("div", { "class": "auth-card", "style": "flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;" },
+          h("section", { "class": "auth-form", "style": "min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;" },
+            h("form", { "onSubmit": $v.submit, "aria-labelledby": "t-login", "style": "width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);" },
+              h("h1", { "id": "t-login", "style": "margin: 0 0 4px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;" },
                 "Content de te revoir"
               ),
               h("button", { "class": "sw-btn sw-btn-provider", "type": "button", "onClick": $v.closed },
@@ -64,7 +64,7 @@ export default class Connexion extends DCLogic {
                 "Se connecter avec Google"
               ),
               h("div", { "class": "sw-divider" },
-                "Ou se connecter avec"
+                "Ou avec ton e-mail"
               ),
               h("div", { "class": "sw-field" },
                 h("label", { "class": "sw-label", "for": "a-mail" },
@@ -77,20 +77,20 @@ export default class Connexion extends DCLogic {
                   "Mot de passe"
                 ),
                 h("input", { "class": "sw-input", "id": "a-pass", "name": "password", "type": "password", "required": true, "autocomplete": "current-password" }),
-                h("a", { "class": "sw-link-quiet", "href": "#", "style": "align-self: flex-end; font-size: 13px; margin-top: 4px;" },
+                h("a", { "class": "sw-link-quiet", "href": "#", "style": "align-self: flex-end; font-size: 13px; margin-top: 2px;" },
                   "Mot de passe oublié ?"
                 )
               ),
-              h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg sw-btn-block", "type": "submit", "style": "margin-top: 6px; justify-content: center; cursor: pointer; font-family: inherit;" },
+              h("button", { "type": "submit", "class": "cta", "style": "align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: inherit; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Se connecter",
-                h("span", { "class": "sw-btn-tile" },
-                  h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                  h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                    h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               ),
               ($v.showNotice) ? [
-                h("p", { "class": "auth-notice", "role": "status", "style": "margin: 0;" },
+                h("p", { "class": "auth-notice", "role": "status" },
                   "L'espace membre n'est pas encore ouvert. ",
                   h("a", { "class": "sw-link", "href": "/inscription" },
                     "Crée ton compte"
@@ -98,7 +98,7 @@ export default class Connexion extends DCLogic {
                   " pour être prévenu de l'ouverture."
                 )
               ] : null,
-              h("p", { "style": "margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--ink-muted);" },
+              h("p", { "style": "margin: 0; text-align: center; font-size: 14px; color: var(--ink-muted);" },
                 "Pas encore de compte ? ",
                 h("a", { "class": "sw-link", "href": "/inscription" },
                   "En créer un"
@@ -106,36 +106,34 @@ export default class Connexion extends DCLogic {
               )
             )
           ),
-          h("section", { "class": "auth-side", "aria-label": "Ce que suit Swarm", "style": "position: relative; overflow: hidden; border-radius: 24px; background: var(--ground); border: 1px solid var(--line); padding: 64px 56px; display: flex; flex-direction: column; gap: 44px;" },
+          h("section", { "class": "auth-side", "aria-label": "Ce que suit Swarm", "style": "position: relative; min-height: 0; overflow: hidden; border-radius: 24px; background: var(--ground); border: 1px solid var(--line); padding: clamp(24px, 5vh, 56px) clamp(28px, 4vw, 56px); display: flex; flex-direction: column; justify-content: center; gap: clamp(16px, 3.4vh, 36px);" },
             h("div", { "aria-hidden": "true", "class": "sw-dots-bg", "style": "position: absolute; inset: 0; -webkit-mask-image: radial-gradient(80% 70% at 70% 20%, #000, transparent); mask-image: radial-gradient(80% 70% at 70% 20%, #000, transparent);" }),
             h("div", { "aria-hidden": "true", "style": "position: absolute; right: -180px; top: -200px; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.30), transparent); animation: sw-drift 16s ease-in-out infinite;" }),
-            h("h2", { "class": "sw-enter", "style": "position: relative; margin: 0; max-width: 560px; font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 700; letter-spacing: -0.05em; color: var(--ink);" },
+            h("h2", { "class": "sw-enter", "style": "position: relative; margin: 0; max-width: 560px; font-family: var(--font-display); font-size: clamp(34px, 5.4vh, 54px); line-height: 1.04; font-weight: 700; letter-spacing: -0.05em; color: var(--ink);" },
               "Bon retour. ",
               h("span", { "style": "color: var(--accent);" },
                 "Tout est comme tu l'as laissé."
               )
             ),
-            h("div", { "style": "position: relative; display: flex; flex-direction: column; gap: 12px;" },
-              h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;" },
-                ($l($v.tiles)).map((t) => [
-                  h("div", { "class": "sw-card sw-enter", "style": `padding: 20px 22px; border-radius: 20px; display: flex; flex-direction: column; gap: 14px; animation-delay: ${$t(t?.delay)};` },
-                    h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--accent);" },
-                      h("path", { "d": t?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            h("div", { "style": "position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;" },
+              ($l($v.tiles)).map((t) => [
+                h("div", { "class": `sw-card sw-enter ${$t(t?.cls)}`, "style": `padding: clamp(12px, 1.9vh, 20px) clamp(14px, 1.6vw, 22px); border-radius: 18px; display: flex; flex-direction: column; gap: clamp(8px, 1.3vh, 14px); animation-delay: ${$t(t?.delay)};` },
+                  h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--accent);" },
+                    h("path", { "d": t?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  h("span", { "style": "display: flex; flex-direction: column; gap: 2px;" },
+                    h("span", { "class": "sw-stat", "style": "font-size: clamp(20px, 3.1vh, 28px);" },
+                      $t(t?.v)
                     ),
-                    h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-                      h("span", { "class": "sw-stat", "style": "font-size: 28px;" },
-                        $t(t?.v)
-                      ),
-                      h("span", { "style": "font-size: 14px; color: var(--ink-muted);" },
-                        $t(t?.l)
-                      )
+                    h("span", { "style": "font-size: 14px; line-height: 1.4; color: var(--ink-muted);" },
+                      $t(t?.l)
                     )
                   )
-                ])
-              ),
-              h("span", { "class": "sw-calc", "style": "position: relative;" },
-                "Trois derniers : exemples relevés par le Radar entre le 7 et le 12/11."
-              )
+                )
+              ])
+            ),
+            h("span", { "class": "sw-calc auth-x2", "style": "position: relative;" },
+              "Exemples relevés par le Radar entre le 7 et le 12/11."
             )
           )
         )
