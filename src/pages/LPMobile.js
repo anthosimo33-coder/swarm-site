@@ -267,17 +267,17 @@ export default class LPMobile extends DCLogic {
             h("span", { "style": "font-size: 15px; color: #4A4F57;" },
               "Toutes les plateformes incluses"
             ),
-            h("div", { "style": "display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: #0E0F12;" },
-              h("span", { "style": "display: inline-flex; align-items: center; gap: 7px;" },
-                h("svg", { "width": "20", "height": "20", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+            h("div", { "style": "display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 14px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: #0E0F12; white-space: nowrap;" },
+              h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                h("svg", { "width": "18", "height": "18", "viewbox": "0 0 24 24", "aria-hidden": "true" },
                   h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#25F4EE", "transform": "translate(-0.7 -0.7)" }),
                   h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#FE2C55", "transform": "translate(0.7 0.7)" }),
                   h("path", { "d": "M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z", "fill": "#0E0F12" })
                 ),
                 "TikTok"
               ),
-              h("span", { "style": "display: inline-flex; align-items: center; gap: 7px;" },
-                h("svg", { "width": "20", "height": "20", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+              h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                h("svg", { "width": "18", "height": "18", "viewbox": "0 0 24 24", "aria-hidden": "true" },
                   h("defs", null,
                     h("lineargradient", { "id": "igM", "x1": "0", "y1": "1", "x2": "1", "y2": "0" },
                       h("stop", { "offset": "0%", "stop-color": "#FEDA75" }),
@@ -292,8 +292,8 @@ export default class LPMobile extends DCLogic {
                 ),
                 "Instagram"
               ),
-              h("span", { "style": "display: inline-flex; align-items: center; gap: 7px;" },
-                h("svg", { "width": "22", "height": "22", "viewbox": "0 0 24 24", "aria-hidden": "true" },
+              h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                h("svg", { "width": "20", "height": "20", "viewbox": "0 0 24 24", "aria-hidden": "true" },
                   h("rect", { "x": "2", "y": "5", "width": "20", "height": "14", "rx": "4.5", "fill": "#FF0033" }),
                   h("path", { "d": "M10 9l5.2 3-5.2 3z", "fill": "#FFFFFF" })
                 ),
