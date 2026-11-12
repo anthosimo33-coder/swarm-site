@@ -5,7 +5,7 @@ Landing page et page tarifs de Swarm (nom provisoire) : les apps et les formats 
 - `/` : la landing page
 - `/tarifs` : la page tarifs (un seul plan, Pro)
 - `/connexion` et `/inscription` : les écrans retenus sur le canevas de l'app (Connexion A, Inscription A), rendus responsives, branchés sur un vrai backend (voir « Comptes »)
-- `/compte` : la page Mon compte, réservée aux personnes connectées
+- `/app/…` : l'app, réservée aux personnes connectées (voir « L'app »)
 
 Chaque page existe en version desktop et en version mobile. La version mobile s'affiche sous 860 px de large, et la page bascule si la fenêtre change de taille (`src/runtime.js`, `Responsive`).
 
@@ -21,7 +21,6 @@ Les pages sont dessinées sur le canevas de design (artboards `LP`, `LPMobile`, 
 | `design/TarifsMobile.dc.html` | `src/pages/TarifsMobile.js` | `src/styles/tfm.css` |
 | `design/Connexion.dc.html` | `src/pages/Connexion.js` | `src/styles/cx.css` + design system |
 | `design/Inscription.dc.html` | `src/pages/Inscription.js` | `src/styles/ins.css` + design system |
-| `design/Compte.dc.html` | `src/pages/Compte.js` | `src/styles/cpt.css` + design system |
 
 Les fichiers de `src/pages` et `src/styles` sont générés : on ne les modifie pas à la main. Pour changer une page, on modifie l'artboard, on recopie le `.dc.html` dans `design/`, puis :
 
@@ -36,7 +35,7 @@ Les images (logos des apps, couvertures des vidéos) sont envoyées sur le canev
 Ce que fait la conversion :
 - les adresses d'images `/_blob/<id>` du canevas deviennent `/media/<fichier>` ;
 - les liens entre artboards deviennent des routes (`/`, `/tarifs`), et depuis les tarifs, les liens vers la LP pointent sur la bonne section ;
-- « Trouver mon app » (`#quiz`) et « Passer Pro » (`#paiement`) mènent à `/inscription`, « Se connecter » (`#connexion`) à `/connexion`, et `Compte.dc.html` à `/compte` ;
+- « Trouver mon app » (`#quiz`) et « Passer Pro » (`#paiement`) mènent à `/inscription`, « Se connecter » (`#connexion`) à `/connexion` ;
 - la barre « Je veux lancer… » du hero est un vrai champ : la recherche part vers `/inscription?q=…`, qui la rappelle au-dessus du formulaire ;
 - les keyframes sont préfixées par page (`lp-`, `lpm-`, `tf-`, `tfm-`) pour qu'elles ne se marchent pas dessus.
 
@@ -49,13 +48,11 @@ Le backend est un projet Convex à part, « swarm » (dossier `convex/`), sans l
 Ce que fait le backend :
 - `convex/auth.ts` : e-mail + mot de passe (8 caractères minimum, e-mail ramené en minuscules) et Google. Le fournisseur mot de passe est écrit sur l'API publique de Convex Auth pour que les erreurs (identifiants incorrects, compte déjà existant, trop de tentatives) arrivent au site sous forme de codes (`convex/authErrors.ts`) : Convex masque en production le message des erreurs ordinaires. Une inscription avec un e-mail déjà pris ET le bon mot de passe connecte la personne.
 - Google ne s'allume que si `AUTH_GOOGLE_ID` et `AUTH_GOOGLE_SECRET` sont posées sur le déploiement ; sans elles, le bouton affiche un message.
-- `convex/users.ts` : `viewer`, la personne connectée (page Mon compte).
+- `convex/users.ts` : `viewer`, la personne connectée (e-mail, et nom quand Google le donne).
 
-Côté site, `src/auth.js` fait le pont : les pages générées reçoivent `auth` (connexion, inscription) ou `account` (Mon compte) par leurs props. Sur le canevas, ces props manquent et les pages gardent leur comportement de maquette.
+Côté site, `src/auth.js` fait le pont : les formulaires générés reçoivent `auth` par leurs props. Sur le canevas, il manque et une note de maquette s'affiche.
 
-Parcours :
-- inscription réussie → `/tarifs` ; connexion réussie → `/compte` ; déjà connecté sur `/connexion` ou `/inscription` → `/compte` ;
-- `/compte` sans session → `/connexion` ; « Se déconnecter » → `/`.
+Parcours : inscription ou connexion réussie → `/app` ; déjà connecté sur `/connexion` ou `/inscription` → `/app` ; `/app/…` sans session → `/connexion` ; `/app/deconnexion` → déconnexion puis `/`. Aucun paiement n'est demandé.
 
 Clés de signature des sessions : `node scripts/setup-auth-env.mjs` (dev) ou `node scripts/setup-auth-env.mjs --prod https://swarm-site-one.vercel.app`. Les valeurs ne sont jamais affichées ; relancer change les clés et déconnecte tout le monde.
 
@@ -69,6 +66,14 @@ Clés de signature des sessions : `node scripts/setup-auth-env.mjs` (dev) ou `no
 ### Déployer le backend
 
 Vercel construit le site avec `scripts/vercel-build.mjs`. Si `CONVEX_DEPLOY_KEY` (clé de déploiement de production, tableau de bord Convex → Settings) est réglée dans Vercel, pour l'environnement Production seulement, chaque push sur `main` déploie aussi le backend. Sans elle, le backend se déploie à la main depuis ce dossier, avant de pousser un site qui en dépend : `npx convex deploy --env-file .env.local` (cible : la production du projet « swarm »).
+
+## L'app
+
+Les écrans retenus sur le canevas de l'app (https://claude.ai/artifact/FLjy3nFCy6GKVLEnokWv3u) sont copiés dans `design/app/`, leurs images dans `public/media/app/` (`design/app/media.json` fait le lien avec les `/_blob/…` du canevas). `npm run gen` les convertit dans `src/app/pages/` et écrit `src/app/routes.js` depuis la table `APP_PAGES` de `scripts/dc2preact.py` (artboard → adresse → titre de l'onglet). Un lien vers un artboard sans adresse fait échouer la conversion.
+
+`app.html` + `src/app/main.js` : une seule page (Vercel réécrit `/app/…` vers `app.html`). La session n'est vérifiée qu'une fois ; les liens internes changent d'écran sans recharger ; chaque écran se charge à la demande. Les écrans reçoivent `user` ({ prenom, email, initiale }) et `signOut` par leurs props.
+
+Données : celles des maquettes, c'est-à-dire le relevé du Radar au 12/11, figé. Chaque fiche (app, format, créateur, vidéo, dossier) montre un exemple. Pas encore de version mobile.
 
 ## Lancer en local
 
@@ -86,7 +91,8 @@ Vercel, projet relié à ce dépôt : chaque push sur `main` déploie en product
 
 - La vidéo motion sous le hero (l'encart 16:9 l'attend).
 - « Mot de passe oublié » : il faut un service d'envoi d'e-mails (le lien affiche pour l'instant que la réinitialisation n'est pas ouverte).
-- L'espace membre : `/compte` ne montre que l'e-mail et l'abonnement (aucun tant que le paiement n'existe pas).
+- Les données de l'app en direct (aujourd'hui, le relevé figé du 12/11) et une fiche par app, format, créateur.
+- La version mobile de l'app.
 - Le paiement et les pages légales (`#cgv`, `#confidentialite`, `#mentions`, `#contact`).
 - Les avis : emplacements entre crochets, à remplacer par de vrais avis.
 - Les couvertures de vidéos montrent des créateurs tiers et les logos sont des marques : à valider (droit à l'image, usage des marques) avant d'en faire de la publicité.

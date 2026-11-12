@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Swarm, vidéo décortiquée : le lecteur une par une</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div class="sw" style="position: relative; min-height: 1060px; background: var(--ground); color: var(--ink); font-family: var(--font-body);">
+<div aria-hidden="true" style="position: absolute; left: -10%; top: -20%; width: 900px; height: 700px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.20), transparent);"></div>
+
+<section role="dialog" aria-labelledby="va-t" style="position: absolute; inset: 20px; display: flex; flex-direction: column; border-radius: 28px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); overflow: hidden;">
+<header style="display: flex; align-items: center; gap: 20px; padding: 18px 24px; border-bottom: 1px solid var(--line);">
+<h1 id="va-t" style="margin: 0; font-size: 17px; font-weight: 700; white-space: nowrap;">Regarder une par une</h1>
+<span style="font-family: var(--font-mono); font-size: 13px; color: var(--ink-faint); white-space: nowrap;">1 sur 14</span>
+<span aria-hidden="true" style="flex: 1; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden;"><span style="display: block; width: 7%; height: 4px; background: var(--accent); border-radius: 2px;"></span></span>
+<span style="display: flex; gap: 6px;"><button class="sw-btn sw-btn-icon" type="button" aria-label="Vidéo précédente" style="width: 40px; height: 40px; background: var(--track);"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button class="sw-btn sw-btn-icon" type="button" aria-label="Vidéo suivante" style="width: 40px; height: 40px; background: var(--tab-on); color: var(--ink);"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button class="sw-btn sw-btn-icon" type="button" aria-label="Fermer" style="width: 40px; height: 40px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button></span>
+</header>
+
+<div style="flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 300px; gap: 28px; padding: 24px;">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<div class="sw-video t-umber" style="border-radius: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
+<img class="sw-cover" src="/_blob/ca1fa398c68488e3e076343e789d6194" alt="POV: tienes EXAMEN ORAL y no has estudiado NADA">
+<span class="sw-video-shade"></span>
+<span style="position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4); display: inline-flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5v7l5.5-3.5z" fill="#FFFFFF"></path></svg></span>
+<div style="position: absolute; left: 14px; right: 14px; bottom: 14px; display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11px; color: #E4E7EC;"><svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5v7l5.5-3.5z" fill="#FFFFFF"></path></svg><span style="flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.25); overflow: hidden;"><span class="sw-video-bar" style="position: static; display: block; height: 3px; animation-duration: 49s;"></span></span><span>0:49</span></div>
+</div>
+<a class="sw-link" href="#" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Ouvrir sur TikTok</a>
+</div>
+
+<div style="min-width: 0; display: flex; flex-direction: column; gap: 18px; overflow: hidden;">
+<div style="display: flex; gap: 6px; flex-wrap: wrap;"><a class="sw-badge" href="FicheA.dc.html" style="text-decoration: none; color: var(--ink);">Astra AI</a><span class="sw-badge">Espagne</span><span class="sw-badge">Publiée le 08/11</span><span class="sw-badge">0:49</span></div>
+<span style="font-size: 15px; color: var(--ink-muted);"><span style="color: var(--ink); font-weight: 700;">@learnwithjoel1</span> · 12,2 k abonnés · fait d'habitude 28,5 k vues</span>
+<div class="sw-card" style="padding: 22px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 24px;">
+<div style="display: flex; flex-direction: column; gap: 6px;">
+<span style="font-size: 13px; color: var(--ink-muted);">Pourquoi elle sort du lot</span>
+<span style="align-self: flex-start; padding: 6px 14px; border-radius: 14px; background: linear-gradient(180deg, var(--blue-400), var(--blue-600)); font-family: var(--font-display); font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.03em; box-shadow: var(--glow-rest);">65×</span>
+<span style="font-size: 14px; color: var(--ink-muted);">sa normale</span>
+<span style="margin-top: 10px; font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.03em;">1,87 M vues</span>
+<span style="font-size: 13px; color: var(--ink-faint);">en 92 heures · 154× ses abonnés</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<svg viewBox="0 0 440 180" width="100%" height="180" role="img" aria-label="Vues : 1,36 M à H+52, 1,53 M à H+67, 1,87 M à H+92">
+<line x1="40" y1="150" x2="440" y2="150" stroke="rgba(255,255,255,0.14)"></line><line x1="40" y1="80" x2="440" y2="80" stroke="rgba(255,255,255,0.06)"></line><line x1="40" y1="10" x2="440" y2="10" stroke="rgba(255,255,255,0.06)"></line>
+<text x="0" y="154" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">0</text><text x="0" y="84" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">1 M</text><text x="0" y="14" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">2 M</text>
+<path d="M40 150 L266 54.9 L331 42.7 L440 19.1" fill="none" stroke="#4C9AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="600" style="animation: sw-draw 6s ease-in-out infinite;"></path>
+<circle cx="266" cy="54.9" r="4.5" fill="#0D111A" stroke="#4C9AFF" stroke-width="2"></circle><circle cx="331" cy="42.7" r="4.5" fill="#0D111A" stroke="#4C9AFF" stroke-width="2"></circle><circle cx="440" cy="19.1" r="5.5" fill="#4C9AFF"></circle>
+<text x="266" y="174" text-anchor="middle" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">H+52</text><text x="331" y="174" text-anchor="middle" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">H+67</text><text x="436" y="174" text-anchor="end" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">H+92</text>
+</svg>
+<span style="font-size: 14px; font-weight: 600;">+38 % entre H+52 et H+92</span>
+<span style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 10px; border-top: 1px solid var(--line);"><span style="font-size: 13px; color: var(--ink-muted);">Revenus estimés de la vidéo</span><span style="font-family: var(--font-display); font-size: 20px; font-weight: 700; white-space: nowrap;"><span style="font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);">Entre </span>4,7<span style="font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);"> et </span>6,5 k€</span></span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column;">
+<span style="font-size: 15px; font-weight: 700; padding-bottom: 6px;">Ce qu'elle fait</span>
+<sc-for list="{{facts}}" as="f" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 14px;"><span style="color: var(--ink-faint);">{{f.k}}</span><span style="color: var(--ink-soft); line-height: 1.5;">{{f.v}}</span></div>
+</sc-for>
+</div>
+</div>
+
+<aside aria-label="Ensuite" style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+<span style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);">Ensuite</span>
+<sc-for list="{{next}}" as="n" hint-placeholder-count="4">
+<a href="#" style="display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--row-hover); text-decoration: none; color: var(--ink);">
+<span class="sw-video {{n.t}}" style="display: block; width: 58px; border-radius: 10px;"><img class="sw-cover" src="{{n.src}}" alt=""></span>
+<span style="display: flex; flex-direction: column; gap: 6px; min-width: 0;"><span class="sw-badge sw-badge-solid" style="align-self: flex-start; height: 22px; font-size: 11px;">{{n.x}}</span><span style="font-size: 13px; font-weight: 600; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{n.hook}}</span><span style="font-size: 11px; color: var(--ink-faint);">{{n.app}} · {{n.v}}</span></span>
+</a>
+</sc-for>
+</aside>
+</div>
+
+<footer style="display: flex; align-items: center; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.02);">
+<span style="display: inline-flex; align-items: center; gap: 8px;"><button class="sw-btn sw-btn-icon" type="button" aria-label="Passer cette vidéo" title="Passer" style="background: var(--track);"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button><span style="font-size: 13px; color: var(--ink-muted);">Passer</span><span class="sw-kbd" style="height: 22px;">P</span></span>
+<span aria-hidden="true" style="width: 1px; height: 24px; background: var(--line);"></span>
+<span style="display: inline-flex; align-items: center; gap: 8px;"><button class="sw-btn sw-btn-icon" type="button" onClick="{{toggleKeep}}" aria-pressed="{{kept}}" aria-label="Garder cette vidéo" title="Garder" style="background: {{keepBg}}; color: {{keepInk}};"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-3.5L7 20z" fill="{{keepFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg></button><span style="font-size: 13px; color: {{keepInk}};">{{keepLabel}}</span><span class="sw-kbd" style="height: 22px;">G</span></span>
+<button class="sw-btn sw-btn-primary" type="button" onClick="{{copy}}" style="margin-left: 12px;">{{copyLabel}}<span class="sw-btn-tile"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+<span style="margin-left: auto;"></span>
+<a class="sw-more" href="FicheA.dc.html" style="font-size: 14px;">Voir l'app Astra AI<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
+</footer>
+
+<sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+<div class="sw-toast" role="status" style="position: absolute; left: calc(50% - 170px); bottom: 92px;"><span class="sw-toast-ico"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span><span class="sw-toast-kicker">Dans le presse-papiers</span><span class="sw-toast-text">Hook, structure, son et légende copiés</span></span></div>
+</sc-if>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = this.state || {};
+    const kept = !!st.kept;
+    const copied = !!st.copied;
+    const facts = [
+      ['Texte à l’écran', '« POV: tienes EXAMEN ORAL y no has estudiado NADA », puis « la aplicación que uso es Astra Ai »'],
+      ['Ce qui est dit', 'Un oral en visio. Elle fait répéter la question, « que se ha cortado », puis répond sans faute sur la glycolyse.'],
+      ['Son', 'original sound - learnwithjoel1'],
+      ['Légende', '« OTRO EXAMEN APROBADO, así de fácil » #studyhacks #buenasnotas #examenes'],
+      ['Réactions', '52,6 k j’aime · 3,2 k enregistrements · 846 partages · 325 commentaires']
+    ].map((f) => ({ k: f[0], v: f[1] }));
+    const next = [['t-navy', '2 333×', 'TKA SD kelas 6 persiapannya bisa dimulai disini', 'Astra AI', '2,0 M'], ['t-pine', '1 226×', 'Mình sẽ xoá vid này trong 24h nữa', 'Astra AI', '809 k'], ['t-violet', '455×', 'Bí mật giúp bạn học giỏi hơn đứa mình ghét', 'Astra AI', '1,2 M'], ['t-plum', '100×', 'Imagine being in a relationship where you stop telling your partner…', 'RecentFollow', '1,2 M']]
+      .map((n, i) => ({ t: n[0], x: n[1], hook: n[2], app: n[3], v: n[4], src: ["/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4", "/_blob/8a6c2da5244cd29c8c4935f8ddb5e5c5", "/_blob/2010c321b827a0e032d25e98d057eca3", "/_blob/608419d1efd84ba7895e44ce6290cd99"][i] }));
+    return {
+      facts, next, kept: kept ? 'true' : 'false',
+      keepLabel: kept ? 'Gardée' : 'Garder',
+      keepEdge: kept ? 'var(--accent-edge)' : 'var(--line)', keepBg: kept ? 'var(--accent-soft)' : 'var(--track)', keepInk: kept ? 'var(--accent)' : 'var(--ink-muted)', keepFill: kept ? 'currentColor' : 'none',
+      toggleKeep: () => this.setState({ kept: !kept }),
+      copyLabel: copied ? 'Format copié' : 'Copier le format',
+      toast: copied,
+      copy: () => { this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2600); }
+    };
+  }
+}
+</script>
+</body>
+</html>

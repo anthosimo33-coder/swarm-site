@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Swarm, apps : le tableau</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div class="sw" style="display: flex; flex-wrap: wrap; min-height: 1280px; background: var(--surface); color: var(--ink); font-family: var(--font-body);">
+
+<nav class="sw-sidebar" aria-label="Navigation principale">
+<a class="sw-side-logo" href="Main.dc.html" aria-label="Swarm, accueil"><span class="sw-app-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span></a>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+<a class="sw-side-item" href="#" aria-current="{{n.cur}}"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{n.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>
+</sc-for>
+<div class="sw-side-foot">
+<button class="sw-btn sw-btn-icon" type="button" aria-label="Passer au thème clair"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<a class="sw-avatar" href="#" aria-label="Mon compte" style="text-decoration: none;">A</a>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; background: var(--surface);">
+<header style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 32px 32px 0;">
+<div style="display: flex; flex-direction: column; gap: 6px;">
+<h1 style="margin: 0; font-family: var(--font-display); font-size: 40px; line-height: 1.05; font-weight: 700; letter-spacing: -0.04em;">Apps</h1>
+<p style="margin: 0; font-size: 15px; color: var(--ink-muted);">Les apps que les réseaux de créateurs poussent en ce moment, classées par vues.</p>
+</div>
+<div role="search" class="sw-search" style="flex: 0 1 400px; height: 48px; padding: 0 8px 0 16px; box-shadow: none;">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<input class="sw-search-input" id="qa" type="search" aria-label="Chercher une app" placeholder="Chercher une app…" style="font-size: 15px;">
+<span class="sw-kbd">⌘ K</span>
+</div>
+</header>
+
+<div style="margin: 24px 32px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--line);">
+<div class="sw-tabs sw-tabs-line" role="tablist" aria-label="Classement" style="border-bottom: 0;">
+<button class="sw-tab" role="tab" aria-selected="true">Les plus vues</button><button class="sw-tab" role="tab" aria-selected="false">Qui accélèrent</button><button class="sw-tab" role="tab" aria-selected="false">Nouvelles</button>
+</div>
+<div class="sw-tabs" role="tablist" aria-label="Période" style="margin-bottom: 10px;"><button class="sw-tab" role="tab" aria-selected="false" style="height: 30px;">7 jours</button><button class="sw-tab" role="tab" aria-selected="true" style="height: 30px;">30 jours</button></div>
+</div>
+
+<div style="padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+<button class="sw-pill" type="button" aria-haspopup="listbox" style="height: 40px; padding: 0 12px 0 14px; gap: 6px; background: var(--track); border-color: var(--line);"><span style="color: var(--ink-faint);">{{f.k}}</span><span style="font-weight: 600;">{{f.v}}</span><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ink-faint);"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</sc-for>
+</div>
+<span style="font-size: 13px; color: var(--ink-faint);">Trier par <span style="color: var(--ink); font-weight: 600;">vues 30 j</span></span>
+</div>
+
+<div style="margin: 0 32px; overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom));">
+<table class="sw-table" style="table-layout: fixed; min-width: 1180px;">
+<thead><tr>
+<th style="width: 44px; padding-left: 20px;">#</th><th style="width: 250px;">App</th><th style="width: 120px;">Réseau</th><th class="sw-num" style="width: 120px;">Vues 30 j</th><th style="width: 140px;">6 semaines</th><th class="sw-num" style="width: 172px;">Revenus estimés</th><th class="sw-num" style="width: 100px;">Meilleure</th><th style="width: 156px; padding-right: 20px;">Ses vidéos</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+<tr style="background: {{r.bg}};">
+<td style="padding-left: 20px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);">{{r.rank}}</td>
+<td><a href="FicheA.dc.html" class="sw-app" style="text-decoration: none;"><span class="sw-app-icon {{r.blank}}" style="width: 40px; height: 40px; border-radius: 12px;"><sc-if value="{{r.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{r.logo}}" alt=""></sc-if><sc-if value="{{r.nologo}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg></sc-if></span><span style="display: flex; flex-direction: column; gap: 4px; min-width: 0;"><span class="sw-app-name" style="font-size: 15px;">{{r.n}}</span><span style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 12px; color: var(--ink-faint);">{{r.niche}}</span><sc-for list="{{r.mk}}" as="m" hint-placeholder-count="2"><span class="sw-flag" style="width: 24px; height: 18px; font-size: 9px;">{{m.c}}</span></sc-for></span></span></a></td>
+<td><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600; color: var(--ink);">{{r.acc}} comptes</span><span style="font-size: 12px; color: var(--ink-faint);">{{r.ppw}} vidéos / sem.</span></span></td>
+<td class="sw-num"><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;"><span style="font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink);">{{r.v30}}</span><span style="font-size: 11px; font-weight: 600; color: {{r.dInk}};">{{r.delta}}</span></span></td>
+<td><svg width="130" height="40" viewBox="0 0 130 40" aria-hidden="true" style="display: block;"><path d="{{r.area}}" fill="{{r.fill}}"></path><path d="{{r.line}}" fill="none" stroke="{{r.stroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="128" cy="{{r.endY}}" r="3" fill="{{r.stroke}}"></circle></svg></td>
+<td class="sw-num"><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;"><span style="font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap;"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);">Entre </span>{{r.revLo}}<span style="font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);"> et </span>{{r.revHi}} k€</span><span style="font-size: 11px; color: var(--ink-faint);">sur 30 jours</span></span></td>
+<td class="sw-num"><span class="sw-badge sw-badge-accent">{{r.best}}</span></td>
+<td style="padding-right: 20px;"><span style="display: flex; gap: 6px;"><sc-for list="{{r.thumbs}}" as="t" hint-placeholder-count="3"><span class="sw-video {{t.t}}" style="width: 44px; border-radius: 8px;"><img class="sw-cover" src="{{t.src}}" alt=""><span class="sw-video-shade"></span><span style="position: absolute; left: 4px; bottom: 4px; font-size: 9px; font-weight: 700; color: #FFFFFF;">{{t.v}}</span></span></sc-for></span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+
+<footer style="margin-top: auto; padding: 28px 32px 32px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+<p class="sw-calc" style="margin: 0;">Vues des vidéos publiées par les comptes de l'app, relevées le 12/11.</p>
+<p class="sw-calc" style="margin: 0;">Meilleure = sa meilleure vidéo de la semaine face à la normale de son compte.</p>
+</footer>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1280}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ic = {
+      accueil: 'M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z',
+      apps: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+      formats: 'M4 5h16v14H4zM10 9l5 3-5 3z',
+      createurs: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
+      alertes: 'M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0',
+      dossiers: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'
+    };
+    const nav = [['accueil', 'Accueil'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs'], ['alertes', 'Alertes'], ['dossiers', 'Dossiers']]
+      .map((x, i) => ({ d: ic[x[0]], label: x[1], cur: i === 1 ? 'page' : 'false' }));
+    const T = ['t-plum', 't-navy', 't-pine', 't-violet', 't-umber', 't-amber'];
+    const A = [
+      ['Rizz App', 'R', 'var(--thumb-plum)', 'Séduction IA', ['US'], 82, 332, 59.67, [0.6, 10.8, 0.5, 16.1, 23.7, 14.1], '120×', ['2,6 M', '2,5 M', '1,9 M']],
+      ['Astra AI', 'A', 'var(--blue-600)', 'Études', ['ID', 'US', 'ES'], 269, 1360, 57.66, [10.6, 9.8, 8.9, 8.5, 17.3, 18.4], '2 333×', ['2,6 M', '2,6 M', '2,3 M']],
+      ['Knowunity', 'K', 'var(--thumb-navy)', 'Études', ['US', 'ES', 'FR'], 55, 205, 44.43, [4.2, 0.6, 14.6, 16.8, 7.0, 6.1], '101×', ['5,7 M', '3,5 M', '2,5 M']],
+      ['Love8', 'L', 'var(--thumb-pine)', 'Couple', ['US', 'ID', 'FR'], 83, 282, 35.06, [1.7, 3.4, 7.1, 4.0, 10.6, 12.6], '1 737×', ['2 M', '1,9 M', '1,8 M']],
+      ['WRizz', 'W', 'var(--thumb-violet)', 'Séduction IA', ['US', 'ID'], 81, 410, 31.94, [0.4, 2.5, 0.6, 8.0, 10.1, 12.4], '110×', ['5 M', '3 M', '1,9 M']],
+      ['Wing AI', 'W', 'var(--thumb-umber)', 'Séduction IA', ['US', 'MX'], 124, 251, 19.62, [0.7, 1.9, 1.6, 2.4, 7.0, 6.9], '109×', ['1,4 M', '876 k', '869 k']],
+      ['Cal AI', 'C', 'var(--thumb-amber)', 'Santé et physique', ['US'], 6, 42, 17.13, [0.01, 0.01, 0.3, 7.8, 5.4, 3.7], '9,5×', ['1,3 M', '878 k', '757 k']],
+      ['Praktika', 'P', 'var(--thumb-navy)', 'Langues', ['US', 'ID', 'BR'], 92, 577, 16.58, [5.9, 0.4, 0.4, 0.5, 7.7, 8.0], '70×', ['2,1 M', '1,9 M', '1,5 M']],
+      ['RecentFollow', 'R', 'var(--thumb-plum)', 'Jalousie et ex', ['US', 'MX'], 39, 294, 13.06, [0.01, 0.01, 0.7, 1.1, 4.2, 7.0], '750×', ['1,2 M', '874 k', '854 k']],
+      ['The Cringe', 'T', 'var(--thumb-pine)', 'Jalousie et ex', ['US', 'FR'], 18, 49, 12.18, [0.1, 0.01, 0.8, 2.9, 5.0, 3.4], '53×', ['2,5 M', '1,1 M', '1,1 M']]
+    ];
+    const COV = {"Rizz App": ["/_blob/c486ed7703cb1a402d8b8e7042d66531", "/_blob/0d7866f32701e79b125d5a7156c47297", "/_blob/6f73acb699e8fe94beb5bf8ad1417ec7"], "Astra AI": ["/_blob/091747503c814d8ad50a7617c2c969cf", "/_blob/4af8eef5c7b8089c8eea427a6a44b6e7", "/_blob/c79155853ab19fe0209db97ca5bbc352"], "Knowunity": ["/_blob/1fc331466e2c5d12d8c528a65fc51d29", "/_blob/d80bee49752b28d2bc32f8b58f1f4e7c", "/_blob/d2f0034b50433fc13d2790b6a8ba22b0"], "Love8": ["/_blob/63119f505f58b810c055512e54a2709e", "/_blob/e78c76be4b9721a935134acfbd26f0c1", "/_blob/66f4fa9843feb3f97ceb21022e5fba21"], "WRizz": ["/_blob/42c065d63ea703294afdc40aa1b3c19a", "/_blob/212e3ebafa229f9b48b5aab01ffacf27", "/_blob/9c2bbd02075ad7fe4b7b510742e9bf5e"], "Wing AI": ["/_blob/3ccf8c7bb4fa7fd436b74b4eaa51b396", "/_blob/27f73773c1d39838dbcf6fb2a60837f8", "/_blob/b2416580f57606acc9d4f5837adced74"], "Cal AI": ["/_blob/58b17fafa46873a6b7c1a6e765a36201", "/_blob/e2ae2ca2e495044b6ae7afc655d67993", "/_blob/82db985053d13a0d5f335cb7adf35889"], "Praktika": ["/_blob/93a1db3bd92781d93c7837e90b164174", "/_blob/069e47467e9285e830a4d635a578367a", "/_blob/6ba7ec5b522785acc5d4c6cbc36c6410"], "RecentFollow": ["/_blob/608419d1efd84ba7895e44ce6290cd99", "/_blob/7c0a9bffe1ede23706d52348b19ce9c9", "/_blob/cb598f2e10f42af598895778e315d4e0"], "The Cringe": ["/_blob/fced59df4c6cc2aeb2e2a183072991f0", "/_blob/712cc0328d364ee5284d8b86b822b0eb", "/_blob/db5ba0c5b0f75a2587a929167111aac4"]};
+    const LOGO = {"Astra AI": "/_blob/8786a14b5a2e9593ed85c3dd97461c2b", "Knowunity": "/_blob/dcc1fbabb3581c11feb02163611cedd9", "Love8": "/_blob/b32d50dfdb2f76bd5cb72bcdcbc0e207", "WRizz": "/_blob/19dc9a0b663ff65637fd95ad9ed777e6", "Wing AI": "/_blob/7b0e6abc36343cb6e0209cef7fb27480", "Cal AI": "/_blob/9fb770251a6fea7848f345eee5987ed0", "Praktika": "/_blob/94f5ede2e3810aaaf5cbfeb383874b35", "The Cringe": "/_blob/0e51161329a4189b50f8adb0cab1c2e3"};
+    const fr = (x, d) => x.toFixed(d).replace('.', ',');
+    const rows = A.map((a, i) => {
+      const w = a[8];
+      const max = Math.max.apply(null, w);
+      const pts = w.map((v, j) => [2 + j * 25.2, 36 - (v / max) * 30]);
+      const line = 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+      const d = (w[5] - w[4]) / w[4];
+      const up = d >= 0;
+      return {
+        rank: String(i + 1).padStart(2, '0'), n: a[0], i: a[1], c: a[2], niche: a[3], mk: a[4].map((c) => ({ c })),
+        acc: a[5], ppw: a[6].toLocaleString('fr-FR'), v30: fr(a[7], 1) + ' M',
+        delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
+        line, area: line + ' L127.9 40 L2 40 Z', endY: pts[5][1].toFixed(1),
+        stroke: up ? '#4C9AFF' : '#8A93A3', fill: up ? 'rgba(76,154,255,0.16)' : 'rgba(138,147,163,0.12)',
+        revLo: Math.round(a[7] * 2.5), revHi: Math.round(a[7] * 3.5),
+        best: a[9], thumbs: a[10].map((v, j) => ({ v, t: T[(i + j) % T.length], src: COV[a[0]][j] })), logo: LOGO[a[0]] || false, nologo: !LOGO[a[0]], blank: LOGO[a[0]] ? '' : 'sw-app-blank',
+        bg: i === 1 ? 'var(--accent-soft)' : 'transparent'
+      };
+    });
+    return {
+      nav,
+      rows,
+      filters: [{ k: 'Marché', v: 'Tous' }, { k: 'Niche', v: 'Toutes' }, { k: 'Plateforme', v: 'Toutes' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

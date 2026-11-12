@@ -1,5 +1,5 @@
 // Généré par scripts/dc2preact.py depuis design/TarifsMobile.dc.html — ne pas modifier à la main.
-import { h } from 'preact';
+import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
 import { DCLogic, $t, $l } from '../runtime.js';
 
 export default class TarifsMobile extends DCLogic {
@@ -99,177 +99,177 @@ export default class TarifsMobile extends DCLogic {
   render() {
     const $v = this.renderVals();
     return [
-      h("div", { "style": "position: relative; display: flex; flex-direction: column; min-height: 100vh; background: linear-gradient(180deg, #B9DCFF 0px, #DCEDFF 340px, #EEF4FB 700px, #F5F6F8 1000px, #F3F3F5 1300px); font-family: Inter, system-ui, sans-serif; color: #111216; font-size: 16px; line-height: 1.5; overflow-x: clip;" },
-        h("div", { "aria-hidden": "true", "style": "position: absolute; left: 0; right: 0; top: 0; height: 900px; overflow: hidden; pointer-events: none;" },
-          h("div", { "style": "position: absolute; left: -30%; top: 80px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.85), transparent); animation: tfm-driftA 16s ease-in-out infinite;" }),
-          h("div", { "style": "position: absolute; right: -35%; top: 0; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, rgba(76,154,255,0.30), transparent); animation: tfm-driftB 14s ease-in-out infinite;" })
+      $h("div", { "style": "position: relative; display: flex; flex-direction: column; min-height: 100vh; background: linear-gradient(180deg, #B9DCFF 0px, #DCEDFF 340px, #EEF4FB 700px, #F5F6F8 1000px, #F3F3F5 1300px); font-family: Inter, system-ui, sans-serif; color: #111216; font-size: 16px; line-height: 1.5; overflow-x: clip;" },
+        $h("div", { "aria-hidden": "true", "style": "position: absolute; left: 0; right: 0; top: 0; height: 900px; overflow: hidden; pointer-events: none;" },
+          $h("div", { "style": "position: absolute; left: -30%; top: 80px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.85), transparent); animation: tfm-driftA 16s ease-in-out infinite;" }),
+          $h("div", { "style": "position: absolute; right: -35%; top: 0; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, rgba(76,154,255,0.30), transparent); animation: tfm-driftB 14s ease-in-out infinite;" })
         ),
-        h("div", { "style": "position: relative; display: flex; flex-direction: column;" },
-          h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 10px 12px 0;" },
-            h("div", { "style": "display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 6px 0 14px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.64); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.10), inset 0 1px 0 #FFFFFF;" },
-              h("a", { "href": "/", "aria-label": "Swarm, accueil", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
-                h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
-                  h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
-                  h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
-                  h("circle", { "cx": "8", "cy": "14", "r": "2.3", "fill": "#0E0F12" }),
-                  h("circle", { "cx": "14", "cy": "13", "r": "2.3", "fill": "#0E0F12" }),
-                  h("circle", { "cx": "19", "cy": "17", "r": "2.3", "fill": "#0E0F12" }),
-                  h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
+        $h("div", { "style": "position: relative; display: flex; flex-direction: column;" },
+          $h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 10px 12px 0;" },
+            $h("div", { "style": "display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 6px 0 14px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.64); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.10), inset 0 1px 0 #FFFFFF;" },
+              $h("a", { "href": "/", "aria-label": "Swarm, accueil", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
+                $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
+                  $h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
+                  $h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
+                  $h("circle", { "cx": "8", "cy": "14", "r": "2.3", "fill": "#0E0F12" }),
+                  $h("circle", { "cx": "14", "cy": "13", "r": "2.3", "fill": "#0E0F12" }),
+                  $h("circle", { "cx": "19", "cy": "17", "r": "2.3", "fill": "#0E0F12" }),
+                  $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
                 ),
-                h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.03em;" },
+                $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.03em;" },
                   "swarm"
                 )
               ),
-              h("a", { "href": "/connexion", "class": "tap", "style": "display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
+              $h("a", { "href": "/connexion", "class": "tap", "style": "display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                 "Se connecter"
               ),
-              h("button", { "type": "button", "class": "tap", "onClick": $v.openMenu, "aria-label": "Ouvrir le menu", "aria-expanded": $v.menuOpen, "style": "width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%; background: #0E0F12; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 14px rgba(14,15,18,0.22);" },
-                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 18 18", "aria-hidden": "true" },
-                  h("path", { "d": "M3 6.5h12M3 11.5h12", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round" })
+              $h("button", { "type": "button", "class": "tap", "onClick": $v.openMenu, "aria-label": "Ouvrir le menu", "aria-expanded": $v.menuOpen, "style": "width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%; background: #0E0F12; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 14px rgba(14,15,18,0.22);" },
+                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 18 18", "aria-hidden": "true" },
+                  $h("path", { "d": "M3 6.5h12M3 11.5h12", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round" })
                 )
               )
             )
           ),
-          h("section", { "style": "padding: 32px 20px 28px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px;" },
-            h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #3A3F47; animation: tfm-blurIn 0.8s ease-out both;" },
-              h("span", { "style": "color: #0B6FE0;" },
+          $h("section", { "style": "padding: 32px 20px 28px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px;" },
+            $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #3A3F47; animation: tfm-blurIn 0.8s ease-out both;" },
+              $h("span", { "style": "color: #0B6FE0;" },
                 "["
               ),
               " TARIFS ",
-              h("span", { "style": "color: #0B6FE0;" },
+              $h("span", { "style": "color: #0B6FE0;" },
                 "]"
               )
             ),
-            h("h1", { "style": "margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(36px, 11vw, 46px); line-height: 1.04; letter-spacing: -0.05em; animation: tfm-blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.1s;" },
+            $h("h1", { "style": "margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(36px, 11vw, 46px); line-height: 1.04; letter-spacing: -0.05em; animation: tfm-blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.1s;" },
               "Un seul plan. ",
-              h("span", { "style": "color: #0B6FE0;" },
+              $h("span", { "style": "color: #0B6FE0;" },
                 "Tout Swarm."
               )
             ),
-            h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.55; color: #3A3F47; animation: tfm-blurIn 0.9s ease-out both; animation-delay: 0.25s;" },
+            $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.55; color: #3A3F47; animation: tfm-blurIn 0.9s ease-out both; animation-delay: 0.25s;" },
               "Les apps et les formats qui explosent en ce moment sur TikTok, Instagram et YouTube Shorts, sur n'importe quel marché, et les créateurs derrière."
             ),
-            h("div", { "role": "group", "aria-label": "Facturation", "style": "position: relative; width: 100%; margin-top: 6px; display: flex; padding: 5px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 24px rgba(16,24,40,0.08); animation: tfm-blurIn 0.9s ease-out both; animation-delay: 0.4s;" },
-              h("span", { "aria-hidden": "true", "style": `position: absolute; top: 5px; bottom: 5px; left: ${$t($v.thumbL)}; width: calc(50% - 5px); border-radius: 999px; background: #0E0F12; box-shadow: 0 6px 16px rgba(14,15,18,0.25); transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);` }),
-              h("button", { "type": "button", "aria-pressed": $v.isM, "onClick": $v.toM, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkM)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: color 0.3s ease;` },
+            $h("div", { "role": "group", "aria-label": "Facturation", "style": "position: relative; width: 100%; margin-top: 6px; display: flex; padding: 5px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 24px rgba(16,24,40,0.08); animation: tfm-blurIn 0.9s ease-out both; animation-delay: 0.4s;" },
+              $h("span", { "aria-hidden": "true", "style": `position: absolute; top: 5px; bottom: 5px; left: ${$t($v.thumbL)}; width: calc(50% - 5px); border-radius: 999px; background: #0E0F12; box-shadow: 0 6px 16px rgba(14,15,18,0.25); transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);` }),
+              $h("button", { "type": "button", "aria-pressed": $v.isM, "onClick": $v.toM, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkM)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: color 0.3s ease;` },
                 "Mensuel"
               ),
-              h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: color 0.3s ease;` },
+              $h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: color 0.3s ease;` },
                 "Annuel",
-                h("span", { "style": "font-size: 11px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 7px;" },
+                $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 7px;" },
                   "−33 %"
                 )
               )
             )
           ),
-          h("section", { "aria-label": "Swarm Pro", "style": "padding: 0 16px;" },
-            h("div", { "style": "position: relative; border-radius: 28px; padding: 1.5px; overflow: hidden; box-shadow: 0 2px 4px rgba(16,24,40,0.06), 0 40px 90px rgba(11,40,90,0.22); animation: tfm-riseIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.5s;" },
-              h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; width: 260%; aspect-ratio: 1 / 1; background: conic-gradient(from 0deg, rgba(11,111,224,0.18) 0deg, rgba(11,111,224,0.18) 230deg, #4C9AFF 300deg, #FFFFFF 335deg, rgba(11,111,224,0.18) 360deg); animation: tfm-spinC 6s linear infinite;" }),
-              h("div", { "style": "position: relative; border-radius: 26.5px; overflow: hidden; background: #FFFFFF;" },
-                h("div", { "class": "dk", "style": "position: relative; overflow: hidden; padding: 28px 22px 24px; background: linear-gradient(180deg, #0E1730 0%, #090D17 100%); color: #FFFFFF; display: flex; flex-direction: column; gap: 22px;" },
-                  h("div", { "aria-hidden": "true", "style": "position: absolute; left: 100%; top: 100%; width: 560px; height: 560px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, transparent 290deg, rgba(76,154,255,0.05) 300deg, rgba(76,154,255,0.30) 360deg); animation: tfm-spinC 9s linear infinite; pointer-events: none;" }),
-                  h("div", { "style": "position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px;" },
-                    h("span", { "style": "display: inline-flex; align-items: center; gap: 9px;" },
-                      h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                        h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
-                        h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
-                        h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
-                        h("circle", { "cx": "8", "cy": "14", "r": "2.3", "fill": "#FFFFFF" }),
-                        h("circle", { "cx": "14", "cy": "13", "r": "2.3", "fill": "#FFFFFF" }),
-                        h("circle", { "cx": "19", "cy": "17", "r": "2.3", "fill": "#FFFFFF" }),
-                        h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
+          $h("section", { "aria-label": "Swarm Pro", "style": "padding: 0 16px;" },
+            $h("div", { "style": "position: relative; border-radius: 28px; padding: 1.5px; overflow: hidden; box-shadow: 0 2px 4px rgba(16,24,40,0.06), 0 40px 90px rgba(11,40,90,0.22); animation: tfm-riseIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.5s;" },
+              $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; width: 260%; aspect-ratio: 1 / 1; background: conic-gradient(from 0deg, rgba(11,111,224,0.18) 0deg, rgba(11,111,224,0.18) 230deg, #4C9AFF 300deg, #FFFFFF 335deg, rgba(11,111,224,0.18) 360deg); animation: tfm-spinC 6s linear infinite;" }),
+              $h("div", { "style": "position: relative; border-radius: 26.5px; overflow: hidden; background: #FFFFFF;" },
+                $h("div", { "class": "dk", "style": "position: relative; overflow: hidden; padding: 28px 22px 24px; background: linear-gradient(180deg, #0E1730 0%, #090D17 100%); color: #FFFFFF; display: flex; flex-direction: column; gap: 22px;" },
+                  $h("div", { "aria-hidden": "true", "style": "position: absolute; left: 100%; top: 100%; width: 560px; height: 560px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, transparent 290deg, rgba(76,154,255,0.05) 300deg, rgba(76,154,255,0.30) 360deg); animation: tfm-spinC 9s linear infinite; pointer-events: none;" }),
+                  $h("div", { "style": "position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px;" },
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 9px;" },
+                      $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
+                        $h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
+                        $h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
+                        $h("circle", { "cx": "8", "cy": "14", "r": "2.3", "fill": "#FFFFFF" }),
+                        $h("circle", { "cx": "14", "cy": "13", "r": "2.3", "fill": "#FFFFFF" }),
+                        $h("circle", { "cx": "19", "cy": "17", "r": "2.3", "fill": "#FFFFFF" }),
+                        $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
                       ),
-                      h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.03em;" },
+                      $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.03em;" },
                         "Swarm Pro"
                       )
                     ),
-                    h("span", { "style": "font-size: 11px; font-weight: 700; color: #FFFFFF; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); border-radius: 999px; padding: 4px 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);" },
+                    $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FFFFFF; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); border-radius: 999px; padding: 4px 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);" },
                       "Tout inclus"
                     )
                   ),
-                  h("div", { "style": "position: relative; height: 96px;" },
-                    h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; opacity: ${$t($v.oM)}; transform: ${$t($v.trM)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
-                      h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
-                        h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
+                  $h("div", { "style": "position: relative; height: 96px;" },
+                    $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; opacity: ${$t($v.oM)}; transform: ${$t($v.trM)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                      $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
+                        $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
                           "49 €"
                         ),
-                        h("span", { "style": "font-size: 16px; color: #9AA3B2;" },
+                        $h("span", { "style": "font-size: 16px; color: #9AA3B2;" },
                           "/ mois"
                         )
                       ),
-                      h("span", { "style": "font-size: 14px; color: #9AA3B2;" },
+                      $h("span", { "style": "font-size: 14px; color: #9AA3B2;" },
                         "Facturé chaque mois."
                       )
                     ),
-                    h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; opacity: ${$t($v.oY)}; transform: ${$t($v.trY)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
-                      h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
-                        h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
+                    $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; opacity: ${$t($v.oY)}; transform: ${$t($v.trY)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                      $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
+                        $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
                           "32,50 €"
                         ),
-                        h("span", { "style": "font-size: 16px; color: #9AA3B2;" },
+                        $h("span", { "style": "font-size: 16px; color: #9AA3B2;" },
                           "/ mois"
                         )
                       ),
-                      h("span", { "style": "font-size: 14px; color: #9AA3B2;" },
+                      $h("span", { "style": "font-size: 14px; color: #9AA3B2;" },
                         "Facturé 390 € par an au lieu de 588 €."
                       )
                     )
                   ),
-                  h("a", { "href": "/inscription", "class": "tap", "style": "position: relative; display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                  $h("a", { "href": "/inscription", "class": "tap", "style": "position: relative; display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Passer Pro",
-                    h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                      h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
-                        h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                      $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                        $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     )
                   ),
-                  h("div", { "style": "position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; font-size: 13px; color: #C9CED6;" },
-                    h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                      h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                        h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  $h("div", { "style": "position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; font-size: 13px; color: #C9CED6;" },
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       ),
                       "Annulable en un clic"
                     ),
-                    h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                      h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                        h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       ),
                       "Sans engagement"
                     ),
-                    h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                      h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                        h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       ),
                       "Paiement sécurisé"
                     )
                   )
                 ),
-                h("div", { "style": "padding: 22px 22px 10px; display: flex; flex-direction: column;" },
-                  h("span", { "style": "font-size: 15px; font-weight: 600;" },
+                $h("div", { "style": "padding: 22px 22px 10px; display: flex; flex-direction: column;" },
+                  $h("span", { "style": "font-size: 15px; font-weight: 600;" },
                     "Tout ce que tu débloques"
                   ),
                   ($l($v.groups)).map((g) => [
-                    h("div", { "style": `padding: 16px 0; border-top: ${$t(g?.line)}; display: flex; flex-direction: column; gap: 4px;` },
-                      h("span", { "style": "display: flex; align-items: baseline; gap: 8px; padding-bottom: 4px;" },
-                        h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #0B6FE0;" },
+                    $h("div", { "style": `padding: 16px 0; border-top: ${$t(g?.line)}; display: flex; flex-direction: column; gap: 4px;` },
+                      $h("span", { "style": "display: flex; align-items: baseline; gap: 8px; padding-bottom: 4px;" },
+                        $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #0B6FE0;" },
                           $t(g?.n)
                         ),
-                        h("span", { "style": "font-size: 14px; font-weight: 700;" },
+                        $h("span", { "style": "font-size: 14px; font-weight: 700;" },
                           $t(g?.title)
                         ),
-                        h("span", { "style": "font-size: 13px; color: #5F656E;" },
+                        $h("span", { "style": "font-size: 13px; color: #5F656E;" },
                           $t(g?.sub)
                         )
                       ),
                       ($l(g?.items)).map((f) => [
-                        h("div", { "style": "display: flex; align-items: center; gap: 12px; min-height: 44px;" },
-                          h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; background: #EEF4FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                            h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                              h("path", { "d": f?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        $h("div", { "style": "display: flex; align-items: center; gap: 12px; min-height: 44px;" },
+                          $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; background: #EEF4FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
+                            $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                              $h("path", { "d": f?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                             )
                           ),
-                          h("span", { "style": "font-size: 15px; font-weight: 500; line-height: 1.35;" },
+                          $h("span", { "style": "font-size: 15px; font-weight: 500; line-height: 1.35;" },
                             $t(f?.t)
                           )
                         )
@@ -280,49 +280,49 @@ export default class TarifsMobile extends DCLogic {
               )
             )
           ),
-          h("section", { "aria-label": "Le Radar en chiffres", "style": "padding: 40px 20px 0;" },
-            h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #E2E4E9; border-bottom: 1px solid #E2E4E9;" },
+          $h("section", { "aria-label": "Le Radar en chiffres", "style": "padding: 40px 20px 0;" },
+            $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #E2E4E9; border-bottom: 1px solid #E2E4E9;" },
               ($l($v.nums)).map((n) => [
-                h("div", { "style": `padding: 18px 0 18px ${$t(n?.pl)}; border-left: ${$t(n?.line)}; display: flex; flex-direction: column; gap: 4px;` },
-                  h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.04em; line-height: 1;" },
+                $h("div", { "style": `padding: 18px 0 18px ${$t(n?.pl)}; border-left: ${$t(n?.line)}; display: flex; flex-direction: column; gap: 4px;` },
+                  $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.04em; line-height: 1;" },
                     $t(n?.v)
                   ),
-                  h("span", { "style": "font-size: 12px; line-height: 1.35; color: #5F656E;" },
+                  $h("span", { "style": "font-size: 12px; line-height: 1.35; color: #5F656E;" },
                     $t(n?.l)
                   )
                 )
               ])
             )
           ),
-          h("section", { "aria-labelledby": "qt", "style": "padding: 64px 20px 72px; display: flex; flex-direction: column; gap: 14px;" },
-            h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #5F656E;" },
-              h("span", { "style": "color: #0B6FE0;" },
+          $h("section", { "aria-labelledby": "qt", "style": "padding: 64px 20px 72px; display: flex; flex-direction: column; gap: 14px;" },
+            $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #5F656E;" },
+              $h("span", { "style": "color: #0B6FE0;" },
                 "["
               ),
               " QUESTIONS ",
-              h("span", { "style": "color: #0B6FE0;" },
+              $h("span", { "style": "color: #0B6FE0;" },
                 "]"
               )
             ),
-            h("h2", { "id": "qt", "style": "margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 32px; letter-spacing: -0.045em; line-height: 1.05;" },
+            $h("h2", { "id": "qt", "style": "margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 32px; letter-spacing: -0.045em; line-height: 1.05;" },
               "Avant de passer Pro."
             ),
-            h("div", { "style": "margin-top: 6px; border-top: 1px dashed #D3D7DE;" },
+            $h("div", { "style": "margin-top: 6px; border-top: 1px dashed #D3D7DE;" },
               ($l($v.qs)).map((f) => [
-                h("div", { "style": "border-bottom: 1px dashed #D3D7DE;" },
-                  h("button", { "type": "button", "onClick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; min-height: 64px; background: transparent; border: 0; padding: 16px 0; box-sizing: border-box; display: flex; align-items: center; gap: 14px; font: inherit; color: #111216; text-align: left; cursor: pointer;" },
-                    h("span", { "style": "flex: 1 1 auto; font-size: 17px; font-weight: 500; line-height: 1.35;" },
+                $h("div", { "style": "border-bottom: 1px dashed #D3D7DE;" },
+                  $h("button", { "type": "button", "onClick": f?.toggle, "aria-expanded": f?.open, "style": "width: 100%; min-height: 64px; background: transparent; border: 0; padding: 16px 0; box-sizing: border-box; display: flex; align-items: center; gap: 14px; font: inherit; color: #111216; text-align: left; cursor: pointer;" },
+                    $h("span", { "style": "flex: 1 1 auto; font-size: 17px; font-weight: 500; line-height: 1.35;" },
                       $t(f?.q)
                     ),
-                    h("span", { "aria-hidden": "true", "style": `width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: ${$t(f?.iconBg)}; transition: background 0.3s ease;` },
-                      h("svg", { "width": "12", "height": "12", "viewBox": "0 0 14 14", "style": `transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
-                        h("path", { "d": "M7 2v10M2 7h10", "stroke": f?.iconInk, "stroke-width": "1.8", "stroke-linecap": "round" })
+                    $h("span", { "aria-hidden": "true", "style": `width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: ${$t(f?.iconBg)}; transition: background 0.3s ease;` },
+                      $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 14 14", "style": `transform: ${$t(f?.rot)}; transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                        $h("path", { "d": "M7 2v10M2 7h10", "stroke": f?.iconInk, "stroke-width": "1.8", "stroke-linecap": "round" })
                       )
                     )
                   ),
-                  h("div", { "style": `display: grid; grid-template-rows: ${$t(f?.rows)}; transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);` },
-                    h("div", { "style": "overflow: hidden;" },
-                      h("p", { "style": "margin: 0; padding: 0 0 20px; font-size: 15px; line-height: 1.6; color: #4A4F57;" },
+                  $h("div", { "style": `display: grid; grid-template-rows: ${$t(f?.rows)}; transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                    $h("div", { "style": "overflow: hidden;" },
+                      $h("p", { "style": "margin: 0; padding: 0 0 20px; font-size: 15px; line-height: 1.6; color: #4A4F57;" },
                         $t(f?.a)
                       )
                     )
@@ -332,121 +332,121 @@ export default class TarifsMobile extends DCLogic {
             )
           )
         ),
-        h("footer", { "class": "dk", "style": "position: relative; overflow: hidden; flex: 1 0 auto; display: flex; flex-direction: column; background-color: #05070C; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px); color: #FFFFFF;" },
-          h("div", { "style": "flex: 1 0 auto; padding: 48px 20px 24px; display: flex; flex-direction: column; gap: 36px;" },
-            h("div", { "style": "display: flex; flex-direction: column; gap: 12px;" },
-              h("a", { "href": "/", "style": "display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;" },
-                h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
-                  h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
-                  h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
-                  h("circle", { "cx": "8", "cy": "14", "r": "2.3", "fill": "#FFFFFF" }),
-                  h("circle", { "cx": "14", "cy": "13", "r": "2.3", "fill": "#FFFFFF" }),
-                  h("circle", { "cx": "19", "cy": "17", "r": "2.3", "fill": "#FFFFFF" }),
-                  h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
+        $h("footer", { "class": "dk", "style": "position: relative; overflow: hidden; flex: 1 0 auto; display: flex; flex-direction: column; background-color: #05070C; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px); color: #FFFFFF;" },
+          $h("div", { "style": "flex: 1 0 auto; padding: 48px 20px 24px; display: flex; flex-direction: column; gap: 36px;" },
+            $h("div", { "style": "display: flex; flex-direction: column; gap: 12px;" },
+              $h("a", { "href": "/", "style": "display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;" },
+                $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
+                  $h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#4C9AFF" }),
+                  $h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#4C9AFF" }),
+                  $h("circle", { "cx": "8", "cy": "14", "r": "2.3", "fill": "#FFFFFF" }),
+                  $h("circle", { "cx": "14", "cy": "13", "r": "2.3", "fill": "#FFFFFF" }),
+                  $h("circle", { "cx": "19", "cy": "17", "r": "2.3", "fill": "#FFFFFF" }),
+                  $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
                 ),
-                h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: #FFFFFF;" },
+                $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: #FFFFFF;" },
                   "swarm"
                 )
               ),
-              h("p", { "style": "margin: 0; font-size: 15px; line-height: 1.55; color: #9AA3B2;" },
+              $h("p", { "style": "margin: 0; font-size: 15px; line-height: 1.55; color: #9AA3B2;" },
                 "Les apps et les formats qui explosent sur TikTok, Instagram et YouTube Shorts, et les créateurs derrière."
               )
             ),
-            h("nav", { "aria-label": "Pied de page", "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 16px;" },
+            $h("nav", { "aria-label": "Pied de page", "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 16px;" },
               ($l($v.cols)).map((c) => [
-                h("div", { "style": "display: flex; flex-direction: column; gap: 2px;" },
-                  h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A93A3; padding-bottom: 6px;" },
+                $h("div", { "style": "display: flex; flex-direction: column; gap: 2px;" },
+                  $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A93A3; padding-bottom: 6px;" },
                     $t(c?.title)
                   ),
                   ($l(c?.links)).map((l) => [
-                    h("a", { "href": l?.href, "style": "font-size: 15px; text-decoration: none; min-height: 40px; display: flex; align-items: center;" },
+                    $h("a", { "href": l?.href, "style": "font-size: 15px; text-decoration: none; min-height: 40px; display: flex; align-items: center;" },
                       $t(l?.t)
                     )
                   ])
                 )
               ])
             ),
-            h("div", { "style": "display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 14px;" },
-              h("a", { "href": "#cgv", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+            $h("div", { "style": "display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 14px;" },
+              $h("a", { "href": "#cgv", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "CGV"
               ),
-              h("a", { "href": "#confidentialite", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "#confidentialite", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Confidentialité"
               ),
-              h("a", { "href": "#mentions", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "#mentions", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Mentions légales"
               ),
-              h("a", { "href": "#contact", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "#contact", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Contact"
               )
             ),
-            h("div", { "style": "margin-top: auto; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; color: #8A93A3;" },
-              h("span", null,
+            $h("div", { "style": "margin-top: auto; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; color: #8A93A3;" },
+              $h("span", null,
                 "© 2026 Swarm"
               ),
-              h("span", { "style": "font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em;" },
+              $h("span", { "style": "font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em;" },
                 "Spot it. Copy it. Launch it."
               )
             )
           )
         ),
         ($v.menuOpen) ? [
-          h("div", { "style": "position: fixed; inset: 0; z-index: 80; background: rgba(5,7,12,0.42); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);" },
-            h("div", { "role": "dialog", "aria-modal": "true", "aria-label": "Menu", "style": "margin: 10px 12px 0; border-radius: 28px; background: rgba(255,255,255,0.97); box-shadow: 0 30px 70px rgba(16,24,40,0.28); padding: 6px 6px 16px; animation: tfm-sheetDown 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
-              h("div", { "style": "display: flex; align-items: center; height: 56px; padding: 0 0 0 14px;" },
-                h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto;" },
-                  h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
-                    h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
-                    h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
-                    h("circle", { "cx": "8", "cy": "14", "r": "2.3", "fill": "#0E0F12" }),
-                    h("circle", { "cx": "14", "cy": "13", "r": "2.3", "fill": "#0E0F12" }),
-                    h("circle", { "cx": "19", "cy": "17", "r": "2.3", "fill": "#0E0F12" }),
-                    h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
+          $h("div", { "style": "position: fixed; inset: 0; z-index: 80; background: rgba(5,7,12,0.42); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);" },
+            $h("div", { "role": "dialog", "aria-modal": "true", "aria-label": "Menu", "style": "margin: 10px 12px 0; border-radius: 28px; background: rgba(255,255,255,0.97); box-shadow: 0 30px 70px rgba(16,24,40,0.28); padding: 6px 6px 16px; animation: tfm-sheetDown 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
+              $h("div", { "style": "display: flex; align-items: center; height: 56px; padding: 0 0 0 14px;" },
+                $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto;" },
+                  $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
+                    $h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
+                    $h("circle", { "cx": "17", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
+                    $h("circle", { "cx": "8", "cy": "14", "r": "2.3", "fill": "#0E0F12" }),
+                    $h("circle", { "cx": "14", "cy": "13", "r": "2.3", "fill": "#0E0F12" }),
+                    $h("circle", { "cx": "19", "cy": "17", "r": "2.3", "fill": "#0E0F12" }),
+                    $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
                   ),
-                  h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.03em; color: #0E0F12;" },
+                  $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.03em; color: #0E0F12;" },
                     "swarm"
                   )
                 ),
-                h("button", { "type": "button", "class": "tap", "onClick": $v.closeMenu, "aria-label": "Fermer le menu", "style": "width: 44px; height: 44px; border: 0; border-radius: 50%; background: #F1F3F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" },
-                  h("svg", { "width": "14", "height": "14", "viewBox": "0 0 14 14", "aria-hidden": "true" },
-                    h("path", { "d": "M3 3l8 8M11 3l-8 8", "stroke": "#0E0F12", "stroke-width": "1.8", "stroke-linecap": "round" })
+                $h("button", { "type": "button", "class": "tap", "onClick": $v.closeMenu, "aria-label": "Fermer le menu", "style": "width: 44px; height: 44px; border: 0; border-radius: 50%; background: #F1F3F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" },
+                  $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 14 14", "aria-hidden": "true" },
+                    $h("path", { "d": "M3 3l8 8M11 3l-8 8", "stroke": "#0E0F12", "stroke-width": "1.8", "stroke-linecap": "round" })
                   )
                 )
               ),
-              h("nav", { "aria-label": "Menu", "style": "display: flex; flex-direction: column; padding: 4px 10px 0;" },
+              $h("nav", { "aria-label": "Menu", "style": "display: flex; flex-direction: column; padding: 4px 10px 0;" },
                 ($l($v.mnav)).map((m) => [
-                  h("a", { "href": m?.href, "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
-                    h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                      h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                        h("path", { "d": m?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  $h("a", { "href": m?.href, "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
+                    $h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
+                      $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": m?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     ),
-                    h("span", { "style": "flex: 1 1 auto; display: flex; flex-direction: column;" },
-                      h("span", { "style": "font-size: 17px; font-weight: 600;" },
+                    $h("span", { "style": "flex: 1 1 auto; display: flex; flex-direction: column;" },
+                      $h("span", { "style": "font-size: 17px; font-weight: 600;" },
                         $t(m?.t)
                       ),
-                      h("span", { "style": "font-size: 13px; color: #5F656E;" },
+                      $h("span", { "style": "font-size: 13px; color: #5F656E;" },
                         $t(m?.sub)
                       )
                     ),
-                    h("svg", { "width": "14", "height": "14", "viewBox": "0 0 16 16", "aria-hidden": "true" },
-                      h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#9AA0A8", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 16 16", "aria-hidden": "true" },
+                      $h("path", { "d": "M6 3.5L10.5 8 6 12.5", "fill": "none", "stroke": "#9AA0A8", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ])
               ),
-              h("div", { "style": "display: flex; flex-direction: column; gap: 8px; padding: 16px 10px 0;" },
-                h("a", { "href": "/inscription", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              $h("div", { "style": "display: flex; flex-direction: column; gap: 8px; padding: 16px 10px 0;" },
+                $h("a", { "href": "/inscription", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                   "Trouver mon app",
-                  h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
-                    h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
-                      h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
+                    $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                      $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
                 ),
-                h("a", { "href": "/connexion", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-self: center; align-items: center; justify-content: center; height: 52px; padding: 0 28px; border-radius: 999px; border: 1px solid #D3D7DE; color: #0E0F12; text-decoration: none; font-size: 16px; font-weight: 600;" },
+                $h("a", { "href": "/connexion", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-self: center; align-items: center; justify-content: center; height: 52px; padding: 0 28px; border-radius: 999px; border: 1px solid #D3D7DE; color: #0E0F12; text-decoration: none; font-size: 16px; font-weight: 600;" },
                   "Se connecter"
                 )
               )

@@ -4,4 +4,4 @@ import './styles/ds/tokens.css';
 import './styles/ds/bundle.css';
 import './styles/cx.css';
 
-mountAuthPage(Connexion, '/compte');
+mountAuthPage(Connexion);

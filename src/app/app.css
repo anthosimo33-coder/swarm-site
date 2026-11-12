@@ -1,0 +1,3 @@
+/* Fond de l'app : la couleur des écrans (--surface), y compris sous un écran plus court
+   que la fenêtre et pendant le chargement d'un écran. Jamais de blanc ni de bande. */
+html, body { margin: 0; background: #080B12; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }

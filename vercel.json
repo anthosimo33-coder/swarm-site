@@ -4,5 +4,18 @@
   "buildCommand": "node scripts/vercel-build.mjs",
   "outputDirectory": "dist",
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/app/:path*",
+      "destination": "/app.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/compte",
+      "destination": "/app/compte",
+      "permanent": false
+    }
+  ]
 }

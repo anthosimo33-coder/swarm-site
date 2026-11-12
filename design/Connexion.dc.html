@@ -100,11 +100,11 @@ class Component extends DCLogic {
       ['alertes', '+69 comptes', 'dans le réseau de Love8']
     ].map((t, i) => ({ d: ic[t[0]], v: t[1], l: t[2], cls: i >= 4 ? 'auth-x1' : '', delay: (0.15 + i * 0.08).toFixed(2) + 's' }));
     const st = this.state || {};
-    // Sur le site, src/auth.js passe `auth` (Convex Auth). Sur le canevas, il n'y a
-    // pas de backend : le formulaire mène directement à la page Mon compte.
+    // Sur le site, src/auth.js passe `auth` (Convex Auth) et la connexion ouvre l'app.
+    // Sur le canevas, il n'y a ni backend ni app : une note le dit.
     const auth = this.props && this.props.auth;
     const run = async (action) => {
-      if (!auth) { window.location.href = 'Compte.dc.html'; return; }
+      if (!auth) { this.setState({ error: '', notice: 'Maquette : sur le site, ce bouton connecte et ouvre l’app.' }); return; }
       this.setState({ busy: true, error: '', notice: '' });
       const failed = await action();
       // Réussi : le pont emmène la personne sur sa page, le bouton reste désactivé d'ici là.

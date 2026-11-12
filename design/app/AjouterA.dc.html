@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Swarm, ajouter à un dossier : la liste</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div class="sw sw-ground" style="position: relative; overflow: hidden; min-height: 720px; box-sizing: border-box; padding: 40px; background: var(--surface); color: var(--ink); font-family: var(--font-body);">
+<div style="display: flex; gap: 32px; align-items: flex-start;">
+<span class="sw-video" style="display: block; width: 300px; border-radius: 24px; flex-shrink: 0; box-shadow: var(--shadow-card);"><img class="sw-cover" src="{{vb.src}}" alt=""><span class="sw-video-shade"></span><span class="sw-video-foot" style="left: 18px; bottom: 18px;"><span style="display: flex; flex-direction: column; gap: 4px;"><span class="sw-video-views" style="font-size: 30px;">{{vb.v}}</span><span class="sw-video-handle" style="font-size: 13px;">{{vb.h}}</span></span></span></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding-top: 8px;">
+<span class="sw-badge sw-badge-accent" style="align-self: flex-start;">{{vb.x}} sa normale</span>
+<span style="font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15;">TKA SD kelas 6 persiapannya bisa dimulai disini</span>
+<span style="font-size: 14px; color: var(--ink-muted);">Astra AI · publiée le {{vb.when}}</span>
+<div style="display: flex; gap: 6px; margin-top: 6px;"><button class="sw-btn sw-btn-icon" type="button" aria-label="Ajouter à un dossier" aria-expanded="true" style="background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-edge);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button class="sw-btn sw-btn-icon" type="button" aria-label="Suivre"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><button class="sw-btn sw-btn-icon" type="button" aria-label="Ouvrir sur TikTok"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
+</div>
+</div>
+<section role="dialog" aria-label="Ajouter à un dossier" style="position: absolute; left: 340px; top: 262px; width: 360px; border-radius: 22px; background: var(--surface-raised); border: 1px solid var(--line-strong); box-shadow: 0 30px 80px rgba(0,0,0,0.6); padding: 14px; display: flex; flex-direction: column; gap: 10px; animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;">
+<span aria-hidden="true" style="position: absolute; top: -8px; left: 24px; width: 14px; height: 14px; background: var(--surface-raised); border-left: 1px solid var(--line-strong); border-top: 1px solid var(--line-strong); transform: rotate(45deg);"></span>
+<div class="sw-search" style="height: 42px; padding: 0 12px; box-shadow: none; border-radius: 12px;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><input class="sw-search-input" type="search" aria-label="Chercher ou créer un dossier" placeholder="Chercher ou créer un dossier…" style="font-size: 14px;"></div>
+<div role="group" aria-label="Dossiers" style="display: flex; flex-direction: column;">
+<sc-for list="{{fl}}" as="d" hint-placeholder-count="4"><label style="display: flex; align-items: center; gap: 12px; padding: 8px 8px; border-radius: 12px; cursor: pointer;"><span role="checkbox" aria-checked="{{d.on}}" style="width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: {{d.box}}; box-shadow: inset 0 0 0 1.5px {{d.boxe}}; color: {{d.ck}};"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="width: 32px; height: 32px; border-radius: 9px; overflow: hidden; position: relative; flex-shrink: 0;"><img class="sw-cover" src="{{d.src}}" alt=""></span><span style="flex: 1; font-size: 14px; font-weight: 600;">{{d.name}}</span><span style="font-size: 12px; color: var(--ink-faint);">{{d.count}}</span></label></sc-for>
+</div>
+<a class="sw-more" href="#" style="padding: 6px 8px; gap: 10px; color: var(--accent);"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Nouveau dossier</a>
+<a class="sw-btn sw-btn-primary sw-btn-sm sw-btn-block" href="#">Enregistrer<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const vb = {"src": "/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4", "h": "@belajarbersamaespi", "app": "Astra AI", "v": "1,99 M", "x": "2 333×", "id": "7705368869250075925", "mk": "ID", "date": "07/11", "when": "07/11 · 11 h"};
+    const fl = [{"name": "Études, ce qui marche", "count": "7 éléments", "src": "/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4", "mos": [{"src": "/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4"}, {"src": "/_blob/ca1fa398c68488e3e076343e789d6194"}, {"src": "/_blob/0d296413178c5acb1c0fb28fed4013c6"}, {"src": "/_blob/d4e30dff2bad903e73b3bf856a6dc247"}], "on": "true", "box": "var(--blue-600)", "boxe": "var(--blue-600)", "ck": "#FFFFFF", "edge": "var(--accent)", "glow": "0 0 0 4px var(--accent-soft)"}, {"name": "Side hustle", "count": "5 éléments", "src": "/_blob/0488fb4a3b81c670ae8e5e16539e99ff", "mos": [{"src": "/_blob/0488fb4a3b81c670ae8e5e16539e99ff"}, {"src": "/_blob/b4bd2f77f49284da6cb01fbacea27c87"}, {"src": "/_blob/d42ca43c8e59b9ffb98eced43927e580"}, {"src": "/_blob/3d311cc9df04ec48df25bf6273370f52"}], "on": "false", "box": "transparent", "boxe": "var(--line-strong)", "ck": "transparent", "edge": "var(--line)", "glow": "none"}, {"name": "Jalousie et ex", "count": "5 éléments", "src": "/_blob/608419d1efd84ba7895e44ce6290cd99", "mos": [{"src": "/_blob/608419d1efd84ba7895e44ce6290cd99"}, {"src": "/_blob/fced59df4c6cc2aeb2e2a183072991f0"}, {"src": "/_blob/6e8d7a4f2d0e84e8ade285ae95e67d3b"}, {"src": "/_blob/08803231eb7ba99e9f91930899051246"}], "on": "false", "box": "transparent", "boxe": "var(--line-strong)", "ck": "transparent", "edge": "var(--line)", "glow": "none"}, {"name": "Couple", "count": "4 éléments", "src": "/_blob/63119f505f58b810c055512e54a2709e", "mos": [{"src": "/_blob/63119f505f58b810c055512e54a2709e"}, {"src": "/_blob/c14ebd0e0a8670ca25e430d53eb50b5a"}, {"src": "/_blob/06aed12697d59d747a1110b546008143"}, {"src": "/_blob/e78c76be4b9721a935134acfbd26f0c1"}], "on": "false", "box": "transparent", "boxe": "var(--line-strong)", "ck": "transparent", "edge": "var(--line)", "glow": "none"}];
+    return { vb, fl };
+  }
+}
+</script>
+</body>
+</html>

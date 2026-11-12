@@ -6,9 +6,12 @@ Chaque fichier .dc.html contient :
   - un gabarit <x-dc> avec des trous {{a.b}}, des boucles <sc-for> et des conditions <sc-if>,
   - une classe `Component extends DCLogic` (état, minuteries, renderVals()).
 
-Le script produit, pour chaque page :
-  - src/pages/<Nom>.js : un composant Preact (la classe d'origine + une méthode render()),
-  - src/styles/<prefixe>.css : le CSS de la page, keyframes préfixés pour éviter les collisions.
+Deux groupes d'écrans :
+  - le site (canevas du site, design/*.dc.html) -> src/pages/<Nom>.js + src/styles/<prefixe>.css ;
+  - l'app (canevas de l'app, design/app/*.dc.html) -> src/app/pages/<Nom>.js + src/app/styles/<prefixe>.css,
+    plus src/app/routes.js (adresse -> écran), lu par le routeur de l'app (src/app/main.js).
+Chaque composant = la classe d'origine + une méthode render(). Les keyframes sont préfixées
+par écran pour éviter les collisions. Un lien vers un artboard sans route fait échouer la conversion.
 
 Usage : python3 scripts/dc2preact.py   (ou npm run gen)
 """
@@ -26,7 +29,6 @@ PAGES = [
     ('TarifsMobile.dc.html', 'TarifsMobile', 'tfm'),
     ('Connexion.dc.html', 'Connexion', 'cx'),
     ('Inscription.dc.html', 'Inscription', 'ins'),
-    ('Compte.dc.html', 'Compte', 'cpt'),
 ]
 # Liens entre artboards du canevas -> routes du site
 LINKS = {
@@ -36,11 +38,37 @@ LINKS = {
     'TarifsMobile.dc.html': '/tarifs',
     'Connexion.dc.html': '/connexion',
     'Inscription.dc.html': '/inscription',
-    'Compte.dc.html': '/compte',
     '#quiz': '/inscription',      # « Trouver mon app » : création du compte
     '#connexion': '/connexion',   # « Se connecter »
     '#paiement': '/inscription',  # « Passer Pro » : on crée d'abord le compte
 }
+
+# L'app : artboard retenu -> (composant, préfixe CSS, adresse, titre de l'onglet). Une adresse None : écran
+# converti mais pas encore routé (interaction que la session app intègre à son écran hôte).
+APP_PAGES = [
+    ('Main.dc.html', 'Accueil', 'a-acc', '/app', 'Accueil'),
+    ('AppsA.dc.html', 'Apps', 'a-apps', '/app/apps', 'Apps'),
+    ('FicheA.dc.html', 'FicheApp', 'a-fapp', '/app/apps/astra-ai', 'Astra AI'),
+    ('VideoA.dc.html', 'Video', 'a-vid', '/app/videos/learnwithjoel1', 'Vidéos'),
+    ('FormatsB.dc.html', 'Formats', 'a-fmts', '/app/formats', 'Formats'),
+    ('FormatFicheA.dc.html', 'FicheFormat', 'a-ffmt', '/app/formats/ich-losche-das-in-2h', 'Format'),
+    ('CreateursA.dc.html', 'Createurs', 'a-crea', '/app/createurs', 'Créateurs'),
+    ('CreateursB.dc.html', 'CreateursCartes', 'a-creb', '/app/createurs/cartes', 'Créateurs'),
+    ('CreateurFicheA.dc.html', 'FicheCreateur', 'a-fcre', '/app/createurs/zinedine-gsbb', 'Créateur'),
+    ('DossiersA.dc.html', 'Dossiers', 'a-dos', '/app/dossiers', 'Dossiers'),
+    ('DossiersB.dc.html', 'Dossier', 'a-dosb', '/app/dossiers/etudes', 'Dossier'),
+    ('AlertesA.dc.html', 'Alertes', 'a-ale', '/app/alertes', 'Alertes'),
+    ('CreerAlerteA.dc.html', 'CreerAlerte', 'a-cale', '/app/alertes/nouvelle', 'Nouvelle alerte'),
+    ('RechercheB.dc.html', 'Recherche', 'a-rech', '/app/recherche', 'Recherche'),
+    ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte'),
+    ('CompteB.dc.html', 'Abonnement', 'a-abo', '/app/compte/abonnement', 'Abonnement'),
+]
+APP_LINKS = {src: route for src, _, _, route, _ in APP_PAGES if route}
+APP_LINKS.update({
+    'FormatsA.dc.html': '/app/formats',        # ancien écran Formats, remplacé par FormatsB
+    'ConnexionA.dc.html': '/app/deconnexion',  # « Se déconnecter » du compte : le routeur déconnecte puis renvoie à l'accueil du site
+})
+
 VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
 HOLE = re.compile(r'\{\{\s*([A-Za-z_$][\w$]*(?:\.[\w$]+)*)\s*\}\}')
 
@@ -129,23 +157,24 @@ ANCHORS = {
 LP_FILES = ('LP.dc.html', 'LPMobile.dc.html')
 
 
-def rewrite_links(value, label=None):
-    if value in LP_FILES and label in ANCHORS:
+def rewrite_links(value, label=None, links=LINKS):
+    if links is LINKS and value in LP_FILES and label in ANCHORS:
         return '/' + ANCHORS[label]
-    if value in LINKS:
-        return LINKS[value]
+    if value in links:
+        return links[value]
     return value
 
 
-def rewrite_script_links(script):
-    files = '|'.join(re.escape(f) for f in LP_FILES)
-    for label, anchor in ANCHORS.items():
-        lab = re.escape(label)
-        script = re.sub(r"\['" + lab + r"', '(?:" + files + r")'\]", f"['{label}', '/{anchor}']", script)
-        script = re.sub(r"(t: '" + lab + r"'[^}]*?href: )'(?:" + files + r")'", r"\g<1>'/" + anchor + "'", script)
-    for old, new in LINKS.items():
+def rewrite_script_links(script, links=LINKS):
+    if links is LINKS:
+        files = '|'.join(re.escape(f) for f in LP_FILES)
+        for label, anchor in ANCHORS.items():
+            lab = re.escape(label)
+            script = re.sub(r"\['" + lab + r"', '(?:" + files + r")'\]", f"['{label}', '/{anchor}']", script)
+            script = re.sub(r"(t: '" + lab + r"'[^}]*?href: )'(?:" + files + r")'", r"\g<1>'/" + anchor + "'", script)
+    for old, new in links.items():
         if old.endswith('.dc.html'):
-            script = script.replace(f"'{old}'", f"'{new}'")
+            script = script.replace(f"'{old}'", f"'{new}'").replace(f'"{old}"', f'"{new}"')
     return script
 
 
@@ -191,16 +220,16 @@ def gen(node, scope, ind):
             props.append(f'{json.dumps(name)}: true')
             continue
         if name == 'href':
-            val = rewrite_links(val, text_of(node))
+            val = rewrite_links(val, text_of(node), CURRENT['links'])
         props.append(f'{json.dumps(attr_name(name))}: {value_expr(val, scope)}')
     props_js = '{ ' + ', '.join(props) + ' }' if props else 'null'
     tag = json.dumps(SVG_TAGS.get(node.tag, node.tag))
     if node.tag in VOID or not node.children:
-        return f'{pad}h({tag}, {props_js})'
+        return f'{pad}$h({tag}, {props_js})'
     inner = gen_children(node, scope, ind + 1)
     if not inner.strip():
-        return f'{pad}h({tag}, {props_js})'
-    return f'{pad}h({tag}, {props_js},\n{inner}\n{pad})'
+        return f'{pad}$h({tag}, {props_js})'
+    return f'{pad}$h({tag}, {props_js},\n{inner}\n{pad})'
 
 
 def gen_children(node, scope, ind):
@@ -220,12 +249,23 @@ def prefix_keyframes(css, template, script, prefix):
     return css, template, script
 
 
-# Images : le canevas les sert sous /_blob/<id> ; le site les sert depuis public/media/.
+# Images : chaque canevas les sert sous /_blob/<id> ; le site les sert depuis public/media/.
 MEDIA = json.loads((ROOT / 'design' / 'media.json').read_text())
+MEDIA.update(json.loads((ROOT / 'design' / 'app' / 'media.json').read_text()))
+
+GROUPS = {
+    'site': {'src': ROOT / 'design', 'pages': ROOT / 'src' / 'pages', 'styles': ROOT / 'src' / 'styles',
+             'runtime': '../runtime.js', 'links': LINKS, 'css_import': False},
+    'app': {'src': ROOT / 'design' / 'app', 'pages': ROOT / 'src' / 'app' / 'pages', 'styles': ROOT / 'src' / 'app' / 'styles',
+            'runtime': '../../runtime.js', 'links': APP_LINKS, 'css_import': False},  # CSS chargé par routes.js
+}
+CURRENT = {'links': LINKS}
 
 
-def convert(src, name, prefix):
-    text = (ROOT / 'design' / src).read_text()
+def convert(src, name, prefix, group='site'):
+    g = GROUPS[group]
+    CURRENT['links'] = g['links']
+    text = (g['src'] / src).read_text()
     for blob, local in MEDIA.items():
         text = text.replace(blob, local)
     xdc = text.split('<x-dc>', 1)[1].split('</x-dc>', 1)[0]
@@ -235,7 +275,7 @@ def convert(src, name, prefix):
     script = re.search(r'<script type="text/x-dc" data-dc-script[^>]*>(.*?)</script>', text, re.S).group(1)
 
     css, template, script = prefix_keyframes(css, template, script, prefix)
-    script = rewrite_script_links(script)
+    script = rewrite_script_links(script, g['links'])
 
     p = Parser()
     p.feed(template)
@@ -248,10 +288,12 @@ def convert(src, name, prefix):
     end = script.rindex('}')
     cls_body = script[start:end].rstrip()
 
-    js = f"""// Généré par scripts/dc2preact.py depuis design/{src} — ne pas modifier à la main.
-import {{ h }} from 'preact';
-import {{ DCLogic, $t, $l }} from '../runtime.js';
-
+    rel = src if group == 'site' else f'app/{src}'
+    css_import = f"import '../styles/{prefix}.css';\n" if g['css_import'] else ''
+    js = f"""// Généré par scripts/dc2preact.py depuis design/{rel} — ne pas modifier à la main.
+import {{ h as $h }} from 'preact';  // $h : jamais masqué par une variable de boucle
+import {{ DCLogic, $t, $l }} from '{g['runtime']}';
+{css_import}
 export default class {name} extends DCLogic {{{cls_body}
 
   render() {{
@@ -262,12 +304,32 @@ export default class {name} extends DCLogic {{{cls_body}
   }}
 }}
 """
-    (ROOT / 'src' / 'pages' / f'{name}.js').write_text(js)
-    (ROOT / 'src' / 'styles' / f'{prefix}.css').write_text(
-        f'/* Généré par scripts/dc2preact.py depuis design/{src} */\n{css}\n')
-    print(f'{src} -> src/pages/{name}.js, src/styles/{prefix}.css')
+    # Un lien vers un artboard sans route mènerait nulle part : on s'arrête.
+    left = sorted(set(re.findall(r'[A-Za-z]+\.dc\.html', js.split('\n', 1)[1])))  # hors commentaire d'en-tête
+    if left:
+        raise SystemExit(f'design/{rel} : lien(s) sans route : {", ".join(left)}')
+    g['pages'].mkdir(parents=True, exist_ok=True)
+    g['styles'].mkdir(parents=True, exist_ok=True)
+    (g['pages'] / f'{name}.js').write_text(js)
+    (g['styles'] / f'{prefix}.css').write_text(f'/* Généré par scripts/dc2preact.py depuis design/{rel} */\n{css}\n')
+    print(f'{rel} -> {g["pages"].relative_to(ROOT)}/{name}.js')
+
+
+def write_app_routes():
+    lines = ['// Généré par scripts/dc2preact.py — ne pas modifier à la main.',
+             '// Adresse de l\'app -> titre de l\'onglet et écran (chargé à la demande).', 'export const ROUTES = {']
+    for _, name, prefix, route, title in APP_PAGES:
+        if route:
+            load = f"Promise.all([import('./pages/{name}.js'), import('./styles/{prefix}.css')]).then(([m]) => m)"
+            lines.append(f"  '{route}': {{ title: {json.dumps(title, ensure_ascii=False)}, load: () => {load} }},")
+    lines.append('};')
+    (ROOT / 'src' / 'app' / 'routes.js').write_text('\n'.join(lines) + '\n')
+    print('src/app/routes.js')
 
 
 if __name__ == '__main__':
     for args in PAGES:
         convert(*args)
+    for src, name, prefix, _, _ in APP_PAGES:
+        convert(src, name, prefix, 'app')
+    write_app_routes()

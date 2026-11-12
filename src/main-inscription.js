@@ -4,4 +4,4 @@ import './styles/ds/tokens.css';
 import './styles/ds/bundle.css';
 import './styles/ins.css';
 
-mountAuthPage(Inscription, '/tarifs');
+mountAuthPage(Inscription);
