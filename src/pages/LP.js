@@ -111,9 +111,7 @@ export default class LP extends DCLogic {
 
     const open = st.open === undefined ? 0 : st.open;
     const faqData = [
-      ['C’est quoi Swarm ?', 'Un outil qui repère les apps et les formats qui explosent en ce moment sur TikTok, Instagram et YouTube Shorts, sur n’importe quel marché, et te montre les créateurs derrière : leurs comptes, leurs vidéos, leurs hooks, leurs sons et leurs revenus estimés.'],
       ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.'],
-      ['En quoi vos données sont différentes ?', 'On ne regarde pas les pubs payantes. On suit les comptes créateurs qui poussent chaque app, relus en continu, et une vidéo n’est rattachée à une app que si elle la cite vraiment.'],
       ['Je débute, est-ce que c’est pour moi ?', 'Oui. Tu choisis un marché et une niche, Swarm te montre les apps et les formats qui y explosent en ce moment, et les créateurs qui les portent. Pas besoin de savoir coder.'],
       ['Les revenus estimés, vous les sortez d’où ?', 'Comme Sensor Tower pour les apps : les vues des comptes de l’app multipliées par ce que rapportent 1 000 vues (2,50 à 3,50 €), recoupées avec les téléchargements et le prix affiché. Tu vois la fourchette et le calcul.'],
       ['C’est légal de copier une app ?', 'Copier une niche, un modèle, une stratégie de contenu : oui, tout le marché le fait. Copier une marque ou du code : non, et on ne t’y aide pas.'],
@@ -860,11 +858,11 @@ export default class LP extends DCLogic {
                     "Écris-nous, on te répond par e-mail."
                   ),
                   h("div", { "style": "display: flex; gap: 10px; flex-wrap: wrap;" },
-                    h("a", { "href": "#contact", "style": "display: inline-flex; align-items: center; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 6px 0 22px; border-radius: 999px; background: #FFFFFF; color: #05070C; text-decoration: none; font-size: 15px; font-weight: 600;" },
+                    h("a", { "href": "#contact", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 4px 0 20px; border-radius: 999px; background: #FFFFFF; border: 1px solid #FFFFFF; color: #05070C; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                       "Écrire à l'équipe",
-                      h("span", { "style": "width: 38px; height: 38px; border-radius: 50%; background: #05070C; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center;" },
-                        h("svg", { "width": "14", "height": "14", "viewbox": "0 0 18 18", "aria-hidden": "true" },
-                          h("path", { "d": "M4 9h10M10 5l4 4-4 4", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      h("span", { "aria-hidden": "true", "style": "width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #05070C; display: grid; place-items: center;" },
+                        h("svg", { "width": "16", "height": "16", "viewbox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
+                          h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         )
                       )
                     ),
