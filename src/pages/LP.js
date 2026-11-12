@@ -847,7 +847,7 @@ export default class LP extends DCLogic {
                 h("p", { "style": "margin: 0; max-width: 420px; font-size: 19px; line-height: 1.55; color: #9AA3B2;" },
                   "Tout ce qu'il faut savoir avant de trouver ton app. Le reste, on en parle par e-mail."
                 ),
-                h("div", { "style": "margin-top: 28px; max-width: 420px; border-radius: 22px; padding: 24px; background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 18px;" },
+                h("div", { "style": "margin-top: 28px; max-width: 460px; border-radius: 22px; padding: 24px; background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 18px;" },
                   h("div", { "style": "display: flex; align-items: center; gap: 12px;" },
                     h("span", { "style": "width: 10px; height: 10px; border-radius: 50%; background: #4C9AFF; animation: lp-pulseDk 1.8s infinite;" }),
                     h("span", { "style": "font-weight: 600; font-size: 17px;" },
