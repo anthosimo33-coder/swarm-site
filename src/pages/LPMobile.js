@@ -16,6 +16,21 @@ export default class LPMobile extends DCLogic {
     const blue = '#0B6FE0';
 
     // Barre de recherche qui s'écrit seule (mots courts : tiennent sur 390 px)
+    const q = st.q || '';
+    const focused = !!st.focus;
+    const search = {
+      q,
+      ph: focused ? 'Je veux lancer une app de…' : '',
+      animO: !focused && !q ? 1 : 0,
+      onQ: (e) => this.setState({ q: e.target.value }),
+      onFocus: () => this.setState({ focus: true }),
+      onBlur: () => this.setState({ focus: false }),
+      submitSearch: (e) => {
+        e.preventDefault();
+        const v = (this.state.q || '').trim();
+        window.location.href = '/inscription' + (v ? '?q=' + encodeURIComponent(v) : '');
+      }
+    };
     const words = ['une app de couple', 'une app d’études', 'une app de foi', 'une app de sport', 'une app IA'];
     const spans = words.map((w) => w.length * 70 + 1400 + w.length * 35 + 300);
     const total = spans.reduce((a, b) => a + b, 0);
@@ -107,6 +122,7 @@ export default class LPMobile extends DCLogic {
 
     return {
       typed: w.slice(0, Math.max(0, n)),
+      q: search.q, ph: search.ph, animO: search.animO, onQ: search.onQ, onFocus: search.onFocus, onBlur: search.onBlur, submitSearch: search.submitSearch,
       miniApps: [
         { icon: ICON['Luv or Pop'], name: 'Luv or Pop', v: '7,5 M · H+26', chip: blue, ink: '#FFFFFF' },
         { icon: ICON['DJ Kartier'], name: 'DJ Kartier', v: '5,5 M · H+43', chip: '#EEF4FF', ink: blue },
@@ -182,7 +198,7 @@ export default class LPMobile extends DCLogic {
                   "swarm"
                 )
               ),
-              h("a", { "href": "#connexion", "class": "tap", "style": "display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
+              h("a", { "href": "/connexion", "class": "tap", "style": "display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                 "Se connecter"
               ),
               h("button", { "type": "button", "class": "tap", "onClick": $v.openMenu, "aria-label": "Ouvrir le menu", "aria-expanded": $v.menuOpen, "style": "width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 50%; background: #0E0F12; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 14px rgba(14,15,18,0.22);" },
@@ -228,21 +244,27 @@ export default class LPMobile extends DCLogic {
             h("p", { "style": "margin: 0; font-size: 17px; line-height: 1.5; color: #3A3F47; animation: lpm-blurIn 0.9s ease-out both; animation-delay: 0.3s;" },
               "Repère les apps et les formats qui explosent en ce moment sur les réseaux, sur n'importe quel marché, et les créateurs qui les font exploser."
             ),
-            h("a", { "href": "/tarifs", "aria-label": "Trouver mon app", "class": "tap", "style": "width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; border-radius: 26px; background: rgba(255,255,255,0.72); border: 1px solid #FFFFFF; backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 24px 60px rgba(16,24,40,0.14), 0 0 0 5px rgba(255,255,255,0.35), inset 0 1px 0 #FFFFFF; text-decoration: none; color: #0E0F12; animation: lpm-blurIn 0.9s ease-out both; animation-delay: 0.45s;" },
-              h("span", { "aria-hidden": "true", "style": "display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px; text-align: left; font-size: 16px; color: #656B74; white-space: nowrap; overflow: hidden;" },
-                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "style": "flex-shrink: 0;" },
+            h("form", { "role": "search", "aria-label": "Trouver mon app", "onSubmit": $v.submitSearch, "style": "margin: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; border-radius: 26px; background: rgba(255,255,255,0.72); border: 1px solid #FFFFFF; backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 24px 60px rgba(16,24,40,0.14), 0 0 0 5px rgba(255,255,255,0.35), inset 0 1px 0 #FFFFFF; color: #0E0F12; animation: lpm-blurIn 0.9s ease-out both; animation-delay: 0.45s;" },
+              h("label", { "style": "position: relative; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px; text-align: left; cursor: text;" },
+                h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                   h("circle", { "cx": "9", "cy": "9", "r": "5.8", "fill": "none", "stroke": "#656B74", "stroke-width": "1.8" }),
                   h("path", { "d": "M13.4 13.4L17 17", "stroke": "#656B74", "stroke-width": "1.8", "stroke-linecap": "round" })
                 ),
-                h("span", null,
-                  "Je veux lancer ",
-                  h("span", { "style": "color: #0E0F12; font-weight: 600;" },
-                    $t($v.typed)
+                h("span", { "style": "position: relative; flex: 1 1 auto; min-width: 0; height: 100%; display: flex; align-items: center;" },
+                  h("span", { "style": "position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;" },
+                    "Quelle app veux-tu lancer ?"
                   ),
-                  h("span", { "style": "display: inline-block; width: 2px; height: 1.1em; background: #0B6FE0; vertical-align: -0.2em; margin-left: 2px; animation: lpm-caret 1s steps(1) infinite;" })
+                  h("input", { "type": "text", "name": "q", "value": $v.q, "onInput": $v.onQ, "onChange": $v.onQ, "onFocus": $v.onFocus, "onBlur": $v.onBlur, "placeholder": $v.ph, "autocomplete": "off", "enterkeyhint": "search", "style": "position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box; border: 0; outline: none; background: transparent; padding: 0; margin: 0; font-family: inherit; font-size: 16px; font-weight: 600; color: #0E0F12; -webkit-appearance: none; appearance: none;" }),
+                  h("span", { "aria-hidden": "true", "style": `pointer-events: none; opacity: ${$t($v.animO)}; transition: opacity 0.2s ease; font-size: 16px; color: #656B74; white-space: nowrap; overflow: hidden;` },
+                    "Je veux lancer ",
+                    h("span", { "style": "color: #0E0F12; font-weight: 600;" },
+                      $t($v.typed)
+                    ),
+                    h("span", { "style": "display: inline-block; width: 2px; height: 1.1em; background: #0B6FE0; vertical-align: -0.2em; margin-left: 2px; animation: lpm-caret 1s steps(1) infinite;" })
+                  )
                 )
               ),
-              h("span", { "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("button", { "type": "submit", "class": "tap", "style": "cursor: pointer; font-family: inherit; display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -441,7 +463,7 @@ export default class LPMobile extends DCLogic {
               )
             ),
             h("div", { "style": "padding: 12px 20px 0;" },
-              h("a", { "href": "/tarifs", "class": "tap", "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("a", { "href": "/inscription", "class": "tap", "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir ce qui explose",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -492,7 +514,7 @@ export default class LPMobile extends DCLogic {
               )
             ),
             h("div", { "style": "padding: 16px 20px 0;" },
-              h("a", { "href": "/tarifs", "class": "tap", "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("a", { "href": "/inscription", "class": "tap", "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir les formats",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -636,7 +658,7 @@ export default class LPMobile extends DCLogic {
               h("p", { "style": "position: relative; margin: 0; font-size: 16px; color: #9AA3B2;" },
                 "Trouve-la avant les autres."
               ),
-              h("a", { "href": "/tarifs", "class": "tap", "style": "position: relative; margin-top: 8px; display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("a", { "href": "/inscription", "class": "tap", "style": "position: relative; margin-top: 8px; display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -749,7 +771,7 @@ export default class LPMobile extends DCLogic {
                 ])
               ),
               h("div", { "style": "display: flex; flex-direction: column; gap: 8px; padding: 16px 10px 0;" },
-                h("a", { "href": "/tarifs", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                h("a", { "href": "/inscription", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                   "Trouver mon app",
                   h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                     h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -757,7 +779,7 @@ export default class LPMobile extends DCLogic {
                     )
                   )
                 ),
-                h("a", { "href": "#connexion", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-self: center; align-items: center; justify-content: center; height: 52px; padding: 0 28px; border-radius: 999px; border: 1px solid #D3D7DE; color: #0E0F12; text-decoration: none; font-size: 16px; font-weight: 600;" },
+                h("a", { "href": "/connexion", "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-self: center; align-items: center; justify-content: center; height: 52px; padding: 0 28px; border-radius: 999px; border: 1px solid #D3D7DE; color: #0E0F12; text-decoration: none; font-size: 16px; font-weight: 600;" },
                   "Se connecter"
                 )
               )

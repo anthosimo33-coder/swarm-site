@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Inscription · Swarm</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+html,body{overflow-x:clip;max-width:100%}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+.auth-notice{border-radius:14px;padding:12px 14px;background:var(--accent-soft);border:1px solid var(--accent-edge);color:var(--ink-soft);font-size:14px;line-height:1.5}
+@media (max-width: 860px){
+.auth-root{padding:20px 12px 32px !important;gap:20px !important}
+.auth-card{padding:8px !important;border-radius:26px !important;gap:8px !important}
+.auth-form{padding:28px 14px 24px !important}
+.auth-side{padding:32px 20px !important;gap:24px !important;border-radius:20px !important}
+.auth-side h2{font-size:34px !important}
+.auth-side .sw-stat{font-size:22px !important}
+.auth-shift{margin-left:0 !important}
+}
+</style>
+</helmet>
+<div class="sw sw-ground auth-root" style="min-height: 100vh; box-sizing: border-box; padding: 32px 24px 48px; display: flex; flex-direction: column; align-items: center; gap: 28px; color: var(--ink); font-family: var(--font-body);">
+
+<a class="sw-logo" href="LP.dc.html" aria-label="Swarm, page d'accueil"><svg class="sw-logo-mark on-dark" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true" style="width: 30px; height: 30px;"><circle class="d-a" cx="5" cy="8" r="2.3"></circle><circle class="d-a" cx="11" cy="5" r="2.3"></circle><circle class="d-a" cx="17" cy="8" r="2.3"></circle><circle class="d-b" cx="8" cy="14" r="2.3"></circle><circle class="d-b" cx="14" cy="13" r="2.3"></circle><circle class="d-b" cx="19" cy="17" r="2.3"></circle><circle class="d-b" cx="11" cy="20" r="2.3"></circle></svg><span class="sw-wordmark" style="font-size: 25px;">swarm</span></a>
+
+<div class="auth-card" style="width: 100%; max-width: 1320px; box-sizing: border-box; padding: 20px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 20px;">
+
+<section class="auth-form" style="display: flex; align-items: center; justify-content: center; padding: 56px 40px;">
+<form onSubmit="{{submit}}" style="width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 22px;" aria-labelledby="t-signup">
+<h1 id="t-signup" style="margin: 0 0 6px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;">Créer un compte</h1>
+<sc-if value="{{hasQ}}" hint-placeholder-val="{{false}}"><p class="auth-notice" style="margin: -8px 0 0;">Ta recherche : <span style="color: var(--ink); font-weight: 600;">« {{q}} »</span>. Crée ton compte pour voir ce qui explose dans ce créneau.</p></sc-if>
+<button class="sw-btn sw-btn-provider" type="button" onClick="{{next}}"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"></path><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"></path><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"></path><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"></path></svg>Continuer avec Google</button>
+<div class="sw-divider">Ou avec ton e-mail</div>
+<div class="sw-field"><label class="sw-label" for="sa-mail">E-mail</label><input class="sw-input" id="sa-mail" name="email" type="email" required autocomplete="email" placeholder="toi@exemple.fr"><span class="sw-hint">On t'envoie un code à 6 chiffres pour confirmer ton e-mail.</span></div>
+<button class="sw-btn sw-btn-primary sw-btn-lg sw-btn-block" type="submit" style="margin-top: 2px; justify-content: center; cursor: pointer; font-family: inherit;">Créer mon compte<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+<p style="margin: 0; text-align: center; font-size: 13px; line-height: 1.6; color: var(--ink-faint);">En continuant, tu acceptes nos <a class="sw-link-quiet" href="#cgv">CGV</a> et notre <a class="sw-link-quiet" href="#confidentialite">politique de confidentialité</a>.</p>
+<p style="margin: 4px 0 0; text-align: center; font-size: 14px; color: var(--ink-muted);">Déjà un compte ? <a class="sw-link" href="Connexion.dc.html">Se connecter</a></p>
+</form>
+</section>
+
+<section class="auth-side" aria-label="Ce qu'en disent les membres" style="position: relative; overflow: hidden; border-radius: 24px; background: var(--ground); border: 1px solid var(--line); padding: 64px 56px; display: flex; flex-direction: column; gap: 32px;">
+<div aria-hidden="true" class="sw-dots-bg" style="position: absolute; inset: 0; -webkit-mask-image: radial-gradient(80% 70% at 30% 10%, #000, transparent); mask-image: radial-gradient(80% 70% at 30% 10%, #000, transparent);"></div>
+<div aria-hidden="true" style="position: absolute; left: -160px; bottom: -260px; width: 680px; height: 680px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.28), transparent); animation: sw-drift 16s ease-in-out infinite;"></div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 16px;">
+<h2 class="sw-enter" style="margin: 0; max-width: 560px; font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 700; letter-spacing: -0.05em;">Ta prochaine app <span style="color: var(--accent);">explose déjà sur les réseaux.</span></h2>
+<div style="display: flex; align-items: center; gap: 14px;">
+<span aria-hidden="true" style="display: flex;"><span class="sw-avatar" style="width: 30px; height: 30px; background: #1B2333; border: 2px solid var(--ground); box-shadow: none;"></span><span class="sw-avatar" style="width: 30px; height: 30px; margin-left: -8px; background: #222B3D; border: 2px solid var(--ground); box-shadow: none;"></span><span class="sw-avatar" style="width: 30px; height: 30px; margin-left: -8px; background: #2A3447; border: 2px solid var(--ground); box-shadow: none;"></span></span>
+<span style="font-size: 15px; color: var(--ink-muted);">Rejoins <span style="color: var(--ink); font-weight: 600;">[N] membres</span> qui repèrent les apps avant tout le monde.</span>
+</div>
+</div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 14px;">
+<sc-for list="{{avis}}" as="r" hint-placeholder-count="3">
+<figure class="sw-card sw-enter auth-shift {{r.cls}}" style="margin: 0 0 0 {{r.shift}}; padding: 22px 24px; border-radius: 20px; display: flex; flex-direction: column; gap: 16px; animation-delay: {{r.delay}};">
+<blockquote style="margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink-soft);">{{r.q}}</blockquote>
+<figcaption style="display: flex; align-items: center; gap: 12px;">
+<span aria-hidden="true" style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(180deg, #1B2333, #111724); border: 1px solid rgba(255,255,255,0.10); display: inline-flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="9" r="4" fill="#3A4558"></circle><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4" fill="#3A4558"></path></svg></span>
+<span style="display: flex; flex-direction: column;"><span style="font-size: 14px; font-weight: 600;">{{r.name}}</span><span style="font-size: 13px; color: var(--ink-faint);">{{r.role}}</span></span>
+</figcaption>
+</figure>
+</sc-for>
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const avis = [
+      ['« [Ce qu’il a trouvé avec Swarm, avec un chiffre : vues, clients ou revenus] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]'],
+      ['« [Le format copié qui a marché du premier coup] »', '[Prénom N.]', '[Niche]'],
+      ['« [Pourquoi Swarm plutôt qu’une formation à 1 000 €] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]']
+    ].map((a, i) => ({ q: a[0], name: a[1], role: a[2], cls: i === 1 ? 'is-featured' : '', shift: i === 1 ? '40px' : '0px', delay: (0.2 + i * 0.12).toFixed(2) + 's' }));
+    const q = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '').trim().slice(0, 80) : '';
+    const next = () => { window.location.href = 'Tarifs.dc.html'; };
+    return {
+      avis,
+      q,
+      hasQ: !!q,
+      next,
+      submit: (e) => { e.preventDefault(); next(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

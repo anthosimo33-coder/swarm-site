@@ -4,12 +4,13 @@ Landing page et page tarifs de Swarm (nom provisoire) : les apps et les formats 
 
 - `/` : la landing page
 - `/tarifs` : la page tarifs (un seul plan, Pro)
+- `/connexion` et `/inscription` : les écrans retenus sur le canevas de l'app (Connexion A, Inscription A), rendus responsives
 
 Chaque page existe en version desktop et en version mobile. La version mobile s'affiche sous 860 px de large, et la page bascule si la fenêtre change de taille (`src/runtime.js`, `Responsive`).
 
 ## D'où vient le code
 
-Les pages sont dessinées sur le canevas de design (artboards `LP`, `LPMobile`, `Tarifs`, `TarifsMobile`). Leurs sources sont copiées dans `design/*.dc.html`, puis converties en composants Preact par `scripts/dc2preact.py` :
+Les pages sont dessinées sur le canevas de design (artboards `LP`, `LPMobile`, `Tarifs`, `TarifsMobile`, `Connexion`, `Inscription`). Connexion et Inscription utilisent le design system Swarm (`src/styles/ds/`, copie de `design/ds/swarm/`). Leurs sources sont copiées dans `design/*.dc.html`, puis converties en composants Preact par `scripts/dc2preact.py` :
 
 | Source | Composant | CSS |
 | --- | --- | --- |
@@ -17,6 +18,8 @@ Les pages sont dessinées sur le canevas de design (artboards `LP`, `LPMobile`, 
 | `design/LPMobile.dc.html` | `src/pages/LPMobile.js` | `src/styles/lpm.css` |
 | `design/Tarifs.dc.html` | `src/pages/Tarifs.js` | `src/styles/tf.css` |
 | `design/TarifsMobile.dc.html` | `src/pages/TarifsMobile.js` | `src/styles/tfm.css` |
+| `design/Connexion.dc.html` | `src/pages/Connexion.js` | `src/styles/cx.css` + design system |
+| `design/Inscription.dc.html` | `src/pages/Inscription.js` | `src/styles/ins.css` + design system |
 
 Les fichiers de `src/pages` et `src/styles` sont générés : on ne les modifie pas à la main. Pour changer une page, on modifie l'artboard, on recopie le `.dc.html` dans `design/`, puis :
 
@@ -31,7 +34,8 @@ Les images (logos des apps, couvertures des vidéos) sont envoyées sur le canev
 Ce que fait la conversion :
 - les adresses d'images `/_blob/<id>` du canevas deviennent `/media/<fichier>` ;
 - les liens entre artboards deviennent des routes (`/`, `/tarifs`), et depuis les tarifs, les liens vers la LP pointent sur la bonne section ;
-- `#quiz` mène à `/tarifs`, puisqu'il n'y a pas de diagnostic gratuit ;
+- « Trouver mon app » (`#quiz`) et « Passer Pro » (`#paiement`) mènent à `/inscription`, « Se connecter » (`#connexion`) à `/connexion` ;
+- la barre « Je veux lancer… » du hero est un vrai champ : la recherche part vers `/inscription?q=…`, qui la rappelle au-dessus du formulaire ;
 - les keyframes sont préfixées par page (`lp-`, `lpm-`, `tf-`, `tfm-`) pour qu'elles ne se marchent pas dessus.
 
 ## Lancer en local
@@ -48,7 +52,8 @@ Vercel, projet relié à ce dépôt : chaque push sur `main` déploie en product
 ## Reste à brancher
 
 - La vidéo motion sous le hero (l'encart 16:9 l'attend).
-- La connexion (`#connexion`), le paiement (`#paiement`) et les pages légales (`#cgv`, `#confidentialite`, `#mentions`, `#contact`).
+- L'authentification : aucun compte n'est créé. « Créer mon compte » mène aux tarifs ; « Se connecter » affiche que l'espace membre n'est pas encore ouvert.
+- Le paiement et les pages légales (`#cgv`, `#confidentialite`, `#mentions`, `#contact`).
 - Les avis : emplacements entre crochets, à remplacer par de vrais avis.
 - Les couvertures de vidéos montrent des créateurs tiers et les logos sont des marques : à valider (droit à l'image, usage des marques) avant d'en faire de la publicité.
 - Les chiffres affichés (+1 000 apps, +100 000 comptes, TikTok + Instagram + YouTube Shorts) doivent être vrais au lancement.

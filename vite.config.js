@@ -6,13 +6,13 @@ const cleanUrls = {
   name: 'clean-urls',
   configureServer(server) {
     server.middlewares.use((req, _res, next) => {
-      if (req.url === '/tarifs' || req.url.startsWith('/tarifs?')) req.url = req.url.replace('/tarifs', '/tarifs.html');
+      req.url = req.url.replace(/^\/(tarifs|connexion|inscription)(?=$|\?)/, '/$1.html');
       next();
     });
   },
   configurePreviewServer(server) {
     server.middlewares.use((req, _res, next) => {
-      if (req.url === '/tarifs' || req.url.startsWith('/tarifs?')) req.url = req.url.replace('/tarifs', '/tarifs.html');
+      req.url = req.url.replace(/^\/(tarifs|connexion|inscription)(?=$|\?)/, '/$1.html');
       next();
     });
   },
@@ -25,6 +25,8 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         tarifs: resolve(import.meta.dirname, 'tarifs.html'),
+        connexion: resolve(import.meta.dirname, 'connexion.html'),
+        inscription: resolve(import.meta.dirname, 'inscription.html'),
       },
     },
   },

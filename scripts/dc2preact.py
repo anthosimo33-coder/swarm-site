@@ -24,6 +24,8 @@ PAGES = [
     ('LPMobile.dc.html', 'LPMobile', 'lpm'),
     ('Tarifs.dc.html', 'Tarifs', 'tf'),
     ('TarifsMobile.dc.html', 'TarifsMobile', 'tfm'),
+    ('Connexion.dc.html', 'Connexion', 'cx'),
+    ('Inscription.dc.html', 'Inscription', 'ins'),
 ]
 # Liens entre artboards du canevas -> routes du site
 LINKS = {
@@ -31,7 +33,11 @@ LINKS = {
     'LPMobile.dc.html': '/',
     'Tarifs.dc.html': '/tarifs',
     'TarifsMobile.dc.html': '/tarifs',
-    '#quiz': '/tarifs',  # plus de diagnostic : l'action principale mène aux tarifs
+    'Connexion.dc.html': '/connexion',
+    'Inscription.dc.html': '/inscription',
+    '#quiz': '/inscription',      # « Trouver mon app » : création du compte
+    '#connexion': '/connexion',   # « Se connecter »
+    '#paiement': '/inscription',  # « Passer Pro » : on crée d'abord le compte
 }
 VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
 HOLE = re.compile(r'\{\{\s*([A-Za-z_$][\w$]*(?:\.[\w$]+)*)\s*\}\}')
@@ -82,7 +88,7 @@ SVG_ATTRS = {a.lower(): a for a in [
     'primitiveUnits', 'stdDeviation', 'textLength', 'lengthAdjust', 'startOffset', 'markerWidth', 'markerHeight',
     'markerUnits', 'refX', 'refY', 'pathLength', 'baseFrequency', 'numOctaves', 'attributeName', 'repeatCount',
     'keyTimes', 'keySplines', 'calcMode', 'xChannelSelector', 'yChannelSelector']}
-EVENTS = {'onclick': 'onClick', 'oninput': 'onInput', 'onchange': 'onChange', 'onsubmit': 'onSubmit',
+EVENTS = {'onclick': 'onClick', 'oninput': 'onInput', 'onchange': 'onChange', 'onsubmit': 'onSubmit', 'onfocus': 'onFocus', 'onblur': 'onBlur',
           'onmouseenter': 'onMouseEnter', 'onmouseleave': 'onMouseLeave', 'onkeydown': 'onKeyDown'}
 
 

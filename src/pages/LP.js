@@ -15,6 +15,21 @@ export default class LP extends DCLogic {
     const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
     const blue = this.props.blue ?? '#0B6FE0';
 
+    const q = st.q || '';
+    const focused = !!st.focus;
+    const search = {
+      q,
+      ph: focused ? 'Je veux lancer une app de…' : '',
+      animO: !focused && !q ? 1 : 0,
+      onQ: (e) => this.setState({ q: e.target.value }),
+      onFocus: () => this.setState({ focus: true }),
+      onBlur: () => this.setState({ focus: false }),
+      submitSearch: (e) => {
+        e.preventDefault();
+        const v = (this.state.q || '').trim();
+        window.location.href = '/inscription' + (v ? '?q=' + encodeURIComponent(v) : '');
+      }
+    };
     const words = ['une app de couple', 'une app pour les études', 'une app de séduction IA', 'une app de foi', 'une app de sport'];
     const spans = words.map((w) => w.length * 70 + 1400 + w.length * 35 + 300);
     const total = spans.reduce((a, b) => a + b, 0);
@@ -181,6 +196,7 @@ export default class LP extends DCLogic {
       toggleMenu: () => this.setState({ menu: !menuOpen }),
       closeMenu: () => this.setState({ menu: false }),
       typed: w.slice(0, Math.max(0, n)),
+      q: search.q, ph: search.ph, animO: search.animO, onQ: search.onQ, onFocus: search.onFocus, onBlur: search.onBlur, submitSearch: search.submitSearch,
       niches: [{ t: 'Couple' }, { t: 'Études' }, { t: 'Séduction IA' }, { t: 'Foi' }, { t: 'Sport' }, { t: 'IA & productivité' }],
       o1: mkO([['Astra AI', 300], ['Luv or Pop', 60]]),
       o2: mkO([['Love8', 320], ['Praktika', 20], ['Plug AI', 75]]),
@@ -253,10 +269,10 @@ export default class LP extends DCLogic {
               )
             ),
             h("div", { "style": "display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;" },
-              h("a", { "href": "#connexion", "class": "nh", "style": "display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
+              h("a", { "href": "/connexion", "class": "nh", "style": "display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                 "Se connecter"
               ),
-              h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 42px; box-sizing: border-box; padding: 0 4px 0 18px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("a", { "href": "/inscription", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 42px; box-sizing: border-box; padding: 0 4px 0 18px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Trouver mon app",
                 h("span", { "aria-hidden": "true", "style": "width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -345,19 +361,25 @@ export default class LP extends DCLogic {
               "Tu copies ce qui marche, tu lances la tienne."
             )
           ),
-          h("a", { "href": "/tarifs", "aria-label": "Trouver mon app", "style": "width: 100%; max-width: 680px; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 24px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.66); border: 1px solid rgba(255,255,255,0.98); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 24px 60px rgba(16,24,40,0.14), 0 0 0 6px rgba(255,255,255,0.35), inset 0 1px 0 #FFFFFF; text-decoration: none; color: #0E0F12; animation: lp-blurIn 0.9s ease-out both; animation-delay: 0.5s;" },
+          h("form", { "role": "search", "aria-label": "Trouver mon app", "onSubmit": $v.submitSearch, "style": "margin: 0; width: 100%; max-width: 680px; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 24px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.66); border: 1px solid rgba(255,255,255,0.98); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 24px 60px rgba(16,24,40,0.14), 0 0 0 6px rgba(255,255,255,0.35), inset 0 1px 0 #FFFFFF; color: #0E0F12; animation: lp-blurIn 0.9s ease-out both; animation-delay: 0.5s;" },
             h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true", "style": "flex-shrink: 0;" },
               h("circle", { "cx": "9", "cy": "9", "r": "5.8", "fill": "none", "stroke": "#656B74", "stroke-width": "1.8" }),
               h("path", { "d": "M13.4 13.4L17 17", "stroke": "#656B74", "stroke-width": "1.8", "stroke-linecap": "round" })
             ),
-            h("span", { "aria-hidden": "true", "style": "flex: 1 1 auto; min-width: 0; text-align: left; font-size: 17px; color: #656B74; white-space: nowrap; overflow: hidden;" },
-              "Je veux lancer ",
-              h("span", { "style": "color: #0E0F12; font-weight: 600;" },
-                $t($v.typed)
+            h("label", { "style": "position: relative; flex: 1 1 auto; min-width: 0; height: 48px; display: flex; align-items: center; cursor: text;" },
+              h("span", { "style": "position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;" },
+                "Quelle app veux-tu lancer ?"
               ),
-              h("span", { "style": `display: inline-block; width: 2px; height: 1.1em; background: ${$t($v.blue)}; vertical-align: -0.2em; margin-left: 2px; animation: lp-caret 1s steps(1) infinite;` })
+              h("input", { "type": "text", "name": "q", "value": $v.q, "onInput": $v.onQ, "onChange": $v.onQ, "onFocus": $v.onFocus, "onBlur": $v.onBlur, "placeholder": $v.ph, "autocomplete": "off", "enterkeyhint": "search", "style": "position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box; border: 0; outline: none; background: transparent; padding: 0; margin: 0; font-family: inherit; font-size: 17px; font-weight: 600; color: #0E0F12; -webkit-appearance: none; appearance: none;" }),
+              h("span", { "aria-hidden": "true", "style": `pointer-events: none; opacity: ${$t($v.animO)}; transition: opacity 0.2s ease; text-align: left; font-size: 17px; color: #656B74; white-space: nowrap; overflow: hidden;` },
+                "Je veux lancer ",
+                h("span", { "style": "color: #0E0F12; font-weight: 600;" },
+                  $t($v.typed)
+                ),
+                h("span", { "style": `display: inline-block; width: 2px; height: 1.1em; background: ${$t($v.blue)}; vertical-align: -0.2em; margin-left: 2px; animation: lp-caret 1s steps(1) infinite;` })
+              )
             ),
-            h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+            h("button", { "type": "submit", "class": "cta", "style": "flex-shrink: 0; cursor: pointer; margin: 0; font-family: inherit; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
               "Trouver mon app",
               h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                 h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -451,7 +473,7 @@ export default class LP extends DCLogic {
                   "Plus de 1 000 apps et 100 000 comptes suivis en continu sur TikTok, Instagram et YouTube Shorts, sur tous les marchés. Choisis un marché, une niche, et plonge dans les formats et les créateurs de n'importe quelle app."
                 )
               ),
-              h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("a", { "href": "/inscription", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir ce qui explose",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -695,7 +717,7 @@ export default class LP extends DCLogic {
               h("p", { "style": "margin: 0; max-width: 640px; font-size: 20px; line-height: 1.55; color: #4A4F57;" },
                 "Les hooks, les sons et les formats qui font exploser les vues en ce moment, et les créateurs qui les tournent. Tu sais quoi poster dès demain."
               ),
-              h("a", { "href": "/tarifs", "class": "cta", "style": "margin-top: 16px; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+              h("a", { "href": "/inscription", "class": "cta", "style": "margin-top: 16px; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                 "Voir les formats",
                 h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                   h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -920,7 +942,7 @@ export default class LP extends DCLogic {
                   )
                 ),
                 h("div", { "style": "position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 12px;" },
-                  h("a", { "href": "/tarifs", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                  h("a", { "href": "/inscription", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Trouver mon app",
                     h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                       h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },

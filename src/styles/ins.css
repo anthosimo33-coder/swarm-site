@@ -1,0 +1,14 @@
+/* Généré par scripts/dc2preact.py depuis design/Inscription.dc.html */
+html,body{overflow-x:clip;max-width:100%}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+.auth-notice{border-radius:14px;padding:12px 14px;background:var(--accent-soft);border:1px solid var(--accent-edge);color:var(--ink-soft);font-size:14px;line-height:1.5}
+@media (max-width: 860px){
+.auth-root{padding:20px 12px 32px !important;gap:20px !important}
+.auth-card{padding:8px !important;border-radius:26px !important;gap:8px !important}
+.auth-form{padding:28px 14px 24px !important}
+.auth-side{padding:32px 20px !important;gap:24px !important;border-radius:20px !important}
+.auth-side h2{font-size:34px !important}
+.auth-side .sw-stat{font-size:22px !important}
+.auth-shift{margin-left:0 !important}
+}
