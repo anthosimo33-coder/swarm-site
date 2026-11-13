@@ -30,10 +30,13 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <div style="flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 300px; gap: 28px; padding: 24px;">
 <div style="display: flex; flex-direction: column; gap: 12px;">
 <div class="sw-video t-umber" style="border-radius: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
+<sc-if value="{{playing}}" hint-placeholder-val="{{false}}"><iframe src="{{vid.embed}}" title="{{vid.hook}}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write" allowfullscreen="true" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;"></iframe></sc-if>
+<sc-if value="{{notPlaying}}" hint-placeholder-val="{{true}}">
 <img class="sw-cover" src="{{vid.cover}}" alt="{{vid.hook}}">
 <span class="sw-video-shade"></span>
-<span style="position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4); display: inline-flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5v7l5.5-3.5z" fill="#FFFFFF"></path></svg></span>
-<div style="position: absolute; left: 14px; right: 14px; bottom: 14px; display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11px; color: #E4E7EC;"><svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5v7l5.5-3.5z" fill="#FFFFFF"></path></svg><span style="flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.25); overflow: hidden;"><span class="sw-video-bar" style="position: static; display: block; height: 3px; animation-duration: {{vid.durS}};"></span></span><span>{{vid.dur}}</span></div>
+<button type="button" onClick="{{play}}" aria-label="Lire la vidéo" style="position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer;"><span style="position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4); display: inline-flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5v7l5.5-3.5z" fill="#FFFFFF"></path></svg></span></button>
+<sc-if value="{{vid.dur}}" hint-placeholder-val="{{true}}"><span style="position: absolute; right: 14px; bottom: 14px; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.55); font-family: var(--font-mono); font-size: 11px; color: #E4E7EC; pointer-events: none;">{{vid.dur}}</span></sc-if>
+</sc-if>
 </div>
 <a class="sw-link" href="{{vid.url}}" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Ouvrir la vidéo</a>
 </div>
@@ -186,6 +189,9 @@ class Component extends DCLogic {
         nextHref: idx >= 0 && idx < list.length - 1 ? href(list[idx + 1]) : href(D.id), nextO: idx >= 0 && idx < list.length - 1 ? 1 : 0.4,
         cover: D.cover || '', hook: D.hook || D.caption || '',
         durS: Math.round(D.durationSec || 30) + 's', dur: D.durationSec ? Math.floor(Math.round(D.durationSec) / 60) + ':' + String(Math.round(D.durationSec) % 60).padStart(2, '0') : '',
+        // Le lecteur officiel de la plateforme, qui démarre au clic sur lecture.
+        embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
+          : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/embed/v2/' + D.id : '',
         url: D.url, appName: D.app ? D.app.name : '', appHref: D.app ? 'FicheA.dc.html?app=' + D.app.slug : 'AppsA.dc.html',
         market: M[D.market] || 'Autres langues', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
         handle: '@' + D.handle, whoMeta: (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : '') + (D.normal ? " · fait d'habitude " + nf(D.normal) + ' vues' : ''),
@@ -227,9 +233,11 @@ class Component extends DCLogic {
       next = cards.filter((c) => c.id !== D.id).slice(Math.max(0, idx), Math.max(0, idx) + 4).map((c, i) => ({
         t: T[i % T.length], x: c.x ? xf(c.x) : nf(c.views), hook: c.hook || '@' + c.handle, app: D.app ? D.app.name : '', v: nf(c.views), src: c.cover || '', href: href(c.id) }));
     }
+    const playing = !!(st.playing && vid.embed);
     return {
       vid, chart,
       facts, next,
+      playing, notPlaying: !playing, play: () => { if (vid.embed) this.setState({ playing: true }); },
       toastText: vid.copyParts,
       copyLabel: copied ? 'Format copié' : 'Copier le format',
       toast: copied,

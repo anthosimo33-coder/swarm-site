@@ -293,12 +293,14 @@ function Missing({ fiche }) {
 document.addEventListener('error', (event) => {
   const img = event.target;
   if (!(img instanceof HTMLImageElement)) return;
+  img.classList.add('is-broken'); // masquée tout de suite : jamais d'icône d'image cassée
   if (img.src.includes('/cover/') && !img.dataset.retried) {
     img.dataset.retried = '1';
     setTimeout(() => { img.src = img.src + (img.src.includes('?') ? '&' : '?') + 'r=1'; }, 4000);
-    return;
   }
-  img.classList.add('is-broken');
+}, true);
+document.addEventListener('load', (event) => {
+  if (event.target instanceof HTMLImageElement) event.target.classList.remove('is-broken');
 }, true);
 
 mount(h(App, null));

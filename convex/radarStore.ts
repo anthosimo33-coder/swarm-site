@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { internalMutation, internalQuery, type QueryCtx } from "./_generated/server";
+import { internalMutation, internalQuery, type MutationCtx, type QueryCtx } from "./_generated/server";
 
 /**
  * Les images déjà recopiées, page par page : [clé, URL servie par Swarm].
@@ -14,6 +14,18 @@ export const mediaPage = internalQuery({
   },
 });
 
+/** La liste des vidéos à ne plus montrer : ajoute (introuvable) ou retire (image rangée). */
+async function setHidden(ctx: MutationCtx, add: string[], remove: string[]) {
+  if (!add.length && !remove.length) return;
+  const row = await ctx.db.query("hidden").first();
+  const ids = new Set(row?.ids ?? []);
+  for (const k of add) ids.add(k.replace(/^v:/, ""));
+  for (const k of remove) ids.delete(k.replace(/^v:/, ""));
+  const list = [...ids].slice(-8000); // une valeur Convex : 8 192 éléments au plus
+  if (row) await ctx.db.patch(row._id, { ids: list, at: Date.now() });
+  else await ctx.db.insert("hidden", { ids: list, at: Date.now() });
+}
+
 /** Une image rangée en HEIC (Chrome ne l'affiche pas) compte comme absente : elle sera recopiée. */
 async function usable(ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null) {
   if (!row) return false;
@@ -26,9 +38,10 @@ export const mediaGet = internalQuery({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
     const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", key)).first();
-    if (row && (await usable(ctx, row))) return { url: row.url, missAt: null };
+    if (row && (await usable(ctx, row))) return { url: row.url, missAt: null, heic: null };
+    if (row) return { url: null, missAt: null, heic: row.storageId }; // HEIC rangé : converti sur place
     const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
-    return { url: null, missAt: miss?.at ?? null };
+    return { url: null, missAt: miss?.at ?? null, heic: null };
   },
 });
 
@@ -51,6 +64,7 @@ export const markMisses = internalMutation({
       if (miss) await ctx.db.patch(miss._id, { at: now });
       else await ctx.db.insert("mediaMiss", { key, at: now });
     }
+    await setHidden(ctx, keys.filter((k) => k.startsWith("v:")), []);
   },
 });
 
@@ -60,6 +74,7 @@ export const markMiss = internalMutation({
     const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
     if (miss) await ctx.db.patch(miss._id, { at: Date.now() });
     else await ctx.db.insert("mediaMiss", { key, at: Date.now() });
+    if (key.startsWith("v:")) await setHidden(ctx, [key], []);
   },
 });
 
@@ -90,6 +105,7 @@ export const saveMedia = internalMutation({
       const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", it.key)).first();
       if (miss) await ctx.db.delete(miss._id);
     }
+    await setHidden(ctx, [], items.map((it) => it.key).filter((k) => k.startsWith("v:")));
   },
 });
 

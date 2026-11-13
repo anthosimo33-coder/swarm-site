@@ -13,11 +13,15 @@ import { query } from "./_generated/server";
  * il faut que les navigateurs oublient leurs anciennes réponses.
  */
 const COVER_VERSION = 2;
-function withCovers(data: unknown): unknown {
+function withCovers(data: unknown, hidden: Set<string>): unknown {
   const site = process.env.CONVEX_SITE_URL;
   if (!site) return data;
+  // Une vidéo introuvable (supprimée, compte privé) n'apparaît nulle part : retirée des listes.
+  const gone = (x: unknown) =>
+    (typeof x === "string" && hidden.has(x)) ||
+    (!!x && typeof x === "object" && !Array.isArray(x) && "cover" in x && hidden.has(String((x as Record<string, unknown>).videoId ?? (x as Record<string, unknown>).id)));
   const fix = (x: unknown): unknown => {
-    if (Array.isArray(x)) return x.map(fix);
+    if (Array.isArray(x)) return x.filter((y) => !gone(y)).map(fix);
     if (!x || typeof x !== "object") return x;
     const o: Record<string, unknown> = {};
     for (const [k, val] of Object.entries(x)) o[k] = typeof val === "object" ? fix(val) : val;
@@ -35,6 +39,9 @@ export const get = query({
   handler: async (ctx, { key }) => {
     if ((await getAuthUserId(ctx)) === null) return null;
     const row = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", key)).first();
-    return row ? withCovers(row.data) : null;
+    if (!row) return null;
+    const hidden = new Set((await ctx.db.query("hidden").first())?.ids ?? []);
+    if (key.startsWith("video:") && hidden.has(key.slice("video:".length))) return null; // fiche « introuvable »
+    return withCovers(row.data, hidden);
   },
 });

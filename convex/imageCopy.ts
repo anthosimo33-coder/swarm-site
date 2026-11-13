@@ -95,8 +95,29 @@ async function imageUrl(source: string): Promise<string | null> {
   return source;
 }
 
-/** L'image réduite à sa taille d'affichage, en WebP (5 à 10 fois plus légère) ; l'originale si la réduction échoue. */
-async function shrink(buf: ArrayBuffer, type: string, key: string): Promise<{ data: ArrayBuffer; type: string }> {
+const isHeic = (type: string | null | undefined) => /hei[cf]/i.test(type ?? "");
+
+/** HEIC (format des miniatures du relevé TikTok, que Chrome n'affiche pas) -> JPEG. */
+async function fromHeic(buf: ArrayBuffer): Promise<ArrayBuffer | null> {
+  try {
+    const convert = (await import("heic-convert")).default as (o: { buffer: Buffer; format: "JPEG"; quality: number }) => Promise<ArrayBuffer>;
+    return await convert({ buffer: Buffer.from(buf), format: "JPEG", quality: 0.85 });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * L'image réduite à sa taille d'affichage, en WebP (5 à 10 fois plus légère) ; l'originale si la
+ * réduction échoue — sauf un HEIC, converti d'abord, et jamais rangé tel quel (null).
+ */
+export async function shrink(buf: ArrayBuffer, type: string, key: string): Promise<{ data: ArrayBuffer; type: string } | null> {
+  if (isHeic(type)) {
+    const jpeg = await fromHeic(buf);
+    if (!jpeg) return null;
+    buf = jpeg;
+    type = "image/jpeg";
+  }
   try {
     const sharp = (await import("sharp")).default;
     const img = sharp(Buffer.from(buf)).rotate();
@@ -116,20 +137,19 @@ export async function copyImage(ctx: ActionCtx, key: string, source: string) {
     let url = await imageUrl(source);
     if (!url) return null;
     let res = await fetch(url, { headers: { "User-Agent": UA } });
-    // Lien signé expiré, ou image en HEIC (Chrome ne l'affiche pas, la réduction ne la lit pas) :
-    // la page publique de la vidéo (TikTok ou Instagram) donne une image neuve en JPEG.
-    const heic = (t: string | null) => /hei[cf]/i.test(t ?? "");
-    if ((!res.ok || heic(res.headers.get("content-type"))) && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
+    // Lien signé expiré : la page publique de la vidéo (TikTok ou Instagram) en donne un neuf.
+    if (!res.ok && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
       const id = key.slice(2);
       url = /^\d+$/.test(id) ? await tiktokCover("tiktok", id) : id.startsWith("ig:") ? await instagramCover(id.slice(3)) : null;
       if (!url) return null;
       res = await fetch(url, { headers: { "User-Agent": UA } });
     }
     const type = res.headers.get("content-type") ?? "";
-    if (!res.ok || !type.startsWith("image/") || heic(type)) return null; // jamais de HEIC rangé
+    if (!res.ok || !type.startsWith("image/")) return null;
     const buf = await res.arrayBuffer();
     if (buf.byteLength === 0 || buf.byteLength > MAX_IMAGE_BYTES) return null;
     const small = await shrink(buf, type, key);
+    if (!small) return null;
     const storageId = (await ctx.storage.store(new Blob([small.data], { type: small.type }))) as Id<"_storage">;
     const served = await ctx.storage.getUrl(storageId);
     return served ? { key, storageId, url: served } : null;

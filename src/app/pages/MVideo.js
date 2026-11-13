@@ -64,7 +64,9 @@ export default class MVideo extends DCLogic {
         growth = ' ' + pct(g) + ' entre H+' + H(snaps[0].at) + ' et H+' + H(snaps[snaps.length - 1].at) + '.';
       }
       const dur = Math.round(D.durationSec || 0);
-      vid = { pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
+      vid = { embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
+          : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/embed/v2/' + D.id : '',
+        pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
         hook: D.hook || D.caption || '@' + D.handle, hasApp: !!D.app, appName: D.app ? D.app.name : '',
         where: [ML[D.market] || '', D.publishedAt ? day(D.publishedAt) : ''].filter(Boolean).join(' · '), views: nf(D.views || 0),
         who: '@' + D.handle + (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : ''), hasDur: dur > 0, dur: Math.floor(dur / 60) + ':' + String(dur % 60).padStart(2, '0'),
@@ -84,7 +86,8 @@ export default class MVideo extends DCLogic {
       nxt = cards.filter((c) => c.id !== D.id).slice(Math.max(0, idx), Math.max(0, idx) + 3).map((c) => ({ src: c.cover || '', x: c.x ? xf(c.x) : nf(c.views),
         t: c.hook || '@' + c.handle, v: nf(c.views), href: '/app/videos/' + c.id }));
     }
-    return { v, facts, nxt, vid, hasNxt: nxt.length > 0 };
+    const playing = !!((this.state || {}).playing && vid.embed); // lecteur officiel de la plateforme, au tap
+    return { v, facts, nxt, vid, hasNxt: nxt.length > 0, playing, notPlaying: !playing, play: () => { if (vid.embed) this.setState({ playing: true }); } };
   }
 
   render() {
@@ -104,44 +107,51 @@ export default class MVideo extends DCLogic {
           )
         ),
         $h("div", { "style": "position: relative; margin: 0 auto; width: 100%; aspect-ratio: 9 / 13; overflow: hidden; background: #000;" },
-          $h("span", { "aria-hidden": "true", "style": "position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 76px 28px 0; box-sizing: border-box; text-align: center; background: radial-gradient(60% 40% at 50% 42%, rgba(76,154,255,0.18), transparent 70%), linear-gradient(160deg, #142036, #0A0F19);" },
-            $h("span", { "style": "max-width: 300px; font-size: 17px; font-weight: 600; line-height: 1.4; color: #E4E7EC; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" },
-              $t($v.vid?.hook)
-            )
-          ),
-          $h("img", { "src": $v.v?.src, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
-          $h("span", { "class": "sw-video-shade" }),
-          $h("span", { "style": "position: absolute; left: 50%; top: 50%; width: 68px; height: 68px; margin: -34px 0 0 -34px; border-radius: 50%; background: rgba(5,7,12,0.5); backdrop-filter: blur(8px); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF;" },
-            $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M9 7l9 5-9 5z", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            )
-          ),
-          $h("span", { "style": "position: absolute; top: 14px; left: 14px; display: flex; gap: 6px;" },
-            ($v.vid?.hasApp) ? [
-              $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
-                $t($v.vid?.appName)
-              )
-            ] : null,
-            $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
-              $t($v.vid?.where)
-            )
-          ),
-          $h("span", { "style": "position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;" },
-            $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-              $h("span", { "style": "font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: #FFFFFF;" },
-                $t($v.vid?.views)
-              ),
-              $h("span", { "style": "font-size: 13px; color: #E4E7EC;" },
-                $t($v.vid?.who)
+          ($v.playing) ? [
+            $h("iframe", { "src": $v.vid?.embed, "title": $v.vid?.hook, "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;" })
+          ] : null,
+          ($v.notPlaying) ? [
+            $h("span", { "aria-hidden": "true", "style": "position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 76px 28px 0; box-sizing: border-box; text-align: center; background: radial-gradient(60% 40% at 50% 42%, rgba(76,154,255,0.18), transparent 70%), linear-gradient(160deg, #142036, #0A0F19);" },
+              $h("span", { "style": "max-width: 300px; font-size: 17px; font-weight: 600; line-height: 1.4; color: #E4E7EC; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" },
+                $t($v.vid?.hook)
               )
             ),
-            ($v.vid?.hasDur) ? [
-              $h("span", { "style": "font-size: 12px; color: #E4E7EC;" },
-                $t($v.vid?.dur)
+            $h("img", { "src": $v.v?.src, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
+            $h("span", { "class": "sw-video-shade" }),
+            $h("button", { "type": "button", "onClick": $v.play, "aria-label": "Lire la vidéo", "style": "position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; color: #FFFFFF;" },
+              $h("span", { "style": "position: absolute; left: 50%; top: 50%; width: 68px; height: 68px; margin: -34px 0 0 -34px; border-radius: 50%; background: rgba(5,7,12,0.5); backdrop-filter: blur(8px); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF;" },
+                $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("path", { "d": "M9 7l9 5-9 5z", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
               )
-            ] : null
-          ),
-          $h("span", { "class": "sw-video-bar", "style": "width: 0;" })
+            ),
+            $h("span", { "style": "position: absolute; top: 14px; left: 14px; display: flex; gap: 6px;" },
+              ($v.vid?.hasApp) ? [
+                $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                  $t($v.vid?.appName)
+                )
+              ] : null,
+              $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                $t($v.vid?.where)
+              )
+            ),
+            $h("span", { "style": "position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;" },
+              $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
+                $h("span", { "style": "font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: #FFFFFF;" },
+                  $t($v.vid?.views)
+                ),
+                $h("span", { "style": "font-size: 13px; color: #E4E7EC;" },
+                  $t($v.vid?.who)
+                )
+              ),
+              ($v.vid?.hasDur) ? [
+                $h("span", { "style": "font-size: 12px; color: #E4E7EC;" },
+                  $t($v.vid?.dur)
+                )
+              ] : null
+            ),
+            $h("span", { "class": "sw-video-bar", "style": "width: 0;" })
+          ] : null
         ),
         $h("div", { "style": "padding: 16px 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px;" },
           $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openAj, "aria-label": "Ajouter à un dossier", "style": "width: 44px; height: 44px; flex-shrink: 0; box-shadow: inset 0 0 0 1px var(--line);" },

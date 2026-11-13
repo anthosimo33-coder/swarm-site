@@ -167,7 +167,7 @@ export function buildBoards(
     const stored = mediaUrl(key);
     if (stored) return stored;
     if (missing(key)) return null;
-    if (source && !/\.heic/i.test(source)) need.set(key, source); // HEIC : Chrome ne l'affiche pas, la page donne du JPEG
+    if (source) need.set(key, source); // un HEIC est converti à la copie (convex/imageCopy.ts)
     else if (/^\d+$/.test(videoId)) need.set(key, `ttpage:${handle ?? ""}/${videoId}`);
     else if (videoId.startsWith("ig:")) need.set(key, `igpage:${videoId.slice(3)}`);
     return coverUrl(videoId);

@@ -94,6 +94,9 @@ export default class Video extends DCLogic {
         nextHref: idx >= 0 && idx < list.length - 1 ? href(list[idx + 1]) : href(D.id), nextO: idx >= 0 && idx < list.length - 1 ? 1 : 0.4,
         cover: D.cover || '', hook: D.hook || D.caption || '',
         durS: Math.round(D.durationSec || 30) + 's', dur: D.durationSec ? Math.floor(Math.round(D.durationSec) / 60) + ':' + String(Math.round(D.durationSec) % 60).padStart(2, '0') : '',
+        // Le lecteur officiel de la plateforme, qui démarre au clic sur lecture.
+        embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
+          : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/embed/v2/' + D.id : '',
         url: D.url, appName: D.app ? D.app.name : '', appHref: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
         market: M[D.market] || 'Autres langues', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
         handle: '@' + D.handle, whoMeta: (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : '') + (D.normal ? " · fait d'habitude " + nf(D.normal) + ' vues' : ''),
@@ -135,9 +138,11 @@ export default class Video extends DCLogic {
       next = cards.filter((c) => c.id !== D.id).slice(Math.max(0, idx), Math.max(0, idx) + 4).map((c, i) => ({
         t: T[i % T.length], x: c.x ? xf(c.x) : nf(c.views), hook: c.hook || '@' + c.handle, app: D.app ? D.app.name : '', v: nf(c.views), src: c.cover || '', href: href(c.id) }));
     }
+    const playing = !!(st.playing && vid.embed);
     return {
       vid, chart,
       facts, next,
+      playing, notPlaying: !playing, play: () => { if (vid.embed) this.setState({ playing: true }); },
       toastText: vid.copyParts,
       copyLabel: copied ? 'Format copié' : 'Copier le format',
       toast: copied,
@@ -188,24 +193,25 @@ export default class Video extends DCLogic {
           $h("div", { "style": "flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 300px; gap: 28px; padding: 24px;" },
             $h("div", { "style": "display: flex; flex-direction: column; gap: 12px;" },
               $h("div", { "class": "sw-video t-umber", "style": "border-radius: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);" },
-                $h("img", { "class": "sw-cover", "src": $v.vid?.cover, "alt": $v.vid?.hook, "loading": "lazy", "decoding": "async" }),
-                $h("span", { "class": "sw-video-shade" }),
-                $h("span", { "style": "position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4); display: inline-flex; align-items: center; justify-content: center;" },
-                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 12 12", "aria-hidden": "true" },
-                    $h("path", { "d": "M4 2.5v7l5.5-3.5z", "fill": "#FFFFFF" })
-                  )
-                ),
-                $h("div", { "style": "position: absolute; left: 14px; right: 14px; bottom: 14px; display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11px; color: #E4E7EC;" },
-                  $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 12 12", "aria-hidden": "true" },
-                    $h("path", { "d": "M4 2.5v7l5.5-3.5z", "fill": "#FFFFFF" })
+                ($v.playing) ? [
+                  $h("iframe", { "src": $v.vid?.embed, "title": $v.vid?.hook, "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;" })
+                ] : null,
+                ($v.notPlaying) ? [
+                  $h("img", { "class": "sw-cover", "src": $v.vid?.cover, "alt": $v.vid?.hook, "loading": "lazy", "decoding": "async" }),
+                  $h("span", { "class": "sw-video-shade" }),
+                  $h("button", { "type": "button", "onClick": $v.play, "aria-label": "Lire la vidéo", "style": "position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer;" },
+                    $h("span", { "style": "position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4); display: inline-flex; align-items: center; justify-content: center;" },
+                      $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 12 12", "aria-hidden": "true" },
+                        $h("path", { "d": "M4 2.5v7l5.5-3.5z", "fill": "#FFFFFF" })
+                      )
+                    )
                   ),
-                  $h("span", { "style": "flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.25); overflow: hidden;" },
-                    $h("span", { "class": "sw-video-bar", "style": `position: static; display: block; height: 3px; animation-duration: ${$t($v.vid?.durS)};` })
-                  ),
-                  $h("span", null,
-                    $t($v.vid?.dur)
-                  )
-                )
+                  ($v.vid?.dur) ? [
+                    $h("span", { "style": "position: absolute; right: 14px; bottom: 14px; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.55); font-family: var(--font-mono); font-size: 11px; color: #E4E7EC; pointer-events: none;" },
+                      $t($v.vid?.dur)
+                    )
+                  ] : null
+                ] : null
               ),
               $h("a", { "class": "sw-link", "href": $v.vid?.url, "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 14px;" },
                 $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },

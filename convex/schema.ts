@@ -43,6 +43,10 @@ export default defineSchema({
   }).index("by_slug", ["slug"]),
 
   // Journal des synchronisations (la dernière sert à l'écran et au suivi).
+  // Les vidéos à ne plus montrer (miniature introuvable : supprimée, compte privé), retirées à la
+  // lecture des documents sans attendre la synchro (convex/boards.ts). Une seule ligne.
+  hidden: defineTable({ ids: v.array(v.string()), at: v.number() }),
+
   // Miniatures introuvables (vidéo supprimée, page refusée) : pas de nouvel essai avant 6 h.
   mediaMiss: defineTable({ key: v.string(), at: v.number() }).index("by_key", ["key"]),
 

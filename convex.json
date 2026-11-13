@@ -1,3 +1,8 @@
 {
-  "node": { "externalPackages": ["sharp"] }
+  "node": {
+    "externalPackages": [
+      "sharp",
+      "heic-convert"
+    ]
+  }
 }
