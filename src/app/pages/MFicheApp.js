@@ -37,7 +37,7 @@ export default class MFicheApp extends DCLogic {
       next.apps = l.indexOf(fid) >= 0 ? l.filter((x) => x !== fid) : [fid].concat(l);
       P.save('follows', next);
     };
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'app', id: fid, label: b.app.name, cover: (b.a && b.a.logo) || null } : null }, { followLabel: f ? 'Suivie' : 'Suivre ' + b.app.name,
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'app', id: fid, label: b.app.name, cover: (b.a && b.a.logo) || null } : null }, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
       secs: (b.secs || []).map((s, i) => Object.assign({}, s, { href: ['#m-vues', '#m-vid', '#m-fmt', '#m-cr'][i] || '#m-vues', on: (st.sec || 0) === i ? 'true' : 'false', pick: () => this.setState({ sec: i }) })) });
   }
 
@@ -247,7 +247,7 @@ export default class MFicheApp extends DCLogic {
           ),
           $h("span", { "class": "sw-card", "style": "border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 4px;" },
             $h("span", { "class": "sw-tile-label", "style": "min-height: 30px; line-height: 15px;" },
-              "Comptes qui la poussent"
+              "Comptes qui le poussent"
             ),
             $h("span", { "class": "sw-tile-value", "style": "font-size: 21px; color: var(--ink);" },
               $t($v.app?.acc)
@@ -283,7 +283,7 @@ export default class MFicheApp extends DCLogic {
           $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 12px;" },
             $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
               $h("h2", { "id": "m-vid", "style": "scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
-                "Ses vidéos qui cartonnent"
+                "Leurs vidéos qui cartonnent"
               )
             ),
             $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
@@ -313,7 +313,7 @@ export default class MFicheApp extends DCLogic {
           $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 10px;" },
             $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
               $h("h2", { "id": "m-fmt", "style": "scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
-                "Les formats qui marchent chez elle"
+                "Les formats qui cartonnent chez eux"
               )
             ),
             $h("div", { "style": "padding: 0 20px; display: flex; flex-direction: column; gap: 8px;" },
@@ -349,7 +349,7 @@ export default class MFicheApp extends DCLogic {
         $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 10px;" },
           $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
             $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
-              "Où ses vues se font"
+              "Où leurs vues se font"
             )
           ),
           $h("div", { "style": "padding: 0 20px; display: flex; flex-direction: column; gap: 10px;" },
@@ -380,7 +380,7 @@ export default class MFicheApp extends DCLogic {
           $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 10px;" },
             $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
               $h("h2", { "id": "m-cr", "style": "scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
-                "Les créateurs qui la poussent"
+                "Les créateurs qui le poussent"
               )
             ),
             $h("div", { "class": "sw-card", "style": "margin: 0 20px; border-radius: 20px; padding: 4px 0;" },

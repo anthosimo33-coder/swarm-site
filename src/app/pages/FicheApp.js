@@ -44,7 +44,7 @@ export default class FicheApp extends DCLogic {
     // Les dossiers qui la gardent (saved('folders')).
     const fs = live ? P.saved('folders') : null;
     const kept = (Array.isArray(fs) ? fs : []).filter((x) => (x.items || []).some((i) => i.kind === 'app' && i.id === slug)).map((x) => ({ name: x.name, href: '/app/dossiers/' + x.id }));
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, { followLabel: f ? 'Suivie' : 'Suivre ' + b.app.name,
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
       kept, keptNone: kept.length === 0,
       ajItem: { kind: 'app', id: slug, label: b.app.name, cover: b.app.icon || null },
       copyAria: st.copied ? 'Lien copié' : 'Copier le lien de la fiche', copyBg: st.copied ? 'var(--accent-soft)' : 'var(--track)',

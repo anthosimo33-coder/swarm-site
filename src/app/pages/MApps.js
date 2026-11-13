@@ -102,7 +102,7 @@ return {};
         bars: w.map((v, j) => ({ h: Math.max(4, Math.round(v / mx * 70)), bg: j === 5 ? 'var(--accent)' : 'var(--line-strong)' })),
         v30: nfm(pa[5] * 1e6), acc: pa[3], ppw: pa[4] ? pa[4].toLocaleString('en-US').replace(/,/g, '\u202f') : '', vids: pa[8].map((src, j) => ({ src, v: pa[9][j], href: videoOf(pa, j) })),
         hasMk: !!md, mkd: (md || []).map((m, i) => ({ c: m[0], p: m[2] + ' %', w: m[2] + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' })),
-        followLabel: (st.follow || {})[pa[0]] ? 'Suivie' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
+        followLabel: (st.follow || {})[pa[0]] ? 'Suivi' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
     const swipe = (k) => ({ s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false, pv: null }); this.y0 = null; } });
     return {
       rows, empty: total === 0, emptyText: A.length === 0 ? 'Aucune app à montrer pour l’instant.' : 'Aucune app pour ces filtres.', canClear: A.length > 0, chips, hasChips: chips.length > 0, nf: chips.length || false, mLabel, nLabel: niches.length === 0 ? 'Toutes' : (niches.length === 1 ? niches[0] : niches.length + ' niches'),
@@ -489,7 +489,7 @@ return {};
             ),
             ($v.pv?.full) ? [
               $h("span", { "style": "display: block; padding: 16px 0 8px; font-size: 15px; font-weight: 700;" },
-                "Ses vidéos qui explosent"
+                "Leurs vidéos qui explosent"
               ),
               $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
                 ($l($v.pv?.vids)).map((v) => [
@@ -505,7 +505,7 @@ return {};
             ] : null,
             ($v.pv?.hasMk) ? [
               $h("span", { "style": "display: block; padding: 16px 0 8px; font-size: 15px; font-weight: 700;" },
-                "Où ses vues se font"
+                "Où leurs vues se font"
               ),
               $h("div", { "style": "display: flex; flex-direction: column; gap: 8px;" },
                 ($l($v.pv?.mkd)).map((m) => [

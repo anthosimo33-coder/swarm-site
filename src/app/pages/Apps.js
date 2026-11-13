@@ -174,7 +174,7 @@ return {};
         v30: fr(pa[5], 1) + ' M', acc: pa[3], ppw: pa[4].toLocaleString('fr-FR'),
         vids: pa[8].map((src, j) => ({ src, v: pa[9][j], href: videoOf(pa, j) })).filter((x) => x.src), href: ficheOf(pa),
         hasMk: !!md, noMk: !md, mkd: (md || []).map((m, i) => ({ c: m[0], l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' })),
-        followLabel: followed(pa) ? 'Suivie' : 'Suivre ' + pa[0], followOn: followed(pa) ? 'true' : 'false', follow: () => toggleFollow(pa) };
+        followLabel: followed(pa) ? 'Suivi' : 'Suivre ' + pa[0], followOn: followed(pa) ? 'true' : 'false', follow: () => toggleFollow(pa) };
       ajItem = { kind: 'app', id: pa[11] || pa[0], label: pa[0], cover: pa[10] || null };
     }
     return {
