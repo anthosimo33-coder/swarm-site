@@ -4,7 +4,10 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
 import { appStoreHit, copyImage } from "./imageCopy";
-import { buildBoards, type Raw } from "./radarModels";
+import { buildBoards, iconKey, type Raw } from "./radarModels";
+
+/** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
+const STORE_RULE = 2;
 
 /**
  * Synchronisation quotidienne du Radar (cron, convex/crons.ts) :
@@ -96,17 +99,27 @@ export const run = internalAction({
         cursor = page.cursor;
         done = page.done;
       }
-      // Fiche App Store des apps qu'on n'a pas encore cherchées (une recherche par app, une seule fois).
-      const stores = await ctx.runQuery(internal.radarStore.appStoreMap, {});
-      const found: { slug: string; url: string | null }[] = [];
+      // Fiche App Store des apps pas encore cherchées avec la règle actuelle (titre qui commence par le
+      // nom de l'app) ; une fiche qui change efface l'icône rangée, recopiée depuis la bonne fiche.
+      // L'App Store limite à ~20 recherches par minute : une toutes les 3,2 s, 3 min au plus.
+      const stores: Record<string, { url: string | null; v: number }> = await ctx.runQuery(internal.radarStore.appStoreMap, {});
+      const found: { slug: string; url: string | null; v: number }[] = [];
+      const iconsToDrop: string[] = [];
+      const storeStart = Date.now();
       for (const a of raw.apps) {
-        if (a.slug in stores || a.mergedInto) continue;
+        if (a.mergedInto || stores[a.slug]?.v === STORE_RULE) continue;
+        if (Date.now() - storeStart > 180_000) break;
+        if (found.length) await new Promise((r) => setTimeout(r, 3_200));
         const hit = await appStoreHit(a.name);
-        stores[a.slug] = hit?.trackViewUrl ?? null;
-        found.push({ slug: a.slug, url: stores[a.slug] });
+        const url = hit?.trackViewUrl ?? null;
+        if (stores[a.slug] && stores[a.slug].url !== url) iconsToDrop.push(iconKey(a.slug));
+        stores[a.slug] = { url, v: STORE_RULE };
+        found.push({ slug: a.slug, url, v: STORE_RULE });
       }
       if (found.length) await ctx.runMutation(internal.radarStore.saveAppStore, { items: found });
-      const storeOf = (slug: string) => stores[slug] ?? null;
+      for (const k of iconsToDrop) if (k in media) { delete media[k]; }
+      if (iconsToDrop.length) await ctx.runMutation(internal.radarStore.dropMedia, { keys: iconsToDrop });
+      const storeOf = (slug: string) => stores[slug]?.url ?? null;
       // Miniatures introuvables récemment (vidéo supprimée, compte privé) : ces vidéos n'apparaissent pas.
       const misses = new Map<string, number>();
       for (let cursor: string | null = null, done = false; !done; ) {
@@ -125,6 +138,8 @@ export const run = internalAction({
       // Miniatures et icônes manquantes : 20 copies en continu, dans le temps imparti.
       const todo = [...need.entries()].slice(0, MEDIA_PER_RUN);
       const mediaStart = Date.now();
+      // Le temps pris par les fiches App Store est retiré de celui des miniatures (une action : 10 min au plus).
+      const mediaBudget = Math.max(60_000, MEDIA_BUDGET_MS - (mediaStart - storeStart));
       let copied = 0;
       const got: { key: string; storageId: Id<"_storage">; url: string }[] = [];
       const failed: string[] = [];
@@ -134,7 +149,7 @@ export const run = internalAction({
       };
       let next = 0;
       const worker = async () => {
-        while (next < todo.length && Date.now() - mediaStart < MEDIA_BUDGET_MS) {
+        while (next < todo.length && Date.now() - mediaStart < mediaBudget) {
           const [k, src] = todo[next++];
           const r = await copyImage(ctx, k, src);
           if (r) {

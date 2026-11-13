@@ -433,21 +433,6 @@ export default class Palette extends DCLogic {
               )
             ] : null,
             $h("div", { "style": "display: flex; align-items: center; gap: 18px; padding: 12px 20px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-faint);" },
-              $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                $h("span", { "class": "sw-kbd", "style": "height: 22px; min-width: 22px; padding: 0 6px; font-size: 11px;" },
-                  "↑"
-                ),
-                $h("span", { "class": "sw-kbd", "style": "height: 22px; min-width: 22px; padding: 0 6px; font-size: 11px;" },
-                  "↓"
-                ),
-                "naviguer"
-              ),
-              $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                $h("span", { "class": "sw-kbd", "style": "height: 22px; min-width: 22px; padding: 0 6px; font-size: 11px;" },
-                  "↵"
-                ),
-                "ouvrir"
-              ),
               $h("span", { "style": "margin-left: auto;" },
                 $t($v.count)
               )

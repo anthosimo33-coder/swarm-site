@@ -343,21 +343,6 @@ export default class Createurs extends DCLogic {
               )
             )
           ),
-          ($v.tip?.on) ? [
-            $h("div", { "style": "margin: 0 32px 16px; padding: 14px 18px; border-radius: 16px; display: flex; align-items: center; gap: 14px; background: linear-gradient(90deg, var(--accent-soft), transparent 70%); border: 1px solid var(--accent-edge);" },
-              $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--blue-600); color: #FFFFFF;" },
-                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              ),
-              $h("span", { "style": "font-size: 14px; color: var(--ink-soft);" },
-                $h("span", { "style": "font-weight: 700; color: var(--ink);" },
-                  "Les abonnés ne comptent pas."
-                ),
-                " ", $t($v.tip?.text)
-              )
-            )
-          ] : null,
           $h("div", { "style": "margin: 0 32px 48px; display: flex; flex-direction: column; gap: 12px;" },
             $h("div", { "style": "overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom));" },
               $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1050px;" },

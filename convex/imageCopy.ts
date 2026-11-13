@@ -25,13 +25,35 @@ const AVATAR_SIZE = 240;
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 
 type StoreHit = { artworkUrl512?: string; artworkUrl100?: string; trackViewUrl?: string; trackName?: string };
-/** La fiche App Store d'une app, cherchée par son nom (premier résultat). */
+const normName = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+/**
+ * La fiche App Store est-elle bien celle de l'app ? Son titre doit COMMENCER par le nom de l'app
+ * (espaces et ponctuation ignorés, « app » final facultatif) : « WingAI: Your AI Wingman » pour
+ * Wing AI, « RIZZ » pour Rizz App ; jamais « Angel Magick » pour What Brandon Thinks (un site),
+ * ni « Find My Airbuds » pour Airbuds. Sans fiche sûre : ni lien ni icône App Store.
+ */
+export function sameApp(name: string, trackName: string): boolean {
+  const words = normName(name).split(" ").filter(Boolean);
+  if (words.length > 1 && words[words.length - 1] === "app") words.pop();
+  const want = words.join("");
+  if (want.length < 3) return false;
+  let acc = "";
+  for (const tok of normName(trackName).split(" ").filter(Boolean)) {
+    acc += tok;
+    if (acc === want) return true;
+    if (acc.length >= want.length) return false;
+  }
+  return false;
+}
+
+/** La fiche App Store d'une app : le premier résultat de la recherche dont le titre est bien le sien. */
 export async function appStoreHit(name: string): Promise<StoreHit | null> {
   try {
-    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=software&limit=1&country=fr`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=software&limit=10&country=fr`);
     if (!res.ok) return null;
     const body = (await res.json()) as { results?: StoreHit[] };
-    return body.results?.[0] ?? null;
+    return (body.results ?? []).find((h) => !!h.trackName && sameApp(name, h.trackName)) ?? null;
   } catch {
     return null;
   }

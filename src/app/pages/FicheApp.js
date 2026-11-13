@@ -101,6 +101,9 @@ export default class FicheApp extends DCLogic {
       v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', lo: '144', hi: '202 k€', week: '18,4 M', wd: "+6 % face à la semaine d'avant",
       acc: '269', ppw: '1 360', best: '2 333×', top10: '43 % des vues', vidsHref: '/app/videos/7705929733220994337', crLabel: 'Tous les créateurs' };
     let top = 20;
+    // Le tableau de bord du haut de la fiche : mêmes entrées pour l'exemple et pour le Radar.
+    let src = { views30: 57.7e6, ig: 2.8e6, weekDelta: 0.06, accounts: 269, ppw: 1360, bestX: 2333, top10: 0.43, videoCount: 2552,
+      rank: 1, rankOf: 5, share: 0.41, scope: 'Études', top: null };
 
     // Sur le site : la fiche de l'app depuis le Radar (document « app:<slug> », convex/radarModels.ts).
     const D = this.props && this.props.data;
@@ -114,7 +117,7 @@ export default class FicheApp extends DCLogic {
       const rev = (v, k) => { const e = v / 1000 * k; return e >= 1000 ? Math.round(e / 1000) : Math.round(e); };
       const kUnit = D.views30 / 1000 * 3.5 >= 1000 ? ' k€' : ' €';
       app = {
-        icon: D.icon || '', name: D.name, niche: D.niche, delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
+        icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
         store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps',
         v30: nf(D.views30), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
         lo: String(rev(D.views30, 2.5)), hi: rev(D.views30, 3.5) + kUnit, week: nf(D.weeks[5]),
@@ -136,7 +139,63 @@ export default class FicheApp extends DCLogic {
       creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
         med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: c.avatar || '', noav: true, page: !!c.page, href: '/app/createurs/' + c.handle }));
       sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));
+      // Rang : dans sa niche (document « apps », toujours chargé), sinon parmi toutes les apps du Radar.
+      const all = (this.props.get && this.props.get('apps')) || null;
+      const list = all && all.apps ? all.apps : [];
+      let pool = list.filter((a) => a.niche === D.niche);
+      const inNiche = D.niche && D.niche !== 'Autres' && pool.length >= 2;
+      if (!inNiche) pool = list;
+      pool = [...pool].sort((a, b) => b.views30 - a.views30);
+      const sum = pool.reduce((s, a) => s + (a.views30 || 0), 0);
+      const t0 = D.videos[0];
+      src = { views30: D.views30, ig: D.views30Ig || 0, weekDelta: D.weekDelta, accounts: D.accounts, ppw: D.videosPerWeek, bestX: D.bestX,
+        top10: D.top10Share, videoCount: D.videoCount || D.videos.length,
+        rank: pool.length ? pool.findIndex((a) => a.slug === D.slug) + 1 : 0, rankOf: pool.length, share: sum ? D.views30 / sum : 0,
+        scope: inNiche ? D.niche : '', top: t0 ? { cover: t0.cover || '', views: t0.views, handle: t0.handle, x: t0.x, at: t0.publishedAt, href: '/app/videos/' + t0.id } : null };
     }
+    // ── Tableau de bord ──
+    const nfD = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+    const grp = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+    const xfD = (x) => (x >= 100 ? grp(x) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
+    const wk = W.map((v) => v * 1e6);
+    const wTop = Math.max(1, ...wk) * 1.22;
+    const hatch = 'repeating-linear-gradient(135deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 7px), rgba(255,255,255,0.03)';
+    const euro = (e) => (e >= 1000 ? Math.round(e / 1000) + ' k€' : Math.round(e) + ' €');
+    const mean = wk.reduce((s, v) => s + v, 0) / (wk.length || 1);
+    const dash = {
+      v30: nfD(src.views30),
+      v30Sub: 'vues sur 30 jours' + (src.ig > 0 ? ', dont ' + nfD(src.ig) + ' sur Instagram' : ''),
+      delta: src.weekDelta === null ? '' : (src.weekDelta >= 0 ? '+' : '−') + Math.round(Math.abs(src.weekDelta) * 100) + ' % cette semaine',
+      deltaBg: src.weekDelta >= 0 ? 'rgba(76,154,255,0.16)' : 'rgba(255,255,255,0.09)', deltaInk: src.weekDelta >= 0 ? '#4C9AFF' : '#E6E9EF',
+      weeks: wk.map((v, i) => {
+        const now = i === wk.length - 1;
+        const prev = i ? wk[i - 1] : 0;
+        const noise = Math.max(v, prev) < Math.max(...wk) * 0.08; // deux semaines quasi vides : la variation ne dit rien
+        const r = prev > 0 && !noise ? v / prev : null;
+        const chip = r === null ? '' : r >= 2 ? '×' + (Math.round(r * 10) / 10).toString().replace('.', ',') : (r >= 1 ? '+' : '−') + Math.round(Math.abs(r - 1) * 100) + ' %';
+        const up = r !== null && r >= 1;
+        return { isNow: now, val: nfD(v), title: (now ? 'Cette semaine' : 'Semaine du ' + L[i]) + ' : ' + nfD(v) + ' vues',
+          label: now ? 'Cette sem.' : L[i], pct: ((v / wTop) * 100).toFixed(1),
+          bg: now ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : hatch,
+          shadow: now ? '0 14px 34px rgba(11,111,224,0.45), inset 0 1px 0 rgba(255,255,255,0.35)' : 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+          chip, chipBg: up ? 'rgba(76,154,255,0.16)' : 'rgba(255,255,255,0.09)', chipInk: up ? '#4C9AFF' : '#E6E9EF',
+          fw: now ? '600' : '400', labelInk: now ? '#FFFFFF' : '#8A93A3' };
+      }),
+      avgPct: ((mean / wTop) * 100).toFixed(1), avgLabel: nfD(mean),
+      revMid: euro(src.views30 / 1000 * 3), revRange: 'entre ' + euro(src.views30 / 1000 * 2.5).replace(' k€', '') + ' et ' + euro(src.views30 / 1000 * 3.5) + ' · 30 jours',
+      shareLabel: src.scope ? 'Part de sa niche' : 'Part du Radar', share: src.share > 0 && src.share < 0.005 ? '< 1 %' : Math.round(src.share * 100) + ' %', shareW: Math.min(100, Math.round(src.share * 100)) + '%',
+      rankLine: src.rank ? 'N°' + src.rank + ' sur ' + src.rankOf + ' apps ' + (src.scope ? 'de ' + src.scope : 'du Radar') : '',
+      rankBadge: src.scope && src.rank && src.rank <= 3 ? 'N°' + src.rank + ' de sa niche' : '',
+      acc: grp(src.accounts), accLabel: src.accounts > 1 ? 'comptes' : 'compte', ppw: grp(src.ppw) + ' vidéos / sem.',
+      hasTop10: src.top10 !== null && src.accounts > 10, top10: Math.round((src.top10 || 0) * 100) + ' %', top10W: Math.round((src.top10 || 0) * 100) + '%',
+      othersLine: 'Les ' + (src.accounts - 10) + ' autres : ' + (100 - Math.round((src.top10 || 0) * 100)) + ' %',
+      hasTop: !!src.top || !(this.props && this.props.data),
+      top: src.top ? { cover: src.top.cover, href: src.top.href, views: nfD(src.top.views) + ' vues', x: src.top.x ? xfD(src.top.x) + ' sa normale' : '',
+        who: '@' + src.top.handle + ' · ' + new Date(src.top.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }), aria: 'Lire la vidéo de @' + src.top.handle }
+        : { cover: vids[0] ? vids[0].src : '', href: '/app/videos/7705929733220994337', views: vids[0] ? vids[0].v + ' vues' : '', x: '', who: vids[0] ? vids[0].h : '', aria: 'Lire la vidéo' },
+      vid30: grp(src.videoCount), best: src.bestX ? xfD(src.bestX) : '—',
+    };
+
     vids = vids.map((v) => Object.assign({ href: '/app/videos/7705929733220994337' }, v));
     formats = formats.map((f) => Object.assign({ href: '/app/formats' }, f));
     creators = creators.map((c) => Object.assign({ page: true, href: '/app/createurs/zinedine.gsbb' }, c));
@@ -148,7 +207,7 @@ export default class FicheApp extends DCLogic {
       aria: 'Vues par semaine de publication sur 6 semaines : ' + W.map((w) => w.toFixed(1).replace('.', ',')).join(' ; ') + ' millions',
       pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + ' M', label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
     };
-    return { nav, sections, chart, vids, formats, mk, creators, app };
+    return { nav, sections, chart, vids, formats, mk, creators, app, dash };
   }
 
   render() {
@@ -237,9 +296,14 @@ export default class FicheApp extends DCLogic {
         $h("main", { "style": "flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 24px;" },
           $h("header", { "style": "display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap;" },
             $h("div", { "style": "display: flex; gap: 18px; align-items: center;" },
-              $h("span", { "class": "sw-app-icon", "style": "width: 72px; height: 72px; border-radius: 20px; box-shadow: 0 14px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08);" },
+              $h("span", { "class": "sw-app-icon", "style": "width: 72px; height: 72px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; background: var(--track); box-shadow: 0 14px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08);" },
                 ($v.app?.icon) ? [
                   $h("img", { "class": "sw-logo-img", "src": $v.app?.icon, "alt": "", "loading": "lazy", "decoding": "async" })
+                ] : null,
+                ($v.app?.noIcon) ? [
+                  $h("svg", { "width": "30", "height": "30", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
+                    $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                  )
                 ] : null
               ),
               $h("div", { "style": "display: flex; flex-direction: column; gap: 8px;" },
@@ -250,25 +314,22 @@ export default class FicheApp extends DCLogic {
                   $h("span", { "class": "sw-badge" },
                     $t($v.app?.niche)
                   ),
-                  ($v.app?.delta) ? [
+                  ($v.dash?.rankBadge) ? [
                     $h("span", { "class": "sw-badge sw-badge-accent" },
-                      $t($v.app?.delta)
+                      $t($v.dash?.rankBadge)
                     )
                   ] : null
                 ),
                 $h("span", { "style": "display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink-muted);" },
                   "Dans le Radar depuis le ", $t($v.app?.since),
-                  $h("span", { "aria-hidden": "true" },
-                    "·"
-                  ),
                   ($v.app?.store) ? [
+                    $h("span", { "aria-hidden": "true" },
+                      "·"
+                    ),
                     $h("a", { "class": "sw-link-quiet", "href": $v.app?.store, "target": "_blank", "rel": "noopener" },
                       "App Store"
                     )
-                  ] : null,
-                  $h("a", { "class": "sw-link-quiet", "href": $v.app?.play, "target": "_blank", "rel": "noopener" },
-                    "Google Play"
-                  )
+                  ] : null
                 )
               )
             ),
@@ -300,127 +361,167 @@ export default class FicheApp extends DCLogic {
               )
             )
           ),
-          $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px;" },
-            $h("section", { "class": "sw-card", "aria-labelledby": "fa-vr", "style": "padding: 24px; display: flex; flex-direction: column; gap: 18px;" },
-              $h("div", { "style": "display: flex; justify-content: space-between; align-items: center;" },
-                $h("h2", { "id": "fa-vr", "class": "sw-card-title" },
-                  "Vues et revenus"
+          $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 268px 268px; gap: 16px;" },
+            $h("section", { "aria-labelledby": "fa-vr", "style": "grid-column: 1; grid-row: 1 / span 2; min-height: 0; display: flex; flex-direction: column; padding: 22px 24px 18px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("div", { "style": "display: flex; align-items: center; justify-content: space-between;" },
+                $h("h2", { "id": "fa-vr", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                  "Vues par semaine"
                 ),
-                $h("span", { "class": "sw-card-sub" },
-                  "Par semaine"
+                $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-faint); white-space: nowrap;" },
+                  $h("span", { "aria-hidden": "true", "style": "width: 18px; border-top: 1.5px dashed rgba(255,255,255,0.4);" }),
+                  "MOYENNE ", $t($v.dash?.avgLabel)
                 )
               ),
-              $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); border-bottom: 1px solid var(--line); padding-bottom: 18px;" },
-                $h("div", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-                  $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted);" },
-                    $h("span", { "style": "width: 8px; height: 8px; border-radius: 50%; background: #4C9AFF;" }),
-                    "Vues 30 j"
-                  ),
-                  $h("span", { "class": "sw-stat" },
-                    $t($v.app?.v30)
-                  ),
-                  $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
-                    $t($v.app?.ig)
-                  )
+              $h("div", { "style": "display: flex; align-items: flex-end; gap: 14px; margin-top: 14px;" },
+                $h("span", { "style": "font-family: var(--font-display); font-size: 54px; line-height: 0.95; font-weight: 700; letter-spacing: -0.05em; white-space: nowrap;" },
+                  $t($v.dash?.v30)
                 ),
-                $h("div", { "style": "display: flex; flex-direction: column; gap: 4px; padding-left: 20px; border-left: 1px solid var(--line);" },
-                  $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted);" },
-                    $h("span", { "style": "width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF;" }),
-                    "Revenus estimés"
-                  ),
-                  $h("span", { "class": "sw-stat", "style": "font-size: 24px; white-space: nowrap;" },
-                    $h("span", { "style": "font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                      "Entre "
-                    ),
-                    $t($v.app?.lo),
-                    $h("span", { "style": "font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                      " et "
-                    ),
-                    $t($v.app?.hi)
-                  ),
+                $h("span", { "style": "display: flex; flex-direction: column; gap: 4px; padding-bottom: 4px;" },
+                  ($v.dash?.delta) ? [
+                    $h("span", { "style": `align-self: flex-start; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: ${$t($v.dash?.deltaBg)}; font-size: 12px; font-weight: 600; color: ${$t($v.dash?.deltaInk)};` },
+                      $t($v.dash?.delta)
+                    )
+                  ] : null,
                   $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
-                    "sur 30 jours"
-                  )
-                ),
-                $h("div", { "style": "display: flex; flex-direction: column; gap: 4px; padding-left: 20px; border-left: 1px solid var(--line);" },
-                  $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                    "Cette semaine"
-                  ),
-                  $h("span", { "class": "sw-stat" },
-                    $t($v.app?.week)
-                  ),
-                  $h("span", { "style": "font-size: 12px; font-weight: 600; color: var(--accent);" },
-                    $t($v.app?.wd)
+                    $t($v.dash?.v30Sub)
                   )
                 )
               ),
-              $h("svg", { "viewBox": "0 0 640 240", "width": "100%", "height": "240", "role": "img", "aria-label": $v.chart?.aria },
-                $h("defs", null,
-                  $h("linearGradient", { "id": "faG", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
-                    $h("stop", { "offset": "0%", "stop-color": "#4C9AFF", "stop-opacity": "0.30" }),
-                    $h("stop", { "offset": "100%", "stop-color": "#4C9AFF", "stop-opacity": "0" })
+              $h("div", { "style": "position: relative; flex: 1; min-height: 0; margin-top: 18px; display: flex; align-items: stretch; gap: 14px;" },
+                $h("span", { "aria-hidden": "true", "style": `position: absolute; left: 0; right: 0; bottom: ${$t($v.dash?.avgPct)}%; border-top: 1.5px dashed rgba(255,255,255,0.28);` }),
+                ($l($v.dash?.weeks)).map((w) => [
+                  $h("div", { "style": "flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px;" },
+                    (w?.isNow) ? [
+                      $h("span", { "style": "padding: 5px 10px; border-radius: 10px; background: #161B26; box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.10); font-family: var(--font-display); font-size: 15px; font-weight: 700; white-space: nowrap;" },
+                        $t(w?.val)
+                      )
+                    ] : null,
+                    (w?.chip) ? [
+                      $h("span", { "style": `display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: ${$t(w?.chipBg)}; font-size: 12px; font-weight: 600; color: ${$t(w?.chipInk)};` },
+                        $t(w?.chip)
+                      )
+                    ] : null,
+                    $h("span", { "title": w?.title, "style": `display: block; width: 100%; height: ${$t(w?.pct)}%; min-height: 6px; border-radius: 14px; background: ${$t(w?.bg)}; box-shadow: ${$t(w?.shadow)};` })
                   )
-                ),
-                $h("line", { "x1": "44", "y1": "20", "x2": "640", "y2": "20", "stroke": "rgba(255,255,255,0.06)" }),
-                $h("line", { "x1": "44", "y1": "110", "x2": "640", "y2": "110", "stroke": "rgba(255,255,255,0.06)" }),
-                $h("line", { "x1": "44", "y1": "200", "x2": "640", "y2": "200", "stroke": "rgba(255,255,255,0.14)" }),
-                $h("text", { "x": "0", "y": "24", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "11" },
-                  $t($v.chart?.top)
-                ),
-                $h("text", { "x": "0", "y": "114", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "11" },
-                  $t($v.chart?.mid)
-                ),
-                $h("text", { "x": "0", "y": "204", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "11" },
-                  "0"
-                ),
-                $h("path", { "d": $v.chart?.area, "fill": "url(#faG)" }),
-                $h("path", { "d": $v.chart?.line, "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.5", "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-dasharray": "900", "style": "animation: sw-draw 7s ease-in-out infinite;" }),
-                ($l($v.chart?.pts)).map((p) => [
-                  $h("circle", { "cx": p?.x, "cy": p?.y, "r": p?.r, "fill": p?.fill, "stroke": "#4C9AFF", "stroke-width": "2" }),
-                  $h("text", { "x": p?.x, "y": p?.ty, "text-anchor": "middle", "fill": p?.ink, "font-family": "Inter, sans-serif", "font-size": "12", "font-weight": p?.fw },
-                    $t(p?.v)
-                  ),
-                  $h("text", { "x": p?.lx, "y": "226", "text-anchor": p?.anchor, "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "10" },
-                    $t(p?.label)
+                ])
+              ),
+              $h("div", { "style": "display: flex; gap: 14px; margin-top: 10px;" },
+                ($l($v.dash?.weeks)).map((w) => [
+                  $h("span", { "style": `flex: 1; text-align: center; white-space: nowrap; font-size: 12px; font-weight: ${$t(w?.fw)}; color: ${$t(w?.labelInk)};` },
+                    $t(w?.label)
                   )
                 ])
               )
             ),
-            $h("section", { "class": "sw-card", "aria-labelledby": "fa-res", "style": "padding: 24px; display: flex; flex-direction: column; gap: 18px;" },
-              $h("h2", { "id": "fa-res", "class": "sw-card-title" },
+            $h("section", { "aria-labelledby": "fa-rev", "style": "grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("h2", { "id": "fa-rev", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                "Revenus estimés"
+              ),
+              $h("span", { "style": "margin-top: 12px; font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.045em;" },
+                $t($v.dash?.revMid)
+              ),
+              $h("span", { "style": "margin-top: 6px; font-size: 13px; color: var(--ink-faint);" },
+                $t($v.dash?.revRange)
+              ),
+              $h("div", { "style": "margin-top: auto; display: flex; flex-direction: column; gap: 8px;" },
+                $h("div", { "style": "display: flex; justify-content: space-between; gap: 10px; font-size: 13px; white-space: nowrap;" },
+                  $h("span", { "style": "color: var(--ink-muted);" },
+                    $t($v.dash?.shareLabel)
+                  ),
+                  $h("span", { "style": "font-weight: 600;" },
+                    $t($v.dash?.share)
+                  )
+                ),
+                $h("span", { "aria-hidden": "true", "style": "display: flex; height: 26px; border-radius: 9px; overflow: hidden; background: repeating-linear-gradient(135deg, rgba(255,255,255,0.09) 0 1px, transparent 1px 7px), rgba(255,255,255,0.025);" },
+                  $h("span", { "style": `width: ${$t($v.dash?.shareW)}; border-radius: 9px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0);` })
+                ),
+                $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                  $t($v.dash?.rankLine)
+                )
+              )
+            ),
+            $h("section", { "aria-labelledby": "fa-res", "style": "grid-column: 2; grid-row: 2; min-height: 0; display: flex; flex-direction: column; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("h2", { "id": "fa-res", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
                 "Son réseau"
               ),
-              $h("div", { "style": "flex: 1 1 auto; display: grid; grid-auto-rows: 1fr; gap: 8px;" },
-                $h("div", { "class": "sw-tile", "style": "flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;" },
-                  $h("span", { "class": "sw-tile-label", "style": "font-size: 13px;" },
-                    "Comptes qui le poussent"
+              $h("span", { "style": "margin-top: 12px; display: flex; align-items: baseline; gap: 8px;" },
+                $h("span", { "style": "font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.045em;" },
+                  $t($v.dash?.acc)
+                ),
+                $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
+                  $t($v.dash?.accLabel)
+                )
+              ),
+              $h("span", { "style": "margin-top: 8px; align-self: flex-start; display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--accent-soft); font-size: 12px; font-weight: 600; color: var(--accent); white-space: nowrap;" },
+                $t($v.dash?.ppw)
+              ),
+              ($v.dash?.hasTop10) ? [
+                $h("div", { "style": "margin-top: auto; display: flex; flex-direction: column; gap: 8px;" },
+                  $h("div", { "style": "display: flex; justify-content: space-between; gap: 10px; font-size: 13px; white-space: nowrap;" },
+                    $h("span", { "style": "color: var(--ink-muted);" },
+                      "Part des 10 premiers"
+                    ),
+                    $h("span", { "style": "font-weight: 600;" },
+                      $t($v.dash?.top10)
+                    )
                   ),
-                  $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap;" },
-                    $t($v.app?.acc)
+                  $h("span", { "aria-hidden": "true", "style": "display: flex; height: 26px; border-radius: 9px; overflow: hidden; background: repeating-linear-gradient(135deg, rgba(255,255,255,0.09) 0 1px, transparent 1px 7px), rgba(255,255,255,0.025);" },
+                    $h("span", { "style": `width: ${$t($v.dash?.top10W)}; border-radius: 9px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0);` })
+                  ),
+                  $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                    $t($v.dash?.othersLine)
+                  )
+                )
+              ] : null
+            ),
+            $h("section", { "aria-labelledby": "fa-top", "style": "grid-column: 3; grid-row: 1 / span 2; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("div", { "style": "display: flex; align-items: center; justify-content: space-between;" },
+                $h("h2", { "id": "fa-top", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                  "Sa vidéo n°1"
+                ),
+                $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-faint);" },
+                  "30 JOURS"
+                )
+              ),
+              ($v.dash?.hasTop) ? [
+                $h("a", { "href": $v.dash?.top?.href, "aria-label": $v.dash?.top?.aria, "style": "position: relative; flex: 1; min-height: 0; display: block; border-radius: 18px; overflow: hidden; background: #0A0C12; text-decoration: none; color: #FFFFFF;" },
+                  $h("img", { "src": $v.dash?.top?.cover, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
+                  $h("span", { "aria-hidden": "true", "style": "position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.25), transparent 30%, transparent 55%, rgba(0,0,0,0.75));" }),
+                  ($v.dash?.top?.x) ? [
+                    $h("span", { "style": "position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); font-size: 12px; font-weight: 700;" },
+                      $t($v.dash?.top?.x)
+                    )
+                  ] : null,
+                  $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.22); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center;" },
+                    $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 12 12", "aria-hidden": "true" },
+                      $h("path", { "d": "M4 2.5v7l5.5-3.5z", "fill": "#FFFFFF" })
+                    )
+                  ),
+                  $h("span", { "style": "position: absolute; left: 14px; right: 14px; bottom: 12px; display: flex; flex-direction: column; gap: 2px;" },
+                    $h("span", { "style": "font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.03em;" },
+                      $t($v.dash?.top?.views)
+                    ),
+                    $h("span", { "style": "font-size: 13px; color: #E4E7EC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                      $t($v.dash?.top?.who)
+                    )
+                  )
+                )
+              ] : null,
+              $h("div", { "style": "margin-top: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;" },
+                $h("div", { "style": "display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--track);" },
+                  $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                    "Vidéos · 30 j"
+                  ),
+                  $h("span", { "style": "font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.03em;" },
+                    $t($v.dash?.vid30)
                   )
                 ),
-                $h("div", { "class": "sw-tile", "style": "flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;" },
-                  $h("span", { "class": "sw-tile-label", "style": "font-size: 13px;" },
-                    "Vidéos par semaine"
+                $h("div", { "style": "display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--track);" },
+                  $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                    "Meilleure · 7 j"
                   ),
-                  $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap;" },
-                    $t($v.app?.ppw)
-                  )
-                ),
-                $h("div", { "class": "sw-tile", "style": "flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;" },
-                  $h("span", { "class": "sw-tile-label", "style": "font-size: 13px;" },
-                    "Meilleure de la semaine"
-                  ),
-                  $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap; color: var(--accent);" },
-                    $t($v.app?.best)
-                  )
-                ),
-                $h("div", { "class": "sw-tile", "style": "flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;" },
-                  $h("span", { "class": "sw-tile-label", "style": "font-size: 13px;" },
-                    "Les 10 premiers comptes"
-                  ),
-                  $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap;" },
-                    $t($v.app?.top10)
+                  $h("span", { "style": "font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: var(--accent);" },
+                    $t($v.dash?.best)
                   )
                 )
               )

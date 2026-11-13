@@ -254,7 +254,7 @@ export default class Video extends DCLogic {
                   $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                     "Pourquoi elle sort du lot"
                   ),
-                  $h("span", { "style": "align-self: flex-start; padding: 6px 14px; border-radius: 14px; background: linear-gradient(180deg, var(--blue-400), var(--blue-600)); font-family: var(--font-display); font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.03em; box-shadow: var(--glow-rest);" },
+                  $h("span", { "style": "align-self: flex-start; padding: 6px 14px; border-radius: 14px; background: linear-gradient(180deg, var(--blue-400), var(--blue-600)); font-family: var(--font-display); font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.03em;" },
                     $t($v.vid?.x)
                   ),
                   $h("span", { "style": "font-size: 14px; color: var(--ink-muted);" },

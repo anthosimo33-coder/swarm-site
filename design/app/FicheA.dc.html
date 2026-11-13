@@ -43,10 +43,10 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 24px;">
 <header style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
 <div style="display: flex; gap: 18px; align-items: center;">
-<span class="sw-app-icon" style="width: 72px; height: 72px; border-radius: 20px; box-shadow: 0 14px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08);"><sc-if value="{{app.icon}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{app.icon}}" alt=""></sc-if></span>
+<span class="sw-app-icon" style="width: 72px; height: 72px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; background: var(--track); box-shadow: 0 14px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08);"><sc-if value="{{app.icon}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{app.icon}}" alt=""></sc-if><sc-if value="{{app.noIcon}}" hint-placeholder-val="{{false}}"><svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ink-faint);"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg></sc-if></span>
 <div style="display: flex; flex-direction: column; gap: 8px;">
-<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;"><h1 style="margin: 0; font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;">{{app.name}}</h1><span class="sw-badge">{{app.niche}}</span><sc-if value="{{app.delta}}" hint-placeholder-val="{{true}}"><span class="sw-badge sw-badge-accent">{{app.delta}}</span></sc-if></div>
-<span style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink-muted);">Dans le Radar depuis le {{app.since}}<span aria-hidden="true">·</span><sc-if value="{{app.store}}" hint-placeholder-val="{{true}}"><a class="sw-link-quiet" href="{{app.store}}" target="_blank" rel="noopener">App Store</a></sc-if><a class="sw-link-quiet" href="{{app.play}}" target="_blank" rel="noopener">Google Play</a></span>
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;"><h1 style="margin: 0; font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;">{{app.name}}</h1><span class="sw-badge">{{app.niche}}</span><sc-if value="{{dash.rankBadge}}" hint-placeholder-val="{{true}}"><span class="sw-badge sw-badge-accent">{{dash.rankBadge}}</span></sc-if></div>
+<span style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink-muted);">Dans le Radar depuis le {{app.since}}<sc-if value="{{app.store}}" hint-placeholder-val="{{true}}"><span aria-hidden="true">·</span><a class="sw-link-quiet" href="{{app.store}}" target="_blank" rel="noopener">App Store</a></sc-if></span>
 </div>
 </div>
 <div style="display: flex; gap: 8px; align-items: center;">
@@ -56,37 +56,66 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 </header>
 
-<div style="display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px;">
-<section class="sw-card" aria-labelledby="fa-vr" style="padding: 24px; display: flex; flex-direction: column; gap: 18px;">
-<div style="display: flex; justify-content: space-between; align-items: center;"><h2 id="fa-vr" class="sw-card-title">Vues et revenus</h2><span class="sw-card-sub">Par semaine</span></div>
-<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); border-bottom: 1px solid var(--line); padding-bottom: 18px;">
-<div style="display: flex; flex-direction: column; gap: 4px;"><span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted);"><span style="width: 8px; height: 8px; border-radius: 50%; background: #4C9AFF;"></span>Vues 30 j</span><span class="sw-stat">{{app.v30}}</span><span style="font-size: 12px; color: var(--ink-faint);">{{app.ig}}</span></div>
-<div style="display: flex; flex-direction: column; gap: 4px; padding-left: 20px; border-left: 1px solid var(--line);"><span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted);"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF;"></span>Revenus estimés</span><span class="sw-stat" style="font-size: 24px; white-space: nowrap;"><span style="font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);">Entre </span>{{app.lo}}<span style="font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);"> et </span>{{app.hi}}</span><span style="font-size: 12px; color: var(--ink-faint);">sur 30 jours</span></div>
-<div style="display: flex; flex-direction: column; gap: 4px; padding-left: 20px; border-left: 1px solid var(--line);"><span style="font-size: 13px; color: var(--ink-muted);">Cette semaine</span><span class="sw-stat">{{app.week}}</span><span style="font-size: 12px; font-weight: 600; color: var(--accent);">{{app.wd}}</span></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 268px 268px; gap: 16px;">
+
+<section aria-labelledby="fa-vr" style="grid-column: 1; grid-row: 1 / span 2; min-height: 0; display: flex; flex-direction: column; padding: 22px 24px 18px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
+<div style="display: flex; align-items: center; justify-content: space-between;"><h2 id="fa-vr" style="margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;">Vues par semaine</h2><span style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-faint); white-space: nowrap;"><span aria-hidden="true" style="width: 18px; border-top: 1.5px dashed rgba(255,255,255,0.4);"></span>MOYENNE {{dash.avgLabel}}</span></div>
+<div style="display: flex; align-items: flex-end; gap: 14px; margin-top: 14px;">
+<span style="font-family: var(--font-display); font-size: 54px; line-height: 0.95; font-weight: 700; letter-spacing: -0.05em; white-space: nowrap;">{{dash.v30}}</span>
+<span style="display: flex; flex-direction: column; gap: 4px; padding-bottom: 4px;"><sc-if value="{{dash.delta}}" hint-placeholder-val="{{true}}"><span style="align-self: flex-start; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: {{dash.deltaBg}}; font-size: 12px; font-weight: 600; color: {{dash.deltaInk}};">{{dash.delta}}</span></sc-if><span style="font-size: 12px; color: var(--ink-faint);">{{dash.v30Sub}}</span></span>
 </div>
-<svg viewBox="0 0 640 240" width="100%" height="240" role="img" aria-label="{{chart.aria}}">
-<defs><linearGradient id="faG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4C9AFF" stop-opacity="0.30"></stop><stop offset="100%" stop-color="#4C9AFF" stop-opacity="0"></stop></linearGradient></defs>
-<line x1="44" y1="20" x2="640" y2="20" stroke="rgba(255,255,255,0.06)"></line><line x1="44" y1="110" x2="640" y2="110" stroke="rgba(255,255,255,0.06)"></line><line x1="44" y1="200" x2="640" y2="200" stroke="rgba(255,255,255,0.14)"></line>
-<text x="0" y="24" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="11">{{chart.top}}</text><text x="0" y="114" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="11">{{chart.mid}}</text><text x="0" y="204" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="11">0</text>
-<path d="{{chart.area}}" fill="url(#faG)"></path>
-<path d="{{chart.line}}" fill="none" stroke="#4C9AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="900" style="animation: sw-draw 7s ease-in-out infinite;"></path>
-<sc-for list="{{chart.pts}}" as="p" hint-placeholder-count="6">
-<circle cx="{{p.x}}" cy="{{p.y}}" r="{{p.r}}" fill="{{p.fill}}" stroke="#4C9AFF" stroke-width="2"></circle>
-<text x="{{p.x}}" y="{{p.ty}}" text-anchor="middle" fill="{{p.ink}}" font-family="Inter, sans-serif" font-size="12" font-weight="{{p.fw}}">{{p.v}}</text>
-<text x="{{p.lx}}" y="226" text-anchor="{{p.anchor}}" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">{{p.label}}</text>
+<div style="position: relative; flex: 1; min-height: 0; margin-top: 18px; display: flex; align-items: stretch; gap: 14px;">
+<span aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: {{dash.avgPct}}%; border-top: 1.5px dashed rgba(255,255,255,0.28);"></span>
+<sc-for list="{{dash.weeks}}" as="w" hint-placeholder-count="6">
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px;">
+<sc-if value="{{w.isNow}}" hint-placeholder-val="{{false}}"><span style="padding: 5px 10px; border-radius: 10px; background: #161B26; box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.10); font-family: var(--font-display); font-size: 15px; font-weight: 700; white-space: nowrap;">{{w.val}}</span></sc-if>
+<sc-if value="{{w.chip}}" hint-placeholder-val="{{true}}"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: {{w.chipBg}}; font-size: 12px; font-weight: 600; color: {{w.chipInk}};">{{w.chip}}</span></sc-if>
+<span title="{{w.title}}" style="display: block; width: 100%; height: {{w.pct}}%; min-height: 6px; border-radius: 14px; background: {{w.bg}}; box-shadow: {{w.shadow}};"></span>
+</div>
 </sc-for>
-</svg>
+</div>
+<div style="display: flex; gap: 14px; margin-top: 10px;">
+<sc-for list="{{dash.weeks}}" as="w" hint-placeholder-count="6"><span style="flex: 1; text-align: center; white-space: nowrap; font-size: 12px; font-weight: {{w.fw}}; color: {{w.labelInk}};">{{w.label}}</span></sc-for>
+</div>
 </section>
 
-<section class="sw-card" aria-labelledby="fa-res" style="padding: 24px; display: flex; flex-direction: column; gap: 18px;">
-<h2 id="fa-res" class="sw-card-title">Son réseau</h2>
-<div style="flex: 1 1 auto; display: grid; grid-auto-rows: 1fr; gap: 8px;">
-<div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Comptes qui le poussent</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap;">{{app.acc}}</span></div>
-<div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Vidéos par semaine</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap;">{{app.ppw}}</span></div>
-<div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Meilleure de la semaine</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap; color: var(--accent);">{{app.best}}</span></div>
-<div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Les 10 premiers comptes</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap;">{{app.top10}}</span></div>
+<section aria-labelledby="fa-rev" style="grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
+<h2 id="fa-rev" style="margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;">Revenus estimés</h2>
+<span style="margin-top: 12px; font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.045em;">{{dash.revMid}}</span>
+<span style="margin-top: 6px; font-size: 13px; color: var(--ink-faint);">{{dash.revRange}}</span>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+<div style="display: flex; justify-content: space-between; gap: 10px; font-size: 13px; white-space: nowrap;"><span style="color: var(--ink-muted);">{{dash.shareLabel}}</span><span style="font-weight: 600;">{{dash.share}}</span></div>
+<span aria-hidden="true" style="display: flex; height: 26px; border-radius: 9px; overflow: hidden; background: repeating-linear-gradient(135deg, rgba(255,255,255,0.09) 0 1px, transparent 1px 7px), rgba(255,255,255,0.025);"><span style="width: {{dash.shareW}}; border-radius: 9px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0);"></span></span>
+<span style="font-size: 12px; color: var(--ink-faint);">{{dash.rankLine}}</span>
 </div>
 </section>
+
+<section aria-labelledby="fa-res" style="grid-column: 2; grid-row: 2; min-height: 0; display: flex; flex-direction: column; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
+<h2 id="fa-res" style="margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;">Son réseau</h2>
+<span style="margin-top: 12px; display: flex; align-items: baseline; gap: 8px;"><span style="font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.045em;">{{dash.acc}}</span><span style="font-size: 13px; color: var(--ink-faint);">{{dash.accLabel}}</span></span>
+<span style="margin-top: 8px; align-self: flex-start; display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--accent-soft); font-size: 12px; font-weight: 600; color: var(--accent); white-space: nowrap;">{{dash.ppw}}</span>
+<sc-if value="{{dash.hasTop10}}" hint-placeholder-val="{{true}}"><div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+<div style="display: flex; justify-content: space-between; gap: 10px; font-size: 13px; white-space: nowrap;"><span style="color: var(--ink-muted);">Part des 10 premiers</span><span style="font-weight: 600;">{{dash.top10}}</span></div>
+<span aria-hidden="true" style="display: flex; height: 26px; border-radius: 9px; overflow: hidden; background: repeating-linear-gradient(135deg, rgba(255,255,255,0.09) 0 1px, transparent 1px 7px), rgba(255,255,255,0.025);"><span style="width: {{dash.top10W}}; border-radius: 9px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0);"></span></span>
+<span style="font-size: 12px; color: var(--ink-faint);">{{dash.othersLine}}</span>
+</div></sc-if>
+</section>
+
+<section aria-labelledby="fa-top" style="grid-column: 3; grid-row: 1 / span 2; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
+<div style="display: flex; align-items: center; justify-content: space-between;"><h2 id="fa-top" style="margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;">Sa vidéo n°1</h2><span style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-faint);">30 JOURS</span></div>
+<sc-if value="{{dash.hasTop}}" hint-placeholder-val="{{true}}"><a href="{{dash.top.href}}" aria-label="{{dash.top.aria}}" style="position: relative; flex: 1; min-height: 0; display: block; border-radius: 18px; overflow: hidden; background: #0A0C12; text-decoration: none; color: #FFFFFF;">
+<img src="{{dash.top.cover}}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
+<span aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.25), transparent 30%, transparent 55%, rgba(0,0,0,0.75));"></span>
+<sc-if value="{{dash.top.x}}" hint-placeholder-val="{{true}}"><span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); font-size: 12px; font-weight: 700;">{{dash.top.x}}</span></sc-if>
+<span aria-hidden="true" style="position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.22); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5v7l5.5-3.5z" fill="#FFFFFF"></path></svg></span>
+<span style="position: absolute; left: 14px; right: 14px; bottom: 12px; display: flex; flex-direction: column; gap: 2px;"><span style="font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.03em;">{{dash.top.views}}</span><span style="font-size: 13px; color: #E4E7EC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{dash.top.who}}</span></span>
+</a></sc-if>
+<div style="margin-top: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--track);"><span style="font-size: 12px; color: var(--ink-faint);">Vidéos · 30 j</span><span style="font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.03em;">{{dash.vid30}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--track);"><span style="font-size: 12px; color: var(--ink-faint);">Meilleure · 7 j</span><span style="font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: var(--accent);">{{dash.best}}</span></div>
+</div>
+</section>
+
 </div>
 
 <section aria-labelledby="fa-vid" style="display: flex; flex-direction: column; gap: 14px;">
@@ -240,6 +269,9 @@ class Component extends DCLogic {
       v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', lo: '144', hi: '202 k€', week: '18,4 M', wd: "+6 % face à la semaine d'avant",
       acc: '269', ppw: '1 360', best: '2 333×', top10: '43 % des vues', vidsHref: 'VideoA.dc.html', crLabel: 'Tous les créateurs' };
     let top = 20;
+    // Le tableau de bord du haut de la fiche : mêmes entrées pour l'exemple et pour le Radar.
+    let src = { views30: 57.7e6, ig: 2.8e6, weekDelta: 0.06, accounts: 269, ppw: 1360, bestX: 2333, top10: 0.43, videoCount: 2552,
+      rank: 1, rankOf: 5, share: 0.41, scope: 'Études', top: null };
 
     // Sur le site : la fiche de l'app depuis le Radar (document « app:<slug> », convex/radarModels.ts).
     const D = this.props && this.props.data;
@@ -253,7 +285,7 @@ class Component extends DCLogic {
       const rev = (v, k) => { const e = v / 1000 * k; return e >= 1000 ? Math.round(e / 1000) : Math.round(e); };
       const kUnit = D.views30 / 1000 * 3.5 >= 1000 ? ' k€' : ' €';
       app = {
-        icon: D.icon || '', name: D.name, niche: D.niche, delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
+        icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
         store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps',
         v30: nf(D.views30), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
         lo: String(rev(D.views30, 2.5)), hi: rev(D.views30, 3.5) + kUnit, week: nf(D.weeks[5]),
@@ -275,7 +307,63 @@ class Component extends DCLogic {
       creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
         med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: c.avatar || '', noav: true, page: !!c.page, href: 'CreateurFicheA.dc.html?h=' + c.handle }));
       sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));
+      // Rang : dans sa niche (document « apps », toujours chargé), sinon parmi toutes les apps du Radar.
+      const all = (this.props.get && this.props.get('apps')) || null;
+      const list = all && all.apps ? all.apps : [];
+      let pool = list.filter((a) => a.niche === D.niche);
+      const inNiche = D.niche && D.niche !== 'Autres' && pool.length >= 2;
+      if (!inNiche) pool = list;
+      pool = [...pool].sort((a, b) => b.views30 - a.views30);
+      const sum = pool.reduce((s, a) => s + (a.views30 || 0), 0);
+      const t0 = D.videos[0];
+      src = { views30: D.views30, ig: D.views30Ig || 0, weekDelta: D.weekDelta, accounts: D.accounts, ppw: D.videosPerWeek, bestX: D.bestX,
+        top10: D.top10Share, videoCount: D.videoCount || D.videos.length,
+        rank: pool.length ? pool.findIndex((a) => a.slug === D.slug) + 1 : 0, rankOf: pool.length, share: sum ? D.views30 / sum : 0,
+        scope: inNiche ? D.niche : '', top: t0 ? { cover: t0.cover || '', views: t0.views, handle: t0.handle, x: t0.x, at: t0.publishedAt, href: 'VideoA.dc.html?v=' + t0.id } : null };
     }
+    // ── Tableau de bord ──
+    const nfD = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+    const grp = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+    const xfD = (x) => (x >= 100 ? grp(x) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
+    const wk = W.map((v) => v * 1e6);
+    const wTop = Math.max(1, ...wk) * 1.22;
+    const hatch = 'repeating-linear-gradient(135deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 7px), rgba(255,255,255,0.03)';
+    const euro = (e) => (e >= 1000 ? Math.round(e / 1000) + ' k€' : Math.round(e) + ' €');
+    const mean = wk.reduce((s, v) => s + v, 0) / (wk.length || 1);
+    const dash = {
+      v30: nfD(src.views30),
+      v30Sub: 'vues sur 30 jours' + (src.ig > 0 ? ', dont ' + nfD(src.ig) + ' sur Instagram' : ''),
+      delta: src.weekDelta === null ? '' : (src.weekDelta >= 0 ? '+' : '−') + Math.round(Math.abs(src.weekDelta) * 100) + ' % cette semaine',
+      deltaBg: src.weekDelta >= 0 ? 'rgba(76,154,255,0.16)' : 'rgba(255,255,255,0.09)', deltaInk: src.weekDelta >= 0 ? '#4C9AFF' : '#E6E9EF',
+      weeks: wk.map((v, i) => {
+        const now = i === wk.length - 1;
+        const prev = i ? wk[i - 1] : 0;
+        const noise = Math.max(v, prev) < Math.max(...wk) * 0.08; // deux semaines quasi vides : la variation ne dit rien
+        const r = prev > 0 && !noise ? v / prev : null;
+        const chip = r === null ? '' : r >= 2 ? '×' + (Math.round(r * 10) / 10).toString().replace('.', ',') : (r >= 1 ? '+' : '−') + Math.round(Math.abs(r - 1) * 100) + ' %';
+        const up = r !== null && r >= 1;
+        return { isNow: now, val: nfD(v), title: (now ? 'Cette semaine' : 'Semaine du ' + L[i]) + ' : ' + nfD(v) + ' vues',
+          label: now ? 'Cette sem.' : L[i], pct: ((v / wTop) * 100).toFixed(1),
+          bg: now ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : hatch,
+          shadow: now ? '0 14px 34px rgba(11,111,224,0.45), inset 0 1px 0 rgba(255,255,255,0.35)' : 'inset 0 0 0 1px rgba(255,255,255,0.06)',
+          chip, chipBg: up ? 'rgba(76,154,255,0.16)' : 'rgba(255,255,255,0.09)', chipInk: up ? '#4C9AFF' : '#E6E9EF',
+          fw: now ? '600' : '400', labelInk: now ? '#FFFFFF' : '#8A93A3' };
+      }),
+      avgPct: ((mean / wTop) * 100).toFixed(1), avgLabel: nfD(mean),
+      revMid: euro(src.views30 / 1000 * 3), revRange: 'entre ' + euro(src.views30 / 1000 * 2.5).replace(' k€', '') + ' et ' + euro(src.views30 / 1000 * 3.5) + ' · 30 jours',
+      shareLabel: src.scope ? 'Part de sa niche' : 'Part du Radar', share: src.share > 0 && src.share < 0.005 ? '< 1 %' : Math.round(src.share * 100) + ' %', shareW: Math.min(100, Math.round(src.share * 100)) + '%',
+      rankLine: src.rank ? 'N°' + src.rank + ' sur ' + src.rankOf + ' apps ' + (src.scope ? 'de ' + src.scope : 'du Radar') : '',
+      rankBadge: src.scope && src.rank && src.rank <= 3 ? 'N°' + src.rank + ' de sa niche' : '',
+      acc: grp(src.accounts), accLabel: src.accounts > 1 ? 'comptes' : 'compte', ppw: grp(src.ppw) + ' vidéos / sem.',
+      hasTop10: src.top10 !== null && src.accounts > 10, top10: Math.round((src.top10 || 0) * 100) + ' %', top10W: Math.round((src.top10 || 0) * 100) + '%',
+      othersLine: 'Les ' + (src.accounts - 10) + ' autres : ' + (100 - Math.round((src.top10 || 0) * 100)) + ' %',
+      hasTop: !!src.top || !(this.props && this.props.data),
+      top: src.top ? { cover: src.top.cover, href: src.top.href, views: nfD(src.top.views) + ' vues', x: src.top.x ? xfD(src.top.x) + ' sa normale' : '',
+        who: '@' + src.top.handle + ' · ' + new Date(src.top.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }), aria: 'Lire la vidéo de @' + src.top.handle }
+        : { cover: vids[0] ? vids[0].src : '', href: 'VideoA.dc.html', views: vids[0] ? vids[0].v + ' vues' : '', x: '', who: vids[0] ? vids[0].h : '', aria: 'Lire la vidéo' },
+      vid30: grp(src.videoCount), best: src.bestX ? xfD(src.bestX) : '—',
+    };
+
     vids = vids.map((v) => Object.assign({ href: 'VideoA.dc.html' }, v));
     formats = formats.map((f) => Object.assign({ href: 'FormatsB.dc.html' }, f));
     creators = creators.map((c) => Object.assign({ page: true, href: 'CreateurFicheA.dc.html' }, c));
@@ -287,7 +375,7 @@ class Component extends DCLogic {
       aria: 'Vues par semaine de publication sur 6 semaines : ' + W.map((w) => w.toFixed(1).replace('.', ',')).join(' ; ') + ' millions',
       pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + ' M', label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
     };
-    return { nav, sections, chart, vids, formats, mk, creators, app };
+    return { nav, sections, chart, vids, formats, mk, creators, app, dash };
   }
 }
 </script>
