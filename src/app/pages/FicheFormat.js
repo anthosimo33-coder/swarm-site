@@ -111,7 +111,8 @@ export default class FicheFormat extends DCLogic {
           s: !whole ? 'Dernière reprise le ' + day(D.lastPostAt) + '.' : span === 1 && dnum(first) === dnum(D.lastPostAt) ? 'Toutes publiées le ' + day(first) + '.' : 'Du ' + day(first) + ' au ' + day(D.lastPostAt) + '.' } : null
       ].filter(Boolean);
     }
-    return { nav, f, tiles, tileN: tiles.length || 1, reps, common, repsTitle };
+    const TIL = { 'Repris par': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Réussite': 'M5 12l5 5 9-10', '× la normale': 'M3 3v18h18M7 15l4-4 3 3 5-6', 'Meilleure reprise': 'M13 2L4 14h7l-1 8 9-12h-7z' };
+    return { nav, f, tiles: tiles.map((t) => Object.assign({}, t, { ic: TIL[t.l] || '' })), tileN: tiles.length || 1, reps, common, repsTitle };
   }
 
   render() {
@@ -178,7 +179,10 @@ export default class FicheFormat extends DCLogic {
                   ),
                   $t($v.f?.kind)
                 ),
-                $h("span", { "class": "sw-badge", "style": "height: 26px;" },
+                $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; font-weight: 500; color: var(--ink);" },
+                  $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
+                    $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   $t($v.f?.niche)
                 ),
                 ($l($v.f?.mk)).map((m) => [
@@ -262,7 +266,10 @@ export default class FicheFormat extends DCLogic {
           $h("div", { "style": `margin: 16px 32px 0; display: grid; grid-template-columns: repeat(${$t($v.tileN)}, minmax(0, 1fr)); gap: 12px;` },
             ($l($v.tiles)).map((t) => [
               $h("div", { "class": "sw-card", "style": "padding: 18px 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 6px;" },
-                $h("span", { "class": "sw-tile-label" },
+                $h("span", { "class": "sw-tile-label", "style": "display: inline-flex; align-items: center; gap: 7px;" },
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": t?.ic, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   $t(t?.l)
                 ),
                 $h("span", { "class": "sw-tile-value", "style": `color: ${$t(t?.ink)};` },
@@ -275,7 +282,10 @@ export default class FicheFormat extends DCLogic {
             ])
           ),
           $h("div", { "style": "padding: 36px 32px 14px; display: flex; align-items: baseline; justify-content: space-between;" },
-            $h("h2", { "class": "sw-card-title", "style": "font-size: 20px;" },
+            $h("h2", { "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px; font-size: 20px;" },
+              $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               $t($v.repsTitle)
             ),
             $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },

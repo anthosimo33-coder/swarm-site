@@ -370,7 +370,10 @@ export default class Dossier extends DCLogic {
                 ] : null,
                 ($v.showApps) ? [
                   $h("div", { "style": "display: flex; align-items: baseline; gap: 10px; margin-top: 8px;" },
-                    $h("h2", { "class": "sw-card-title", "style": "font-size: 17px;" },
+                    $h("h2", { "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px; font-size: 17px;" },
+                      $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
                       "Apps"
                     ),
                     $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },
@@ -428,7 +431,10 @@ export default class Dossier extends DCLogic {
                 ] : null,
                 ($v.showFmts) ? [
                   $h("div", { "style": "display: flex; align-items: baseline; gap: 10px; margin-top: 8px;" },
-                    $h("h2", { "class": "sw-card-title", "style": "font-size: 17px;" },
+                    $h("h2", { "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px; font-size: 17px;" },
+                      $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
                       "Formats"
                     ),
                     $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },
@@ -477,7 +483,10 @@ export default class Dossier extends DCLogic {
                     ($v.showCr) ? [
                       $h("div", { "style": "display: flex; flex-direction: column; gap: 14px;" },
                         $h("div", { "style": "display: flex; align-items: baseline; gap: 10px; margin-top: 8px;" },
-                          $h("h2", { "class": "sw-card-title", "style": "font-size: 17px;" },
+                          $h("h2", { "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px; font-size: 17px;" },
+                            $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                              $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                            ),
                             "Créateurs"
                           ),
                           $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },
@@ -529,7 +538,10 @@ export default class Dossier extends DCLogic {
                     ($v.showVid) ? [
                       $h("div", { "style": "display: flex; flex-direction: column; gap: 14px;" },
                         $h("div", { "style": "display: flex; align-items: baseline; gap: 10px; margin-top: 8px;" },
-                          $h("h2", { "class": "sw-card-title", "style": "font-size: 17px;" },
+                          $h("h2", { "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px; font-size: 17px;" },
+                            $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                              $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                            ),
                             "Vidéos"
                           ),
                           $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },

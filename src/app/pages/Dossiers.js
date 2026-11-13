@@ -406,7 +406,10 @@ export default class Dossiers extends DCLogic {
           ] : null,
           ($v.hasRecent) ? [
             $h("div", { "style": "padding: 36px 32px 14px; display: flex; justify-content: space-between; align-items: baseline;" },
-              $h("h2", { "class": "sw-card-title", "style": "font-size: 20px;" },
+              $h("h2", { "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px; font-size: 20px;" },
+                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Ajouté récemment"
               ),
               $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },

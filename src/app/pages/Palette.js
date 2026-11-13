@@ -143,7 +143,10 @@ export default class Palette extends DCLogic {
               $h("div", { "style": "display: grid; grid-template-columns: 420px minmax(0, 1fr);" },
                 $h("div", { "style": "border-right: 1px solid var(--line); padding-bottom: 10px; max-height: 560px; overflow-y: auto;" },
                   ($v.hasApps) ? [
-                    $h("span", { "style": "display: block; padding: 12px 20px 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+                    $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 12px 20px 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
                       $t($v.gApps)
                     ),
                     ($l($v.apps)).map((a) => [
@@ -170,7 +173,10 @@ export default class Palette extends DCLogic {
                     ])
                   ] : null,
                   ($v.hasFms) ? [
-                    $h("span", { "style": "display: block; padding: 12px 20px 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+                    $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 12px 20px 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
                       $t($v.gFms)
                     ),
                     ($l($v.fms)).map((f) => [
@@ -192,7 +198,10 @@ export default class Palette extends DCLogic {
                     ])
                   ] : null,
                   ($v.hasCrs) ? [
-                    $h("span", { "style": "display: block; padding: 12px 20px 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+                    $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 12px 20px 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
                       $t($v.gCrs)
                     ),
                     ($l($v.crs)).map((c) => [

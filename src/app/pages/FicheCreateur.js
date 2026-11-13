@@ -48,7 +48,7 @@ export default class FicheCreateur extends DCLogic {
     const hasApp = !!(b.z.app && b.z.app.name);
     const tab = st.tab === 'fmts' || (st.tab === 'apps' && hasApp) ? st.tab : 'vids';
     const tabs = [['vids', 'Vidéos · ' + b.vids.length], ['fmts', 'Formats repris · ' + b.fmts.length]].concat(hasApp ? [['apps', 'Apps poussées · 1']] : [])
-      .map((t) => ({ l: t[1], on: tab === t[0] ? 'true' : 'false', pick: () => this.setState({ tab: t[0] }) }));
+      .map((t) => ({ l: t[1], d: ({ 'vids': 'M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4', 'fmts': 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5', 'apps': 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' })[t[0]], on: tab === t[0] ? 'true' : 'false', bg: tab === t[0] ? 'rgba(255,255,255,0.10)' : 'transparent', ink: tab === t[0] ? 'var(--ink)' : 'var(--ink-muted)', fw: tab === t[0] ? '600' : '500', ic: tab === t[0] ? 'var(--accent)' : 'var(--ink-faint)', pick: () => this.setState({ tab: t[0] }) }));
     return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: { kind: 'creator', id: handle, label: '@' + handle, cover } }, { followAria: f ? 'Ne plus suivre ce compte' : 'Suivre ce compte', followInk: f ? 'var(--accent)' : 'var(--ink-muted)',
       vids: (st.sort === 'vues') ? (b.vids || []).slice().sort((x, y) => y.raw - x.raw) : b.vids,
       sorts: [['recent', 'Récentes'], ['vues', 'Les plus vues']].map((s) => ({ l: s[1], on: (st.sort || 'recent') === s[0] ? 'true' : 'false', pick: () => this.setState({ sort: s[0] }) })),
@@ -124,7 +124,8 @@ export default class FicheCreateur extends DCLogic {
         meta: 'Repris par ' + f.accounts + ' comptes', href: '/app/formats/' + f.id }));
     }
     vids = vids.map((v) => Object.assign({ href: '/app/videos/7705929733220994337' }, v));
-    return { nav, z, tiles, vids, ins, fmts };
+    const TIL = { 'Abonnés': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Vues médianes': 'M3 3v18h18M7 15l4-4 3 3 5-6', 'Rythme': 'M3 12h4l3-8 4 16 3-8h4', 'Meilleure vidéo': 'M13 2L4 14h7l-1 8 9-12h-7z' };
+    return { nav, z, tiles: tiles.map((t) => Object.assign({}, t, { ic: TIL[t.l] || '' })), vids, ins, fmts };
   }
 
   render() {
@@ -228,7 +229,10 @@ export default class FicheCreateur extends DCLogic {
                   )
                 ] : null,
                 ($v.z?.app?.niche) ? [
-                  $h("span", { "class": "sw-badge", "style": "height: 26px;" },
+                  $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; font-weight: 500; color: var(--ink);" },
+                    $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
+                      $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ),
                     $t($v.z?.app?.niche)
                   )
                 ] : null,
@@ -272,7 +276,10 @@ export default class FicheCreateur extends DCLogic {
           $h("div", { "style": `margin: 16px 32px 0; display: grid; grid-template-columns: repeat(${$t($v.tileN)}, minmax(0, 1fr)); gap: 12px;` },
             ($l($v.tiles)).map((t) => [
               $h("div", { "class": "sw-card", "style": "padding: 18px 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 6px;" },
-                $h("span", { "class": "sw-tile-label" },
+                $h("span", { "class": "sw-tile-label", "style": "display: inline-flex; align-items: center; gap: 7px;" },
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": t?.ic, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   $t(t?.l)
                 ),
                 $h("span", { "class": "sw-tile-value", "style": `color: ${$t(t?.ink)};` },
@@ -285,9 +292,12 @@ export default class FicheCreateur extends DCLogic {
             ])
           ),
           $h("div", { "style": "margin: 28px 32px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line);" },
-            $h("div", { "class": "sw-tabs sw-tabs-line", "role": "tablist", "aria-label": "Contenu", "style": "border-bottom: 0;" },
+            $h("div", { "role": "tablist", "aria-label": "Contenu", "style": "display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
               ($l($v.tabs)).map((tb) => [
-                $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": tb?.on, "onClick": tb?.pick },
+                $h("button", { "type": "button", "role": "tab", "aria-selected": tb?.on, "onClick": tb?.pick, "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: ${$t(tb?.bg)}; color: ${$t(tb?.ink)}; font: inherit; font-size: 14px; font-weight: ${$t(tb?.fw)}; cursor: pointer;` },
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t(tb?.ic)};` },
+                    $h("path", { "d": tb?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   $t(tb?.l)
                 )
               ])

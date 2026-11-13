@@ -62,7 +62,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 
 <div class="va-mid" style="min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
-<div style="display: flex; gap: 6px; flex-wrap: wrap;"><sc-if value="{{vid.appName}}" hint-placeholder-val="{{true}}"><a class="sw-badge" href="{{vid.appHref}}" style="text-decoration: none; color: var(--ink);">{{vid.appName}}</a></sc-if><span class="sw-badge">{{vid.market}}</span><span class="sw-badge">Publiée le {{vid.date}}</span><sc-if value="{{vid.dur}}" hint-placeholder-val="{{true}}"><span class="sw-badge">{{vid.dur}}</span></sc-if></div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap;"><sc-if value="{{vid.appName}}" hint-placeholder-val="{{true}}"><a class="sw-badge" href="{{vid.appHref}}" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--ink);"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-muted);"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{vid.appName}}</a></sc-if><span class="sw-badge" style="display: inline-flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-muted);"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{vid.market}}</span><span class="sw-badge" style="display: inline-flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-muted);"><path d="M4 6h16v14H4zM4 10h16M9 3v4M15 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Publiée le {{vid.date}}</span><sc-if value="{{vid.dur}}" hint-placeholder-val="{{true}}"><span class="sw-badge" style="display: inline-flex; align-items: center; gap: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-muted);"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{vid.dur}}</span></sc-if></div>
 <span style="font-size: 15px; color: var(--ink-muted);"><span style="color: var(--ink); font-weight: 700;">{{vid.handle}}</span>{{vid.whoMeta}}</span>
 <div class="sw-card" style="padding: 18px 22px; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 24px;">
 <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -90,15 +90,15 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 </div>
 <div class="va-facts" style="display: flex; flex-direction: column;">
-<span style="font-size: 15px; font-weight: 700; padding-bottom: 6px;">Ce qu'elle fait</span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; padding-bottom: 6px;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Ce qu'elle fait</span>
 <sc-for list="{{facts}}" as="f" hint-placeholder-count="5">
-<div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px;"><span style="color: var(--ink-faint);">{{f.k}}</span><span title="{{f.v}}" style="color: var(--ink-soft); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{f.v}}</span></div>
+<div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px;"><span style="display: inline-flex; align-items: center; gap: 8px; color: var(--ink-faint);"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="{{f.ic}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{f.k}}</span><span title="{{f.v}}" style="color: var(--ink-soft); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{f.v}}</span></div>
 </sc-for>
 </div>
 </div>
 
 <aside aria-label="Ensuite" style="display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; overflow: hidden;">
-<span style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);">Ensuite</span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink-muted);"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Ensuite</span>
 <sc-for list="{{next}}" as="n" hint-placeholder-count="4">
 <a class="va-next" href="{{n.href}}" style="display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--row-hover); text-decoration: none; color: var(--ink);">
 <span class="sw-video {{n.t}}" style="display: block; width: 58px; border-radius: 10px;"><img class="sw-cover" src="{{n.src}}" alt=""></span>
@@ -271,7 +271,7 @@ class Component extends DCLogic {
     const playing = !!(st.playing && vid.embed);
     return {
       vid, chart,
-      facts, next,
+      facts: facts.map((x) => Object.assign({}, x, { ic: { 'Texte à l’écran': 'M5 6h14M12 6v13M9 19h6', 'Ce qui est dit': 'M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z', 'Son': 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z', 'Légende': 'M4 6h16M4 12h16M4 18h10', 'Réactions': 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z' }[x.k] || '' })), next,
       playing, notPlaying: !playing, play: () => { if (vid.embed) this.setState({ playing: true }); },
       toastText: vid.copyParts,
       copyLabel: copied ? 'Format copié' : 'Copier le format',

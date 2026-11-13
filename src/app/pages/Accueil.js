@@ -142,7 +142,8 @@ export default class Accueil extends DCLogic {
     }
     look = look.map((r, i, a) => Object.assign(r, { sep: i === a.length - 1 ? 'transparent' : 'var(--line)' }));
     // Une niche mène au classement des apps filtré sur elle (/app/apps?niche=…).
-    niches = niches.map((n) => ({ label: n, href: '/app/apps?niche=' + encodeURIComponent(n) }));
+    const NIC = { 'Séduction IA': 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z', 'Couple': 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z', 'Études': 'M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM8 7h7', 'Jalousie et ex': 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'Side hustle': 'M3 17l6-6 4 4 8-8M15 7h6v6', 'Langues': 'M4 5h8M8 3v2M5 9c1.5 3 4 5 7 6M11 5c-1 4-3.5 7-7 9M13 21l4-9 4 9M14.5 18h5', 'Foi': 'M12 3v18M7 8h10', 'Social et loisirs': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Santé et physique': 'M3 12h4l3-8 4 16 3-8h4', 'Beauté IA': 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z' };
+    niches = niches.map((n) => ({ label: n, d: NIC[n] || 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', href: '/app/apps?niche=' + encodeURIComponent(n) }));
     return {
       nav,
       look, hasLook: look.length > 0,
@@ -228,7 +229,10 @@ export default class Accueil extends DCLogic {
                   "Ça explose cette semaine :"
                 ),
                 ($l($v.niches)).map((t) => [
-                  $h("a", { "class": "sw-pill", "href": t?.href },
+                  $h("a", { "class": "sw-pill", "href": t?.href, "style": "gap: 7px;" },
+                    $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                      $h("path", { "d": t?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ),
                     $t(t?.label)
                   )
                 ])

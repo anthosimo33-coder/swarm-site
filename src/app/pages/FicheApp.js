@@ -307,7 +307,10 @@ export default class FicheApp extends DCLogic {
                   $h("h1", { "style": "margin: 0; font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
                     $t($v.app?.name)
                   ),
-                  $h("span", { "class": "sw-badge" },
+                  $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; font-weight: 500; color: var(--ink);" },
+                    $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
+                      $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ),
                     $t($v.app?.niche)
                   ),
                   ($v.dash?.rankBadge) ? [
@@ -360,7 +363,10 @@ export default class FicheApp extends DCLogic {
           $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 268px 268px; gap: 16px;" },
             $h("section", { "aria-labelledby": "fa-vr", "style": "grid-column: 1; grid-row: 1 / span 2; min-height: 0; display: flex; flex-direction: column; padding: 22px 24px 18px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
               $h("div", { "style": "display: flex; align-items: center; justify-content: space-between;" },
-                $h("h2", { "id": "fa-vr", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                $h("h2", { "id": "fa-vr", "style": "display: flex; align-items: center; gap: 9px; margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M3 3v18h18M7 15l4-4 3 3 5-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   "Vues par semaine"
                 ),
                 $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-faint); white-space: nowrap;" },
@@ -410,7 +416,10 @@ export default class FicheApp extends DCLogic {
               )
             ),
             $h("section", { "aria-labelledby": "fa-place", "style": "grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-              $h("h2", { "id": "fa-place", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+              $h("h2", { "id": "fa-place", "style": "display: flex; align-items: center; gap: 9px; margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.5 14l-1.5 7 5-3 5 3-1.5-7", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Sa place"
               ),
               $h("span", { "style": "margin-top: 12px; display: flex; align-items: baseline; gap: 8px;" },
@@ -439,7 +448,10 @@ export default class FicheApp extends DCLogic {
               )
             ),
             $h("section", { "aria-labelledby": "fa-res", "style": "grid-column: 2; grid-row: 2; min-height: 0; display: flex; flex-direction: column; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-              $h("h2", { "id": "fa-res", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+              $h("h2", { "id": "fa-res", "style": "display: flex; align-items: center; gap: 9px; margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Son réseau"
               ),
               $h("span", { "style": "margin-top: 12px; display: flex; align-items: baseline; gap: 8px;" },
@@ -474,7 +486,10 @@ export default class FicheApp extends DCLogic {
             ),
             $h("section", { "aria-labelledby": "fa-top", "style": "grid-column: 3; grid-row: 1 / span 2; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
               $h("div", { "style": "display: flex; align-items: center; justify-content: space-between;" },
-                $h("h2", { "id": "fa-top", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                $h("h2", { "id": "fa-top", "style": "display: flex; align-items: center; gap: 9px; margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   "Sa vidéo n°1"
                 ),
                 $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-faint);" },
@@ -527,7 +542,10 @@ export default class FicheApp extends DCLogic {
           ),
           $h("section", { "aria-labelledby": "fa-vid", "style": "display: flex; flex-direction: column; gap: 14px;" },
             $h("div", { "class": "sw-card-head" },
-              $h("h2", { "id": "fa-vid", "class": "sw-card-title" },
+              $h("h2", { "id": "fa-vid", "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px;" },
+                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Leurs vidéos qui cartonnent"
               ),
               $h("a", { "class": "sw-more", "href": $v.app?.vidsHref },
@@ -564,7 +582,10 @@ export default class FicheApp extends DCLogic {
           $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px;" },
             $h("section", { "class": "sw-card", "aria-labelledby": "fa-fmt", "style": "padding: 24px; display: flex; flex-direction: column;" },
               $h("div", { "class": "sw-card-head", "style": "margin-bottom: 8px;" },
-                $h("h2", { "id": "fa-fmt", "class": "sw-card-title" },
+                $h("h2", { "id": "fa-fmt", "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px;" },
+                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   "Les formats qui cartonnent chez eux"
                 ),
                 $h("a", { "class": "sw-more", "href": "/app/formats" },
@@ -602,7 +623,10 @@ export default class FicheApp extends DCLogic {
             ),
             $h("section", { "class": "sw-card", "aria-labelledby": "fa-mk", "style": "padding: 24px; display: flex; flex-direction: column; gap: 14px;" },
               $h("div", { "class": "sw-card-head" },
-                $h("h2", { "id": "fa-mk", "class": "sw-card-title" },
+                $h("h2", { "id": "fa-mk", "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px;" },
+                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   "Où leurs vues se font"
                 ),
                 $h("span", { "class": "sw-card-sub" },
@@ -633,7 +657,10 @@ export default class FicheApp extends DCLogic {
           ),
           $h("section", { "class": "sw-card", "aria-labelledby": "fa-cr", "style": "padding: 8px 24px 12px;" },
             $h("div", { "class": "sw-card-head", "style": "padding: 16px 0 6px;" },
-              $h("h2", { "id": "fa-cr", "class": "sw-card-title" },
+              $h("h2", { "id": "fa-cr", "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px;" },
+                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Les créateurs qui le poussent"
               ),
               $h("a", { "class": "sw-more", "href": "/app/createurs" },
@@ -647,19 +674,44 @@ export default class FicheApp extends DCLogic {
               $h("thead", null,
                 $h("tr", null,
                   $h("th", { "style": "padding-left: 0;" },
-                    "Compte"
+                    $h("span", { "class": "sw-th" },
+                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      "Compte"
+                    )
                   ),
                   $h("th", null,
-                    "Marché"
+                    $h("span", { "class": "sw-th" },
+                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      "Marché"
+                    )
                   ),
                   $h("th", { "class": "sw-num" },
-                    "Abonnés"
+                    $h("span", { "class": "sw-th" },
+                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      "Abonnés"
+                    )
                   ),
                   $h("th", { "class": "sw-num" },
-                    "Vidéos 7 j"
+                    $h("span", { "class": "sw-th" },
+                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      "Vidéos 7 j"
+                    )
                   ),
                   $h("th", { "class": "sw-num" },
-                    "Vues d'habitude"
+                    $h("span", { "class": "sw-th" },
+                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M3 3v18h18M7 15l4-4 3 3 5-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      "Vues d'habitude"
+                    )
                   ),
                   $h("th", { "class": "sw-num", "style": "padding-right: 0;" })
                 )
