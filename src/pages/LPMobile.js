@@ -103,7 +103,6 @@ export default class LPMobile extends DCLogic {
     const faqData = [
       ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.'],
       ['Je débute, est-ce que c’est pour moi ?', 'Oui. Tu choisis un marché et une niche, Swarm te montre les apps et les formats qui y explosent en ce moment, et les créateurs qui les portent. Pas besoin de savoir coder.'],
-      ['Les revenus estimés, vous les sortez d’où ?', 'Comme Sensor Tower pour les apps : les vues des comptes de l’app multipliées par ce que rapportent 1 000 vues (2,50 à 3,50 €), recoupées avec les téléchargements et le prix affiché. Tu vois la fourchette et le calcul.'],
       ['C’est légal de copier une app ?', 'Copier une niche, un modèle, une stratégie de contenu : oui, tout le marché le fait. Copier une marque ou du code : non, et on ne t’y aide pas.'],
       ['Les données sont à jour ?', 'Les comptes sont relus en continu, et une vidéo qui explose est repérée dès ses premières heures.'],
       ['Y a-t-il une limite d’utilisation ?', 'Non. Avec Pro, tu as toutes les apps, tous les marchés, toutes les fiches et toutes les vidéos, sans limite.'],
@@ -168,7 +167,7 @@ export default class LPMobile extends DCLogic {
       ],
       cols: [
         mk('Produit', [['Comment ça marche', '#produit'], ['Exemple', '#exemple'], ['Tarifs', '/tarifs'], ['FAQ', '#faq']]),
-        mk('Fonctionnalités', [['Apps qui explosent', '#produit'], ['Formats qui explosent', '#exemple'], ['Créateurs', '#produit'], ['Tous les marchés', '#produit'], ['Revenus estimés', '#produit']])
+        mk('Fonctionnalités', [['Apps qui explosent', '#produit'], ['Formats qui explosent', '#exemple'], ['Créateurs', '#produit'], ['Tous les marchés', '#produit']])
       ]
     };
   }
@@ -442,14 +441,6 @@ export default class LPMobile extends DCLogic {
                     $h("span", { "style": "font-weight: 700;" },
                       "269 / 272"
                     )
-                  ),
-                  $h("div", { "style": "display: flex; justify-content: space-between; font-size: 13px;" },
-                    $h("span", { "style": "color: #4A4F57;" },
-                      "Revenus estimés"
-                    ),
-                    $h("span", { "style": "font-weight: 700; filter: blur(4px);" },
-                      "[XX] k€"
-                    )
                   )
                 ),
                 $h("div", { "style": "padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 6px;" },
@@ -457,7 +448,7 @@ export default class LPMobile extends DCLogic {
                     "Chaque app décortiquée"
                   ),
                   $h("p", { "style": "margin: 0; font-size: 15px; line-height: 1.5; color: #5F656E;" },
-                    "Ses vidéos qui explosent, ses hooks, ses sons et ses revenus estimés."
+                    "Ses vidéos qui explosent, ses hooks et ses sons."
                   )
                 )
               )

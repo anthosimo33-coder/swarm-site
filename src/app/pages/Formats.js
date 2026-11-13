@@ -116,7 +116,7 @@ export default class Formats extends DCLogic {
     const D = this.props && this.props.data;
     if (D && D.formats) {
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
-      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ICO = { hook: 'M5 6h14M12 6v13M9 19h6', sound: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z' };
       const appOf = (a) => ({ name: a.name, tile: true, logo: a.icon || false, nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank' });
@@ -168,7 +168,7 @@ export default class Formats extends DCLogic {
               )
             )
           ),
-          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
             $h("span", { "class": "sw-side-ico" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -202,14 +202,11 @@ export default class Formats extends DCLogic {
                 "Ce que plusieurs comptes reprennent en même temps. Un format qui marche chez trois inconnus marchera chez toi."
               )
             ),
-            $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 400px; height: 48px; padding: 0 8px 0 16px; box-shadow: none;" },
+            $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 400px; height: 48px; padding: 0 16px; box-shadow: none;" },
               $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
-              $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "qfb", "type": "search", "aria-label": "Chercher une accroche ou un son", "placeholder": "Chercher une accroche ou un son…", "style": "font-size: 15px;" }),
-              $h("span", { "class": "sw-kbd" },
-                "⌘ K"
-              )
+              $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "qfb", "type": "search", "aria-label": "Chercher une accroche ou un son", "placeholder": "Chercher une accroche ou un son…", "style": "font-size: 15px;" })
             )
           ),
           $h("div", { "style": "padding: 24px 32px 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },

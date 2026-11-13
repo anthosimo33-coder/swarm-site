@@ -239,8 +239,7 @@ class Component extends DCLogic {
       ]],
       ['02', 'Copy it', 'copier ce qui marche', [
         ['videos', 'Les formats qui explosent', 'Les hooks, les sons et les formats qui font les vues.'],
-        ['fiche', 'Fiches d’app décortiquées', 'Comptes, formats et rythme de publication.'],
-        ['revenus', 'Revenus estimés', 'Vues × RPM, avec la fourchette et le calcul.']
+        ['fiche', 'Fiches d’app décortiquées', 'Comptes, formats et rythme de publication.']
       ]],
       ['03', 'Launch it', 'lancer la tienne', [
         ['createurs', 'Les créateurs derrière chaque app', 'Leurs comptes et leurs vidéos, pour les recruter.'],
@@ -264,8 +263,7 @@ class Component extends DCLogic {
     const faq = [
       ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Swarm, sans palier ni option.'],
       ['Je peux annuler quand je veux ?', 'Oui, en un clic depuis ton compte. Tu gardes l’accès jusqu’à la fin de la période déjà payée.'],
-      ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.'],
-      ['Les revenus affichés sont garantis ?', 'Non. Ce sont des estimations : vues relevées × un RPM de 3 € pour 1 000 vues, dans une fourchette de 2,50 à 3,50 €. Le calcul est toujours affiché.']
+      ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.']
     ];
     const qs = faq.map((f, i) => {
       const o = openQ === i;
@@ -310,7 +308,7 @@ class Component extends DCLogic {
       tickO: (el % 3200) < 2900 ? 1 : 0,
       cols: [
         mk('Produit', [['Comment ça marche', 'LP.dc.html'], ['Exemple', 'LP.dc.html'], ['Tarifs', 'Tarifs.dc.html'], ['FAQ', 'LP.dc.html']]),
-        mk('Fonctionnalités', [['Apps qui explosent', 'LP.dc.html'], ['Formats qui explosent', 'LP.dc.html'], ['Créateurs derrière chaque app', 'LP.dc.html'], ['Tous les marchés', 'LP.dc.html'], ['Revenus estimés', 'LP.dc.html']]),
+        mk('Fonctionnalités', [['Apps qui explosent', 'LP.dc.html'], ['Formats qui explosent', 'LP.dc.html'], ['Créateurs derrière chaque app', 'LP.dc.html'], ['Tous les marchés', 'LP.dc.html']]),
         mk('Légal', [['CGV', '#cgv'], ['Confidentialité', '#confidentialite'], ['Mentions légales', '#mentions'], ['Contact', '#contact']])
       ]
     };

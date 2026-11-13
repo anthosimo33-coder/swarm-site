@@ -98,7 +98,7 @@ export default class FicheApp extends DCLogic {
     // L'en-tête et les chiffres de l'exemple (le canevas n'a pas de données).
     let app = { icon: "/media/app/app-astra-ai.jpg", name: 'Astra AI', niche: 'Études', delta: '+6 % cette semaine', since: '06/11',
       store: 'https://apps.apple.com/fr/app/astra-ai-r%C3%A9vision-examens/id6751030141', play: 'https://play.google.com/store/search?q=Astra%20AI&c=apps',
-      v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', lo: '144', hi: '202 k€', week: '18,4 M', wd: "+6 % face à la semaine d'avant",
+      v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', week: '18,4 M', wd: "+6 % face à la semaine d'avant",
       acc: '269', ppw: '1 360', best: '2 333×', top10: '43 % des vues', vidsHref: '/app/videos/7705929733220994337', crLabel: 'Tous les créateurs' };
     let top = 20;
     // Le tableau de bord du haut de la fiche : mêmes entrées pour l'exemple et pour le Radar.
@@ -110,17 +110,15 @@ export default class FicheApp extends DCLogic {
     if (D && D.name) {
       const M = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
-      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %';
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + ' j'; };
-      const rev = (v, k) => { const e = v / 1000 * k; return e >= 1000 ? Math.round(e / 1000) : Math.round(e); };
-      const kUnit = D.views30 / 1000 * 3.5 >= 1000 ? ' k€' : ' €';
       app = {
         icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
         store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps',
         v30: nf(D.views30), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
-        lo: String(rev(D.views30, 2.5)), hi: rev(D.views30, 3.5) + kUnit, week: nf(D.weeks[5]),
+        week: nf(D.weeks[5]),
         wd: D.weekDelta === null ? 'première semaine relevée' : pct(D.weekDelta) + " face à la semaine d'avant",
         acc: D.accounts.toLocaleString('fr-FR'), ppw: D.videosPerWeek.toLocaleString('fr-FR'), best: D.bestX ? xf(D.bestX) : '—',
         top10: D.top10Share === null ? '—' : Math.round(D.top10Share * 100) + ' % des vues',
@@ -160,7 +158,6 @@ export default class FicheApp extends DCLogic {
     const wk = W.map((v) => v * 1e6);
     const wTop = Math.max(1, ...wk) * 1.22;
     const hatch = 'repeating-linear-gradient(135deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 7px), rgba(255,255,255,0.03)';
-    const euro = (e) => (e >= 1000 ? Math.round(e / 1000) + ' k€' : Math.round(e) + ' €');
     const mean = wk.reduce((s, v) => s + v, 0) / (wk.length || 1);
     const dash = {
       v30: nfD(src.views30),
@@ -182,9 +179,8 @@ export default class FicheApp extends DCLogic {
           fw: now ? '600' : '400', labelInk: now ? '#FFFFFF' : '#8A93A3' };
       }),
       avgPct: ((mean / wTop) * 100).toFixed(1), avgLabel: nfD(mean),
-      revMid: euro(src.views30 / 1000 * 3), revRange: 'entre ' + euro(src.views30 / 1000 * 2.5).replace(' k€', '') + ' et ' + euro(src.views30 / 1000 * 3.5) + ' · 30 jours',
       shareLabel: src.scope ? 'Part de sa niche' : 'Part du Radar', share: src.share > 0 && src.share < 0.005 ? '< 1 %' : Math.round(src.share * 100) + ' %', shareW: Math.min(100, Math.round(src.share * 100)) + '%',
-      rankLine: src.rank ? 'N°' + src.rank + ' sur ' + src.rankOf + ' apps ' + (src.scope ? 'de ' + src.scope : 'du Radar') : '',
+      rank: src.rank ? 'N°' + src.rank : '—', rankOf: src.rank ? 'sur ' + src.rankOf + ' apps ' + (src.scope ? 'de ' + src.scope : 'du Radar') : '',
       rankBadge: src.scope && src.rank && src.rank <= 3 ? 'N°' + src.rank + ' de sa niche' : '',
       acc: grp(src.accounts), accLabel: src.accounts > 1 ? 'comptes' : 'compte', ppw: grp(src.ppw) + ' vidéos / sem.',
       hasTop10: src.top10 !== null && src.accounts > 10, top10: Math.round((src.top10 || 0) * 100) + ' %', top10W: Math.round((src.top10 || 0) * 100) + '%',
@@ -228,7 +224,7 @@ export default class FicheApp extends DCLogic {
               )
             )
           ),
-          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
             $h("span", { "class": "sw-side-ico" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -296,7 +292,7 @@ export default class FicheApp extends DCLogic {
         $h("main", { "style": "flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 24px;" },
           $h("header", { "style": "display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap;" },
             $h("div", { "style": "display: flex; gap: 18px; align-items: center;" },
-              $h("span", { "class": "sw-app-icon", "style": "width: 72px; height: 72px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; background: var(--track); box-shadow: 0 14px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08);" },
+              $h("span", { "class": "sw-app-icon", "style": "width: 72px; height: 72px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; background: var(--track); box-shadow: 0 14px 30px rgba(0,0,0,0.45);" },
                 ($v.app?.icon) ? [
                   $h("img", { "class": "sw-logo-img", "src": $v.app?.icon, "alt": "", "loading": "lazy", "decoding": "async" })
                 ] : null,
@@ -413,15 +409,17 @@ export default class FicheApp extends DCLogic {
                 ])
               )
             ),
-            $h("section", { "aria-labelledby": "fa-rev", "style": "grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-              $h("h2", { "id": "fa-rev", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
-                "Revenus estimés"
+            $h("section", { "aria-labelledby": "fa-place", "style": "grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; padding: 22px 22px 20px; border-radius: 24px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("h2", { "id": "fa-place", "style": "margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em;" },
+                "Sa place"
               ),
-              $h("span", { "style": "margin-top: 12px; font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.045em;" },
-                $t($v.dash?.revMid)
-              ),
-              $h("span", { "style": "margin-top: 6px; font-size: 13px; color: var(--ink-faint);" },
-                $t($v.dash?.revRange)
+              $h("span", { "style": "margin-top: 12px; display: flex; align-items: baseline; gap: 8px;" },
+                $h("span", { "style": "font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.045em;" },
+                  $t($v.dash?.rank)
+                ),
+                $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
+                  $t($v.dash?.rankOf)
+                )
               ),
               $h("div", { "style": "margin-top: auto; display: flex; flex-direction: column; gap: 8px;" },
                 $h("div", { "style": "display: flex; justify-content: space-between; gap: 10px; font-size: 13px; white-space: nowrap;" },
@@ -436,7 +434,7 @@ export default class FicheApp extends DCLogic {
                   $h("span", { "style": `width: ${$t($v.dash?.shareW)}; border-radius: 9px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0);` })
                 ),
                 $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
-                  $t($v.dash?.rankLine)
+                  "en vues sur 30 jours"
                 )
               )
             ),

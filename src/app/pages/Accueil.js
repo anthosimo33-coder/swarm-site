@@ -122,7 +122,7 @@ export default class Accueil extends DCLogic {
     const D = this.props && this.props.data;
     if (D && D.apps) {
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
-      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %';
       const has = (d) => d !== null && d !== undefined;
       const appRow = (a) => ({ logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', name: a.name,
@@ -169,7 +169,7 @@ export default class Accueil extends DCLogic {
               )
             )
           ),
-          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
             $h("span", { "class": "sw-side-ico" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -216,14 +216,11 @@ export default class Accueil extends DCLogic {
             $h("p", { "class": "sw-enter", "style": "margin: 14px 0 0; font-size: 19px; line-height: 1.55; color: var(--ink-muted); animation-delay: 0.2s;" },
               "Ce qui explose sur TikTok, Instagram et YouTube Shorts, app par app, marché par marché."
             ),
-            $h("div", { "role": "search", "class": "sw-search sw-enter", "style": "margin-top: 40px; width: 100%; height: 72px; padding: 0 10px 0 26px; box-sizing: border-box; box-shadow: var(--shadow-float), 0 0 0 8px rgba(76,154,255,0.07); animation-delay: 0.3s;" },
+            $h("div", { "role": "search", "class": "sw-search sw-enter", "style": "margin-top: 40px; width: 100%; height: 72px; padding: 0 26px; box-sizing: border-box; box-shadow: var(--shadow-float), 0 0 0 8px rgba(76,154,255,0.07); animation-delay: 0.3s;" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
-              $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "q", "type": "search", "aria-label": "Chercher une app, un format ou un créateur", "placeholder": "Cherche une app, un format, un créateur…", "style": "font-size: 18px;" }),
-              $h("span", { "class": "sw-kbd" },
-                "⌘ K"
-              )
+              $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "q", "type": "search", "aria-label": "Chercher une app, un format ou un créateur", "placeholder": "Cherche une app, un format, un créateur…", "style": "font-size: 18px;" })
             ),
             ($v.hasNiches) ? [
               $h("div", { "class": "sw-enter", "style": "margin-top: 28px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; animation-delay: 0.5s;" },

@@ -73,6 +73,7 @@ const median = (xs: number[]) => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 const round = (x: number, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
+const roundOrNull = (x: number | null, d = 2) => (x === null ? null : round(x, d));
 const groupBy = <T, K>(xs: T[], key: (x: T) => K) => {
   const m = new Map<K, T[]>();
   for (const x of xs) {
@@ -279,7 +280,7 @@ export function buildBoards(
       return {
         id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount, apps: appsOf,
         niche: appsOf[0] ? nicheOf(appsOf[0]!.name) : "Autres", market: marketOf(f.lang),
-        maxViews: f.maxViews, medX: median(xs), wins: xs.filter((x) => x > 1).length, n: f.members.length,
+        maxViews: f.maxViews, medX: roundOrNull(median(xs), 1), wins: xs.filter((x) => x > 1).length, n: f.members.length,
         lastPostAt: f.lastPostAt, firstSeenAt: f.firstSeenAt, members,
       };
     })

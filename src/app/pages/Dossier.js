@@ -71,7 +71,6 @@ export default class Dossier extends DCLogic {
     const M = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
     const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
     const xf = (x) => (x >= 10 ? Math.round(x).toLocaleString('fr-FR') : x.toFixed(1).replace(/\.0$/, '').replace('.', ',')) + '×';
-    const rev = (v) => { const lo = v / 1000 * 2.5, hi = v / 1000 * 3.5; return hi >= 1000 ? 'Entre ' + Math.round(lo / 1000) + ' et ' + Math.round(hi / 1000) + ' k€' : 'Entre ' + Math.round(lo) + ' et ' + Math.round(hi) + ' €'; };
     const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     const items = folder.items || [];
     const drop = (it) => this.change((fs) => fs.map((f) => (f.id !== folder.id ? f : Object.assign({}, f, { items: (f.items || []).filter((x) => !(x.kind === it.kind && x.id === it.id)) }))));
@@ -80,7 +79,7 @@ export default class Dossier extends DCLogic {
       const a = A[it.id], ex = EX['app:' + it.id] || {};
       const logo = (a && a.icon) || it.cover || '';
       return Object.assign(base(it, '/app/apps/'), { n: a ? a.name : it.label, niche: a ? a.niche : (ex.niche || ''), logo: logo || false, nologo: !logo, blank: logo ? '' : 'sw-app-blank',
-        v: a ? nf(a.views30) : (ex.v || '—'), rev: a ? rev(a.views30) : (ex.rev || '—'),
+        v: a ? nf(a.views30) : (ex.v || '—'),
         covs: (a ? (a.top || []).map((t) => t.cover) : (ex.covs || [])).filter(Boolean).slice(0, 3).map((src) => ({ src })) });
     });
     const fmts = items.filter((x) => x.kind === 'format').map((it) => {
@@ -164,8 +163,8 @@ export default class Dossier extends DCLogic {
   baseVals() {
     // Sur le canevas : ce que le site lirait dans les listes du Radar, pour les éléments du premier dossier.
     const exd = {
-      'app:astraai': { niche: 'Études', v: '57,7 M', rev: 'Entre 144 et 202 k€', covs: ['/media/app/v-7700392351268752661.jpg', '/media/app/v-7697654738124442896.jpg', '/media/app/v-7702743575934684437.jpg'] },
-      'app:knowunity': { niche: 'Études', v: '44,4 M', rev: 'Entre 111 et 156 k€', covs: ['/media/app/v-7699151144400244000.jpg', '/media/app/v-7702625361716170002.jpg', '/media/app/v-7698010148391947552.jpg'] },
+      'app:astraai': { niche: 'Études', v: '57,7 M', covs: ['/media/app/v-7700392351268752661.jpg', '/media/app/v-7697654738124442896.jpg', '/media/app/v-7702743575934684437.jpg'] },
+      'app:knowunity': { niche: 'Études', v: '44,4 M', covs: ['/media/app/v-7699151144400244000.jpg', '/media/app/v-7702625361716170002.jpg', '/media/app/v-7698010148391947552.jpg'] },
       'app:retaincards': { niche: 'Études' },
       'format:ich-losche': { meta: 'Accroche · 3 comptes', med: '39×', cov: ['/media/app/v-7706579888727231777.jpg', '/media/app/v-7705712961511263521.jpg', '/media/app/v-7705122381735513376.jpg'] },
       'format:guarda-partilha': { meta: 'Accroche · 3 comptes', med: '17×', cov: ['/media/app/v-7705159364558081313.jpg', '/media/app/v-7702530293768523041.jpg', '/media/app/v-7701734315805166880.jpg'] },
@@ -193,7 +192,7 @@ export default class Dossier extends DCLogic {
               )
             )
           ),
-          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
             $h("span", { "class": "sw-side-ico" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -381,7 +380,7 @@ export default class Dossier extends DCLogic {
                   $h("div", { "class": "sw-card", "style": "border-radius: 22px; padding: 4px 0;" },
                     ($l($v.apps)).map((a) => [
                       $h("div", { "style": "display: flex; align-items: center; gap: 8px; padding-right: 12px; border-bottom: 1px solid var(--line);" },
-                        $h("a", { "href": a?.href, "style": "flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1.6fr) 1fr 1.3fr 150px; align-items: center; gap: 16px; padding: 14px 4px 14px 20px; text-decoration: none; color: inherit;" },
+                        $h("a", { "href": a?.href, "style": "flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1.6fr) 1fr 150px; align-items: center; gap: 16px; padding: 14px 4px 14px 20px; text-decoration: none; color: inherit;" },
                           $h("span", { "style": "display: flex; align-items: center; gap: 14px; min-width: 0;" },
                             $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 44px; height: 44px; border-radius: 12px;" },
                               (a?.logo) ? [
@@ -408,14 +407,6 @@ export default class Dossier extends DCLogic {
                             ),
                             $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
                               "vues en 30 j"
-                            )
-                          ),
-                          $h("span", { "style": "display: flex; flex-direction: column; gap: 2px;" },
-                            $h("span", { "style": "font-size: 14px; font-weight: 600; color: var(--ink);" },
-                              $t(a?.rev)
-                            ),
-                            $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
-                              "revenus estimés"
                             )
                           ),
                           $h("span", { "style": "display: flex; gap: 4px; justify-content: flex-end;" },

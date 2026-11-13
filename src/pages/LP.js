@@ -143,7 +143,6 @@ export default class LP extends DCLogic {
     const faqData = [
       ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.'],
       ['Je débute, est-ce que c’est pour moi ?', 'Oui. Tu choisis un marché et une niche, Swarm te montre les apps et les formats qui y explosent en ce moment, et les créateurs qui les portent. Pas besoin de savoir coder.'],
-      ['Les revenus estimés, vous les sortez d’où ?', 'Comme Sensor Tower pour les apps : les vues des comptes de l’app multipliées par ce que rapportent 1 000 vues (2,50 à 3,50 €), recoupées avec les téléchargements et le prix affiché. Tu vois la fourchette et le calcul.'],
       ['C’est légal de copier une app ?', 'Copier une niche, un modèle, une stratégie de contenu : oui, tout le marché le fait. Copier une marque ou du code : non, et on ne t’y aide pas.'],
       ['Les données sont à jour ?', 'Les comptes sont relus en continu, et une vidéo qui explose est repérée dès ses premières heures.'],
       ['Y a-t-il une limite d’utilisation ?', 'Non. Avec Pro, tu as toutes les apps, tous les marchés, toutes les fiches et toutes les vidéos, sans limite.'],
@@ -220,7 +219,7 @@ export default class LP extends DCLogic {
       tickO: (el % 3200) < 2900 ? 1 : 0,
       cols: [
         mkCol('Produit', [['Comment ça marche', '#produit'], ['Exemple', '#exemple'], ['Tarifs', '/tarifs'], ['FAQ', '#faq']]),
-        mkCol('Fonctionnalités', [['Apps qui explosent', '#produit'], ['Formats qui explosent', '#exemple'], ['Hooks qui gagnent', '#exemple'], ['Créateurs derrière chaque app', '#produit'], ['Tous les marchés', '#produit'], ['Revenus estimés', '#produit']]),
+        mkCol('Fonctionnalités', [['Apps qui explosent', '#produit'], ['Formats qui explosent', '#exemple'], ['Hooks qui gagnent', '#exemple'], ['Créateurs derrière chaque app', '#produit'], ['Tous les marchés', '#produit']]),
         mkCol('Légal', [['CGV', '#cgv'], ['Confidentialité', '#confidentialite'], ['Mentions légales', '#mentions'], ['Contact', '#contact']])
       ]
     };
@@ -624,14 +623,6 @@ export default class LP extends DCLogic {
                             "1 350"
                           )
                         ),
-                        $h("div", { "style": "display: flex; justify-content: space-between; align-items: center; background: #F6F7F9; border-radius: 10px; padding: 9px 12px; font-size: 13px;" },
-                          $h("span", { "style": "color: #4A4F57;" },
-                            "Revenus estimés"
-                          ),
-                          $h("span", { "style": "font-weight: 700; filter: blur(4px);" },
-                            "00 k€"
-                          )
-                        ),
                         $h("div", { "style": "display: flex; justify-content: space-between; align-items: center; margin-top: 6px;" },
                           $h("span", { "style": "font-size: 14px; color: #4A4F57;" },
                             "Vidéos qui explosent"
@@ -661,7 +652,7 @@ export default class LP extends DCLogic {
                     "Les créateurs et les formats derrière chaque app"
                   ),
                   $h("p", { "style": "margin: 0; font-size: 19px; line-height: 1.55; color: #4A4F57;" },
-                    "Ses créateurs, ses vidéos qui explosent, ses hooks, ses sons et ses revenus estimés. Tout ce qu'il faut pour la copier."
+                    "Ses créateurs, ses vidéos qui explosent, ses hooks et ses sons. Tout ce qu'il faut pour la copier."
                   )
                 )
               )

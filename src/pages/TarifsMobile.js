@@ -35,7 +35,7 @@ export default class TarifsMobile extends DCLogic {
     };
     const spec = [
       ['01', 'Spot it', 'repérer ce qui explose', [['apps', 'Les apps qui explosent'], ['radar', 'Nouvelles apps repérées'], ['alertes', 'Alertes « vidéo qui explose »']]],
-      ['02', 'Copy it', 'copier ce qui marche', [['videos', 'Les formats qui explosent'], ['fiche', 'Fiches d’app décortiquées'], ['revenus', 'Revenus estimés']]],
+      ['02', 'Copy it', 'copier ce qui marche', [['videos', 'Les formats qui explosent'], ['fiche', 'Fiches d’app décortiquées']]],
       ['03', 'Launch it', 'lancer la tienne', [['createurs', 'Les créateurs derrière chaque app'], ['marches', 'Tous les marchés'], ['export', 'Export CSV']]]
     ];
     const groups = spec.map((g, gi) => ({
@@ -49,8 +49,7 @@ export default class TarifsMobile extends DCLogic {
     const faq = [
       ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Swarm, sans palier ni option.'],
       ['Je peux annuler quand je veux ?', 'Oui, en un clic depuis ton compte. Tu gardes l’accès jusqu’à la fin de la période déjà payée.'],
-      ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.'],
-      ['Les revenus affichés sont garantis ?', 'Non. Ce sont des estimations : vues relevées × un RPM de 3 € pour 1 000 vues, dans une fourchette de 2,50 à 3,50 €. Le calcul est toujours affiché.']
+      ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.']
     ];
     const mk = (title, links) => ({ title, links: links.map((l) => ({ t: l[0], href: l[1] })) });
     return {
@@ -91,7 +90,7 @@ export default class TarifsMobile extends DCLogic {
       ],
       cols: [
         mk('Produit', [['Comment ça marche', '/#produit'], ['Exemple', '/#exemple'], ['Tarifs', '/tarifs'], ['FAQ', '/#faq']]),
-        mk('Fonctionnalités', [['Apps qui explosent', '/#produit'], ['Formats qui explosent', '/#exemple'], ['Créateurs', '/#produit'], ['Tous les marchés', '/#produit'], ['Revenus estimés', '/#produit']])
+        mk('Fonctionnalités', [['Apps qui explosent', '/#produit'], ['Formats qui explosent', '/#exemple'], ['Créateurs', '/#produit'], ['Tous les marchés', '/#produit']])
       ]
     };
   }

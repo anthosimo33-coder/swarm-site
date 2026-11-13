@@ -99,7 +99,7 @@ export default class Video extends DCLogic {
     if (D && D.id) {
       const M = { FR: 'France', US: 'Anglophone', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + ' M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(Math.round(n)));
-      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const list = D.playlist || [];
       const idx = list.indexOf(D.id);
       const href = (id) => '/app/videos/' + id;
@@ -177,7 +177,7 @@ export default class Video extends DCLogic {
               $h("span", { "style": `display: block; width: ${$t($v.vid?.progress)}; height: 4px; background: var(--accent); border-radius: 2px;` })
             ),
             $h("span", { "style": "display: flex; gap: 6px;" },
-              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "title": "Chercher (⌘ K)", "style": "width: 40px; height: 40px; background: var(--track);" },
+              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher", "style": "width: 40px; height: 40px; background: var(--track);" },
                 $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )

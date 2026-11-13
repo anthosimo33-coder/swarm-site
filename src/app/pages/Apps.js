@@ -58,7 +58,7 @@ return {};
     const D = this.props && this.props.data;
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
-    const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+    const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     if (D && D.apps) {
       const LBL = Object.fromEntries(D.markets);
       A = D.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, a.weeks.map((w) => w / 1e6),
@@ -108,7 +108,7 @@ return {};
         delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
         line, area: line + ' L127.9 40 L2 40 Z', endY: pts[5][1].toFixed(1),
         stroke: up ? '#4C9AFF' : '#8A93A3', fill: up ? 'rgba(76,154,255,0.16)' : 'rgba(138,147,163,0.12)',
-        revLo: Math.round(views(a) * 2.5), revHi: Math.round(views(a) * 3.5), best: a[7],
+        best: a[7],
         thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length], href: videoOf(a, j) })).filter((t) => t.src),
         logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank',
         bg: st.pv === a[0] ? 'var(--accent-soft)' : 'transparent',
@@ -169,7 +169,7 @@ return {};
       const d = dlt(pa);
       const md = MKD[pa[0]];
       pv = { on: true, n: pa[0], niche: pa[1], mk: pa[2].filter((c) => c !== 'XX').slice(0, 3).map((c) => ({ c })), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
-        lo: Math.round(pa[5] * 2.5), hi: Math.round(pa[5] * 3.5), delta: (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine',
+        delta: (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine',
         line, area: line + ' L458 94 L6 94 Z', ex: pts[5][0].toFixed(1), ey: pts[5][1].toFixed(1), week: fr(w[5], 1) + ' M',
         v30: fr(pa[5], 1) + ' M', acc: pa[3], ppw: pa[4].toLocaleString('fr-FR'),
         vids: pa[8].map((src, j) => ({ src, v: pa[9][j], href: videoOf(pa, j) })).filter((x) => x.src), href: ficheOf(pa),
@@ -179,7 +179,7 @@ return {};
     }
     return {
       rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv, ajItem,
-      vlab: period === '7' ? 'Vues 7 j' : 'Vues 30 j', rlab: period === '7' ? 'sur 7 jours' : 'sur 30 jours', sortLabel: sort === 'accel' ? 'progression de la semaine' : (period === '7' ? 'vues 7 j' : 'vues 30 j'),
+      vlab: period === '7' ? 'Vues 7 j' : 'Vues 30 j', sortLabel: sort === 'accel' ? 'progression de la semaine' : (period === '7' ? 'vues 7 j' : 'vues 30 j'),
       closeMenu: () => set({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
       setMenu: (el) => { this.menuEl = el; }, setMenuInput: (el) => { this.menuInput = el; },
@@ -207,7 +207,7 @@ return {};
               )
             )
           ),
-          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
             $h("span", { "class": "sw-side-ico" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -241,14 +241,11 @@ return {};
                 "Les apps que les réseaux de créateurs poussent, classées par vues."
               )
             ),
-            $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 400px; height: 48px; padding: 0 8px 0 16px; box-shadow: none;" },
+            $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 400px; height: 48px; padding: 0 16px; box-shadow: none;" },
               $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
-              $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "qa", "type": "search", "aria-label": "Chercher une app", "placeholder": "Chercher une app…", "style": "font-size: 15px;" }),
-              $h("span", { "class": "sw-kbd" },
-                "⌘ K"
-              )
+              $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "qa", "type": "search", "aria-label": "Chercher une app", "placeholder": "Chercher une app…", "style": "font-size: 15px;" })
             )
           ),
           $h("div", { "style": "margin: 24px 32px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--line);" },
@@ -342,7 +339,7 @@ return {};
             )
           ),
           $h("div", { "style": "margin: 0 32px; overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom));" },
-            $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1180px;" },
+            $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1008px;" },
               $h("thead", null,
                 $h("tr", null,
                   $h("th", { "style": "width: 44px; padding-left: 20px;" },
@@ -359,9 +356,6 @@ return {};
                   ),
                   $h("th", { "style": "width: 140px;" },
                     "6 semaines"
-                  ),
-                  $h("th", { "class": "sw-num", "style": "width: 172px;" },
-                    "Revenus estimés"
                   ),
                   $h("th", { "class": "sw-num", "style": "width: 100px;" },
                     "Meilleure"
@@ -431,23 +425,6 @@ return {};
                         $h("path", { "d": r?.area, "fill": r?.fill }),
                         $h("path", { "d": r?.line, "fill": "none", "stroke": r?.stroke, "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" }),
                         $h("circle", { "cx": "128", "cy": r?.endY, "r": "3", "fill": r?.stroke })
-                      )
-                    ),
-                    $h("td", { "class": "sw-num" },
-                      $h("span", { "style": "display: flex; flex-direction: column; align-items: flex-end; gap: 2px;" },
-                        $h("span", { "style": "font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap;" },
-                          $h("span", { "style": "font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                            "Entre "
-                          ),
-                          $t(r?.revLo),
-                          $h("span", { "style": "font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                            " et "
-                          ),
-                          $t(r?.revHi), " k€"
-                        ),
-                        $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
-                          $t($v.rlab)
-                        )
                       )
                     ),
                     $h("td", { "class": "sw-num" },
@@ -560,18 +537,11 @@ return {};
             $h("div", { "style": "flex: 1 1 auto; overflow-y: auto; padding: 22px 28px; display: flex; flex-direction: column; gap: 22px;" },
               $h("div", { "style": "display: flex; flex-direction: column; gap: 4px;" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                  "Revenus estimés sur 30 jours"
+                  "Vues sur 30 jours"
                 ),
                 $h("div", { "style": "display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
                   $h("span", { "style": "font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: -0.04em; line-height: 1;" },
-                    $h("span", { "style": "font-size: 22px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-muted);" },
-                      "Entre "
-                    ),
-                    $t($v.pv?.lo),
-                    $h("span", { "style": "font-size: 22px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-muted);" },
-                      " et "
-                    ),
-                    $t($v.pv?.hi), " k€"
+                    $t($v.pv?.v30)
                   ),
                   $h("span", { "class": "sw-badge sw-badge-accent" },
                     $t($v.pv?.delta)
@@ -589,15 +559,7 @@ return {};
                   "cette semaine · ", $t($v.pv?.week)
                 )
               ),
-              $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
-                $h("div", { "class": "sw-tile" },
-                  $h("span", { "class": "sw-tile-label" },
-                    "Vues 30 j"
-                  ),
-                  $h("span", { "class": "sw-tile-value" },
-                    $t($v.pv?.v30)
-                  )
-                ),
+              $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;" },
                 $h("div", { "class": "sw-tile" },
                   $h("span", { "class": "sw-tile-label" },
                     "Comptes qui le poussent"

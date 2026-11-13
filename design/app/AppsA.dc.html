@@ -20,7 +20,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 
 <nav class="sw-sidebar" aria-label="Navigation principale">
 <a class="sw-side-logo" href="Main.dc.html" aria-label="Swarm, accueil"><span class="sw-app-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span></a>
-<button class="sw-side-item" type="button" data-cmdk="true" onClick="{{openPal}}" aria-label="Chercher, raccourci Commande K" style="border: 0; background: transparent; font-family: inherit; cursor: pointer;"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Chercher</button>
+<button class="sw-side-item" type="button" data-cmdk="true" onClick="{{openPal}}" aria-label="Chercher" style="border: 0; background: transparent; font-family: inherit; cursor: pointer;"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Chercher</button>
 <sc-for list="{{sb}}" as="n" hint-placeholder-count="6">
 <a class="sw-side-item" href="{{n.href}}" aria-current="{{n.cur}}"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{n.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>
 </sc-for>
@@ -35,10 +35,9 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <h1 style="margin: 0; font-family: var(--font-display); font-size: 40px; line-height: 1.05; font-weight: 700; letter-spacing: -0.04em;">Apps</h1>
 <p style="margin: 0; font-size: 15px; color: var(--ink-muted);">Les apps que les réseaux de créateurs poussent, classées par vues.</p>
 </div>
-<div role="search" class="sw-search" style="flex: 0 1 400px; height: 48px; padding: 0 8px 0 16px; box-shadow: none;">
+<div role="search" class="sw-search" style="flex: 0 1 400px; height: 48px; padding: 0 16px; box-shadow: none;">
 <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
 <input class="sw-search-input" onFocus="{{openPal}}" id="qa" type="search" aria-label="Chercher une app" placeholder="Chercher une app…" style="font-size: 15px;">
-<span class="sw-kbd">⌘ K</span>
 </div>
 </header>
 
@@ -73,9 +72,9 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 
 <div style="margin: 0 32px; overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom));">
-<table class="sw-table" style="table-layout: fixed; min-width: 1180px;">
+<table class="sw-table" style="table-layout: fixed; min-width: 1008px;">
 <thead><tr>
-<th style="width: 44px; padding-left: 20px;">#</th><th style="width: 250px;">App</th><th style="width: 120px;">Réseau</th><th class="sw-num" style="width: 120px;">{{vlab}}</th><th style="width: 140px;">6 semaines</th><th class="sw-num" style="width: 172px;">Revenus estimés</th><th class="sw-num" style="width: 100px;">Meilleure</th><th style="width: 156px; padding-right: 20px;">Ses vidéos</th>
+<th style="width: 44px; padding-left: 20px;">#</th><th style="width: 250px;">App</th><th style="width: 120px;">Réseau</th><th class="sw-num" style="width: 120px;">{{vlab}}</th><th style="width: 140px;">6 semaines</th><th class="sw-num" style="width: 100px;">Meilleure</th><th style="width: 156px; padding-right: 20px;">Ses vidéos</th>
 </tr></thead>
 <tbody>
 <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
@@ -85,7 +84,6 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <td><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600; color: var(--ink);">{{r.acc}} comptes</span><span style="font-size: 12px; color: var(--ink-faint);">{{r.ppw}} vidéos / sem.</span></span></td>
 <td class="sw-num"><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;"><span style="font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink);">{{r.v30}}</span><span style="font-size: 11px; font-weight: 600; white-space: nowrap; color: {{r.dInk}};">{{r.delta}}</span></span></td>
 <td><svg width="130" height="40" viewBox="0 0 130 40" aria-hidden="true" style="display: block;"><path d="{{r.area}}" fill="{{r.fill}}"></path><path d="{{r.line}}" fill="none" stroke="{{r.stroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="128" cy="{{r.endY}}" r="3" fill="{{r.stroke}}"></circle></svg></td>
-<td class="sw-num"><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;"><span style="font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap;"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);">Entre </span>{{r.revLo}}<span style="font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);"> et </span>{{r.revHi}} k€</span><span style="font-size: 11px; color: var(--ink-faint);">{{rlab}}</span></span></td>
 <td class="sw-num"><span class="sw-badge sw-badge-accent">{{r.best}}</span></td>
 <td style="padding-right: 20px;"><span style="display: flex; gap: 6px;"><sc-for list="{{r.thumbs}}" as="t" hint-placeholder-count="3"><a href="{{t.href}}" class="sw-video {{t.t}}" style="display: block; width: 44px; border-radius: 8px;"><img class="sw-cover" src="{{t.src}}" alt=""><span class="sw-video-shade"></span><span style="position: absolute; left: 4px; bottom: 4px; font-size: 9px; font-weight: 700; color: #FFFFFF;">{{t.v}}</span></a></sc-for></span></td>
 </tr>
@@ -112,10 +110,10 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <div class="sw-tabs sw-tabs-line" role="tablist" style="gap: 20px;"><button class="sw-tab" role="tab" aria-selected="true">Aperçu</button><a class="sw-tab" role="tab" aria-selected="false" href="{{pv.href}}#fa-vid" style="display: inline-flex; align-items: center; text-decoration: none;">Vidéos</a><a class="sw-tab" role="tab" aria-selected="false" href="{{pv.href}}#fa-fmt" style="display: inline-flex; align-items: center; text-decoration: none;">Formats</a><a class="sw-tab" role="tab" aria-selected="false" href="{{pv.href}}#fa-cr" style="display: inline-flex; align-items: center; text-decoration: none;">Créateurs</a></div>
 </header>
 <div style="flex: 1 1 auto; overflow-y: auto; padding: 22px 28px; display: flex; flex-direction: column; gap: 22px;">
-<div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 13px; color: var(--ink-muted);">Revenus estimés sur 30 jours</span>
-<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;"><span style="font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: -0.04em; line-height: 1;"><span style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-muted);">Entre </span>{{pv.lo}}<span style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-muted);"> et </span>{{pv.hi}} k€</span><span class="sw-badge sw-badge-accent">{{pv.delta}}</span></div></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 13px; color: var(--ink-muted);">Vues sur 30 jours</span>
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;"><span style="font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: -0.04em; line-height: 1;">{{pv.v30}}</span><span class="sw-badge sw-badge-accent">{{pv.delta}}</span></div></div>
 <svg viewBox="0 0 464 110" width="100%" height="110" role="img" aria-label="Vues par semaine sur 6 semaines"><path d="{{pv.area}}" fill="rgba(76,154,255,0.14)"></path><path d="{{pv.line}}" fill="none" stroke="#4C9AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="{{pv.ex}}" cy="{{pv.ey}}" r="5" fill="#4C9AFF"></circle><text x="6" y="108" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">il y a 6 sem.</text><text x="458" y="108" text-anchor="end" fill="#8A93A3" font-family="JetBrains Mono, monospace" font-size="10">cette semaine · {{pv.week}}</text></svg>
-<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;"><div class="sw-tile"><span class="sw-tile-label">Vues 30 j</span><span class="sw-tile-value">{{pv.v30}}</span></div><div class="sw-tile"><span class="sw-tile-label">Comptes qui le poussent</span><span class="sw-tile-value">{{pv.acc}}</span></div><div class="sw-tile"><span class="sw-tile-label">Vidéos / sem.</span><span class="sw-tile-value">{{pv.ppw}}</span></div></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;"><div class="sw-tile"><span class="sw-tile-label">Comptes qui le poussent</span><span class="sw-tile-value">{{pv.acc}}</span></div><div class="sw-tile"><span class="sw-tile-label">Vidéos / sem.</span><span class="sw-tile-value">{{pv.ppw}}</span></div></div>
 <div style="display: flex; flex-direction: column; gap: 10px;"><div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-size: 14px; font-weight: 600;">Leurs vidéos qui explosent</span><a class="sw-more" href="{{pv.href}}#fa-vid">Toutes<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
 <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;"><sc-for list="{{pv.vids}}" as="v" hint-placeholder-count="3"><a href="{{v.href}}" class="sw-video" style="display: block; border-radius: 12px; text-decoration: none;"><img class="sw-cover" src="{{v.src}}" alt=""><span class="sw-video-shade"></span><span class="sw-video-foot"><span class="sw-video-views" style="font-size: 16px;">{{v.v}}</span></span></a></sc-for></div></div>
 <sc-if value="{{pv.hasMk}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; gap: 10px;"><span style="font-size: 14px; font-weight: 600;">Où ses vues se font</span><sc-for list="{{pv.mkd}}" as="m" hint-placeholder-count="4"><div style="display: grid; grid-template-columns: 28px 150px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 13px;"><span class="sw-flag" style="width: 26px;">{{m.c}}</span><span style="color: var(--ink-muted);">{{m.l}}</span><span style="height: 6px; border-radius: 3px; background: var(--track); overflow: hidden;"><span style="display: block; height: 6px; width: {{m.w}}; background: {{m.bg}}; border-radius: 3px;"></span></span><span style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">{{m.p}}</span></div></sc-for></div></sc-if>
@@ -186,7 +184,7 @@ return {};
     const D = this.props && this.props.data;
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
-    const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+    const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     if (D && D.apps) {
       const LBL = Object.fromEntries(D.markets);
       A = D.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, a.weeks.map((w) => w / 1e6),
@@ -236,7 +234,7 @@ return {};
         delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
         line, area: line + ' L127.9 40 L2 40 Z', endY: pts[5][1].toFixed(1),
         stroke: up ? '#4C9AFF' : '#8A93A3', fill: up ? 'rgba(76,154,255,0.16)' : 'rgba(138,147,163,0.12)',
-        revLo: Math.round(views(a) * 2.5), revHi: Math.round(views(a) * 3.5), best: a[7],
+        best: a[7],
         thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length], href: videoOf(a, j) })).filter((t) => t.src),
         logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank',
         bg: st.pv === a[0] ? 'var(--accent-soft)' : 'transparent',
@@ -297,7 +295,7 @@ return {};
       const d = dlt(pa);
       const md = MKD[pa[0]];
       pv = { on: true, n: pa[0], niche: pa[1], mk: pa[2].filter((c) => c !== 'XX').slice(0, 3).map((c) => ({ c })), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
-        lo: Math.round(pa[5] * 2.5), hi: Math.round(pa[5] * 3.5), delta: (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine',
+        delta: (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine',
         line, area: line + ' L458 94 L6 94 Z', ex: pts[5][0].toFixed(1), ey: pts[5][1].toFixed(1), week: fr(w[5], 1) + ' M',
         v30: fr(pa[5], 1) + ' M', acc: pa[3], ppw: pa[4].toLocaleString('fr-FR'),
         vids: pa[8].map((src, j) => ({ src, v: pa[9][j], href: videoOf(pa, j) })).filter((x) => x.src), href: ficheOf(pa),
@@ -307,7 +305,7 @@ return {};
     }
     return {
       rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv, ajItem,
-      vlab: period === '7' ? 'Vues 7 j' : 'Vues 30 j', rlab: period === '7' ? 'sur 7 jours' : 'sur 30 jours', sortLabel: sort === 'accel' ? 'progression de la semaine' : (period === '7' ? 'vues 7 j' : 'vues 30 j'),
+      vlab: period === '7' ? 'Vues 7 j' : 'Vues 30 j', sortLabel: sort === 'accel' ? 'progression de la semaine' : (period === '7' ? 'vues 7 j' : 'vues 30 j'),
       closeMenu: () => set({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
       setMenu: (el) => { this.menuEl = el; }, setMenuInput: (el) => { this.menuInput = el; },

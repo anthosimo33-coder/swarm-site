@@ -22,3 +22,9 @@ img.is-broken { visibility: hidden; }
     background: rgba(255,255,255,0.10) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14l11-7z' fill='white' fill-opacity='0.85'/%3E%3C/svg%3E") 56% 50% / 18px no-repeat;
   }
 }
+
+/* Logos d'app : certaines icônes portent un bord clair ou des coins arrondis dessinés dans l'image
+   (Astra AI). Agrandie de 12 % dans sa tuile, qui coupe ce qui dépasse, l'image perd ce bord ; et
+   la tuile n'a plus de fond clair qui ferait un liseré au bord de l'arrondi. */
+.sw-app-icon img.sw-logo-img { transform: scale(1.12); }
+.sw-app-icon:has(img.sw-logo-img:not(.is-broken)) { background: transparent !important; }

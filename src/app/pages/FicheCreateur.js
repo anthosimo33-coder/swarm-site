@@ -61,11 +61,11 @@ export default class FicheCreateur extends DCLogic {
 
   baseVals() {
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "/app", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "/app/apps", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "/app/formats", "cur": "false"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "/app/createurs", "cur": "page"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
-    let z = {"av": "/media/app/av-zinedine.gsbb.jpg", "noav": false, "h": "@zinedine.gsbb", "bio": "L'ia c'est 👇", "fans": "16 200", "med": "7 792", "p7": "3 vidéos en 7 j", "rev": "Entre 12 et 16 k€", "views": "4,7 M", "best": "2,85 M", "app": {"name": "Shortfy", "niche": "Side hustle", "logo": "", "nologo": true, "blank": "sw-app-blank", "href": '/app/apps/' + 'shortfy'}, "hits": 4,
+    let z = {"av": "/media/app/av-zinedine.gsbb.jpg", "noav": false, "h": "@zinedine.gsbb", "bio": "L'ia c'est 👇", "fans": "16 200", "med": "7 792", "p7": "3 vidéos en 7 j", "views": "4,7 M", "best": "2,85 M", "app": {"name": "Shortfy", "niche": "Side hustle", "logo": "", "nologo": true, "blank": "sw-app-blank", "href": '/app/apps/' + 'shortfy'}, "hits": 4,
       "mk": "France", "flag": "FR", "tt": "https://www.tiktok.com/@zinedine.gsbb"};
     let ins = { b: '4 vidéos sur 10 à plus de 10× sa normale,', r: ' toutes publiées entre le 24/10 et le 31/10. Depuis, aucune n’a dépassé 2×.' };
     let fmts = [];
-    let tiles = [{"l": "Abonnés", "v": "16 200", "s": " ", "ink": "var(--ink)"}, {"l": "Vues médianes", "v": "7 792", "s": "sa normale", "ink": "var(--ink)"}, {"l": "Rythme", "v": "3 vidéos en 7 j", "s": "dernière il y a 2 j", "ink": "var(--ink)"}, {"l": "Meilleure vidéo", "v": "2,85 M", "s": "366× sa normale", "ink": "var(--accent)"}, {"l": "Revenus estimés, 30 j", "v": "Entre 12 et 16 k€", "s": "4,7 M vues sur ses 10 vidéos", "ink": "var(--ink)"}];
+    let tiles = [{"l": "Abonnés", "v": "16 200", "s": " ", "ink": "var(--ink)"}, {"l": "Vues médianes", "v": "7 792", "s": "sa normale", "ink": "var(--ink)"}, {"l": "Rythme", "v": "3 vidéos en 7 j", "s": "dernière il y a 2 j", "ink": "var(--ink)"}, {"l": "Meilleure vidéo", "v": "2,85 M", "s": "366× sa normale", "ink": "var(--accent)"}];
     let vids = [{"src": "/media/app/v-7706797723294420256.jpg", "v": "2 k", "raw": 2042.0, "x": "0,3×", "xr": 0.2620636550308008, "hit": false, "date": "11/11", "ago": "il y a 2 j", "t": "Job Alimentaire ❌ Vidéo YTB pour enfants ✅", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7706656919259319585.jpg", "v": "5 k", "raw": 4676.0, "x": "0,6×", "xr": 0.6001026694045175, "hit": false, "date": "10/11", "ago": "il y a 2 j", "t": "Il vit en 2098 😳", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7704799316795477280.jpg", "v": "2 k", "raw": 1635.0, "x": "0,2×", "xr": 0.2098305954825462, "hit": false, "date": "05/11", "ago": "il y a 7 j", "t": "Shortfy.io", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7703924847239269664.jpg", "v": "8 k", "raw": 8017.0, "x": "1×", "xr": 1.028875770020534, "hit": false, "date": "03/11", "ago": "il y a 9 j", "t": "Shortfy.io", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7702800263538560289.jpg", "v": "791 k", "raw": 791173.0, "x": "102×", "xr": 101.53657597535934, "hit": true, "date": "31/10", "ago": "il y a 12 j", "t": "Shortfy.io", "badge": "var(--blue-600)"}, {"src": "/media/app/v-7702109191736986913.jpg", "v": "191 k", "raw": 190605.0, "x": "24×", "xr": 24.4616273100616, "hit": true, "date": "29/10", "ago": "il y a 14 j", "t": "Vous avez plus d’excuses, il vient d’expliquer comment faire en même p", "badge": "var(--blue-600)"}, {"src": "/media/app/v-7701347136323013921.jpg", "v": "841 k", "raw": 841262.0, "x": "108×", "xr": 107.96483572895278, "hit": true, "date": "27/10", "ago": "il y a 16 j", "t": "J’ai enregistré pour vous, me remerciez pas 🤝 #Argent #shortfy #TikTok", "badge": "var(--blue-600)"}, {"src": "/media/app/v-7700172397613288736.jpg", "v": "2,85 M", "raw": 2848785.0, "x": "366×", "xr": 365.6038244353183, "hit": true, "date": "24/10", "ago": "il y a 19 j", "t": "Pourquoi personne nous apprend ça à l’école? 😭 #Argent #shortfy #TikTo", "badge": "var(--blue-600)"}, {"src": "/media/app/v-7699871031615360288.jpg", "v": "8 k", "raw": 7567.0, "x": "1×", "xr": 0.9711242299794661, "hit": false, "date": "23/10", "ago": "il y a 20 j", "t": "Shortfy.io", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7699388137767734561.jpg", "v": "7 k", "raw": 6941.0, "x": "0,9×", "xr": 0.8907854209445585, "hit": false, "date": "22/10", "ago": "il y a 22 j", "t": "c’est une dinguerie ce qu’il fait 🤯", "badge": "rgba(5,7,12,0.55)"}];
 
     // Sur le site : la fiche du créateur depuis le Radar (document « creator:<handle> », convex/radarModels.ts).
@@ -95,33 +95,11 @@ export default class FicheCreateur extends DCLogic {
       const n7 = Math.max(D.posts7d || 0, V.filter((v) => v.publishedAt >= ref - 7 * DAY).length);
       // Meilleure vidéo : la plus vue de ses vidéos connues (la liste, et ses meilleures des 30 j).
       const top = V.concat(D.best || []).reduce((m, v) => (!m || v.views > m.views ? v : m), null);
-      // Revenus 30 j : la somme des vues de ses vidéos des 30 derniers jours, seulement quand la liste
-      // les contient toutes à coup sûr. La liste (ses 15 plus récentes) doit remonter avant le début du
-      // mois sans compter les épinglées (3 au plus, isolées loin derrière), sans trou de plus de 14 j,
-      // sans publication plus récente que sa dernière vidéo, et avec au moins autant de vidéos sur 7 j
-      // que le compte en annonce. Sinon la somme serait fausse : pas de tuile.
-      const start = ref - 30 * DAY;
-      const in30 = V.filter((v) => v.publishedAt >= start);
-      const tk7 = V.filter((v) => v.platform !== 'instagram' && v.publishedAt >= ref - 7 * DAY).length;
-      let K = V;
-      for (let i = Math.max(1, V.length - 3); i < V.length; i++) if (V[i - 1].publishedAt - V[i].publishedAt > 14 * DAY) { K = V.slice(0, i); break; }
-      const j = K.findIndex((v) => v.publishedAt < start);
-      const covered = j > 0 && K.slice(0, j + 1).every((v, i, l) => !i || l[i - 1].publishedAt - v.publishedAt <= 14 * DAY)
-        && K[0].publishedAt >= (D.lastPostAt || 0) - 3600000 && tk7 >= (D.posts7d || 0);
-      let rev = null;
-      if (covered && in30.length) {
-        const sum = in30.reduce((s, v) => s + v.views, 0);
-        const lo = sum / 1000 * 2.5, hi = sum / 1000 * 3.5;
-        const k = (e) => { const x = e / 1000; return x >= 10 ? String(Math.round(x)) : x.toFixed(1).replace(/\.0$/, '').replace('.', ','); };
-        rev = { l: 'Revenus estimés, 30 j', v: hi >= 1000 ? 'Entre ' + k(lo) + ' et ' + k(hi) + ' k€' : 'Entre ' + Math.round(lo) + ' et ' + Math.round(hi) + ' €',
-          s: nf(sum) + ' vues sur ses ' + plural(in30.length, 'vidéo'), ink };
-      }
       tiles = [
         typeof D.fans === 'number' ? { l: 'Abonnés', v: big(D.fans), s: ' ', ink } : null,
         D.median ? { l: 'Vues médianes', v: big(D.median), s: 'sa normale', ink } : null,
         typeof D.posts7d === 'number' || V.length ? { l: 'Rythme', v: plural(n7, 'vidéo') + ' en 7 j', s: last ? 'dernière ' + ago(last) : ' ', ink } : null,
-        top ? { l: 'Meilleure vidéo', v: nf(top.views), s: typeof top.x === 'number' ? xf(top.x) + ' sa normale' : ' ', ink: 'var(--accent)' } : null,
-        rev
+        top ? { l: 'Meilleure vidéo', v: nf(top.views), s: typeof top.x === 'number' ? xf(top.x) + ' sa normale' : ' ', ink: 'var(--accent)' } : null
       ].filter(Boolean);
       const isX = (v) => typeof v.x === 'number';
       vids = V.map((v) => ({ src: v.cover || '', v: nf(v.views), raw: v.views, x: isX(v) ? xf(v.x) : '', xr: isX(v) ? v.x : null, hit: isX(v) && v.x >= 10,
@@ -167,7 +145,7 @@ export default class FicheCreateur extends DCLogic {
               )
             )
           ),
-          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher, raccourci Commande K", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
+          $h("button", { "class": "sw-side-item", "type": "button", "data-cmdk": "true", "onClick": $v.openPal, "aria-label": "Chercher", "style": "border: 0; background: transparent; font-family: inherit; cursor: pointer;" },
             $h("span", { "class": "sw-side-ico" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
