@@ -50,6 +50,18 @@ function matchRoute(path) {
   return null;
 }
 
+// Démarrage : le code du premier écran se télécharge tout de suite, en même temps que la
+// session se vérifie ; et la connexion aux miniatures (/cover/…) s'ouvre d'avance.
+{
+  const first = matchRoute(clean(window.location.pathname));
+  if (first) loaderOf(first.route, MOBILE.matches)().catch(() => {});
+  const site = (import.meta.env.VITE_CONVEX_URL || '').replace(/\.cloud\/?$/, '.site');
+  if (site.startsWith('https://')) {
+    const link = Object.assign(document.createElement('link'), { rel: 'preconnect', href: site });
+    document.head.appendChild(link);
+  }
+}
+
 // ─── Les documents du Radar et ce que la personne garde : un abonnement par clé, gardé toute la session ───
 const watched = new Map(); // « board:clé » ou « saved:clé » -> { value, listeners: Set }
 const board = (key) => watch(api.boards.get, `board:${key}`, key);
@@ -61,7 +73,10 @@ function watch(fn, id, key) {
     entry = { value: undefined, listeners: new Set() };
     const read = () => {
       try {
-        entry.value = query.localQueryResult();
+        // Pendant un renouvellement de session, le serveur renvoie tout : on garde la valeur reçue
+        // (sinon l'écran retomberait un instant sur l'exemple du canevas).
+        const value = query.localQueryResult();
+        if (value !== undefined) entry.value = value;
       } catch {
         entry.value = null; // erreur de la requête : l'écran montre son état vide
       }
@@ -124,7 +139,13 @@ function App() {
     else if (viewer === null) void signOut();
   }, [isLoading, isAuthenticated, viewer]);
 
-  const user = useMemo(() => (viewer ? toUser(viewer) : null), [viewer]);
+  // Le profil reste connu pendant un renouvellement de session (viewer repasse un instant à undefined).
+  const lastUser = useRef(null);
+  const user = useMemo(() => {
+    if (viewer) lastUser.current = toUser(viewer);
+    else if (viewer === null || !isAuthenticated) lastUser.current = null;
+    return lastUser.current;
+  }, [viewer, isAuthenticated]);
   const known = user !== null;
 
   // Liens internes, ⌘K, largeur de l'écran.
@@ -182,7 +203,7 @@ function App() {
       setPath(HOME);
       return undefined;
     }
-    if (!known) return undefined;
+    if (!isAuthenticated) return undefined; // le profil (viewer) arrive en parallèle
     let current = true;
     Promise.all([loaderOf(match.route, mobile)(), match.key ? ready(match.key) : null]).then(
       ([module]) => {
@@ -198,7 +219,7 @@ function App() {
     return () => {
       current = false;
     };
-  }, [path, known, mobile]);
+  }, [path, isAuthenticated, mobile]);
 
   // Une fois le premier écran affiché : les autres écrans et les listes se chargent en
   // arrière-plan, la navigation devient instantanée.

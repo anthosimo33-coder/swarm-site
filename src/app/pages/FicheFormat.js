@@ -53,7 +53,7 @@ export default class FicheFormat extends DCLogic {
   baseVals() {
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "/app", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "/app/apps", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "/app/formats", "cur": "page"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "/app/createurs", "cur": "false"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
     let f = {"quote": "Ich lösche das in 2h‼️", "fr": "Je supprime ça dans 2 h ‼️", "app0": {"name": "Retain Cards", "logo": "/media/app/retain-cards.jpg", "nologo": false, "blank": ""}, "mk": [{"c": "DE"}], "med": "39×", "okText": "3 sur 4", "n": 3, "max": "106 k", "rev": "Entre 500 et 710 €", "niche": "Études", "last": "vu le 10/11"};
-    let tiles = [{"l": "Repris par", "v": "3 comptes", "s": "en 4 jours", "ink": "var(--ink)"}, {"l": "Réussite", "v": "3 sur 4", "s": "au-dessus de leur normale", "ink": "var(--ink)"}, {"l": "× la normale", "v": "39×", "s": "médiane des reprises", "ink": "var(--accent)"}, {"l": "Meilleure reprise", "v": "106 k vues", "s": "@studywithdenise, 10/11", "ink": "var(--ink)"}, {"l": "Revenus estimés", "v": "Entre 500 et 710 €", "s": "pour les 4 reprises", "ink": "var(--ink)"}];
+    let tiles = [{"l": "Repris par", "v": "3 comptes", "s": "en 4 jours", "ink": "var(--ink)"}, {"l": "Réussite", "v": "3 sur 4", "s": "au-dessus de leur normale", "ink": "var(--ink)"}, {"l": "× la normale", "v": "39×", "s": "médiane des reprises", "ink": "var(--accent)"}, {"l": "Meilleure reprise", "v": "106 k vues", "s": "@studywithdenise, 10/11", "ink": "var(--ink)"}];
     let reps = [{"src":"/media/app/v-7706579888727231777.jpg", "v": "106 k", "h": "@studywithdenise", "raw": 105676, "date": "10/11", "app": "Retain Cards", "when": "10/11 · 17 h", "day": "10/11"}, {"src": "/media/app/v-7705712961511263521.jpg", "v": "83 k", "h": "@study.mit.lauri", "raw": 83412, "date": "08/11", "app": "Retain Cards", "when": "08/11 · 09 h", "day": "08/11"}, {"src": "/media/app/v-7705122381735513376.jpg", "v": "12 k", "h": "@studywithdenise", "raw": 11628, "date": "06/11", "app": "Retain Cards", "when": "06/11 · 19 h", "day": "06/11"}, {"src": "/media/app/v-7704967516086488353.jpg", "v": "1 k", "h": "@study.mit.sophia", "raw": 1064, "date": "06/11", "app": "Retain Cards", "when": "06/11 · 09 h", "day": "06/11"}];
     let common = [{"d":"M5 6h14M12 6v13M9 19h6", "t": "Le même texte à l’écran", "s": "Mot pour mot sur les 4 vidéos, en allemand."}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "t": "Une seule app derrière", "s": "Les 3 comptes poussent Retain Cards, une app de révision."}, {"d": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "t": "4 reprises en 4 jours", "s": "Du 06/11 au 10/11, chaque reprise a fait mieux que la précédente."}];
     const HOOK = 'M5 6h14M12 6v13M9 19h6';
@@ -92,17 +92,12 @@ export default class FicheFormat extends DCLogic {
       const span = Math.max(1, dnum(D.lastPostAt) - dnum(first));
       const spanTxt = 'en ' + span + (span > 1 ? ' jours' : ' jour') + (whole ? '' : ' ou plus');
       const best = ms[0];
-      const sum = ms.reduce((s, m) => s + m.views, 0);
-      const lo = sum / 1000 * 2.5, hi = sum / 1000 * 3.5;
-      const k = hi >= 1000;
-      const eur = (e) => (k ? (e / 1000).toFixed(1).replace('.', ',').replace(/,0$/, '') : String(Math.round(e)));
       tiles = [
         { l: 'Repris par', v: D.accounts + ' comptes', s: spanTxt, ink: 'var(--ink)' },
         { l: 'Réussite', v: D.wins + ' sur ' + D.n, s: 'au-dessus de leur normale', ink: 'var(--ink)' },
         D.medX ? { l: '× la normale', v: xf(D.medX), s: 'médiane des reprises', ink: D.medX >= 10 ? 'var(--accent)' : 'var(--ink)' } : null,
         best ? { l: 'Meilleure reprise', v: nf(best.views) + ' vues', s: '@' + best.handle + ', ' + day(best.publishedAt), ink: 'var(--ink)' } : null,
-        ms.length ? { l: 'Revenus estimés', v: 'Entre ' + eur(lo) + ' et ' + eur(hi) + (k ? ' k€' : ' €'), s: 'pour les ' + ms.length + ' reprises' + (whole ? '' : ' les plus vues'), ink: 'var(--ink)' } : null
-      ].filter(Boolean);
+      ].filter(Boolean); // pas de revenus pour un format (décision du 13/11) : seulement par app
       const one = D.apps.length === 1 ? D.apps[0].name : '';
       reps = ms.map((m) => ({ src: m.cover || '', v: nf(m.views), h: '@' + m.handle, app: one, href: '/app/videos/' + m.videoId,
         when: day(m.publishedAt) + ' · ' + String(new Date(m.publishedAt).getHours()).padStart(2, '0') + ' h' }));
@@ -116,7 +111,7 @@ export default class FicheFormat extends DCLogic {
           s: !whole ? 'Dernière reprise le ' + day(D.lastPostAt) + '.' : span === 1 && dnum(first) === dnum(D.lastPostAt) ? 'Toutes publiées le ' + day(first) + '.' : 'Du ' + day(first) + ' au ' + day(D.lastPostAt) + '.' } : null
       ].filter(Boolean);
     }
-    return { nav, f, tiles, reps, common, repsTitle };
+    return { nav, f, tiles, tileN: tiles.length || 1, reps, common, repsTitle };
   }
 
   render() {
@@ -264,7 +259,7 @@ export default class FicheFormat extends DCLogic {
               )
             )
           ),
-          $h("div", { "style": "margin: 16px 32px 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px;" },
+          $h("div", { "style": `margin: 16px 32px 0; display: grid; grid-template-columns: repeat(${$t($v.tileN)}, minmax(0, 1fr)); gap: 12px;` },
             ($l($v.tiles)).map((t) => [
               $h("div", { "class": "sw-card", "style": "padding: 18px 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 6px;" },
                 $h("span", { "class": "sw-tile-label" },

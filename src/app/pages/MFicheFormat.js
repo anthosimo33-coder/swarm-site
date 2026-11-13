@@ -236,26 +236,7 @@ export default class MFicheFormat extends DCLogic {
             $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
               $t($v.f?.bestH)
             )
-          ),
-          ($v.f?.hasRev) ? [
-            $h("span", { "class": "sw-tile", "style": "grid-column: span 2;" },
-              $h("span", { "class": "sw-tile-label" },
-                $t($v.f?.revLabel)
-              ),
-              $h("span", { "class": "sw-tile-value" },
-                $h("span", { "style": "white-space: nowrap;" },
-                  $h("span", { "style": "font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                    "Entre "
-                  ),
-                  $t($v.f?.lo),
-                  $h("span", { "style": "font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                    " et "
-                  ),
-                  $t($v.f?.hi)
-                )
-              )
-            )
-          ] : null
+          )
         ),
         $h("div", { "style": "padding: 26px 20px 12px;" },
           $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },

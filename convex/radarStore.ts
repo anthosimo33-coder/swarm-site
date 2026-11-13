@@ -11,6 +11,38 @@ export const mediaMap = internalQuery({
   },
 });
 
+/** Une image rangée (ou son dernier échec). */
+export const mediaGet = internalQuery({
+  args: { key: v.string() },
+  handler: async (ctx, { key }) => {
+    const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", key)).first();
+    if (row) return { url: row.url, missAt: null };
+    const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
+    return { url: null, missAt: miss?.at ?? null };
+  },
+});
+
+export const markMiss = internalMutation({
+  args: { key: v.string() },
+  handler: async (ctx, { key }) => {
+    const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
+    if (miss) await ctx.db.patch(miss._id, { at: Date.now() });
+    else await ctx.db.insert("mediaMiss", { key, at: Date.now() });
+  },
+});
+
+/** Pour /cover/<id> : la miniature déjà rangée, sinon le compte de la vidéo (si l'app la connaît). */
+export const coverLookup = internalQuery({
+  args: { id: v.string() },
+  handler: async (ctx, { id }) => {
+    const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", `v:${id}`)).first();
+    if (row) return { url: row.url, handle: null };
+    const page = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", `video:${id}`)).first();
+    const handle = (page?.data as { handle?: string } | undefined)?.handle;
+    return { url: null, handle: handle || null };
+  },
+});
+
 export const saveMedia = internalMutation({
   args: { items: v.array(v.object({ key: v.string(), storageId: v.id("_storage"), url: v.string() })) },
   handler: async (ctx, { items }) => {
@@ -23,6 +55,8 @@ export const saveMedia = internalMutation({
       } else {
         await ctx.db.insert("media", { ...it, at: now });
       }
+      const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", it.key)).first();
+      if (miss) await ctx.db.delete(miss._id);
     }
   },
 });

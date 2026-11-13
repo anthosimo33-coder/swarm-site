@@ -1,0 +1,21 @@
+import { internal } from "./_generated/api";
+import { httpAction } from "./_generated/server";
+
+/**
+ * GET /cover/<id de vidéo TikTok> — la miniature d'une vidéo du Radar, toujours servie par Swarm :
+ * la copie rangée (redirection immédiate), sinon copiée à la première vue (1 à 2 s), puis rangée.
+ * Seules les vidéos qui ont une page dans l'app sont servies (pas de copie à la demande d'un inconnu).
+ */
+export const cover = httpAction(async (ctx, request) => {
+  const id = new URL(request.url).pathname.split("/").pop() ?? "";
+  const missing = (maxAge: number) => new Response(null, { status: 404, headers: { "Cache-Control": `public, max-age=${maxAge}` } });
+  if (!/^\d{6,25}$/.test(id)) return missing(86_400);
+  const found: { handle: string | null; url: string | null } = await ctx.runQuery(internal.radarStore.coverLookup, { id });
+  let url = found.url;
+  if (!url) {
+    if (found.handle === null) return missing(86_400);
+    url = await ctx.runAction(internal.covers.ensure, { id, handle: found.handle });
+  }
+  if (!url) return missing(3_600);
+  return new Response(null, { status: 302, headers: { Location: url, "Cache-Control": "public, max-age=604800, immutable" } });
+});

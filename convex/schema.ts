@@ -43,6 +43,9 @@ export default defineSchema({
   }).index("by_slug", ["slug"]),
 
   // Journal des synchronisations (la dernière sert à l'écran et au suivi).
+  // Miniatures introuvables (vidéo supprimée, page refusée) : pas de nouvel essai avant 6 h.
+  mediaMiss: defineTable({ key: v.string(), at: v.number() }).index("by_key", ["key"]),
+
   syncRuns: defineTable({
     startedAt: v.number(),
     finishedAt: v.optional(v.number()),

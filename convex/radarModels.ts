@@ -147,12 +147,14 @@ export function buildBoards(
     const med = acc?.medianViews;
     return med && med > 0 ? round(v.views / med, 1) : null;
   };
-  const cover = (videoId: string, source: string | null | undefined) => {
+  /** Miniature : la copie rangée, sinon la source à copier (lien du relevé, ou page publique de la vidéo TikTok). */
+  const cover = (videoId: string, source: string | null | undefined, handle: string | null | undefined) => {
     const key = coverKey(videoId);
     used.add(key);
     const stored = mediaUrl(key);
     if (stored) return stored;
     if (source) need.set(key, source);
+    else if (/^\d+$/.test(videoId)) need.set(key, `ttpage:${handle ?? ""}/${videoId}`);
     return source ?? null;
   };
   const card = (v: RVideo): VideoCard => {
@@ -166,7 +168,7 @@ export function buildBoards(
       views: Math.max(v.views, s?.views ?? 0),
       x: xOf(v, s),
       publishedAt: v.publishedAt,
-      cover: cover(v.videoId, v.coverUrl ?? s?.coverUrl),
+      cover: cover(v.videoId, v.coverUrl ?? s?.coverUrl, acc?.handle ?? s?.authorHandle),
       hook: v.hook ?? s?.hook ?? null,
     };
   };
@@ -237,7 +239,7 @@ export function buildBoards(
       const members = [...f.members].sort((p, q) => q.views - p.views).map((m) => {
         const tv = trackedByVideo.get(m.videoId);
         return {
-          _video: tv ?? memberVideo(m), handle: m.handle, videoId: m.videoId, views: m.views, x: accountX(m), publishedAt: m.publishedAt, cover: cover(m.videoId, tv?.coverUrl ?? signalByVideo.get(m.videoId)?.coverUrl) };
+          _video: tv ?? memberVideo(m), handle: m.handle, videoId: m.videoId, views: m.views, x: accountX(m), publishedAt: m.publishedAt, cover: cover(m.videoId, tv?.coverUrl ?? signalByVideo.get(m.videoId)?.coverUrl, m.handle) };
       });
       const appsOf = [...new Set(f.appIds.map((id) => canonical(id)?.id).filter(Boolean) as string[])].map(appMini).filter(Boolean);
       return {
@@ -313,7 +315,7 @@ export function buildBoards(
     const a = canonical(s.appId);
     return {
       id: s.videoId, platform: s.platform, handle: s.authorHandle, app: a ? { slug: a.slug, name: a.name, icon: icon(a) } : null,
-      views: s.views, x: round(s.multiplier ?? 0, 1), publishedAt: s.publishedAt, cover: cover(s.videoId, s.coverUrl), hook: s.hook,
+      views: s.views, x: round(s.multiplier ?? 0, 1), publishedAt: s.publishedAt, cover: cover(s.videoId, s.coverUrl, s.authorHandle), hook: s.hook,
       market: marketOf(s.lang), region: s.region,
     };
   });
@@ -364,7 +366,7 @@ export function buildBoards(
       snapshots: (s?.snapshots?.length ? s.snapshots : v?.snapshots ?? []).slice(-12),
       hook: v?.hook ?? s?.hook ?? null, caption: v?.caption ?? s?.caption ?? null, transcript: s?.transcript ?? null,
       music: v?.musicTitle ?? s?.musicTitle ?? null,
-      cover: cover(id, v?.coverUrl ?? s?.coverUrl),
+      cover: cover(id, v?.coverUrl ?? s?.coverUrl, handle),
       playlist,
     };
   }

@@ -3,7 +3,7 @@
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
-import type { ActionCtx } from "./_generated/server";
+import { appStoreHit, copyImage } from "./imageCopy";
 import { buildBoards, type Raw } from "./radarModels";
 
 /**
@@ -22,10 +22,6 @@ const TABLES = ["apps", "tracked", "trackedVideos", "formats", "signals"] as con
 const MEDIA_PER_RUN = 8000;
 const MEDIA_BUDGET_MS = 6 * 60_000;
 const PARALLEL = 16;
-const MAX_IMAGE_BYTES = 4_000_000;
-/** Taille servie : une vignette fait au plus 360 px de large à l'écran (720 en Retina), une icône 256 px. */
-const COVER_WIDTH = 480;
-const ICON_SIZE = 256;
 /** Taille d'un lot d'écriture : arguments bornés, et chaque document est relu (4 096 lectures au plus par mutation). */
 const BATCH_BYTES = 3_000_000;
 const BATCH_ITEMS = 400;
@@ -56,59 +52,6 @@ function hashOf(data: unknown): string {
     h2 = Math.imul(h2 ^ c, 2246822519) >>> 0;
   }
   return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
-}
-
-type StoreHit = { artworkUrl512?: string; artworkUrl100?: string; trackViewUrl?: string; trackName?: string };
-/** La fiche App Store d'une app, cherchée par son nom (premier résultat). */
-async function appStoreHit(name: string): Promise<StoreHit | null> {
-  try {
-    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=software&limit=1&country=fr`);
-    if (!res.ok) return null;
-    const body = (await res.json()) as { results?: StoreHit[] };
-    return body.results?.[0] ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** L'URL d'une image : l'icône d'une app via l'App Store, sinon l'URL source telle quelle. */
-async function imageUrl(source: string): Promise<string | null> {
-  if (!source.startsWith("itunes:")) return source;
-  const hit = await appStoreHit(source.slice("itunes:".length));
-  return hit?.artworkUrl512 ?? hit?.artworkUrl100 ?? null;
-}
-
-/** L'image réduite à sa taille d'affichage, en WebP (5 à 10 fois plus légère) ; l'originale si la réduction échoue. */
-async function shrink(buf: ArrayBuffer, type: string, key: string): Promise<{ data: ArrayBuffer; type: string }> {
-  try {
-    const sharp = (await import("sharp")).default;
-    const img = sharp(Buffer.from(buf)).rotate();
-    const out = key.startsWith("icon:")
-      ? await img.resize({ width: ICON_SIZE, height: ICON_SIZE, fit: "cover" }).webp({ quality: 85 }).toBuffer()
-      : await img.resize({ width: COVER_WIDTH, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer();
-    if (out.byteLength >= buf.byteLength) return { data: buf, type };
-    return { data: out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer, type: "image/webp" };
-  } catch {
-    return { data: buf, type };
-  }
-}
-
-async function copyImage(ctx: ActionCtx, key: string, source: string) {
-  try {
-    const url = await imageUrl(source);
-    if (!url) return null;
-    const res = await fetch(url);
-    const type = res.headers.get("content-type") ?? "";
-    if (!res.ok || !type.startsWith("image/")) return null;
-    const buf = await res.arrayBuffer();
-    if (buf.byteLength === 0 || buf.byteLength > MAX_IMAGE_BYTES) return null;
-    const small = await shrink(buf, type, key);
-    const storageId = (await ctx.storage.store(new Blob([small.data], { type: small.type }))) as Id<"_storage">;
-    const served = await ctx.storage.getUrl(storageId);
-    return served ? { key, storageId, url: served } : null;
-  } catch {
-    return null; // une miniature expirée ou refusée : l'écran montre son repli
-  }
 }
 
 export const run = internalAction({

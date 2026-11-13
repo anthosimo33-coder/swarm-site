@@ -212,6 +212,8 @@ LP_FILES = ('LP.dc.html', 'LPMobile.dc.html')
 def rewrite_links(value, label=None, links=LINKS):
     if links is LINKS and value in LP_FILES and label in ANCHORS:
         return '/' + ANCHORS[label]
+    if value in links:  # ancre seule qui mène ailleurs : « #quiz » -> /inscription, « #connexion » -> /connexion
+        return links[value]
     page, sep, anchor = value.partition('#')
     page, qsep, query = page.partition('?')
     if page in links:
