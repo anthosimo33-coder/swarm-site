@@ -21,7 +21,7 @@ export default class FicheCreateur extends DCLogic {
       sb, me,
       getFn: this.props && this.props.get, savedFn: this.props && this.props.saved, saveFn: this.props && this.props.save,
       pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
-      aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
+      aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj, ajV: null }), closeAj: () => this.setState({ aj: false })
     };
   }
   extraVals(b) {
@@ -52,6 +52,29 @@ export default class FicheCreateur extends DCLogic {
     return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: { kind: 'creator', id: handle, label: '@' + handle, cover } }, { followAria: f ? 'Ne plus suivre ce compte' : 'Suivre ce compte', followInk: f ? 'var(--accent)' : 'var(--ink-muted)',
       vids: (st.sort === 'vues') ? (b.vids || []).slice().sort((x, y) => y.raw - x.raw) : b.vids,
       sorts: [['recent', 'Récentes'], ['vues', 'Les plus vues']].map((s) => ({ l: s[1], on: (st.sort || 'recent') === s[0] ? 'true' : 'false', pick: () => this.setState({ sort: s[0] }) })),
+      cards: ((st.sort === 'vues') ? (b.vids || []).slice().sort((x, y) => y.raw - x.raw) : (b.vids || [])).map((v, i) => {
+        const id = v.id || 'v' + i;
+        const z = b.z;
+        const app = z.app || {};
+        const up = typeof v.xr === 'number' && v.xr >= 1;
+        const aj = st.ajV === id;
+        const copied = st.copied === id;
+        return { href: v.href || '/app/videos/7705929733220994337', src: v.src, v: v.v, x: v.x, xBg: typeof v.xr === 'number' && v.xr >= 2 ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : 'rgba(5,7,12,0.6)',
+          plat: v.ig ? 'Instagram' : 'TikTok', url: v.url || z.tt, urlLabel: v.ig ? 'VOIR SUR INSTAGRAM' : 'VOIR SUR TIKTOK',
+          av: z.av || '', noav: !z.av, ini: String(z.h || '').replace(/^@/, '').charAt(0).toUpperCase(), h: z.h, flag: z.flag || '', mk: z.mk || '',
+          appName: app.name || '', appIcon: app.logo || '', appBlank: app.logo ? '' : 'sw-app-blank', appLine: app.name ? app.name + (app.niche ? ' · ' + app.niche : '') : '',
+          ago: v.ago || v.date || '', st: typeof v.xr === 'number' ? (up ? 'AU-DESSUS DE SA NORMALE' : 'SOUS SA NORMALE') : '', stInk: up ? '#4C9AFF' : '#8A93A3',
+          t: v.t || '', tShown: v.t || 'Pas d’accroche lue sur cette vidéo.', tInk: v.t ? 'var(--ink-soft)' : 'var(--ink-faint)',
+          copyLabel: copied ? 'Accroche copiée' : 'Copier l’accroche', copyInk: copied ? 'var(--accent)' : 'var(--ink-muted)', copyIc: copied ? 'M5 12.5l4.5 4.5L19 7.5' : 'M9 9h10v11H9zM5 15V4h10',
+          copy: () => { const done = () => { this.setState({ copied: id }); clearTimeout(this.copyT); this.copyT = setTimeout(() => { if ((this.state || {}).copied === id) this.setState({ copied: null }); }, 1800); };
+            const legacy = () => { const ta = document.createElement('textarea'); ta.value = v.t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+              document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); if (ok) done(); };
+            try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v.t).then(done, legacy); else legacy(); } catch (e) { legacy(); } },
+          aj, ajOpen: aj ? 'true' : 'false', ajBg: aj ? 'var(--accent-soft)' : 'transparent', ajInk: aj ? 'var(--accent)' : 'var(--ink-faint)',
+          toggleAj: () => this.setState({ ajV: (this.state || {}).ajV === id ? null : id, aj: false }),
+          item: { kind: 'video', id: v.id || '', label: z.h, cover: v.src || null } };
+      }),
+      closeAjV: () => this.setState({ ajV: null }),
       tabs, tabV: tab === 'vids', tabF: tab === 'fmts', tabA: tab === 'apps',
       showSort: tab === 'vids' && b.vids.length > 1, ins: tab === 'vids' ? b.ins : null,
       noVids: !b.vids.length, noFmts: !b.fmts.length,
@@ -105,7 +128,9 @@ export default class FicheCreateur extends DCLogic {
       ].filter(Boolean);
       const isX = (v) => typeof v.x === 'number';
       vids = V.map((v) => ({ src: v.cover || '', v: nf(v.views), raw: v.views, x: isX(v) ? xf(v.x) : '', xr: isX(v) ? v.x : null, hit: isX(v) && v.x >= 10,
-        date: day(v.publishedAt), t: v.hook || '', badge: isX(v) && v.x >= 10 ? 'var(--blue-600)' : 'rgba(5,7,12,0.55)', href: '/app/videos/' + v.id }));
+        date: day(v.publishedAt), ago: ago(v.publishedAt), t: v.hook || '', badge: isX(v) && v.x >= 10 ? 'var(--blue-600)' : 'rgba(5,7,12,0.55)', href: '/app/videos/' + v.id,
+        id: v.id, ig: v.platform === 'instagram',
+        url: v.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(v.id).replace(/^ig:/, '') + '/' : 'https://www.tiktok.com/@' + D.handle + '/video/' + v.id }));
       // Le bandeau : ses vidéos à 10× sa normale ou plus, et ce qui a suivi la dernière. Rien à dire, pas de bandeau.
       const hits = V.filter((v) => isX(v) && v.x >= 10);
       ins = null;
@@ -330,33 +355,113 @@ export default class FicheCreateur extends DCLogic {
             )
           ] : null,
           ($v.tabV) ? [
-            $h("div", { "style": "padding: 16px 32px 48px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px;" },
-              ($l($v.vids)).map((v) => [
-                $h("a", { "href": v?.href, "style": "display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit; min-width: 0;" },
-                  $h("span", { "class": "sw-video", "style": "display: block; border-radius: 18px;" },
+            $h("div", { "style": "padding: 16px 32px 48px; display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: 16px;" },
+              ($l($v.cards)).map((v) => [
+                $h("article", { "style": "position: relative; display: flex; flex-direction: column; min-width: 0; border-radius: 18px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+                  $h("header", { "style": "display: flex; align-items: center; gap: 10px; padding: 12px 12px 10px;" },
+                    $h("span", { "style": "position: relative; flex-shrink: 0; width: 34px; height: 34px;" },
+                      $h("span", { "style": "display: flex; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724);" },
+                        (v?.av) ? [
+                          $h("img", { "src": v?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" })
+                        ] : null,
+                        (v?.noav) ? [
+                          $h("span", { "style": "font-size: 13px; font-weight: 700; color: var(--ink-faint);" },
+                            $t(v?.ini)
+                          )
+                        ] : null
+                      ),
+                      (v?.flag) ? [
+                        $h("span", { "class": "sw-flag", "data-c": v?.flag, "aria-hidden": "true", "style": "position: absolute; right: -3px; bottom: -3px; width: 14px; height: 14px; box-shadow: 0 0 0 2px #121722;" })
+                      ] : null
+                    ),
+                    $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;" },
+                      $h("span", { "style": "font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                        $t(v?.h)
+                      ),
+                      (v?.appName) ? [
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-size: 11px; color: var(--ink-faint); white-space: nowrap; overflow: hidden;" },
+                          $h("span", { "class": `sw-app-icon ${$t(v?.appBlank)}`, "style": "width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;" },
+                            (v?.appIcon) ? [
+                              $h("img", { "class": "sw-logo-img", "src": v?.appIcon, "alt": "", "loading": "lazy", "decoding": "async" })
+                            ] : null
+                          ),
+                          $h("span", { "style": "overflow: hidden; text-overflow: ellipsis;" },
+                            $t(v?.appLine)
+                          )
+                        )
+                      ] : null
+                    ),
+                    $h("span", { "style": "position: relative; display: inline-flex; flex-shrink: 0;" },
+                      $h("button", { "data-aj-trigger": "true", "type": "button", "onClick": v?.toggleAj, "aria-expanded": v?.ajOpen, "aria-haspopup": "dialog", "aria-label": "Ranger dans un dossier", "title": "Ranger dans un dossier", "style": `width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 9px; background: ${$t(v?.ajBg)}; color: ${$t(v?.ajInk)}; cursor: pointer;` },
+                        $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                        )
+                      ),
+                      (v?.aj) ? [
+                        $h("span", { "style": "position: absolute; top: calc(100% + 8px); right: 0; z-index: 45;" },
+                          $h(AjoutDossier, { "onClose": $v.closeAjV, "item": v?.item, "saved": $v.savedFn, "save": $v.saveFn })
+                        )
+                      ] : null
+                    )
+                  ),
+                  $h("a", { "href": v?.href, "class": "sw-video", "aria-label": `Voir la vidéo, ${$t(v?.v)} vues`, "style": "display: block; margin: 0 12px; aspect-ratio: 4 / 5; border-radius: 14px;" },
                     (v?.src) ? [
-                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy" })
                     ] : null,
                     $h("span", { "class": "sw-video-shade" }),
                     (v?.x) ? [
-                      $h("span", { "class": "sw-badge", "style": `position: absolute; top: 10px; left: 10px; height: 24px; font-size: 11px; background: ${$t(v?.badge)}; color: #FFFFFF;` },
+                      $h("span", { "style": `position: absolute; top: 10px; left: 10px; z-index: 2; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: ${$t(v?.xBg)}; font-size: 12px; font-weight: 700; color: #FFFFFF;` },
                         $t(v?.x), " sa normale"
                       )
                     ] : null,
-                    $h("span", { "class": "sw-video-foot" },
-                      $h("span", { "class": "sw-video-views", "style": "font-size: 22px;" },
-                        $t(v?.v)
-                      ),
-                      $h("span", { "style": "font-size: 11px; color: #E4E7EC;" },
-                        $t(v?.date)
-                      )
+                    $h("span", { "style": "position: absolute; top: 10px; right: 10px; z-index: 2; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: rgba(5,7,12,0.6); font-size: 11px; font-weight: 600; color: #FFFFFF;" },
+                      $t(v?.plat)
+                    ),
+                    $h("span", { "style": "position: absolute; left: 12px; bottom: 10px; z-index: 2; font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #FFFFFF;" },
+                      $t(v?.v)
                     )
                   ),
-                  (v?.t) ? [
-                    $h("span", { "style": "font-size: 13px; line-height: 1.4; color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" },
-                      $t(v?.t)
+                  $h("div", { "style": "display: flex; align-items: center; gap: 12px; padding: 12px 12px 0; font-size: 12px; color: var(--ink-muted); min-width: 0;" },
+                    (v?.mk) ? [
+                      $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                        $h("span", { "class": "sw-flag", "data-c": v?.flag, "aria-hidden": "true", "style": "width: 14px; height: 14px; flex-shrink: 0;" }),
+                        $t(v?.mk)
+                      )
+                    ] : null,
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; white-space: nowrap;" },
+                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      $t(v?.ago)
                     )
-                  ] : null
+                  ),
+                  (v?.st) ? [
+                    $h("span", { "style": `display: inline-flex; align-items: center; gap: 7px; padding: 10px 12px 0; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: ${$t(v?.stInk)};` },
+                      $h("span", { "style": `width: 7px; height: 7px; border-radius: 50%; background: ${$t(v?.stInk)};` }),
+                      $t(v?.st)
+                    )
+                  ] : null,
+                  $h("p", { "style": `margin: 8px 12px 0; min-height: 40px; font-size: 13px; line-height: 1.5; color: ${$t(v?.tInk)}; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;` },
+                    $t(v?.tShown)
+                  ),
+                  $h("footer", { "style": "margin-top: auto; padding-top: 12px;" },
+                    $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 12px; border-top: 1px solid var(--line);" },
+                      $h("a", { "href": v?.url, "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 6px; height: 32px; flex-shrink: 0; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em; color: var(--ink-faint); text-decoration: none; white-space: nowrap;" },
+                        $t(v?.urlLabel),
+                        $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M7 17L17 7M9 7h8v8", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      ),
+                      (v?.t) ? [
+                        $h("button", { "type": "button", "onClick": v?.copy, "aria-live": "polite", "style": `display: inline-flex; align-items: center; gap: 6px; height: 32px; min-width: 0; padding: 0 6px; border: 0; border-radius: 9px; background: transparent; color: ${$t(v?.copyInk)}; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; overflow: hidden;` },
+                          $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                            $h("path", { "d": v?.copyIc, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                          ),
+                          $t(v?.copyLabel)
+                        )
+                      ] : null
+                    )
+                  )
                 )
               ]),
               ($v.noVids) ? [

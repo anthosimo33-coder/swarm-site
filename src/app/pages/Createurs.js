@@ -20,6 +20,7 @@ export default class Createurs extends DCLogic {
     ps = ps || {};
     // Menu ouvert : le focus y reste (Safari ne le donne pas au bouton cliqué), pour qu'Échap le ferme.
     if (st.open && this.menuInput && (st.open !== ps.open || !(this.menuEl && this.menuEl.contains(document.activeElement)))) this.menuInput.focus();
+    if (st.pv && st.pv !== ps.pv && this.pvClose) this.pvClose.focus();
   }
 
   renderVals() {
@@ -98,7 +99,11 @@ export default class Createurs extends DCLogic {
     // 50 lignes d'abord, puis 50 de plus à la demande ; filtres et classement portent sur toute la liste.
     const LIM = 50;
     const lim = st.lim || LIM;
-    const rows = list.slice(0, lim).map((c, i) => Object.assign({}, c, { rank: String(i + 1).padStart(2, '0') }));
+    const pvH = st.pv || null;
+    const rows = list.slice(0, lim).map((c, i) => { const h = String(c.h || '').replace(/^@/, ''); const on = h === pvH;
+      return Object.assign({}, c, { rank: String(i + 1).padStart(2, '0'), mk: c.market || b.shown || '', bg: on ? 'var(--accent-soft)' : 'transparent', sel: on ? 'true' : 'false',
+        open: () => this.setState({ pv: h, open: '' }) }); });
+    const pv = this.profileVals(pvH, list, b);
     // « Les abonnés ne comptent pas » : parmi les comptes affichés, celui qui fait le plus de vues médianes
     // face à ses abonnés (au moins 10 k vues médianes, et 10 fois ses abonnés) ; personne : le bandeau se cache.
     const star = list.filter((c) => c.nFans > 0 && c.nMed >= 1e4 && c.nMed >= 10 * c.nFans).sort((x, y) => y.nMed / y.nFans - x.nMed / x.nFans)[0];
@@ -115,7 +120,62 @@ export default class Createurs extends DCLogic {
       closeMenu: () => set({ open: '' }), onMq: (e) => set({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
       setMenu: (el) => { this.menuEl = el; }, setMenuInput: (el) => { this.menuInput = el; },
-      clearAll: () => set({ niches: [], apps: [], fans: 'ALL', active: false, open: '' }) });
+      clearAll: () => set({ niches: [], apps: [], fans: 'ALL', active: false, open: '' }),
+      pv, closePv: () => this.setState({ pv: null }), setPvClose: (el) => { this.pvClose = el; },
+      pvKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ pv: null }); } } });
+  }
+
+  // Profil à côté de la liste : la fiche du créateur (document « creator:<pseudo> », lue au clic),
+  // complétée par sa ligne tant qu'elle charge. Sur le canevas : la ligne seule.
+  profileVals(h, list, b) {
+    if (!h) return { on: false };
+    const P = this.props || {};
+    const row = list.filter((c) => String(c.h || '').replace(/^@/, '') === h)[0] || {};
+    const F = typeof P.get === 'function' ? P.get('creator:' + h) : null;
+    const D = F || {};
+    const grp = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+    const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(Math.round(n)));
+    const xf = (x) => (x >= 10 ? String(Math.round(x)) : (Math.round(x * 10) / 10).toString().replace('.', ',')) + '×';
+    const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    const ago = (ms) => { const hr = Math.max(1, Math.round((Date.now() - ms) / 3600000)); const d = Math.round(hr / 24);
+      return hr < 24 ? 'il y a ' + hr + ' h' : d < 60 ? 'il y a ' + d + ' j' : d < 365 ? 'il y a ' + Math.round(d / 30.4) + ' mois' : 'il y a ' + Math.round(d / 365) + ' an' + (d >= 730 ? 's' : ''); };
+    const fans = typeof D.fans === 'number' ? D.fans : row.nFans || 0;
+    const med = typeof D.median === 'number' ? D.median : row.nMed || 0;
+    const p7 = typeof D.posts7d === 'number' ? D.posts7d : null;
+    const vids = (D.videos || []).filter((v) => typeof v.views === 'number' && v.publishedAt);
+    const last = vids.slice().sort((p, q) => p.publishedAt - q.publishedAt).slice(-8);
+    const top = Math.max(1, ...last.map((v) => v.views), med) * 1.08;
+    const hatch = 'repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 1px, transparent 1px 6px), rgba(255,255,255,0.04)';
+    const above = vids.filter((v) => typeof v.x === 'number' && v.x >= 1).sort((p, q) => q.views - p.views).slice(0, 3);
+    const pool = above.length ? above : (D.best || []).slice(0, 3);
+    const tops = pool.map((v) => ({ src: v.cover || '', v: nf(v.views || 0), x: typeof v.x === 'number' && v.x > 0 ? xf(v.x) : '', href: '/app/videos/' + v.id,
+      xBg: (v.x || 0) >= 2 ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : 'rgba(5,7,12,0.6)' })).filter((v) => v.src);
+    const live = typeof P.saved === 'function' && typeof P.save === 'function';
+    const fw = live ? P.saved('follows') : null;
+    const followed = live ? !!(fw && (fw.creators || []).indexOf(h) >= 0) : !!((this.state || {}).followC || {})[h];
+    const follow = () => {
+      if (!live) return this.setState({ followC: Object.assign({}, (this.state || {}).followC || {}, { [h]: !followed }) });
+      const cur = P.saved('follows');
+      if (cur === undefined) return;
+      const next = Object.assign({ apps: [], creators: [], formats: [] }, cur || {});
+      next.creators = followed ? (next.creators || []).filter((x) => x !== h) : [h].concat(next.creators || []);
+      P.save('follows', next);
+    };
+    const app = D.app || null;
+    const lastAt = D.lastPostAt || null;
+    const active = p7 !== null && p7 > 0;
+    return { on: true, h: '@' + h, bio: D.bio || row.bio || '', av: D.avatar || row.av || '', noav: !(D.avatar || row.av), ini: h.charAt(0).toUpperCase(), mk: D.market || row.mk || b.shown || '',
+      tt: 'https://www.tiktok.com/@' + h, href: '/app/createurs/' + h,
+      hasApp: !!(app || row.appName), appName: app ? app.name : row.appName || '', appIcon: app ? app.icon || '' : (row.app && row.app.logo) || '', appBlank: (app ? app.icon : row.app && row.app.logo) ? '' : 'sw-app-blank',
+      appHref: app && app.slug ? '/app/apps/' + app.slug : (row.appHref || '/app/apps/astraai'), niche: app ? app.niche || '' : row.niche || '',
+      act: lastAt ? (active ? 'Actif' : 'Calme') + ' · dernière ' + ago(lastAt) : '', actBg: active ? 'var(--accent-soft)' : 'var(--track)', actInk: active ? 'var(--accent)' : 'var(--ink-muted)',
+      tiles: [['Abonnés', fans ? grp(fans) : '—', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3'],
+        ['Vues médianes', med ? nf(med) : '—', 'M3 3v18h18M7 15l4-4 3 3 5-6'], ['Vidéos en 7 j', p7 !== null ? String(p7) : '—', 'M3 12h4l3-8 4 16 3-8h4']].map(([l, v, d]) => ({ l, v, d })),
+      wait: F === undefined, hasBars: last.length > 1, barsTitle: 'Ses ' + last.length + ' dernières vidéos', medLabel: med ? nf(med).toUpperCase() : '—', medPct: med ? Math.min(100, (med / top) * 100).toFixed(1) : '0',
+      bars: last.map((v) => ({ d: day(v.publishedAt), t: day(v.publishedAt) + ' : ' + nf(v.views) + ' vues', h: ((v.views / top) * 100).toFixed(1), href: '/app/videos/' + v.id,
+        bg: med && v.views >= med ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : hatch })),
+      hasTops: tops.length > 0, topsTitle: above.length ? 'Au-dessus de sa normale' : 'Ses meilleures vidéos', tops,
+      follow, followOn: followed ? 'true' : 'false', followLabel: followed ? 'Suivi' : 'Suivre' };
   }
 
   baseVals() {
@@ -404,22 +464,25 @@ export default class Createurs extends DCLogic {
                 ),
                 $h("tbody", null,
                   ($l($v.rows)).map((c) => [
-                    $h("tr", null,
+                    $h("tr", { "style": `background: ${$t(c?.bg)};` },
                       $h("td", { "style": "padding-left: 20px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },
                         $t(c?.rank)
                       ),
                       $h("td", null,
-                        $h("a", { "href": c?.href, "style": "display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; min-width: 0;" },
-                          $h("span", { "style": "position: relative; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
-                            (c?.av) ? [
-                              $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
-                            ] : null,
-                            (c?.noav) ? [
-                              $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                                $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
-                                $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
-                              )
-                            ] : null
+                        $h("button", { "type": "button", "onClick": c?.open, "aria-label": `Aperçu de ${$t(c?.h)}`, "aria-expanded": c?.sel, "style": "display: flex; width: 100%; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0;" },
+                          $h("span", { "style": "position: relative; flex-shrink: 0; display: inline-flex;" },
+                            $h("span", { "style": "position: relative; width: 42px; height: 42px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                              (c?.av) ? [
+                                $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                              ] : null,
+                              (c?.noav) ? [
+                                $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                  $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
+                                  $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
+                                )
+                              ] : null
+                            ),
+                            $h("span", { "class": "sw-flag", "data-c": c?.mk, "aria-hidden": "true", "style": "position: absolute; right: -3px; bottom: -3px; z-index: 2; box-shadow: 0 0 0 2px #121722;" })
                           ),
                           $h("span", { "style": "display: flex; flex-direction: column; gap: 3px; min-width: 0;" },
                             $h("span", { "style": "font-size: 15px; font-weight: 600; color: var(--ink);" },
@@ -525,6 +588,162 @@ export default class Createurs extends DCLogic {
             ] : null
           )
         ),
+        ($v.pv?.on) ? [
+          $h("button", { "type": "button", "aria-label": "Fermer le profil", "onClick": $v.closePv, "tabindex": "-1", "style": "position: fixed; inset: 0; z-index: 40; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.45);" }),
+          $h("aside", { "role": "dialog", "aria-modal": "true", "aria-label": `Profil de ${$t($v.pv?.h)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: 470px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: #0E131C; border-left: 1px solid var(--line); box-shadow: -40px 0 80px rgba(0,0,0,0.5); animation: sw-rise .35s cubic-bezier(.2,.8,.2,1) both;" },
+            $h("header", { "style": "flex-shrink: 0; padding: clamp(14px, 2.2vh, 20px) 20px clamp(10px, 1.6vh, 14px); display: flex; flex-direction: column; gap: clamp(8px, 1.4vh, 12px); border-bottom: 1px solid var(--line);" },
+              $h("div", { "style": "display: flex; align-items: flex-start; gap: 14px;" },
+                $h("span", { "style": "position: relative; flex-shrink: 0; width: 58px; height: 58px;" },
+                  $h("span", { "style": "display: flex; width: 58px; height: 58px; border-radius: 50%; overflow: hidden; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724);" },
+                    ($v.pv?.av) ? [
+                      $h("img", { "src": $v.pv?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" })
+                    ] : null,
+                    ($v.pv?.noav) ? [
+                      $h("span", { "style": "font-size: 20px; font-weight: 700; color: var(--ink-faint);" },
+                        $t($v.pv?.ini)
+                      )
+                    ] : null
+                  ),
+                  $h("span", { "class": "sw-flag", "data-c": $v.pv?.mk, "aria-hidden": "true", "style": "position: absolute; right: -2px; bottom: -2px; box-shadow: 0 0 0 2px #0E131C;" })
+                ),
+                $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;" },
+                  $h("span", { "style": "font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                    $t($v.pv?.h)
+                  ),
+                  $h("span", { "style": "font-size: 13px; color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" },
+                    $t($v.pv?.bio)
+                  )
+                ),
+                $h("span", { "style": "display: flex; gap: 6px; flex-shrink: 0;" },
+                  $h("a", { "href": $v.pv?.tt, "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir sur TikTok", "title": "Ouvrir sur TikTok", "style": "width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--track); color: var(--ink-muted);" },
+                    $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
+                      $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  ),
+                  $h("button", { "ref": $v.setPvClose, "type": "button", "onClick": $v.closePv, "aria-label": "Fermer le profil", "style": "width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: var(--track); color: var(--ink-muted); cursor: pointer;" },
+                    $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
+                      $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  )
+                )
+              ),
+              $h("div", { "style": "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" },
+                ($v.pv?.hasApp) ? [
+                  $h("a", { "href": $v.pv?.appHref, "style": "display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px 0 4px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; color: var(--ink); text-decoration: none;" },
+                    $h("span", { "class": `sw-app-icon ${$t($v.pv?.appBlank)}`, "style": "width: 20px; height: 20px; border-radius: 6px;" },
+                      ($v.pv?.appIcon) ? [
+                        $h("img", { "class": "sw-logo-img", "src": $v.pv?.appIcon, "alt": "", "loading": "lazy", "decoding": "async" })
+                      ] : null
+                    ),
+                    "Pousse ",
+                    $h("b", { "style": "font-weight: 600;" },
+                      $t($v.pv?.appName)
+                    )
+                  ),
+                  $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px;" },
+                    $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
+                      $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ),
+                    $t($v.pv?.niche)
+                  )
+                ] : null,
+                ($v.pv?.act) ? [
+                  $h("span", { "style": `display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: ${$t($v.pv?.actBg)}; font-size: 12px; font-weight: 600; color: ${$t($v.pv?.actInk)};` },
+                    $h("span", { "style": `width: 7px; height: 7px; border-radius: 50%; background: ${$t($v.pv?.actInk)};` }),
+                    $t($v.pv?.act)
+                  )
+                ] : null
+              )
+            ),
+            $h("div", { "style": "flex: 1 1 auto; min-height: 0; overflow: hidden; padding: clamp(10px, 1.6vh, 14px) 20px; display: flex; flex-direction: column; gap: clamp(8px, 1.4vh, 14px);" },
+              $h("div", { "style": "flex-shrink: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
+                ($l($v.pv?.tiles)).map((k) => [
+                  $h("span", { "style": "display: flex; flex-direction: column; gap: 4px; padding: clamp(8px, 1.3vh, 11px) 12px; border-radius: 14px; background: var(--track);" },
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-faint);" },
+                      $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": k?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      $t(k?.l)
+                    ),
+                    $h("span", { "style": "font-family: var(--font-display); font-size: clamp(15px, 2.2vh, 18px); font-weight: 700; letter-spacing: -0.02em; white-space: nowrap;" },
+                      $t(k?.v)
+                    )
+                  )
+                ])
+              ),
+              ($v.pv?.wait) ? [
+                $h("p", { "style": "margin: 8px 2px; font-size: 13px; color: var(--ink-faint);" },
+                  "Chargement de ses vidéos…"
+                )
+              ] : null,
+              ($v.pv?.hasBars) ? [
+                $h("div", { "style": "flex: 1 1 0; min-height: 110px; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+                  $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 10px;" },
+                    $h("span", { "style": "font-size: 13px; font-weight: 600;" },
+                      $t($v.pv?.barsTitle)
+                    ),
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--ink-faint); white-space: nowrap;" },
+                      $h("span", { "style": "width: 12px; border-top: 1.5px dashed rgba(255,255,255,0.35);" }),
+                      "SA NORMALE ", $t($v.pv?.medLabel)
+                    )
+                  ),
+                  $h("div", { "style": "position: relative; flex: 1; min-height: 40px; display: flex; align-items: flex-end; gap: 8px;" },
+                    $h("span", { "aria-hidden": "true", "style": `position: absolute; left: 0; right: 0; bottom: ${$t($v.pv?.medPct)}%; border-top: 1.5px dashed rgba(255,255,255,0.28);` }),
+                    ($l($v.pv?.bars)).map((b) => [
+                      $h("a", { "href": b?.href, "title": b?.t, "style": `flex: 1; height: ${$t(b?.h)}%; min-height: 3px; border-radius: 6px 6px 2px 2px; background: ${$t(b?.bg)};` })
+                    ])
+                  ),
+                  $h("div", { "style": "display: flex; gap: 8px;" },
+                    ($l($v.pv?.bars)).map((b) => [
+                      $h("span", { "style": "flex: 1; text-align: center; font-size: 10px; color: var(--ink-faint);" },
+                        $t(b?.d)
+                      )
+                    ])
+                  )
+                )
+              ] : null,
+              ($v.pv?.hasTops) ? [
+                $h("div", { "style": "flex: 1 1 0; min-height: 130px; display: flex; flex-direction: column; gap: 8px;" },
+                  $h("span", { "style": "font-size: 13px; font-weight: 600;" },
+                    $t($v.pv?.topsTitle)
+                  ),
+                  $h("div", { "style": "flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
+                    ($l($v.pv?.tops)).map((v) => [
+                      $h("a", { "href": v?.href, "class": "sw-video", "style": "position: relative; display: block; height: 100%; aspect-ratio: auto; border-radius: 12px; overflow: hidden; background: #0A0C12;" },
+                        $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy" }),
+                        $h("span", { "class": "sw-video-shade" }),
+                        (v?.x) ? [
+                          $h("span", { "style": `position: absolute; top: 7px; left: 7px; z-index: 2; display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 999px; background: ${$t(v?.xBg)}; font-size: 11px; font-weight: 700; color: #FFFFFF;` },
+                            $t(v?.x)
+                          )
+                        ] : null,
+                        $h("span", { "style": "position: absolute; left: 8px; bottom: 6px; z-index: 2; font-size: 13px; font-weight: 700; color: #FFFFFF;" },
+                          $t(v?.v)
+                        )
+                      )
+                    ])
+                  )
+                )
+              ] : null
+            ),
+            $h("footer", { "style": "flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: clamp(10px, 1.6vh, 14px) 20px clamp(12px, 2.2vh, 20px); border-top: 1px solid var(--line);" },
+              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "height: 46px; gap: 8px;" },
+                $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
+                  $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
+                $t($v.pv?.followLabel)
+              ),
+              $h("a", { "class": "sw-btn sw-btn-primary", "href": $v.pv?.href, "style": "flex: 1; justify-content: space-between;" },
+                "Voir la fiche complète",
+                $h("span", { "class": "sw-btn-tile" },
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
+                    $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                )
+              )
+            )
+          )
+        ] : null,
         ($v.pal) ? [
           $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
             $h(Palette, { "onClose": $v.closePal, "get": $v.getFn })
