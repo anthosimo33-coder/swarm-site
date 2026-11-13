@@ -47,8 +47,7 @@ export default class MFicheFormat extends DCLogic {
     let reps = [{"src": "/media/app/v-7706579888727231777.jpg", "v": "106 k", "h": "@studywithdenise", "when": "10/11 · 17 h"}, {"src": "/media/app/v-7705712961511263521.jpg", "v": "83 k", "h": "@study.mit.lauri", "when": "08/11 · 09 h"}, {"src": "/media/app/v-7705122381735513376.jpg", "v": "12 k", "h": "@studywithdenise", "when": "06/11 · 19 h"}, {"src": "/media/app/v-7704967516086488353.jpg", "v": "1 k", "h": "@study.mit.sophia", "when": "06/11 · 09 h"}];
     reps = reps.map((x) => Object.assign({}, x, { href: '/app/videos/' + vkey(x.src) }));
     let common = [{"d": "M5 6h14M12 6v13M9 19h6", "t": "Le même texte à l’écran", "s": "Mot pour mot sur les 4 vidéos, en allemand."}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "t": "Une seule app derrière", "s": "Les 3 comptes poussent Retain Cards, une app de révision."}, {"d": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "t": "4 reprises en 4 jours", "s": "Du 06/11 au 10/11, chaque reprise a fait mieux que la précédente."}];
-    f = Object.assign({ flag: 'DE', hasFr: true, accLabel: '3 comptes', spanTxt: 'en 4 jours', bestV: '106 k vues', bestH: '@studywithdenise', hasRev: true,
-      revLabel: 'Revenus estimés des 4 reprises', lo: '500', hi: '710 €', repsTitle: 'Les 4 reprises' }, f);
+    f = Object.assign({ flag: 'DE', hasFr: true, accLabel: '3 comptes', spanTxt: 'en 4 jours', bestV: '106 k vues', bestH: '@studywithdenise', repsTitle: 'Les 4 reprises' }, f);
     // Sur le site : le format (document « format:<id> »), lu comme FormatFicheA.
     const D = this.props && this.props.data;
     if (D && D.members) {
@@ -71,14 +70,12 @@ export default class MFicheFormat extends DCLogic {
       const first = ms.length ? Math.min.apply(null, ms.map((x) => x.publishedAt)) : D.lastPostAt;
       const span = Math.max(1, dnum(D.lastPostAt) - dnum(first));
       const best = ms[0];
-      const r = eur(ms.reduce((s, x) => s + x.views, 0));
       const APPS = 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z';
       f = Object.assign({}, f, { kind: hook ? 'Accroche' : 'Son', ico: hook ? TXT : SON, quote: hook ? '« ' + D.label + ' »' : D.label, raw: D.label, niche: D.niche || '',
         flag: D.market && D.market !== 'XX' ? D.market : '', n: D.accounts, ok: D.wins + '/' + D.n, okText: D.wins + ' sur ' + D.n, med: D.medX ? xf(D.medX) : '—', max: nf(D.maxViews || 0),
         app0: D.apps && D.apps[0] ? Object.assign({ name: D.apps[0].name }, ico(D.apps[0])) : { name: '', logo: '', nologo: true, blank: 'sw-app-blank' }, appLine: names(D.apps),
         hasFr: false, accLabel: D.accounts + ' comptes', spanTxt: 'en ' + span + (span > 1 ? ' jours' : ' jour') + (whole ? '' : ' ou plus'),
-        bestV: best ? nf(best.views) + ' vues' : '—', bestH: best ? '@' + best.handle : '', hasRev: ms.length > 0,
-        revLabel: 'Revenus estimés des ' + ms.length + ' reprises' + (whole ? '' : ' les plus vues'), lo: r[0], hi: r[1],
+        bestV: best ? nf(best.views) + ' vues' : '—', bestH: best ? '@' + best.handle : '',
         repsTitle: whole ? 'Les ' + ms.length + ' reprises' : 'Les ' + ms.length + ' reprises les plus vues, sur ' + D.n });
       reps = ms.map((x) => ({ src: x.cover || '', v: nf(x.views), h: '@' + x.handle, when: day(x.publishedAt) + ' · ' + String(new Date(x.publishedAt).getHours()).padStart(2, '0') + ' h',
         href: '/app/videos/' + x.videoId }));

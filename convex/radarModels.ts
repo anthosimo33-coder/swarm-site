@@ -155,6 +155,7 @@ export function buildBoards(
     if (stored) return stored;
     if (source) need.set(key, source);
     else if (/^\d+$/.test(videoId)) need.set(key, `ttpage:${handle ?? ""}/${videoId}`);
+    else if (videoId.startsWith("ig:")) need.set(key, `igpage:${videoId.slice(3)}`);
     return source ?? null;
   };
   const card = (v: RVideo): VideoCard => {

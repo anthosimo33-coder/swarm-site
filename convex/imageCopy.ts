@@ -11,6 +11,7 @@ import type { ActionCtx } from "./_generated/server";
  * Sources :
  *   itunes:<nom de l'app>           l'icône App Store de l'app
  *   ttpage:<handle>/<id de vidéo>   la miniature lue sur la page publique de la vidéo TikTok
+ *   igpage:<code du reel>           la miniature lue sur la page d'intégration publique d'Instagram
  *   https://…                       l'image elle-même (URL signée du dernier relevé)
  */
 
@@ -59,6 +60,27 @@ export async function tiktokCover(handle: string, id: string): Promise<string | 
   }
 }
 
+/** La miniature d'un reel Instagram, lue sur sa page d'intégration publique (sans connexion). */
+export async function instagramCover(code: string): Promise<string | null> {
+  const decode = (u: string) => u.replace(/&amp;/g, "&");
+  try {
+    const res = await fetch(`https://www.instagram.com/reel/${encodeURIComponent(code)}/embed/`, {
+      headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const m = html.match(/class="EmbeddedMediaImage"[^>]*src="([^"]+)"/) ?? html.match(/src="([^"]+)"[^>]*class="EmbeddedMediaImage"/);
+      if (m) return decode(m[1]);
+    }
+    const page = await fetch(`https://www.instagram.com/reel/${encodeURIComponent(code)}/`, { headers: { "User-Agent": UA } });
+    if (!page.ok) return null;
+    const og = (await page.text()).match(/property="og:image" content="([^"]+)"/);
+    return og ? decode(og[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** L'URL de l'image à télécharger pour une source. */
 async function imageUrl(source: string): Promise<string | null> {
   if (source.startsWith("itunes:")) {
@@ -69,6 +91,7 @@ async function imageUrl(source: string): Promise<string | null> {
     const [handle, id] = source.slice("ttpage:".length).split("/");
     return id ? tiktokCover(handle, id) : null;
   }
+  if (source.startsWith("igpage:")) return instagramCover(source.slice("igpage:".length));
   return source;
 }
 
@@ -93,9 +116,10 @@ export async function copyImage(ctx: ActionCtx, key: string, source: string) {
     let url = await imageUrl(source);
     if (!url) return null;
     let res = await fetch(url, { headers: { "User-Agent": UA } });
-    // Lien signé expiré : la page publique d'une vidéo TikTok en donne un neuf.
-    if (!res.ok && key.startsWith("v:") && /^\d+$/.test(key.slice(2)) && !source.startsWith("ttpage:")) {
-      url = await tiktokCover("tiktok", key.slice(2));
+    // Lien signé expiré : la page publique de la vidéo (TikTok ou Instagram) en donne un neuf.
+    if (!res.ok && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
+      const id = key.slice(2);
+      url = /^\d+$/.test(id) ? await tiktokCover("tiktok", id) : id.startsWith("ig:") ? await instagramCover(id.slice(3)) : null;
       if (!url) return null;
       res = await fetch(url, { headers: { "User-Agent": UA } });
     }

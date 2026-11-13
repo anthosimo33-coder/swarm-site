@@ -9,7 +9,7 @@ import { copyImage } from "./imageCopy";
 const RETRY_MS = 6 * 3_600_000;
 
 /**
- * La miniature d'une vidéo TikTok, copiée chez Swarm à la première demande (/cover/<id>,
+ * La miniature d'une vidéo TikTok ou Instagram, copiée chez Swarm à la première demande (/cover/<id>,
  * convex/coverHttp.ts) : déjà rangée → son URL ; sinon lue sur la page publique de la vidéo,
  * réduite et rangée. null si la vidéo n'en donne pas.
  */
@@ -20,7 +20,8 @@ export const ensure = internalAction({
     const known: { url: string | null; missAt: number | null } = await ctx.runQuery(internal.radarStore.mediaGet, { key });
     if (known.url) return known.url;
     if (known.missAt && Date.now() - known.missAt < RETRY_MS) return null;
-    const got = await copyImage(ctx, key, `ttpage:${handle}/${id}`);
+    const source = id.startsWith("ig:") ? `igpage:${id.slice(3)}` : `ttpage:${handle}/${id}`;
+    const got = await copyImage(ctx, key, source);
     if (!got) {
       await ctx.runMutation(internal.radarStore.markMiss, { key });
       return null;

@@ -288,9 +288,17 @@ function Missing({ fiche }) {
   );
 }
 
-// Une image qui ne se charge pas (miniature expirée) ne laisse pas d'icône cassée.
+// Une image qui ne se charge pas ne laisse pas d'icône cassée. Une miniature servie par Swarm
+// (/cover/…) est redemandée une fois, 4 s plus tard : la première vue la copie (1 à 3 s).
 document.addEventListener('error', (event) => {
-  if (event.target instanceof HTMLImageElement) event.target.classList.add('is-broken');
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  if (img.src.includes('/cover/') && !img.dataset.retried) {
+    img.dataset.retried = '1';
+    setTimeout(() => { img.src = img.src + (img.src.includes('?') ? '&' : '?') + 'r=1'; }, 4000);
+    return;
+  }
+  img.classList.add('is-broken');
 }, true);
 
 mount(h(App, null));

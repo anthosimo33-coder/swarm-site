@@ -9,7 +9,7 @@ import { query } from "./_generated/server";
 /**
  * Une miniature est toujours servie par Swarm : sa copie rangée, sinon l'adresse /cover/<id>
  * (convex/coverHttp.ts) qui la copie à la première vue. Jamais un lien TikTok signé qui expire,
- * ni un vide quand la vidéo en a une. (Les vidéos Instagram gardent leur lien.)
+ * ni un vide quand la vidéo en a une, TikTok comme Instagram.
  */
 function withCovers(data: unknown): unknown {
   const site = process.env.CONVEX_SITE_URL;
@@ -23,7 +23,7 @@ function withCovers(data: unknown): unknown {
     if ("cover" in o) {
       const id = (o.videoId ?? o.id) as unknown;
       const cover = o.cover as string | null;
-      if (typeof id === "string" && /^\d{6,25}$/.test(id) && !(cover && cover.startsWith(stored))) o.cover = `${site}/cover/${id}`;
+      if (typeof id === "string" && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) && !(cover && cover.startsWith(stored))) o.cover = `${site}/cover/${id}`;
     }
     return o;
   };

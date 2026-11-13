@@ -12,3 +12,13 @@ img.is-broken { visibility: hidden; }
 .app-missing h1 { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
 .app-missing p { margin: 0; max-width: 34ch; color: var(--ink-muted); font-size: 16px; line-height: 1.5; }
 .app-missing a { margin-top: 8px; display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: var(--radius-pill); background: var(--solid); color: var(--on-solid); font-size: 15px; font-weight: 600; text-decoration: none; }
+
+/* Vidéo dont la miniature n'existe plus (compte passé en privé, vidéo supprimée) : un repère de
+   lecture sur le fond de la vignette, pas un rectangle vide. (Le mobile a déjà le sien.) */
+@media (min-width: 861px) {
+  .sw-video:has(img.is-broken)::before {
+    content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%);
+    border-radius: 50%; pointer-events: none;
+    background: rgba(255,255,255,0.10) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14l11-7z' fill='white' fill-opacity='0.85'/%3E%3C/svg%3E") 56% 50% / 18px no-repeat;
+  }
+}
