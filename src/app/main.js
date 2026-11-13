@@ -338,6 +338,7 @@ document.addEventListener('load', (event) => {
   };
   document.addEventListener('mouseover', (e) => {
     if (location.pathname.indexOf('/app/videos/') === 0) return; // déjà sur une vidéo : pas de second lecteur
+    if (window.innerWidth < 861) return; // écran étroit = mise en page mobile : pas d'aperçu flottant
     const a = linkOf(e.target);
     if (!a || a === current || !a.querySelector('img')) return;
     const id = idOf(a);

@@ -34,7 +34,7 @@ img.is-broken { visibility: hidden; }
   font-family: var(--font-mono); font-size: 11px !important; font-weight: 500; letter-spacing: 0.02em; color: var(--ink-faint); }
 
 /* En-têtes de tableau : casse normale, gris doux, une icône devant (direction « après »). */
-.sw-table th { text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-muted); padding-top: 14px; padding-bottom: 14px; }
+.sw-table th { text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: 12px; font-weight: 500; color: var(--ink-muted); padding-top: 9px; padding-bottom: 9px; }
 .sw-table thead tr { background: rgba(255,255,255,0.02); }
 .sw-th { display: inline-flex; align-items: center; gap: 8px; }
 .sw-th > svg { flex-shrink: 0; color: var(--ink-faint); }
@@ -63,3 +63,4 @@ img.is-broken { visibility: hidden; }
 /* Barre latérale : l’icône et son libellé rapprochés (case de 32 px au lieu de 40, 3 px d’écart). */
 .sw-side-item { gap: 3px !important; }
 .sw-side-ico { height: 32px !important; }
+.sw-table th svg { width: 13px; height: 13px; }
