@@ -291,7 +291,7 @@ export default class FicheCreateur extends DCLogic {
               )
             ])
           ),
-          $h("div", { "style": "margin: 28px 32px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line);" },
+          $h("div", { "style": "margin: 28px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;" },
             $h("div", { "role": "tablist", "aria-label": "Contenu", "style": "display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
               ($l($v.tabs)).map((tb) => [
                 $h("button", { "type": "button", "role": "tab", "aria-selected": tb?.on, "onClick": tb?.pick, "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: ${$t(tb?.bg)}; color: ${$t(tb?.ink)}; font: inherit; font-size: 14px; font-weight: ${$t(tb?.fw)}; cursor: pointer;` },
@@ -303,7 +303,7 @@ export default class FicheCreateur extends DCLogic {
               ])
             ),
             ($v.showSort) ? [
-              $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Tri", "style": "margin-bottom: 10px;" },
+              $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Tri" },
                 ($l($v.sorts)).map((s) => [
                   $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick, "style": "height: 30px;" },
                     $t(s?.l)
