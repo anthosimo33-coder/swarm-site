@@ -77,7 +77,11 @@ La conversion fait aussi : liens `X.dc.html#ancre` → adresse + ancre ; `onChan
 
 `app.html` + `src/app/main.js` : une seule page (Vercel réécrit `/app/…` vers `/app`). La session n'est vérifiée qu'une fois ; les liens internes changent d'écran sans recharger ; chaque écran se charge à la demande avec son CSS et celui de ses composants ; ⌘K / Ctrl+K clique le déclencheur `[data-cmdk]` de l'écran (la palette) ; une ancre dans l'adresse fait défiler jusqu'à elle. Les écrans reçoivent `user` ({ prenom, email, initiale }) et `signOut` par leurs props.
 
-Données : celles des maquettes, c'est-à-dire le relevé du Radar au 12/11, figé. Chaque fiche (app, format, créateur, vidéo, dossier) montre un exemple. Rien de ce qu'on fait dans l'app n'est enregistré (prénom, dossiers, alertes, réglages) : tout repart à zéro au rechargement. Pas encore de version mobile.
+Données : le vrai Radar, recalculé chaque nuit (cron 1 h 30 UTC, `convex/radarSync.ts` lit l'export de Jarvia et écrit un document par écran dans `boards`). Contrat complet, liens et formes : `docs/donnees-app.md`. Une fiche absente du Radar mène à une page « introuvable », jamais à l'exemple du canevas. Ce que la personne fait est gardé dans son compte (`convex/saved.ts`) : apps/comptes/formats suivis, dossiers, règles d'alerte, déjà lu.
+
+Vérifier un écran sur les vraies données, sans navigateur : exporter le dev (`npx convex export --path x.zip`, puis `boards/documents.jsonl` → `[[clé, document], …]`) et `BOARDS=boards.json node scripts/render-data.mjs <Composant> <clé>` (variables `SAVED`, `PARAMS`, `QUERY` en tête du script).
+
+Mobile (sous 860 px) : les artboards `design/app/M*` (`APP_MOBILE_PAGES`). Tant qu'ils ne sont pas tous branchés, on génère et on commite sans eux : `SWARM_SANS_MOBILE=1 npm run gen` (les téléphones reçoivent alors les écrans desktop).
 
 ## Lancer en local
 
@@ -95,9 +99,8 @@ Vercel, projet relié à ce dépôt : chaque push sur `main` déploie en product
 
 - La vidéo motion sous le hero (l'encart 16:9 l'attend).
 - « Mot de passe oublié » : il faut un service d'envoi d'e-mails (le lien affiche pour l'instant que la réinitialisation n'est pas ouverte).
-- Les données de l'app en direct (aujourd'hui, le relevé figé du 12/11) et une fiche par app, format, créateur.
-- L'enregistrement de ce qu'on fait dans l'app : prénom, dossiers, alertes, réglages.
-- La version mobile de l'app.
+- La version mobile de l'app (artboards `M*` en cours de branchement).
+- L'envoi des alertes (e-mail, notification) : les règles filtrent l'écran Alertes, rien n'est envoyé.
 - Le paiement et les pages légales (`#cgv`, `#confidentialite`, `#mentions`, `#contact`).
 - Les avis : emplacements entre crochets, à remplacer par de vrais avis.
 - Les couvertures de vidéos montrent des créateurs tiers et les logos sont des marques : à valider (droit à l'image, usage des marques) avant d'en faire de la publicité.
