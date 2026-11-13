@@ -88,6 +88,19 @@ const groupBy = <T, K>(xs: T[], key: (x: T) => K) => {
 export const coverKey = (videoId: string) => `v:${videoId}`;
 export const iconKey = (slug: string) => `icon:${slug}`;
 
+/** La bio sans les e-mails ni numéros de téléphone : Swarm montre ce que fait un compte, pas comment le contacter. */
+export const cleanBio = (bio: string | null) => {
+  if (!bio) return bio;
+  const out = bio
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "")
+    .replace(/\+?\(?\d[\d .()-]{7,}\d/g, (m) => (m.replace(/\D/g, "").length >= 9 ? "" : m)) // téléphone : 9 chiffres ou plus
+    .replace(/[ \t]*[|·•,:;-]?[ \t]*(?:📧|✉️?|📩|📞|☎️?|📱)[ \t]*[|·•,:;-]?/gu, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]*[|·•,:;-][ \t]*$/gm, "")
+    .trim();
+  return out || null;
+};
+
 /** Une vidéo, telle que la voient les écrans (vignette, lecteur). */
 export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null };
 
@@ -253,7 +266,7 @@ export function buildBoards(
     use(best);
     const a = canonical(t.appId);
     return {
-      handle: t.handle, bio: t.bio, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
+      handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
       market: marketOf(t.lang), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a.name) } : null,
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
