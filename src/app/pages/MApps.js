@@ -43,19 +43,20 @@ return {};
     // Sur le site : le classement du Radar (document « apps »), lu comme AppsA. A[i] = [nom, niche, marchés, comptes,
     // vidéos/sem., vues 30 j (M), 6 semaines (M), meilleure, miniatures, vues des miniatures, icône, slug, id des vidéos, nouvelle ?]
     const D = this.props && this.props.data;
+    const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
     const nfm = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
     const xfm = (x) => (x >= 100 ? Math.round(x).toLocaleString('en-US').replace(/,/g, '\u202f') : x >= 10 ? String(Math.round(x)) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     if (D && D.apps) {
       const LBL = Object.fromEntries(D.markets);
       A = D.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, (a.weeks || []).map((w) => w / 1e6),
         a.bestX ? xfm(a.bestX) : '—', (a.top || []).map((t) => t.cover || ''), (a.top || []).map((t) => nfm(t.views)), a.icon || '', a.slug, (a.top || []).map((t) => t.id), !!a.isNew, a.weekDelta === undefined ? null : a.weekDelta, typeof a.top10Share === 'number' ? a.top10Share : null, a.top && a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null]);
-      MKD = Object.fromEntries(D.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c === 'XX' ? '…' : c, LBL[c] || c, p])]));
-      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c === 'XX' ? '' : c]));
+      MKD = Object.fromEntries(D.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || MKN(c) || c, p])]));
+      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l || MKN(c) || c, c]));
       NIS = D.niches;
     } else if (D === null) {
       A = [];
     }
-    const flagsOf = (a) => a[2].filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
+    const flagsOf = (a) => a[2].filter((c) => c).slice(0, 3).map((c) => ({ c }));
     const ficheOf = (a) => (a[11] ? '/app/apps/' + a[11] : '/app/apps/astraai');
     const videoOf = (a, j) => '/app/videos/' + ((a[12] && a[12][j]) || vkey(a[8][j]));
     const isNew = (a) => (a[13] !== undefined ? a[13] : !!a[6] && a[6][0] + a[6][1] < 0.2);
@@ -77,12 +78,14 @@ return {};
     const limit = st.limit || 30, total = list.length;
     // Marchés en texte (« US 88 % · MX 12 % ») : les parts du document quand on les a, sinon les codes.
     const mkText = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2]]) : a[2].map((c) => [c, null]);
-      return l.filter((m) => m[1] !== null || (m[0] !== 'XX' && m[0] !== '…')).slice(0, 2)
-        .map(([c, p]) => (c === 'XX' || c === '…' ? 'Autres' : c) + (p !== null && p !== undefined ? ' ' + p + ' %' : '')).join(' · '); };
+      return l.filter((m) => m[0]).slice(0, 2).map(([c, p]) => c + (p !== null && p !== undefined ? ' ' + p + ' %' : '')).join(' · '); };
+    // Les mêmes marchés en drapeaux (data-c = code du marché, n'importe quel code pays ISO).
+    const mkList = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2], m[1]]) : a[2].map((c) => [c, null, c]);
+      return l.filter((m) => m[0]).slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + ' %' : '', t })); };
     const rows = list.slice(0, limit).map((a, i) => { const w = a[6] || [1, 1, 1, 1, 1, 1], mx = Math.max.apply(null, w) || 1, d = a[6] ? dlt(a) : null, up = d === null || d >= 0;
       const pts = w.map((v, j) => [j * 20, 36 - (v / mx) * 32]);
       const line = 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
-      return { rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mkText: mkText(a), v30: nfm(views(a) * 1e6),
+      return { rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mkText: mkText(a), mks: mkList(a), v30: nfm(views(a) * 1e6),
         hasDelta: d !== null, delta: d === null ? '' : dfmt(d), dInk: up ? 'var(--accent)' : 'var(--ink-faint)', stroke: up ? '#4C9AFF' : '#8A93A3',
         line, area: line + ' L100 40 L0 40 Z', gid: 'mapl' + i, ex: '100', ey: (pts[5][1] / 40 * 100).toFixed(1), hasW: !!a[6],
         covs: a[8].map((src, j) => ({ src, v: a[9][j] || '', href: videoOf(a, j) })).filter((c) => c.src), logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank', open: () => this.setState({ pv: a[0] }) }; });
@@ -114,7 +117,7 @@ return {};
       const t10 = typeof pa[15] === 'number' && pa[3] > 10 ? pa[15] : null;
       const t0 = pa[16] || null;
       const grp = (n) => Number(n || 0).toLocaleString('en-US').replace(/,/g, '\u202f');
-      pv = { on: true, full: !!pa[6], lite: !pa[6], n: pa[0], niche: pa[1], mkText: mkText(pa), href: ficheOf(pa), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
+      pv = { on: true, full: !!pa[6], lite: !pa[6], n: pa[0], niche: pa[1], mkText: mkText(pa), mks: mkList(pa), href: ficheOf(pa), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
         v30: nfm(pa[5] * 1e6), week: nfm(w[5] * 1e6), delta: d === null ? '' : dfmt(d),
         dBg: d !== null && d >= 0 ? 'var(--accent-soft)' : 'rgba(255,255,255,0.09)', dInk: d !== null && d >= 0 ? 'var(--accent)' : 'var(--ink-soft)',
         line, area: line + ' L296 60 L4 60 Z',
@@ -125,7 +128,7 @@ return {};
         waffle: Array.from({ length: 20 }, (_, c) => ({ bg: c < Math.round((t10 || 0) * 20) ? '#4C9AFF' : 'rgba(255,255,255,0.08)' })),
         hasTop: !!pa[8][0], top: pa[8][0] ? { cover: pa[8][0], views: (pa[9][0] || '') + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xfm(t0.x) + ' sa normale' : '', who: t0 && t0.handle ? '@' + t0.handle : '' } : {},
         ppw: grp(pa[4]), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
-        hasMk: !!md, noMk: !md, mkd: (md || []).slice(0, 2).map((m, n) => ({ l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
+        hasMk: !!md, noMk: !md, mkd: (md || []).slice(0, 2).map((m, n) => ({ c: m[0], l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
         followLabel: (st.follow || {})[pa[0]] ? 'Suivi' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
     const swipe = (k) => ({ s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false, pv: null }); this.y0 = null; } });
     return {
@@ -278,11 +281,14 @@ return {};
                     $h("span", { "class": "m-ic", "data-i": r?.niche, "aria-hidden": "true" }),
                     $t(r?.niche)
                   ),
-                  (r?.mkText) ? [
-                    $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
-                      $t(r?.mkText)
-                    )
-                  ] : null
+                  $h("span", { "style": "display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
+                    ($l(r?.mks)).map((k) => [
+                      $h("span", { "title": k?.t, "style": "display: inline-flex; align-items: center; gap: 5px;" },
+                        $h("span", { "class": "sw-flag", "data-c": k?.c, "aria-hidden": "true" }),
+                        $t(k?.p)
+                      )
+                    ])
+                  )
                 ),
                 $h("span", { "style": "flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;" },
                   $h("span", { "style": "font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: 22px; letter-spacing: -0.03em; white-space: nowrap;" },
@@ -375,9 +381,7 @@ return {};
                     )
                   ),
                   (it?.flag) ? [
-                    $h("span", { "class": "sw-flag", "style": "width: 26px; height: 20px;" },
-                      $t(it?.flag)
-                    )
+                    $h("span", { "class": "sw-flag", "data-c": it?.flag, "aria-hidden": "true" })
                   ] : null,
                   $h("span", { "style": `flex: 1; font-weight: ${$t(it?.w)};` },
                     $t(it?.label)
@@ -612,8 +616,11 @@ return {};
                   ($l($v.pv?.mkd)).map((m) => [
                     $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
                       $h("span", { "style": "display: flex; justify-content: space-between; gap: 6px; font-size: 11px;" },
-                        $h("span", { "style": "color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
-                          $t(m?.l)
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--ink-soft);" },
+                          $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
+                          $h("span", { "style": "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                            $t(m?.l)
+                          )
                         ),
                         $h("span", { "style": "flex-shrink: 0; font-weight: 600; white-space: nowrap;" },
                           $t(m?.p)
@@ -626,8 +633,10 @@ return {};
                   ])
                 ] : null,
                 ($v.pv?.noMk) ? [
-                  $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
-                    $t($v.pv?.mkText)
+                  $h("span", { "style": "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" },
+                    ($l($v.pv?.mks)).map((k) => [
+                      $h("span", { "class": "sw-flag", "data-c": k?.c, "title": k?.t, "aria-hidden": "true" })
+                    ])
                   )
                 ] : null
               )

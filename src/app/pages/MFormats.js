@@ -34,15 +34,16 @@ export default class MFormats extends DCLogic {
       const pct = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %');
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? 'aujourd’hui' : 'il y a ' + d + ' j'; };
-      const ML = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
+      const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const ML = new Proxy({}, { get: (o, c) => MKN(String(c)) });
       const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
-      const flags = (cs) => (cs || []).filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
+      const flags = (cs) => (cs || []).filter((c) => c).slice(0, 3).map((c) => ({ c }));
       const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const appOf = (a) => Object.assign({ name: a.name }, ico(a));
       const card = (f, i) => { const hook = f.kind === 'hook'; const ms = f.members || [];
         return { rank: String(i + 1).padStart(2, '0'), kind: hook ? 'Accroche' : 'Son', ico: hook ? TXT : SON, isHook: hook, isSon: !hook, quote: hook ? '« ' + f.label + ' »' : f.label, raw: f.label,
-          niche: f.niche || '', mk: f.market && f.market !== 'XX' ? [{ c: f.market }] : [], n: f.accounts, ok: f.wins + '/' + f.n, okText: f.wins + ' sur ' + f.n,
+          niche: f.niche || '', mk: f.market ? [{ c: f.market }] : [], n: f.accounts, ok: f.wins + '/' + f.n, okText: f.wins + ' sur ' + f.n,
           med: f.medX ? xf(f.medX) : '—', max: nf(f.maxViews || 0), apps: (f.apps || []).slice(0, 2).map(appOf),
           app0: f.apps && f.apps[0] ? appOf(f.apps[0]) : { name: '', logo: '', nologo: true, blank: 'sw-app-blank' },
           line: [names(f.apps), f.accounts + ' comptes', f.niche].filter(Boolean).join(' · '), last: f.lastPostAt ? 'repris le ' + day(f.lastPostAt) : '',
@@ -149,9 +150,9 @@ export default class MFormats extends DCLogic {
                 $t($v.h?.glossText)
               )
             ] : null,
-            $h("div", { "style": "position: relative; height: 196px;" },
+            $h("div", { "style": "position: relative; height: 196px; display: flex; flex-wrap: nowrap; align-items: flex-start; justify-content: center; padding-right: 6px;" },
               ($l($v.fan)).map((c) => [
-                $h("a", { "href": c?.href, "aria-label": "Ouvrir la vidéo", "class": "sw-video", "style": `display: inline-block; vertical-align: top; width: 84px; margin-right: -6px; transform: translateY(${$t(c?.t)}px) rotate(${$t(c?.r)}deg); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);` },
+                $h("a", { "href": c?.href, "aria-label": "Ouvrir la vidéo", "class": "sw-video", "style": `display: block; flex: 0 1 84px; min-width: 0; margin-right: -6px; transform: translateY(${$t(c?.t)}px) rotate(${$t(c?.r)}deg); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);` },
                   $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
                   $h("span", { "class": "sw-video-shade" }),
                   $h("span", { "style": "position: absolute; left: 7px; bottom: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #FFFFFF;" },
@@ -249,9 +250,7 @@ export default class MFormats extends DCLogic {
                     $t(f?.kind)
                   ),
                   ($l(f?.mk)).map((m) => [
-                    $h("span", { "class": "sw-flag", "style": "width: 22px; height: 16px; font-size: 8px;" },
-                      $t(m?.c)
-                    )
+                    $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" })
                   ]),
                   $h("span", { "style": "margin-left: auto; font-size: 12px; color: var(--ink-faint);" },
                     $t(f?.niche)

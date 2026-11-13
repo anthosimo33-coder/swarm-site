@@ -26,16 +26,23 @@ export default class MCreateurs extends DCLogic {
     const P = this.props || {};
     const D = P.data;
     const site = D !== undefined || typeof P.get === 'function';
-    const market = st.market || (D && D.market) || 'FR';
+    // Les marchés : ceux du document (du plus fourni au moins fourni), sinon les cinq de l'exemple ; ?m= n'est retenu que s'il en fait partie.
+    const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+    const MKD = D && Array.isArray(D.markets) && D.markets.length ? D.markets : null;
+    const MKC = MKD ? MKD.map((m) => m[0]) : ['FR', 'US', 'MX', 'ES', 'BR'];
+    const qm = String((P.query && P.query.m) || '').toUpperCase();
+    const market = st.market || (MKC.indexOf(qm) >= 0 ? qm : '') || (D && D.market) || MKC[0] || 'FR';
     const active = !!st.active, lim = st.lim || LIM;
-    const PH = { FR: 'en France', US: 'anglophones', MX: 'en Amérique latine', ES: 'en Espagne', BR: 'au Brésil et au Portugal', XX: 'dans d’autres langues' };
+    const PH0 = { FR: 'en France', US: 'anglophones', MX: 'en Amérique latine', ES: 'en Espagne', BR: 'au Brésil et au Portugal', DE: 'germanophones', SA: 'dans le monde arabe', RU: 'russophones' };
+    // Les autres pays : « en <pays> » à partir du nom du marché (Italie, Indonésie…).
+    const PH = new Proxy(PH0, { get: (t, c) => t[c] || ((MKD || []).filter((m) => m[0] === c).map((m) => 'en ' + (m[1] || MKN(c)))[0]) || (MKN(String(c)) ? 'en ' + MKN(String(c)) : '') });
     let src = { rows: b.rows, cards: b.cards, live: b.live }, none = market !== 'FR', total = null, tip = { on: true, text: '@paul.crown4 : 104 abonnés, 33 k vues médianes.' };
     let MK = b.mkt || [];
     if (!site && none) src = { rows: [], cards: [], live: [] };
     if (site) {
       // Sur le site : les créateurs d'un marché (document « creators:<marché> ») ; un autre marché se lit avec get(),
       // et la liste d'avant reste affichée pendant qu'il charge. Lu comme CreateursA.
-      MK = [['FR', 'France'], ['US', 'Anglophones'], ['MX', 'Amérique latine'], ['ES', 'Espagne'], ['BR', 'Brésil et Portugal'], ['XX', 'Autres langues']].map((x) => ({ c: x[0], l: x[1] }));
+      MK = (MKD || [['FR', 'France'], ['US', 'Anglophones'], ['MX', 'Amérique latine'], ['ES', 'Espagne'], ['BR', 'Brésil et Portugal']]).map((x) => ({ c: x[0], l: x[1] || MKN(x[0]) || x[0], n: x[2] }));
       let doc = D && D.market === market ? D : (P.get ? P.get('creators:' + market) : null);
       if (doc === undefined) doc = this.lastDoc === undefined ? null : this.lastDoc;
       else this.lastDoc = doc;
@@ -66,7 +73,7 @@ export default class MCreateurs extends DCLogic {
     const cardsAll = pool(src.cards).map((c) => Object.assign({ href: '/app/createurs/zinedine.gsbb' }, c));
     const shownAll = b.rows ? rowsAll : cardsAll;
     const more = shownAll.length - lim;
-    return { mkt: MK.map((m) => Object.assign({}, m, { flag: m.c === 'XX' ? '' : m.c, on: m.c === market ? 'true' : 'false', pick: () => this.setState({ market: m.c, lim: LIM }) })),
+    return { mkt: MK.map((m) => Object.assign({}, m, { flag: m.c, on: m.c === market ? 'true' : 'false', pick: () => this.setState({ market: m.c, lim: LIM }) })),
       rows: rowsAll.slice(0, lim), cards: cardsAll.slice(0, lim), live: pool(src.live).map((c) => Object.assign({ href: '/app/createurs/zinedine.gsbb' }, c)), none, tip,
       hasMore: more > 0, moreLabel: 'Voir ' + Math.min(LIM, more) + ' comptes de plus', showMore: () => this.setState({ lim: lim + LIM }),
       activeOn: active ? 'true' : 'false', toggleActive: () => this.setState({ active: !active, lim: LIM }),
@@ -129,11 +136,7 @@ export default class MCreateurs extends DCLogic {
           $h("div", { "class": "m-fc-row" },
             ($l($v.mkt)).map((m) => [
               $h("button", { "class": "m-chip", "type": "button", "aria-pressed": m?.on, "onClick": m?.pick },
-                (m?.flag) ? [
-                  $h("span", { "class": "sw-flag", "style": "width: 24px; height: 18px; font-size: 9px;" },
-                    $t(m?.c)
-                  )
-                ] : null,
+                $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
                 $t(m?.l)
               )
             ])

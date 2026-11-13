@@ -56,9 +56,10 @@ export default class MFicheCreateur extends DCLogic {
       const pct = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %');
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? 'aujourd’hui' : 'il y a ' + d + ' j'; };
-      const ML = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
+      const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const ML = new Proxy({}, { get: (o, c) => MKN(String(c)) });
       const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
-      const flags = (cs) => (cs || []).filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
+      const flags = (cs) => (cs || []).filter((c) => c).slice(0, 3).map((c) => ({ c }));
       const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const DAY = 86400000;
@@ -75,7 +76,7 @@ export default class MFicheCreateur extends DCLogic {
         fans: typeof D.fans === 'number' ? big(D.fans) : '—', med: D.median ? big(D.median) : '—', p7: n7 ? n7 + (n7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j',
         best: top ? nf(top.views) : '—', bestX: top && top.x ? xf(top.x) + ' sa normale' : (top ? day(top.publishedAt) : ''),
         app: a ? ico(a) : { logo: '', nologo: true, blank: 'sw-app-blank' }, hasApp: !!a, appLine: a ? 'Pousse ' + a.name : '', niche: (a && a.niche) || '',
-        flag: D.market && D.market !== 'XX' ? D.market : '', tt: 'https://www.tiktok.com/@' + D.handle,
+        flag: D.market || '', tt: 'https://www.tiktok.com/@' + D.handle,
         hasTip: hits.length > 0 && V.length > 1, tipB: hits.length + (hits.length > 1 ? ' vidéos' : ' vidéo') + ' sur ' + V.length + ' à plus de 10× sa normale,',
         tipT: hits.length ? (hits.length > 1 ? 'la dernière le ' : 'le ') + day(hits[0].publishedAt) + '.' : '', nv: String(V.length) });
       vids = V.map((x) => { const hit = x.x >= 10;
@@ -159,9 +160,7 @@ export default class MFicheCreateur extends DCLogic {
               )
             ] : null,
             ($v.z?.flag) ? [
-              $h("span", { "class": "sw-flag" },
-                $t($v.z?.flag)
-              )
+              $h("span", { "class": "sw-flag", "data-c": $v.z?.flag, "aria-hidden": "true" })
             ] : null
           ),
           $h("span", { "style": "display: flex; gap: 6px;" },

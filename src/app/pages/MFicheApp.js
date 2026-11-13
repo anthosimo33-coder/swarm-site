@@ -70,9 +70,10 @@ export default class MFicheApp extends DCLogic {
       const pct = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %');
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? 'aujourd’hui' : 'il y a ' + d + ' j'; };
-      const ML = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
+      const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const ML = new Proxy({}, { get: (o, c) => MKN(String(c)) });
       const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
-      const flags = (cs) => (cs || []).filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
+      const flags = (cs) => (cs || []).filter((c) => c).slice(0, 3).map((c) => ({ c }));
       const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const hasD = D.weekDelta !== null && D.weekDelta !== undefined;
@@ -89,8 +90,8 @@ export default class MFicheApp extends DCLogic {
       fv = (D.videos || []).slice(0, 6).map((v) => ({ src: v.cover || '', v: nf(v.views), h: '@' + v.handle, age: ago(v.publishedAt), href: '/app/videos/' + v.id }));
       ff = (D.formats || []).slice(0, 4).map((f) => ({ ico: f.kind === 'sound' ? SON : TXT, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         m: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', o: nf(f.maxViews || 0) + ' vues au mieux', href: '/app/formats/' + f.id }));
-      fm = (D.markets || []).map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: ML[c] || c, v: nf((D.views30 || 0) * p / 100), p: p + ' %', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
-      fc = (D.creators || []).slice(0, 6).map((c) => ({ av: c.avatar || '', noav: true, h: '@' + c.handle, mk: c.market && c.market !== 'XX' ? c.market : '',
+      fm = (D.markets || []).map(([c, p], i) => ({ c, l: ML[c] || c, v: nf((D.views30 || 0) * p / 100), p: p + ' %', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
+      fc = (D.creators || []).slice(0, 6).map((c) => ({ av: c.avatar || '', noav: true, h: '@' + c.handle, mk: c.market || '',
         s: nf(c.fans || 0) + ' abonnés' + (c.median ? ' · ' + nf(c.median) + ' vues médianes' : ''), page: !!c.page, nopage: !c.page, href: '/app/createurs/' + c.handle }));
       secs = secs.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || (D.videos || []).length), String((D.formats || []).length), (D.accounts || 0).toLocaleString('en-US').replace(/,/g, '\u202f')][i] || '' }));
       // Rang : dans sa niche (document « apps », toujours chargé), sinon parmi toutes les apps du Radar.
@@ -536,9 +537,7 @@ export default class MFicheApp extends DCLogic {
             ($l($v.fm)).map((m) => [
               $h("span", { "style": "display: flex; flex-direction: column; gap: 5px;" },
                 $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 13px;" },
-                  $h("span", { "class": "sw-flag", "style": "width: 24px; height: 18px; font-size: 9px;" },
-                    $t(m?.c)
-                  ),
+                  $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
                   $h("span", { "style": "flex: 1; color: var(--ink-soft);" },
                     $t(m?.l)
                   ),
@@ -587,9 +586,7 @@ export default class MFicheApp extends DCLogic {
                           $t(c?.h)
                         ),
                         (c?.mk) ? [
-                          $h("span", { "class": "sw-flag", "style": "width: 22px; height: 16px; font-size: 8px;" },
-                            $t(c?.mk)
-                          )
+                          $h("span", { "class": "sw-flag", "data-c": c?.mk, "aria-hidden": "true" })
                         ] : null
                       ),
                       $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
@@ -622,9 +619,7 @@ export default class MFicheApp extends DCLogic {
                           $t(c?.h)
                         ),
                         (c?.mk) ? [
-                          $h("span", { "class": "sw-flag", "style": "width: 22px; height: 16px; font-size: 8px;" },
-                            $t(c?.mk)
-                          )
+                          $h("span", { "class": "sw-flag", "data-c": c?.mk, "aria-hidden": "true" })
                         ] : null
                       ),
                       $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
