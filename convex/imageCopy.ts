@@ -116,15 +116,17 @@ export async function copyImage(ctx: ActionCtx, key: string, source: string) {
     let url = await imageUrl(source);
     if (!url) return null;
     let res = await fetch(url, { headers: { "User-Agent": UA } });
-    // Lien signé expiré : la page publique de la vidéo (TikTok ou Instagram) en donne un neuf.
-    if (!res.ok && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
+    // Lien signé expiré, ou image en HEIC (Chrome ne l'affiche pas, la réduction ne la lit pas) :
+    // la page publique de la vidéo (TikTok ou Instagram) donne une image neuve en JPEG.
+    const heic = (t: string | null) => /hei[cf]/i.test(t ?? "");
+    if ((!res.ok || heic(res.headers.get("content-type"))) && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
       const id = key.slice(2);
       url = /^\d+$/.test(id) ? await tiktokCover("tiktok", id) : id.startsWith("ig:") ? await instagramCover(id.slice(3)) : null;
       if (!url) return null;
       res = await fetch(url, { headers: { "User-Agent": UA } });
     }
     const type = res.headers.get("content-type") ?? "";
-    if (!res.ok || !type.startsWith("image/")) return null;
+    if (!res.ok || !type.startsWith("image/") || heic(type)) return null; // jamais de HEIC rangé
     const buf = await res.arrayBuffer();
     if (buf.byteLength === 0 || buf.byteLength > MAX_IMAGE_BYTES) return null;
     const small = await shrink(buf, type, key);

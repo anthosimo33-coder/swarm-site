@@ -1,24 +1,56 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { internalMutation, internalQuery, type QueryCtx } from "./_generated/server";
 
-/** Toutes les miniatures déjà recopiées : clé -> URL servie par Swarm. */
-export const mediaMap = internalQuery({
-  args: {},
-  handler: async (ctx) => {
-    const out: Record<string, string> = {};
-    for await (const m of ctx.db.query("media")) out[m.key] = m.url;
-    return out;
+/**
+ * Les images déjà recopiées, page par page : [clé, URL servie par Swarm].
+ * (Une valeur Convex a au plus 1 024 champs et 8 192 éléments : jamais tout d'un coup.)
+ */
+export const mediaPage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("media").paginate({ cursor, numItems: 4000 });
+    return { items: r.page.map((m) => [m.key, m.url] as [string, string]), cursor: r.continueCursor, done: r.isDone };
   },
 });
+
+/** Une image rangée en HEIC (Chrome ne l'affiche pas) compte comme absente : elle sera recopiée. */
+async function usable(ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null) {
+  if (!row) return false;
+  const file = await ctx.db.system.get(row.storageId);
+  return !!file && !/hei[cf]/i.test(file.contentType ?? "");
+}
 
 /** Une image rangée (ou son dernier échec). */
 export const mediaGet = internalQuery({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
     const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", key)).first();
-    if (row) return { url: row.url, missAt: null };
+    if (row && (await usable(ctx, row))) return { url: row.url, missAt: null };
     const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
     return { url: null, missAt: miss?.at ?? null };
+  },
+});
+
+/** Les miniatures introuvables, page par page : [clé, date du dernier essai]. */
+export const missPage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("mediaMiss").paginate({ cursor, numItems: 4000 });
+    return { items: r.page.map((m) => [m.key, m.at] as [string, number]), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+/** Note des miniatures introuvables (synchro). */
+export const markMisses = internalMutation({
+  args: { keys: v.array(v.string()) },
+  handler: async (ctx, { keys }) => {
+    const now = Date.now();
+    for (const key of keys) {
+      const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
+      if (miss) await ctx.db.patch(miss._id, { at: now });
+      else await ctx.db.insert("mediaMiss", { key, at: now });
+    }
   },
 });
 
@@ -36,7 +68,7 @@ export const coverLookup = internalQuery({
   args: { id: v.string() },
   handler: async (ctx, { id }) => {
     const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", `v:${id}`)).first();
-    if (row) return { url: row.url, handle: null };
+    if (row && (await usable(ctx, row))) return { url: row.url, handle: null };
     const page = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", `video:${id}`)).first();
     const handle = (page?.data as { handle?: string } | undefined)?.handle;
     return { url: null, handle: handle || null };
@@ -58,6 +90,20 @@ export const saveMedia = internalMutation({
       const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", it.key)).first();
       if (miss) await ctx.db.delete(miss._id);
     }
+  },
+});
+
+/** Les images rangées en HEIC (avant le 13/11 midi), page par page : Chrome ne les affiche pas. */
+export const heicPage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("media").paginate({ cursor, numItems: 2000 });
+    const keys: string[] = [];
+    for (const m of r.page) {
+      const file = await ctx.db.system.get(m.storageId);
+      if (file && /hei[cf]/i.test(file.contentType ?? "")) keys.push(m.key);
+    }
+    return { keys, cursor: r.continueCursor, done: r.isDone };
   },
 });
 
@@ -110,9 +156,14 @@ export const saveBoards = internalMutation({
   },
 });
 
+/** Démarre un passage ; null si un autre tourne déjà (lancé il y a moins de 12 min et pas fini). */
 export const startRun = internalMutation({
   args: {},
-  handler: async (ctx) => ctx.db.insert("syncRuns", { startedAt: Date.now() }),
+  handler: async (ctx) => {
+    const last = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").first();
+    if (last && !last.finishedAt && Date.now() - last.startedAt < 12 * 60_000) return null;
+    return ctx.db.insert("syncRuns", { startedAt: Date.now() });
+  },
 });
 
 export const endRun = internalMutation({

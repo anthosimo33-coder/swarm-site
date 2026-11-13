@@ -114,7 +114,15 @@ export function buildBoards(
   now: number,
   mediaUrl: (key: string) => string | null,
   storeOf: (slug: string) => string | null = () => null,
+  opts: {
+    /** Miniature introuvable récemment (vidéo supprimée, compte privé) : la vidéo n'apparaît pas. */
+    missing?: (key: string) => boolean;
+    /** Adresse qui sert une miniature pas encore copiée (/cover/<id>, copie à la première vue). */
+    coverUrl?: (videoId: string) => string | null;
+  } = {},
 ): { boards: Boards; need: MediaNeed; used: Set<string> } {
+  const missing = opts.missing ?? (() => false);
+  const coverUrl = opts.coverUrl ?? (() => null);
   const boards: Boards = new Map();
   const need: MediaNeed = new Map();
   const used = new Set<string>(); // clés media citées par un document : le reste peut être effacé
@@ -147,16 +155,32 @@ export function buildBoards(
     const med = acc?.medianViews;
     return med && med > 0 ? round(v.views / med, 1) : null;
   };
-  /** Miniature : la copie rangée, sinon la source à copier (lien du relevé, ou page publique de la vidéo TikTok). */
+  /**
+   * Miniature : la copie rangée chez Swarm ; sinon, si la vidéo existe toujours, l'adresse qui la
+   * copie à la première vue (et la copie est demandée pour ce passage) ; null si elle est introuvable.
+   * RÈGLE (13/11) : une vidéo sans image (supprimée, compte privé) n'apparaît nulle part : les listes
+   * ne gardent que les vidéos dont la miniature n'est pas null.
+   */
   const cover = (videoId: string, source: string | null | undefined, handle: string | null | undefined) => {
     const key = coverKey(videoId);
     used.add(key);
     const stored = mediaUrl(key);
     if (stored) return stored;
-    if (source) need.set(key, source);
+    if (missing(key)) return null;
+    if (source && !/\.heic/i.test(source)) need.set(key, source); // HEIC : Chrome ne l'affiche pas, la page donne du JPEG
     else if (/^\d+$/.test(videoId)) need.set(key, `ttpage:${handle ?? ""}/${videoId}`);
     else if (videoId.startsWith("ig:")) need.set(key, `igpage:${videoId.slice(3)}`);
-    return source ?? null;
+    return coverUrl(videoId);
+  };
+  /** Les n premières vidéos (dans l'ordre donné) qui ont une image ; la copie des suivantes est demandée. */
+  const withImage = <T,>(vs: T[], n: number, has: (v: T) => boolean): T[] => {
+    const out: T[] = [];
+    for (const v of vs.slice(0, Math.max(n * 3, n + 10))) if (has(v) && out.length < n) out.push(v);
+    return out;
+  };
+  const trackedHasImage = (v: RVideo) => {
+    const s = signalByVideo.get(v.videoId);
+    return cover(v.videoId, v.coverUrl ?? s?.coverUrl, accountById.get(v.accountId)?.handle ?? s?.authorHandle) !== null;
   };
   const card = (v: RVideo): VideoCard => {
     const s = signalByVideo.get(v.videoId);
@@ -200,8 +224,8 @@ export function buildBoards(
       .map(([m, vs]) => [m, views30 ? Math.round((vs.reduce((n, v) => n + v.views, 0) / views30) * 100) : 0] as [string, number])
       .filter(([, p]) => p > 0)
       .sort((p, q) => q[1] - p[1]);
-    const top = [...recent].sort((p, q) => q.views - p.views);
-    use(top.slice(0, 12));
+    const top = withImage([...recent].sort((p, q) => q.views - p.views), 12, trackedHasImage);
+    use(top);
     return {
       slug: a.slug, name: a.name, niche: nicheOf(a.name), icon: icon(a),
       accounts: accs.length, videosPerWeek: week.length,
@@ -237,10 +261,12 @@ export function buildBoards(
     .filter((f) => f.accountCount >= 3 && now - f.lastPostAt <= 21 * DAY)
     .map((f) => {
       const xs = f.members.map(accountX).filter((x): x is number => x !== null);
-      const members = [...f.members].sort((p, q) => q.views - p.views).map((m) => {
+      const sorted = [...f.members].sort((p, q) => q.views - p.views);
+      const coverOf = (m: RFormatMember) => cover(m.videoId, trackedByVideo.get(m.videoId)?.coverUrl ?? signalByVideo.get(m.videoId)?.coverUrl, m.handle);
+      // Les reprises montrées : seulement celles qui ont une image (les chiffres portent sur toutes).
+      const members = withImage(sorted, sorted.length, (m) => coverOf(m) !== null).map((m) => {
         const tv = trackedByVideo.get(m.videoId);
-        return {
-          _video: tv ?? memberVideo(m), handle: m.handle, videoId: m.videoId, views: m.views, x: accountX(m), publishedAt: m.publishedAt, cover: cover(m.videoId, tv?.coverUrl ?? signalByVideo.get(m.videoId)?.coverUrl, m.handle) };
+        return { _video: tv ?? memberVideo(m), handle: m.handle, videoId: m.videoId, views: m.views, x: accountX(m), publishedAt: m.publishedAt, cover: coverOf(m) };
       });
       const appsOf = [...new Set(f.appIds.map((id) => canonical(id)?.id).filter(Boolean) as string[])].map(appMini).filter(Boolean);
       return {
@@ -250,6 +276,7 @@ export function buildBoards(
         lastPostAt: f.lastPostAt, firstSeenAt: f.firstSeenAt, members,
       };
     })
+    .filter((f) => f.members.length > 0) // un format sans aucune reprise montrable n'apparaît pas
     .sort((p, q) => q.accounts - p.accounts || (q.medX ?? 0) - (p.medX ?? 0));
   // Chaque reprise montrée mène à sa vidéo : elle a sa page dans le lecteur.
   const shown = formatRows.slice(0, 150);
@@ -265,7 +292,7 @@ export function buildBoards(
   // ── Créateurs, par marché, et la fiche de chaque créateur ──
   const creatorRow = (t: RTracked) => {
     const vids = (videosByAccount.get(t.id) ?? []).sort((p, q) => q.publishedAt - p.publishedAt);
-    const best = [...vids].filter((v) => now - v.publishedAt <= 30 * DAY).sort((p, q) => q.views - p.views).slice(0, 3);
+    const best = withImage([...vids].filter((v) => now - v.publishedAt <= 30 * DAY).sort((p, q) => q.views - p.views), 3, trackedHasImage);
     use(best);
     const a = canonical(t.appId);
     return {
@@ -284,7 +311,7 @@ export function buildBoards(
   for (const c of creators) {
     if (!creatorPages.has(c.handle)) continue;
     const t = trackedByHandle.get(c.handle)!;
-    const vids = c._vids.slice(0, 15);
+    const vids = withImage(c._vids, 15, trackedHasImage);
     use(vids);
     const fmts = (formatsByAccount.get(t.id) ?? []).map((x) => x.f).filter((f, i, arr) => arr.indexOf(f) === i && f.accountCount >= 3);
     const { _vids, ...row } = c;
@@ -309,9 +336,11 @@ export function buildBoards(
   }
 
   // ── Vidéos qui décollent : alertes et accueil ──
-  const hot = raw.signals
-    .filter((s) => !s.unavailable && s.multiplier && now - s.publishedAt <= 7 * DAY)
-    .sort((p, q) => (q.multiplier ?? 0) - (p.multiplier ?? 0));
+  const hot = withImage(
+    raw.signals.filter((s) => !s.unavailable && s.multiplier && now - s.publishedAt <= 7 * DAY).sort((p, q) => (q.multiplier ?? 0) - (p.multiplier ?? 0)),
+    40,
+    (s) => cover(s.videoId, s.coverUrl, s.authorHandle) !== null,
+  );
   const hotCards = hot.slice(0, 40).map((s) => {
     const a = canonical(s.appId);
     return {
