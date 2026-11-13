@@ -107,24 +107,27 @@ export default class MFormats extends DCLogic {
             )
           )
         ),
-        $h("div", { "style": "padding: 14px 20px 0;" },
-          $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Type", "style": "display: flex;" },
+        $h("section", { "aria-label": "Type et niche", "class": "m-fc" },
+          $h("div", { "class": "m-tc is-flat", "role": "tablist", "aria-label": "Type" },
             ($l($v.types)).map((t) => [
-              $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": t?.on, "onClick": t?.pick, "style": "flex: 1; min-height: 44px;" },
+              $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": t?.on, "onClick": t?.pick },
+                $h("span", { "class": "m-ic", "data-i": t?.l, "aria-hidden": "true" }),
                 $t(t?.l)
               )
             ])
-          )
-        ),
-        $h("div", { "style": "padding-top: 12px; display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
-          ($l($v.niches)).map((c) => [
-            $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": c?.on, "onClick": c?.pick, "style": "height: 44px; flex-shrink: 0;" },
-              $t(c?.l),
-              $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },
-                $t(c?.n)
+          ),
+          $h("span", { "aria-hidden": "true", "class": "m-fc-line" }),
+          $h("div", { "class": "m-fc-row" },
+            ($l($v.niches)).map((c) => [
+              $h("button", { "class": "m-chip", "type": "button", "aria-pressed": c?.on, "onClick": c?.pick },
+                $h("span", { "class": "m-ic", "data-i": c?.l, "aria-hidden": "true", "style": "width: 14px; height: 14px;" }),
+                $t(c?.l),
+                $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },
+                  $t(c?.n)
+                )
               )
-            )
-          ])
+            ])
+          )
         ),
         ($v.hasHero) ? [
           $h("section", { "class": "sw-card is-featured", "style": "margin: 16px 20px 0; border-radius: 26px; padding: 22px 20px 24px; overflow: hidden; display: flex; flex-direction: column; gap: 16px;" },
@@ -211,7 +214,10 @@ export default class MFormats extends DCLogic {
           )
         ] : null,
         $h("div", { "style": "padding: 26px 20px 12px;" },
-          $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+          $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+            $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+              $h("path", { "d": "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ),
             "Les autres formats de la semaine"
           )
         ),

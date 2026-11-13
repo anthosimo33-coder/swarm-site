@@ -204,7 +204,8 @@ export default class MFicheApp extends DCLogic {
                 $t($v.app?.name)
               ),
               $h("span", { "style": "display: flex; align-items: center; gap: 6px; flex-wrap: wrap;" },
-                $h("span", { "class": "sw-badge", "style": "height: 24px;" },
+                $h("span", { "class": "m-tagn" },
+                  $h("span", { "class": "m-ic", "data-i": $v.app?.niche, "aria-hidden": "true" }),
                   $t($v.app?.niche)
                 ),
                 ($v.dash?.rankBadge) ? [
@@ -250,10 +251,11 @@ export default class MFicheApp extends DCLogic {
             )
           )
         ),
-        $h("div", { "style": "margin-top: 18px; border-bottom: 1px solid var(--line);" },
-          $h("div", { "class": "sw-tabs sw-tabs-line", "role": "tablist", "style": "border-bottom: 0; gap: 22px; overflow-x: auto; padding: 0 20px; scrollbar-width: none;" },
+        $h("div", { "style": "margin: 18px 20px 0;" },
+          $h("div", { "class": "m-tc is-scroll", "role": "tablist" },
             ($l($v.secs)).map((s) => [
               $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "href": s?.href, "onClick": s?.pick, "style": "flex-shrink: 0; display: inline-flex; gap: 6px; align-items: center; text-decoration: none;" },
+                $h("span", { "class": "m-ic", "data-i": s?.l, "aria-hidden": "true" }),
                 $t(s?.l),
                 $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
                   $t(s?.n)
@@ -265,7 +267,10 @@ export default class MFicheApp extends DCLogic {
         $h("div", { "id": "m-vues", "style": "scroll-margin-top: 72px; padding: 18px 20px 0; display: flex; flex-direction: column; gap: 12px;" },
           $h("section", { "aria-labelledby": "mf-vr", "style": "border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: 18px 18px 14px; display: flex; flex-direction: column;" },
             $h("div", { "style": "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px;" },
-              $h("h2", { "id": "mf-vr", "style": "margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;" },
+              $h("h2", { "id": "mf-vr", "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M3 3v18h18M7 15l4-4 3 3 5-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Vues par semaine"
               ),
               $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--ink-faint); white-space: nowrap;" },
@@ -315,7 +320,10 @@ export default class MFicheApp extends DCLogic {
             )
           ),
           $h("section", { "aria-labelledby": "mf-place", "style": "border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: 18px; display: flex; flex-direction: column;" },
-            $h("h2", { "id": "mf-place", "style": "margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em;" },
+            $h("h2", { "id": "mf-place", "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em;" },
+              $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.5 14l-1.5 7 5-3 5 3-1.5-7", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Sa place"
             ),
             $h("span", { "style": "margin-top: 12px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;" },
@@ -344,7 +352,10 @@ export default class MFicheApp extends DCLogic {
             )
           ),
           $h("section", { "aria-labelledby": "mf-res", "style": "border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: 18px; display: flex; flex-direction: column;" },
-            $h("h2", { "id": "mf-res", "style": "margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em;" },
+            $h("h2", { "id": "mf-res", "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em;" },
+              $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Son réseau"
             ),
             $h("span", { "style": "margin-top: 12px; display: flex; align-items: baseline; gap: 8px;" },
@@ -379,7 +390,10 @@ export default class MFicheApp extends DCLogic {
           ),
           $h("section", { "aria-labelledby": "mf-top", "style": "border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: 18px; display: flex; flex-direction: column; gap: 14px;" },
             $h("div", { "style": "display: flex; align-items: center; justify-content: space-between;" },
-              $h("h2", { "id": "mf-top", "style": "margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em;" },
+              $h("h2", { "id": "mf-top", "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Sa vidéo n°1"
               ),
               $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-faint);" },
@@ -412,7 +426,10 @@ export default class MFicheApp extends DCLogic {
             ] : null,
             $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;" },
               $h("div", { "style": "display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--track);" },
-                $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-faint);" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   "Vidéos · 30 j"
                 ),
                 $h("span", { "style": "font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.03em;" },
@@ -420,7 +437,10 @@ export default class MFicheApp extends DCLogic {
                 )
               ),
               $h("div", { "style": "display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--track);" },
-                $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-faint);" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M13 2L4 14h7l-1 8 9-12h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   "Meilleure · 7 j"
                 ),
                 $h("span", { "style": "font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: var(--accent);" },
@@ -433,7 +453,10 @@ export default class MFicheApp extends DCLogic {
         ($v.hasFv) ? [
           $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 12px;" },
             $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
-              $h("h2", { "id": "m-vid", "style": "scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+              $h("h2", { "id": "m-vid", "style": "display: flex; align-items: center; gap: 8px; scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Leurs vidéos qui cartonnent"
               )
             ),
@@ -463,7 +486,10 @@ export default class MFicheApp extends DCLogic {
         ($v.hasFf) ? [
           $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 10px;" },
             $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
-              $h("h2", { "id": "m-fmt", "style": "scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+              $h("h2", { "id": "m-fmt", "style": "display: flex; align-items: center; gap: 8px; scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Les formats qui cartonnent chez eux"
               )
             ),
@@ -499,7 +525,10 @@ export default class MFicheApp extends DCLogic {
         ] : null,
         $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 10px;" },
           $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
-            $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+            $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+              $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Où leurs vues se font"
             )
           ),
@@ -530,7 +559,10 @@ export default class MFicheApp extends DCLogic {
         ($v.hasFc) ? [
           $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 10px;" },
             $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
-              $h("h2", { "id": "m-cr", "style": "scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+              $h("h2", { "id": "m-cr", "style": "display: flex; align-items: center; gap: 8px; scroll-margin-top: 72px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Les créateurs qui le poussent"
               )
             ),

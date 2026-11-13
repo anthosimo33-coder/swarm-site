@@ -63,7 +63,10 @@ export default class MCompte extends DCLogic {
           )
         ),
         $h("div", { "style": "padding: 24px 20px 0; display: flex; flex-direction: column; gap: 8px;" },
-          $h("span", { "style": "padding-left: 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+          $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding-left: 4px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+            $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+              $h("path", { "d": "M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ),
             "Accès"
           ),
           $h("div", { "style": "border-radius: 20px; background: var(--surface-raised); border: 1px solid var(--accent-edge); overflow: hidden;" },
@@ -83,7 +86,10 @@ export default class MCompte extends DCLogic {
           )
         ),
         $h("div", { "style": "padding: 24px 20px 0; display: flex; flex-direction: column; gap: 8px;" },
-          $h("span", { "style": "padding-left: 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+          $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding-left: 4px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+            $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+              $h("path", { "d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ),
             "Profil"
           ),
           $h("div", { "style": "border-radius: 20px; background: var(--surface-raised); border: 1px solid var(--line); overflow: hidden;" },

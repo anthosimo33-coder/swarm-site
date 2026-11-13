@@ -137,7 +137,10 @@ export default class MPalette extends DCLogic {
               ),
               $h("span", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;" },
                 $h("span", { "class": "sw-tile", "style": "padding: 10px 12px;" },
-                  $h("span", { "class": "sw-tile-label", "style": "min-height: 30px; line-height: 15px;" },
+                  $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; min-height: 30px; line-height: 15px;" },
+                    $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                      $h("path", { "d": "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ),
                     "Vues en 30 j"
                   ),
                   $h("span", { "class": "sw-tile-value", "style": "font-size: 18px;" },
@@ -145,7 +148,10 @@ export default class MPalette extends DCLogic {
                   )
                 ),
                 $h("span", { "class": "sw-tile", "style": "padding: 10px 12px;" },
-                  $h("span", { "class": "sw-tile-label", "style": "min-height: 30px; line-height: 15px;" },
+                  $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; min-height: 30px; line-height: 15px;" },
+                    $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                      $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ),
                     "Comptes qui le poussent"
                   ),
                   $h("span", { "class": "sw-tile-value", "style": "font-size: 18px;" },
@@ -227,7 +233,10 @@ export default class MPalette extends DCLogic {
             )
           ] : null,
           ($v.hasApps) ? [
-            $h("span", { "style": "display: block; padding: 18px 0 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+            $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 18px 0 4px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               $t($v.gApps)
             ),
             ($l($v.apps)).map((a) => [
@@ -257,7 +266,10 @@ export default class MPalette extends DCLogic {
             ])
           ] : null,
           ($v.hasFms) ? [
-            $h("span", { "style": "display: block; padding: 18px 0 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+            $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 18px 0 4px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               $t($v.gFms)
             ),
             ($l($v.fms)).map((f) => [
@@ -282,7 +294,10 @@ export default class MPalette extends DCLogic {
             ])
           ] : null,
           ($v.hasCrs) ? [
-            $h("span", { "style": "display: block; padding: 18px 0 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+            $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 18px 0 4px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               $t($v.gCrs)
             ),
             ($l($v.crs)).map((c) => [

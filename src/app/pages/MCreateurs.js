@@ -110,7 +110,7 @@ export default class MCreateurs extends DCLogic {
           $h("span", { "style": "font-size: 14px; color: var(--ink-muted);" },
             $t($v.countLabel)
           ),
-          $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Affichage" },
+          $h("div", { "class": "m-tc is-scroll", "role": "tablist", "aria-label": "Affichage" },
             $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "true", "href": "/app/createurs", "aria-label": "Vue liste", "style": "height: 44px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" },
               $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M4 6h16M4 12h16M4 18h16", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -125,22 +125,25 @@ export default class MCreateurs extends DCLogic {
             )
           )
         ),
-        $h("div", { "style": "padding-top: 12px; display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
-          ($l($v.mkt)).map((m) => [
-            $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": m?.on, "onClick": m?.pick, "style": "height: 44px; flex-shrink: 0; gap: 8px; padding: 0 14px 0 8px;" },
-              (m?.flag) ? [
-                $h("span", { "class": "sw-flag", "style": "width: 24px; height: 18px; font-size: 9px;" },
-                  $t(m?.c)
-                )
-              ] : null,
-              $t(m?.l)
+        $h("section", { "aria-label": "Marché et filtres", "class": "m-fc" },
+          $h("div", { "class": "m-fc-row" },
+            ($l($v.mkt)).map((m) => [
+              $h("button", { "class": "m-chip", "type": "button", "aria-pressed": m?.on, "onClick": m?.pick },
+                (m?.flag) ? [
+                  $h("span", { "class": "sw-flag", "style": "width: 24px; height: 18px; font-size: 9px;" },
+                    $t(m?.c)
+                  )
+                ] : null,
+                $t(m?.l)
+              )
+            ])
+          ),
+          $h("span", { "aria-hidden": "true", "class": "m-fc-line" }),
+          $h("div", { "class": "m-fc-row" },
+            $h("button", { "class": "m-chip", "type": "button", "aria-pressed": $v.activeOn, "onClick": $v.toggleActive },
+              $h("span", { "style": "width: 8px; height: 8px; border-radius: 50%; background: var(--accent);" }),
+              "Actifs cette semaine"
             )
-          ])
-        ),
-        $h("div", { "style": "padding-top: 10px; display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
-          $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": $v.activeOn, "onClick": $v.toggleActive, "style": "height: 44px; flex-shrink: 0; gap: 8px;" },
-            $h("span", { "style": "width: 8px; height: 8px; border-radius: 50%; background: var(--accent);" }),
-            "Actifs cette semaine"
           )
         ),
         $h("div", { "class": "sw-card", "style": "margin: 14px 20px 0; border-radius: 22px; padding: 2px 0;" },

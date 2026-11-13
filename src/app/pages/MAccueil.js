@@ -135,7 +135,10 @@ export default class MAccueil extends DCLogic {
         ] : null,
         $h("div", { "style": "padding-top: 28px; display: flex; flex-direction: column; gap: 12px;" },
           $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
-            $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+            $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+              $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M3 17l6-6 4 4 8-8M15 7h6v6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Ça explose"
             ),
             $h("a", { "class": "sw-more", "href": "/app/apps" },

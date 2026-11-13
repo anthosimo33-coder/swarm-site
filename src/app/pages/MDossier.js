@@ -205,7 +205,8 @@ export default class MDossier extends DCLogic {
           ] : null,
           ($l($v.secs)).map((g) => [
             $h("div", { "style": "padding: 22px 20px 10px; display: flex; align-items: baseline; gap: 8px;" },
-              $h("h2", { "style": "margin: 0; font-size: 17px; font-weight: 700;" },
+              $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 17px; font-weight: 700;" },
+                $h("span", { "class": "m-ic", "data-i": g?.title, "aria-hidden": "true", "style": "width: 16px; height: 16px;" }),
                 $t(g?.title)
               ),
               $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },

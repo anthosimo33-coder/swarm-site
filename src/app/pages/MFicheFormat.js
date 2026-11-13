@@ -126,7 +126,8 @@ export default class MFicheFormat extends DCLogic {
               ),
               $t($v.f?.kind)
             ),
-            $h("span", { "class": "sw-badge", "style": "height: 26px;" },
+            $h("span", { "class": "m-tagn" },
+              $h("span", { "class": "m-ic", "data-i": $v.f?.niche, "aria-hidden": "true" }),
               $t($v.f?.niche)
             ),
             ($v.f?.flag) ? [
@@ -155,7 +156,10 @@ export default class MFicheFormat extends DCLogic {
           ),
           ($v.f?.hasFr) ? [
             $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-              $h("span", { "style": "font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+              $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+                $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M4 5h8M8 3v2M5 9c1.5 3 4 5 7 6M11 5c-1 4-3.5 7-7 9M13 21l4-9 4 9M14.5 18h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "En français"
               ),
               $h("span", { "style": "font-size: 20px; font-weight: 600; color: var(--ink-soft);" },
@@ -189,7 +193,10 @@ export default class MFicheFormat extends DCLogic {
         ),
         $h("div", { "style": "padding: 18px 20px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;" },
           $h("span", { "class": "sw-tile" },
-            $h("span", { "class": "sw-tile-label" },
+            $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; " },
+              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M3 3v18h18M7 15l4-4 3 3 5-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "× la normale"
             ),
             $h("span", { "class": "sw-tile-value", "style": "color: var(--accent);" },
@@ -200,7 +207,10 @@ export default class MFicheFormat extends DCLogic {
             )
           ),
           $h("span", { "class": "sw-tile" },
-            $h("span", { "class": "sw-tile-label" },
+            $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; " },
+              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Réussite"
             ),
             $h("span", { "class": "sw-tile-value" },
@@ -211,7 +221,10 @@ export default class MFicheFormat extends DCLogic {
             )
           ),
           $h("span", { "class": "sw-tile" },
-            $h("span", { "class": "sw-tile-label" },
+            $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; " },
+              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Repris par"
             ),
             $h("span", { "class": "sw-tile-value" },
@@ -222,7 +235,10 @@ export default class MFicheFormat extends DCLogic {
             )
           ),
           $h("span", { "class": "sw-tile" },
-            $h("span", { "class": "sw-tile-label" },
+            $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; " },
+              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M13 2L4 14h7l-1 8 9-12h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Meilleure reprise"
             ),
             $h("span", { "class": "sw-tile-value" },
@@ -234,7 +250,10 @@ export default class MFicheFormat extends DCLogic {
           )
         ),
         $h("div", { "style": "padding: 26px 20px 12px;" },
-          $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+          $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+            $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+              $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ),
             $t($v.f?.repsTitle)
           )
         ),
@@ -270,7 +289,10 @@ export default class MFicheFormat extends DCLogic {
           )
         ] : null,
         $h("div", { "style": "padding: 26px 20px 0; display: flex; flex-direction: column; gap: 10px;" },
-          $h("h2", { "style": "margin: 0 0 4px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+          $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+            $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+              $h("path", { "d": "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ),
             "Ce que les reprises ont en commun"
           ),
           ($l($v.common)).map((c) => [

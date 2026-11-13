@@ -197,10 +197,11 @@ export default class MAlertes extends DCLogic {
             )
           ] : null
         ),
-        $h("div", { "style": "margin-top: 6px; border-bottom: 1px solid var(--line);" },
-          $h("div", { "class": "sw-tabs sw-tabs-line", "role": "tablist", "style": "border-bottom: 0; padding: 0 20px; gap: 20px; overflow-x: auto; scrollbar-width: none;" },
+        $h("div", { "style": "margin-top: 6px;  padding: 0 20px;" },
+          $h("div", { "class": "m-tc is-scroll", "role": "tablist" },
             ($l($v.tabs)).map((t) => [
               $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": t?.on, "onClick": t?.pick, "style": "flex-shrink: 0; display: inline-flex; gap: 6px; align-items: center;" },
+                $h("span", { "class": "m-ic", "data-i": `a:${$t(t?.l)}`, "aria-hidden": "true" }),
                 $t(t?.l),
                 $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
                   $t(t?.n)
@@ -226,7 +227,10 @@ export default class MAlertes extends DCLogic {
         ] : null,
         ($l($v.groups)).map((g) => [
           $h("section", null,
-            $h("h2", { "style": "margin: 0; padding: 16px 20px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+            $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; padding: 16px 20px 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               $t(g?.g)
             ),
             ($l(g?.items)).map((a) => [
@@ -262,7 +266,10 @@ export default class MAlertes extends DCLogic {
         ]),
         $h("div", { "style": "padding: 28px 20px 0; display: flex; flex-direction: column; gap: 10px;" },
           $h("div", { "style": "display: flex; justify-content: space-between; align-items: baseline;" },
-            $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700;" },
+            $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700;" },
+              $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Tes alertes"
             )
           ),

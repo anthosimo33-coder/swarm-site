@@ -153,7 +153,8 @@ export default class MFicheCreateur extends DCLogic {
               )
             ] : null,
             ($v.z?.niche) ? [
-              $h("span", { "class": "sw-badge" },
+              $h("span", { "class": "m-tagn" },
+                $h("span", { "class": "m-ic", "data-i": $v.z?.niche, "aria-hidden": "true" }),
                 $t($v.z?.niche)
               )
             ] : null,
@@ -183,7 +184,10 @@ export default class MFicheCreateur extends DCLogic {
         ),
         $h("div", { "style": "padding: 14px 20px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;" },
           $h("span", { "class": "sw-tile" },
-            $h("span", { "class": "sw-tile-label" },
+            $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; " },
+              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Abonnés"
             ),
             $h("span", { "class": "sw-tile-value" },
@@ -191,7 +195,10 @@ export default class MFicheCreateur extends DCLogic {
             )
           ),
           $h("span", { "class": "sw-tile" },
-            $h("span", { "class": "sw-tile-label" },
+            $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; " },
+              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M3 3v18h18M7 15l4-4 3 3 5-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Vues médianes"
             ),
             $h("span", { "class": "sw-tile-value" },
@@ -202,7 +209,10 @@ export default class MFicheCreateur extends DCLogic {
             )
           ),
           $h("span", { "class": "sw-tile" },
-            $h("span", { "class": "sw-tile-label" },
+            $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; " },
+              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M3 12h4l3-8 4 16 3-8h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Rythme"
             ),
             $h("span", { "class": "sw-tile-value", "style": "font-size: 18px;" },
@@ -210,7 +220,10 @@ export default class MFicheCreateur extends DCLogic {
             )
           ),
           $h("span", { "class": "sw-tile" },
-            $h("span", { "class": "sw-tile-label" },
+            $h("span", { "class": "sw-tile-label", "style": "display: flex; align-items: center; gap: 6px; " },
+              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M13 2L4 14h7l-1 8 9-12h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Meilleure vidéo"
             ),
             $h("span", { "class": "sw-tile-value", "style": "color: var(--accent);" },
@@ -237,7 +250,10 @@ export default class MFicheCreateur extends DCLogic {
           )
         ] : null,
         $h("div", { "style": "padding: 24px 20px 0; display: flex; align-items: baseline; gap: 8px;" },
-          $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+          $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+            $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+              $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ),
             "Ses vidéos"
           ),
           $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },

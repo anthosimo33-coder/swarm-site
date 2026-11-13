@@ -107,9 +107,10 @@ export default class MDossiers extends DCLogic {
           )
         ),
         $h("div", { "style": "padding: 14px 20px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;" },
-          $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Tri" },
+          $h("div", { "class": "m-tc is-scroll", "role": "tablist", "aria-label": "Tri" },
             ($l($v.sorts)).map((s) => [
               $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick, "style": "height: 44px;" },
+                $h("span", { "class": "m-ic", "data-i": s?.l, "aria-hidden": "true" }),
                 $t(s?.l)
               )
             ])
@@ -204,7 +205,10 @@ export default class MDossiers extends DCLogic {
         ($v.hasRecent) ? [
           $h("div", { "style": "padding-top: 26px; display: flex; flex-direction: column; gap: 12px;" },
             $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
-              $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+              $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Ajouté récemment"
               )
             ),
@@ -215,6 +219,7 @@ export default class MDossiers extends DCLogic {
                     $h("img", { "class": "sw-cover", "src": r?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "class": "sw-badge", "style": "position: absolute; top: 6px; left: 6px; height: 20px; padding: 0 7px; font-size: 10px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                      $h("span", { "class": "m-ic", "data-i": r?.kind, "aria-hidden": "true", "style": "width: 13px; height: 13px;" }),
                       $t(r?.kind)
                     )
                   ),

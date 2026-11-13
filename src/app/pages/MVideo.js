@@ -176,10 +176,16 @@ export default class MVideo extends DCLogic {
             $h("span", { "style": "position: absolute; top: 14px; left: 14px; display: flex; gap: 6px;" },
               ($v.vid?.hasApp) ? [
                 $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
+                    $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   $t($v.vid?.appName)
                 )
               ] : null,
               $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
+                  $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 $t($v.vid?.where)
               )
             ),
@@ -284,12 +290,16 @@ export default class MVideo extends DCLogic {
           )
         ),
         $h("div", { "style": "padding: 24px 20px 0; display: flex; flex-direction: column; gap: 4px;" },
-          $h("span", { "style": "font-size: 18px; font-weight: 700; padding-bottom: 6px;" },
+          $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; padding-bottom: 6px;" },
+            $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+              $h("path", { "d": "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ),
             "Ce qu’elle fait"
           ),
           ($l($v.facts)).map((f) => [
             $h("div", { "style": "padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px;" },
-              $h("span", { "style": "font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint);" },
+              $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+                $h("span", { "class": "m-ic", "data-i": f?.k, "aria-hidden": "true", "style": "width: 14px; height: 14px;" }),
                 $t(f?.k)
               ),
               $h("span", { "style": "font-size: 15px; line-height: 1.5; color: var(--ink-soft);" },
@@ -301,7 +311,10 @@ export default class MVideo extends DCLogic {
         ($v.hasNxt) ? [
           $h("div", { "style": "padding-top: 24px; display: flex; flex-direction: column; gap: 12px;" },
             $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
-              $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+              $h("h2", { "style": "display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
                 "Ensuite"
               )
             ),

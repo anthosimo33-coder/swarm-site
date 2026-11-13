@@ -48,7 +48,7 @@ return {};
     if (D && D.apps) {
       const LBL = Object.fromEntries(D.markets);
       A = D.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, (a.weeks || []).map((w) => w / 1e6),
-        a.bestX ? xfm(a.bestX) : '—', (a.top || []).map((t) => t.cover || ''), (a.top || []).map((t) => nfm(t.views)), a.icon || '', a.slug, (a.top || []).map((t) => t.id), !!a.isNew, a.weekDelta === undefined ? null : a.weekDelta]);
+        a.bestX ? xfm(a.bestX) : '—', (a.top || []).map((t) => t.cover || ''), (a.top || []).map((t) => nfm(t.views)), a.icon || '', a.slug, (a.top || []).map((t) => t.id), !!a.isNew, a.weekDelta === undefined ? null : a.weekDelta, typeof a.top10Share === 'number' ? a.top10Share : null, a.top && a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null]);
       MKD = Object.fromEntries(D.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c === 'XX' ? '…' : c, LBL[c] || c, p])]));
       MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c === 'XX' ? '' : c]));
       NIS = D.niches;
@@ -75,12 +75,17 @@ return {};
     if (sort === 'nouvelles') list = list.filter(isNew);
     list = list.slice().sort((x, y) => (sort === 'accel' ? dv(y) - dv(x) : views(y) - views(x)));
     const limit = st.limit || 30, total = list.length;
+    // Marchés en texte (« US 88 % · MX 12 % ») : les parts du document quand on les a, sinon les codes.
+    const mkText = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2]]) : a[2].map((c) => [c, null]);
+      return l.filter((m) => m[1] !== null || (m[0] !== 'XX' && m[0] !== '…')).slice(0, 2)
+        .map(([c, p]) => (c === 'XX' || c === '…' ? 'Autres' : c) + (p !== null && p !== undefined ? ' ' + p + ' %' : '')).join(' · '); };
     const rows = list.slice(0, limit).map((a, i) => { const w = a[6] || [1, 1, 1, 1, 1, 1], mx = Math.max.apply(null, w) || 1, d = a[6] ? dlt(a) : null, up = d === null || d >= 0;
-      const line = 'M' + w.map((v, j) => (2 + j * 15.2).toFixed(1) + ' ' + (26 - (v / mx) * 22).toFixed(1)).join(' L');
-      return { rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mk: flagsOf(a), v30: nfm(views(a) * 1e6),
-        hasDelta: d !== null, delta: d === null ? '' : dfmt(d), dInk: up ? 'var(--accent)' : 'var(--ink-faint)', line, stroke: up ? '#4C9AFF' : '#8A93A3',
-        hasW: !!a[6],
-        covs: a[8].map((src) => ({ src })).filter((c) => c.src), logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank', open: () => this.setState({ pv: a[0] }) }; });
+      const pts = w.map((v, j) => [j * 20, 36 - (v / mx) * 32]);
+      const line = 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+      return { rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mkText: mkText(a), v30: nfm(views(a) * 1e6),
+        hasDelta: d !== null, delta: d === null ? '' : dfmt(d), dInk: up ? 'var(--accent)' : 'var(--ink-faint)', stroke: up ? '#4C9AFF' : '#8A93A3',
+        line, area: line + ' L100 40 L0 40 Z', gid: 'mapl' + i, ex: '100', ey: (pts[5][1] / 40 * 100).toFixed(1), hasW: !!a[6],
+        covs: a[8].map((src, j) => ({ src, v: a[9][j] || '', href: videoOf(a, j) })).filter((c) => c.src), logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank', open: () => this.setState({ pv: a[0] }) }; });
     const mLabel = market === 'ALL' ? 'Tous' : MKS.filter((m) => m[0] === market)[0][1];
     const chips = [];
     if (market !== 'ALL') chips.push({ label: mLabel, clear: () => this.setState({ market: 'ALL' }) });
@@ -94,11 +99,33 @@ return {};
     const pa = A.filter((a) => a[0] === st.pv)[0];
     let pv = { on: false };
     if (pa) { const w = pa[6] || [1, 1, 1, 1, 1, 1], mx = Math.max.apply(null, w) || 1, d = pa[6] ? dlt(pa) : null, md = MKD[pa[0]];
-      pv = { on: true, full: !!pa[6], lite: !pa[6], n: pa[0], niche: pa[1], mk: flagsOf(pa), href: ficheOf(pa), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
-        hasDelta: d !== null, delta: d === null ? '' : dfmt(d) + ' cette semaine', week: nfm(w[5] * 1e6),
-        bars: w.map((v, j) => ({ h: Math.max(4, Math.round(v / mx * 70)), bg: j === 5 ? 'var(--accent)' : 'var(--line-strong)' })),
-        v30: nfm(pa[5] * 1e6), acc: pa[3], ppw: pa[4] ? pa[4].toLocaleString('en-US').replace(/,/g, '\u202f') : '', vids: pa[8].map((src, j) => ({ src, v: pa[9][j], href: videoOf(pa, j) })),
-        hasMk: !!md, mkd: (md || []).map((m, i) => ({ c: m[0], p: m[2] + ' %', w: m[2] + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' })),
+      const pts = w.map((v, j) => [4 + j * (292 / 5), 56 - (v / mx) * 50]);
+      const line = 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+      const at = D && D.updatedAt ? D.updatedAt : null;
+      const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+      // Sa place : dans sa niche (au moins 2 apps, pas « Autres »), sinon parmi toutes les apps du Radar.
+      let pool = A.filter((x) => x[1] === pa[1]);
+      const inNiche = pa[1] && pa[1] !== 'Autres' && pool.length >= 2;
+      if (!inNiche) pool = A;
+      pool = pool.slice().sort((x, y) => y[5] - x[5]);
+      const at1 = pool.indexOf(pa);
+      const hatchB = 'repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 1px, transparent 1px 6px), rgba(255,255,255,0.04)';
+      const shown = at1 < 6 ? pool.slice(0, 6) : pool.slice(0, 5).concat([pa]);
+      const t10 = typeof pa[15] === 'number' && pa[3] > 10 ? pa[15] : null;
+      const t0 = pa[16] || null;
+      const grp = (n) => Number(n || 0).toLocaleString('en-US').replace(/,/g, '\u202f');
+      pv = { on: true, full: !!pa[6], lite: !pa[6], n: pa[0], niche: pa[1], mkText: mkText(pa), href: ficheOf(pa), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
+        v30: nfm(pa[5] * 1e6), week: nfm(w[5] * 1e6), delta: d === null ? '' : dfmt(d),
+        dBg: d !== null && d >= 0 ? 'var(--accent-soft)' : 'rgba(255,255,255,0.09)', dInk: d !== null && d >= 0 ? 'var(--accent)' : 'var(--ink-soft)',
+        line, area: line + ' L296 60 L4 60 Z',
+        labels: w.map((_, j) => ({ t: j === 5 ? 'Cette sem.' : at ? day(at - (6 - j) * 7 * 86400000) : 'S−' + (5 - j), ink: j === 5 ? '#FFFFFF' : '#8A93A3', fw: j === 5 ? '600' : '400' })),
+        rank: at1 >= 0 ? 'N°' + (at1 + 1) : '—', rankOf: 'sur ' + pool.length + ' apps ' + (inNiche ? 'de ' + pa[1] : 'du Radar'),
+        bars: shown.map((x) => ({ h: Math.max(4, Math.round(x[5] / (pool[0][5] || 1) * 100)) + '%', bg: x === pa ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : hatchB })),
+        acc: grp(pa[3]), accLabel: pa[3] > 1 ? 'comptes' : 'compte', hasTop10: t10 !== null, top10: Math.round((t10 || 0) * 100) + ' %',
+        waffle: Array.from({ length: 20 }, (_, c) => ({ bg: c < Math.round((t10 || 0) * 20) ? '#4C9AFF' : 'rgba(255,255,255,0.08)' })),
+        hasTop: !!pa[8][0], top: pa[8][0] ? { cover: pa[8][0], views: (pa[9][0] || '') + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xfm(t0.x) + ' sa normale' : '', who: t0 && t0.handle ? '@' + t0.handle : '' } : {},
+        ppw: grp(pa[4]), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
+        hasMk: !!md, noMk: !md, mkd: (md || []).slice(0, 2).map((m, n) => ({ l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
         followLabel: (st.follow || {})[pa[0]] ? 'Suivi' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
     const swipe = (k) => ({ s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false, pv: null }); this.y0 = null; } });
     return {
@@ -139,55 +166,66 @@ return {};
             )
           )
         ),
-        $h("div", { "style": "padding: 14px 20px 0;" },
-          $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Classement", "style": "display: flex;" },
+        $h("section", { "aria-label": "Classement et filtres", "class": "m-fc" },
+          $h("div", { "class": "m-tc is-flat is-stack", "role": "tablist", "aria-label": "Classement" },
             ($l($v.sorts)).map((s) => [
-              $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick, "style": "flex: 1; min-height: 44px; padding: 0 6px;" },
+              $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick },
+                $h("span", { "class": "m-ic", "data-i": s?.l, "aria-hidden": "true", "style": "width: 16px; height: 16px;" }),
                 $t(s?.l)
               )
             ])
-          )
-        ),
-        $h("div", { "style": "padding-top: 12px; display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
-          $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": $v.fsOpen, "onClick": $v.openFs, "style": "height: 44px; flex-shrink: 0; gap: 6px; background: var(--accent-soft); border-color: var(--accent-edge); color: var(--accent);" },
-            $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M4 6h16M7 12h10M10 18h4", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+          ),
+          $h("span", { "aria-hidden": "true", "class": "m-fc-line" }),
+          $h("div", { "class": "m-fc-row" },
+            $h("button", { "class": "m-fb is-on", "type": "button", "aria-pressed": $v.fsOpen, "onClick": $v.openFs },
+              $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M4 6h16M7 12h10M10 18h4", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
+              "Filtres",
+              ($v.nf) ? [
+                $h("span", { "class": "sw-count", "style": "box-shadow: none;" },
+                  $t($v.nf)
+                )
+              ] : null
             ),
-            "Filtres",
-            ($v.nf) ? [
-              $h("span", { "class": "sw-count", "style": "box-shadow: none;" },
-                $t($v.nf)
+            $h("button", { "class": "m-fb", "type": "button", "onClick": $v.openFs },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
+              $h("span", { "class": "m-fb-k" },
+                "Marché"
+              ),
+              $h("span", { "class": "m-fb-v" },
+                $t($v.mLabel)
+              ),
+              $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
-            ] : null
-          ),
-          $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": "false", "onClick": $v.openFs, "style": "height: 44px; flex-shrink: 0; gap: 6px; background: var(--track); border-color: var(--line);" },
-            $h("span", { "style": "color: var(--ink-faint);" },
-              "Marché"
             ),
-            $h("span", { "style": "font-weight: 600;" },
-              $t($v.mLabel)
+            $h("button", { "class": "m-fb", "type": "button", "onClick": $v.openFs },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
+              $h("span", { "class": "m-fb-k" },
+                "Niche"
+              ),
+              $h("span", { "class": "m-fb-v" },
+                $t($v.nLabel)
+              ),
+              $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
             ),
-            $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
-              $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            )
-          ),
-          $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": "false", "onClick": $v.openFs, "style": "height: 44px; flex-shrink: 0; gap: 6px; background: var(--track); border-color: var(--line);" },
-            $h("span", { "style": "color: var(--ink-faint);" },
-              "Niche"
-            ),
-            $h("span", { "style": "font-weight: 600;" },
-              $t($v.nLabel)
-            ),
-            $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
-              $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            )
-          ),
-          $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": "false", "onClick": $v.togglePeriod, "style": "height: 44px; flex-shrink: 0; gap: 6px; background: var(--track); border-color: var(--line);" },
-            $h("span", { "style": "color: var(--ink-faint);" },
-              "Période"
-            ),
-            $h("span", { "style": "font-weight: 600;" },
-              $t($v.pLabel)
+            $h("button", { "class": "m-fb", "type": "button", "onClick": $v.togglePeriod },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
+              $h("span", { "class": "m-fb-k" },
+                "Période"
+              ),
+              $h("span", { "class": "m-fb-v" },
+                $t($v.pLabel)
+              )
             )
           )
         ),
@@ -217,12 +255,12 @@ return {};
             )
           ] : null,
           ($l($v.rows)).map((r) => [
-            $h("button", { "type": "button", "onClick": r?.open, "class": "sw-card", "aria-label": `Aperçu de ${$t(r?.n)}`, "style": "width: 100%; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 12px; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
-              $h("span", { "style": "display: flex; align-items: center; gap: 12px; width: 100%;" },
-                $h("span", { "style": "width: 20px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
+            $h("div", { "style": "border-radius: 20px; overflow: hidden; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("button", { "type": "button", "onClick": r?.open, "aria-label": `Aperçu de ${$t(r?.n)}`, "style": "width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 10px; border: 0; background: transparent; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+                $h("span", { "style": "width: 18px; flex-shrink: 0; padding-top: 3px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
                   $t(r?.rank)
                 ),
-                $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 46px; height: 46px; border-radius: 13px;" },
+                $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;" },
                   (r?.logo) ? [
                     $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
                   ] : null,
@@ -232,41 +270,54 @@ return {};
                     )
                   ] : null
                 ),
-                $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;" },
-                  $h("span", { "style": "font-size: 16px; font-weight: 600;" },
+                $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;" },
+                  $h("span", { "style": "max-width: 100%; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                     $t(r?.n)
                   ),
-                  $h("span", { "style": "display: flex; align-items: center; gap: 5px; min-width: 0;" },
-                    $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
-                      $t(r?.niche)
-                    ),
-                    ($l(r?.mk)).map((m) => [
-                      $h("span", { "class": "sw-flag", "style": "width: 22px; height: 16px; font-size: 8px;" },
-                        $t(m?.c)
-                      )
-                    ])
-                  )
+                  $h("span", { "class": "m-tagn" },
+                    $h("span", { "class": "m-ic", "data-i": r?.niche, "aria-hidden": "true" }),
+                    $t(r?.niche)
+                  ),
+                  (r?.mkText) ? [
+                    $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
+                      $t(r?.mkText)
+                    )
+                  ] : null
                 ),
-                $h("span", { "style": "display: flex; flex-direction: column; align-items: flex-end; gap: 2px;" },
-                  $h("span", { "style": "font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap;" },
+                $h("span", { "style": "flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;" },
+                  $h("span", { "style": "font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: 22px; letter-spacing: -0.03em; white-space: nowrap;" },
                     $t(r?.v30)
                   ),
                   (r?.hasDelta) ? [
-                    $h("span", { "style": `font-size: 11px; font-weight: 600; color: ${$t(r?.dInk)}; white-space: nowrap;` },
+                    $h("span", { "style": `font-size: 12px; font-weight: 600; color: ${$t(r?.dInk)}; white-space: nowrap;` },
                       $t(r?.delta)
                     )
                   ] : null
                 )
               ),
               (r?.hasW) ? [
-                $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-top: 10px; border-top: 1px solid var(--line); box-sizing: border-box;" },
-                  $h("svg", { "class": "m-spark", "width": "72", "height": "28", "viewBox": "0 0 80 28", "aria-hidden": "true", "style": "flex-shrink: 0;" },
-                    $h("path", { "d": r?.line, "fill": "none", "stroke": r?.stroke, "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                $h("div", { "style": "display: flex; align-items: center; gap: 12px; padding: 0 14px 14px;" },
+                  $h("span", { "aria-hidden": "true", "style": "position: relative; flex: 1; min-width: 0; height: 56px;" },
+                    $h("svg", { "viewBox": "0 0 100 40", "preserveAspectRatio": "none", "style": "position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;" },
+                      $h("defs", null,
+                        $h("linearGradient", { "id": r?.gid, "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                          $h("stop", { "offset": "0", "stop-color": r?.stroke, "stop-opacity": "0.30" }),
+                          $h("stop", { "offset": "1", "stop-color": r?.stroke, "stop-opacity": "0" })
+                        )
+                      ),
+                      $h("path", { "d": r?.area, "fill": `url(#${$t(r?.gid)})` }),
+                      $h("path", { "d": r?.line, "fill": "none", "stroke": r?.stroke, "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", "vector-effect": "non-scaling-stroke" })
+                    ),
+                    $h("span", { "style": `position: absolute; left: ${$t(r?.ex)}%; top: ${$t(r?.ey)}%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: ${$t(r?.stroke)}; box-shadow: 0 0 0 3px rgba(5,7,12,0.55);` })
                   ),
-                  $h("span", { "style": "display: flex; gap: 3px; flex-shrink: 0;" },
+                  $h("span", { "style": "display: flex; gap: 6px; flex-shrink: 0;" },
                     ($l(r?.covs)).map((c) => [
-                      $h("span", { "class": "sw-video", "style": "display: block; width: 24px; border-radius: 5px;" },
-                        $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                      $h("a", { "href": c?.href, "class": "sw-video", "aria-label": `Vidéo à ${$t(c?.v)} vues`, "style": "display: block; width: 56px; border-radius: 10px;" },
+                        $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy" }),
+                        $h("span", { "class": "sw-video-shade" }),
+                        $h("span", { "style": "position: absolute; left: 6px; bottom: 5px; font-size: 11px; font-weight: 700; color: #FFFFFF;" },
+                          $t(c?.v)
+                        )
                       )
                     ])
                   )
@@ -309,7 +360,10 @@ return {};
                 )
               )
             ),
-            $h("span", { "style": "font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+            $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Marché"
             ),
             $h("div", { "role": "radiogroup", "aria-label": "Marché", "style": "display: flex; flex-direction: column; padding: 6px 0 14px;" },
@@ -334,7 +388,10 @@ return {};
                 )
               ])
             ),
-            $h("span", { "style": "font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+            $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
               "Niche, plusieurs possibles"
             ),
             $h("div", { "style": "display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0 6px;" },
@@ -361,12 +418,12 @@ return {};
         ] : null,
         ($v.pv?.on) ? [
           $h("button", { "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.closePv, "style": "position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
-          $h("section", { "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom)); animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
-            $h("div", { "ontouchstart": $v.tStart, "ontouchend": $v.tEnd, "style": "display: flex; justify-content: center; padding: 10px 0 6px; touch-action: none;" },
+          $h("section", { "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 96vh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom)); animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
+            $h("div", { "ontouchstart": $v.tStart, "ontouchend": $v.tEnd, "style": "display: flex; justify-content: center; padding: clamp(6px, 1.2vh, 10px) 0 clamp(4px, 0.8vh, 6px); touch-action: none;" },
               $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);" })
             ),
-            $h("div", { "style": "display: flex; align-items: center; gap: 14px; padding: 2px 0 14px;" },
-              $h("span", { "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: 56px; height: 56px; border-radius: 16px;" },
+            $h("div", { "style": "display: flex; align-items: center; gap: 14px; padding: 2px 0 clamp(8px, 1.4vh, 12px);" },
+              $h("span", { "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: clamp(44px, 7.5vh, 56px); height: clamp(44px, 7.5vh, 56px); border-radius: 16px;" },
                 ($v.pv?.logo) ? [
                   $h("img", { "class": "sw-logo-img", "src": $v.pv?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
                 ] : null,
@@ -377,16 +434,14 @@ return {};
                 ] : null
               ),
               $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;" },
-                $h("span", { "style": "font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.03em;" },
+                $h("span", { "style": "font-family: var(--font-display); font-size: clamp(20px, 3.4vh, 24px); font-weight: 700; letter-spacing: -0.03em;" },
                   $t($v.pv?.n)
                 ),
-                $h("span", { "style": "display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--ink-faint);" },
-                  $t($v.pv?.niche),
-                  ($l($v.pv?.mk)).map((m) => [
-                    $h("span", { "class": "sw-flag", "style": "width: 22px; height: 16px; font-size: 8px;" },
-                      $t(m?.c)
-                    )
-                  ])
+                $h("span", { "style": "display: flex;" },
+                  $h("span", { "class": "m-tagn" },
+                    $h("span", { "class": "m-ic", "data-i": $v.pv?.niche, "aria-hidden": "true" }),
+                    $t($v.pv?.niche)
+                  )
                 )
               ),
               $h("button", { "ref": $v.setPvClose, "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.closePv, "aria-label": "Fermer l’aperçu", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-right: -8px;" },
@@ -395,98 +450,189 @@ return {};
                 )
               )
             ),
-            $h("div", { "style": "border-radius: 20px; padding: 16px; background: var(--track); display: flex; flex-direction: column; gap: 12px;" },
-              $h("span", { "style": "display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;" },
-                $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                  "Vues sur 30 jours"
+            $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(6px, 1vh, 8px);" },
+              $h("section", { "aria-label": "Vues sur 30 jours", "style": "grid-column: 1 / span 2; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: clamp(10px, 1.8vh, 14px) 16px clamp(8px, 1.2vh, 10px); display: flex; flex-direction: column;" },
+                $h("div", { "style": "display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;" },
+                  $h("div", { "style": "display: flex; flex-direction: column; gap: 4px;" },
+                    $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
+                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      "Vues sur 30 jours"
+                    ),
+                    $h("span", { "style": "font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: clamp(26px, 4.2vh, 34px);" },
+                      $t($v.pv?.v30)
+                    )
+                  ),
+                  $h("div", { "style": "display: flex; flex-direction: column; align-items: flex-end; gap: 4px;" },
+                    $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                      "Cette semaine"
+                    ),
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                      $h("span", { "style": "font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: 17px; letter-spacing: -0.02em;" },
+                        $t($v.pv?.week)
+                      ),
+                      ($v.pv?.delta) ? [
+                        $h("span", { "style": `display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: ${$t($v.pv?.dBg)}; font-size: 12px; font-weight: 600; color: ${$t($v.pv?.dInk)}; white-space: nowrap;` },
+                          $t($v.pv?.delta)
+                        )
+                      ] : null
+                    )
+                  )
                 ),
-                ($v.pv?.hasDelta) ? [
-                  $h("span", { "class": "sw-badge sw-badge-accent", "style": "white-space: nowrap;" },
-                    $t($v.pv?.delta)
+                ($v.pv?.full) ? [
+                  $h("svg", { "viewBox": "0 0 300 60", "preserveAspectRatio": "none", "role": "img", "aria-label": "Vues par semaine sur 6 semaines", "class": "m-pv-ch", "style": "width: 100%; height: clamp(34px, 7vh, 62px); margin-top: clamp(6px, 1vh, 10px); overflow: visible;" },
+                    $h("defs", null,
+                      $h("linearGradient", { "id": "mpvAr", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                        $h("stop", { "offset": "0", "stop-color": "#4C9AFF", "stop-opacity": "0.32" }),
+                        $h("stop", { "offset": "1", "stop-color": "#4C9AFF", "stop-opacity": "0" })
+                      )
+                    ),
+                    $h("path", { "d": $v.pv?.area, "fill": "url(#mpvAr)" }),
+                    $h("path", { "d": $v.pv?.line, "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round", "vector-effect": "non-scaling-stroke" })
+                  ),
+                  $h("div", { "class": "m-pv-lb", "style": "display: flex; justify-content: space-between; margin-top: 5px;" },
+                    ($l($v.pv?.labels)).map((l) => [
+                      $h("span", { "style": `font-size: 10px; color: ${$t(l?.ink)}; font-weight: ${$t(l?.fw)};` },
+                        $t(l?.t)
+                      )
+                    ])
+                  )
+                ] : null,
+                ($v.pv?.lite) ? [
+                  $h("span", { "style": "margin-top: 8px; font-size: 13px; color: var(--ink-muted);" },
+                    "Pas encore de détail par semaine pour cette app."
                   )
                 ] : null
               ),
-              $h("span", { "style": "font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.04em; white-space: nowrap;" },
-                $t($v.pv?.v30)
-              ),
-              ($v.pv?.full) ? [
-                $h("span", { "style": "display: flex; align-items: flex-end; gap: 8px; height: 74px;" },
-                  ($l($v.pv?.bars)).map((b) => [
-                    $h("span", { "style": `flex: 1; height: ${$t(b?.h)}px; border-radius: 6px 6px 2px 2px; background: ${$t(b?.bg)};` })
-                  ])
-                ),
-                $h("span", { "style": "display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-faint);" },
-                  $h("span", null,
-                    "il y a 6 sem."
+              $h("section", { "aria-label": "Sa place", "style": "min-width: 0; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: clamp(10px, 1.6vh, 14px) 14px; display: flex; flex-direction: column;" },
+                $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.5 14l-1.5 7 5-3 5 3-1.5-7", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
-                  $h("span", null,
-                    "cette semaine · ", $t($v.pv?.week)
+                  "Sa place"
+                ),
+                $h("span", { "style": "margin-top: 6px; font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: clamp(22px, 3.4vh, 28px);" },
+                  $t($v.pv?.rank)
+                ),
+                $h("span", { "style": "margin-top: 3px; font-size: 11px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                  $t($v.pv?.rankOf)
+                ),
+                $h("div", { "aria-hidden": "true", "style": "height: clamp(18px, 4vh, 44px); margin-top: auto; padding-top: 8px; display: flex; align-items: flex-end; gap: 4px;" },
+                  ($l($v.pv?.bars)).map((b) => [
+                    $h("span", { "style": `flex: 1; height: ${$t(b?.h)}; min-height: 3px; border-radius: 5px 5px 2px 2px; background: ${$t(b?.bg)};` })
+                  ])
+                )
+              ),
+              $h("section", { "aria-label": "Son réseau", "style": "min-width: 0; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: clamp(10px, 1.6vh, 14px) 14px; display: flex; flex-direction: column;" },
+                $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  "Son réseau"
+                ),
+                $h("span", { "style": "margin-top: 6px; display: flex; align-items: baseline; gap: 5px;" },
+                  $h("span", { "style": "font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: clamp(22px, 3.4vh, 28px);" },
+                    $t($v.pv?.acc)
+                  ),
+                  $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
+                    $t($v.pv?.accLabel)
+                  )
+                ),
+                ($v.pv?.hasTop10) ? [
+                  $h("div", { "aria-hidden": "true", "style": "margin-top: auto; padding-top: 8px; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px;" },
+                    ($l($v.pv?.waffle)).map((c) => [
+                      $h("span", { "style": `height: clamp(6px, 1.2vh, 10px); border-radius: 2px; background: ${$t(c?.bg)};` })
+                    ])
+                  ),
+                  $h("span", { "style": "margin-top: 5px; font-size: 11px; color: var(--ink-faint);" },
+                    $h("span", { "style": "color: var(--ink); font-weight: 600;" },
+                      "10 comptes"
+                    ),
+                    " font ", $t($v.pv?.top10), " des vues"
+                  )
+                ] : null
+              ),
+              ($v.pv?.hasTop) ? [
+                $h("a", { "href": $v.pv?.top?.href, "aria-label": "Lire sa vidéo la plus vue", "style": "grid-column: 1 / span 2; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: 8px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink);" },
+                  $h("span", { "class": "sw-video", "style": "flex: 0 0 auto; width: clamp(42px, 7vh, 72px); aspect-ratio: 3 / 4; border-radius: 12px;" },
+                    $h("img", { "class": "sw-cover", "src": $v.pv?.top?.cover, "alt": "", "loading": "lazy", "decoding": "async" })
+                  ),
+                  $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px;" },
+                    $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
+                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                        $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      "Sa vidéo la plus vue"
+                    ),
+                    $h("span", { "style": "font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: clamp(20px, 3vh, 24px);" },
+                      $t($v.pv?.top?.views)
+                    ),
+                    $h("span", { "style": "display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; color: var(--ink-faint);" },
+                      ($v.pv?.top?.x) ? [
+                        $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--accent-soft); font-weight: 600; color: var(--accent);" },
+                          $t($v.pv?.top?.x)
+                        )
+                      ] : null,
+                      $h("span", { "style": "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                        $t($v.pv?.top?.who)
+                      )
+                    )
                   )
                 )
               ] : null,
-              ($v.pv?.lite) ? [
-                $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                  "Pas encore de détail par semaine pour cette app."
-                )
-              ] : null
-            ),
-            ($v.pv?.full) ? [
-              $h("div", { "style": "display: flex; gap: 8px; padding-top: 12px;" },
-                $h("span", { "class": "sw-tile", "style": "flex: 1; min-width: 0; padding: 10px 12px;" },
-                  $h("span", { "class": "sw-tile-label" },
-                    "Comptes"
+              $h("section", { "aria-label": "Vidéos par semaine", "style": "min-width: 0; border-radius: 20px; background: var(--track); padding: clamp(10px, 1.6vh, 14px) 14px; display: flex; flex-direction: column; gap: 5px;" },
+                $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
-                  $h("span", { "class": "sw-tile-value", "style": "font-size: 18px;" },
-                    $t($v.pv?.acc)
-                  )
+                  "Vidéos par semaine"
                 ),
-                $h("span", { "class": "sw-tile", "style": "flex: 1; min-width: 0; padding: 10px 12px;" },
-                  $h("span", { "class": "sw-tile-label" },
-                    "Vidéos / sem."
+                $h("span", { "style": "font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: clamp(20px, 3vh, 24px);" },
+                  $t($v.pv?.ppw)
+                ),
+                ($v.pv?.best) ? [
+                  $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
+                    "meilleure à ",
+                    $h("span", { "style": "color: var(--accent); font-weight: 600;" },
+                      $t($v.pv?.best)
+                    ),
+                    " sa normale"
+                  )
+                ] : null
+              ),
+              $h("section", { "aria-label": "Où ses vues se font", "style": "min-width: 0; border-radius: 20px; background: var(--track); padding: clamp(10px, 1.6vh, 14px) 14px; display: flex; flex-direction: column; gap: 6px;" },
+                $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
-                  $h("span", { "class": "sw-tile-value", "style": "font-size: 18px;" },
-                    $t($v.pv?.ppw)
-                  )
-                )
-              )
-            ] : null,
-            ($v.pv?.full) ? [
-              $h("span", { "style": "display: block; padding: 16px 0 8px; font-size: 15px; font-weight: 700;" },
-                "Leurs vidéos qui explosent"
-              ),
-              $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
-                ($l($v.pv?.vids)).map((v) => [
-                  $h("a", { "href": v?.href, "class": "sw-video", "style": "display: block; border-radius: 12px;" },
-                    $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
-                    $h("span", { "class": "sw-video-shade" }),
-                    $h("span", { "style": "position: absolute; left: 7px; bottom: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #FFFFFF;" },
-                      $t(v?.v)
+                  "Où ses vues se font"
+                ),
+                ($v.pv?.hasMk) ? [
+                  ($l($v.pv?.mkd)).map((m) => [
+                    $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
+                      $h("span", { "style": "display: flex; justify-content: space-between; gap: 6px; font-size: 11px;" },
+                        $h("span", { "style": "color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                          $t(m?.l)
+                        ),
+                        $h("span", { "style": "flex-shrink: 0; font-weight: 600; white-space: nowrap;" },
+                          $t(m?.p)
+                        )
+                      ),
+                      $h("span", { "aria-hidden": "true", "style": "display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08);" },
+                        $h("span", { "style": `display: block; width: ${$t(m?.w)}; height: 5px; border-radius: 3px; background: ${$t(m?.bg)};` })
+                      )
                     )
+                  ])
+                ] : null,
+                ($v.pv?.noMk) ? [
+                  $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                    $t($v.pv?.mkText)
                   )
-                ])
+                ] : null
               )
-            ] : null,
-            ($v.pv?.hasMk) ? [
-              $h("span", { "style": "display: block; padding: 16px 0 8px; font-size: 15px; font-weight: 700;" },
-                "Où leurs vues se font"
-              ),
-              $h("div", { "style": "display: flex; flex-direction: column; gap: 8px;" },
-                ($l($v.pv?.mkd)).map((m) => [
-                  $h("span", { "style": "display: grid; grid-template-columns: 30px minmax(0, 1fr) 44px; align-items: center; gap: 10px;" },
-                    $h("span", { "class": "sw-flag", "style": "width: 26px; height: 20px;" },
-                      $t(m?.c)
-                    ),
-                    $h("span", { "style": "height: 8px; border-radius: 4px; background: var(--line); overflow: hidden;" },
-                      $h("span", { "style": `display: block; height: 100%; width: ${$t(m?.w)}; background: ${$t(m?.bg)};` })
-                    ),
-                    $h("span", { "style": "font-size: 13px; text-align: right; color: var(--ink-soft);" },
-                      $t(m?.p)
-                    )
-                  )
-                ])
-              )
-            ] : null,
-            $h("div", { "style": "display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 18px;" },
+            ),
+            $h("div", { "style": "display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: clamp(8px, 1.4vh, 12px);" },
               $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "style": "height: 48px; gap: 8px;" },
                 $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
