@@ -393,7 +393,7 @@ export default class FicheApp extends DCLogic {
               $h("div", { "style": "flex: 1 1 auto; display: grid; grid-auto-rows: 1fr; gap: 8px;" },
                 $h("div", { "class": "sw-tile", "style": "flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;" },
                   $h("span", { "class": "sw-tile-label", "style": "font-size: 13px;" },
-                    "Comptes qui la poussent"
+                    "Comptes qui le poussent"
                   ),
                   $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap;" },
                     $t($v.app?.acc)
@@ -429,7 +429,7 @@ export default class FicheApp extends DCLogic {
           $h("section", { "aria-labelledby": "fa-vid", "style": "display: flex; flex-direction: column; gap: 14px;" },
             $h("div", { "class": "sw-card-head" },
               $h("h2", { "id": "fa-vid", "class": "sw-card-title" },
-                "Ses vidéos qui cartonnent"
+                "Leurs vidéos qui cartonnent"
               ),
               $h("a", { "class": "sw-more", "href": $v.app?.vidsHref },
                 "Les regarder une par une",
@@ -456,9 +456,6 @@ export default class FicheApp extends DCLogic {
                   $h("span", { "style": "display: flex; justify-content: space-between; gap: 6px; font-size: 12px;" },
                     $h("span", { "style": "color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
                       $t(v?.h)
-                    ),
-                    $h("span", { "class": "sw-flag", "style": "width: 24px; height: 18px; font-size: 9px; flex-shrink: 0;" },
-                      $t(v?.mk)
                     )
                   )
                 )
@@ -469,7 +466,7 @@ export default class FicheApp extends DCLogic {
             $h("section", { "class": "sw-card", "aria-labelledby": "fa-fmt", "style": "padding: 24px; display: flex; flex-direction: column;" },
               $h("div", { "class": "sw-card-head", "style": "margin-bottom: 8px;" },
                 $h("h2", { "id": "fa-fmt", "class": "sw-card-title" },
-                  "Les formats qui marchent chez elle"
+                  "Les formats qui cartonnent chez eux"
                 ),
                 $h("a", { "class": "sw-more", "href": "/app/formats" },
                   "Tous les formats",
@@ -507,7 +504,7 @@ export default class FicheApp extends DCLogic {
             $h("section", { "class": "sw-card", "aria-labelledby": "fa-mk", "style": "padding: 24px; display: flex; flex-direction: column; gap: 14px;" },
               $h("div", { "class": "sw-card-head" },
                 $h("h2", { "id": "fa-mk", "class": "sw-card-title" },
-                  "Où ses vues se font"
+                  "Où leurs vues se font"
                 ),
                 $h("span", { "class": "sw-card-sub" },
                   "Vues 30 j"
@@ -541,7 +538,7 @@ export default class FicheApp extends DCLogic {
           $h("section", { "class": "sw-card", "aria-labelledby": "fa-cr", "style": "padding: 8px 24px 12px;" },
             $h("div", { "class": "sw-card-head", "style": "padding: 16px 0 6px;" },
               $h("h2", { "id": "fa-cr", "class": "sw-card-title" },
-                "Les créateurs qui la poussent"
+                "Les créateurs qui le poussent"
               ),
               $h("a", { "class": "sw-more", "href": "/app/createurs" },
                 $t($v.app?.crLabel),

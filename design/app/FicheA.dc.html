@@ -81,7 +81,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <section class="sw-card" aria-labelledby="fa-res" style="padding: 24px; display: flex; flex-direction: column; gap: 18px;">
 <h2 id="fa-res" class="sw-card-title">Son réseau</h2>
 <div style="flex: 1 1 auto; display: grid; grid-auto-rows: 1fr; gap: 8px;">
-<div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Comptes qui la poussent</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap;">{{app.acc}}</span></div>
+<div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Comptes qui le poussent</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap;">{{app.acc}}</span></div>
 <div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Vidéos par semaine</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap;">{{app.ppw}}</span></div>
 <div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Meilleure de la semaine</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap; color: var(--accent);">{{app.best}}</span></div>
 <div class="sw-tile" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"><span class="sw-tile-label" style="font-size: 13px;">Les 10 premiers comptes</span><span class="sw-tile-value" style="flex-shrink: 0; white-space: nowrap;">{{app.top10}}</span></div>
@@ -90,12 +90,12 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 
 <section aria-labelledby="fa-vid" style="display: flex; flex-direction: column; gap: 14px;">
-<div class="sw-card-head"><h2 id="fa-vid" class="sw-card-title">Ses vidéos qui cartonnent</h2><a class="sw-more" href="{{app.vidsHref}}">Les regarder une par une<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
+<div class="sw-card-head"><h2 id="fa-vid" class="sw-card-title">Leurs vidéos qui cartonnent</h2><a class="sw-more" href="{{app.vidsHref}}">Les regarder une par une<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
 <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;">
 <sc-for list="{{vids}}" as="v" hint-placeholder-count="6">
 <a href="{{v.href}}" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none;">
 <span class="sw-video {{v.t}}" style="display: block;"><img class="sw-cover" src="{{v.src}}" alt="{{v.hook}}"><span class="sw-video-shade"></span><span class="sw-badge" style="position: absolute; top: 10px; left: 10px; height: 22px; font-size: 11px; background: rgba(5,7,12,0.55); color: #FFFFFF;">{{v.age}}</span><span class="sw-video-foot"><span class="sw-video-views">{{v.v}}</span></span></span>
-<span style="display: flex; justify-content: space-between; gap: 6px; font-size: 12px;"><span style="color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{v.h}}</span><span class="sw-flag" style="width: 24px; height: 18px; font-size: 9px; flex-shrink: 0;">{{v.mk}}</span></span>
+<span style="display: flex; justify-content: space-between; gap: 6px; font-size: 12px;"><span style="color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{v.h}}</span></span>
 </a>
 </sc-for>
 </div>
@@ -103,7 +103,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 
 <div style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px;">
 <section class="sw-card" aria-labelledby="fa-fmt" style="padding: 24px; display: flex; flex-direction: column;">
-<div class="sw-card-head" style="margin-bottom: 8px;"><h2 id="fa-fmt" class="sw-card-title">Les formats qui marchent chez elle</h2><a class="sw-more" href="FormatsB.dc.html">Tous les formats<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
+<div class="sw-card-head" style="margin-bottom: 8px;"><h2 id="fa-fmt" class="sw-card-title">Les formats qui cartonnent chez eux</h2><a class="sw-more" href="FormatsB.dc.html">Tous les formats<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
 <sc-for list="{{formats}}" as="f" hint-placeholder-count="4">
 <a href="{{f.href}}" style="text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line);">
 <span style="width: 32px; height: 32px; border-radius: 10px; background: var(--track); color: var(--ink-muted); display: inline-flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="{{f.icon}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
@@ -113,7 +113,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </sc-for>
 </section>
 <section class="sw-card" aria-labelledby="fa-mk" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
-<div class="sw-card-head"><h2 id="fa-mk" class="sw-card-title">Où ses vues se font</h2><span class="sw-card-sub">Vues 30 j</span></div>
+<div class="sw-card-head"><h2 id="fa-mk" class="sw-card-title">Où leurs vues se font</h2><span class="sw-card-sub">Vues 30 j</span></div>
 <sc-for list="{{mk}}" as="m" hint-placeholder-count="6">
 <div style="display: grid; grid-template-columns: 28px minmax(0, 1fr) 60px; gap: 12px; align-items: center;">
 <span class="sw-flag" style="width: 28px;">{{m.c}}</span>
@@ -125,7 +125,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 
 <section class="sw-card" aria-labelledby="fa-cr" style="padding: 8px 24px 12px;">
-<div class="sw-card-head" style="padding: 16px 0 6px;"><h2 id="fa-cr" class="sw-card-title">Les créateurs qui la poussent</h2><a class="sw-more" href="CreateursA.dc.html">{{app.crLabel}}<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
+<div class="sw-card-head" style="padding: 16px 0 6px;"><h2 id="fa-cr" class="sw-card-title">Les créateurs qui le poussent</h2><a class="sw-more" href="CreateursA.dc.html">{{app.crLabel}}<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
 <table class="sw-table">
 <thead><tr><th style="padding-left: 0;">Compte</th><th>Marché</th><th class="sw-num">Abonnés</th><th class="sw-num">Vidéos 7 j</th><th class="sw-num">Vues d'habitude</th><th class="sw-num" style="padding-right: 0;"></th></tr></thead>
 <tbody>

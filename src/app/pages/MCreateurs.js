@@ -49,7 +49,7 @@ export default class MCreateurs extends DCLogic {
       const line = (s) => { const ls = String(s || '').split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean); return ls.filter((x) => /\p{L}/u.test(x))[0] || ls[0] || ''; };
       const all = list.map((c) => {
         const a = c.app || null, ic = (a && a.icon) || '', on = c.posts7d > 0, bst = (c.best || [])[0];
-        return { av: '', noav: true, h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio),
+        return { av: c.avatar || '', noav: true, h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio),
           app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, appName: a ? a.name : 'Sans app repérée', niche: (a && a.niche) || '',
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('en-US').replace(/,/g, '\u202f') : '', fansK: isN(c.fans) ? nf(c.fans) : '—', nFans: isN(c.fans) ? c.fans : -1,
           med: isN(c.median) ? nf(c.median) : '—', nMed: isN(c.median) ? c.median : 0,
@@ -167,9 +167,9 @@ export default class MCreateurs extends DCLogic {
           ($l($v.rows)).map((c) => [
             $h("a", { "href": c?.href, "style": "display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
               $h("span", { "style": "display: flex; align-items: center; gap: 12px;" },
-                $h("span", { "style": "width: 46px; height: 46px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                $h("span", { "style": "width: 46px; height: 46px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   (c?.av) ? [
-                    $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (c?.noav) ? [
                     $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },

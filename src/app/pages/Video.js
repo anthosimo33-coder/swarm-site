@@ -66,7 +66,7 @@ export default class Video extends DCLogic {
     // obs = [{ h: heures depuis la publication, v: vues }]. Le tronçon publication -> premier relevé
     // n'a pas été relevé : il est en pointillés. Une seule étiquette (la dernière valeur), 3 repères de temps.
     const makeChart = (obs, views, normal, nfmt) => {
-      const W = 380, Y0 = 170, Y1 = 36, f = (n) => n.toFixed(1);
+      const W = 380, Y0 = 146, Y1 = 30, f = (n) => n.toFixed(1);
       const lastH = Math.max(1, obs.length ? obs[obs.length - 1].h : 1);
       const vmax = Math.max(1, views, normal || 0, ...obs.map((p) => p.v)) * 1.14;
       const X = (h) => 6 + (h / lastH) * (W - 12), Yv = (v) => Y0 - (v / vmax) * (Y0 - Y1);
@@ -74,7 +74,7 @@ export default class Video extends DCLogic {
       const smooth = (pts) => pts.length < 2 ? '' : pts.slice(1).reduce((d, b, i) => { const a = pts[i], dx = (b.x - a.x) / 2.4;
         return d + ' C' + f(a.x + dx) + ' ' + f(a.y) + ' ' + f(b.x - dx) + ' ' + f(b.y) + ' ' + f(b.x) + ' ' + f(b.y); }, 'M' + f(pts[0].x) + ' ' + f(pts[0].y));
       const E = P[P.length - 1];
-      const below = E.y < 58;
+      const below = E.y < 50;
       const ny = normal ? Yv(normal) : 0;
       const days = (h) => (h >= 48 ? 'J+' + Math.round(h / 24) : 'H+' + Math.round(h));
       const ticks = [{ x: 6, a: 'start', label: 'Publiée' }];
@@ -163,7 +163,7 @@ export default class Video extends DCLogic {
   render() {
     const $v = this.renderVals();
     return [
-      $h("div", { "class": "sw", "style": "position: relative; min-height: 1060px; background: var(--ground); color: var(--ink); font-family: var(--font-body);" },
+      $h("div", { "class": "sw", "style": "position: relative; height: 100vh; min-height: 620px; overflow: hidden; background: var(--ground); color: var(--ink); font-family: var(--font-body);" },
         $h("div", { "aria-hidden": "true", "style": "position: absolute; left: -10%; top: -20%; width: 900px; height: 700px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.20), transparent);" }),
         $h("section", { "role": "dialog", "aria-labelledby": "va-t", "style": "position: absolute; inset: 20px; display: flex; flex-direction: column; border-radius: 28px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); overflow: hidden;" },
           $h("header", { "style": "display: flex; align-items: center; gap: 20px; padding: 18px 24px; border-bottom: 1px solid var(--line);" },
@@ -200,9 +200,9 @@ export default class Video extends DCLogic {
               )
             )
           ),
-          $h("div", { "style": "flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 300px; gap: 28px; padding: 24px;" },
-            $h("div", { "style": "display: flex; flex-direction: column; gap: 12px;" },
-              $h("div", { "class": "sw-video t-umber", "style": "border-radius: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);" },
+          $h("div", { "style": "flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 1fr); gap: 28px; padding: 22px 24px; overflow: hidden;" },
+            $h("div", { "style": "min-height: 0; display: flex; align-items: flex-start;" },
+              $h("div", { "class": "sw-video t-umber va-frame", "style": "border-radius: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);" },
                 ($v.playing) ? [
                   $h("iframe", { "src": $v.vid?.embed, "title": $v.vid?.hook, "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;" })
                 ] : null,
@@ -222,15 +222,9 @@ export default class Video extends DCLogic {
                     )
                   ] : null
                 ] : null
-              ),
-              $h("a", { "class": "sw-link", "href": $v.vid?.url, "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 14px;" },
-                $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                ),
-                "Ouvrir la vidéo"
               )
             ),
-            $h("div", { "style": "min-width: 0; display: flex; flex-direction: column; gap: 18px; overflow: hidden;" },
+            $h("div", { "class": "va-mid", "style": "min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;" },
               $h("div", { "style": "display: flex; gap: 6px; flex-wrap: wrap;" },
                 ($v.vid?.appName) ? [
                   $h("a", { "class": "sw-badge", "href": $v.vid?.appHref, "style": "text-decoration: none; color: var(--ink);" },
@@ -255,7 +249,7 @@ export default class Video extends DCLogic {
                 ),
                 $t($v.vid?.whoMeta)
               ),
-              $h("div", { "class": "sw-card", "style": "padding: 22px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 24px;" },
+              $h("div", { "class": "sw-card", "style": "padding: 18px 22px; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 24px;" },
                 $h("div", { "style": "display: flex; flex-direction: column; gap: 6px;" },
                   $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                     "Pourquoi elle sort du lot"
@@ -277,14 +271,14 @@ export default class Video extends DCLogic {
                   $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                     "Ses vues face à sa normale"
                   ),
-                  $h("svg", { "viewBox": "0 0 380 210", "width": "100%", "height": "210", "role": "img", "aria-label": $v.chart?.aria, "style": "overflow: visible;" },
+                  $h("svg", { "class": "va-chart", "viewBox": "0 0 380 176", "width": "100%", "role": "img", "aria-label": $v.chart?.aria, "style": "overflow: visible;" },
                     $h("defs", null,
                       $h("linearGradient", { "id": "va-area", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
                         $h("stop", { "offset": "0", "stop-color": "#4C9AFF", "stop-opacity": "0.30" }),
                         $h("stop", { "offset": "1", "stop-color": "#4C9AFF", "stop-opacity": "0" })
                       )
                     ),
-                    $h("line", { "x1": "0", "y1": "170", "x2": "380", "y2": "170", "stroke": "rgba(255,255,255,0.10)" }),
+                    $h("line", { "x1": "0", "y1": "146", "x2": "380", "y2": "146", "stroke": "rgba(255,255,255,0.10)" }),
                     $h("path", { "d": $v.chart?.area, "fill": "url(#va-area)", "class": "va-fade" }),
                     ($v.chart?.hasNormal) ? [
                       $h("line", { "x1": "0", "y1": $v.chart?.ny, "x2": "380", "y2": $v.chart?.ny, "stroke": "rgba(255,255,255,0.32)", "stroke-width": "1.2", "stroke-dasharray": "4 6" }),
@@ -303,7 +297,7 @@ export default class Video extends DCLogic {
                       $t($v.chart?.endLabel)
                     ),
                     ($l($v.chart?.ticks)).map((t) => [
-                      $h("text", { "x": t?.x, "y": "198", "text-anchor": t?.a, "fill": "#8A93A3", "font-family": "Inter, system-ui, sans-serif", "font-size": "12" },
+                      $h("text", { "x": t?.x, "y": "168", "text-anchor": t?.a, "fill": "#8A93A3", "font-family": "Inter, system-ui, sans-serif", "font-size": "12" },
                         $t(t?.label)
                       )
                     ])
@@ -313,28 +307,28 @@ export default class Video extends DCLogic {
                   )
                 )
               ),
-              $h("div", { "style": "display: flex; flex-direction: column;" },
+              $h("div", { "class": "va-facts", "style": "display: flex; flex-direction: column;" },
                 $h("span", { "style": "font-size: 15px; font-weight: 700; padding-bottom: 6px;" },
                   "Ce qu'elle fait"
                 ),
                 ($l($v.facts)).map((f) => [
-                  $h("div", { "style": "display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 14px;" },
+                  $h("div", { "style": "display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px;" },
                     $h("span", { "style": "color: var(--ink-faint);" },
                       $t(f?.k)
                     ),
-                    $h("span", { "style": "color: var(--ink-soft); line-height: 1.5;" },
+                    $h("span", { "title": f?.v, "style": "color: var(--ink-soft); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" },
                       $t(f?.v)
                     )
                   )
                 ])
               )
             ),
-            $h("aside", { "aria-label": "Ensuite", "style": "display: flex; flex-direction: column; gap: 10px; min-width: 0;" },
+            $h("aside", { "aria-label": "Ensuite", "style": "display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; overflow: hidden;" },
               $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);" },
                 "Ensuite"
               ),
               ($l($v.next)).map((n) => [
-                $h("a", { "href": n?.href, "style": "display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--row-hover); text-decoration: none; color: var(--ink);" },
+                $h("a", { "class": "va-next", "href": n?.href, "style": "display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--row-hover); text-decoration: none; color: var(--ink);" },
                   $h("span", { "class": `sw-video ${$t(n?.t)}`, "style": "display: block; width: 58px; border-radius: 10px;" },
                     $h("img", { "class": "sw-cover", "src": n?.src, "alt": "", "loading": "lazy", "decoding": "async" })
                   ),
@@ -370,6 +364,12 @@ export default class Video extends DCLogic {
               ] : null
             ),
             $h("span", { "style": "margin-left: auto;" }),
+            $h("a", { "class": "sw-link", "href": $v.vid?.url, "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin-right: 18px;" },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
+              "Ouvrir la vidéo"
+            ),
             ($v.vid?.appName) ? [
               $h("a", { "class": "sw-more", "href": $v.vid?.appHref, "style": "font-size: 14px;" },
                 "Voir l'app ", $t($v.vid?.appName),

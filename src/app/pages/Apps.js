@@ -600,7 +600,7 @@ return {};
                 ),
                 $h("div", { "class": "sw-tile" },
                   $h("span", { "class": "sw-tile-label" },
-                    "Comptes qui la poussent"
+                    "Comptes qui le poussent"
                   ),
                   $h("span", { "class": "sw-tile-value" },
                     $t($v.pv?.acc)
@@ -618,7 +618,7 @@ return {};
               $h("div", { "style": "display: flex; flex-direction: column; gap: 10px;" },
                 $h("div", { "style": "display: flex; justify-content: space-between; align-items: baseline;" },
                   $h("span", { "style": "font-size: 14px; font-weight: 600;" },
-                    "Ses vidéos qui explosent"
+                    "Leurs vidéos qui explosent"
                   ),
                   $h("a", { "class": "sw-more", "href": `${$t($v.pv?.href)}#fa-vid` },
                     "Toutes",

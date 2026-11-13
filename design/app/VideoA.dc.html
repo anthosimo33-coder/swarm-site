@@ -12,6 +12,21 @@
 <helmet>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <style>
+/* L'écran tient dans la fenêtre : la vidéo prend la hauteur disponible, en 9:16, 420 px de large au plus. */
+.va-frame { width: min(calc((100vh - 244px) * 9 / 16), 420px); flex-shrink: 0; }
+.va-mid { scrollbar-width: none; max-width: 780px; }
+.va-chart { display: block; height: auto; aspect-ratio: 380 / 176; max-height: 230px; }
+@media (max-height: 900px) { .va-chart { max-height: 176px; } }
+/* Écran bas (portable 13", 720 px) : courbe plus basse, une ligne par fait, sans les réactions, « Ensuite » compact. */
+@media (max-height: 780px) {
+  .va-chart { max-height: 138px; }
+  .va-facts > div > span:last-child { -webkit-line-clamp: 1 !important; }
+  .va-facts > div:nth-of-type(n+4) { display: none !important; }
+  .va-next { grid-template-columns: 44px minmax(0, 1fr) !important; padding: 8px !important; }
+  .va-next > .sw-video { width: 44px !important; }
+}
+@media (max-height: 740px) { .va-chart { max-height: 112px; } .va-mid { gap: 10px !important; } }
+.va-mid::-webkit-scrollbar { display: none; }
 /* Courbe de la vidéo : tracée une fois à l'arrivée, l'aire apparaît en fondu. */
 .va-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: va-draw 1.1s cubic-bezier(.2,.7,.2,1) .1s forwards; }
 .va-fade { opacity: 0; animation: va-fade .6s ease-out .5s forwards; }
@@ -22,7 +37,7 @@ body{margin:0;background:#05070C}
 a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </style>
 </helmet>
-<div class="sw" style="position: relative; min-height: 1060px; background: var(--ground); color: var(--ink); font-family: var(--font-body);">
+<div class="sw" style="position: relative; height: 100vh; min-height: 620px; overflow: hidden; background: var(--ground); color: var(--ink); font-family: var(--font-body);">
 <div aria-hidden="true" style="position: absolute; left: -10%; top: -20%; width: 900px; height: 700px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.20), transparent);"></div>
 
 <section role="dialog" aria-labelledby="va-t" style="position: absolute; inset: 20px; display: flex; flex-direction: column; border-radius: 28px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); overflow: hidden;">
@@ -33,9 +48,9 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <span style="display: flex; gap: 6px;"><button class="sw-btn sw-btn-icon" type="button" data-cmdk="true" onClick="{{openPal}}" aria-label="Chercher, raccourci Commande K" title="Chercher (⌘ K)" style="width: 40px; height: 40px; background: var(--track);"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><span aria-hidden="true" style="width: 1px; height: 24px; margin: 8px 4px; background: var(--line);"></span><a class="sw-btn sw-btn-icon" href="{{vid.prevHref}}" aria-label="Vidéo précédente" style="width: 40px; height: 40px; background: var(--track); opacity: {{vid.prevO}};"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a><a class="sw-btn sw-btn-icon" href="{{vid.nextHref}}" aria-label="Vidéo suivante" style="width: 40px; height: 40px; background: var(--tab-on); color: var(--ink); opacity: {{vid.nextO}};"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a><button class="sw-btn sw-btn-icon" type="button" onClick="{{close}}" aria-label="Fermer" style="width: 40px; height: 40px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button></span>
 </header>
 
-<div style="flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 360px minmax(0, 1fr) 300px; gap: 28px; padding: 24px;">
-<div style="display: flex; flex-direction: column; gap: 12px;">
-<div class="sw-video t-umber" style="border-radius: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
+<div style="flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 1fr); gap: 28px; padding: 22px 24px; overflow: hidden;">
+<div style="min-height: 0; display: flex; align-items: flex-start;">
+<div class="sw-video t-umber va-frame" style="border-radius: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
 <sc-if value="{{playing}}" hint-placeholder-val="{{false}}"><iframe src="{{vid.embed}}" title="{{vid.hook}}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write" allowfullscreen="true" style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;"></iframe></sc-if>
 <sc-if value="{{notPlaying}}" hint-placeholder-val="{{true}}">
 <img class="sw-cover" src="{{vid.cover}}" alt="{{vid.hook}}">
@@ -44,13 +59,12 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <sc-if value="{{vid.dur}}" hint-placeholder-val="{{true}}"><span style="position: absolute; right: 14px; bottom: 14px; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.55); font-family: var(--font-mono); font-size: 11px; color: #E4E7EC; pointer-events: none;">{{vid.dur}}</span></sc-if>
 </sc-if>
 </div>
-<a class="sw-link" href="{{vid.url}}" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Ouvrir la vidéo</a>
 </div>
 
-<div style="min-width: 0; display: flex; flex-direction: column; gap: 18px; overflow: hidden;">
+<div class="va-mid" style="min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;">
 <div style="display: flex; gap: 6px; flex-wrap: wrap;"><sc-if value="{{vid.appName}}" hint-placeholder-val="{{true}}"><a class="sw-badge" href="{{vid.appHref}}" style="text-decoration: none; color: var(--ink);">{{vid.appName}}</a></sc-if><span class="sw-badge">{{vid.market}}</span><span class="sw-badge">Publiée le {{vid.date}}</span><sc-if value="{{vid.dur}}" hint-placeholder-val="{{true}}"><span class="sw-badge">{{vid.dur}}</span></sc-if></div>
 <span style="font-size: 15px; color: var(--ink-muted);"><span style="color: var(--ink); font-weight: 700;">{{vid.handle}}</span>{{vid.whoMeta}}</span>
-<div class="sw-card" style="padding: 22px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 24px;">
+<div class="sw-card" style="padding: 18px 22px; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 24px;">
 <div style="display: flex; flex-direction: column; gap: 6px;">
 <span style="font-size: 13px; color: var(--ink-muted);">Pourquoi elle sort du lot</span>
 <span style="align-self: flex-start; padding: 6px 14px; border-radius: 14px; background: linear-gradient(180deg, var(--blue-400), var(--blue-600)); font-family: var(--font-display); font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.03em; box-shadow: var(--glow-rest);">{{vid.x}}</span>
@@ -60,9 +74,9 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 <div style="display: flex; flex-direction: column; gap: 8px;">
 <span style="font-size: 13px; color: var(--ink-muted);">Ses vues face à sa normale</span>
-<svg viewBox="0 0 380 210" width="100%" height="210" role="img" aria-label="{{chart.aria}}" style="overflow: visible;">
+<svg class="va-chart" viewBox="0 0 380 176" width="100%" role="img" aria-label="{{chart.aria}}" style="overflow: visible;">
 <defs><linearGradient id="va-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C9AFF" stop-opacity="0.30"></stop><stop offset="1" stop-color="#4C9AFF" stop-opacity="0"></stop></linearGradient></defs>
-<line x1="0" y1="170" x2="380" y2="170" stroke="rgba(255,255,255,0.10)"></line>
+<line x1="0" y1="146" x2="380" y2="146" stroke="rgba(255,255,255,0.10)"></line>
 <path d="{{chart.area}}" fill="url(#va-area)" class="va-fade"></path>
 <sc-if value="{{chart.hasNormal}}" hint-placeholder-val="{{true}}"><line x1="0" y1="{{chart.ny}}" x2="380" y2="{{chart.ny}}" stroke="rgba(255,255,255,0.32)" stroke-width="1.2" stroke-dasharray="4 6"></line><text x="0" y="{{chart.nty}}" fill="#A9B1BF" font-family="Inter, system-ui, sans-serif" font-size="12.5">{{chart.nLabel}}</text></sc-if>
 <path d="{{chart.guess}}" fill="none" stroke="#4C9AFF" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round"></path>
@@ -70,23 +84,23 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <sc-for list="{{chart.dots}}" as="d" hint-placeholder-count="2"><circle cx="{{d.x}}" cy="{{d.y}}" r="2.5" fill="#4C9AFF" fill-opacity="0.7"></circle></sc-for>
 <circle cx="{{chart.ex}}" cy="{{chart.ey}}" r="12" fill="#4C9AFF" fill-opacity="0.16"></circle><circle cx="{{chart.ex}}" cy="{{chart.ey}}" r="5.5" fill="#4C9AFF" stroke="#0D111A" stroke-width="2.5"></circle>
 <text x="{{chart.lx}}" y="{{chart.ly}}" text-anchor="{{chart.la}}" fill="#FFFFFF" font-family="Inter Tight, Inter, system-ui, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.01em">{{chart.endLabel}}</text>
-<sc-for list="{{chart.ticks}}" as="t" hint-placeholder-count="3"><text x="{{t.x}}" y="198" text-anchor="{{t.a}}" fill="#8A93A3" font-family="Inter, system-ui, sans-serif" font-size="12">{{t.label}}</text></sc-for>
+<sc-for list="{{chart.ticks}}" as="t" hint-placeholder-count="3"><text x="{{t.x}}" y="168" text-anchor="{{t.a}}" fill="#8A93A3" font-family="Inter, system-ui, sans-serif" font-size="12">{{t.label}}</text></sc-for>
 </svg>
 <span style="font-size: 14px; line-height: 1.45; color: var(--ink-muted);">{{vid.growth}}</span>
 </div>
 </div>
-<div style="display: flex; flex-direction: column;">
+<div class="va-facts" style="display: flex; flex-direction: column;">
 <span style="font-size: 15px; font-weight: 700; padding-bottom: 6px;">Ce qu'elle fait</span>
 <sc-for list="{{facts}}" as="f" hint-placeholder-count="5">
-<div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 14px;"><span style="color: var(--ink-faint);">{{f.k}}</span><span style="color: var(--ink-soft); line-height: 1.5;">{{f.v}}</span></div>
+<div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px;"><span style="color: var(--ink-faint);">{{f.k}}</span><span title="{{f.v}}" style="color: var(--ink-soft); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{f.v}}</span></div>
 </sc-for>
 </div>
 </div>
 
-<aside aria-label="Ensuite" style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+<aside aria-label="Ensuite" style="display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; overflow: hidden;">
 <span style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);">Ensuite</span>
 <sc-for list="{{next}}" as="n" hint-placeholder-count="4">
-<a href="{{n.href}}" style="display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--row-hover); text-decoration: none; color: var(--ink);">
+<a class="va-next" href="{{n.href}}" style="display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--row-hover); text-decoration: none; color: var(--ink);">
 <span class="sw-video {{n.t}}" style="display: block; width: 58px; border-radius: 10px;"><img class="sw-cover" src="{{n.src}}" alt=""></span>
 <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0;"><span class="sw-badge sw-badge-solid" style="align-self: flex-start; height: 22px; font-size: 11px;">{{n.x}}</span><span style="font-size: 13px; font-weight: 600; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{n.hook}}</span><span style="font-size: 11px; color: var(--ink-faint);">{{n.app}} · {{n.v}}</span></span>
 </a>
@@ -97,6 +111,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <footer style="display: flex; align-items: center; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.02);">
 <span style="position: relative; display: inline-flex;"><button data-aj-trigger="true" onClick="{{toggleAj}}" aria-expanded="{{ajOpen}}" aria-haspopup="dialog" class="sw-btn sw-btn-primary" type="button" aria-pressed="{{kept}}">{{saveLabel}}<span class="sw-btn-tile"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-3.5L7 20z" fill="{{keepFill}}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg></span></button><sc-if value="{{aj}}" hint-placeholder-val="{{false}}"><span style="position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 45;"><dc-import name="AjoutDossier" on-close="{{closeAj}}" item="{{ajItem}}" saved="{{savedFn}}" save="{{saveFn}}" hint-size="360px,420px"></dc-import></span></sc-if></span>
 <span style="margin-left: auto;"></span>
+<a class="sw-link" href="{{vid.url}}" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin-right: 18px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Ouvrir la vidéo</a>
 <sc-if value="{{vid.appName}}" hint-placeholder-val="{{true}}"><a class="sw-more" href="{{vid.appHref}}" style="font-size: 14px;">Voir l'app {{vid.appName}}<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></sc-if>
 </footer>
 
@@ -171,7 +186,7 @@ class Component extends DCLogic {
     // obs = [{ h: heures depuis la publication, v: vues }]. Le tronçon publication -> premier relevé
     // n'a pas été relevé : il est en pointillés. Une seule étiquette (la dernière valeur), 3 repères de temps.
     const makeChart = (obs, views, normal, nfmt) => {
-      const W = 380, Y0 = 170, Y1 = 36, f = (n) => n.toFixed(1);
+      const W = 380, Y0 = 146, Y1 = 30, f = (n) => n.toFixed(1);
       const lastH = Math.max(1, obs.length ? obs[obs.length - 1].h : 1);
       const vmax = Math.max(1, views, normal || 0, ...obs.map((p) => p.v)) * 1.14;
       const X = (h) => 6 + (h / lastH) * (W - 12), Yv = (v) => Y0 - (v / vmax) * (Y0 - Y1);
@@ -179,7 +194,7 @@ class Component extends DCLogic {
       const smooth = (pts) => pts.length < 2 ? '' : pts.slice(1).reduce((d, b, i) => { const a = pts[i], dx = (b.x - a.x) / 2.4;
         return d + ' C' + f(a.x + dx) + ' ' + f(a.y) + ' ' + f(b.x - dx) + ' ' + f(b.y) + ' ' + f(b.x) + ' ' + f(b.y); }, 'M' + f(pts[0].x) + ' ' + f(pts[0].y));
       const E = P[P.length - 1];
-      const below = E.y < 58;
+      const below = E.y < 50;
       const ny = normal ? Yv(normal) : 0;
       const days = (h) => (h >= 48 ? 'J+' + Math.round(h / 24) : 'H+' + Math.round(h));
       const ticks = [{ x: 6, a: 'start', label: 'Publiée' }];

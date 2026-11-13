@@ -80,7 +80,7 @@ export default class MFicheCreateur extends DCLogic {
       const hits = V.filter((x) => x.x >= 10);
       // Pas de moyen de contacter un créateur : les e-mails et numéros de sa bio ne sont pas repris.
       const noContact = (s) => String(s || '').replace(/(?:📧|✉️?|📩|📬|e-?mail|mail|contact|business|pro)?\s*[:：]?\s*[\w.+-]+@[\w-]+(?:\.[\w-]+)+/gi, ' ').replace(/\+?\d[\d .-]{7,}\d/g, ' ').replace(/\s+/g, ' ').trim();
-      z = Object.assign({}, z, { av: '', noav: true, h: '@' + D.handle, bio: noContact(D.bio),
+      z = Object.assign({}, z, { av: D.avatar || '', noav: true, h: '@' + D.handle, bio: noContact(D.bio),
         fans: typeof D.fans === 'number' ? big(D.fans) : '—', med: D.median ? big(D.median) : '—', p7: n7 ? n7 + (n7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j',
         best: top ? nf(top.views) : '—', bestX: top && top.x ? xf(top.x) + ' sa normale' : (top ? day(top.publishedAt) : ''),
         app: a ? ico(a) : { logo: '', nologo: true, blank: 'sw-app-blank' }, hasApp: !!a, appLine: a ? 'Pousse ' + a.name : '', niche: (a && a.niche) || '',
@@ -128,9 +128,9 @@ export default class MFicheCreateur extends DCLogic {
         ),
         $h("div", { "style": "padding: 22px 20px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;" },
           $h("span", { "style": "padding: 4px; border-radius: 50%; background: conic-gradient(from 200deg, var(--blue-400), var(--blue-700), var(--blue-400));" },
-            $h("span", { "style": "width: 96px; height: 96px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface);" },
+            $h("span", { "style": "width: 96px; height: 96px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface); position: relative;" },
               ($v.z?.av) ? [
-                $h("img", { "src": $v.z?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                $h("img", { "src": $v.z?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
               ] : null,
               ($v.z?.noav) ? [
                 $h("svg", { "width": "48", "height": "48", "viewBox": "0 0 24 24", "aria-hidden": "true" },

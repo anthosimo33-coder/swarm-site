@@ -88,7 +88,7 @@ export default class MFicheApp extends DCLogic {
       ff = (D.formats || []).slice(0, 4).map((f) => ({ ico: f.kind === 'sound' ? SON : TXT, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         m: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', o: nf(f.maxViews || 0) + ' vues au mieux', href: '/app/formats/' + f.id }));
       fm = (D.markets || []).map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: ML[c] || c, v: nf((D.views30 || 0) * p / 100), p: p + ' %', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
-      fc = (D.creators || []).slice(0, 6).map((c) => ({ av: '', noav: true, h: '@' + c.handle, mk: c.market && c.market !== 'XX' ? c.market : '',
+      fc = (D.creators || []).slice(0, 6).map((c) => ({ av: c.avatar || '', noav: true, h: '@' + c.handle, mk: c.market && c.market !== 'XX' ? c.market : '',
         s: nf(c.fans || 0) + ' abonnés' + (c.median ? ' · ' + nf(c.median) + ' vues médianes' : ''), page: !!c.page, nopage: !c.page, href: '/app/createurs/' + c.handle }));
       secs = secs.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || (D.videos || []).length), String((D.formats || []).length), (D.accounts || 0).toLocaleString('en-US').replace(/,/g, '\u202f')][i] || '' }));
     }
@@ -387,9 +387,9 @@ export default class MFicheApp extends DCLogic {
               ($l($v.fc)).map((c) => [
                 (c?.page) ? [
                   $h("a", { "href": c?.href, "style": "display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
-                    $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                    $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                       (c?.av) ? [
-                        $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       (c?.noav) ? [
                         $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -422,9 +422,9 @@ export default class MFicheApp extends DCLogic {
                 ] : null,
                 (c?.nopage) ? [
                   $h("div", { "style": "display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
-                    $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                    $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                       (c?.av) ? [
-                        $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       (c?.noav) ? [
                         $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },

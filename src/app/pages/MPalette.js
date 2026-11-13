@@ -38,7 +38,7 @@ export default class MPalette extends DCLogic {
         return { k: 'fm', t: hook ? '« ' + f.label + ' »' : 'Son « ' + f.label + ' »', kind: hook ? 'Accroche' : 'Son', ico: hook ? TXT : SON,
           sub: [hook ? 'Accroche' : 'Son', f.accounts + ' comptes', full && full.medX ? xf(full.medX) + ' la normale' : ''].filter(Boolean).join(' · '),
           href: '/app/formats/' + f.id, key: f.label }; });
-      CR = S.creators.map((c) => ({ av: '', noav: true, k: 'cr', h: '@' + c.handle, s: [c.app, nf(c.fans || 0) + ' abonnés', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
+      CR = S.creators.map((c) => ({ av: c.avatar || '', noav: true, handle: c.handle, k: 'cr', h: '@' + c.handle, s: [c.app, nf(c.fans || 0) + ' abonnés', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
         href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || '') }));
     }
     const st = this.state || {};
@@ -53,12 +53,24 @@ export default class MPalette extends DCLogic {
     if (scope === 'formats') { apps = []; crs = []; }
     if (scope === 'createurs') { apps = []; fms = []; }
     const cur = apps[0] || null;
+    // Un créateur trouvé (onglet Créateurs, ou aucune app) : sa photo, son rythme et ses 3 dernières vidéos avec image (document « creator: »).
+    const crHit = nq && (scope === 'createurs' || !cur) ? crs[0] || null : null;
+    let cc = {};
+    if (crHit) {
+      const g = this.props && typeof this.props.get === 'function' ? this.props.get : null;
+      const d = g && crHit.handle ? g('creator:' + crHit.handle) : null;
+      const nfc = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+      const covs = d && d.videos ? d.videos.filter((v) => v.cover).slice(0, 3).map((v) => ({ src: v.cover, v: nfc(v.views) })) : (crHit.covs || []);
+      const p7 = d ? d.posts7d || 0 : null;
+      cc = Object.assign({}, crHit, { av: crHit.av || (d && d.avatar) || '', noav: true, covs, hasCov: covs.length > 0,
+        ryt: p7 === null ? (crHit.ryt || '—') : p7 ? p7 + (p7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j' });
+    }
     const close = () => { if (this.props.onClose) this.props.onClose(); };
     return {
       q, close, onQ: (e) => this.setState({ q: e.target.value }), setInput: (el) => { this.inp = el; },
       keys: (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } },
       scopes: [['tout', 'Tout'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs']].map((s) => ({ l: s[1], on: s[0] === scope ? 'true' : 'false', pick: () => this.setState({ scope: s[0] }) })),
-      apps: apps.slice(cur && nq ? 1 : 0), fms, crs, hasApps: apps.length > (cur && nq ? 1 : 0), hasFms: fms.length > 0, hasCrs: crs.length > 0,
+      apps: apps.slice(cur && nq ? 1 : 0), fms, crs: crHit ? crs.slice(1) : crs, pc: !!crHit, cc, hasApps: apps.length > (cur && nq ? 1 : 0), hasFms: fms.length > 0, hasCrs: crs.length > (crHit ? 1 : 0),
       gApps: nq ? 'Autres apps' : 'Les plus vues en 30 jours', gFms: nq ? 'Formats' : 'Formats de la semaine', gCrs: nq ? 'Créateurs' : 'Créateurs à suivre',
       pa: !!cur && !!nq, cur: cur || {}, none: apps.length + fms.length + crs.length === 0
     };
@@ -164,6 +176,58 @@ export default class MPalette extends DCLogic {
               )
             )
           ] : null,
+          ($v.pc) ? [
+            $h("a", { "href": $v.cc?.href, "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
+              $h("span", { "style": "display: flex; align-items: center; gap: 12px;" },
+                $h("span", { "style": "width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
+                  ($v.cc?.av) ? [
+                    $h("img", { "src": $v.cc?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                  ] : null,
+                  ($v.cc?.noav) ? [
+                    $h("svg", { "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
+                      $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
+                    )
+                  ] : null
+                ),
+                $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px;" },
+                  $h("span", { "style": "font-family: var(--font-display); font-size: 21px; font-weight: 700; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                    $t($v.cc?.h)
+                  ),
+                  $h("span", { "style": "font-size: 12px; line-height: 1.4; color: var(--ink-faint);" },
+                    $t($v.cc?.s)
+                  )
+                )
+              ),
+              $h("span", { "class": "sw-tile", "style": "padding: 10px 12px;" },
+                $h("span", { "class": "sw-tile-label" },
+                  "Rythme"
+                ),
+                $h("span", { "class": "sw-tile-value", "style": "font-size: 18px;" },
+                  $t($v.cc?.ryt)
+                )
+              ),
+              ($v.cc?.hasCov) ? [
+                $h("span", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
+                  ($l($v.cc?.covs)).map((v) => [
+                    $h("span", { "class": "sw-video", "style": "display: block; border-radius: 12px;" },
+                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                      $h("span", { "class": "sw-video-shade" }),
+                      $h("span", { "style": "position: absolute; left: 7px; bottom: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #FFFFFF;" },
+                        $t(v?.v)
+                      )
+                    )
+                  ])
+                )
+              ] : null,
+              $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; min-height: 24px; font-size: 14px; font-weight: 600; color: var(--accent);" },
+                "Ouvrir la fiche",
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              )
+            )
+          ] : null,
           ($v.hasApps) ? [
             $h("span", { "style": "display: block; padding: 18px 0 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
               $t($v.gApps)
@@ -225,9 +289,9 @@ export default class MPalette extends DCLogic {
             ),
             ($l($v.crs)).map((c) => [
               $h("a", { "href": c?.href, "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
-                $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   (c?.av) ? [
-                    $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (c?.noav) ? [
                     $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },

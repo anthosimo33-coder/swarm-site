@@ -49,7 +49,7 @@ export default class MCreateursCartes extends DCLogic {
       const line = (s) => { const ls = String(s || '').split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean); return ls.filter((x) => /\p{L}/u.test(x))[0] || ls[0] || ''; };
       const all = list.map((c) => {
         const a = c.app || null, ic = (a && a.icon) || '', on = c.posts7d > 0, bst = (c.best || [])[0];
-        return { av: '', noav: true, h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio),
+        return { av: c.avatar || '', noav: true, h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio),
           app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, appName: a ? a.name : 'Sans app repérée', niche: (a && a.niche) || '',
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('en-US').replace(/,/g, '\u202f') : '', fansK: isN(c.fans) ? nf(c.fans) : '—', nFans: isN(c.fans) ? c.fans : -1,
           med: isN(c.median) ? nf(c.median) : '—', nMed: isN(c.median) ? c.median : 0,
@@ -152,9 +152,9 @@ export default class MCreateursCartes extends DCLogic {
           $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
             ($l($v.live)).map((c) => [
               $h("a", { "href": c?.href, "style": "flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 7px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;" },
-                $h("span", { "style": "width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                $h("span", { "style": "width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   (c?.av) ? [
-                    $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (c?.noav) ? [
                     $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -196,9 +196,9 @@ export default class MCreateursCartes extends DCLogic {
               ),
               $h("span", { "style": "padding: 0 12px 14px; display: flex; flex-direction: column; gap: 8px;" },
                 $h("span", { "style": "margin-top: -22px;" },
-                  $h("span", { "style": "width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 3px var(--surface-raised);" },
+                  $h("span", { "style": "width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 3px var(--surface-raised); position: relative;" },
                     (c?.av) ? [
-                      $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     (c?.noav) ? [
                       $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },

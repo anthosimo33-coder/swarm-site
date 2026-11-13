@@ -5,6 +5,9 @@ import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
 export default class MVideo extends DCLogic {
+  // La courbe est dessinée à la largeur réelle de l'écran (le texte garde 12 à 16 px).
+  componentDidMount() { this.fit = () => { const w = this.box ? Math.round(this.box.clientWidth) : 0; if (w && w !== (this.state || {}).cw) this.setState({ cw: w }); }; this.fit(); window.addEventListener('resize', this.fit); }
+  componentWillUnmount() { window.removeEventListener('resize', this.fit); }
 
   renderVals() {
     const b = this.baseVals();
@@ -24,7 +27,9 @@ export default class MVideo extends DCLogic {
     const st = this.state || {};
     const P = this.props || {};
     const vid0 = (P.data && P.data.id) || (P.params && P.params.id) || '';
-    return { ajItem: vid0 ? { kind: 'video', id: vid0, label: b.vid.hook || b.vid.who || '', cover: (b.v && b.v.src) || null } : null, copyLabel: st.copied ? 'Format copié' : 'Copier le format', copy: () => { try { navigator.clipboard.writeText(b.vid.copyText); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } };
+    const fsv = typeof P.saved === 'function' ? P.saved('folders') : null;
+    const kept = !!vid0 && Array.isArray(fsv) && fsv.some((x) => (x.items || []).some((i) => i.kind === 'video' && i.id === vid0));
+    return { ajItem: vid0 ? { kind: 'video', id: vid0, label: b.vid.hook || b.vid.who || '', cover: (b.v && b.v.src) || null } : null, saveLabel: kept ? 'Dans tes dossiers' : 'Enregistrer dans un dossier', setChartBox: (el) => { this.box = el; } };
   }
 
   baseVals() {
@@ -33,7 +38,8 @@ export default class MVideo extends DCLogic {
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     let nxt = [{"src": "/media/app/v-7705368869250075925.jpg", "x": "2 333×", "t": "TKA SD kelas 6 persiapannya bisa dimulai disini", "v": "2,0 M"}, {"src": "/media/app/v-7706010190566542612.jpg", "x": "1 226×", "t": "Mình sẽ xoá vid này trong 24h nữa", "v": "809 k"}, {"src": "/media/app/v-7706101547570171143.jpg", "x": "455×", "t": "Bí mật giúp bạn học giỏi hơn đứa mình ghét", "v": "1,2 M"}];
     nxt = nxt.map((x) => Object.assign({}, x, { href: '/app/videos/' + vkey(x.src) }));
-    let vid = { pos: '1 sur 14', back: '/app/apps/astraai', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', hasApp: true, appName: 'Astra AI', where: 'Espagne · 08/11',
+    let au = { av: '/media/app/av-learnwithjoel1.jpg', noav: true };
+    let vid = { embed: 'https://www.tiktok.com/player/v1/7705929733220994337?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0', pos: '1 sur 14', back: '/app/apps/astraai', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', hasApp: true, appName: 'Astra AI', where: 'Espagne · 08/11',
       views: '1,87 M', who: '@learnwithjoel1 · 12,2 k abonnés', hasDur: true, dur: '0:49', url: 'https://www.tiktok.com/@learnwithjoel1/video/7705929733220994337', hasX: true, x: '65×',
       story: '1,87 M vues en 92 heures, alors que le compte fait d’habitude 28,5 k vues. +38 % entre H+52 et H+92.', lo: '4,7', hi: '6,5 k€',
       appHref: '/app/apps/astraai', appLink: 'Voir l’app Astra AI', copyText: 'POV: tienes EXAMEN ORAL y no has estudiado NADA' };
@@ -64,6 +70,7 @@ export default class MVideo extends DCLogic {
         growth = ' ' + pct(g) + ' entre H+' + H(snaps[0].at) + ' et H+' + H(snaps[snaps.length - 1].at) + '.';
       }
       const dur = Math.round(D.durationSec || 0);
+      au = { av: D.avatar || '', noav: true };
       vid = { embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
           : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/player/v1/' + D.id + '?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0' : '',
         pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
@@ -86,8 +93,52 @@ export default class MVideo extends DCLogic {
       nxt = cards.filter((c) => c.id !== D.id).slice(Math.max(0, idx), Math.max(0, idx) + 3).map((c) => ({ src: c.cover || '', x: c.x ? xf(c.x) : nf(c.views),
         t: c.hook || '@' + c.handle, v: nf(c.views), href: '/app/videos/' + c.id }));
     }
+    // Courbe : la publication, les relevés de vues, la normale du compte (modèle VideoA, makeChart), à la largeur réelle.
+    const CW = Math.max(240, Math.min(600, (this.state || {}).cw || 314));
+    const nfc = (n) => (n >= 999500 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + ' M' : n >= 999.5 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(Math.round(n)));
+    const makeChart = (obs, views, normal) => {
+      const W = CW, Y0 = 160, Y1 = 34, f = (n) => n.toFixed(1);
+      const lastH = Math.max(1, obs.length ? obs[obs.length - 1].h : 1);
+      const vmax = Math.max(1, views, normal || 0, ...obs.map((p) => p.v)) * 1.14;
+      const X = (hh) => 6 + (hh / lastH) * (W - 12), Yv = (v) => Y0 - (v / vmax) * (Y0 - Y1);
+      const PT = [{ x: X(0), y: Y0 }].concat(obs.map((p) => ({ x: X(p.h), y: Yv(p.v) })));
+      const smooth = (pts) => (pts.length < 2 ? '' : pts.slice(1).reduce((d, q, i) => { const p = pts[i], dx = (q.x - p.x) / 2.4;
+        return d + ' C' + f(p.x + dx) + ' ' + f(p.y) + ' ' + f(q.x - dx) + ' ' + f(q.y) + ' ' + f(q.x) + ' ' + f(q.y); }, 'M' + f(pts[0].x) + ' ' + f(pts[0].y)));
+      const E = PT[PT.length - 1];
+      const below = E.y < 56;
+      const ny = normal ? Yv(normal) : 0;
+      const days = (hh) => (hh >= 48 ? 'J+' + Math.round(hh / 24) : 'H+' + Math.round(hh));
+      const ticks = [{ x: 6, a: 'start', label: 'Publiée' }];
+      if (lastH >= 96) ticks.push({ x: f(X(lastH / 2)), a: 'middle', label: days(lastH / 2) });
+      ticks.push({ x: W - 6, a: 'end', label: days(lastH) });
+      return { w: W, area: PT.length > 1 ? smooth(PT) + ' L' + f(E.x) + ' ' + Y0 + ' L' + f(PT[0].x) + ' ' + Y0 + ' Z' : '',
+        guess: PT.length > 1 ? smooth(PT.slice(0, 2)) : '', line: PT.length > 2 ? smooth(PT.slice(1)) : '',
+        dots: PT.slice(1, -1).map((p) => ({ x: f(p.x), y: f(p.y) })), ex: f(E.x), ey: f(E.y), endLabel: nfc(views),
+        lx: f(E.x > W - 60 ? E.x + 4 : E.x), ly: f(below ? E.y + 30 : E.y - 18), la: E.x > W - 60 ? 'end' : 'middle',
+        // La normale basse : son étiquette va à droite, sous l'aire, là où le tronçon en pointillés ne passe pas.
+        nx: ny > Y0 - (Y0 - Y1) * 0.35 && Math.abs(E.y - ny) > 28 ? f(W - 6) : '0', na: ny > Y0 - (Y0 - Y1) * 0.35 && Math.abs(E.y - ny) > 28 ? 'end' : 'start',
+        hasNormal: !!normal && ny > Y1 - 4, ny: f(ny), nty: f(ny - 9 < 14 ? ny + 18 : ny - 9), nLabel: normal ? 'Sa normale · ' + nfc(normal) + ' vues' : '',
+        ticks, aria: 'Vues : ' + nfc(views) + ' à ' + days(lastH) + (normal ? ', sa normale est de ' + nfc(normal) + ' vues' : '') };
+    };
+    let obs = [{ h: 52, v: 1360000 }, { h: 67, v: 1530000 }, { h: 92, v: 1870000 }];
+    let chart = makeChart(obs, 1870000, 28500);
+    if (D && D.id) {
+      const HH = (ms) => Math.max(0, Math.round((ms - D.publishedAt) / 3600000));
+      obs = (D.snapshots || []).filter((p) => p.at >= D.publishedAt).sort((p, q) => p.at - q.at).map((p) => ({ h: HH(p.at), v: p.views }));
+      if (!obs.length || obs[obs.length - 1].v < D.views) obs.push({ h: Math.max(1, HH(Date.now())), v: D.views });
+      chart = makeChart(obs, D.views, D.normal || 0);
+    }
+    // Sous la courbe : ce qu'elle fait en ce moment (gain sur les dernières 24 h environ).
+    vid = Object.assign({}, vid, { growth: '' });
+    if (obs.length >= 2) {
+      const last = obs[obs.length - 1];
+      const ref = obs.slice(0, -1).reverse().find((p) => last.h - p.h >= 20) || obs[0];
+      const gain = last.v - ref.v, span = last.h - ref.h;
+      const per = span >= 20 && span <= 30 ? 'sur les dernières 24 h' : span >= 48 ? 'en ' + Math.round(span / 24) + ' jours' : 'en ' + Math.max(1, span) + ' h';
+      vid.growth = gain > Math.max(50, last.v * 0.01) ? '+' + nfc(gain) + ' vues ' + per + ' : elle continue de monter.' : 'Presque plus de nouvelles vues ' + per + ' : l’essentiel est fait.';
+    }
     const playing = !!((this.state || {}).playing && vid.embed); // lecteur officiel de la plateforme, au tap
-    return { v, facts, nxt, vid, hasNxt: nxt.length > 0, playing, notPlaying: !playing, play: () => { if (vid.embed) this.setState({ playing: true }); } };
+    return { v, facts, nxt, vid, au, chart, hasNxt: nxt.length > 0, playing, notPlaying: !playing, play: () => { if (vid.embed) this.setState({ playing: true }); } };
   }
 
   render() {
@@ -140,8 +191,21 @@ export default class MVideo extends DCLogic {
                 $h("span", { "style": "font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: #FFFFFF;" },
                   $t($v.vid?.views)
                 ),
-                $h("span", { "style": "font-size: 13px; color: #E4E7EC;" },
-                  $t($v.vid?.who)
+                $h("span", { "style": "display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: #E4E7EC;" },
+                  $h("span", { "style": "width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
+                    ($v.au?.av) ? [
+                      $h("img", { "src": $v.au?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    ] : null,
+                    ($v.au?.noav) ? [
+                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
+                        $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
+                      )
+                    ] : null
+                  ),
+                  $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                    $t($v.vid?.who)
+                  )
                 )
               ),
               ($v.vid?.hasDur) ? [
@@ -150,26 +214,21 @@ export default class MVideo extends DCLogic {
                 )
               ] : null
             ),
+            $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.url, "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir la vidéo sur sa plateforme", "style": "position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; background: rgba(5,7,12,0.55); color: #FFFFFF; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" },
+              $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
+            ),
             $h("span", { "class": "sw-video-bar", "style": "width: 0;" })
           ] : null
         ),
-        $h("div", { "style": "padding: 16px 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px;" },
-          $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openAj, "aria-label": "Ajouter à un dossier", "style": "width: 44px; height: 44px; flex-shrink: 0; box-shadow: inset 0 0 0 1px var(--line);" },
-            $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M6 4h12v16l-6-4-6 4z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            )
-          ),
-          $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.copy },
-            $t($v.copyLabel),
+        $h("div", { "style": "padding: 16px 20px 0; display: flex; justify-content: center;" },
+          $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.openAj },
+            $t($v.saveLabel),
             $h("span", { "class": "sw-btn-tile" },
               $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linejoin": "round" })
               )
-            )
-          ),
-          $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.url, "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir la vidéo", "style": "width: 44px; height: 44px; flex-shrink: 0; box-shadow: inset 0 0 0 1px var(--line);" },
-            $h("svg", { "width": "19", "height": "19", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
             )
           )
         ),
@@ -187,8 +246,44 @@ export default class MVideo extends DCLogic {
               )
             )
           ] : null,
+          $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
+            "Ses vues face à sa normale"
+          ),
+          $h("div", { "ref": $v.setChartBox, "style": "width: 100%;" },
+            $h("svg", { "viewBox": `0 0 ${$t($v.chart?.w)} 200`, "width": "100%", "height": "200", "role": "img", "aria-label": $v.chart?.aria, "style": "display: block; overflow: visible;" },
+              $h("defs", null,
+                $h("linearGradient", { "id": "mv-area", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                  $h("stop", { "offset": "0", "stop-color": "#4C9AFF", "stop-opacity": "0.32" }),
+                  $h("stop", { "offset": "1", "stop-color": "#4C9AFF", "stop-opacity": "0" })
+                )
+              ),
+              $h("line", { "x1": "0", "y1": "160", "x2": $v.chart?.w, "y2": "160", "stroke": "rgba(255,255,255,0.10)" }),
+              $h("path", { "d": $v.chart?.area, "fill": "url(#mv-area)", "class": "va-fade", "style": "opacity: 0; animation: m-vid-va-fade .6s ease-out .5s forwards;" }),
+              ($v.chart?.hasNormal) ? [
+                $h("line", { "x1": "0", "y1": $v.chart?.ny, "x2": $v.chart?.w, "y2": $v.chart?.ny, "stroke": "rgba(255,255,255,0.32)", "stroke-width": "1.2", "stroke-dasharray": "4 6" }),
+                $h("text", { "x": $v.chart?.nx, "y": $v.chart?.nty, "text-anchor": $v.chart?.na, "fill": "#A9B1BF", "font-family": "Inter, system-ui, sans-serif", "font-size": "12.5" },
+                  $t($v.chart?.nLabel)
+                )
+              ] : null,
+              $h("path", { "d": $v.chart?.guess, "fill": "none", "stroke": "#4C9AFF", "stroke-opacity": "0.5", "stroke-width": "2", "stroke-dasharray": "2 6", "stroke-linecap": "round" }),
+              $h("path", { "d": $v.chart?.line, "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.75", "stroke-linecap": "round", "stroke-linejoin": "round", "pathLength": "1", "stroke-dasharray": "1", "stroke-dashoffset": "1", "class": "va-draw", "style": "animation: m-vid-va-draw 1.1s cubic-bezier(.2,.7,.2,1) .1s forwards;" }),
+              ($l($v.chart?.dots)).map((d) => [
+                $h("circle", { "cx": d?.x, "cy": d?.y, "r": "2.5", "fill": "#4C9AFF", "fill-opacity": "0.7" })
+              ]),
+              $h("circle", { "cx": $v.chart?.ex, "cy": $v.chart?.ey, "r": "12", "fill": "#4C9AFF", "fill-opacity": "0.16" }),
+              $h("circle", { "cx": $v.chart?.ex, "cy": $v.chart?.ey, "r": "5.5", "fill": "#4C9AFF", "stroke": "#0D111A", "stroke-width": "2.5" }),
+              $h("text", { "x": $v.chart?.lx, "y": $v.chart?.ly, "text-anchor": $v.chart?.la, "fill": "#FFFFFF", "font-family": "Inter Tight, Inter, system-ui, sans-serif", "font-size": "16", "font-weight": "700" },
+                $t($v.chart?.endLabel)
+              ),
+              ($l($v.chart?.ticks)).map((t) => [
+                $h("text", { "x": t?.x, "y": "188", "text-anchor": t?.a, "fill": "#8A93A3", "font-family": "Inter, system-ui, sans-serif", "font-size": "12" },
+                  $t(t?.label)
+                )
+              ])
+            )
+          ),
           $h("span", { "style": "font-size: 14px; line-height: 1.5; color: var(--ink-muted);" },
-            $t($v.vid?.story)
+            $t($v.vid?.growth)
           )
         ),
         $h("div", { "style": "padding: 24px 20px 0; display: flex; flex-direction: column; gap: 4px;" },
