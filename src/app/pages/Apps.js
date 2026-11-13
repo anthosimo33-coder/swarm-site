@@ -197,6 +197,7 @@ return {};
         hasTop10: t10 !== null, top10: Math.round((t10 || 0) * 100) + ' %',
         waffle: Array.from({ length: 20 }, (_, c) => ({ bg: c < Math.round((t10 || 0) * 20) ? '#4C9AFF' : 'rgba(255,255,255,0.08)' })),
         hasTop: !!v1, top: v1 || {},
+        rows: v1 ? 'minmax(0, 1.2fr) minmax(0, 1.06fr) minmax(0, 0.86fr) minmax(0, 0.88fr)' : 'minmax(0, 1.3fr) minmax(0, 1.06fr) minmax(0, 0.88fr)',
         ppw: Number(pa[4]).toLocaleString('fr-FR'), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
         mkd: (md || pa[2].map((c) => [c, c, null])).filter((m) => m[2] !== null).slice(0, 2).map((m, n) => ({ l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
         href: ficheOf(pa),
@@ -498,7 +499,7 @@ return {};
         ($v.pv?.on) ? [
           $h("button", { "type": "button", "aria-label": "Fermer l’aperçu", "onClick": $v.closePv, "style": "position: fixed; inset: 0; z-index: 40; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.45);" }),
           $h("aside", { "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: 520px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--surface-raised); border-left: 1px solid var(--line); box-shadow: -40px 0 80px rgba(0,0,0,0.5); animation: sw-rise .4s cubic-bezier(.2,.8,.2,1) both;" },
-            $h("header", { "style": "padding: 24px 24px 18px; display: flex; flex-direction: column;" },
+            $h("header", { "style": "flex-shrink: 0; padding: clamp(14px, 2.6vh, 24px) 24px clamp(10px, 1.8vh, 18px); display: flex; flex-direction: column;" },
               $h("div", { "style": "display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;" },
                 $h("div", { "class": "sw-app", "style": "gap: 14px;" },
                   $h("span", { "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: 52px; height: 52px; border-radius: 15px;" },
@@ -541,14 +542,14 @@ return {};
                 )
               )
             ),
-            $h("div", { "style": "flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 24px 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 12px;" },
-              $h("section", { "aria-label": "Vues sur 30 jours", "style": "grid-column: 1 / span 2; height: 200px; box-sizing: border-box; display: flex; flex-direction: column; padding: 18px 18px 12px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+            $h("div", { "style": `flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 0 24px clamp(10px, 1.8vh, 18px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: ${$t($v.pv?.rows)}; gap: clamp(8px, 1.3vh, 12px);` },
+              $h("section", { "aria-label": "Vues sur 30 jours", "style": "grid-column: 1 / span 2; min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 18px clamp(8px, 1.3vh, 12px); border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
                 $h("div", { "style": "display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;" },
                   $h("div", { "style": "display: flex; flex-direction: column; gap: 4px;" },
                     $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                       $t($v.pv?.vLabel)
                     ),
-                    $h("span", { "style": "font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 700; letter-spacing: -0.045em;" },
+                    $h("span", { "style": "font-family: var(--font-display); font-size: clamp(30px, 4.6vh, 44px); line-height: 1; font-weight: 700; letter-spacing: -0.045em;" },
                       $t($v.pv?.v30)
                     )
                   ),
@@ -568,7 +569,7 @@ return {};
                     )
                   )
                 ),
-                $h("svg", { "viewBox": "0 0 436 72", "preserveAspectRatio": "none", "role": "img", "aria-label": "Vues par semaine sur 6 semaines", "style": "flex: 1; min-height: 0; width: 100%; margin-top: 10px; overflow: visible;" },
+                $h("svg", { "viewBox": "0 0 436 72", "preserveAspectRatio": "none", "role": "img", "aria-label": "Vues par semaine sur 6 semaines", "style": "flex: 1; min-height: 24px; width: 100%; margin-top: clamp(4px, 1vh, 10px); overflow: visible;" },
                   $h("defs", null,
                     $h("linearGradient", { "id": "apAr", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
                       $h("stop", { "offset": "0", "stop-color": "#4C9AFF", "stop-opacity": "0.32" }),
@@ -586,28 +587,28 @@ return {};
                   ])
                 )
               ),
-              $h("section", { "aria-label": "Sa place", "style": "height: 170px; box-sizing: border-box; display: flex; flex-direction: column; padding: 16px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("section", { "aria-label": "Sa place", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "Sa place"
                 ),
-                $h("span", { "style": "margin-top: 6px; font-family: var(--font-display); font-size: 34px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
+                $h("span", { "style": "margin-top: 4px; font-family: var(--font-display); font-size: clamp(24px, 3.6vh, 34px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
                   $t($v.pv?.rank)
                 ),
                 $h("span", { "style": "margin-top: 4px; font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                   $t($v.pv?.rankOf)
                 ),
-                $h("div", { "aria-hidden": "true", "style": "flex: 1; min-height: 0; margin-top: 12px; display: flex; align-items: flex-end; gap: 6px;" },
+                $h("div", { "aria-hidden": "true", "style": "flex: 1; min-height: 0; margin-top: clamp(6px, 1.2vh, 12px); display: flex; align-items: flex-end; gap: 6px;" },
                   ($l($v.pv?.bars)).map((b) => [
                     $h("span", { "title": b?.title, "style": `flex: 1; height: ${$t(b?.h)}; min-height: 3px; border-radius: 6px 6px 2px 2px; background: ${$t(b?.bg)};` })
                   ])
                 )
               ),
-              $h("section", { "aria-label": "Son réseau", "style": "height: 170px; box-sizing: border-box; display: flex; flex-direction: column; padding: 16px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("section", { "aria-label": "Son réseau", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "Son réseau"
                 ),
-                $h("span", { "style": "margin-top: 6px; display: flex; align-items: baseline; gap: 6px;" },
-                  $h("span", { "style": "font-family: var(--font-display); font-size: 34px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
+                $h("span", { "style": "margin-top: 4px; display: flex; align-items: baseline; gap: 6px;" },
+                  $h("span", { "style": "font-family: var(--font-display); font-size: clamp(24px, 3.6vh, 34px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
                     $t($v.pv?.acc)
                   ),
                   $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
@@ -617,10 +618,10 @@ return {};
                 ($v.pv?.hasTop10) ? [
                   $h("div", { "aria-hidden": "true", "style": "margin-top: auto; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px;" },
                     ($l($v.pv?.waffle)).map((c) => [
-                      $h("span", { "style": `aspect-ratio: 1; border-radius: 3px; background: ${$t(c?.bg)};` })
+                      $h("span", { "style": `height: clamp(7px, 1.5vh, 15px); border-radius: 3px; background: ${$t(c?.bg)};` })
                     ])
                   ),
-                  $h("span", { "style": "margin-top: 8px; font-size: 12px; color: var(--ink-faint);" },
+                  $h("span", { "style": "margin-top: clamp(4px, 0.8vh, 8px); font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
                     $h("span", { "style": "color: var(--ink); font-weight: 600;" },
                       "10 comptes"
                     ),
@@ -629,7 +630,7 @@ return {};
                 ] : null
               ),
               ($v.pv?.hasTop) ? [
-                $h("a", { "href": $v.pv?.top?.href, "aria-label": $v.pv?.top?.aria, "style": "grid-column: 1 / span 2; height: 150px; box-sizing: border-box; display: flex; gap: 14px; padding: 12px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-decoration: none; color: var(--ink);" },
+                $h("a", { "href": $v.pv?.top?.href, "aria-label": $v.pv?.top?.aria, "style": "grid-column: 1 / span 2; min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; gap: 14px; padding: clamp(8px, 1.3vh, 12px); border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-decoration: none; color: var(--ink);" },
                   $h("span", { "class": "sw-video", "style": "position: relative; flex: 0 0 auto; height: 100%; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden; background: #0A0C12;" },
                     $h("img", { "class": "sw-cover", "src": $v.pv?.top?.cover, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; background: rgba(5,7,12,0.55); display: flex; align-items: center; justify-content: center;" },
@@ -642,7 +643,7 @@ return {};
                     $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                       "Sa vidéo la plus vue"
                     ),
-                    $h("span", { "style": "font-family: var(--font-display); font-size: 30px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
+                    $h("span", { "style": "font-family: var(--font-display); font-size: clamp(22px, 3.3vh, 30px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
                       $t($v.pv?.top?.views)
                     ),
                     $h("span", { "style": "display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: var(--ink-faint);" },
@@ -658,11 +659,11 @@ return {};
                   )
                 )
               ] : null,
-              $h("section", { "aria-label": "Rythme", "style": "height: 130px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 16px; border-radius: 22px; background: var(--track);" },
+              $h("section", { "aria-label": "Rythme", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "Vidéos par semaine"
                 ),
-                $h("span", { "style": "font-family: var(--font-display); font-size: 30px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
+                $h("span", { "style": "font-family: var(--font-display); font-size: clamp(22px, 3.3vh, 30px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
                   $t($v.pv?.ppw)
                 ),
                 $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
@@ -675,7 +676,7 @@ return {};
                   ] : null
                 )
               ),
-              $h("section", { "aria-label": "Où ses vues se font", "style": "height: 130px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 16px; border-radius: 22px; background: var(--track);" },
+              $h("section", { "aria-label": "Où ses vues se font", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "Où ses vues se font"
                 ),
@@ -696,7 +697,7 @@ return {};
                 ])
               )
             ),
-            $h("footer", { "style": "padding: 16px 24px 24px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px;" },
+            $h("footer", { "style": "flex-shrink: 0; padding: clamp(10px, 1.7vh, 16px) 24px clamp(12px, 2.6vh, 24px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px;" },
               $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "height: 48px;" },
                 $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
