@@ -14,6 +14,24 @@ const RETRY_MS = 6 * 3_600_000;
  * convex/coverHttp.ts) : déjà rangée → son URL ; sinon lue sur la page publique de la vidéo,
  * réduite et rangée. null si la vidéo n'en donne pas.
  */
+/** La photo de profil d'un compte TikTok, copiée à la première demande (/avatar/<handle>). */
+export const ensureAvatar = internalAction({
+  args: { handle: v.string() },
+  handler: async (ctx, { handle }): Promise<string | null> => {
+    const key = `a:${handle}`;
+    const known: { url: string | null; missAt: number | null } = await ctx.runQuery(internal.radarStore.mediaGet, { key });
+    if (known.url) return known.url;
+    if (known.missAt && Date.now() - known.missAt < RETRY_MS) return null;
+    const got = await copyImage(ctx, key, `ttavatar:${handle}`);
+    if (!got) {
+      await ctx.runMutation(internal.radarStore.markMiss, { key });
+      return null;
+    }
+    await ctx.runMutation(internal.radarStore.saveMedia, { items: [got] });
+    return got.url;
+  },
+});
+
 export const ensure = internalAction({
   args: { id: v.string(), handle: v.string() },
   handler: async (ctx, { id, handle }): Promise<string | null> => {

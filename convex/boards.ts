@@ -25,6 +25,8 @@ function withCovers(data: unknown, hidden: Set<string>): unknown {
     if (!x || typeof x !== "object") return x;
     const o: Record<string, unknown> = {};
     for (const [k, val] of Object.entries(x)) o[k] = typeof val === "object" ? fix(val) : val;
+    // Un compte (créateur, auteur d'une vidéo) : sa photo de profil, servie par /avatar/<handle>.
+    if (typeof o.handle === "string" && "fans" in o && /^[A-Za-z0-9._]{2,30}$/.test(o.handle)) o.avatar = `${site}/avatar/${o.handle}?v=1`;
     if ("cover" in o) {
       const id = (o.videoId ?? o.id) as unknown;
       if (typeof id === "string" && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id)) o.cover = `${site}/cover/${id}?v=${COVER_VERSION}`;

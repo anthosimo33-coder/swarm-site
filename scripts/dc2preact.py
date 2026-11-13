@@ -329,6 +329,7 @@ def prefix_keyframes(css, template, script, prefix):
         new = f'{prefix}-{n}'
         css = re.sub(r'(@keyframes\s+)' + re.escape(n) + r'\b', r'\g<1>' + new, css)
         dur = r'(?=\s+(?:-?[\d.]+m?s\b|\{\{))'  # « nom 3s … » ou « nom {{durée}} … »
+        css = re.sub(r'(?<![\w-])' + re.escape(n) + r'\b' + dur, new, css)  # « animation: nom 1s » dans la feuille elle-même
         template = re.sub(r'(?<![\w-])' + re.escape(n) + r'\b' + dur, new, template)
         script = re.sub(r'(?<![\w-])' + re.escape(n) + r'\b' + dur, new, script)
         script = re.sub(r"(?<=['\"`])" + re.escape(n) + r"(?=\s)", new, script)

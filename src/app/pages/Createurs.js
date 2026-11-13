@@ -158,7 +158,7 @@ export default class Createurs extends DCLogic {
         const ic = (a && a.icon) || '';
         const on = c.posts7d > 0;
         return {
-          h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio), av: '', noav: true,
+          h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio), av: c.avatar || '', noav: true,
           app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, hasApp: !!a,
           appName: a ? a.name : '', niche: (a && a.niche) || '', appHref: a ? '/app/apps/' + a.slug : '/app/apps',
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('fr-FR') : '', fansK: isN(c.fans) ? nf(c.fans) : '', nFans: isN(c.fans) ? c.fans : -1,
@@ -394,9 +394,9 @@ export default class Createurs extends DCLogic {
                       ),
                       $h("td", null,
                         $h("a", { "href": c?.href, "style": "display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; min-width: 0;" },
-                          $h("span", { "style": "width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                          $h("span", { "style": "position: relative; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                             (c?.av) ? [
-                              $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                              $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                             ] : null,
                             (c?.noav) ? [
                               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },

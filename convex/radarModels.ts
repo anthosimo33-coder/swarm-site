@@ -173,6 +173,13 @@ export function buildBoards(
     return coverUrl(videoId);
   };
   /** Les n premières vidéos (dans l'ordre donné) qui ont une image ; la copie des suivantes est demandée. */
+  /** Photo de profil d'un compte TikTok : copiée d'avance par la synchro (servie par /avatar/<handle>). */
+  const wantAvatar = (handle: string | null | undefined) => {
+    if (!handle) return;
+    const key = `a:${handle}`;
+    used.add(key);
+    if (!mediaUrl(key) && !missing(key)) need.set(key, `ttavatar:${handle}`);
+  };
   const withImage = <T,>(vs: T[], n: number, has: (v: T) => boolean): T[] => {
     const out: T[] = [];
     for (const v of vs.slice(0, Math.max(n * 3, n + 10))) if (has(v) && out.length < n) out.push(v);
@@ -302,6 +309,7 @@ export function buildBoards(
     };
   };
   const creators = accounts.filter((t) => (t.medianViews ?? 0) > 0).map(creatorRow).sort((p, q) => (q.median ?? 0) - (p.median ?? 0));
+  for (const c of creators) wantAvatar(c.handle);
   for (const [code] of MARKETS) {
     const list = creators.filter((c) => c.market === code).slice(0, 200).map(({ _vids, ...c }) => c);
     boards.set(`creators:${code}`, { updatedAt: now, market: code, total: creators.filter((c) => c.market === code).length, creators: list });

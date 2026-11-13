@@ -158,7 +158,7 @@ export default class CreateursCartes extends DCLogic {
         const ic = (a && a.icon) || '';
         const on = c.posts7d > 0;
         return {
-          h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio), av: '', noav: true,
+          h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio), av: c.avatar || '', noav: true,
           app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, hasApp: !!a,
           appName: a ? a.name : '', niche: (a && a.niche) || '', appHref: a ? '/app/apps/' + a.slug : '/app/apps',
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('fr-FR') : '', fansK: isN(c.fans) ? nf(c.fans) : '', nFans: isN(c.fans) ? c.fans : -1,
@@ -347,9 +347,9 @@ export default class CreateursCartes extends DCLogic {
               ),
               ($l($v.live)).map((c) => [
                 $h("a", { "href": c?.href, "style": "display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;" },
-                  $h("span", { "style": "width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                  $h("span", { "style": "position: relative; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                     (c?.av) ? [
-                      $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     (c?.noav) ? [
                       $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -406,9 +406,9 @@ export default class CreateursCartes extends DCLogic {
                 ] : null,
                 $h("div", { "style": "padding: 0 22px 22px; display: flex; flex-direction: column; gap: 14px;" },
                   $h("div", { "style": "position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; margin-top: -30px;" },
-                    $h("span", { "style": "width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised), 0 8px 24px rgba(0,0,0,0.4);" },
+                    $h("span", { "style": "position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised), 0 8px 24px rgba(0,0,0,0.4);" },
                       (c?.av) ? [
-                        $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       (c?.noav) ? [
                         $h("svg", { "width": "32", "height": "32", "viewBox": "0 0 24 24", "aria-hidden": "true" },

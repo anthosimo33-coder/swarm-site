@@ -5,19 +5,7 @@ import AjoutDossier from './AjoutDossier.js';
 import Palette from './Palette.js';
 
 export default class Video extends DCLogic {
-  // Raccourcis annoncés en bas : P passe à la suivante, G ouvre « Garder ».
-  componentDidMount() {
-    this.onKey = (e) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
-      const t = e.target;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
-      const k = String(e.key || '').toLowerCase();
-      if (k === 'p' && this.skipEl) { e.preventDefault(); this.skipEl.click(); }
-      else if (k === 'g') { e.preventDefault(); this.setState({ aj: !(this.state || {}).aj }); }
-    };
-    document.addEventListener('keydown', this.onKey);
-  }
-  componentWillUnmount() { document.removeEventListener('keydown', this.onKey); clearTimeout(this.tm); }
+  componentWillUnmount() { clearTimeout(this.tm); }
 
   renderVals() {
     const b = this.baseVals();
@@ -46,7 +34,7 @@ export default class Video extends DCLogic {
     const fs = live ? P.saved('folders') : null;
     const kept = live ? (Array.isArray(fs) ? fs : []).some((x) => (x.items || []).some((i) => i.kind === 'video' && i.id === id)) : !!st.kept;
     return {
-      kept: kept ? 'true' : 'false', keepLabel: kept ? 'Gardée' : 'Garder',
+      kept: kept ? 'true' : 'false', keepLabel: kept ? 'Gardée' : 'Garder', saveLabel: kept ? 'Dans tes dossiers' : 'Enregistrer dans un dossier',
       keepBg: kept ? 'var(--accent-soft)' : 'var(--track)', keepInk: kept ? 'var(--accent)' : 'var(--ink-muted)', keepFill: kept ? 'currentColor' : 'none',
       ajItem: { kind: 'video', id, label: b.vid.handle, cover: b.vid.cover || null },
       setSkip: (el) => { this.skipEl = el; },
@@ -73,9 +61,38 @@ export default class Video extends DCLogic {
       cover: '/media/app/v-7705929733220994337.jpg', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', durS: '49s', dur: '0:49',
       url: 'https://www.tiktok.com/@learnwithjoel1/video/7705929733220994337', appName: 'Astra AI', appHref: '/app/apps/astraai', market: 'Espagne', date: '08/11',
       handle: '@learnwithjoel1', whoMeta: " · 12,2 k abonnés · fait d'habitude 28,5 k vues", x: '65×', views: '1,87 M vues', age: 'en 92 heures · 154× ses abonnés',
-      growth: '+38 % entre H+52 et H+92', copyText: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', copyParts: 'Texte à l’écran' };
-    let chart = { line: 'M40 150 L266 54.9 L331 42.7 L440 19.1', mid: '1 M', top: '2 M', aria: 'Vues : 1,36 M à H+52, 1,53 M à H+67, 1,87 M à H+92',
-      pts: [[266, 54.9, 'H+52', 'middle', 266], [331, 42.7, 'H+67', 'middle', 331], [440, 19.1, 'H+92', 'end', 436]].map((p, i, a) => ({ x: p[0], y: p[1], label: p[2], anchor: p[3], lx: p[4], r: i === a.length - 1 ? 5.5 : 4.5, fill: i === a.length - 1 ? '#4C9AFF' : '#0D111A' })) };
+      growth: '+340 k vues sur les dernières 24 h : elle continue de monter.', copyText: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', copyParts: 'Texte à l’écran' };
+    // Courbe « ses vues face à sa normale » : la publication, les relevés, la normale du compte.
+    // obs = [{ h: heures depuis la publication, v: vues }]. Le tronçon publication -> premier relevé
+    // n'a pas été relevé : il est en pointillés. Une seule étiquette (la dernière valeur), 3 repères de temps.
+    const makeChart = (obs, views, normal, nfmt) => {
+      const W = 380, Y0 = 170, Y1 = 36, f = (n) => n.toFixed(1);
+      const lastH = Math.max(1, obs.length ? obs[obs.length - 1].h : 1);
+      const vmax = Math.max(1, views, normal || 0, ...obs.map((p) => p.v)) * 1.14;
+      const X = (h) => 6 + (h / lastH) * (W - 12), Yv = (v) => Y0 - (v / vmax) * (Y0 - Y1);
+      const P = [{ x: X(0), y: Y0 }].concat(obs.map((p) => ({ x: X(p.h), y: Yv(p.v) })));
+      const smooth = (pts) => pts.length < 2 ? '' : pts.slice(1).reduce((d, b, i) => { const a = pts[i], dx = (b.x - a.x) / 2.4;
+        return d + ' C' + f(a.x + dx) + ' ' + f(a.y) + ' ' + f(b.x - dx) + ' ' + f(b.y) + ' ' + f(b.x) + ' ' + f(b.y); }, 'M' + f(pts[0].x) + ' ' + f(pts[0].y));
+      const E = P[P.length - 1];
+      const below = E.y < 58;
+      const ny = normal ? Yv(normal) : 0;
+      const days = (h) => (h >= 48 ? 'J+' + Math.round(h / 24) : 'H+' + Math.round(h));
+      const ticks = [{ x: 6, a: 'start', label: 'Publiée' }];
+      if (lastH >= 96) ticks.push({ x: f(X(lastH / 2)), a: 'middle', label: days(lastH / 2) });
+      ticks.push({ x: W - 6, a: 'end', label: days(lastH) });
+      return {
+        area: P.length > 1 ? smooth(P) + ' L' + f(E.x) + ' ' + Y0 + ' L' + f(P[0].x) + ' ' + Y0 + ' Z' : '',
+        guess: P.length > 1 ? smooth(P.slice(0, 2)) : '',
+        line: P.length > 2 ? smooth(P.slice(1)) : '',
+        dots: P.slice(1, -1).map((p) => ({ x: f(p.x), y: f(p.y) })),
+        ex: f(E.x), ey: f(E.y), endLabel: nfmt(views),
+        lx: f(E.x > W - 60 ? E.x + 4 : E.x), ly: f(below ? E.y + 30 : E.y - 18), la: E.x > W - 60 ? 'end' : 'middle',
+        hasNormal: !!normal && ny > Y1 - 4, ny: f(ny), nty: f(ny - 9 < 14 ? ny + 18 : ny - 9), nLabel: normal ? 'Sa normale · ' + nfmt(normal) + ' vues' : '',
+        ticks, aria: 'Vues : ' + nfmt(views) + ' à ' + days(lastH) + (normal ? ', sa normale est de ' + nfmt(normal) + ' vues' : ''),
+      };
+    };
+    let chart = makeChart([{ h: 52, v: 1360000 }, { h: 67, v: 1530000 }, { h: 92, v: 1870000 }], 1870000, 28500,
+      (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + ' M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(n)));
 
     // Sur le site : la vidéo depuis le Radar (document « video:<id> », convex/radarModels.ts).
     const D = this.props && this.props.data;
@@ -107,25 +124,18 @@ export default class Video extends DCLogic {
         copyParts: ((p) => (p.length ? (p.slice(0, -1).join(', ') + (p.length > 1 ? ' et ' : '') + p[p.length - 1]).replace(/^./, (c) => c.toUpperCase()) : 'Rien à copier'))(
           [D.hook ? 'texte à l’écran' : '', D.caption ? 'légende' : '', D.music ? 'son' : ''].filter(Boolean))
       };
-      // Courbe : les relevés de vues, du dépôt au dernier relevé.
-      const snaps = (D.snapshots || []).filter((p) => p.at >= D.publishedAt);
-      const pts = [{ h: 0, v: 0 }].concat(snaps.map((p) => ({ h: H(p.at), v: p.views })));
-      const maxH = Math.max(1, pts[pts.length - 1].h), maxV = Math.max(1, D.views);
-      const top = Math.pow(10, Math.floor(Math.log10(maxV))) * Math.ceil(maxV / Math.pow(10, Math.floor(Math.log10(maxV))));
-      const XY = pts.map((p) => [40 + p.h / maxH * 400, 150 - p.v / top * 140]);
-      chart = {
-        line: 'M' + XY.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L'), top: nf(top), mid: nf(top / 2),
-        aria: 'Vues : ' + snaps.map((p) => nf(p.views) + ' à H+' + H(p.at)).join(', '),
-        pts: XY.slice(1).map((p, i, a) => ({ x: p[0].toFixed(1), y: p[1].toFixed(1), label: 'H+' + pts[i + 1].h, anchor: i === a.length - 1 ? 'end' : 'middle', lx: i === a.length - 1 ? 436 : p[0].toFixed(1), r: i === a.length - 1 ? 5.5 : 4.5, fill: i === a.length - 1 ? '#4C9AFF' : '#0D111A' }))
-      };
-      // Une étiquette d'heure par point, sauf si elle mordrait sur la suivante (la dernière gagne).
-      for (let i = chart.pts.length - 2, last = 436; i >= 0; i--) {
-        if (last - chart.pts[i].x < 44) chart.pts[i].label = '';
-        else last = +chart.pts[i].x;
-      }
-      if (snaps.length >= 2 && snaps[0].views > 0) {
-        const g = (snaps[snaps.length - 1].views - snaps[0].views) / snaps[0].views;
-        vid.growth = (g >= 0 ? '+' : '−') + Math.round(Math.abs(g) * 100) + ' % entre H+' + H(snaps[0].at) + ' et H+' + H(snaps[snaps.length - 1].at);
+      // Courbe : la publication, les relevés de vues, la normale du compte.
+      const obs = (D.snapshots || []).filter((p) => p.at >= D.publishedAt).sort((a, b) => a.at - b.at).map((p) => ({ h: H(p.at), v: p.views }));
+      if (!obs.length || obs[obs.length - 1].v < D.views) obs.push({ h: Math.max(1, hours), v: D.views });
+      chart = makeChart(obs, D.views, D.normal || 0, nf);
+      // Sous la courbe : ce qu'elle fait en ce moment (gain sur les dernières 24 h environ).
+      if (obs.length >= 2) {
+        const last = obs[obs.length - 1];
+        const ref = obs.slice(0, -1).reverse().find((p) => last.h - p.h >= 20) || obs[0];
+        const gain = last.v - ref.v, span = last.h - ref.h;
+        const per = span >= 20 && span <= 30 ? 'sur les dernières 24 h' : span >= 48 ? 'en ' + Math.round(span / 24) + ' jours' : 'en ' + Math.max(1, span) + ' h';
+        vid.growth = gain > Math.max(50, last.v * 0.01) ? '+' + nf(gain) + ' vues ' + per + ' : elle continue de monter.'
+          : 'Presque plus de nouvelles vues ' + per + ' : l’essentiel est fait.';
       }
       const r = (n) => (n === null || n === undefined ? null : nf(n));
       facts = [
@@ -264,28 +274,41 @@ export default class Video extends DCLogic {
                   )
                 ),
                 $h("div", { "style": "display: flex; flex-direction: column; gap: 8px;" },
-                  $h("svg", { "viewBox": "0 0 440 180", "width": "100%", "height": "180", "role": "img", "aria-label": $v.chart?.aria },
-                    $h("line", { "x1": "40", "y1": "150", "x2": "440", "y2": "150", "stroke": "rgba(255,255,255,0.14)" }),
-                    $h("line", { "x1": "40", "y1": "80", "x2": "440", "y2": "80", "stroke": "rgba(255,255,255,0.06)" }),
-                    $h("line", { "x1": "40", "y1": "10", "x2": "440", "y2": "10", "stroke": "rgba(255,255,255,0.06)" }),
-                    $h("text", { "x": "0", "y": "154", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "10" },
-                      "0"
+                  $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
+                    "Ses vues face à sa normale"
+                  ),
+                  $h("svg", { "viewBox": "0 0 380 210", "width": "100%", "height": "210", "role": "img", "aria-label": $v.chart?.aria, "style": "overflow: visible;" },
+                    $h("defs", null,
+                      $h("linearGradient", { "id": "va-area", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                        $h("stop", { "offset": "0", "stop-color": "#4C9AFF", "stop-opacity": "0.30" }),
+                        $h("stop", { "offset": "1", "stop-color": "#4C9AFF", "stop-opacity": "0" })
+                      )
                     ),
-                    $h("text", { "x": "0", "y": "84", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "10" },
-                      $t($v.chart?.mid)
+                    $h("line", { "x1": "0", "y1": "170", "x2": "380", "y2": "170", "stroke": "rgba(255,255,255,0.10)" }),
+                    $h("path", { "d": $v.chart?.area, "fill": "url(#va-area)", "class": "va-fade" }),
+                    ($v.chart?.hasNormal) ? [
+                      $h("line", { "x1": "0", "y1": $v.chart?.ny, "x2": "380", "y2": $v.chart?.ny, "stroke": "rgba(255,255,255,0.32)", "stroke-width": "1.2", "stroke-dasharray": "4 6" }),
+                      $h("text", { "x": "0", "y": $v.chart?.nty, "fill": "#A9B1BF", "font-family": "Inter, system-ui, sans-serif", "font-size": "12.5" },
+                        $t($v.chart?.nLabel)
+                      )
+                    ] : null,
+                    $h("path", { "d": $v.chart?.guess, "fill": "none", "stroke": "#4C9AFF", "stroke-opacity": "0.5", "stroke-width": "2", "stroke-dasharray": "2 6", "stroke-linecap": "round" }),
+                    $h("path", { "d": $v.chart?.line, "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.75", "stroke-linecap": "round", "stroke-linejoin": "round", "pathLength": "1", "class": "va-draw" }),
+                    ($l($v.chart?.dots)).map((d) => [
+                      $h("circle", { "cx": d?.x, "cy": d?.y, "r": "2.5", "fill": "#4C9AFF", "fill-opacity": "0.7" })
+                    ]),
+                    $h("circle", { "cx": $v.chart?.ex, "cy": $v.chart?.ey, "r": "12", "fill": "#4C9AFF", "fill-opacity": "0.16" }),
+                    $h("circle", { "cx": $v.chart?.ex, "cy": $v.chart?.ey, "r": "5.5", "fill": "#4C9AFF", "stroke": "#0D111A", "stroke-width": "2.5" }),
+                    $h("text", { "x": $v.chart?.lx, "y": $v.chart?.ly, "text-anchor": $v.chart?.la, "fill": "#FFFFFF", "font-family": "Inter Tight, Inter, system-ui, sans-serif", "font-size": "16", "font-weight": "700", "letter-spacing": "-0.01em" },
+                      $t($v.chart?.endLabel)
                     ),
-                    $h("text", { "x": "0", "y": "14", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "10" },
-                      $t($v.chart?.top)
-                    ),
-                    $h("path", { "d": $v.chart?.line, "fill": "none", "stroke": "#4C9AFF", "stroke-width": "2.5", "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-dasharray": "600", "style": "animation: sw-draw 6s ease-in-out infinite;" }),
-                    ($l($v.chart?.pts)).map((p) => [
-                      $h("circle", { "cx": p?.x, "cy": p?.y, "r": p?.r, "fill": p?.fill, "stroke": "#4C9AFF", "stroke-width": "2" }),
-                      $h("text", { "x": p?.lx, "y": "174", "text-anchor": p?.anchor, "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "10" },
-                        $t(p?.label)
+                    ($l($v.chart?.ticks)).map((t) => [
+                      $h("text", { "x": t?.x, "y": "198", "text-anchor": t?.a, "fill": "#8A93A3", "font-family": "Inter, system-ui, sans-serif", "font-size": "12" },
+                        $t(t?.label)
                       )
                     ])
                   ),
-                  $h("span", { "style": "font-size: 14px; font-weight: 600;" },
+                  $h("span", { "style": "font-size: 14px; line-height: 1.45; color: var(--ink-muted);" },
                     $t($v.vid?.growth)
                   )
                 )
@@ -331,47 +354,20 @@ export default class Video extends DCLogic {
             )
           ),
           $h("footer", { "style": "display: flex; align-items: center; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.02);" },
-            $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px;" },
-              $h("a", { "ref": $v.setSkip, "class": "sw-btn sw-btn-icon", "href": $v.vid?.nextHref, "aria-label": "Passer cette vidéo", "title": "Passer (P)", "style": "background: var(--track);" },
-                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round" })
-                )
-              ),
-              $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                "Passer"
-              ),
-              $h("span", { "class": "sw-kbd", "style": "height: 22px;" },
-                "P"
-              )
-            ),
-            $h("span", { "aria-hidden": "true", "style": "width: 1px; height: 24px; background: var(--line);" }),
-            $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px;" },
-              $h("span", { "style": "position: relative; display: inline-flex;" },
-                $h("button", { "data-aj-trigger": "true", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "class": "sw-btn sw-btn-icon", "type": "button", "aria-pressed": $v.kept, "aria-label": "Garder cette vidéo", "title": "Garder (G)", "style": `background: ${$t($v.keepBg)}; color: ${$t($v.keepInk)};` },
+            $h("span", { "style": "position: relative; display: inline-flex;" },
+              $h("button", { "data-aj-trigger": "true", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "class": "sw-btn sw-btn-primary", "type": "button", "aria-pressed": $v.kept },
+                $t($v.saveLabel),
+                $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": $v.keepFill, "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                    $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": $v.keepFill, "stroke": "currentColor", "stroke-width": "2", "stroke-linejoin": "round" })
                   )
-                ),
-                ($v.aj) ? [
-                  $h("span", { "style": "position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 45;" },
-                    $h(AjoutDossier, { "onClose": $v.closeAj, "item": $v.ajItem, "saved": $v.savedFn, "save": $v.saveFn })
-                  )
-                ] : null
-              ),
-              $h("span", { "style": `font-size: 13px; color: ${$t($v.keepInk)};` },
-                $t($v.keepLabel)
-              ),
-              $h("span", { "class": "sw-kbd", "style": "height: 22px;" },
-                "G"
-              )
-            ),
-            $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.copy, "style": "margin-left: 12px;" },
-              $t($v.copyLabel),
-              $h("span", { "class": "sw-btn-tile" },
-                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
-              )
+              ),
+              ($v.aj) ? [
+                $h("span", { "style": "position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 45;" },
+                  $h(AjoutDossier, { "onClose": $v.closeAj, "item": $v.ajItem, "saved": $v.savedFn, "save": $v.saveFn })
+                )
+              ] : null
             ),
             $h("span", { "style": "margin-left: auto;" }),
             ($v.vid?.appName) ? [

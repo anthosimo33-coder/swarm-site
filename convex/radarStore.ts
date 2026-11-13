@@ -78,6 +78,18 @@ export const markMiss = internalMutation({
   },
 });
 
+/** Pour /avatar/<handle> : la photo déjà rangée, et si l'app connaît le compte (fiche, ou cité par une app). */
+export const avatarLookup = internalQuery({
+  args: { handle: v.string() },
+  handler: async (ctx, { handle }) => {
+    const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", `a:${handle}`)).first();
+    if (row) return { known: true, url: row.url };
+    const page = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", `creator:${handle}`)).first();
+    const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", `a:${handle}`)).first();
+    return { known: !!page || !!miss, url: null };
+  },
+});
+
 /** Pour /cover/<id> : la miniature déjà rangée, sinon le compte de la vidéo (si l'app la connaît). */
 export const coverLookup = internalQuery({
   args: { id: v.string() },

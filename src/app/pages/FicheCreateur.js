@@ -85,7 +85,7 @@ export default class FicheCreateur extends DCLogic {
       const ink = 'var(--ink)';
       const a = D.app;
       z = {
-        av: '', noav: true, h: '@' + D.handle, bio: D.bio ? D.bio.replace(/\s+/g, ' ').trim() : '',
+        av: D.avatar || '', noav: true, h: '@' + D.handle, bio: D.bio ? D.bio.replace(/\s+/g, ' ').trim() : '',
         mk: M[D.market] || M.XX, flag: D.market && D.market !== 'XX' && M[D.market] ? D.market : '', tt: 'https://www.tiktok.com/@' + D.handle,
         app: a ? { name: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
                : { name: '', niche: '', logo: '', nologo: true, blank: 'sw-app-blank', href: '' }
@@ -212,9 +212,9 @@ export default class FicheCreateur extends DCLogic {
           $h("section", { "class": "sw-card", "style": "margin: 18px 32px 0; padding: 32px 36px; border-radius: 28px; overflow: hidden; display: flex; align-items: center; gap: 28px; flex-wrap: wrap;" },
             $h("div", { "aria-hidden": "true", "class": "sw-dots-bg", "style": "position: absolute; inset: 0; -webkit-mask-image: radial-gradient(50% 100% at 0% 50%, #000, transparent); mask-image: radial-gradient(50% 100% at 0% 50%, #000, transparent);" }),
             $h("span", { "style": "position: relative; padding: 4px; border-radius: 50%; background: conic-gradient(from 200deg, var(--blue-400), var(--blue-700), var(--blue-400));" },
-              $h("span", { "style": "width: 112px; height: 112px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised);" },
+              $h("span", { "style": "position: relative; width: 112px; height: 112px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised);" },
                 ($v.z?.av) ? [
-                  $h("img", { "src": $v.z?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                  $h("img", { "src": $v.z?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                 ] : null,
                 ($v.z?.noav) ? [
                   $h("svg", { "width": "56", "height": "56", "viewBox": "0 0 24 24", "aria-hidden": "true" },

@@ -134,7 +134,7 @@ export default class FicheApp extends DCLogic {
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
       mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + ' %', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
       creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
-        med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: false, noav: true, page: !!c.page, href: '/app/createurs/' + c.handle }));
+        med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: c.avatar || '', noav: true, page: !!c.page, href: '/app/createurs/' + c.handle }));
       sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));
     }
     vids = vids.map((v) => Object.assign({ href: '/app/videos/7705929733220994337' }, v));
@@ -576,9 +576,9 @@ export default class FicheApp extends DCLogic {
                   $h("tr", null,
                     $h("td", { "style": "padding-left: 0;" },
                       $h("span", { "class": "sw-app" },
-                        $h("span", { "style": "width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #1B2333; border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
+                        $h("span", { "style": "position: relative; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #1B2333; border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
                           (c?.av) ? [
-                            $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (c?.noav) ? [
                             $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },

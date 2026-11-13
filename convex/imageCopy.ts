@@ -12,6 +12,7 @@ import type { ActionCtx } from "./_generated/server";
  *   itunes:<nom de l'app>           l'icône App Store de l'app
  *   ttpage:<handle>/<id de vidéo>   la miniature lue sur la page publique de la vidéo TikTok
  *   igpage:<code du reel>           la miniature lue sur la page d'intégration publique d'Instagram
+ *   ttavatar:<handle>               la photo de profil lue sur la page publique du compte TikTok
  *   https://…                       l'image elle-même (URL signée du dernier relevé)
  */
 
@@ -19,6 +20,8 @@ export const MAX_IMAGE_BYTES = 4_000_000;
 /** Taille servie : une vignette fait au plus 360 px de large à l'écran (720 en Retina), une icône 256 px. */
 const COVER_WIDTH = 480;
 const ICON_SIZE = 256;
+/** Photo de profil : affichée en 36 à 120 px. */
+const AVATAR_SIZE = 240;
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 
 type StoreHit = { artworkUrl512?: string; artworkUrl100?: string; trackViewUrl?: string; trackName?: string };
@@ -60,6 +63,24 @@ export async function tiktokCover(handle: string, id: string): Promise<string | 
   }
 }
 
+/** La photo de profil d'un compte TikTok, lue dans les données de sa page publique. */
+export async function tiktokAvatar(handle: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://www.tiktok.com/@${encodeURIComponent(handle)}`, {
+      headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
+    if (!m) return null;
+    const user = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.user-detail"]?.userInfo?.user;
+    const url = user?.avatarMedium || user?.avatarLarger || user?.avatarThumb;
+    return typeof url === "string" && url.startsWith("https://") ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 /** La miniature d'un reel Instagram, lue sur sa page d'intégration publique (sans connexion). */
 export async function instagramCover(code: string): Promise<string | null> {
   const decode = (u: string) => u.replace(/&amp;/g, "&");
@@ -92,6 +113,7 @@ async function imageUrl(source: string): Promise<string | null> {
     return id ? tiktokCover(handle, id) : null;
   }
   if (source.startsWith("igpage:")) return instagramCover(source.slice("igpage:".length));
+  if (source.startsWith("ttavatar:")) return tiktokAvatar(source.slice("ttavatar:".length));
   return source;
 }
 
@@ -123,6 +145,8 @@ export async function shrink(buf: ArrayBuffer, type: string, key: string): Promi
     const img = sharp(Buffer.from(buf)).rotate();
     const out = key.startsWith("icon:")
       ? await img.resize({ width: ICON_SIZE, height: ICON_SIZE, fit: "cover" }).webp({ quality: 85 }).toBuffer()
+      : key.startsWith("a:")
+      ? await img.resize({ width: AVATAR_SIZE, height: AVATAR_SIZE, fit: "cover" }).webp({ quality: 80 }).toBuffer()
       : await img.resize({ width: COVER_WIDTH, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer();
     if (out.byteLength >= buf.byteLength) return { data: buf, type };
     return { data: out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer, type: "image/webp" };

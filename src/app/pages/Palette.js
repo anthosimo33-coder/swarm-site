@@ -51,7 +51,7 @@ export default class Palette extends DCLogic {
             hasStats: !!full, med: full && full.medX ? xf(full.medX) : '—', ok: full && full.n ? full.wins + ' sur ' + full.n : '—', max: full ? nf(full.maxViews || 0) : '',
             apps: and(names), hasCov: covs.length > 0, covs, href: '/app/formats/' + f.id, key: f.label + ' ' + names.join(' ') + ' ' + ((full && full.niche) || '') };
         });
-        const C2 = (S.creators || []).map((c) => ({ k: 'cr', av: '', noav: true, h: '@' + c.handle, app: c.app || '',
+        const C2 = (S.creators || []).map((c) => ({ k: 'cr', av: c.avatar || '', noav: true, h: '@' + c.handle, handle: c.handle, app: c.app || '',
           s: [c.app || '', has(c.fans) ? nf(c.fans) + ' abonnés' : '', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
           med: c.median ? nf(c.median) : '—', rytL: 'Abonnés', ryt: has(c.fans) ? nf(c.fans) : '—',
           hasCov: false, covs: [], href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || '') }));
@@ -80,7 +80,17 @@ export default class Palette extends DCLogic {
       hover: () => { if ((this.state || {}).sel !== i + off) this.setState({ sel: i + off }); }
     }));
     const A2 = mark(apps, 0), F2 = mark(fms, apps.length), C2 = mark(crs, apps.length + fms.length);
-    const cur = flat[sel] || null;
+    let cur = flat[sel] || null;
+    // Un créateur : ses vidéos les plus récentes et son rythme, lus dans sa fiche (document « creator: »).
+    if (cur && cur.k === 'cr' && cur.handle && this.props && this.props.get) {
+      const d = this.props.get('creator:' + cur.handle);
+      if (d) {
+        const nf2 = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+        const covs = (d.videos || []).filter((v) => v.cover).slice(0, 3).map((v) => ({ src: v.cover, v: nf2(v.views) }));
+        const p7 = d.posts7d || 0;
+        cur = Object.assign({}, cur, { covs, hasCov: covs.length > 0, rytL: 'Rythme', ryt: p7 ? p7 + (p7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j', av: cur.av || d.avatar || '' });
+      }
+    }
     const close = () => { if (this.props.onClose) this.props.onClose(); };
     const scopes = [['tout', 'Tout'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs']]
       .map((s) => ({ l: s[1], on: s[0] === scope ? 'true' : 'false', pick: () => this.setState({ scope: s[0], sel: 0 }) }));
@@ -114,12 +124,7 @@ export default class Palette extends DCLogic {
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--accent); flex-shrink: 0;" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
-              $h("input", { "ref": $v.setInput, "type": "search", "value": $v.q, "onInput": $v.onQ, "aria-label": "Chercher une app, un format ou un créateur", "placeholder": "Cherche une app, un format, un créateur…", "autocomplete": "off", "style": "flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; color: var(--ink); font-family: var(--font-body); font-size: 20px; font-weight: 500;" }),
-              $h("button", { "type": "button", "onClick": $v.close, "aria-label": "Fermer", "style": "border: 0; background: transparent; padding: 0; cursor: pointer;" },
-                $h("span", { "class": "sw-kbd", "style": "height: 22px; min-width: 22px; padding: 0 6px; font-size: 11px;" },
-                  "Échap"
-                )
-              )
+              $h("input", { "ref": $v.setInput, "type": "search", "value": $v.q, "onInput": $v.onQ, "aria-label": "Chercher une app, un format ou un créateur", "placeholder": "Cherche une app, un format, un créateur…", "autocomplete": "off", "style": "flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; color: var(--ink); font-family: var(--font-body); font-size: 20px; font-weight: 500;" })
             ),
             $h("div", { "role": "tablist", "aria-label": "Chercher dans", "style": "display: flex; gap: 6px; padding: 12px 16px; border-bottom: 1px solid var(--line);" },
               ($l($v.scopes)).map((s) => [
@@ -197,9 +202,9 @@ export default class Palette extends DCLogic {
                     ),
                     ($l($v.crs)).map((c) => [
                       $h("a", { "href": c?.href, "onMouseEnter": c?.hover, "style": `display: flex; align-items: center; gap: 12px; margin: 0 8px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(c?.bg)}; box-shadow: inset 0 0 0 1px ${$t(c?.edge)};` },
-                        $h("span", { "style": "width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                        $h("span", { "style": "position: relative; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                           (c?.av) ? [
-                            $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (c?.noav) ? [
                             $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -360,9 +365,9 @@ export default class Palette extends DCLogic {
                   ] : null,
                   ($v.pc) ? [
                     $h("div", { "style": "display: flex; align-items: center; gap: 16px;" },
-                      $h("span", { "style": "width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
+                      $h("span", { "style": "position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                         ($v.cur?.av) ? [
-                          $h("img", { "src": $v.cur?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                          $h("img", { "src": $v.cur?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                         ] : null,
                         ($v.cur?.noav) ? [
                           $h("svg", { "width": "32", "height": "32", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -442,12 +447,6 @@ export default class Palette extends DCLogic {
                   "↵"
                 ),
                 "ouvrir"
-              ),
-              $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                $h("span", { "class": "sw-kbd", "style": "height: 22px; min-width: 22px; padding: 0 6px; font-size: 11px;" },
-                  "Échap"
-                ),
-                "fermer"
               ),
               $h("span", { "style": "margin-left: auto;" },
                 $t($v.count)
