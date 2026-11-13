@@ -46,7 +46,18 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <div role="tablist" aria-label="Classement" style="display: flex; gap: 4px; flex-wrap: wrap;">
 <sc-for list="{{sorts}}" as="s" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{s.on}}" onClick="{{s.pick}}" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: {{s.bg}}; color: {{s.ink}}; font: inherit; font-size: 14px; font-weight: {{s.fw}}; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: {{s.ic}};"><path d="{{s.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{s.l}}</button></sc-for>
 </div>
-<div role="tablist" aria-label="Période" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--track);"><sc-for list="{{periods}}" as="p" hint-placeholder-count="2"><button type="button" role="tab" aria-selected="{{p.on}}" onClick="{{p.pick}}" style="height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: {{p.bg}}; color: {{p.ink}}; font: inherit; font-size: 13px; font-weight: {{p.fw}}; cursor: pointer;">{{p.l}}</button></sc-for></div>
+<div style="position: relative;"><div role="tablist" aria-label="Période" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--track); box-shadow: inset 0 0 0 1px {{perEdge}};"><sc-for list="{{periods}}" as="p" hint-placeholder-count="2"><button type="button" role="tab" aria-selected="{{p.on}}" onClick="{{p.pick}}" style="height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: {{p.bg}}; color: {{p.ink}}; font: inherit; font-size: 13px; font-weight: {{p.fw}}; cursor: pointer;">{{p.l}}</button></sc-for><button type="button" role="tab" data-menu-trigger="true" aria-selected="{{cust.on}}" aria-expanded="{{cust.open}}" aria-haspopup="dialog" onClick="{{cust.toggle}}" style="display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: {{cust.bg}}; color: {{cust.ink}}; font: inherit; font-size: 13px; font-weight: {{cust.fw}}; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: {{cust.ic}};"><path d="M4 6h16v14H4zM4 10h16M9 3v4M15 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{cust.l}}</button></div>
+<sc-if value="{{cal.on}}" hint-placeholder-val="{{false}}"><div ref="{{setMenu}}" role="dialog" aria-label="Choisir une période" style="position: absolute; top: 44px; right: 0; z-index: 30; width: 820px; max-width: calc(100vw - 140px); display: grid; grid-template-columns: 210px minmax(0, 1fr); box-sizing: border-box; padding: 8px; border-radius: 22px; background: #0D111A; border: 1px solid var(--glass-edge); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both; padding: 0; overflow: hidden;">
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 12px; border-right: 1px solid var(--line);"><span style="padding: 8px 10px 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);">Raccourcis</span><sc-for list="{{cal.presets}}" as="q" hint-placeholder-count="6"><button type="button" onClick="{{q.pick}}" aria-pressed="{{q.sel}}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 40px; padding: 0 10px; border: 0; border-radius: 10px; background: {{q.bg}}; color: {{q.ink}}; font: inherit; font-size: 14px; font-weight: {{q.fw}}; text-align: left; cursor: pointer;">{{q.l}}<sc-if value="{{q.on}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--accent);"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></button></sc-for></div>
+<div style="display: flex; flex-direction: column; min-width: 0;">
+<div style="display: flex; align-items: center; gap: 10px; padding: 16px 20px 12px;"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border-radius: 12px; background: var(--track); box-shadow: inset 0 0 0 1px {{cal.aEdge}};"><span style="font-size: 11px; color: var(--ink-faint);">Du</span><span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{cal.aTxt}}</span></span><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border-radius: 12px; background: var(--track); box-shadow: inset 0 0 0 1px {{cal.bEdge}};"><span style="font-size: 11px; color: var(--ink-faint);">Au</span><span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{cal.bTxt}}</span></span></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 4px 20px 16px;"><sc-for list="{{cal.months}}" as="m" hint-placeholder-count="2"><div style="display: flex; flex-direction: column; gap: 6px;">
+<div style="display: flex; align-items: center; justify-content: space-between; height: 32px;"><sc-if value="{{m.prev}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{cal.prevM}}" aria-label="Mois précédent" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: var(--track); color: var(--ink); cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: currentColor;"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></sc-if><sc-if value="{{m.noPrev}}" hint-placeholder-val="{{true}}"><span style="width: 28px;"></span></sc-if><span style="font-size: 14px; font-weight: 600;">{{m.t}}</span><sc-if value="{{m.next}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{cal.nextM}}" aria-label="Mois suivant" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: var(--track); color: var(--ink); cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: currentColor;"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></sc-if><sc-if value="{{m.noNext}}" hint-placeholder-val="{{true}}"><span style="width: 28px;"></span></sc-if></div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px;"><sc-for list="{{cal.dow}}" as="w" hint-placeholder-count="7"><span style="height: 26px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--ink-faint);">{{w.l}}</span></sc-for><sc-for list="{{m.cells}}" as="c" hint-placeholder-count="35"><span style="height: 36px; display: flex; align-items: center; justify-content: center; background: {{c.band}}; border-radius: {{c.bandR}};"><sc-if value="{{c.on}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{c.pick}}" aria-label="{{c.aria}}" aria-pressed="{{c.sel}}" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: {{c.dot}}; color: {{c.ink}}; font: inherit; font-size: 13px; font-weight: {{c.fw}}; font-variant-numeric: tabular-nums; box-shadow: {{c.ring}}; cursor: pointer;">{{c.n}}</button></sc-if><sc-if value="{{c.off}}" hint-placeholder-val="{{false}}"><span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: {{c.ink}}; font-variant-numeric: tabular-nums;">{{c.n}}</span></sc-if></span></sc-for></div>
+</div></sc-for></div>
+<div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--line);"><span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 14px; font-weight: 600;">{{cal.count}}</span><span style="font-size: 12px; color: var(--ink-faint);">Les vues des vidéos publiées sur la période. Le Radar remonte au {{cal.since}}.</span></span><span style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;"><button type="button" onClick="{{closeMenu}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; color: var(--ink-muted); font: inherit; font-size: 14px; cursor: pointer;">Annuler</button><button class="sw-btn sw-btn-primary sw-btn-sm" type="button" onClick="{{cal.apply}}">Appliquer<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: currentColor;"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
+</div>
+</div></sc-if></div>
 </div>
 <span aria-hidden="true" style="display: block; height: 1px; background: var(--line);"></span>
 <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px;">
@@ -57,7 +68,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <sc-for list="{{menu.items}}" as="it" hint-placeholder-count="7">
 <button type="button" role="option" aria-selected="{{it.sel}}" onClick="{{it.pick}}" onKeyDown="{{menuKeys}}" style="width: 100%; height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 12px; background: {{it.bg}}; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; opacity: {{it.o}};">
 <span aria-hidden="true" style="width: 18px; height: 18px; border-radius: {{it.radius}}; border: 1.5px solid {{it.box}}; background: {{it.fill}}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" fill="none" stroke="{{it.tick}}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
-<span style="flex: 1 1 auto; min-width: 0; font-weight: {{it.w}};">{{it.label}}</span>
+<sc-if value="{{it.flag}}" hint-placeholder-val="{{false}}"><span class="sw-flag" data-c="{{it.flag}}" aria-hidden="true"></span></sc-if><span style="flex: 1 1 auto; min-width: 0; font-weight: {{it.w}};">{{it.label}}</span>
 <span style="font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;">{{it.n}}</span>
 </button>
 </sc-for>
@@ -71,7 +82,13 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <div style="display: flex; align-items: center; gap: 18px;">
 <span style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25;"><span style="font-size: 12px; color: var(--ink-faint);">Affichées</span><span style="font-size: 14px; font-weight: 600;">{{total}} apps</span></span>
 <span aria-hidden="true" style="width: 1px; height: 28px; background: var(--line);"></span>
-<span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px;"><span style="color: var(--ink-muted);">Trier par</span><span style="font-weight: 600;">{{sortLabel}}</span><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ink-faint);"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<div style="position: relative;"><button type="button" data-menu-trigger="true" onClick="{{sortBtn.toggle}}" aria-expanded="{{sortBtn.open}}" aria-haspopup="listbox" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: {{sortBtn.bg}}; box-shadow: inset 0 0 0 1px {{sortBtn.edge}}; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: {{sortBtn.ic}};"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color: var(--ink-muted);">Trier par</span><span style="font-weight: 600;">{{sortLabel}}</span><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="{{sortBtn.dirD}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<sc-if value="{{sortMenu.on}}" hint-placeholder-val="{{false}}"><div ref="{{setMenu}}" role="listbox" aria-label="Trier par" style="position: absolute; top: 46px; right: 0; z-index: 30; width: 360px; box-sizing: border-box; padding: 8px; border-radius: 22px; background: #0D111A; border: 1px solid var(--glass-edge); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;">
+<span style="display: block; padding: 10px 12px 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);">Trier par</span>
+<sc-for list="{{sortMenu.items}}" as="o" hint-placeholder-count="7"><button type="button" role="option" aria-selected="{{o.sel}}" onClick="{{o.pick}}" style="width: 100%; display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: {{o.bg}}; color: var(--ink); font: inherit; font-size: 14px; font-weight: {{o.fw}}; text-align: left; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: {{o.ic}};"><path d="{{o.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex: 1;">{{o.l}}</span><sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--accent);"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></button></sc-for>
+<span aria-hidden="true" style="display: block; height: 1px; margin: 6px 4px; background: var(--line);"></span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 4px 4px 12px;"><span style="font-size: 13px; color: var(--ink-muted);">Ordre</span><span role="radiogroup" aria-label="Ordre" style="display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--track);"><sc-for list="{{sortMenu.dirs}}" as="r" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{r.sel}}" onClick="{{r.pick}}" style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: {{r.bg}}; color: {{r.ink}}; font: inherit; font-size: 13px; font-weight: {{r.fw}}; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="{{r.d}}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.l}}</button></sc-for></span></div>
+</div></sc-if></div>
 </div>
 </div>
 </section>
@@ -79,13 +96,13 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <div style="margin: 16px 32px 0; overflow-x: auto; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
 <table class="sw-table" style="table-layout: fixed; min-width: 1240px;">
 <thead><tr style="background: rgba(255,255,255,0.02);">
-<th style="width: 330px; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-muted); padding-top: 14px; padding-bottom: 14px; padding-left: 20px;"><span style="display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>App</span></th><th style="width: 200px; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-muted); padding-top: 14px; padding-bottom: 14px;"><span style="display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M3 12V4h8l10 10-8 8zM7.5 7.5h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Niche</span></th><th style="width: 340px; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-muted); padding-top: 14px; padding-bottom: 14px;"><span style="display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Leurs vidéos qui cartonnent</span></th><th style="width: 300px; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-muted); padding-top: 14px; padding-bottom: 14px;"><span style="display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M3 3v18h18M7 15l4-4 3 3 5-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{vlab}}</span></th><th class="sw-num" style="width: 110px; text-transform: none; letter-spacing: 0; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-muted); padding-top: 14px; padding-bottom: 14px; padding-right: 20px;"><span style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Meilleure</span></th>
+<th aria-sort="{{hd.name.aria}}" style="width: 330px; padding-top: 14px; padding-bottom: 14px; padding-left: 20px;"><button type="button" onClick="{{hd.name.pick}}" style="display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; border: 0; background: transparent; color: {{hd.name.ink}}; font: inherit; font-size: 13px; font-weight: {{hd.name.fw}}; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: {{hd.name.ic}};"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>App<span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; background: {{hd.name.sBg}}; color: {{hd.name.sInk}};"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="{{hd.name.sD}}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></th><th style="width: 200px; padding-top: 14px; padding-bottom: 14px;"><span class="sw-th"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: currentColor;"><path d="M3 12V4h8l10 10-8 8zM7.5 7.5h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Niche</span></th><th style="width: 340px; padding-top: 14px; padding-bottom: 14px;"><span class="sw-th"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: currentColor;"><path d="M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Leurs vidéos qui cartonnent</span></th><th aria-sort="{{hd.views.aria}}" style="width: 300px; padding-top: 14px; padding-bottom: 14px;"><button type="button" onClick="{{hd.views.pick}}" style="display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; border: 0; background: transparent; color: {{hd.views.ink}}; font: inherit; font-size: 13px; font-weight: {{hd.views.fw}}; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: {{hd.views.ic}};"><path d="M3 3v18h18M7 15l4-4 3 3 5-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{vlab}}<span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; background: {{hd.views.sBg}}; color: {{hd.views.sInk}};"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="{{hd.views.sD}}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></th><th class="sw-num" aria-sort="{{hd.best.aria}}" style="width: 110px; padding-top: 14px; padding-bottom: 14px; padding-right: 20px;"><button type="button" onClick="{{hd.best.pick}}" style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 0; border: 0; background: transparent; color: {{hd.best.ink}}; font: inherit; font-size: 13px; font-weight: {{hd.best.fw}}; cursor: pointer;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: {{hd.best.ic}};"><path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Meilleure<span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; background: {{hd.best.sBg}}; color: {{hd.best.sInk}};"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="{{hd.best.sD}}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></th>
 </tr></thead>
 <tbody>
 <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
 <tr style="background: {{r.bg}};">
 <td style="padding: 20px 12px 20px 20px;"><span style="display: flex; align-items: center; gap: 14px; min-width: 0;"><span style="width: 20px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);">{{r.rank}}</span><button type="button" class="sw-app" onClick="{{r.open}}" aria-label="Aperçu de {{r.n}}" style="min-width: 0; gap: 14px; border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;"><span class="sw-app-icon {{r.blank}}" style="width: 48px; height: 48px; border-radius: 14px;"><sc-if value="{{r.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{r.logo}}" alt=""></sc-if><sc-if value="{{r.nologo}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg></sc-if></span><span style="min-width: 0; display: flex; flex-direction: column; gap: 5px;"><span class="sw-app-name" style="font-size: 16px; font-weight: 600; letter-spacing: -0.01em;">{{r.n}}</span><span style="font-size: 12px; color: var(--ink-faint); white-space: nowrap;">{{r.net}}</span></span></button></span></td>
-<td><span style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px;"><span style="display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-muted);"><path d="{{r.nicheIc}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.niche}}</span><span style="font-size: 12px; color: var(--ink-faint); white-space: nowrap;">{{r.mkText}}</span></span></td>
+<td><span style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px;"><span style="display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-muted);"><path d="{{r.nicheIc}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.niche}}</span><span style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--ink-faint); white-space: nowrap;"><sc-for list="{{r.mks}}" as="k" hint-placeholder-count="2"><span title="{{k.t}}" style="display: inline-flex; align-items: center; gap: 6px;"><span class="sw-flag" data-c="{{k.c}}" aria-hidden="true"></span>{{k.p}}</span></sc-for></span></span></td>
 <td><span style="display: flex; flex-direction: column; gap: 8px;"><span style="display: flex; gap: 10px;"><sc-for list="{{r.thumbs}}" as="t" hint-placeholder-count="3"><a href="{{t.href}}" class="sw-video {{t.t}}" style="display: block; width: 92px; height: 124px; aspect-ratio: auto; border-radius: 12px;"><img class="sw-cover" src="{{t.src}}" alt="" loading="lazy"><span class="sw-video-shade"></span><span style="position: absolute; left: 8px; bottom: 7px; font-size: 13px; font-weight: 700; color: #FFFFFF;">{{t.v}}</span></a></sc-for></span><sc-if value="{{r.count}}" hint-placeholder-val="{{true}}"><span style="font-size: 12px; color: var(--ink-faint);"><span style="color: var(--ink-soft); font-weight: 600;">{{r.count}}</span> vidéos en 30 jours</span></sc-if></span></td>
 <td><span style="display: flex; align-items: center; gap: 18px;"><span style="display: flex; flex-direction: column; gap: 6px; min-width: 104px;"><span style="font-family: var(--font-display); font-size: 24px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{r.v30}}</span><span style="font-size: 12px; font-weight: 600; white-space: nowrap; color: {{r.dInk}};">{{r.delta}}</span></span><svg width="150" height="56" viewBox="0 0 150 56" aria-hidden="true" style="display: block; flex-shrink: 0; overflow: visible;"><defs><linearGradient id="{{r.gid}}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{{r.stroke}}" stop-opacity="0.28"></stop><stop offset="1" stop-color="{{r.stroke}}" stop-opacity="0"></stop></linearGradient></defs><path d="{{r.area}}" fill="url(#{{r.gid}})"></path><path d="{{r.line}}" fill="none" stroke="{{r.stroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="{{r.ex}}" cy="{{r.ey}}" r="4" fill="{{r.stroke}}" stroke="#121722" stroke-width="2"></circle></svg></span></td>
 <td class="sw-num" style="padding-right: 20px;"><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;"><span style="font-family: var(--font-display); font-size: 24px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--accent);">{{r.best}}</span><span style="font-size: 12px; font-weight: 400; color: var(--ink-faint);">sa normale</span></span></td>
@@ -147,7 +164,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </section>
 <section aria-label="Où ses vues se font" style="min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);">
 <span style="font-size: 13px; color: var(--ink-muted);">Où ses vues se font</span>
-<sc-for list="{{pv.mkd}}" as="m" hint-placeholder-count="2"><span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: flex; justify-content: space-between; gap: 8px; font-size: 12px;"><span style="color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{m.l}}</span><span style="font-weight: 600;">{{m.p}}</span></span><span aria-hidden="true" style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08);"><span style="display: block; width: {{m.w}}; height: 6px; border-radius: 3px; background: {{m.bg}};"></span></span></span></sc-for>
+<sc-for list="{{pv.mkd}}" as="m" hint-placeholder-count="2"><span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: flex; justify-content: space-between; gap: 8px; font-size: 12px;"><span style="display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sw-flag" data-c="{{m.c}}" aria-hidden="true"></span>{{m.l}}</span><span style="font-weight: 600;">{{m.p}}</span></span><span aria-hidden="true" style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08);"><span style="display: block; width: {{m.w}}; height: 6px; border-radius: 3px; background: {{m.bg}};"></span></span></span></sc-for>
 </section>
 </div>
 <footer style="flex-shrink: 0; padding: clamp(10px, 1.7vh, 16px) 24px clamp(12px, 2.6vh, 24px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px;">
@@ -170,8 +187,11 @@ class Component extends DCLogic {
       this.setState({ open: '' });
     };
     document.addEventListener('mousedown', this.out);
+    // Échap ferme le menu de tri et le calendrier (les menus de filtre ont leur propre champ).
+    this.esc = (e) => { const st = this.state || {}; if (e.key === 'Escape' && (st.open === 'tri' || st.open === 'periode')) this.setState({ open: '' }); };
+    document.addEventListener('keydown', this.esc);
   }
-  componentWillUnmount() { document.removeEventListener('mousedown', this.out); }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.out); document.removeEventListener('keydown', this.esc); }
   componentDidUpdate(pp, ps) {
     const st = this.state || {};
     ps = ps || {};
@@ -212,8 +232,10 @@ return {};
     // Sur le canevas : l'exemple ci-dessus. A[i] = [nom, niche, marchés, comptes, vidéos/sem.,
     // vues 30 j (M), 6 semaines (M), meilleure, miniatures, vues des miniatures, icône,
     // slug, id des vidéos, nouvelle ?, vues 30 j TikTok (M), Instagram (M), 7 j TikTok (M), 7 j Instagram (M),
-    // part des 10 premiers comptes, vidéo n°1 { x, handle }, vidéos sur 30 j]
+    // part des 10 premiers comptes, vidéo n°1 { x, handle }, vidéos sur 30 j, meilleure (×), arrivée (ms),
+    // vues par jour de publication sur 42 jours (total, Instagram)]
     const D = this.props && this.props.data;
+    let DAYEND = null; // dernier jour de l'historique (jours depuis 1970, heure de Paris)
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
     const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
@@ -222,9 +244,10 @@ return {};
       A = D.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, a.weeks.map((w) => w / 1e6),
         a.bestX ? xf(a.bestX) : '—', a.top.map((t) => t.cover || ''), a.top.map((t) => nf(t.views)), a.icon || '', a.slug, a.top.map((t) => t.id), a.isNew,
         (a.views30 - a.views30Ig) / 1e6, a.views30Ig / 1e6, (a.views7 - (a.views7Ig || 0)) / 1e6, (a.views7Ig || 0) / 1e6,
-        a.top10Share, a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null, a.videoCount]);
+        a.top10Share, a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null, a.videoCount, a.bestX || 0, a.trackedSince || 0, a.days || null, a.daysIg || null]);
+      DAYEND = D.apps.length && typeof D.apps[0].dayEnd === 'number' ? D.apps[0].dayEnd : null;
       MKD = Object.fromEntries(D.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || c, p])]));
-      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c === 'XX' ? '' : c]));
+      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c]));
       NIS = D.niches;
     }
     const ficheOf = (a) => (a[11] ? 'FicheA.dc.html?app=' + a[11] : 'FicheA.dc.html');
@@ -236,7 +259,17 @@ return {};
     const qn = this.props && this.props.query ? this.props.query.niche : (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('niche') : null);
     const niches = st.niches || (qn && NIS.indexOf(qn) >= 0 ? [qn] : []);
     const sort = st.sort || 'vues';
-    const period = st.period || '30';
+    let period = st.period || '30';
+    // Historique jour par jour : 42 jours, le dernier = aujourd'hui (heure de Paris). Sur le canevas : déduit des semaines.
+    const NDAYS = 42;
+    const dayEnd = DAYEND !== null ? DAYEND : Math.floor((Date.now() + 3600e3) / 864e5);
+    const dayDate = (i) => new Date((dayEnd - NDAYS + 1 + i) * 864e5);
+    const dd = (i) => { const x = dayDate(i); return String(x.getUTCDate()).padStart(2, '0') + '/' + String(x.getUTCMonth() + 1).padStart(2, '0'); };
+    const range = st.range && typeof st.range.a === 'number' ? st.range : null;
+    if (period === 'custom' && !range) period = '30';
+    const rangeLabel = range ? (range.a === range.b ? 'le ' + dd(range.a) : dd(range.a) + ' → ' + dd(range.b)) : '';
+    const dayArr = (a, ig) => (ig ? a[24] : a[23]) || Array.from({ length: NDAYS }, (_, i) => (ig ? 0 : a[6][Math.floor(i / 7)] * 1e6 / 7));
+    const sumR = (arr) => { let n = 0; for (let i = range.a; i <= range.b; i++) n += arr[i] || 0; return n / 1e6; };
     const mq = (st.mq || '').toLowerCase();
     const fr = (x, d) => x.toFixed(d).replace('.', ',');
     const okM = (a, m) => m === 'ALL' || a[2].indexOf(m) >= 0;
@@ -245,21 +278,30 @@ return {};
     const isNew = (a) => (a[13] !== undefined ? a[13] : a[6][0] + a[6][1] < 0.2);
     // Vues de la période et de la plateforme choisies (sans découpage par plateforme dans l'exemple : le total).
     const views = (a) => {
+      if (period === 'custom') { const all = sumR(dayArr(a, false)), ig = sumR(dayArr(a, true)); return platform === 'tiktok' ? all - ig : platform === 'instagram' ? ig : all; }
       if (platform === 'tiktok' && a[14] !== undefined) return period === '7' ? a[16] : a[14];
       if (platform === 'instagram' && a[15] !== undefined) return period === '7' ? a[17] : a[15];
       return period === '7' ? a[6][5] : a[5];
     };
     const dlt = (a) => (a[6][4] > 0 ? (a[6][5] - a[6][4]) / a[6][4] : 0);
     const set = (patch) => this.setState(Object.assign({ open, market, niches, sort, period, platform, menuX: st.menuX }, patch));
+    const pickSort = (k) => set({ sortBy: k, dir: k === sortBy ? (dir === 'asc' ? 'desc' : 'asc') : (k === 'name' ? 'asc' : 'desc'), open: '' });
     let list = A.filter((a) => okM(a, market) && okN(a, niches) && (platform === 'ALL' || views(a) > 0));
     if (sort === 'nouvelles') list = list.filter(isNew);
-    list = list.slice().sort((x, y) => (sort === 'accel' ? dlt(y) - dlt(x) : views(y) - views(x)));
+    // Tri : celui choisi (menu ou en-tête), sinon celui de l'onglet ; l'ordre, sinon décroissant (A → Z pour le nom).
+    const sortBy = st.sortBy || (sort === 'accel' ? 'progress' : 'views');
+    const dir = st.dir || (sortBy === 'name' ? 'asc' : 'desc');
+    const KEY = { views: (a) => views(a), progress: dlt, accounts: (a) => Number(a[3]) || 0, ppw: (a) => Number(a[4]) || 0, best: (a) => a[21] || parseFloat(String(a[7]).replace(/\s/g, '').replace(',', '.')) || 0,
+      arrival: (a) => a[22] || 0, name: (a) => String(a[0]).toLowerCase() };
+    list = list.slice().sort((x, y) => { const p = KEY[sortBy](x), q = KEY[sortBy](y); const c = typeof p === 'string' ? p.localeCompare(q, 'fr') : p - q; return dir === 'asc' ? c : -c; });
     // Icônes : une par niche, par onglet et par filtre (style des en-têtes : trait 1,8).
     const NIC = { 'Séduction IA': 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z', 'Couple': 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z',
       'Études': 'M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM8 7h7', 'Jalousie et ex': 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
       'Side hustle': 'M3 17l6-6 4 4 8-8M15 7h6v6', 'Langues': 'M4 5h8M8 3v2M5 9c1.5 3 4 5 7 6M11 5c-1 4-3.5 7-7 9M13 21l4-9 4 9M14.5 18h5', 'Foi': 'M12 3v18M7 8h10',
       'Social et loisirs': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Santé et physique': 'M3 12h4l3-8 4 16 3-8h4', 'Beauté IA': 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z' };
     const NIC0 = 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z';
+    const mkList = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2], m[1]]) : a[2].map((c) => [c, null, c]);
+      return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + ' %' : '', t })); };
     const mkText = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2]]) : a[2].map((c) => [c, null]);
       return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p]) => (c === 'XX' ? 'Autres' : c) + (p !== null && p !== undefined ? ' ' + p + ' %' : '')).join(' · '); };
     const rows = list.map((a, i) => {
@@ -270,7 +312,7 @@ return {};
       const d = dlt(a);
       const up = d >= 0;
       return {
-        rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], nicheIc: NIC[a[1]] || NIC0, mkText: mkText(a),
+        rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], nicheIc: NIC[a[1]] || NIC0, mkText: mkText(a), mks: mkList(a),
         net: Number(a[3]).toLocaleString('fr-FR') + ' comptes · ' + Number(a[4]).toLocaleString('fr-FR') + ' vidéos / sem.',
         count: typeof a[20] === 'number' && a[20] > 0 ? a[20].toLocaleString('fr-FR') : '', v30: fr(views(a), 1) + ' M',
         delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
@@ -316,9 +358,9 @@ return {};
     }
     const SIC = { vues: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', accel: 'M3 17l6-6 4 4 8-8M15 7h6v6', nouvelles: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z' };
     const sorts = [['vues', 'Les plus vues'], ['accel', 'Qui accélèrent'], ['nouvelles', 'Nouvelles']].map((s) => { const on = s[0] === sort;
-      return { l: s[1], d: SIC[s[0]], on: on ? 'true' : 'false', bg: on ? 'rgba(255,255,255,0.10)' : 'transparent', ink: on ? 'var(--ink)' : 'var(--ink-muted)', fw: on ? '600' : '500', ic: on ? 'var(--accent)' : 'var(--ink-faint)', pick: () => set({ sort: s[0] }) }; });
+      return { l: s[1], d: SIC[s[0]], on: on ? 'true' : 'false', bg: on ? 'rgba(255,255,255,0.10)' : 'transparent', ink: on ? 'var(--ink)' : 'var(--ink-muted)', fw: on ? '600' : '500', ic: on ? 'var(--accent)' : 'var(--ink-faint)', pick: () => set({ sort: s[0], sortBy: null, dir: null }) }; });
     const periods = [['7', '7 j'], ['30', '30 j']].map((p) => { const on = p[0] === period;
-      return { l: p[1], on: on ? 'true' : 'false', bg: on ? 'rgba(255,255,255,0.10)' : 'transparent', ink: on ? 'var(--ink)' : 'var(--ink-muted)', fw: on ? '600' : '400', pick: () => set({ period: p[0] }) }; });
+      return { l: p[1], on: on ? 'true' : 'false', bg: on ? 'rgba(255,255,255,0.10)' : 'transparent', ink: on ? 'var(--ink)' : 'var(--ink-muted)', fw: on ? '600' : '400', pick: () => set({ period: p[0], open: '' }) }; });
     const pa = A.filter((a) => a[0] === st.pv)[0];
     let pv = { on: false };
     let ajItem = null;
@@ -371,14 +413,76 @@ return {};
         hasTop: !!v1, top: v1 || {},
         rows: v1 ? 'minmax(0, 1.2fr) minmax(0, 1.06fr) minmax(0, 0.86fr) minmax(0, 0.88fr)' : 'minmax(0, 1.3fr) minmax(0, 1.06fr) minmax(0, 0.88fr)',
         ppw: Number(pa[4]).toLocaleString('fr-FR'), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
-        mkd: (md || pa[2].map((c) => [c, c, null])).filter((m) => m[2] !== null).slice(0, 2).map((m, n) => ({ l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
+        mkd: (md || pa[2].map((c) => [c, c, null])).filter((m) => m[2] !== null).slice(0, 2).map((m, n) => ({ c: m[0], l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
         href: ficheOf(pa),
         followLabel: followed(pa) ? 'Suivi' : 'Suivre', followOn: followed(pa) ? 'true' : 'false', follow: () => toggleFollow(pa) };
       ajItem = { kind: 'app', id: pa[11] || pa[0], label: pa[0], cover: pa[10] || null };
     }
+    // ── Tri : menu, ordre, en-têtes ──
+    const SLAB = { views: period === 'custom' ? 'Vues · ' + rangeLabel : (period === '7' ? 'Vues · 7 j' : 'Vues · 30 j'), progress: 'Progression', accounts: 'Comptes', ppw: 'Vidéos / sem.', best: 'Meilleure', arrival: 'Arrivée', name: 'Nom' };
+    const SOPT = [['views', 'Vues sur la période', 'M3 3v18h18M7 15l4-4 3 3 5-6'], ['progress', 'Progression de la semaine', 'M3 17l6-6 4 4 8-8M15 7h6v6'],
+      ['accounts', 'Comptes qui la poussent', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3'],
+      ['ppw', 'Vidéos par semaine', 'M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4'], ['best', 'Meilleure vidéo (× sa normale)', 'M13 2L4 14h7l-1 8 9-12h-7z'],
+      ['arrival', 'Arrivée dans le Radar', 'M4 6h16v14H4zM4 10h16M9 3v4M15 3v4'], ['name', 'Nom de l’app', 'M4 18l4-12 4 12M5.5 14h5M14 6h6l-6 12h6']];
+    const DOWN = 'M12 5v14M6 13l6 6 6-6', UPA = 'M12 19V5M6 11l6-6 6 6';
+    const sortMenu = { on: open === 'tri',
+      items: SOPT.map(([k, l, d]) => { const on = k === sortBy; return { l, d, on, sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', fw: on ? '600' : '500', ic: on ? 'var(--accent)' : 'var(--ink-faint)', pick: () => set({ sortBy: k, dir: k === 'name' ? 'asc' : 'desc', open: '' }) }; }),
+      dirs: [['desc', 'Décroissant', DOWN], ['asc', 'Croissant', UPA]].map(([k, l, d]) => { const on = k === dir; return { l, d, sel: on ? 'true' : 'false', bg: on ? 'rgba(255,255,255,0.10)' : 'transparent', ink: on ? 'var(--ink)' : 'var(--ink-muted)', fw: on ? '600' : '400', pick: () => set({ dir: k }) }; }) };
+    const sortBtn = { open: open === 'tri' ? 'true' : 'false', bg: open === 'tri' ? 'var(--tab-on)' : 'var(--track)', edge: open === 'tri' ? 'var(--accent-edge)' : 'var(--line)', ic: open === 'tri' ? 'var(--accent)' : 'var(--ink-faint)',
+      dirD: dir === 'asc' ? UPA : DOWN, toggle: () => set({ open: open === 'tri' ? '' : 'tri' }) };
+    const hcol = (k) => { const on = sortBy === k; return { aria: on ? (dir === 'asc' ? 'ascending' : 'descending') : 'none', pick: () => pickSort(k), ink: on ? 'var(--ink)' : 'var(--ink-muted)', fw: on ? '600' : '500', ic: on ? 'var(--accent)' : 'var(--ink-faint)',
+      sBg: on ? 'var(--accent-soft)' : 'transparent', sInk: on ? 'var(--accent)' : 'var(--ink-faint)', sD: on ? (dir === 'asc' ? UPA : DOWN) : 'M8 9l4-4 4 4M8 15l4 4 4-4' }; };
+    const hd = { name: hcol('name'), views: hcol('views'), best: hcol('best') };
+    // ── Période personnalisée : calendrier sur l'historique (42 jours) ──
+    const draft = st.draft && typeof st.draft.a === 'number' ? st.draft : (range || { a: NDAYS - 30, b: NDAYS - 1 });
+    const endDow = (dayDate(NDAYS - 1).getUTCDay() + 6) % 7;
+    const PRE = [['7 derniers jours', NDAYS - 7, NDAYS - 1], ['14 derniers jours', NDAYS - 14, NDAYS - 1], ['30 derniers jours', NDAYS - 30, NDAYS - 1],
+      ['Cette semaine', NDAYS - 1 - endDow, NDAYS - 1], ['La semaine dernière', NDAYS - 8 - endDow, NDAYS - 2 - endDow], ['Tout l’historique', 0, NDAYS - 1]];
+    const isPre = (p) => draft.b !== null && draft.a === p[1] && draft.b === p[2];
+    const anyPre = PRE.some(isPre);
+    const LONG = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+    const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    const last = dayDate(NDAYS - 1), first = dayDate(0);
+    const monthsSpan = (last.getUTCFullYear() - first.getUTCFullYear()) * 12 + last.getUTCMonth() - first.getUTCMonth(); // 1 ou 2
+    const shift = Math.max(-(monthsSpan - 1), Math.min(0, st.calShift || 0));
+    const pickDay = (i) => { const d = draft; const next = d.b === null ? (i < d.a ? { a: i, b: d.a } : { a: d.a, b: i }) : { a: i, b: null }; this.setState({ draft: next }); };
+    const mkMonth = (y, m, isFirst) => {
+      const lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7, nd = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      const cells = [];
+      for (let k = 0; k < lead; k++) cells.push({ n: '', on: false, off: true, band: 'transparent', bandR: '0', ink: 'transparent' });
+      for (let d = 1; d <= nd; d++) {
+        const i = Math.round(Date.UTC(y, m, d) / 864e5) - (dayEnd - NDAYS + 1), dow = (lead + d - 1) % 7;
+        const ok = i >= 0 && i < NDAYS, b = draft.b === null ? draft.a : draft.b;
+        const edge = i === draft.a || i === b, inR = i >= draft.a && i <= b;
+        const l = i === draft.a || dow === 0 || d === 1, r = i === b || dow === 6 || d === nd;
+        cells.push({ n: String(d), on: ok, off: !ok, sel: edge ? 'true' : 'false', aria: LONG.format(new Date(Date.UTC(y, m, d))), pick: () => pickDay(i),
+          band: ok && inR && draft.b !== null ? 'rgba(76,154,255,0.14)' : 'transparent', bandR: (l ? '18px ' : '0 ') + (r ? '18px 18px ' : '0 0 ') + (l ? '18px' : '0'),
+          dot: ok && edge ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : 'transparent', fw: edge ? '700' : '500',
+          ink: !ok ? 'rgba(138,147,163,0.35)' : edge ? '#FFFFFF' : inR ? 'var(--ink)' : 'var(--ink-soft)', ring: i === NDAYS - 1 && !edge ? 'inset 0 0 0 1px var(--line-strong)' : 'none' });
+      }
+      const canPrev = isFirst && shift > -(monthsSpan - 1), canNext = !isFirst && shift < 0;
+      return { t: MONTHS[m] + ' ' + y, cells, prev: canPrev, noPrev: !canPrev, next: canNext, noNext: !canNext };
+    };
+    const m2 = new Date(Date.UTC(last.getUTCFullYear(), last.getUTCMonth() + shift, 1)), m1 = new Date(Date.UTC(m2.getUTCFullYear(), m2.getUTCMonth() - 1, 1));
+    const nDays = draft.b === null ? 1 : draft.b - draft.a + 1;
+    const cal = { on: open === 'periode',
+      presets: PRE.map((p) => { const on = isPre(p); return { l: p[0], on, sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', fw: on ? '600' : '500', ink: on ? 'var(--ink)' : 'var(--ink-soft)', pick: () => this.setState({ draft: { a: p[1], b: p[2] } }) }; })
+        .concat([{ l: 'Personnalisée', on: !anyPre, sel: !anyPre ? 'true' : 'false', bg: !anyPre ? 'var(--accent-soft)' : 'transparent', fw: !anyPre ? '600' : '500', ink: !anyPre ? 'var(--ink)' : 'var(--ink-soft)', pick: () => {} }]),
+      aTxt: LONG.format(dayDate(draft.a)), bTxt: draft.b === null ? 'Choisis le dernier jour' : LONG.format(dayDate(draft.b)),
+      aEdge: draft.b === null ? 'var(--line)' : 'var(--accent-edge)', bEdge: draft.b === null ? 'var(--accent-edge)' : 'var(--line)',
+      months: [mkMonth(m1.getUTCFullYear(), m1.getUTCMonth(), true), mkMonth(m2.getUTCFullYear(), m2.getUTCMonth(), false)],
+      dow: ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l) => ({ l })),
+      prevM: () => this.setState({ calShift: shift - 1 }), nextM: () => this.setState({ calShift: shift + 1 }),
+      count: nDays + (nDays > 1 ? ' jours' : ' jour'), since: LONG.format(first).replace(/^\S+ /, ''),
+      apply: () => set({ period: 'custom', range: { a: draft.a, b: draft.b === null ? draft.a : draft.b }, open: '', draft: null }) };
+    const cust = { on: period === 'custom' ? 'true' : 'false', open: open === 'periode' ? 'true' : 'false', l: period === 'custom' ? rangeLabel : 'Du … au …',
+      bg: period === 'custom' ? 'var(--accent-soft)' : 'transparent', ink: period === 'custom' ? 'var(--ink)' : 'var(--ink-muted)', fw: period === 'custom' ? '600' : '400', ic: period === 'custom' ? 'var(--accent)' : 'currentColor',
+      toggle: () => set({ open: open === 'periode' ? '' : 'periode', draft: range || { a: NDAYS - 30, b: NDAYS - 1 }, calShift: 0 }) };
+    const perEdge = open === 'periode' ? 'var(--accent-edge)' : 'transparent';
     return {
+      sortMenu, sortBtn, hd, cal, cust, perEdge,
       rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv, ajItem,
-      vlab: period === '7' ? 'Vues 7 j' : 'Vues 30 j', sortLabel: sort === 'accel' ? 'progression de la semaine' : (period === '7' ? 'vues 7 j' : 'vues 30 j'),
+      vlab: period === 'custom' ? 'Vues · ' + rangeLabel : (period === '7' ? 'Vues 7 j' : 'Vues 30 j'), sortLabel: SLAB[sortBy],
       closeMenu: () => set({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
       setMenu: (el) => { this.menuEl = el; }, setMenuInput: (el) => { this.menuInput = el; },

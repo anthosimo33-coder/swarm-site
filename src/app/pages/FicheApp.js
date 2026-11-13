@@ -743,7 +743,7 @@ export default class FicheApp extends DCLogic {
                       )
                     ),
                     $h("td", null,
-                      $h("span", { "class": "sw-flag" },
+                      $h("span", { "class": "sw-flag", "data-c": c?.mk },
                         $t(c?.mk)
                       )
                     ),

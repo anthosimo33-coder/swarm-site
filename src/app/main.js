@@ -303,4 +303,56 @@ document.addEventListener('load', (event) => {
   if (event.target instanceof HTMLImageElement) event.target.classList.remove('is-broken');
 }, true);
 
+// Survol d'une miniature de vidéo (ordinateur seulement) : la vidéo s'agrandit dans une fenêtre flottante
+// et se lance sans le son, après 0,35 s. TikTok : le lecteur officiel ; Instagram : la miniature en grand
+// (son lecteur ne démarre pas sans clic). La fenêtre part dès que la souris quitte la miniature.
+(() => {
+  if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const W = 300, H = 534, PAD = 14;
+  let timer = 0, current = null, box = null;
+  const linkOf = (el) => (el && el.closest ? el.closest('a[href*="/app/videos/"]') : null);
+  const idOf = (a) => { const m = (a.getAttribute('href') || '').match(/\/app\/videos\/([^/?#]+)/); return m ? decodeURIComponent(m[1]) : null; };
+  const hide = () => { clearTimeout(timer); current = null; if (box) { box.remove(); box = null; } };
+  const show = (a, id) => {
+    hide();
+    const img = a.querySelector('img');
+    if (!img || !img.src || img.classList.contains('is-broken')) return;
+    current = a;
+    const r = a.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
+    let left = r.right + PAD;
+    if (left + W > vw - 12) left = r.left - W - PAD;
+    if (left < 12) left = Math.max(12, (vw - W) / 2);
+    const top = Math.max(12, Math.min(vh - H - 12, r.top + r.height / 2 - H / 2));
+    box = document.createElement('div');
+    box.className = 'sw-hoverplay';
+    box.setAttribute('aria-hidden', 'true');
+    box.style.cssText = 'left:' + left + 'px;top:' + top + 'px;width:' + W + 'px;height:' + H + 'px;background-image:url("' + img.src.replace(/"/g, '%22') + '")';
+    if (/^\d{10,}$/.test(id)) {
+      const f = document.createElement('iframe');
+      f.src = 'https://www.tiktok.com/player/v1/' + id + '?autoplay=1&loop=1&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0';
+      f.allow = 'autoplay; encrypted-media';
+      f.tabIndex = -1;
+      box.appendChild(f);
+    }
+    document.body.appendChild(box);
+  };
+  document.addEventListener('mouseover', (e) => {
+    if (location.pathname.indexOf('/app/videos/') === 0) return; // déjà sur une vidéo : pas de second lecteur
+    const a = linkOf(e.target);
+    if (!a || a === current || !a.querySelector('img')) return;
+    const id = idOf(a);
+    if (!id) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => show(a, id), 350);
+  });
+  document.addEventListener('mouseout', (e) => {
+    const a = linkOf(e.target);
+    if (!a || (e.relatedTarget && a.contains(e.relatedTarget))) return;
+    hide();
+  });
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('popstate', hide);
+  document.addEventListener('mousedown', hide, true);
+})();
+
 mount(h(App, null));

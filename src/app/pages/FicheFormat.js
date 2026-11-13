@@ -186,7 +186,7 @@ export default class FicheFormat extends DCLogic {
                   $t($v.f?.niche)
                 ),
                 ($l($v.f?.mk)).map((m) => [
-                  $h("span", { "class": "sw-flag", "style": "width: 26px; height: 20px; font-size: 10px;" },
+                  $h("span", { "class": "sw-flag", "data-c": m?.c, "style": "width: 26px; height: 20px; font-size: 10px;" },
                     $t(m?.c)
                   )
                 ]),

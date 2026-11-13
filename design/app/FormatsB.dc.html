@@ -56,7 +56,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <sc-for list="{{menu.items}}" as="it" hint-placeholder-count="7">
 <button type="button" role="option" aria-selected="{{it.sel}}" onClick="{{it.pick}}" onKeyDown="{{menuKeys}}" style="width: 100%; height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 12px; background: {{it.bg}}; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; opacity: {{it.o}};">
 <span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid {{it.box}}; background: {{it.fill}}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" fill="none" stroke="{{it.tick}}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
-<span style="flex: 1 1 auto; min-width: 0; font-weight: {{it.w}};">{{it.label}}</span>
+<sc-if value="{{it.flag}}" hint-placeholder-val="{{false}}"><span class="sw-flag" data-c="{{it.flag}}" aria-hidden="true"></span></sc-if><span style="flex: 1 1 auto; min-width: 0; font-weight: {{it.w}};">{{it.label}}</span>
 <span style="font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;">{{it.n}}</span>
 </button>
 </sc-for>
@@ -104,7 +104,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <sc-for list="{{f.cov}}" as="v" hint-placeholder-count="3"><a href="{{v.href}}" style="position: relative; overflow: hidden; display: block; text-decoration: none;"><img class="sw-cover" src="{{v.src}}" alt=""><span class="sw-video-shade"></span><span style="position: absolute; left: 10px; bottom: 10px; font-family: var(--font-display); font-size: 16px; font-weight: 700; color: #FFFFFF;">{{v.v}}</span></a></sc-for>
 </span>
 <a href="{{f.href}}" style="padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 14px; flex: 1; text-decoration: none; color: inherit;">
-<span style="display: flex; align-items: center; gap: 8px;"><span class="sw-badge" style="height: 24px; gap: 6px; padding: 0 9px 0 7px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="{{f.ico}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{f.kind}}</span><sc-for list="{{f.mk}}" as="m" hint-placeholder-count="1"><span class="sw-flag" style="width: 24px; height: 18px; font-size: 9px;">{{m.c}}</span></sc-for><span style="margin-left: auto; font-size: 12px; color: var(--ink-faint);">{{f.niche}}</span></span>
+<span style="display: flex; align-items: center; gap: 8px;"><span class="sw-badge" style="height: 24px; gap: 6px; padding: 0 9px 0 7px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="{{f.ico}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{f.kind}}</span><sc-for list="{{f.mk}}" as="m" hint-placeholder-count="1"><span class="sw-flag" data-c="{{m.c}}" style="width: 24px; height: 18px; font-size: 9px;">{{m.c}}</span></sc-for><span style="margin-left: auto; font-size: 12px; color: var(--ink-faint);">{{f.niche}}</span></span>
 <span style="font-size: 18px; font-weight: 600; line-height: 1.38; letter-spacing: -0.01em; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 50px;">{{f.quote}}</span>
 <span style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
 <span class="sw-tile" style="padding: 10px 12px;"><span class="sw-tile-label">× la normale</span><span class="sw-tile-value" style="font-size: 19px; color: {{f.medInk}};">{{f.med}}</span></span>
@@ -271,7 +271,7 @@ class Component extends DCLogic {
       const cnt = {};
       D.formats.forEach((f) => { cnt[f.niche] = (cnt[f.niche] || 0) + 1; });
       nicheNames = Object.keys(cnt).sort((p, q) => (p === 'Autres') - (q === 'Autres') || cnt[q] - cnt[p]);
-      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c === 'XX' ? '' : c]));
+      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c]));
       live = true;
     }
     return { nav, niches, hero, fan, cards, all, nicheNames, MKS, live };

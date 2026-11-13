@@ -238,7 +238,7 @@ export default class FicheCreateur extends DCLogic {
                 ] : null,
                 $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft);" },
                   ($v.z?.flag) ? [
-                    $h("span", { "class": "sw-flag" },
+                    $h("span", { "class": "sw-flag", "data-c": $v.z?.flag },
                       $t($v.z?.flag)
                     )
                   ] : null,

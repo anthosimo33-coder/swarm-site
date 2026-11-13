@@ -249,7 +249,7 @@ export default class Palette extends DCLogic {
                         $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-faint);" },
                           $t($v.cur?.niche),
                           ($l($v.cur?.mk)).map((m) => [
-                            $h("span", { "class": "sw-flag", "style": "width: 22px; height: 16px; font-size: 8px;" },
+                            $h("span", { "class": "sw-flag", "data-c": m?.c, "style": "width: 22px; height: 16px; font-size: 8px;" },
                               $t(m?.c)
                             )
                           ])

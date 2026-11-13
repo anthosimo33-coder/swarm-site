@@ -39,3 +39,27 @@ img.is-broken { visibility: hidden; }
 .sw-th { display: inline-flex; align-items: center; gap: 8px; }
 .sw-th > svg { flex-shrink: 0; color: var(--ink-faint); }
 .sw-num > .sw-th { justify-content: flex-end; }
+
+/* Drapeaux des marchés : un rond par pays (data-c = code du marché), un globe pour « Autres langues ».
+   Sans data-c, .sw-flag reste le code en texte discret. */
+.sw-flag[data-c] { display: inline-block !important; width: 18px !important; height: 18px !important; min-width: 18px; border-radius: 50% !important; overflow: hidden; vertical-align: middle; flex-shrink: 0;
+  background-size: cover !important; background-position: center !important; font-size: 0 !important; line-height: 0; color: transparent !important; }
+.sw-flag[data-c=""], .sw-flag[data-c="ALL"] { display: none !important; }
+.sw-flag[data-c="FR"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%230055A4'/%3E%3Crect x='1' width='1' height='2' fill='%23FFFFFF'/%3E%3Crect x='2' width='1' height='2' fill='%23EF4135'/%3E%3C/svg%3E") !important; }
+.sw-flag[data-c="ES"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='3' height='2' fill='%23AA151B'/%3E%3Crect y='0.5' width='3' height='1' fill='%23F1BF00'/%3E%3C/svg%3E") !important; }
+.sw-flag[data-c="MX"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23006847'/%3E%3Crect x='1' width='1' height='2' fill='%23FFFFFF'/%3E%3Crect x='2' width='1' height='2' fill='%23CE1126'/%3E%3Ccircle cx='1.5' cy='1' r='0.26' fill='%238C5A2B'/%3E%3C/svg%3E") !important; }
+.sw-flag[data-c="BR"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14'%3E%3Crect width='20' height='14' fill='%23009C3B'/%3E%3Cpath d='M10 1.6L18.2 7 10 12.4 1.8 7z' fill='%23FFDF00'/%3E%3Ccircle cx='10' cy='7' r='3.3' fill='%23002776'/%3E%3C/svg%3E") !important; }
+.sw-flag[data-c="US"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 19 10'%3E%3Crect width='19' height='10' fill='%23FFFFFF'/%3E%3Crect y='0.000' width='19' height='0.769' fill='%23B22234'/%3E%3Crect y='1.538' width='19' height='0.769' fill='%23B22234'/%3E%3Crect y='3.077' width='19' height='0.769' fill='%23B22234'/%3E%3Crect y='4.615' width='19' height='0.769' fill='%23B22234'/%3E%3Crect y='6.154' width='19' height='0.769' fill='%23B22234'/%3E%3Crect y='7.692' width='19' height='0.769' fill='%23B22234'/%3E%3Crect y='9.231' width='19' height='0.769' fill='%23B22234'/%3E%3Crect width='7.6' height='5.38' fill='%233C3B6E'/%3E%3C/svg%3E") !important; }
+.sw-flag[data-c="XX"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%231B2230'/%3E%3Cg fill='none' stroke='%238A93A3' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Cpath d='M5 12h14M12 5c2 2 3 4.3 3 7s-1 5-3 7c-2-2-3-4.3-3-7s1-5 3-7z'/%3E%3C/g%3E%3C/svg%3E") !important; }
+.sw-flag[data-c="…"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%231B2230'/%3E%3Cg fill='none' stroke='%238A93A3' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Cpath d='M5 12h14M12 5c2 2 3 4.3 3 7s-1 5-3 7c-2-2-3-4.3-3-7s1-5 3-7z'/%3E%3C/g%3E%3C/svg%3E") !important; }
+
+/* Aperçu au survol d'une miniature (src/app/main.js) : la vidéo flotte à côté et se lance sans le son. */
+.sw-hoverplay { position: fixed; z-index: 90; border-radius: 20px; overflow: hidden; pointer-events: none; background: #000 center / cover no-repeat;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08); animation: sw-hoverplay-in .18s ease-out both; }
+.sw-hoverplay iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+@keyframes sw-hoverplay-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sw-hoverplay { animation: none; } }
+
+/* Barre latérale : l’icône et son libellé rapprochés (case de 32 px au lieu de 40, 3 px d’écart). */
+.sw-side-item { gap: 3px !important; }
+.sw-side-ico { height: 32px !important; }

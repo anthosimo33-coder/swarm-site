@@ -151,7 +151,7 @@ export default class Formats extends DCLogic {
       const cnt = {};
       D.formats.forEach((f) => { cnt[f.niche] = (cnt[f.niche] || 0) + 1; });
       nicheNames = Object.keys(cnt).sort((p, q) => (p === 'Autres') - (q === 'Autres') || cnt[q] - cnt[p]);
-      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c === 'XX' ? '' : c]));
+      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c]));
       live = true;
     }
     return { nav, niches, hero, fan, cards, all, nicheNames, MKS, live };
@@ -274,6 +274,9 @@ export default class Formats extends DCLogic {
                               $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": it?.tick, "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" })
                             )
                           ),
+                          (it?.flag) ? [
+                            $h("span", { "class": "sw-flag", "data-c": it?.flag, "aria-hidden": "true" })
+                          ] : null,
                           $h("span", { "style": `flex: 1 1 auto; min-width: 0; font-weight: ${$t(it?.w)};` },
                             $t(it?.label)
                           ),
@@ -445,7 +448,7 @@ export default class Formats extends DCLogic {
                       $t(f?.kind)
                     ),
                     ($l(f?.mk)).map((m) => [
-                      $h("span", { "class": "sw-flag", "style": "width: 24px; height: 18px; font-size: 9px;" },
+                      $h("span", { "class": "sw-flag", "data-c": m?.c, "style": "width: 24px; height: 18px; font-size: 9px;" },
                         $t(m?.c)
                       )
                     ]),

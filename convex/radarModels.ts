@@ -41,6 +41,16 @@ export type Raw = { apps: RApp[]; tracked: RTracked[]; trackedVideos: RVideo[]; 
 
 const DAY = 86_400_000;
 const WEEK = 7 * DAY;
+/** Historique jour par jour d'une app (vues des vidéos publiées ce jour-là, heure de Paris). */
+export const DAYS = 42;
+/** Décalage de Paris sur UTC à l'instant t : +2 h du dernier dimanche de mars au dernier dimanche d'octobre (1 h UTC), +1 h sinon. */
+const parisOffset = (t: number) => {
+  const y = new Date(t).getUTCFullYear();
+  const lastSunday = (m: number) => { const d = new Date(Date.UTC(y, m + 1, 0)); return Date.UTC(y, m, d.getUTCDate() - d.getUTCDay(), 1); };
+  return t >= lastSunday(2) && t < lastSunday(9) ? 2 * 3600_000 : 3600_000;
+};
+/** Numéro du jour (jours depuis le 1er janvier 1970) à Paris. */
+export const parisDay = (t: number) => Math.floor((t + parisOffset(t)) / DAY);
 
 /** Marché = langue des vidéos du compte (relevée par le Radar). */
 export const MARKETS: ReadonlyArray<readonly [string, string]> = [
@@ -221,6 +231,15 @@ export function buildBoards(
       const end = now - (5 - i) * WEEK;
       return vids.filter((v) => v.publishedAt > end - WEEK && v.publishedAt <= end).reduce((n, v) => n + v.views, 0);
     });
+    // Vues par jour de publication sur les DAYS derniers jours (le dernier = aujourd'hui à Paris).
+    const dayEnd = parisDay(now);
+    const days = new Array(DAYS).fill(0), daysIg = new Array(DAYS).fill(0);
+    for (const v of vids) {
+      const i = parisDay(v.publishedAt) - dayEnd + DAYS - 1;
+      if (i < 0 || i >= DAYS) continue;
+      days[i] += v.views;
+      if (v.platform === "instagram") daysIg[i] += v.views;
+    }
     const views30 = recent.reduce((n, v) => n + v.views, 0);
     const views30Ig = recent.filter((v) => v.platform === "instagram").reduce((n, v) => n + v.views, 0);
     const views7 = week.reduce((n, v) => n + v.views, 0);
@@ -236,7 +255,7 @@ export function buildBoards(
     use(top);
     return {
       slug: a.slug, name: a.name, niche: nicheOf(a.name), icon: icon(a),
-      accounts: accs.length, videosPerWeek: week.length,
+      accounts: accs.length, videosPerWeek: week.length, dayEnd, days, daysIg,
       views30, views30Ig, views7, views7Ig, weeks,
       weekDelta: weeks[4] > 0 ? round((weeks[5] - weeks[4]) / weeks[4], 3) : null,
       bestX: best.length ? Math.max(...best) : null,

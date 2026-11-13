@@ -237,6 +237,7 @@ export default class CreateursCartes extends DCLogic {
             $h("div", { "role": "tablist", "aria-label": "Marché", "style": "display: flex; gap: 4px; flex-wrap: wrap;" },
               ($l($v.mkt)).map((m) => [
                 $h("a", { "role": "tab", "aria-selected": m?.on, "href": m?.href, "style": `height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 10px; background: ${$t(m?.bg)}; color: ${$t(m?.ink)}; font-size: 14px; font-weight: ${$t(m?.fw)}; text-decoration: none;` },
+                  $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
                   $t(m?.l)
                 )
               ])
