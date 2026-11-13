@@ -3,11 +3,11 @@
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
-import { appStoreHit, copyImage } from "./imageCopy";
-import { buildBoards, iconKey, type Raw } from "./radarModels";
+import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
+import { APP_SITE, buildBoards, iconKey, type Raw } from "./radarModels";
 
 /** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
-const STORE_RULE = 2;
+const STORE_RULE = 6; // 6 : à plusieurs candidates, titre exact ou nette avance en avis ; 5 : fiche exacte par l'identifiant du Radar ; sinon recherche France puis États-Unis, refusée si le nom est ambigu ; icône gardée
 
 /**
  * Synchronisation quotidienne du Radar (cron, convex/crons.ts) :
@@ -102,24 +102,40 @@ export const run = internalAction({
       // Fiche App Store des apps pas encore cherchées avec la règle actuelle (titre qui commence par le
       // nom de l'app) ; une fiche qui change efface l'icône rangée, recopiée depuis la bonne fiche.
       // L'App Store limite à ~20 recherches par minute : une toutes les 3,2 s, 3 min au plus.
-      const stores: Record<string, { url: string | null; v: number }> = await ctx.runQuery(internal.radarStore.appStoreMap, {});
-      const found: { slug: string; url: string | null; v: number }[] = [];
+      const stores: Record<string, { url: string | null; v: number; art: string | null }> = await ctx.runQuery(internal.radarStore.appStoreMap, {});
+      const found: { slug: string; url: string | null; v: number; art: string | null }[] = [];
+      let storeErrors = 0;
       const iconsToDrop: string[] = [];
       const storeStart = Date.now();
       for (const a of raw.apps) {
         if (a.mergedInto || stores[a.slug]?.v === STORE_RULE) continue;
-        if (Date.now() - storeStart > 180_000) break;
-        if (found.length) await new Promise((r) => setTimeout(r, 3_200));
-        const hit = await appStoreHit(a.name);
+        if (Date.now() - storeStart > 300_000) break;
+        const id = a.store?.storeId ? String(a.store.storeId) : null;
+        if (APP_SITE[a.slug] && !id) { // app web : pas de fiche App Store, son icône vient de son site
+          if (stores[a.slug]?.url) iconsToDrop.push(iconKey(a.slug));
+          stores[a.slug] = { url: null, v: STORE_RULE, art: null };
+          found.push({ slug: a.slug, url: null, v: STORE_RULE, art: null });
+          continue;
+        }
+        let hit: Awaited<ReturnType<typeof appStoreHit>>;
+        try {
+          hit = (id ? await appStoreLookup(id) : null) ?? (await appStoreHit(a.name));
+        } catch {
+          // L'App Store refuse ou ne répond pas : on garde la fiche d'avant, l'app sera revue au prochain passage.
+          if (++storeErrors >= 5) break;
+          continue;
+        }
         const url = hit?.trackViewUrl ?? null;
+        const art = hit?.artworkUrl512 ?? hit?.artworkUrl100 ?? null;
         if (stores[a.slug] && stores[a.slug].url !== url) iconsToDrop.push(iconKey(a.slug));
-        stores[a.slug] = { url, v: STORE_RULE };
-        found.push({ slug: a.slug, url, v: STORE_RULE });
+        stores[a.slug] = { url, v: STORE_RULE, art };
+        found.push({ slug: a.slug, url, v: STORE_RULE, art });
       }
       if (found.length) await ctx.runMutation(internal.radarStore.saveAppStore, { items: found });
       for (const k of iconsToDrop) if (k in media) { delete media[k]; }
       if (iconsToDrop.length) await ctx.runMutation(internal.radarStore.dropMedia, { keys: iconsToDrop });
       const storeOf = (slug: string) => stores[slug]?.url ?? null;
+      const artOf = (slug: string) => stores[slug]?.art ?? null;
       // Miniatures introuvables récemment (vidéo supprimée, compte privé) : ces vidéos n'apparaissent pas.
       const misses = new Map<string, number>();
       for (let cursor: string | null = null, done = false; !done; ) {
@@ -132,11 +148,13 @@ export const run = internalAction({
       const opts = {
         missing: (k: string) => (misses.get(k) ?? 0) > now - MISS_HIDE_MS,
         coverUrl: (id: string) => (site && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) ? `${site}/cover/${id}` : null),
+        artOf,
       };
       let { boards, need, used } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
 
       // Miniatures et icônes manquantes : 20 copies en continu, dans le temps imparti.
-      const todo = [...need.entries()].slice(0, MEDIA_PER_RUN);
+      // Les icônes d'abord (peu nombreuses, visibles partout), puis les miniatures.
+      const todo = [...need.entries()].sort((p, q) => Number(q[0].startsWith("icon:")) - Number(p[0].startsWith("icon:"))).slice(0, MEDIA_PER_RUN);
       const mediaStart = Date.now();
       // Le temps pris par les fiches App Store est retiré de celui des miniatures (une action : 10 min au plus).
       const mediaBudget = Math.max(60_000, MEDIA_BUDGET_MS - (mediaStart - storeStart));

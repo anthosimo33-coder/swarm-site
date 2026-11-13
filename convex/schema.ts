@@ -39,7 +39,8 @@ export default defineSchema({
   appStore: defineTable({
     slug: v.string(),
     url: v.union(v.string(), v.null()), // null : cherchée, pas trouvée
-    v: v.optional(v.number()), // version de la règle de correspondance (2 : titre qui commence par le nom)
+    v: v.optional(v.number()), // version de la règle de correspondance
+    art: v.optional(v.union(v.string(), v.null())), // icône de la fiche (mzstatic), copiée sans rappeler l'App Store
     at: v.number(),
   }).index("by_slug", ["slug"]),
 

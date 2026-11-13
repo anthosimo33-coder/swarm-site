@@ -97,7 +97,9 @@ export default class Video extends DCLogic {
     // Sur le site : la vidéo depuis le Radar (document « video:<id> », convex/radarModels.ts).
     const D = this.props && this.props.data;
     if (D && D.id) {
-      const M = { FR: 'France', US: 'Anglophone', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
+      const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
+      const M = MKW({ FR: 'France', US: 'Anglophone', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' });
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + ' M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(Math.round(n)));
       const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const list = D.playlist || [];
@@ -115,7 +117,7 @@ export default class Video extends DCLogic {
         embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
           : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/player/v1/' + D.id + '?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0' : '',
         url: D.url, appName: D.app ? D.app.name : '', appHref: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
-        market: M[D.market] || 'Autres langues', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
+        market: D.market ? M[D.market] : '', mk: D.market || '', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
         handle: '@' + D.handle, whoMeta: (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : '') + (D.normal ? " · fait d'habitude " + nf(D.normal) + ' vues' : ''),
         x: D.x ? xf(D.x) : '—', views: nf(D.views) + ' vues',
         age: (hours >= 48 ? 'en ' + Math.round(hours / 24) + ' jours' : 'en ' + hours + ' heures') + (D.fans ? ' · ' + xf(Math.round(D.views / Math.max(D.fans, 100))) + ' ses abonnés' : ''),
@@ -234,12 +236,12 @@ export default class Video extends DCLogic {
                     $t($v.vid?.appName)
                   )
                 ] : null,
-                $h("span", { "class": "sw-badge", "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
-                    $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  ),
-                  $t($v.vid?.market)
-                ),
+                ($v.vid?.market) ? [
+                  $h("span", { "class": "sw-badge", "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                    $h("span", { "class": "sw-flag", "data-c": $v.vid?.mk, "aria-hidden": "true", "style": "width: 14px; height: 14px;" }),
+                    $t($v.vid?.market)
+                  )
+                ] : null,
                 $h("span", { "class": "sw-badge", "style": "display: inline-flex; align-items: center; gap: 6px;" },
                   $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
                     $h("path", { "d": "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })

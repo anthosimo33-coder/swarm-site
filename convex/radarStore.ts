@@ -203,18 +203,18 @@ export const endRun = internalMutation({
 export const appStoreMap = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const out: Record<string, { url: string | null; v: number }> = {};
-    for await (const r of ctx.db.query("appStore")) out[r.slug] = { url: r.url, v: r.v ?? 1 };
+    const out: Record<string, { url: string | null; v: number; art: string | null }> = {};
+    for await (const r of ctx.db.query("appStore")) out[r.slug] = { url: r.url, v: r.v ?? 1, art: r.art ?? null };
     return out;
   },
 });
 
 export const saveAppStore = internalMutation({
-  args: { items: v.array(v.object({ slug: v.string(), url: v.union(v.string(), v.null()), v: v.number() })) },
+  args: { items: v.array(v.object({ slug: v.string(), url: v.union(v.string(), v.null()), v: v.number(), art: v.optional(v.union(v.string(), v.null())) })) },
   handler: async (ctx, { items }) => {
     for (const it of items) {
       const old = await ctx.db.query("appStore").withIndex("by_slug", (q) => q.eq("slug", it.slug)).first();
-      if (old) await ctx.db.patch(old._id, { url: it.url, v: it.v, at: Date.now() });
+      if (old) await ctx.db.patch(old._id, { url: it.url, v: it.v, art: it.art ?? null, at: Date.now() });
       else await ctx.db.insert("appStore", { ...it, at: Date.now() });
     }
   },

@@ -12,16 +12,17 @@
 // ─── Lignes de l'export ──────────────────────────────────────────────────────
 
 export type Snapshot = { at: number; views: number };
-export type RApp = { id: string; slug: string; name: string; status: string; trackedCount: number | null; mergedInto: string | null; createdAt: number };
+export type RApp = { id: string; slug: string; name: string; status: string; trackedCount: number | null; mergedInto: string | null; createdAt: number;
+  store?: { storeId?: string | number | null; url?: string | null } | null };
 export type RTracked = {
-  id: string; handle: string; appId: string; status: string; fans: number; bio: string | null; lang: string | null;
+  id: string; handle: string; appId: string; status: string; fans: number; bio: string | null; lang: string | null; country?: string | null;
   medianViews: number | null; videosSeen: number; lastPostAt: number | null; posts7d: number | null;
   igHandle: string | null; igFans: number | null; igMedianViews: number | null; addedAt: number;
 };
 export type RVideo = {
   id: string; accountId: string; appId: string; platform: "tiktok" | "instagram"; videoId: string; publishedAt: number;
   views: number; snapshots: Snapshot[]; caption: string | null; hook: string | null; hookKey: string | null;
-  musicTitle: string | null; coverUrl: string | null;
+  musicTitle: string | null; coverUrl: string | null; region?: string | null;
 };
 export type RFormatMember = { accountId: string; handle: string; appId: string; videoId: string; publishedAt: number; views: number; multiplier?: number; hook?: string; platform?: string };
 export type RFormat = {
@@ -52,12 +53,34 @@ const parisOffset = (t: number) => {
 /** Numéro du jour (jours depuis le 1er janvier 1970) à Paris. */
 export const parisDay = (t: number) => Math.floor((t + parisOffset(t)) / DAY);
 
-/** Marché = langue des vidéos du compte (relevée par le Radar). */
-export const MARKETS: ReadonlyArray<readonly [string, string]> = [
-  ["FR", "France"], ["US", "États-Unis et anglophones"], ["MX", "Amérique latine"], ["ES", "Espagne"], ["BR", "Brésil et Portugal"], ["XX", "Autres langues"],
-];
+/**
+ * Marché d'un compte : la langue de ses vidéos quand le Radar la relève (fr, en, es-am, es-es, pt),
+ * sinon son pays, sinon le pays d'où il publie le plus. Code = pays ISO (un drapeau par marché) ;
+ * les pays d'une même langue se regroupent (anglophones, Amérique latine, germanophones, monde arabe…).
+ * Jamais de fourre-tout « autres langues » : un compte sans aucun indice n'a pas de marché (null).
+ */
 const LANG_MARKET: Record<string, string> = { fr: "FR", en: "US", "es-am": "MX", "es-es": "ES", pt: "BR" };
-export const marketOf = (lang: string | null | undefined) => (lang && LANG_MARKET[lang]) || "XX";
+const COUNTRY_GROUP: Record<string, string> = Object.fromEntries([
+  ["US", "US GB CA AU NZ IE ZA NG GH KE JM TT UG ZW ZM"],
+  ["MX", "MX AR CO CL PE VE EC BO PY UY GT HN SV NI CR PA DO CU PR"],
+  ["BR", "BR PT AO MZ"],
+  ["FR", "FR MC LU"],
+  ["DE", "DE AT CH LI"],
+  ["SA", "SA AE IQ KW QA BH OM JO LB SY YE EG LY SD DZ MA TN PS"],
+  ["RU", "RU BY KZ KG TJ UZ"],
+].flatMap(([m, cs]) => cs.split(" ").map((c) => [c, m])));
+const MARKET_LABEL: Record<string, string> = {
+  FR: "France", US: "États-Unis et anglophones", MX: "Amérique latine", ES: "Espagne", BR: "Brésil et Portugal",
+  DE: "Allemagne et germanophones", SA: "Monde arabe", RU: "Russie et russophones",
+};
+const regionNames = new Intl.DisplayNames(["fr"], { type: "region" });
+export const marketLabel = (code: string) => MARKET_LABEL[code] ?? (() => { try { return regionNames.of(code) ?? code; } catch { return code; } })();
+const countryMarket = (c: string | null | undefined) => {
+  const k = (c ?? "").trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(k) ? COUNTRY_GROUP[k] ?? k : null;
+};
+/** Marché d'une vidéo ou d'un signal sans compte suivi : sa langue, sinon sa région. */
+export const marketOf = (lang: string | null | undefined, region?: string | null) => (lang && LANG_MARKET[lang]) || countryMarket(region);
 
 /** Niche de chaque app (classement éditorial de Swarm ; le Radar n'en a pas). */
 export const NICHES: Record<string, string> = {
@@ -83,6 +106,8 @@ const median = (xs: number[]) => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 const round = (x: number, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
+/** Valeur la plus fréquente (null ignorés). */
+const majority = (xs: (string | null)[]) => { const n = new Map<string, number>(); for (const x of xs) if (x) n.set(x, (n.get(x) ?? 0) + 1); return [...n.entries()].sort((p, q) => q[1] - p[1])[0]?.[0] ?? null; };
 const roundOrNull = (x: number | null, d = 2) => (x === null ? null : round(x, d));
 const groupBy = <T, K>(xs: T[], key: (x: T) => K) => {
   const m = new Map<K, T[]>();
@@ -98,6 +123,8 @@ const groupBy = <T, K>(xs: T[], key: (x: T) => K) => {
 /** Clé d'une miniature dans `media` : une par vidéo, une icône par app. */
 export const coverKey = (videoId: string) => `v:${videoId}`;
 export const iconKey = (slug: string) => `icon:${slug}`;
+/** Apps web (pas d'App Store) : leur site, d'où vient leur icône. */
+export const APP_SITE: Record<string, string> = { whatbrandonthinks: "www.whatbrandonthinks.com", theick: "theick.io" };
 
 /** La bio sans les e-mails ni numéros de téléphone : Swarm montre ce que fait un compte, pas comment le contacter. */
 export const cleanBio = (bio: string | null) => {
@@ -130,6 +157,8 @@ export function buildBoards(
     missing?: (key: string) => boolean;
     /** Adresse qui sert une miniature pas encore copiée (/cover/<id>, copie à la première vue). */
     coverUrl?: (videoId: string) => string | null;
+    /** Icône de la fiche App Store retenue (adresse mzstatic), copiée sans rappeler l'App Store. */
+    artOf?: (slug: string) => string | null;
   } = {},
 ): { boards: Boards; need: MediaNeed; used: Set<string> } {
   const missing = opts.missing ?? (() => false);
@@ -218,6 +247,21 @@ export function buildBoards(
 
   const videosByApp = groupBy(raw.trackedVideos, (v) => canonical(v.appId)?.id ?? "");
   const videosByAccount = groupBy(raw.trackedVideos, (v) => v.accountId);
+  const marketByAccount = new Map<string, string | null>();
+  for (const t of raw.tracked) {
+    let m = (t.lang && LANG_MARKET[t.lang]) || countryMarket(t.country);
+    if (!m) {
+      const n = new Map<string, number>();
+      for (const v of videosByAccount.get(t.id) ?? []) { const r = countryMarket(v.region); if (r) n.set(r, (n.get(r) ?? 0) + 1); }
+      m = [...n.entries()].sort((p, q) => q[1] - p[1])[0]?.[0] ?? null;
+    }
+    marketByAccount.set(t.id, m);
+  }
+  const mkOf = (accountId: string | null | undefined) => (accountId ? marketByAccount.get(accountId) ?? null : null);
+  // Les marchés présents, du plus fourni au moins fourni (comptes actifs).
+  const marketCount = new Map<string, number>();
+  for (const t of accounts) { const m = mkOf(t.id); if (m) marketCount.set(m, (marketCount.get(m) ?? 0) + 1); }
+  const MARKETS = [...marketCount.entries()].sort((p, q) => q[1] - p[1]).map(([c, n]) => [c, marketLabel(c), n] as [string, string, number]);
   const accountsByApp = groupBy(accounts, (t) => canonical(t.appId)?.id ?? "");
   const usedVideos = new Map<string, RVideo>();
   const use = (vs: RVideo[]) => vs.forEach((v) => usedVideos.set(v.videoId, v));
@@ -247,8 +291,10 @@ export function buildBoards(
     const best = week.map((v) => xOf(v, signalByVideo.get(v.videoId))).filter((x): x is number => x !== null);
     const accs = accountsByApp.get(a.id) ?? [];
     const byAccount = [...groupBy(recent, (v) => v.accountId).values()].map((vs) => vs.reduce((n, v) => n + v.views, 0)).sort((p, q) => q - p);
-    const markets = [...groupBy(recent, (v) => marketOf(accountById.get(v.accountId)?.lang)).entries()]
-      .map(([m, vs]) => [m, views30 ? Math.round((vs.reduce((n, v) => n + v.views, 0) / views30) * 100) : 0] as [string, number])
+    const known = recent.filter((v) => mkOf(v.accountId));
+    const knownViews = known.reduce((n, v) => n + v.views, 0);
+    const markets = [...groupBy(known, (v) => mkOf(v.accountId) as string).entries()]
+      .map(([m, vs]) => [m, knownViews ? Math.round((vs.reduce((n, v) => n + v.views, 0) / knownViews) * 100) : 0] as [string, number])
       .filter(([, p]) => p > 0)
       .sort((p, q) => q[1] - p[1]);
     const top = withImage([...recent].sort((p, q) => q.views - p.views), 12, trackedHasImage);
@@ -298,7 +344,7 @@ export function buildBoards(
       const appsOf = [...new Set(f.appIds.map((id) => canonical(id)?.id).filter(Boolean) as string[])].map(appMini).filter(Boolean);
       return {
         id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount, apps: appsOf,
-        niche: appsOf[0] ? nicheOf(appsOf[0]!.name) : "Autres", market: marketOf(f.lang),
+        niche: appsOf[0] ? nicheOf(appsOf[0]!.name) : "Autres", market: (f.lang && LANG_MARKET[f.lang]) || majority(f.members.map((m) => mkOf(m.accountId))),
         maxViews: f.maxViews, medX: roundOrNull(median(xs), 1), wins: xs.filter((x) => x > 1).length, n: f.members.length,
         lastPostAt: f.lastPostAt, firstSeenAt: f.firstSeenAt, members,
       };
@@ -324,7 +370,7 @@ export function buildBoards(
     const a = canonical(t.appId);
     return {
       handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
-      market: marketOf(t.lang), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a.name) } : null,
+      market: mkOf(t.id), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a.name) } : null,
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
   };
@@ -332,9 +378,9 @@ export function buildBoards(
   for (const c of creators) wantAvatar(c.handle);
   for (const [code] of MARKETS) {
     const list = creators.filter((c) => c.market === code).slice(0, 200).map(({ _vids, ...c }) => c);
-    boards.set(`creators:${code}`, { updatedAt: now, market: code, total: creators.filter((c) => c.market === code).length, creators: list });
+    boards.set(`creators:${code}`, { updatedAt: now, market: code, markets: MARKETS, total: creators.filter((c) => c.market === code).length, creators: list });
   }
-  boards.set("creators:ALL", { updatedAt: now, market: "ALL", total: creators.length, creators: creators.slice(0, 200).map(({ _vids, ...c }) => c) });
+  boards.set("creators:ALL", { updatedAt: now, market: "ALL", markets: MARKETS, total: creators.length, creators: creators.slice(0, 200).map(({ _vids, ...c }) => c) });
   const creatorPages = new Set(MARKETS.flatMap(([code]) => creators.filter((c) => c.market === code).slice(0, 200).map((c) => c.handle)));
   for (const c of creators) {
     if (!creatorPages.has(c.handle)) continue;
@@ -357,7 +403,7 @@ export function buildBoards(
       .filter((t) => (t.medianViews ?? 0) > 0)
       .sort((p, q) => (q.medianViews ?? 0) - (p.medianViews ?? 0))
       .slice(0, 10)
-      .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: marketOf(t.lang), page: creatorPages.has(t.handle) }));
+      .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle) }));
     const appFormats = formatRows.filter((f) => f.apps.some((x) => x?.slug === a.slug)).slice(0, 8).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX, maxViews: f.maxViews }));
     const { _top12, _accs, ...row } = r;
     boards.set(`app:${a.slug}`, { updatedAt: now, ...row, videos: _top12.map(card), formats: appFormats, creators: appCreators });
@@ -374,7 +420,7 @@ export function buildBoards(
     return {
       id: s.videoId, platform: s.platform, handle: s.authorHandle, app: a ? { slug: a.slug, name: a.name, icon: icon(a) } : null,
       views: s.views, x: round(s.multiplier ?? 0, 1), publishedAt: s.publishedAt, cover: cover(s.videoId, s.coverUrl, s.authorHandle), hook: s.hook,
-      market: marketOf(s.lang), region: s.region,
+      market: s.trackedAccountId && mkOf(s.trackedAccountId) ? mkOf(s.trackedAccountId) : marketOf(s.lang, s.region), region: s.region,
     };
   });
   const newFormats = formatRows.filter((f) => f.accounts >= 3 && now - f.firstSeenAt <= 7 * DAY).slice(0, 20);
@@ -417,7 +463,7 @@ export function buildBoards(
       url: s?.url ?? (platform === "instagram" ? `https://www.instagram.com/reel/${id.replace(/^ig:/, "")}/` : `https://www.tiktok.com/@${handle}/video/${id}`),
       handle, fans: acc?.fans ?? s?.authorFans ?? null, normal: acc?.medianViews ?? null,
       app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a.name) } : null,
-      market: marketOf(acc?.lang ?? s?.lang), region: s?.region ?? null,
+      market: acc ? mkOf(acc.id) ?? marketOf(s?.lang, s?.region ?? v?.region) : marketOf(s?.lang, s?.region ?? v?.region), region: s?.region ?? null,
       publishedAt: v?.publishedAt ?? s?.publishedAt ?? null, durationSec: s?.durationSec ?? null,
       views, x: v ? xOf(v, s) : s?.multiplier ? round(s.multiplier, 1) : null,
       likes: s?.likes ?? null, comments: s?.comments ?? null, shares: s?.shares ?? null, saves: s?.saves ?? null,
@@ -430,7 +476,14 @@ export function buildBoards(
   }
 
   // Icônes des apps : à chercher si on ne les a pas encore.
-  for (const a of apps) if (!mediaUrl(iconKey(a.slug))) need.set(iconKey(a.slug), `itunes:${a.name}`);
+  // Icônes des apps : la fiche App Store retenue (identifiant), sinon le site d'une app web, sinon la recherche par nom.
+  for (const a of apps) {
+    if (mediaUrl(iconKey(a.slug))) continue;
+    const art = opts.artOf?.(a.slug) ?? null;
+    const id = (storeOf(a.slug) ?? "").match(/\/id(\d+)/)?.[1] ?? null;
+    const src = APP_SITE[a.slug] ? `site:${APP_SITE[a.slug]}` : art ?? (id ? `itunesid:${id}` : null);
+    if (src) need.set(iconKey(a.slug), src);
+  }
 
   return { boards, need, used };
 }

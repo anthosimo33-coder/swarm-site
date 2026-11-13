@@ -71,7 +71,9 @@ export default class FicheCreateur extends DCLogic {
     // Sur le site : la fiche du créateur depuis le Radar (document « creator:<handle> », convex/radarModels.ts).
     const D = this.props && this.props.data;
     if (D && D.handle) {
-      const M = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
+      const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
+      const M = MKW({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' });
       const DAY = 86400000;
       const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
       const xf = (x) => (x < 0.05 ? '< 0,1' : x >= 10 ? Math.round(x).toLocaleString('fr-FR') : x.toFixed(1).replace(/\.0$/, '').replace('.', ',')) + '×';
@@ -86,7 +88,7 @@ export default class FicheCreateur extends DCLogic {
       const a = D.app;
       z = {
         av: D.avatar || '', noav: true, h: '@' + D.handle, bio: D.bio ? D.bio.replace(/\s+/g, ' ').trim() : '',
-        mk: M[D.market] || M.XX, flag: D.market && D.market !== 'XX' && M[D.market] ? D.market : '', tt: 'https://www.tiktok.com/@' + D.handle,
+        mk: M[D.market] || '', flag: D.market || '', tt: 'https://www.tiktok.com/@' + D.handle,
         app: a ? { name: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
                : { name: '', niche: '', logo: '', nologo: true, blank: 'sw-app-blank', href: '' }
       };

@@ -9,7 +9,9 @@ import type { ActionCtx } from "./_generated/server";
  * /cover/<id> qui va chercher une miniature à la première vue (convex/covers.ts).
  *
  * Sources :
- *   itunes:<nom de l'app>           l'icône App Store de l'app
+ *   itunes:<nom de l'app>           l'icône App Store de l'app (recherche par nom, France puis États-Unis)
+ *   itunesid:<identifiant>          l'icône App Store de la fiche exacte (identifiant connu du Radar)
+ *   site:<domaine>                  l'icône d'un site (apps web) : apple-touch-icon, sinon icône déclarée
  *   ttpage:<handle>/<id de vidéo>   la miniature lue sur la page publique de la vidéo TikTok
  *   igpage:<code du reel>           la miniature lue sur la page d'intégration publique d'Instagram
  *   ttavatar:<handle>               la photo de profil lue sur la page publique du compte TikTok
@@ -24,7 +26,7 @@ const ICON_SIZE = 256;
 const AVATAR_SIZE = 240;
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 
-type StoreHit = { artworkUrl512?: string; artworkUrl100?: string; trackViewUrl?: string; trackName?: string };
+type StoreHit = { artworkUrl512?: string; artworkUrl100?: string; trackViewUrl?: string; trackName?: string; trackId?: number; userRatingCount?: number };
 const normName = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 
 /**
@@ -47,13 +49,77 @@ export function sameApp(name: string, trackName: string): boolean {
   return false;
 }
 
+/** Le titre est exactement le nom de l'app (ponctuation, casse et « app » final ignorés). */
+const exactName = (name: string, title: string) => {
+  const w = normName(name).split(" ").filter(Boolean);
+  if (w.length > 1 && w[w.length - 1] === "app") w.pop();
+  const t = normName(title).split(" ").filter(Boolean);
+  if (t.length > 1 && t[t.length - 1] === "app") t.pop();
+  return w.join("") === t.join("");
+};
+
 /** La fiche App Store d'une app : le premier résultat de la recherche dont le titre est bien le sien. */
+/** L'App Store tolère ~20 appels par minute : un appel toutes les 3,2 s, pour toute l'action. */
+let nextCall = 0;
+async function storeGet(url: string): Promise<{ results?: StoreHit[] }> {
+  const wait = nextCall - Date.now();
+  nextCall = Math.max(Date.now(), nextCall) + 3_200;
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`App Store ${res.status}`); // refus ou panne : ce n'est pas « aucune fiche »
+  return (await res.json()) as { results?: StoreHit[] };
+}
+
+/**
+ * La fiche App Store d'une app d'après son nom : France puis États-Unis. Plusieurs apps différentes
+ * portent ce nom (« The Ick », « Snitch ») : impossible de savoir laquelle, donc aucune fiche plutôt
+ * qu'une mauvaise icône. Lève une erreur si l'App Store ne répond pas (la fiche d'avant est gardée).
+ */
 export async function appStoreHit(name: string): Promise<StoreHit | null> {
+  for (const country of ["fr", "us"]) {
+    const body = await storeGet(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=software&limit=25&country=${country}`);
+    const seen = new Set<unknown>();
+    const hits = (body.results ?? []).filter((h) => !!h.trackName && sameApp(name, h.trackName) && !seen.has(h.trackId ?? h.trackViewUrl) && seen.add(h.trackId ?? h.trackViewUrl));
+    if (hits.length === 1) return hits[0];
+    if (hits.length > 1) {
+      // Plusieurs titres commencent par ce nom : celui qui EST le nom (« RIZZ » pour Rizz App)…
+      const exact = hits.filter((h) => exactName(name, h.trackName!));
+      if (exact.length === 1) return exact[0];
+      // … sinon celle qui écrase les autres en nombre d'avis (Cal AI face à ses copies), sinon aucune.
+      const byRatings = [...hits].sort((p, q) => (q.userRatingCount ?? 0) - (p.userRatingCount ?? 0));
+      const [a, b] = [byRatings[0].userRatingCount ?? 0, byRatings[1].userRatingCount ?? 0];
+      return a >= 20 && a >= 3 * b ? byRatings[0] : null;
+    }
+  }
+  return null;
+}
+
+/** La fiche App Store exacte d'un identifiant (connu du Radar Jarvia) : France, sinon États-Unis. */
+export async function appStoreLookup(id: string): Promise<StoreHit | null> {
+  if (!/^\d+$/.test(id)) return null;
+  for (const country of ["fr", "us"]) {
+    const body = await storeGet(`https://itunes.apple.com/lookup?id=${id}&country=${country}`);
+    const hit = (body.results ?? []).find((h) => !!h.trackViewUrl);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/** L'icône d'un site (app web) : son apple-touch-icon, sinon la plus grande icône déclarée, sinon /favicon.ico. */
+export async function siteIcon(domain: string): Promise<string | null> {
   try {
-    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=software&limit=10&country=fr`);
+    const base = `https://${domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")}/`;
+    const res = await fetch(base, { headers: { "User-Agent": UA, Accept: "text/html" }, redirect: "follow" });
     if (!res.ok) return null;
-    const body = (await res.json()) as { results?: StoreHit[] };
-    return (body.results ?? []).find((h) => !!h.trackName && sameApp(name, h.trackName)) ?? null;
+    const html = (await res.text()).slice(0, 200_000);
+    const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((m) => m[0]);
+    const attr = (tag: string, k: string) => (tag.match(new RegExp(`${k}\\s*=\\s*["']([^"']+)["']`, "i")) || [])[1] ?? null;
+    const icons = links.filter((t) => /rel\s*=\s*["'][^"']*icon[^"']*["']/i.test(t)).map((t) => ({
+      href: attr(t, "href"), apple: /apple-touch-icon/i.test(attr(t, "rel") ?? ""), size: Number((attr(t, "sizes") ?? "0").split("x")[0]) || 0,
+    })).filter((i) => i.href);
+    icons.sort((p, q) => Number(q.apple) - Number(p.apple) || q.size - p.size);
+    const href = icons[0]?.href ?? "/favicon.ico";
+    return new URL(href, res.url || base).toString();
   } catch {
     return null;
   }
@@ -126,10 +192,15 @@ export async function instagramCover(code: string): Promise<string | null> {
 
 /** L'URL de l'image à télécharger pour une source. */
 async function imageUrl(source: string): Promise<string | null> {
-  if (source.startsWith("itunes:")) {
-    const hit = await appStoreHit(source.slice("itunes:".length));
-    return hit?.artworkUrl512 ?? hit?.artworkUrl100 ?? null;
+  if (source.startsWith("itunesid:") || source.startsWith("itunes:")) {
+    try {
+      const hit = source.startsWith("itunesid:") ? await appStoreLookup(source.slice("itunesid:".length)) : await appStoreHit(source.slice("itunes:".length));
+      return hit?.artworkUrl512 ?? hit?.artworkUrl100 ?? null;
+    } catch {
+      return null;
+    }
   }
+  if (source.startsWith("site:")) return siteIcon(source.slice("site:".length));
   if (source.startsWith("ttpage:")) {
     const [handle, id] = source.slice("ttpage:".length).split("/");
     return id ? tiktokCover(handle, id) : null;
