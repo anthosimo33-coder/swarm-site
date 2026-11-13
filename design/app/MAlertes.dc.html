@@ -148,8 +148,6 @@ class Component extends DCLogic {
       const ML = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
       const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
       const flags = (cs) => (cs || []).filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
-      const eur = (v) => { const lo = v / 1000 * 2.5, hi = v / 1000 * 3.5; if (hi < 1000) return [String(Math.round(lo)), Math.round(hi) + ' €'];
-        const k = (e) => (hi >= 1e4 ? String(Math.round(e / 1000)) : (e / 1000).toFixed(1).replace('.', ',').replace(/,0$/, '')); return [k(lo), k(hi) + ' k€']; };
       const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const de = (n) => (/^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? 'd’' : 'de ') + n;

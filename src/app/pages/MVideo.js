@@ -41,7 +41,7 @@ export default class MVideo extends DCLogic {
     let au = { av: '/media/app/av-learnwithjoel1.jpg', noav: true };
     let vid = { embed: 'https://www.tiktok.com/player/v1/7705929733220994337?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0', pos: '1 sur 14', back: '/app/apps/astraai', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', hasApp: true, appName: 'Astra AI', where: 'Espagne · 08/11',
       views: '1,87 M', who: '@learnwithjoel1 · 12,2 k abonnés', hasDur: true, dur: '0:49', url: 'https://www.tiktok.com/@learnwithjoel1/video/7705929733220994337', hasX: true, x: '65×',
-      story: '1,87 M vues en 92 heures, alors que le compte fait d’habitude 28,5 k vues. +38 % entre H+52 et H+92.', lo: '4,7', hi: '6,5 k€',
+      story: '1,87 M vues en 92 heures, alors que le compte fait d’habitude 28,5 k vues. +38 % entre H+52 et H+92.',
       appHref: '/app/apps/astraai', appLink: 'Voir l’app Astra AI', copyText: 'POV: tienes EXAMEN ORAL y no has estudiado NADA' };
     // Sur le site : la vidéo (document « video:<id> »), lue comme VideoA ; « Ensuite » = la suite de la liste de lecture de l'app.
     const D = this.props && this.props.data;
@@ -54,15 +54,12 @@ export default class MVideo extends DCLogic {
       const ML = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
       const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
       const flags = (cs) => (cs || []).filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
-      const eur = (v) => { const lo = v / 1000 * 2.5, hi = v / 1000 * 3.5; if (hi < 1000) return [String(Math.round(lo)), Math.round(hi) + ' €'];
-        const k = (e) => (hi >= 1e4 ? String(Math.round(e / 1000)) : (e / 1000).toFixed(1).replace('.', ',').replace(/,0$/, '')); return [k(lo), k(hi) + ' k€']; };
       const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const list = D.playlist || [];
       const idx = list.indexOf(D.id);
       const H = (ms) => Math.max(0, Math.round((ms - D.publishedAt) / 3600000));
       const hours = H(Date.now());
-      const r = eur(D.views || 0);
       const snaps = (D.snapshots || []).filter((p) => p.at >= D.publishedAt);
       let growth = '';
       if (snaps.length >= 2 && snaps[0].views > 0) {
@@ -80,7 +77,7 @@ export default class MVideo extends DCLogic {
         url: D.url || 'https://www.tiktok.com/@' + D.handle, hasX: !!D.x, x: D.x ? xf(D.x) : '',
         story: nf(D.views || 0) + ' vues ' + (hours >= 48 ? 'en ' + Math.round(hours / 24) + ' jours' : 'en ' + hours + ' heures')
           + (D.normal ? ', alors que le compte fait d’habitude ' + nf(D.normal) + ' vues.' : '.') + growth,
-        lo: r[0], hi: r[1], appHref: D.app ? '/app/apps/' + D.app.slug : '/app/apps', appLink: D.app ? 'Voir l’app ' + D.app.name : '',
+        appHref: D.app ? '/app/apps/' + D.app.slug : '/app/apps', appLink: D.app ? 'Voir l’app ' + D.app.name : '',
         copyText: [D.hook, D.caption, D.music ? 'Son : ' + D.music : ''].filter(Boolean).join('\n') || '@' + D.handle };
       v = { src: D.cover || '' };
       const rr = (n) => (n === null || n === undefined ? '' : nf(n));

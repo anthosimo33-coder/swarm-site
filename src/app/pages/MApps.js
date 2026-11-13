@@ -55,9 +55,6 @@ return {};
     } else if (D === null) {
       A = [];
     }
-    // Revenus estimés : 2,50 à 3,50 € les 1 000 vues ; en k€ dès 1 000 €.
-    const eur = (vM) => { const lo = vM * 2500, hi = vM * 3500; if (hi < 1000) return [String(Math.round(lo)), Math.round(hi) + ' €'];
-      const k = (e) => (hi >= 1e4 ? String(Math.round(e / 1000)) : (e / 1000).toFixed(1).replace('.', ',').replace(/,0$/, '')); return [k(lo), k(hi) + ' k€']; };
     const flagsOf = (a) => a[2].filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
     const ficheOf = (a) => (a[11] ? '/app/apps/' + a[11] : '/app/apps/astraai');
     const videoOf = (a, j) => '/app/videos/' + ((a[12] && a[12][j]) || vkey(a[8][j]));
@@ -82,7 +79,7 @@ return {};
       const line = 'M' + w.map((v, j) => (2 + j * 15.2).toFixed(1) + ' ' + (26 - (v / mx) * 22).toFixed(1)).join(' L');
       return { rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mk: flagsOf(a), v30: nfm(views(a) * 1e6),
         hasDelta: d !== null, delta: d === null ? '' : dfmt(d), dInk: up ? 'var(--accent)' : 'var(--ink-faint)', line, stroke: up ? '#4C9AFF' : '#8A93A3',
-        lo: eur(views(a))[0], hi: eur(views(a))[1], hasW: !!a[6], rlab: period === '7' ? 'Revenus estimés, 7 j' : 'Revenus estimés, 30 j',
+        hasW: !!a[6],
         covs: a[8].map((src) => ({ src })).filter((c) => c.src), logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank', open: () => this.setState({ pv: a[0] }) }; });
     const mLabel = market === 'ALL' ? 'Tous' : MKS.filter((m) => m[0] === market)[0][1];
     const chips = [];
@@ -98,7 +95,7 @@ return {};
     let pv = { on: false };
     if (pa) { const w = pa[6] || [1, 1, 1, 1, 1, 1], mx = Math.max.apply(null, w) || 1, d = pa[6] ? dlt(pa) : null, md = MKD[pa[0]];
       pv = { on: true, full: !!pa[6], lite: !pa[6], n: pa[0], niche: pa[1], mk: flagsOf(pa), href: ficheOf(pa), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
-        lo: eur(pa[5])[0], hi: eur(pa[5])[1], hasDelta: d !== null, delta: d === null ? '' : dfmt(d) + ' cette semaine', week: nfm(w[5] * 1e6),
+        hasDelta: d !== null, delta: d === null ? '' : dfmt(d) + ' cette semaine', week: nfm(w[5] * 1e6),
         bars: w.map((v, j) => ({ h: Math.max(4, Math.round(v / mx * 70)), bg: j === 5 ? 'var(--accent)' : 'var(--line-strong)' })),
         v30: nfm(pa[5] * 1e6), acc: pa[3], ppw: pa[4] ? pa[4].toLocaleString('en-US').replace(/,/g, '\u202f') : '', vids: pa[8].map((src, j) => ({ src, v: pa[9][j], href: videoOf(pa, j) })),
         hasMk: !!md, mkd: (md || []).map((m, i) => ({ c: m[0], p: m[2] + ' %', w: m[2] + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' })),
@@ -261,25 +258,8 @@ return {};
                   ] : null
                 )
               ),
-              $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-top: 10px; border-top: 1px solid var(--line); box-sizing: border-box;" },
-                $h("span", { "style": "flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;" },
-                  $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
-                    $t(r?.rlab)
-                  ),
-                  $h("span", { "style": "font-family: var(--font-display); font-size: 15px; font-weight: 700;" },
-                    $h("span", { "style": "white-space: nowrap;" },
-                      $h("span", { "style": "font-size: 11px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                        "Entre "
-                      ),
-                      $t(r?.lo),
-                      $h("span", { "style": "font-size: 11px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                        " et "
-                      ),
-                      $t(r?.hi)
-                    )
-                  )
-                ),
-                (r?.hasW) ? [
+              (r?.hasW) ? [
+                $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-top: 10px; border-top: 1px solid var(--line); box-sizing: border-box;" },
                   $h("svg", { "class": "m-spark", "width": "72", "height": "28", "viewBox": "0 0 80 28", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                     $h("path", { "d": r?.line, "fill": "none", "stroke": r?.stroke, "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
@@ -290,8 +270,8 @@ return {};
                       )
                     ])
                   )
-                ] : null
-              )
+                )
+              ] : null
             )
           ]),
           ($v.hasMore) ? [
@@ -418,7 +398,7 @@ return {};
             $h("div", { "style": "border-radius: 20px; padding: 16px; background: var(--track); display: flex; flex-direction: column; gap: 12px;" },
               $h("span", { "style": "display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                  "Revenus estimés sur 30 jours"
+                  "Vues sur 30 jours"
                 ),
                 ($v.pv?.hasDelta) ? [
                   $h("span", { "class": "sw-badge sw-badge-accent", "style": "white-space: nowrap;" },
@@ -426,17 +406,8 @@ return {};
                   )
                 ] : null
               ),
-              $h("span", { "style": "font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.04em;" },
-                $h("span", { "style": "white-space: nowrap;" },
-                  $h("span", { "style": "font-size: 17px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                    "Entre "
-                  ),
-                  $t($v.pv?.lo),
-                  $h("span", { "style": "font-size: 17px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                    " et "
-                  ),
-                  $t($v.pv?.hi)
-                )
+              $h("span", { "style": "font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: -0.04em; white-space: nowrap;" },
+                $t($v.pv?.v30)
               ),
               ($v.pv?.full) ? [
                 $h("span", { "style": "display: flex; align-items: flex-end; gap: 8px; height: 74px;" },
@@ -459,16 +430,8 @@ return {};
                 )
               ] : null
             ),
-            $h("div", { "style": "display: flex; gap: 8px; padding-top: 12px;" },
-              $h("span", { "class": "sw-tile", "style": "flex: 1; min-width: 0; padding: 10px 12px;" },
-                $h("span", { "class": "sw-tile-label" },
-                  "Vues 30 j"
-                ),
-                $h("span", { "class": "sw-tile-value", "style": "font-size: 18px; white-space: nowrap;" },
-                  $t($v.pv?.v30)
-                )
-              ),
-              ($v.pv?.full) ? [
+            ($v.pv?.full) ? [
+              $h("div", { "style": "display: flex; gap: 8px; padding-top: 12px;" },
                 $h("span", { "class": "sw-tile", "style": "flex: 1; min-width: 0; padding: 10px 12px;" },
                   $h("span", { "class": "sw-tile-label" },
                     "Comptes"
@@ -485,8 +448,8 @@ return {};
                     $t($v.pv?.ppw)
                   )
                 )
-              ] : null
-            ),
+              )
+            ] : null,
             ($v.pv?.full) ? [
               $h("span", { "style": "display: block; padding: 16px 0 8px; font-size: 15px; font-weight: 700;" },
                 "Leurs vidéos qui explosent"

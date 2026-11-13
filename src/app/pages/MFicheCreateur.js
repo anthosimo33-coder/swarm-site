@@ -41,12 +41,12 @@ export default class MFicheCreateur extends DCLogic {
   }
 
   baseVals() {
-    let z = {"av": "/media/app/av-zinedine.gsbb.jpg", "noav": false, "h": "@zinedine.gsbb", "bio": "L'ia c'est 👇", "fans": "16 200", "med": "7 792", "p7": "3 vidéos en 7 j", "rev": "Entre 12 et 16 k€", "views": "4,7 M", "best": "2,85 M", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "hits": 4};
+    let z = {"av": "/media/app/av-zinedine.gsbb.jpg", "noav": false, "h": "@zinedine.gsbb", "bio": "L'ia c'est 👇", "fans": "16 200", "med": "7 792", "p7": "3 vidéos en 7 j", "views": "4,7 M", "best": "2,85 M", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "hits": 4};
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     let vids = [{"src": "/media/app/v-7706797723294420256.jpg", "v": "2 k", "raw": 2042.0, "x": "0,3×", "xr": 0.2620636550308008, "hit": false, "date": "11/11", "ago": "il y a 2 j", "t": "Job Alimentaire ❌ Vidéo YTB pour enfants ✅", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7706656919259319585.jpg", "v": "5 k", "raw": 4676.0, "x": "0,6×", "xr": 0.6001026694045175, "hit": false, "date": "10/11", "ago": "il y a 2 j", "t": "Il vit en 2098 😳", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7704799316795477280.jpg", "v": "2 k", "raw": 1635.0, "x": "0,2×", "xr": 0.2098305954825462, "hit": false, "date": "05/11", "ago": "il y a 7 j", "t": "Shortfy.io", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7703924847239269664.jpg", "v": "8 k", "raw": 8017.0, "x": "1×", "xr": 1.028875770020534, "hit": false, "date": "03/11", "ago": "il y a 9 j", "t": "Shortfy.io", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7702800263538560289.jpg", "v": "791 k", "raw": 791173.0, "x": "102×", "xr": 101.53657597535934, "hit": true, "date": "31/10", "ago": "il y a 12 j", "t": "Shortfy.io", "badge": "var(--blue-600)"}, {"src": "/media/app/v-7702109191736986913.jpg", "v": "191 k", "raw": 190605.0, "x": "24×", "xr": 24.4616273100616, "hit": true, "date": "29/10", "ago": "il y a 14 j", "t": "Vous avez plus d’excuses, il vient d’expliquer comment faire en même p", "badge": "var(--blue-600)"}, {"src": "/media/app/v-7701347136323013921.jpg", "v": "841 k", "raw": 841262.0, "x": "108×", "xr": 107.96483572895278, "hit": true, "date": "27/10", "ago": "il y a 16 j", "t": "J’ai enregistré pour vous, me remerciez pas 🤝 #Argent #shortfy #TikTok", "badge": "var(--blue-600)"}, {"src": "/media/app/v-7700172397613288736.jpg", "v": "2,85 M", "raw": 2848785.0, "x": "366×", "xr": 365.6038244353183, "hit": true, "date": "24/10", "ago": "il y a 19 j", "t": "Pourquoi personne nous apprend ça à l’école? 😭 #Argent #shortfy #TikTo", "badge": "var(--blue-600)"}, {"src": "/media/app/v-7699871031615360288.jpg", "v": "8 k", "raw": 7567.0, "x": "1×", "xr": 0.9711242299794661, "hit": false, "date": "23/10", "ago": "il y a 20 j", "t": "Shortfy.io", "badge": "rgba(5,7,12,0.55)"}, {"src": "/media/app/v-7699388137767734561.jpg", "v": "7 k", "raw": 6941.0, "x": "0,9×", "xr": 0.8907854209445585, "hit": false, "date": "22/10", "ago": "il y a 22 j", "t": "c’est une dinguerie ce qu’il fait 🤯", "badge": "rgba(5,7,12,0.55)"}];
     vids = vids.map((x) => Object.assign({}, x, { href: '/app/videos/' + vkey(x.src) }));
     z = Object.assign({ appLine: 'Pousse Shortfy', hasApp: true, niche: 'Side hustle', flag: 'FR', tt: 'https://www.tiktok.com/@zinedine.gsbb', bestX: '366× sa normale',
-      hasRev: true, lo: '12', hi: '16 k€', revSub: '4,7 M vues sur ses 10 vidéos', hasTip: true, tipB: '4 vidéos sur 10 à plus de 10× sa normale,',
+      hasTip: true, tipB: '4 vidéos sur 10 à plus de 10× sa normale,',
       tipT: 'toutes entre le 24/10 et le 31/10. Depuis, aucune n’a dépassé 2×.', nv: '10' }, z);
     // Sur le site : le créateur (document « creator:<handle> »), lu comme CreateurFicheA.
     const D = this.props && this.props.data;
@@ -59,8 +59,6 @@ export default class MFicheCreateur extends DCLogic {
       const ML = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
       const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
       const flags = (cs) => (cs || []).filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
-      const eur = (v) => { const lo = v / 1000 * 2.5, hi = v / 1000 * 3.5; if (hi < 1000) return [String(Math.round(lo)), Math.round(hi) + ' €'];
-        const k = (e) => (hi >= 1e4 ? String(Math.round(e / 1000)) : (e / 1000).toFixed(1).replace('.', ',').replace(/,0$/, '')); return [k(lo), k(hi) + ' k€']; };
       const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const DAY = 86400000;
@@ -70,13 +68,6 @@ export default class MFicheCreateur extends DCLogic {
       const a = D.app;
       const n7 = Math.max(D.posts7d || 0, V.filter((x) => x.publishedAt >= ref - 7 * DAY).length);
       const top = V.concat(D.best || []).reduce((m, x) => (!m || x.views > m.views ? x : m), null);
-      // Revenus 30 j : seulement si ses vidéos connues couvrent bien les 30 jours (la plus ancienne avant le début, sans trou de plus de 14 j).
-      const start = ref - 30 * DAY;
-      const in30 = V.filter((x) => x.publishedAt >= start);
-      const j = V.findIndex((x) => x.publishedAt < start);
-      const covered = j > 0 && V.slice(0, j + 1).every((x, i, l) => !i || l[i - 1].publishedAt - x.publishedAt <= 14 * DAY) && V[0].publishedAt >= (D.lastPostAt || 0) - 3600000;
-      const sum = in30.reduce((s, x) => s + x.views, 0);
-      const r = eur(sum);
       const hits = V.filter((x) => x.x >= 10);
       // Pas de moyen de contacter un créateur : les e-mails et numéros de sa bio ne sont pas repris.
       const noContact = (s) => String(s || '').replace(/(?:📧|✉️?|📩|📬|e-?mail|mail|contact|business|pro)?\s*[:：]?\s*[\w.+-]+@[\w-]+(?:\.[\w-]+)+/gi, ' ').replace(/\+?\d[\d .-]{7,}\d/g, ' ').replace(/\s+/g, ' ').trim();
@@ -85,7 +76,6 @@ export default class MFicheCreateur extends DCLogic {
         best: top ? nf(top.views) : '—', bestX: top && top.x ? xf(top.x) + ' sa normale' : (top ? day(top.publishedAt) : ''),
         app: a ? ico(a) : { logo: '', nologo: true, blank: 'sw-app-blank' }, hasApp: !!a, appLine: a ? 'Pousse ' + a.name : '', niche: (a && a.niche) || '',
         flag: D.market && D.market !== 'XX' ? D.market : '', tt: 'https://www.tiktok.com/@' + D.handle,
-        hasRev: covered && in30.length > 0, lo: r[0], hi: r[1], revSub: nf(sum) + ' vues sur ses ' + in30.length + (in30.length > 1 ? ' vidéos' : ' vidéo'),
         hasTip: hits.length > 0 && V.length > 1, tipB: hits.length + (hits.length > 1 ? ' vidéos' : ' vidéo') + ' sur ' + V.length + ' à plus de 10× sa normale,',
         tipT: hits.length ? (hits.length > 1 ? 'la dernière le ' : 'le ') + day(hits[0].publishedAt) + '.' : '', nv: String(V.length) });
       vids = V.map((x) => { const hit = x.x >= 10;
@@ -229,29 +219,7 @@ export default class MFicheCreateur extends DCLogic {
             $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
               $t($v.z?.bestX)
             )
-          ),
-          ($v.z?.hasRev) ? [
-            $h("span", { "class": "sw-tile", "style": "grid-column: span 2;" },
-              $h("span", { "class": "sw-tile-label" },
-                "Revenus estimés sur 30 jours"
-              ),
-              $h("span", { "class": "sw-tile-value" },
-                $h("span", { "style": "white-space: nowrap;" },
-                  $h("span", { "style": "font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                    "Entre "
-                  ),
-                  $t($v.z?.lo),
-                  $h("span", { "style": "font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
-                    " et "
-                  ),
-                  $t($v.z?.hi)
-                )
-              ),
-              $h("span", { "style": "font-size: 11px; color: var(--ink-faint);" },
-                $t($v.z?.revSub)
-              )
-            )
-          ] : null
+          )
         ),
         ($v.z?.hasTip) ? [
           $h("div", { "style": "margin: 14px 20px 0; padding: 12px 14px; border-radius: 16px; display: flex; gap: 12px; align-items: flex-start; background: linear-gradient(90deg, var(--accent-soft), transparent); border: 1px solid var(--accent-edge);" },
