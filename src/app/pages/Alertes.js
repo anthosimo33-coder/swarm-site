@@ -84,11 +84,12 @@ export default class Alertes extends DCLogic {
       remove: () => keepRules(mine.filter((x) => x !== r)) }));
     const same = (p, q) => p.quoi === q.quoi && (p.niche || null) === (q.niche || null) && p.seuil === q.seuil && (p.marche || null) === (q.marche || null);
     const kindN = (r, n) => n + (r.quoi === 'format' ? (n > 1 ? ' formats' : ' format') : (n > 1 ? ' vidéos' : ' vidéo'));
+    const TABIC = { Toutes: 'M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0', Formats: 'M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4', 'Vidéos': 'M4 5h16v14H4zM10 9l5 3-5 3z', Comptes: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6' };
     return {
       groups, rules, hasRules: mine.length > 0, noRules: !rulesWait && mine.length === 0,
       subtitle: mineOn ? 'Ce que le Radar a repéré cette semaine, selon tes alertes.' : 'Ce que le Radar a repéré cette semaine.',
       noAlert: groups.length === 0, noAlertText: mineOn ? 'Rien cette semaine pour tes alertes' + (tab === 'Toutes' ? '.' : ' dans ce type.') : 'Aucune alerte de ce type cette semaine.',
-      tabs: TABS.map((t) => ({ l: t[0], n: pool.filter(t[1]).length, on: t[0] === tab ? 'true' : 'false', pick: () => this.setState({ tab: t[0] }) })),
+      tabs: TABS.map((t) => ({ l: t[0], d: TABIC[t[0]] || TABIC.Toutes, n: pool.filter(t[1]).length, on: t[0] === tab ? 'true' : 'false', bg: t[0] === tab ? 'rgba(255,255,255,0.10)' : 'transparent', ink: t[0] === tab ? 'var(--ink)' : 'var(--ink-muted)', fw: t[0] === tab ? '600' : '500', ic: t[0] === tab ? 'var(--accent)' : 'var(--ink-faint)', pick: () => this.setState({ tab: t[0] }) })),
       mineOn: mineOn ? 'true' : 'false', toggleMine: () => this.setState({ mine: !mineOn }),
       hasUnread: items.some(unread),
       markRead: () => { const v = Object.assign({}, seenV || {}, { alerts: Date.now() }); if (site) P.save('seen', v); else this.setState({ seen: v }); },
@@ -236,10 +237,13 @@ export default class Alertes extends DCLogic {
               )
             )
           ),
-          $h("div", { "style": "margin: 20px 32px 0; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
-            $h("div", { "class": "sw-tabs sw-tabs-line", "role": "tablist", "aria-label": "Type", "style": "border-bottom: 0;" },
+          $h("div", { "style": "margin: 24px 32px 0; padding: 12px 14px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
+            $h("div", { "role": "tablist", "aria-label": "Type", "style": "display: flex; gap: 4px; flex-wrap: wrap;" },
               ($l($v.tabs)).map((t) => [
-                $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": t?.on, "onClick": t?.pick, "style": "display: inline-flex; align-items: center; gap: 8px;" },
+                $h("button", { "type": "button", "role": "tab", "aria-selected": t?.on, "onClick": t?.pick, "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: ${$t(t?.bg)}; color: ${$t(t?.ink)}; font: inherit; font-size: 14px; font-weight: ${$t(t?.fw)}; cursor: pointer;` },
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t(t?.ic)};` },
+                    $h("path", { "d": t?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   $t(t?.l),
                   $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },
                     $t(t?.n)
@@ -248,7 +252,7 @@ export default class Alertes extends DCLogic {
               ])
             ),
             ($v.hasRules) ? [
-              $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": $v.mineOn, "onClick": $v.toggleMine, "style": "height: 36px; gap: 8px;" },
+              $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": $v.mineOn, "onClick": $v.toggleMine, "style": "height: 36px; padding: 0 12px; border-radius: 10px; gap: 8px; font-size: 13px;" },
                 $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 ),
@@ -265,7 +269,10 @@ export default class Alertes extends DCLogic {
               ] : null,
               ($l($v.groups)).map((g) => [
                 $h("section", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-                  $h("h2", { "style": "margin: 0 0 4px 14px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);" },
+                  $h("h2", { "style": "margin: 0 0 6px 6px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink-muted);" },
+                    $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                      $h("path", { "d": "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ),
                     $t(g?.g)
                   ),
                   ($l(g?.items)).map((a) => [
@@ -292,10 +299,10 @@ export default class Alertes extends DCLogic {
                           $t(a?.when)
                         )
                       ),
-                      $h("span", { "style": "display: flex; flex-shrink: 0; width: 92px; box-sizing: border-box; padding-left: 10px; justify-content: flex-end;" },
+                      $h("span", { "style": "display: flex; flex-shrink: 0; gap: 6px; justify-content: flex-end; width: 154px;" },
                         ($l(a?.covs)).map((c) => [
-                          $h("span", { "class": "sw-video", "style": "display: block; width: 34px; margin-left: -10px; border-radius: 8px; box-shadow: 0 0 0 2px var(--surface);" },
-                            $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                          $h("span", { "class": "sw-video", "style": "display: block; width: 46px; border-radius: 10px;" },
+                            $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy" })
                           )
                         ])
                       )

@@ -63,7 +63,8 @@ export default class CreateursCartes extends DCLogic {
     const comptes = (n) => grp(n) + (n > 1 ? ' comptes' : ' compte');
     // Un menu par pastille (comme sur Apps), posé sous la pastille cliquée.
     const many = (xs, w) => (xs.length === 0 ? 'Toutes' : xs.length === 1 ? xs[0] : xs.length + ' ' + w);
-    const mkBar = (key, k, v) => ({ k, v, open: open === key ? 'true' : 'false', bg: open === key ? 'var(--tab-on)' : 'var(--track)', edge: open === key ? 'var(--accent-edge)' : 'var(--line)',
+    const BIC = { niche: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.01', app: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', fans: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3' };
+    const mkBar = (key, k, v) => ({ k, v, d: BIC[key], open: open === key ? 'true' : 'false', bg: open === key ? 'var(--tab-on)' : 'var(--track)', edge: open === key ? 'var(--accent-edge)' : 'var(--line)',
       toggle: (e) => set({ open: open === key ? '' : key, mq: '', left: e && e.currentTarget ? e.currentTarget.offsetLeft : 0 }) });
     const filters = [mkBar('niche', 'Niche', many(niches, 'niches')), mkBar('app', 'App', many(apps, 'apps')), mkBar('fans', 'Abonnés', fb[1])];
     const chips = [];
@@ -91,7 +92,7 @@ export default class CreateursCartes extends DCLogic {
     }
     if (menu.on) Object.assign(menu, { left: (st.left || 0) + 'px', cta: 'Voir ' + comptes(list.length), q: st.mq || '' });
     const IN = { FR: 'en France', US: 'chez les anglophones', MX: 'en Amérique latine', ES: 'en Espagne', BR: 'au Brésil et au Portugal', XX: 'dans les autres langues' };
-    const mkt = (b.mkt || []).map((m) => Object.assign({}, m, { on: m.c === b.market ? 'true' : 'false', flag: m.c !== 'XX', href: '/app/createurs/cartes?m=' + m.c }));
+    const mkt = (b.mkt || []).map((m) => Object.assign({}, m, { on: m.c === b.market ? 'true' : 'false', bg: m.c === b.market ? 'rgba(255,255,255,0.10)' : 'transparent', ink: m.c === b.market ? 'var(--ink)' : 'var(--ink-muted)', fw: m.c === b.market ? '600' : '500', ic: m.c === b.market ? 'var(--accent)' : 'var(--ink-faint)', flag: m.c !== 'XX', href: '/app/createurs/cartes?m=' + m.c }));
     // 50 cartes d'abord, puis 50 de plus à la demande ; filtres et « Actifs cette semaine » portent sur toute la liste.
     const LIM = 50;
     const lim = st.lim || LIM;
@@ -225,22 +226,17 @@ export default class CreateursCartes extends DCLogic {
                 "Les comptes qui font des vues pour des apps. Regarde ce qu’ils publient, et copie ce qui marche."
               )
             ),
-            $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 400px; height: 48px; padding: 0 16px; box-shadow: none;" },
+            $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 440px; height: 48px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: none; -webkit-backdrop-filter: none;" },
               $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
               $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "qcb", "type": "search", "aria-label": "Chercher un compte", "placeholder": "Chercher un compte…", "style": "font-size: 15px;" })
             )
           ),
-          $h("div", { "style": "padding: 24px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
-            $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Marché" },
+          $h("div", { "style": "margin: 24px 32px 0; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-radius: 20px 20px 0 0; background: var(--card-top); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+            $h("div", { "role": "tablist", "aria-label": "Marché", "style": "display: flex; gap: 4px; flex-wrap: wrap;" },
               ($l($v.mkt)).map((m) => [
-                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": m?.on, "href": m?.href, "style": "height: 36px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;" },
-                  (m?.flag) ? [
-                    $h("span", { "class": "sw-flag", "style": "width: 24px; height: 18px; font-size: 9px;" },
-                      $t(m?.c)
-                    )
-                  ] : null,
+                $h("a", { "role": "tab", "aria-selected": m?.on, "href": m?.href, "style": `height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 10px; background: ${$t(m?.bg)}; color: ${$t(m?.ink)}; font-size: 14px; font-weight: ${$t(m?.fw)}; text-decoration: none;` },
                   $t(m?.l)
                 )
               ])
@@ -249,17 +245,20 @@ export default class CreateursCartes extends DCLogic {
               $t($v.countLabel)
             )
           ),
-          $h("div", { "style": "padding: 16px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
+          $h("div", { "style": "margin: -1px 32px 0; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-radius: 0 0 20px 20px; background: var(--card-bottom); box-shadow: inset 0 0 0 1px var(--card-edge);" },
             $h("div", { "style": "position: relative; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;" },
               ($l($v.filters)).map((f) => [
-                $h("button", { "class": "sw-pill", "type": "button", "data-menu-trigger": "true", "onClick": f?.toggle, "aria-expanded": f?.open, "aria-haspopup": "listbox", "style": `height: 40px; padding: 0 12px 0 14px; gap: 6px; background: ${$t(f?.bg)}; border-color: ${$t(f?.edge)};` },
-                  $h("span", { "style": "color: var(--ink-faint);" },
+                $h("button", { "type": "button", "data-menu-trigger": "true", "onClick": f?.toggle, "aria-expanded": f?.open, "aria-haspopup": "listbox", "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: ${$t(f?.bg)}; box-shadow: inset 0 0 0 1px ${$t(f?.edge)}; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;` },
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                    $h("path", { "d": f?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  $h("span", { "style": "color: var(--ink-muted);" },
                     $t(f?.k)
                   ),
                   $h("span", { "style": "font-weight: 600;" },
                     $t(f?.v)
                   ),
-                  $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
+                  $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
                     $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -273,7 +272,7 @@ export default class CreateursCartes extends DCLogic {
                 )
               ]),
               ($v.menu?.on) ? [
-                $h("div", { "ref": $v.setMenu, "role": "listbox", "aria-label": $v.menu?.title, "style": `position: absolute; top: 52px; left: ${$t($v.menu?.left)}; z-index: 30; width: 360px; box-sizing: border-box; padding: 8px; border-radius: 22px; background: rgba(13,17,26,0.96); border: 1px solid var(--glass-edge); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;` },
+                $h("div", { "ref": $v.setMenu, "role": "listbox", "aria-label": $v.menu?.title, "style": `position: absolute; top: 46px; left: ${$t($v.menu?.left)}; z-index: 30; width: 360px; box-sizing: border-box; padding: 8px; border-radius: 22px; background: rgba(13,17,26,0.96); border: 1px solid var(--glass-edge); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;` },
                   $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; margin-bottom: 6px; border-radius: 14px; background: var(--track);" },
                     $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
                       $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -337,7 +336,7 @@ export default class CreateursCartes extends DCLogic {
             )
           ),
           ($v.liveOn) ? [
-            $h("section", { "style": "margin: 20px 32px 0; padding: 16px 20px; border-radius: 20px; background: var(--surface-raised); border: 1px solid var(--line); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;" },
+            $h("section", { "style": "margin: 16px 32px 0; padding: 16px 20px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;" },
               $h("span", { "class": "sw-live" },
                 $h("span", { "aria-hidden": "true", "style": "width: 8px; height: 8px; border-radius: 50%; background: var(--accent);" }),
                 "Actifs cette semaine"

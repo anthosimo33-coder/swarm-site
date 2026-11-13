@@ -143,8 +143,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <section class="sw-card" aria-labelledby="fa-mk" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
 <div class="sw-card-head"><h2 id="fa-mk" class="sw-card-title">Où leurs vues se font</h2><span class="sw-card-sub">Vues 30 j</span></div>
 <sc-for list="{{mk}}" as="m" hint-placeholder-count="6">
-<div style="display: grid; grid-template-columns: 28px minmax(0, 1fr) 60px; gap: 12px; align-items: center;">
-<span class="sw-flag" style="width: 28px;">{{m.c}}</span>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px; gap: 12px; align-items: center;">
 <span style="display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: var(--ink-soft);">{{m.l}}</span><span style="color: var(--ink-faint);">{{m.v}}</span></span><span style="height: 6px; border-radius: 3px; background: var(--track); overflow: hidden;"><span style="display: block; height: 6px; width: {{m.w}}; background: {{m.bg}}; border-radius: 3px;"></span></span></span>
 <span style="text-align: right; font-family: var(--font-display); font-size: 17px; font-weight: 700;">{{m.p}}</span>
 </div>

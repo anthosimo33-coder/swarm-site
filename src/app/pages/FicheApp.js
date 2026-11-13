@@ -610,10 +610,7 @@ export default class FicheApp extends DCLogic {
                 )
               ),
               ($l($v.mk)).map((m) => [
-                $h("div", { "style": "display: grid; grid-template-columns: 28px minmax(0, 1fr) 60px; gap: 12px; align-items: center;" },
-                  $h("span", { "class": "sw-flag", "style": "width: 28px;" },
-                    $t(m?.c)
-                  ),
+                $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1fr) 60px; gap: 12px; align-items: center;" },
                   $h("span", { "style": "display: flex; flex-direction: column; gap: 6px;" },
                     $h("span", { "style": "display: flex; justify-content: space-between; font-size: 13px;" },
                       $h("span", { "style": "color: var(--ink-soft);" },

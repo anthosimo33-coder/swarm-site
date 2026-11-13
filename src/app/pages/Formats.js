@@ -79,6 +79,13 @@ export default class Formats extends DCLogic {
         items: MKS.filter((m) => keep(m[1])).map((m) => { const n = all.filter((c) => okN(c, niche) && okT(c) && okM(c, m[0])).length; const on = market === m[0];
           return Object.assign({ label: m[1], flag: m[2] || false, n: count(n), sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1, pick: () => this.setState({ market: m[0], shown: PAGE }) }, radio(on)); }) };
     }
+    const NIC = { 'Séduction IA': 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z', 'Couple': 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z',
+      'Études': 'M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM8 7h7', 'Jalousie et ex': 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+      'Side hustle': 'M3 17l6-6 4 4 8-8M15 7h6v6', 'Langues': 'M4 5h8M8 3v2M5 9c1.5 3 4 5 7 6M11 5c-1 4-3.5 7-7 9M13 21l4-9 4 9M14.5 18h5', 'Foi': 'M12 3v18M7 8h10',
+      'Social et loisirs': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Santé et physique': 'M3 12h4l3-8 4 16 3-8h4',
+      'Beauté IA': 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z', 'Toutes': 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5' };
+    const NIC0 = 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z';
+    const TIC = { Tout: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', Accroches: 'M5 6h14M12 6v13M9 19h6', Sons: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z' };
     return {
       hero, fan, cards, hasHero: list.length > 0, noCards: cards.length === 0,
       moreOn: more > 0, moreLabel: 'Voir ' + more + (more > 1 ? ' formats de plus' : ' format de plus'), gridPad: more > 0 ? '0 32px 24px' : '0 32px 48px',
@@ -87,8 +94,8 @@ export default class Formats extends DCLogic {
       heroEyebrow: b.live ? 'Le plus repris en ce moment' : 'Le plus fort cette semaine',
       listTitle: b.live ? 'Les autres formats du moment' : 'Les autres formats de la semaine',
       listSort: b.live ? 'Triés par nombre de comptes' : 'Triés par × la normale',
-      niches: niches.map((c) => Object.assign({}, c, { on: c.l === niche ? 'true' : 'false', pick: () => this.setState({ niche: c.l, shown: PAGE }) })),
-      types: ['Tout', 'Accroches', 'Sons'].map((l) => ({ l, on: l === type ? 'true' : 'false', pick: () => this.setState({ type: l, shown: PAGE }) })),
+      niches: niches.map((c) => { const on = c.l === niche; return Object.assign({}, c, { on: on ? 'true' : 'false', d: NIC[c.l] || NIC0, bg: on ? 'var(--accent-soft)' : 'var(--track)', edge: on ? 'var(--accent-edge)' : 'var(--line)', ink: on ? 'var(--ink)' : 'var(--ink-soft)', fw: on ? '600' : '500', ic: on ? 'var(--accent)' : 'var(--ink-faint)', pick: () => this.setState({ niche: c.l, shown: PAGE }) }); }),
+      types: ['Tout', 'Accroches', 'Sons'].map((l) => ({ l, d: TIC[l], on: l === type ? 'true' : 'false', bg: l === type ? 'rgba(255,255,255,0.10)' : 'transparent', ink: l === type ? 'var(--ink)' : 'var(--ink-muted)', fw: l === type ? '600' : '500', ic: l === type ? 'var(--accent)' : 'var(--ink-faint)', pick: () => this.setState({ type: l, shown: PAGE }) })),
       mkBar, menu,
       closeMenu: () => this.setState({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ open: '' }); } },
@@ -202,86 +209,113 @@ export default class Formats extends DCLogic {
                 "Ce que plusieurs comptes reprennent en même temps. Un format qui marche chez trois inconnus marchera chez toi."
               )
             ),
-            $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 400px; height: 48px; padding: 0 16px; box-shadow: none;" },
+            $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 440px; height: 48px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: none; -webkit-backdrop-filter: none;" },
               $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
               $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "qfb", "type": "search", "aria-label": "Chercher une accroche ou un son", "placeholder": "Chercher une accroche ou un son…", "style": "font-size: 15px;" })
             )
           ),
-          $h("div", { "style": "padding: 24px 32px 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
-            $h("div", { "style": "display: flex; gap: 8px; flex-wrap: wrap;" },
+          $h("section", { "aria-label": "Filtres", "style": "margin: 24px 32px 0; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+            $h("div", { "style": "display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px;" },
               ($l($v.niches)).map((c) => [
-                $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": c?.on, "onClick": c?.pick, "style": "height: 40px;" },
+                $h("button", { "type": "button", "aria-pressed": c?.on, "onClick": c?.pick, "style": `display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: ${$t(c?.bg)}; box-shadow: inset 0 0 0 1px ${$t(c?.edge)}; color: ${$t(c?.ink)}; font: inherit; font-size: 13px; font-weight: ${$t(c?.fw)}; cursor: pointer;` },
+                  $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t(c?.ic)};` },
+                    $h("path", { "d": c?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
                   $t(c?.l),
-                  $h("span", { "style": "font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);" },
+                  $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
                     $t(c?.n)
                   )
                 )
               ])
             ),
-            $h("div", { "style": "position: relative; display: flex; gap: 8px; align-items: center;" },
-              $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Type" },
-                ($l($v.types)).map((t) => [
-                  $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": t?.on, "onClick": t?.pick, "style": "height: 32px;" },
-                    $t(t?.l)
-                  )
-                ])
-              ),
-              $h("button", { "class": "sw-pill", "type": "button", "data-menu-trigger": "true", "onClick": $v.mkBar?.toggle, "aria-expanded": $v.mkBar?.open, "aria-haspopup": "listbox", "style": `height: 40px; padding: 0 12px 0 14px; gap: 6px; background: ${$t($v.mkBar?.bg)}; border-color: ${$t($v.mkBar?.edge)};` },
-                $h("span", { "style": "color: var(--ink-faint);" },
-                  "Marché"
+            $h("span", { "aria-hidden": "true", "style": "display: block; height: 1px; background: var(--line);" }),
+            $h("div", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px;" },
+              $h("div", { "style": "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" },
+                $h("div", { "role": "tablist", "aria-label": "Type", "style": "display: flex; gap: 4px;" },
+                  ($l($v.types)).map((t) => [
+                    $h("button", { "type": "button", "role": "tab", "aria-selected": t?.on, "onClick": t?.pick, "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: ${$t(t?.bg)}; color: ${$t(t?.ink)}; font: inherit; font-size: 14px; font-weight: ${$t(t?.fw)}; cursor: pointer;` },
+                      $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t(t?.ic)};` },
+                        $h("path", { "d": t?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      ),
+                      $t(t?.l)
+                    )
+                  ])
                 ),
-                $h("span", { "style": "font-weight: 600;" },
-                  $t($v.mkBar?.v)
-                ),
-                $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
-                  $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              ),
-              ($v.menu?.on) ? [
-                $h("div", { "ref": $v.setMenu, "role": "listbox", "aria-label": "Marché", "style": "position: absolute; top: 52px; right: 0; z-index: 30; width: 360px; box-sizing: border-box; padding: 8px; border-radius: 22px; background: rgba(13,17,26,0.96); border: 1px solid var(--glass-edge); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;" },
-                  $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; margin-bottom: 6px; border-radius: 14px; background: var(--track);" },
-                    $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
-                      $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                $h("span", { "aria-hidden": "true", "style": "width: 1px; height: 24px; margin: 0 4px; background: var(--line);" }),
+                $h("span", { "style": "position: relative; display: inline-flex;" },
+                  $h("button", { "type": "button", "data-menu-trigger": "true", "onClick": $v.mkBar?.toggle, "aria-expanded": $v.mkBar?.open, "aria-haspopup": "listbox", "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: ${$t($v.mkBar?.bg)}; box-shadow: inset 0 0 0 1px ${$t($v.mkBar?.edge)}; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;` },
+                    $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                      $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
-                    $h("input", { "ref": $v.setMenuInput, "type": "search", "onInput": $v.onMq, "onKeyDown": $v.menuKeys, "aria-label": "Chercher un marché", "placeholder": "Chercher un marché", "style": "flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--ink); font: inherit; font-size: 14px;" })
+                    $h("span", { "style": "color: var(--ink-muted);" },
+                      "Marché"
+                    ),
+                    $h("span", { "style": "font-weight: 600;" },
+                      $t($v.mkBar?.v)
+                    ),
+                    $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
+                      $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
                   ),
-                  ($l($v.menu?.items)).map((it) => [
-                    $h("button", { "type": "button", "role": "option", "aria-selected": it?.sel, "onClick": it?.pick, "onKeyDown": $v.menuKeys, "style": `width: 100%; height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 12px; background: ${$t(it?.bg)}; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; opacity: ${$t(it?.o)};` },
-                      $h("span", { "aria-hidden": "true", "style": `width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid ${$t(it?.box)}; background: ${$t(it?.fill)}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;` },
-                        $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                          $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": it?.tick, "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                        )
+                  ($v.menu?.on) ? [
+                    $h("div", { "ref": $v.setMenu, "role": "listbox", "aria-label": "Marché", "style": "position: absolute; top: 46px; left: 0; z-index: 30; width: 360px; box-sizing: border-box; padding: 8px; border-radius: 22px; background: rgba(13,17,26,0.96); border: 1px solid var(--glass-edge); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;" },
+                      $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; margin-bottom: 6px; border-radius: 14px; background: var(--track);" },
+                        $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
+                          $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        ),
+                        $h("input", { "ref": $v.setMenuInput, "type": "search", "onInput": $v.onMq, "onKeyDown": $v.menuKeys, "aria-label": "Chercher un marché", "placeholder": "Chercher un marché", "style": "flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--ink); font: inherit; font-size: 14px;" })
                       ),
-                      (it?.flag) ? [
-                        $h("span", { "class": "sw-flag" },
-                          $t(it?.flag)
+                      ($l($v.menu?.items)).map((it) => [
+                        $h("button", { "type": "button", "role": "option", "aria-selected": it?.sel, "onClick": it?.pick, "onKeyDown": $v.menuKeys, "style": `width: 100%; height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 12px; background: ${$t(it?.bg)}; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; opacity: ${$t(it?.o)};` },
+                          $h("span", { "aria-hidden": "true", "style": `width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid ${$t(it?.box)}; background: ${$t(it?.fill)}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;` },
+                            $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                              $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": it?.tick, "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                            )
+                          ),
+                          $h("span", { "style": `flex: 1 1 auto; min-width: 0; font-weight: ${$t(it?.w)};` },
+                            $t(it?.label)
+                          ),
+                          $h("span", { "style": "font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;" },
+                            $t(it?.n)
+                          )
                         )
-                      ] : null,
-                      $h("span", { "style": `flex: 1 1 auto; min-width: 0; font-weight: ${$t(it?.w)};` },
-                        $t(it?.label)
-                      ),
-                      $h("span", { "style": "font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;" },
-                        $t(it?.n)
+                      ]),
+                      $h("div", { "style": "margin-top: 6px; padding: 12px 12px 6px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px;" },
+                        $h("span", { "style": "font-size: 12px; line-height: 1.4; color: var(--ink-faint); max-width: 190px;" },
+                          "Le marché d’un compte, c’est la langue de ses vidéos."
+                        ),
+                        $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.closeMenu },
+                          "Voir ", $t($v.menu?.total),
+                          $h("span", { "class": "sw-btn-tile" },
+                            $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                              $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                            )
+                          )
+                        )
                       )
                     )
-                  ]),
-                  $h("div", { "style": "margin-top: 6px; padding: 12px 12px 6px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px;" },
-                    $h("span", { "style": "font-size: 12px; line-height: 1.4; color: var(--ink-faint); max-width: 190px;" },
-                      "Le marché d’un compte, c’est la langue de ses vidéos."
-                    ),
-                    $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.closeMenu },
-                      "Voir ", $t($v.menu?.total),
-                      $h("span", { "class": "sw-btn-tile" },
-                        $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                          $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                        )
-                      )
-                    )
+                  ] : null
+                )
+              ),
+              $h("div", { "style": "display: flex; align-items: center; gap: 18px;" },
+                $h("span", { "style": "display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25;" },
+                  $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                    "Affichés"
+                  ),
+                  $h("span", { "style": "font-size: 14px; font-weight: 600;" },
+                    $t($v.menu?.total)
+                  )
+                ),
+                $h("span", { "aria-hidden": "true", "style": "width: 1px; height: 28px; background: var(--line);" }),
+                $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted);" },
+                  $t($v.listSort),
+                  $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
+                    $h("path", { "d": "M12 5v14M6 13l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
-              ] : null
+              )
             )
           ),
           ($v.hasHero) ? [

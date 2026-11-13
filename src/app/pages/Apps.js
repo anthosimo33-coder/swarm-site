@@ -352,11 +352,6 @@ return {};
                             $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": it?.tick, "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" })
                           )
                         ),
-                        (it?.flag) ? [
-                          $h("span", { "class": "sw-flag" },
-                            $t(it?.flag)
-                          )
-                        ] : null,
                         $h("span", { "style": `flex: 1 1 auto; min-width: 0; font-weight: ${$t(it?.w)};` },
                           $t(it?.label)
                         ),
