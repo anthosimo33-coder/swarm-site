@@ -1,0 +1,251 @@
+// Généré par scripts/dc2preact.py depuis design/app/MVideo.dc.html — ne pas modifier à la main.
+import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
+import { DCLogic, $t, $l } from '../../runtime.js';
+import MAjout from './MAjout.js';
+import MPalette from './MPalette.js';
+
+export default class MVideo extends DCLogic {
+
+  renderVals() {
+    const b = this.baseVals();
+    return Object.assign({}, b, this.shellVals(), this.extraVals(b));
+  }
+  shellVals() {
+    const st = this.state || {};
+    const u = this.props.user;
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
+                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
+    return {
+      me, getFn: this.props && this.props.get, savedFn: this.props && this.props.saved, saveFn: this.props && this.props.save, ajItem: null, pal: !!st.pal, openPal: () => this.setState({ pal: true }), closePal: () => this.setState({ pal: false }),
+      aj: !!st.aj, openAj: () => this.setState({ aj: true }), closeAj: () => this.setState({ aj: false })
+    };
+  }
+  extraVals(b) {
+    const st = this.state || {};
+    const P = this.props || {};
+    const vid0 = (P.data && P.data.id) || (P.params && P.params.id) || '';
+    return { ajItem: vid0 ? { kind: 'video', id: vid0, label: b.vid.hook || b.vid.who || '', cover: (b.v && b.v.src) || null } : null, copyLabel: st.copied ? 'Format copié' : 'Copier le format', copy: () => { try { navigator.clipboard.writeText(b.vid.copyText); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } };
+  }
+
+  baseVals() {
+    let v = {"src": "/media/app/v-7705929733220994337.jpg"};
+    let facts = [{"k": "Texte à l’écran", "v": "« POV: tienes EXAMEN ORAL y no has estudiado NADA », puis « la aplicación que uso es Astra Ai »"}, {"k": "Ce qui est dit", "v": "Un oral en visio. Elle fait répéter la question, « que se ha cortado », puis répond sans faute sur la glycolyse."}, {"k": "Son", "v": "original sound - learnwithjoel1"}, {"k": "Légende", "v": "« OTRO EXAMEN APROBADO, así de fácil » #studyhacks #buenasnotas #examenes"}, {"k": "Réactions", "v": "52,6 k j’aime · 3,2 k enregistrements · 846 partages · 325 commentaires"}];
+    const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
+    let nxt = [{"src": "/media/app/v-7705368869250075925.jpg", "x": "2 333×", "t": "TKA SD kelas 6 persiapannya bisa dimulai disini", "v": "2,0 M"}, {"src": "/media/app/v-7706010190566542612.jpg", "x": "1 226×", "t": "Mình sẽ xoá vid này trong 24h nữa", "v": "809 k"}, {"src": "/media/app/v-7706101547570171143.jpg", "x": "455×", "t": "Bí mật giúp bạn học giỏi hơn đứa mình ghét", "v": "1,2 M"}];
+    nxt = nxt.map((x) => Object.assign({}, x, { href: '/app/videos/' + vkey(x.src) }));
+    let vid = { pos: '1 sur 14', back: '/app/apps/astraai', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', hasApp: true, appName: 'Astra AI', where: 'Espagne · 08/11',
+      views: '1,87 M', who: '@learnwithjoel1 · 12,2 k abonnés', hasDur: true, dur: '0:49', url: 'https://www.tiktok.com/@learnwithjoel1/video/7705929733220994337', hasX: true, x: '65×',
+      story: '1,87 M vues en 92 heures, alors que le compte fait d’habitude 28,5 k vues. +38 % entre H+52 et H+92.', lo: '4,7', hi: '6,5 k€',
+      appHref: '/app/apps/astraai', appLink: 'Voir l’app Astra AI', copyText: 'POV: tienes EXAMEN ORAL y no has estudiado NADA' };
+    // Sur le site : la vidéo (document « video:<id> »), lue comme VideoA ; « Ensuite » = la suite de la liste de lecture de l'app.
+    const D = this.props && this.props.data;
+    if (D && D.id) {
+      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+      const xf = (x) => (x < 0.05 ? '< 0,1' : x >= 100 ? Math.round(x).toLocaleString('en-US').replace(/,/g, '\u202f') : x >= 10 ? String(Math.round(x)) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
+      const pct = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %');
+      const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+      const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? 'aujourd’hui' : 'il y a ' + d + ' j'; };
+      const ML = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
+      const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
+      const flags = (cs) => (cs || []).filter((c) => c && c !== 'XX').slice(0, 3).map((c) => ({ c }));
+      const eur = (v) => { const lo = v / 1000 * 2.5, hi = v / 1000 * 3.5; if (hi < 1000) return [String(Math.round(lo)), Math.round(hi) + ' €'];
+        const k = (e) => (hi >= 1e4 ? String(Math.round(e / 1000)) : (e / 1000).toFixed(1).replace('.', ',').replace(/,0$/, '')); return [k(lo), k(hi) + ' k€']; };
+      const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
+      const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
+      const list = D.playlist || [];
+      const idx = list.indexOf(D.id);
+      const H = (ms) => Math.max(0, Math.round((ms - D.publishedAt) / 3600000));
+      const hours = H(Date.now());
+      const r = eur(D.views || 0);
+      const snaps = (D.snapshots || []).filter((p) => p.at >= D.publishedAt);
+      let growth = '';
+      if (snaps.length >= 2 && snaps[0].views > 0) {
+        const g = (snaps[snaps.length - 1].views - snaps[0].views) / snaps[0].views;
+        growth = ' ' + pct(g) + ' entre H+' + H(snaps[0].at) + ' et H+' + H(snaps[snaps.length - 1].at) + '.';
+      }
+      const dur = Math.round(D.durationSec || 0);
+      vid = { pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
+        hook: D.hook || D.caption || '@' + D.handle, hasApp: !!D.app, appName: D.app ? D.app.name : '',
+        where: [ML[D.market] || '', D.publishedAt ? day(D.publishedAt) : ''].filter(Boolean).join(' · '), views: nf(D.views || 0),
+        who: '@' + D.handle + (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : ''), hasDur: dur > 0, dur: Math.floor(dur / 60) + ':' + String(dur % 60).padStart(2, '0'),
+        url: D.url || 'https://www.tiktok.com/@' + D.handle, hasX: !!D.x, x: D.x ? xf(D.x) : '',
+        story: nf(D.views || 0) + ' vues ' + (hours >= 48 ? 'en ' + Math.round(hours / 24) + ' jours' : 'en ' + hours + ' heures')
+          + (D.normal ? ', alors que le compte fait d’habitude ' + nf(D.normal) + ' vues.' : '.') + growth,
+        lo: r[0], hi: r[1], appHref: D.app ? '/app/apps/' + D.app.slug : '/app/apps', appLink: D.app ? 'Voir l’app ' + D.app.name : '',
+        copyText: [D.hook, D.caption, D.music ? 'Son : ' + D.music : ''].filter(Boolean).join('\n') || '@' + D.handle };
+      v = { src: D.cover || '' };
+      const rr = (n) => (n === null || n === undefined ? '' : nf(n));
+      const said = D.transcript && D.transcript.length > 280 ? D.transcript.slice(0, 280).replace(/\s+\S*$/, '') + ' …' : D.transcript;
+      facts = [['Texte à l’écran', D.hook], ['Ce qui est dit', said], ['Son', D.music], ['Légende', D.caption],
+        ['Réactions', [rr(D.likes) && rr(D.likes) + ' j’aime', rr(D.saves) && rr(D.saves) + ' enregistrements', rr(D.shares) && rr(D.shares) + ' partages', rr(D.comments) && rr(D.comments) + ' commentaires'].filter(Boolean).join(' · ')]]
+        .filter((f) => f[1]).map((f) => ({ k: f[0], v: f[1] }));
+      const ap = D.app && this.props.get ? this.props.get('app:' + D.app.slug) : null;
+      const cards = ap && ap.videos ? ap.videos : [];
+      nxt = cards.filter((c) => c.id !== D.id).slice(Math.max(0, idx), Math.max(0, idx) + 3).map((c) => ({ src: c.cover || '', x: c.x ? xf(c.x) : nf(c.views),
+        t: c.hook || '@' + c.handle, v: nf(c.views), href: '/app/videos/' + c.id }));
+    }
+    return { v, facts, nxt, vid, hasNxt: nxt.length > 0 };
+  }
+
+  render() {
+    const $v = this.renderVals();
+    return [
+      $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(32px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
+        $h("header", { "style": "position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
+          $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;" },
+            $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.back, "aria-label": "Retour", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;" },
+              $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
+            ),
+            $h("span", { "style": "flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+              $t($v.vid?.pos)
+            )
+          )
+        ),
+        $h("div", { "style": "position: relative; margin: 0 auto; width: 100%; aspect-ratio: 9 / 13; overflow: hidden; background: #000;" },
+          $h("span", { "aria-hidden": "true", "style": "position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 76px 28px 0; box-sizing: border-box; text-align: center; background: radial-gradient(60% 40% at 50% 42%, rgba(76,154,255,0.18), transparent 70%), linear-gradient(160deg, #142036, #0A0F19);" },
+            $h("span", { "style": "max-width: 300px; font-size: 17px; font-weight: 600; line-height: 1.4; color: #E4E7EC; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;" },
+              $t($v.vid?.hook)
+            )
+          ),
+          $h("img", { "src": $v.v?.src, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
+          $h("span", { "class": "sw-video-shade" }),
+          $h("span", { "style": "position: absolute; left: 50%; top: 50%; width: 68px; height: 68px; margin: -34px 0 0 -34px; border-radius: 50%; background: rgba(5,7,12,0.5); backdrop-filter: blur(8px); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF;" },
+            $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+              $h("path", { "d": "M9 7l9 5-9 5z", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            )
+          ),
+          $h("span", { "style": "position: absolute; top: 14px; left: 14px; display: flex; gap: 6px;" },
+            ($v.vid?.hasApp) ? [
+              $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                $t($v.vid?.appName)
+              )
+            ] : null,
+            $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+              $t($v.vid?.where)
+            )
+          ),
+          $h("span", { "style": "position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;" },
+            $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
+              $h("span", { "style": "font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: #FFFFFF;" },
+                $t($v.vid?.views)
+              ),
+              $h("span", { "style": "font-size: 13px; color: #E4E7EC;" },
+                $t($v.vid?.who)
+              )
+            ),
+            ($v.vid?.hasDur) ? [
+              $h("span", { "style": "font-size: 12px; color: #E4E7EC;" },
+                $t($v.vid?.dur)
+              )
+            ] : null
+          ),
+          $h("span", { "class": "sw-video-bar", "style": "width: 0;" })
+        ),
+        $h("div", { "style": "padding: 16px 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px;" },
+          $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openAj, "aria-label": "Ajouter à un dossier", "style": "width: 44px; height: 44px; flex-shrink: 0; box-shadow: inset 0 0 0 1px var(--line);" },
+            $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+              $h("path", { "d": "M6 4h12v16l-6-4-6 4z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            )
+          ),
+          $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.copy },
+            $t($v.copyLabel),
+            $h("span", { "class": "sw-btn-tile" },
+              $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
+            )
+          ),
+          $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.url, "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir la vidéo", "style": "width: 44px; height: 44px; flex-shrink: 0; box-shadow: inset 0 0 0 1px var(--line);" },
+            $h("svg", { "width": "19", "height": "19", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+              $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            )
+          )
+        ),
+        $h("div", { "class": "sw-card is-featured", "style": "margin: 18px 20px 0; border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 12px;" },
+          $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
+            "Pourquoi elle sort du lot"
+          ),
+          ($v.vid?.hasX) ? [
+            $h("span", { "style": "display: flex; align-items: baseline; gap: 10px;" },
+              $h("span", { "style": "font-family: var(--font-display); font-size: 48px; line-height: 1; font-weight: 700; letter-spacing: -0.05em; color: var(--accent);" },
+                $t($v.vid?.x)
+              ),
+              $h("span", { "style": "font-size: 15px; color: var(--ink-soft);" },
+                "sa normale"
+              )
+            )
+          ] : null,
+          $h("span", { "style": "font-size: 14px; line-height: 1.5; color: var(--ink-muted);" },
+            $t($v.vid?.story)
+          )
+        ),
+        $h("div", { "style": "padding: 24px 20px 0; display: flex; flex-direction: column; gap: 4px;" },
+          $h("span", { "style": "font-size: 18px; font-weight: 700; padding-bottom: 6px;" },
+            "Ce qu’elle fait"
+          ),
+          ($l($v.facts)).map((f) => [
+            $h("div", { "style": "padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px;" },
+              $h("span", { "style": "font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint);" },
+                $t(f?.k)
+              ),
+              $h("span", { "style": "font-size: 15px; line-height: 1.5; color: var(--ink-soft);" },
+                $t(f?.v)
+              )
+            )
+          ])
+        ),
+        ($v.hasNxt) ? [
+          $h("div", { "style": "padding-top: 24px; display: flex; flex-direction: column; gap: 12px;" },
+            $h("div", { "style": "padding: 0 20px; display: flex; align-items: baseline; justify-content: space-between;" },
+              $h("h2", { "style": "margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em;" },
+                "Ensuite"
+              )
+            ),
+            $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
+              ($l($v.nxt)).map((n) => [
+                $h("a", { "href": n?.href, "style": "flex-shrink: 0; width: 150px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
+                  $h("span", { "class": "sw-video", "style": "display: block; border-radius: 16px;" },
+                    $h("img", { "class": "sw-cover", "src": n?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                    $h("span", { "class": "sw-video-shade" }),
+                    $h("span", { "class": "sw-badge", "style": "position: absolute; top: 8px; left: 8px; height: 22px; font-size: 11px; background: var(--blue-600); color: #FFFFFF;" },
+                      $t(n?.x)
+                    ),
+                    $h("span", { "class": "sw-video-foot" },
+                      $h("span", { "class": "sw-video-views", "style": "font-size: 18px;" },
+                        $t(n?.v)
+                      )
+                    )
+                  ),
+                  $h("span", { "style": "font-size: 12px; line-height: 1.4; color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" },
+                    $t(n?.t)
+                  )
+                )
+              ])
+            )
+          )
+        ] : null,
+        $h("div", { "style": "padding: 22px 20px 0;" },
+          $h("div", { "style": "display: flex; justify-content: center;" },
+            ($v.vid?.hasApp) ? [
+              $h("a", { "class": "sw-link", "href": $v.vid?.appHref, "style": "min-height: 44px; display: inline-flex; align-items: center;" },
+                $t($v.vid?.appLink)
+              )
+            ] : null
+          )
+        ),
+        ($v.pal) ? [
+          $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
+            $h(MPalette, { "onClose": $v.closePal, "get": $v.getFn })
+          )
+        ] : null,
+        ($v.aj) ? [
+          $h("div", { "style": "position: fixed; inset: 0; z-index: 70;" },
+            $h(MAjout, { "onClose": $v.closeAj, "item": $v.ajItem, "saved": $v.savedFn, "save": $v.saveFn })
+          )
+        ] : null
+      )
+    ];
+  }
+}

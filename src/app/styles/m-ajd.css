@@ -1,0 +1,7 @@
+/* Généré par scripts/dc2preact.py depuis design/app/MAjout.dc.html */
+body{margin:0}
+a{color:#4C9AFF}
+@media (hover: hover){a:hover{color:#FFFFFF}}
+.sw-more,.sw-link,.sw-logo{position:relative}.sw-more::after,.sw-link::after,.sw-logo::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:44px;transform:translate(-50%,-50%)}
+@media (hover: none){.sw-btn:hover{transform:none}.sw-btn-icon:hover{background:transparent}.sw-btn-icon:hover{color:var(--ink-muted)}.sw-pill:not([aria-pressed="true"]):hover{background:var(--glass-fill)}.sw-tab:not([aria-selected="true"]):hover{color:var(--ink-muted)}.sw-more:hover{color:var(--ink-muted)}.sw-link:hover{text-decoration:none}}
+.sw-video::before,.m-ph::before{content:"";position:absolute;left:50%;top:46%;width:clamp(10px,30%,32px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,255,255,0.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 7l8 5-8 5z' fill='white'/%3E%3C/svg%3E") center/55% no-repeat}

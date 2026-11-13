@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Swarm mobile, compte</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}
+@media (hover: hover){a:hover{color:#FFFFFF}}
+.m-hit{position:relative}.m-hit::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}
+.sw-more,.sw-link,.sw-logo{position:relative}.sw-more::after,.sw-link::after,.sw-logo::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:44px;transform:translate(-50%,-50%)}
+@media (hover: none){.sw-btn:hover{transform:none}.sw-btn-icon:hover{background:transparent}.sw-btn-icon:hover{color:var(--ink-muted)}.sw-pill:not([aria-pressed="true"]):hover{background:var(--glass-fill)}.sw-tab:not([aria-selected="true"]):hover{color:var(--ink-muted)}.sw-more:hover{color:var(--ink-muted)}.sw-link:hover{text-decoration:none}}
+.sw-video::before,.m-ph::before{content:"";position:absolute;left:50%;top:46%;width:clamp(10px,30%,32px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,255,255,0.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 7l8 5-8 5z' fill='white'/%3E%3C/svg%3E") center/55% no-repeat}
+</style>
+</helmet>
+<div class="sw " style="position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(32px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);">
+<header style="position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);"><span style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;"><a class="sw-btn sw-btn-icon" href="MAccueil.dc.html" aria-label="Retour" style="flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a><span style="flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Compte</span></span></header>
+<div style="padding: 24px 20px 0; display: flex; align-items: center; gap: 16px;"><span class="sw-avatar" style="width: 64px; height: 64px; font-size: 26px;">{{me.initiale}}</span><span style="display: flex; flex-direction: column; gap: 3px;"><span style="font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.03em;">{{nameLabel}}</span><span style="font-size: 14px; color: var(--ink-muted); overflow-wrap: anywhere;">{{me.email}}</span></span></div>
+<div style="padding: 24px 20px 0; display: flex; flex-direction: column; gap: 8px;"><span style="padding-left: 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);">Accès</span><div style="border-radius: 20px; background: var(--surface-raised); border: 1px solid var(--accent-edge); overflow: hidden;"><div style="min-height: 56px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;"><span style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 16px; font-weight: 700;">Accès complet</span><span class="sw-badge sw-badge-accent" style="height: 22px;">Ouvert</span></span><span style="font-size: 13px; line-height: 1.5; color: var(--ink-faint);">Ton compte a accès à tout Swarm : apps, formats, créateurs, alertes et dossiers.</span></div></div></div>
+<div style="padding: 24px 20px 0; display: flex; flex-direction: column; gap: 8px;"><span style="padding-left: 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint);">Profil</span><div style="border-radius: 20px; background: var(--surface-raised); border: 1px solid var(--line); overflow: hidden;"><div style="min-height: 56px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line);"><span style="width: 70px; font-size: 14px; color: var(--ink-faint);">Prénom</span><span style="flex: 1; min-width: 0; font-size: 16px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{prenomLabel}}</span></div><div style="min-height: 56px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line);"><span style="width: 70px; font-size: 14px; color: var(--ink-faint);">E-mail</span><span style="flex: 1; min-width: 0; font-size: 16px; color: var(--ink-soft); overflow-wrap: anywhere;">{{me.email}}</span></div></div></div>
+
+
+<div style="padding: 26px 20px 0; display: flex; flex-direction: column; align-items: center; gap: 18px;"><a class="sw-link-quiet" href="MConnexion.dc.html" onClick="{{logout}}" style="font-size: 15px; min-height: 44px; display: inline-flex; align-items: center;">Se déconnecter</a></div>
+
+
+<sc-if value="{{pal}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 60;"><dc-import name="MPalette" on-close="{{closePal}}" get="{{getFn}}" hint-size="100%,100%"></dc-import></div></sc-if>
+<sc-if value="{{aj}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 70;"><dc-import name="MAjout" on-close="{{closeAj}}" item="{{ajItem}}" saved="{{savedFn}}" save="{{saveFn}}" hint-size="100%,100%"></dc-import></div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":390,"height":1140}}'>
+class Component extends DCLogic {
+
+  renderVals() {
+    const b = this.baseVals();
+    return Object.assign({}, b, this.shellVals(), this.extraVals(b));
+  }
+  shellVals() {
+    const st = this.state || {};
+    const u = this.props.user;
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
+                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
+    return {
+      me, getFn: this.props && this.props.get, savedFn: this.props && this.props.saved, saveFn: this.props && this.props.save, ajItem: null, pal: !!st.pal, openPal: () => this.setState({ pal: true }), closePal: () => this.setState({ pal: false }),
+      aj: !!st.aj, openAj: () => this.setState({ aj: true }), closeAj: () => this.setState({ aj: false })
+    };
+  }
+  extraVals(b) {
+    const st = this.state || {};
+    const u = this.props.user;
+    const prenom = u ? (u.prenom || '') : 'Anthony';
+    return { nameLabel: prenom || 'Ton compte', prenomLabel: prenom || '—',
+      logout: (e) => { if (this.props.signOut) { e.preventDefault(); this.props.signOut(); } } };
+  }
+
+  baseVals() {
+    const m = 1;
+    return { m };
+  }
+}
+</script>
+</body>
+</html>
