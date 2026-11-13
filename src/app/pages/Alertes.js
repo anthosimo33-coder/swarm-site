@@ -18,36 +18,154 @@ export default class Alertes extends DCLogic {
     const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
     const sb = [["accueil", "Accueil", "/app"], ["apps", "Apps", "/app/apps"], ["formats", "Formats", "/app/formats"], ["createurs", "Créateurs", "/app/createurs"], ["alertes", "Alertes", "/app/alertes"], ["dossiers", "Dossiers", "/app/dossiers"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'alertes' ? 'page' : 'false' }));
     return {
-      sb, me,
+      sb, me, getFn: this.props && this.props.get,
       pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
       aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
     };
   }
   extraVals(b) {
     const st = this.state || {};
+    const P = this.props || {};
+    // Ce que la personne garde (saved) : ses alertes (alertRules) et le moment de « Tout marquer comme lu » (seen).
+    // Sur le canevas, ces props n'existent pas : état local, avec les alertes d'exemple.
+    const site = typeof P.saved === 'function' && typeof P.save === 'function';
+    const rulesV = site ? P.saved('alertRules') : st.rules;
+    const rulesWait = site && rulesV === undefined;
+    const mine = Array.isArray(rulesV) ? rulesV.filter((r) => r && typeof r === 'object') : site ? [] : b.sampleRules;
+    const seenV = site ? P.saved('seen') : st.seen;
+    const seenAt = seenV && typeof seenV.alerts === 'number' ? seenV.alerts : null;
+    const keepRules = (xs) => (site ? P.save('alertRules', xs) : this.setState({ rules: xs }));
+    // Une alerte = { id, createdAt, quoi: 'compte'|'video'|'format', niche: nom|null, seuil: nombre, marche: code|null }.
+    const SL = { compte: [[10, '10×'], [100, '100×'], [1000, '1 000×']], video: [[5e5, '500 k'], [1e6, '1 M'], [5e6, '5 M']], format: [[3, '3'], [5, '5'], [10, '10']] };
+    const sl = (r) => { const m = (SL[r.quoi] || []).filter((x) => x[0] === r.seuil)[0]; return m ? m[1] : String(r.seuil); };
+    const MKL = { FR: 'France', US: 'Anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
+    const ICO = { compte: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6', video: 'M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6', format: 'M5 6h14M12 6v13M9 19h6' };
+    const known = (r) => !!SL[r.quoi] && typeof r.seuil === 'number';
+    const titleOf = (r) => (!known(r) ? String(r.t || 'Alerte') : r.quoi === 'compte' ? 'Un compte fait ' + sl(r) + ' sa normale'
+      : r.quoi === 'video' ? 'Une vidéo d’app passe ' + sl(r) + ' de vues' : 'Un format repris par ' + sl(r) + ' comptes ou plus');
+    const subOf = (r) => (!known(r) ? String(r.s || '') : (r.niche || 'Toutes niches') + ' · ' + (MKL[r.marche] || 'tous les marchés'));
+    // Une alerte de la semaine répond-elle à une alerte de la personne ? Sur le canevas, l'exemple dit à quelle alerte il répond.
+    // null : on ne sait pas encore (niche d'une vidéo tant que le document « apps » charge).
+    const match = (r, a) => {
+      if (!known(r)) return false;
+      if (a.kind === undefined) return a.rule === titleOf(r);
+      if (r.marche && a.market !== r.marche) return false;
+      if (r.quoi === 'format' ? !(a.kind === 'format' && a.accounts >= r.seuil)
+        : r.quoi === 'video' ? !(a.kind === 'video' && !!a.slug && a.views >= r.seuil)
+        : !(a.kind === 'video' && a.x >= r.seuil)) return false;
+      if (!r.niche) return true;
+      const n = b.nicheOf ? b.nicheOf(a) : null;
+      return n === null ? null : n === r.niche;
+    };
+    const items = b.items || [];
+    const hits = (r) => items.filter((a) => match(r, a) === true);
+    const unsure = (r) => items.some((a) => match(r, a) === null);
+    const mineOn = !!st.mine && mine.length > 0;
+    const isMine = (a) => mine.some((r) => match(r, a) === true);
     const tab = st.tab || 'Toutes';
-    const read = !!st.read;
-    const off = st.off || {};
-    const made = st.made || [];
-    const keep = (a) => tab === 'Toutes' || (tab === 'Formats' ? (a.typ === 'Format' || a.typ === 'Son') : tab === 'Vidéos' ? a.typ === 'Vidéo' : a.typ === 'Compte');
-    const groups = (b.groups || []).map((g) => ({ g: g.g, items: g.items.filter(keep).map((a) => read ? Object.assign({}, a, { dot: 'transparent', bg: 'transparent', w: '600' }) : a) })).filter((g) => g.items.length > 0);
-    const rules = made.concat(b.rules || []).map((r, i) => { const on = !off[r.t]; return Object.assign({}, r, { on: on ? 'true' : 'false', bg: on ? 'var(--blue-600)' : 'var(--track)', knob: on ? '19px' : '3px',
-      toggle: () => this.setState({ off: Object.assign({}, off, { [r.t]: on }) }) }); });
+    const TABS = [['Toutes', () => true], ['Formats', (a) => a.typ === 'Format' || a.typ === 'Son'], ['Vidéos', (a) => a.typ === 'Vidéo'], ['Comptes', (a) => a.typ === 'Compte']];
+    const pool = mineOn ? items.filter(isMine) : items;
+    const keep = (TABS.filter((t) => t[0] === tab)[0] || TABS[0])[1];
+    // Non lu : publié après « Tout marquer comme lu » ; sans rien d'enregistré, ce qui date d'aujourd'hui ou d'hier.
+    const unread = (a) => (seenAt !== null ? !!a.at && a.at > seenAt : !!a.unread);
+    const groups = [];
+    pool.filter(keep).forEach((a) => {
+      const u = unread(a);
+      const it = Object.assign({}, a, { dot: u ? 'var(--accent)' : 'transparent', bg: u ? 'var(--accent-soft)' : 'transparent', w: u ? '700' : '600' });
+      if (!groups.length || groups[groups.length - 1].g !== a.g) groups.push({ g: a.g, items: [] });
+      groups[groups.length - 1].items.push(it);
+    });
+    // Le nombre d'une alerte compte les alertes listées ici (document « alerts » : 40 vidéos et 20 formats au plus), pas toute la semaine.
+    const count = (r) => { if (!known(r) || unsure(r)) return ''; const c = hits(r).length;
+      return c === 0 ? 'Aucune parmi les alertes' : c + ' parmi les alertes'; };
+    const editId = st.na ? st.editId || null : null;
+    const rules = mine.map((r) => ({ t: titleOf(r), s: subOf(r), n: count(r), ico: ICO[r.quoi] || ICO.format,
+      edit: () => this.setState({ na: true, editId: r.id }),
+      remove: () => keepRules(mine.filter((x) => x !== r)) }));
+    const same = (p, q) => p.quoi === q.quoi && (p.niche || null) === (q.niche || null) && p.seuil === q.seuil && (p.marche || null) === (q.marche || null);
+    const kindN = (r, n) => n + (r.quoi === 'format' ? (n > 1 ? ' formats' : ' format') : (n > 1 ? ' vidéos' : ' vidéo'));
     return {
-      groups, rules, noAlert: groups.length === 0,
-      tabs: (b.tabs || []).map((t) => Object.assign({}, t, { on: t.l === tab ? 'true' : 'false', pick: () => this.setState({ tab: t.l }) })),
-      markRead: () => this.setState({ read: true }),
-      na: !!st.na, openNa: () => this.setState({ na: true }), closeNa: () => this.setState({ na: false }),
-      addRule: (r) => this.setState({ made: [{ t: r.t, s: r.s, n: 'Nouvelle', ico: b.rules && b.rules[0] ? b.rules[0].ico : '' }].concat((this.state || {}).made || []) })
+      groups, rules, hasRules: mine.length > 0, noRules: !rulesWait && mine.length === 0,
+      subtitle: mineOn ? 'Ce que le Radar a repéré cette semaine, selon tes alertes.' : 'Ce que le Radar a repéré cette semaine.',
+      noAlert: groups.length === 0, noAlertText: mineOn ? 'Rien cette semaine pour tes alertes' + (tab === 'Toutes' ? '.' : ' dans ce type.') : 'Aucune alerte de ce type cette semaine.',
+      tabs: TABS.map((t) => ({ l: t[0], n: pool.filter(t[1]).length, on: t[0] === tab ? 'true' : 'false', pick: () => this.setState({ tab: t[0] }) })),
+      mineOn: mineOn ? 'true' : 'false', toggleMine: () => this.setState({ mine: !mineOn }),
+      hasUnread: items.some(unread),
+      markRead: () => { const v = Object.assign({}, seenV || {}, { alerts: Date.now() }); if (site) P.save('seen', v); else this.setState({ seen: v }); },
+      na: !!st.na, openNa: () => this.setState({ na: true, editId: null }), closeNa: () => this.setState({ na: false, editId: null }),
+      naRule: editId ? mine.filter((r) => r.id === editId)[0] || null : null,
+      naNiches: b.niches || null,
+      // Ce que l'alerte en cours de réglage trouve dans les alertes de la semaine (aperçu de « Nouvelle alerte »).
+      naPreview: (r) => { if (unsure(r)) return null; const xs = hits(r);
+        return { text: xs.length ? kindN(r, xs.length) : 'Aucune pour ces critères', hits: xs.filter((a) => a.covs && a.covs[0] && a.covs[0].src).slice(0, 3).map((a) => ({ src: a.covs[0].src, x: a.big })) }; },
+      addRule: (f) => {
+        const r = { quoi: f.quoi, niche: f.niche || null, seuil: f.seuil, marche: f.marche || null };
+        const now = Date.now();
+        if (editId) keepRules(mine.map((x) => (x.id === editId ? Object.assign({}, x, r) : x)));
+        else if (!mine.some((x) => same(x, r))) keepRules([Object.assign({ id: now.toString(36) + Math.random().toString(36).slice(2, 6), createdAt: now }, r)].concat(mine));
+      }
     };
   }
 
   baseVals() {
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "/app", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "/app/apps", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "/app/formats", "cur": "false"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "/app/createurs", "cur": "false"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "page"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
-    const tabs = [{"l": "Toutes", "n": 8, "on": "true"}, {"l": "Formats", "n": 4, "on": "false"}, {"l": "Vidéos", "n": 2, "on": "false"}, {"l": "Comptes", "n": 2, "on": "false"}];
-    const groups = [{"g": "Aujourd’hui", "items": [{"group": "Aujourd’hui", "when": "12/11", "typ": "Son", "ico": "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z", "title": "Un son se répète : « original sound - ex7stence »", "sub": "RecentFollow · 3 comptes · États-Unis et Mexique", "big": "3,2×", "covs": [{"src": "/media/app/v-7704011591062261023.jpg"}, {"src": "/media/app/v-7707075093578419476.jpg"}, {"src": "/media/app/v-7704407707469630741.jpg"}], "cov0": "/media/app/v-7704011591062261023.jpg", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "/app/formats/ich-losche-das-in-2h", "cta": "Voir le format"}]}, {"g": "Hier", "items": [{"group": "Hier", "when": "11/11", "typ": "Format", "ico": "M5 6h14M12 6v13M9 19h6", "title": "Une accroche se répète : « POV: terminaste de estudiar 4 horas antes… »", "sub": "Retain Cards · Mexique · 7 reprises sur 11 au-dessus de leur normale", "big": "4,7×", "covs": [{"src": "/media/app/v-7702846481736174868.jpg"}, {"src": "/media/app/v-7704563725029674262.jpg"}, {"src": "/media/app/v-7706045051574488342.jpg"}], "cov0": "/media/app/v-7702846481736174868.jpg", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "/app/formats/ich-losche-das-in-2h", "cta": "Voir le format"}, {"group": "Hier", "when": "11/11", "typ": "Son", "ico": "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z", "title": "Un son se répète : « exam vibes »", "sub": "Astra AI · 4 reprises sur 6 au-dessus de leur normale", "big": "7×", "covs": [{"src": "/media/app/v-7704417260647025953.jpg"}, {"src": "/media/app/v-7706993521584098593.jpg"}, {"src": "/media/app/v-7705514449699966241.jpg"}], "cov0": "/media/app/v-7704417260647025953.jpg", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "/app/formats/ich-losche-das-in-2h", "cta": "Voir le format"}]}, {"g": "Lundi 10/11", "items": [{"group": "Lundi 10/11", "when": "10/11 · 17 h", "typ": "Format", "ico": "M5 6h14M12 6v13M9 19h6", "title": "« Ich lösche das in 2h‼️ » : 4e reprise, et la meilleure", "sub": "@studywithdenise · 106 k vues · Retain Cards · Allemagne", "big": "39×", "covs": [{"src": "/media/app/v-7706579888727231777.jpg"}, {"src": "/media/app/v-7705712961511263521.jpg"}, {"src": "/media/app/v-7705122381735513376.jpg"}], "cov0": "/media/app/v-7706579888727231777.jpg", "rule": "Un format repris par 3 comptes ou plus", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/formats/ich-losche-das-in-2h", "cta": "Voir le format"}]}, {"g": "Dimanche 09/11", "items": [{"group": "Dimanche 09/11", "when": "09/11 · 10 h", "typ": "Compte", "ico": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "title": "@hocba.tapsu fait 455× sa normale", "sub": "Astra AI · Indonésie et Vietnam · 1,2 M vues", "big": "455×", "covs": [{"src": "/media/app/v-7706101547570171143.jpg"}], "cov0": "/media/app/v-7706101547570171143.jpg", "rule": "Un compte fait 100× sa normale", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/createurs/zinedine-gsbb", "cta": "Voir le compte"}, {"group": "Dimanche 09/11", "when": "09/11 · 04 h", "typ": "Compte", "ico": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "title": "@studywith_elsie fait 1 226× sa normale", "sub": "Astra AI · 572 abonnés · 809 k vues", "big": "1 226×", "covs": [{"src": "/media/app/v-7706010190566542612.jpg"}], "cov0": "/media/app/v-7706010190566542612.jpg", "rule": "Un compte fait 100× sa normale", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/createurs/zinedine-gsbb", "cta": "Voir le compte"}]}, {"g": "Samedi 08/11", "items": [{"group": "Samedi 08/11", "when": "08/11 · 23 h", "typ": "Vidéo", "ico": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "title": "Une vidéo d’Astra AI passe 1 M de vues", "sub": "@learnwithjoel1 · Espagne · 65× sa normale", "big": "1,87 M", "covs": [{"src": "/media/app/v-7705929733220994337.jpg"}], "cov0": "/media/app/v-7705929733220994337.jpg", "rule": "Une vidéo d’app passe 1 M de vues", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/videos/learnwithjoel1", "cta": "Voir la vidéo"}]}, {"g": "Vendredi 07/11", "items": [{"group": "Vendredi 07/11", "when": "07/11 · 11 h", "typ": "Vidéo", "ico": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "title": "Une vidéo d’Astra AI passe 1 M de vues", "sub": "@belajarbersamaespi · Indonésie · 2 333× sa normale", "big": "1,99 M", "covs": [{"src": "/media/app/v-7705368869250075925.jpg"}], "cov0": "/media/app/v-7705368869250075925.jpg", "rule": "Une vidéo d’app passe 1 M de vues", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/videos/learnwithjoel1", "cta": "Voir la vidéo"}]}];
-    const rules = [{"t": "Un format repris par 3 comptes ou plus", "s": "Toutes niches · tous les marchés", "n": "4 cette semaine", "ico": "M5 6h14M12 6v13M9 19h6"}, {"t": "Une vidéo d’app passe 1 M de vues", "s": "Études · tous les marchés", "n": "2 cette semaine", "ico": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6"}, {"t": "Un compte fait 100× sa normale", "s": "Études et Couple · tous les marchés", "n": "2 cette semaine", "ico": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"}];
-    return { nav, tabs, groups, rules };
+    let groups = [{"g": "Aujourd’hui", "items": [{"group": "Aujourd’hui", "when": "12/11", "typ": "Son", "ico": "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z", "title": "Un son se répète : « original sound - ex7stence »", "sub": "RecentFollow · 3 comptes · États-Unis et Mexique", "big": "3,2×", "covs": [{"src": "/media/app/v-7704011591062261023.jpg"}, {"src": "/media/app/v-7707075093578419476.jpg"}, {"src": "/media/app/v-7704407707469630741.jpg"}], "cov0": "/media/app/v-7704011591062261023.jpg", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "/app/formats", "cta": "Voir le format"}]}, {"g": "Hier", "items": [{"group": "Hier", "when": "11/11", "typ": "Format", "ico": "M5 6h14M12 6v13M9 19h6", "title": "Une accroche se répète : « POV: terminaste de estudiar 4 horas antes… »", "sub": "Retain Cards · Mexique · 7 reprises sur 11 au-dessus de leur normale", "big": "4,7×", "covs": [{"src": "/media/app/v-7702846481736174868.jpg"}, {"src": "/media/app/v-7704563725029674262.jpg"}, {"src": "/media/app/v-7706045051574488342.jpg"}], "cov0": "/media/app/v-7702846481736174868.jpg", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "/app/formats", "cta": "Voir le format"}, {"group": "Hier", "when": "11/11", "typ": "Son", "ico": "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z", "title": "Un son se répète : « exam vibes »", "sub": "Astra AI · 4 reprises sur 6 au-dessus de leur normale", "big": "7×", "covs": [{"src": "/media/app/v-7704417260647025953.jpg"}, {"src": "/media/app/v-7706993521584098593.jpg"}, {"src": "/media/app/v-7705514449699966241.jpg"}], "cov0": "/media/app/v-7704417260647025953.jpg", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "/app/formats", "cta": "Voir le format"}]}, {"g": "Lundi 10/11", "items": [{"group": "Lundi 10/11", "when": "10/11 · 17 h", "typ": "Format", "ico": "M5 6h14M12 6v13M9 19h6", "title": "« Ich lösche das in 2h‼️ » : 4e reprise, et la meilleure", "sub": "@studywithdenise · 106 k vues · Retain Cards · Allemagne", "big": "39×", "covs": [{"src": "/media/app/v-7706579888727231777.jpg"}, {"src": "/media/app/v-7705712961511263521.jpg"}, {"src": "/media/app/v-7705122381735513376.jpg"}], "cov0": "/media/app/v-7706579888727231777.jpg", "rule": "Un format repris par 3 comptes ou plus", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/formats", "cta": "Voir le format"}]}, {"g": "Dimanche 09/11", "items": [{"group": "Dimanche 09/11", "when": "09/11 · 10 h", "typ": "Compte", "ico": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "title": "@hocba.tapsu fait 455× sa normale", "sub": "Astra AI · Indonésie et Vietnam · 1,2 M vues", "big": "455×", "covs": [{"src": "/media/app/v-7706101547570171143.jpg"}], "cov0": "/media/app/v-7706101547570171143.jpg", "rule": "Un compte fait 100× sa normale", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/createurs/zinedine.gsbb", "cta": "Voir le compte"}, {"group": "Dimanche 09/11", "when": "09/11 · 04 h", "typ": "Compte", "ico": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "title": "@studywith_elsie fait 1 226× sa normale", "sub": "Astra AI · 572 abonnés · 809 k vues", "big": "1 226×", "covs": [{"src": "/media/app/v-7706010190566542612.jpg"}], "cov0": "/media/app/v-7706010190566542612.jpg", "rule": "Un compte fait 100× sa normale", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/createurs/zinedine.gsbb", "cta": "Voir le compte"}]}, {"g": "Samedi 08/11", "items": [{"group": "Samedi 08/11", "when": "08/11 · 23 h", "typ": "Vidéo", "ico": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "title": "Une vidéo d’Astra AI passe 1 M de vues", "sub": "@learnwithjoel1 · Espagne · 65× sa normale", "big": "1,87 M", "covs": [{"src": "/media/app/v-7705929733220994337.jpg"}], "cov0": "/media/app/v-7705929733220994337.jpg", "rule": "Une vidéo d’app passe 1 M de vues", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/videos/7705929733220994337", "cta": "Voir la vidéo"}]}, {"g": "Vendredi 07/11", "items": [{"group": "Vendredi 07/11", "when": "07/11 · 11 h", "typ": "Vidéo", "ico": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "title": "Une vidéo d’Astra AI passe 1 M de vues", "sub": "@belajarbersamaespi · Indonésie · 2 333× sa normale", "big": "1,99 M", "covs": [{"src": "/media/app/v-7705368869250075925.jpg"}], "cov0": "/media/app/v-7705368869250075925.jpg", "rule": "Une vidéo d’app passe 1 M de vues", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "/app/videos/7705929733220994337", "cta": "Voir la vidéo"}]}];
+    // Alertes d'exemple (canevas) : même forme que celles enregistrées (saved('alertRules')).
+    const sampleRules = [{ id: 'ex1', createdAt: 0, quoi: 'format', niche: null, seuil: 3, marche: null },
+      { id: 'ex2', createdAt: 0, quoi: 'video', niche: 'Études', seuil: 1e6, marche: null },
+      { id: 'ex3', createdAt: 0, quoi: 'compte', niche: null, seuil: 100, marche: null }];
+    let niches = null;
+    let nicheOf = null;
+    // Sur le site : les alertes du Radar (document « alerts », convex/radarModels.ts) : les vidéos de la semaine
+    // qui font le plus de fois leur normale, et les formats apparus cette semaine. Rangées par jour de publication
+    // (dernière reprise pour un format) ; non lues par défaut = celles d'aujourd'hui et d'hier (voir extraVals).
+    const D = this.props && this.props.data;
+    if (D && D.videos) {
+      const M = { FR: 'France', US: 'Anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' };
+      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + ' M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(Math.round(n)));
+      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+      const de = (n) => (/^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? 'd’' : 'de ') + n;
+      const ICO = { video: 'M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6', compte: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
+        hook: 'M5 6h14M12 6v13M9 19h6', sound: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z' };
+      const day0 = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
+      const today = day0(Date.now());
+      const ago = (ms) => Math.max(0, Math.round((today - day0(ms)) / 86400000));
+      const dayLabel = (ms) => { const k = ago(ms); if (k === 0) return 'Aujourd’hui'; if (k === 1) return 'Hier';
+        const s = new Date(ms).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: '2-digit' }); return s.charAt(0).toUpperCase() + s.slice(1); };
+      const when = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' · ' + String(new Date(ms).getHours()).padStart(2, '0') + ' h';
+      const items = [];
+      D.videos.forEach((v) => {
+        const app = v.app ? v.app.name : '';
+        const mk = M[v.market] || '';
+        const million = v.views >= 1e6;
+        const acc = !million && v.x >= 100;
+        const une = 'Une vidéo ' + (app ? de(app) + ' ' : '');
+        items.push({ at: v.publishedAt, typ: acc ? 'Compte' : 'Vidéo', ico: acc ? ICO.compte : ICO.video,
+          title: million ? une + 'passe ' + Math.floor(v.views / 1e6) + ' M de vues' : acc ? '@' + v.handle + ' fait ' + xf(v.x) + ' sa normale' : une + (v.x ? 'à ' + xf(v.x) + ' sa normale' : 'à ' + nf(v.views) + ' vues'),
+          sub: (acc ? [app, mk, nf(v.views) + ' vues'] : ['@' + v.handle, mk, million && v.x ? xf(v.x) + ' sa normale' : nf(v.views) + ' vues']).filter(Boolean).join(' · '),
+          big: million || !v.x ? nf(v.views) : xf(v.x), covs: v.cover ? [{ src: v.cover }] : [], href: '/app/videos/' + v.id,
+          kind: 'video', views: v.views, x: v.x || 0, slug: v.app ? v.app.slug : '', market: v.market || '' });
+      });
+      (D.formats || []).forEach((f) => {
+        const names = (f.apps || []).filter(Boolean).map((a) => a.name);
+        const appsL = names.length <= 3 ? names.slice(0, -1).join(', ') + (names.length > 1 ? ' et ' : '') + names.slice(-1) : names.slice(0, 2).join(', ') + ' et ' + (names.length - 2) + ' autres apps';
+        items.push({ at: f.lastPostAt, typ: f.kind === 'sound' ? 'Son' : 'Format', ico: f.kind === 'sound' ? ICO.sound : ICO.hook,
+          title: (f.kind === 'sound' ? 'Un son se répète : « ' : 'Une accroche se répète : « ') + f.label + ' »',
+          sub: [appsL, M[f.market] || '', f.n ? f.wins + ' reprises sur ' + f.n + ' au-dessus de leur normale' : ''].filter(Boolean).join(' · '),
+          // un format se mesure au nombre de comptes qui le reprennent (sa médiane × est souvent sous 1)
+          big: f.accounts + ' comptes', covs: (f.members || []).filter((m) => m.cover).slice(0, 3).map((m) => ({ src: m.cover })), href: '/app/formats/' + f.id,
+          kind: 'format', accounts: f.accounts, niche: f.niche || '', market: f.market || '' });
+      });
+      items.sort((p, q) => q.at - p.at);
+      groups = [{ g: '', items: items.map((a) => Object.assign(a, { g: dayLabel(a.at), when: when(a.at), unread: ago(a.at) <= 1 })) }];
+      // La niche d'une vidéo vient de son app (document « apps ») : tant qu'il charge, elle est inconnue (null).
+      const A = this.props.get ? this.props.get('apps') : null;
+      const NI = A && A.apps ? Object.fromEntries(A.apps.map((a) => [a.slug, a.niche || ''])) : null;
+      nicheOf = (a) => (a.kind === 'format' ? a.niche : NI ? NI[a.slug] || '' : null);
+      if (A && A.niches) niches = A.niches.slice().sort((p, q) => p.localeCompare(q, 'fr'));
+    }
+    const items = [].concat.apply([], groups.map((g) => g.items.map((a) => Object.assign({ g: g.g }, a))));
+    return { nav, items, sampleRules, niches, nicheOf };
   }
 
   render() {
@@ -87,11 +205,6 @@ export default class Alertes extends DCLogic {
             )
           ]),
           $h("div", { "class": "sw-side-foot" },
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Passer au thème clair" },
-              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
-            ),
             $h("a", { "class": "sw-avatar", "href": "/app/compte", "aria-label": "Mon compte", "style": "text-decoration: none;" },
               $t($v.me?.initiale)
             )
@@ -104,13 +217,15 @@ export default class Alertes extends DCLogic {
                 "Alertes"
               ),
               $h("p", { "style": "margin: 0; font-size: 15px; color: var(--ink-muted);" },
-                "Ce que le Radar a repéré pour toi, selon tes réglages."
+                $t($v.subtitle)
               )
             ),
             $h("div", { "style": "display: flex; align-items: center; gap: 16px;" },
-              $h("button", { "class": "sw-more", "type": "button", "onClick": $v.markRead, "style": "border: 0; background: transparent; cursor: pointer; font-family: inherit;" },
-                "Tout marquer comme lu"
-              ),
+              ($v.hasUnread) ? [
+                $h("button", { "class": "sw-more", "type": "button", "onClick": $v.markRead, "style": "border: 0; background: transparent; cursor: pointer; font-family: inherit;" },
+                  "Tout marquer comme lu"
+                )
+              ] : null,
               $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.openNa },
                 "Créer une alerte",
                 $h("span", { "class": "sw-btn-tile" },
@@ -121,7 +236,7 @@ export default class Alertes extends DCLogic {
               )
             )
           ),
-          $h("div", { "style": "margin: 20px 32px 0; border-bottom: 1px solid var(--line);" },
+          $h("div", { "style": "margin: 20px 32px 0; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
             $h("div", { "class": "sw-tabs sw-tabs-line", "role": "tablist", "aria-label": "Type", "style": "border-bottom: 0;" },
               ($l($v.tabs)).map((t) => [
                 $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": t?.on, "onClick": t?.pick, "style": "display: inline-flex; align-items: center; gap: 8px;" },
@@ -131,13 +246,21 @@ export default class Alertes extends DCLogic {
                   )
                 )
               ])
-            )
+            ),
+            ($v.hasRules) ? [
+              $h("button", { "class": "sw-pill", "type": "button", "aria-pressed": $v.mineOn, "onClick": $v.toggleMine, "style": "height: 36px; gap: 8px;" },
+                $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
+                "Selon tes alertes"
+              )
+            ] : null
           ),
           $h("div", { "style": "padding: 20px 32px 48px; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start;" },
             $h("div", { "style": "display: flex; flex-direction: column; gap: 18px;" },
               ($v.noAlert) ? [
                 $h("p", { "style": "margin: 8px 14px; font-size: 15px; color: var(--ink-muted);" },
-                  "Aucune alerte de ce type cette semaine."
+                  $t($v.noAlertText)
                 )
               ] : null,
               ($l($v.groups)).map((g) => [
@@ -172,7 +295,7 @@ export default class Alertes extends DCLogic {
                       $h("span", { "style": "display: flex; flex-shrink: 0; width: 92px; box-sizing: border-box; padding-left: 10px; justify-content: flex-end;" },
                         ($l(a?.covs)).map((c) => [
                           $h("span", { "class": "sw-video", "style": "display: block; width: 34px; margin-left: -10px; border-radius: 8px; box-shadow: 0 0 0 2px var(--surface);" },
-                            $h("img", { "class": "sw-cover", "src": c?.src, "alt": "" })
+                            $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy", "decoding": "async" })
                           )
                         ])
                       )
@@ -194,36 +317,42 @@ export default class Alertes extends DCLogic {
                       $h("path", { "d": r?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   ),
-                  $h("span", { "style": "flex: 1; display: flex; flex-direction: column; gap: 3px;" },
+                  $h("button", { "type": "button", "onClick": r?.edit, "title": "Modifier cette alerte", "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;" },
                     $h("span", { "style": "font-size: 14px; font-weight: 600; line-height: 1.35;" },
                       $t(r?.t)
                     ),
                     $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
                       $t(r?.s)
                     ),
-                    $h("span", { "style": "font-size: 12px; font-weight: 600; color: var(--accent);" },
-                      $t(r?.n)
-                    )
+                    (r?.n) ? [
+                      $h("span", { "style": "font-size: 12px; font-weight: 600; color: var(--accent);" },
+                        $t(r?.n)
+                      )
+                    ] : null
                   ),
-                  $h("button", { "type": "button", "role": "switch", "aria-checked": r?.on, "onClick": r?.toggle, "aria-label": "Activer cette alerte", "style": `width: 40px; height: 24px; border-radius: 12px; flex-shrink: 0; position: relative; padding: 0; border: 0; cursor: pointer; background: ${$t(r?.bg)};` },
-                    $h("span", { "style": `position: absolute; top: 3px; left: ${$t(r?.knob)}; width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF;` })
+                  $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": r?.remove, "aria-label": "Supprimer cette alerte", "style": "width: 32px; height: 32px; flex-shrink: 0;" },
+                    $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round" })
+                    )
                   )
                 )
               ]),
-              $h("span", { "style": "font-size: 12px; line-height: 1.5; color: var(--ink-faint);" },
-                "Par e-mail et notification, au plus une fois par jour et par alerte."
-              )
+              ($v.noRules) ? [
+                $h("p", { "style": "margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-muted);" },
+                  "Aucune alerte pour l’instant."
+                )
+              ] : null
             )
           )
         ),
         ($v.na) ? [
           $h("div", { "style": "position: fixed; inset: 0; z-index: 55;" },
-            $h(NouvelleAlerte, { "onClose": $v.closeNa, "onCreate": $v.addRule })
+            $h(NouvelleAlerte, { "onClose": $v.closeNa, "onCreate": $v.addRule, "rule": $v.naRule, "niches": $v.naNiches, "preview": $v.naPreview })
           )
         ] : null,
         ($v.pal) ? [
           $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
-            $h(Palette, { "onClose": $v.closePal })
+            $h(Palette, { "onClose": $v.closePal, "get": $v.getFn })
           )
         ] : null
       )

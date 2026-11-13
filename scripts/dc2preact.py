@@ -43,51 +43,78 @@ LINKS = {
     '#paiement': '/inscription',  # « Passer Pro » : on crée d'abord le compte
 }
 
-# L'app : artboard retenu -> (composant, préfixe CSS, adresse, titre de l'onglet).
+# L'app : artboard retenu -> (composant, préfixe CSS, adresse, titre de l'onglet, données).
+# Une adresse peut porter un paramètre (« :slug ») ; « données » = la clé du document
+# que l'écran reçoit dans `data` (convex/boards.ts), avec le paramètre entre accolades.
 APP_PAGES = [
-    ('Main.dc.html', 'Accueil', 'a-acc', '/app', 'Accueil'),
-    ('AppsA.dc.html', 'Apps', 'a-apps', '/app/apps', 'Apps'),
-    ('FicheA.dc.html', 'FicheApp', 'a-fapp', '/app/apps/astra-ai', 'Astra AI'),
-    ('VideoA.dc.html', 'Video', 'a-vid', '/app/videos/learnwithjoel1', 'Vidéos'),
-    ('FormatsB.dc.html', 'Formats', 'a-fmts', '/app/formats', 'Formats'),
-    ('FormatFicheA.dc.html', 'FicheFormat', 'a-ffmt', '/app/formats/ich-losche-das-in-2h', 'Format'),
-    ('CreateursA.dc.html', 'Createurs', 'a-crea', '/app/createurs', 'Créateurs'),
-    ('CreateursB.dc.html', 'CreateursCartes', 'a-creb', '/app/createurs/cartes', 'Créateurs'),
-    ('CreateurFicheA.dc.html', 'FicheCreateur', 'a-fcre', '/app/createurs/zinedine-gsbb', 'Créateur'),
-    ('DossiersA.dc.html', 'Dossiers', 'a-dos', '/app/dossiers', 'Dossiers'),
-    ('DossiersB.dc.html', 'Dossier', 'a-dosb', '/app/dossiers/etudes', 'Dossier'),
-    ('AlertesA.dc.html', 'Alertes', 'a-ale', '/app/alertes', 'Alertes'),
-    ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte'),
+    ('Main.dc.html', 'Accueil', 'a-acc', '/app', 'Accueil', 'home'),
+    ('AppsA.dc.html', 'Apps', 'a-apps', '/app/apps', 'Apps', 'apps'),
+    ('FicheA.dc.html', 'FicheApp', 'a-fapp', '/app/apps/:slug', 'App', 'app:{slug}'),
+    ('VideoA.dc.html', 'Video', 'a-vid', '/app/videos/:id', 'Vidéo', 'video:{id}'),
+    ('FormatsB.dc.html', 'Formats', 'a-fmts', '/app/formats', 'Formats', 'formats'),
+    ('FormatFicheA.dc.html', 'FicheFormat', 'a-ffmt', '/app/formats/:id', 'Format', 'format:{id}'),
+    ('CreateursA.dc.html', 'Createurs', 'a-crea', '/app/createurs', 'Créateurs', 'creators:FR'),
+    ('CreateursB.dc.html', 'CreateursCartes', 'a-creb', '/app/createurs/cartes', 'Créateurs', 'creators:FR'),
+    ('CreateurFicheA.dc.html', 'FicheCreateur', 'a-fcre', '/app/createurs/:handle', 'Créateur', 'creator:{handle}'),
+    ('DossiersA.dc.html', 'Dossiers', 'a-dos', '/app/dossiers', 'Dossiers', None),
+    ('DossiersB.dc.html', 'Dossier', 'a-dosb', '/app/dossiers/:id', 'Dossier', None),
+    ('AlertesA.dc.html', 'Alertes', 'a-ale', '/app/alertes', 'Alertes', 'alerts'),
+    ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte', None),
 ]
+# Lien sans paramètre vers une fiche (maquette pas encore branchée) : l'exemple de la maquette.
+APP_SAMPLE = {'/app/apps/:slug': 'astraai', '/app/videos/:id': '7705929733220994337',
+              '/app/formats/:id': None, '/app/createurs/:handle': 'zinedine.gsbb'}
+
 # Version mobile (sous 860 px) des mêmes adresses : artboard M* -> (composant, préfixe CSS, adresse).
 # Une adresse sans version mobile garde l'écran desktop.
 APP_MOBILE_PAGES = [
     ('MAccueil.dc.html', 'MAccueil', 'm-acc', '/app'),
     ('MApps.dc.html', 'MApps', 'm-apps', '/app/apps'),
-    ('MFiche.dc.html', 'MFicheApp', 'm-fapp', '/app/apps/astra-ai'),
-    ('MVideo.dc.html', 'MVideo', 'm-vid', '/app/videos/learnwithjoel1'),
+    ('MFiche.dc.html', 'MFicheApp', 'm-fapp', '/app/apps/:slug'),
+    ('MVideo.dc.html', 'MVideo', 'm-vid', '/app/videos/:id'),
     ('MFormats.dc.html', 'MFormats', 'm-fmts', '/app/formats'),
-    ('MFormatFiche.dc.html', 'MFicheFormat', 'm-ffmt', '/app/formats/ich-losche-das-in-2h'),
+    ('MFormatFiche.dc.html', 'MFicheFormat', 'm-ffmt', '/app/formats/:id'),
     ('MCreateurs.dc.html', 'MCreateurs', 'm-crea', '/app/createurs'),
     ('MCreateursCartes.dc.html', 'MCreateursCartes', 'm-creb', '/app/createurs/cartes'),
-    ('MCreateurFiche.dc.html', 'MFicheCreateur', 'm-fcre', '/app/createurs/zinedine-gsbb'),
+    ('MCreateurFiche.dc.html', 'MFicheCreateur', 'm-fcre', '/app/createurs/:handle'),
     ('MDossiers.dc.html', 'MDossiers', 'm-dos', '/app/dossiers'),
-    ('MDossier.dc.html', 'MDossier', 'm-dosb', '/app/dossiers/etudes'),
+    ('MDossier.dc.html', 'MDossier', 'm-dosb', '/app/dossiers/:id'),
     ('MAlertes.dc.html', 'MAlertes', 'm-ale', '/app/alertes'),
     ('MCompte.dc.html', 'MCompte', 'm-cpt', '/app/compte'),
 ]
+
+# SWARM_SANS_MOBILE=1 : génère sans les écrans mobiles (téléphones servis par le desktop), le temps
+# qu'ils soient branchés ; on ne commite alors ni design/app/M* ni leurs pages.
+if __import__('os').environ.get('SWARM_SANS_MOBILE'):
+    APP_MOBILE_PAGES = []
 
 # Composants partagés, importés par <dc-import name="…"> (pas des routes) : fichier, composant, préfixe CSS.
 APP_COMPONENTS = [
     ('Palette.dc.html', 'Palette', 'a-pal'),
     ('AjoutDossier.dc.html', 'AjoutDossier', 'a-ajd'),
     ('NouvelleAlerte.dc.html', 'NouvelleAlerte', 'a-nal'),
+    # Mobile : feuilles qui montent du bas (recherche, ajout à un dossier, nouvelle alerte).
+    ('MPalette.dc.html', 'MPalette', 'm-pal'),
+    ('MAjout.dc.html', 'MAjout', 'm-ajd'),
+    ('MNouvelleAlerte.dc.html', 'MNouvelleAlerte', 'm-nal'),
 ]
-APP_LINKS = {src: route for src, _, _, route, _ in APP_PAGES if route}
-APP_LINKS.update({src: route for src, _, _, route in APP_MOBILE_PAGES})
+if not APP_MOBILE_PAGES:
+    APP_COMPONENTS = [c for c in APP_COMPONENTS if not c[0].startswith('M')]
+def _plain(route):
+    if ':' not in route:
+        return route
+    sample = APP_SAMPLE.get(route)
+    return route.split('/:')[0] + ('/' + sample if sample else '')
+
+
+APP_LINKS = {src: _plain(route) for src, _, _, route, _, _ in APP_PAGES}
+# 'FicheA.dc.html?app=' + slug -> '/app/apps/' + slug : la base de l'adresse à paramètre.
+APP_PARAM_LINKS = {src: route.split('/:')[0] + '/' for src, _, _, route, _, _ in APP_PAGES if ':' in route}
+APP_LINKS.update({src: _plain(route) for src, _, _, route in APP_MOBILE_PAGES})
+APP_PARAM_LINKS.update({src: route.split('/:')[0] + '/' for src, _, _, route in APP_MOBILE_PAGES if ':' in route})
 APP_LINKS.update({
     # Écrans d'interaction mobiles : s'il en reste un lien, il mène à l'écran hôte.
-    'MFiltres.dc.html': '/app/apps', 'MApercu.dc.html': '/app/apps/astra-ai', 'MCreerAlerte.dc.html': '/app/alertes',
+    'MFiltres.dc.html': '/app/apps', 'MApercu.dc.html': '/app/apps/astraai', 'MCreerAlerte.dc.html': '/app/alertes',
     'MRecherche.dc.html': '/app', 'MAbonnement.dc.html': '/app/compte', 'MConnexion.dc.html': '/app/deconnexion',
 
     'FormatsA.dc.html': '/app/formats',        # ancien écran Formats (restes de données), remplacé par FormatsB
@@ -186,8 +213,9 @@ def rewrite_links(value, label=None, links=LINKS):
     if links is LINKS and value in LP_FILES and label in ANCHORS:
         return '/' + ANCHORS[label]
     page, sep, anchor = value.partition('#')
+    page, qsep, query = page.partition('?')
     if page in links:
-        return links[page] + sep + anchor
+        return links[page] + qsep + query + sep + anchor
     return value
 
 
@@ -198,6 +226,17 @@ def rewrite_script_links(script, links=LINKS):
             lab = re.escape(label)
             script = re.sub(r"\['" + lab + r"', '(?:" + files + r")'\]", f"['{label}', '/{anchor}']", script)
             script = re.sub(r"(t: '" + lab + r"'[^}]*?href: )'(?:" + files + r")'", r"\g<1>'/" + anchor + "'", script)
+    # 'X.dc.html?param=' (suivi de + valeur) -> base de l'adresse à paramètre
+    if links is APP_LINKS:
+        for src, base in APP_PARAM_LINKS.items():
+            script = re.sub(r"(['\"])" + re.escape(src) + r"\?[A-Za-z]+=(['\"])", lambda m: m.group(1) + base + m.group(2), script)
+            # lien d'exemple écrit en entier : 'MVideo.dc.html?v=abc' -> '/app/videos/abc'
+            script = re.sub(r"(['\"])" + re.escape(src) + r"\?[A-Za-z]+=([^'\"&#]+)\1", lambda m: m.group(1) + base + m.group(2) + m.group(1), script)
+    # 'X.dc.html?filtre=' (écran sans paramètre d'adresse) -> adresse + requête : '/app/apps?niche=' + valeur
+    if links is APP_LINKS:
+        for src, route in links.items():
+            if src not in APP_PARAM_LINKS:
+                script = re.sub(r"(['\"])" + re.escape(src) + r"\?", lambda m, r=route: m.group(1) + r + '?', script)
     # 'X.dc.html' ou "X.dc.html#ancre" dans le script -> adresse (+ ancre)
     def to_route(m):
         q, page, anchor = m.group(1), m.group(2), m.group(3) or ''
@@ -264,6 +303,9 @@ def gen(node, scope, ind):
         if name == 'href':
             val = rewrite_links(val, text_of(node), CURRENT['links'])
         props.append(f'{json.dumps(attr_name(name))}: {value_expr(val, scope)}')
+    # App : une image ne se télécharge qu'à l'approche de l'écran (listes de 150 formats, 200 comptes).
+    if node.tag == 'img' and CURRENT['links'] is APP_LINKS and 'loading' not in attrs:
+        props += ['"loading": "lazy"', '"decoding": "async"']
     props_js = '{ ' + ', '.join(props) + ' }' if props else 'null'
     tag = json.dumps(SVG_TAGS.get(node.tag, node.tag))
     if node.tag in VOID or not node.children:
@@ -363,8 +405,9 @@ export default class {name} extends DCLogic {{{cls_body}
 
 def write_app_routes():
     lines = ['// Généré par scripts/dc2preact.py — ne pas modifier à la main.',
-             '// Adresse de l\'app -> titre de l\'onglet, écran desktop (load) et, s\'il existe, écran mobile (loadMobile).',
-             'export const ROUTES = {']
+             '// Adresses de l\'app (fixes d\'abord) : titre de l\'onglet, clé des données (convex/boards.ts),',
+             '// écran desktop (load) et, s\'il existe, écran mobile (loadMobile).',
+             'export const ROUTES = [']
     prefixes = {name: prefix for _, name, prefix, *_ in APP_PAGES + APP_COMPONENTS + APP_MOBILE_PAGES}
     mobile = {route: (name, prefix) for _, name, prefix, route in APP_MOBILE_PAGES}
 
@@ -374,7 +417,7 @@ def write_app_routes():
             if c not in seen:
                 out += [x for x in css_of(c, seen + (name,)) if x not in out]
         return out
-    for _, name, prefix, route, title in APP_PAGES:
+    for _, name, prefix, route, title, data in sorted(APP_PAGES, key=lambda r: ':' in r[3]):
         css = ', '.join(f"import('./styles/{x}.css')" for x in css_of(name))
         load = f"Promise.all([import('./pages/{name}.js'), {css}]).then(([m]) => m)"
         extra = ''
@@ -382,8 +425,8 @@ def write_app_routes():
             mname = mobile[route][0]
             mcss = ', '.join(f"import('./styles/{x}.css')" for x in css_of(mname))
             extra = f", loadMobile: () => Promise.all([import('./pages/{mname}.js'), {mcss}]).then(([m]) => m)"
-        lines.append(f"  '{route}': {{ title: {json.dumps(title, ensure_ascii=False)}, load: () => {load}{extra} }},")
-    lines.append('};')
+        lines.append(f"  {{ path: '{route}', title: {json.dumps(title, ensure_ascii=False)}, data: {json.dumps(data)}, load: () => {load}{extra} }},")
+    lines.append('];')
     (ROOT / 'src' / 'app' / 'routes.js').write_text('\n'.join(lines) + '\n')
     print('src/app/routes.js')
 
@@ -393,7 +436,7 @@ if __name__ == '__main__':
         convert(*args)
     for src, name, prefix in APP_COMPONENTS:
         convert(src, name, prefix, 'app')
-    for src, name, prefix, _, _ in APP_PAGES:
+    for src, name, prefix, *_ in APP_PAGES:
         convert(src, name, prefix, 'app')
     for src, name, prefix, _ in APP_MOBILE_PAGES:
         if (GROUPS['app']['src'] / src).exists():

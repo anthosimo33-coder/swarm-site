@@ -12,35 +12,67 @@ export default class AjoutDossier extends DCLogic {
     };
     document.addEventListener('mousedown', this.out);
   }
-  componentWillUnmount() { document.removeEventListener('mousedown', this.out); clearTimeout(this.tm); }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.out); }
   close() { if (this.props.onClose) this.props.onClose(); }
-  renderVals() {
-    const FL = [{"name": "Études, ce qui marche", "n": 7, "src": "/media/app/v-7705368869250075925.jpg"}, {"name": "Side hustle", "n": 5, "src": "/media/app/v-7700172397613288736.jpg"}, {"name": "Jalousie et ex", "n": 5, "src": "/media/app/v-7705376808862076182.jpg"}, {"name": "Couple", "n": 4, "src": "/media/app/v-7705441234847862037.jpg"}];
+  // Les dossiers de la personne : sur le site, saved('folders') (docs/donnees-app.md) ;
+  // sur le canevas, quatre dossiers d'exemple gardés dans l'état local.
+  live() { const P = this.props || {}; return typeof P.saved === 'function' && typeof P.save === 'function'; }
+  folders() {
+    if (this.live()) return this.props.saved('folders');
     const st = this.state || {};
+    if (st.local) return st.local;
+    return [['Études, ce qui marche', 7, '/media/app/v-7705368869250075925.jpg'], ['Side hustle', 5, '/media/app/v-7700172397613288736.jpg'], ['Jalousie et ex', 5, '/media/app/v-7705376808862076182.jpg'], ['Couple', 4, '/media/app/v-7705441234847862037.jpg']]
+      .map((f, i) => ({ id: 'ex' + i, name: f[0], createdAt: 0, items: Array.from({ length: f[1] }, (_, j) => ({ kind: 'video', id: 'ex' + i + '-' + j, label: '', cover: j === 0 ? f[2] : null, at: 0 })) }));
+  }
+  write(next) { if (this.live()) this.props.save('folders', next); else this.setState({ local: next }); }
+  renderVals() {
+    const st = this.state || {};
+    const P = this.props || {};
+    // L'élément à ranger : passé par l'écran hôte ({ kind, id, label, cover }) ; sur le canevas, une app d'exemple.
+    const item = P.item || (this.live() ? null : { kind: 'app', id: 'astraai', label: 'Astra AI', cover: '/media/app/app-astra-ai.jpg' });
+    const raw = this.folders();
+    const loading = raw === undefined;
+    const all = Array.isArray(raw) ? raw : [];
+    const same = (x) => !!item && x.kind === item.kind && x.id === item.id;
+    const has = (f) => (f.items || []).some(same);
+    const entry = () => ({ kind: item.kind, id: item.id, label: item.label || '', cover: item.cover || null, at: Date.now() });
+    const fresh = () => { const v = this.folders(); return Array.isArray(v) ? v : []; };
+    // Un clic coche ou décoche : la valeur entière est réécrite aussitôt.
+    const toggle = (id) => {
+      if (!item || this.folders() === undefined) return;
+      this.write(fresh().map((f) => (f.id !== id ? f : Object.assign({}, f, { items: has(f) ? (f.items || []).filter((x) => !same(x)) : [entry()].concat(f.items || []) }))));
+    };
     const q = st.q || '';
-    const on = st.on || {};
-    const extra = st.extra || [];
-    const all = extra.map((n) => ({ name: n, n: 0, src: '' })).concat(FL);
-    const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
     const nq = norm(q.trim());
-    const rows = all.filter((f) => !nq || norm(f.name).indexOf(nq) >= 0).map((f) => {
-      const c = !!on[f.name];
-      return { name: f.name, src: f.src, nosrc: !f.src, count: (f.n + (c ? 1 : 0)) + ' éléments', on: c ? 'true' : 'false',
-        box: c ? 'var(--blue-600)' : 'transparent', boxe: c ? 'var(--blue-600)' : 'var(--line-strong)', ck: c ? '#FFFFFF' : 'transparent',
-        toggle: () => this.setState({ on: Object.assign({}, on, { [f.name]: !c }), saved: false }) };
-    });
     const exact = all.some((f) => norm(f.name) === nq);
-    const n = Object.keys(on).filter((k) => on[k]).length;
+    const canCreate = !loading && !!nq && !exact;
+    const create = () => {
+      const name = q.trim();
+      if (!name || !canCreate) return;
+      const now = Date.now();
+      this.write([{ id: now.toString(36) + Math.random().toString(36).slice(2, 6), name, createdAt: now, items: item ? [entry()] : [] }].concat(fresh()));
+      this.setState({ q: '' });
+    };
+    const rows = all.filter((f) => !nq || norm(f.name).indexOf(nq) >= 0).map((f) => {
+      const c = has(f);
+      const n = (f.items || []).length;
+      const src = ((f.items || []).filter((x) => x.cover)[0] || {}).cover || '';
+      return { name: f.name, src, nosrc: !src, count: n + (n > 1 ? ' éléments' : ' élément'), on: c ? 'true' : 'false',
+        box: c ? 'var(--blue-600)' : 'transparent', boxe: c ? 'var(--blue-600)' : 'var(--line-strong)', ck: c ? '#FFFFFF' : 'transparent',
+        toggle: () => toggle(f.id) };
+    });
+    const n = all.filter(has).length;
     return {
-      q, rows,
-      canCreate: !!nq && !exact, noCreate: !nq && !st.saved,
+      q, rows, canCreate, create,
+      noCreate: !loading && !nq && n === 0,
+      inAny: n > 0, inLabel: 'Dans ' + n + (n > 1 ? ' dossiers' : ' dossier'),
       onQ: (e) => this.setState({ q: e.target.value }),
-      create: () => { const name = q.trim(); this.setState({ extra: [name].concat(extra), on: Object.assign({}, on, { [name]: true }), q: '' }); },
+      inputKeys: (e) => { if (e.key === 'Enter') { e.preventDefault(); create(); } },
       setInput: (el) => { this.inp = el; },
       setRoot: (el) => { this.root = el; },
       keys: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.close(); } },
-      saved: !!st.saved, savedLabel: n === 0 ? 'Aucun dossier coché' : ('Enregistré dans ' + n + (n > 1 ? ' dossiers' : ' dossier')),
-      save: () => { this.setState({ saved: true }); clearTimeout(this.tm); if (n > 0) this.tm = setTimeout(() => this.close(), 900); }
+      done: () => this.close()
     };
   }
 
@@ -52,7 +84,7 @@ export default class AjoutDossier extends DCLogic {
           $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
             $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
           ),
-          $h("input", { "ref": $v.setInput, "class": "sw-search-input", "type": "search", "value": $v.q, "onInput": $v.onQ, "aria-label": "Chercher ou créer un dossier", "placeholder": "Chercher ou créer un dossier…", "autocomplete": "off", "style": "font-size: 14px;" })
+          $h("input", { "ref": $v.setInput, "class": "sw-search-input", "type": "search", "value": $v.q, "onInput": $v.onQ, "onKeyDown": $v.inputKeys, "maxlength": "60", "aria-label": "Chercher ou créer un dossier", "placeholder": "Chercher ou créer un dossier…", "autocomplete": "off", "style": "font-size: 14px;" })
         ),
         $h("div", { "role": "group", "aria-label": "Dossiers", "style": "display: flex; flex-direction: column; max-height: 260px; overflow-y: auto;" },
           ($l($v.rows)).map((d) => [
@@ -64,7 +96,7 @@ export default class AjoutDossier extends DCLogic {
               ),
               (d?.src) ? [
                 $h("span", { "style": "width: 32px; height: 32px; border-radius: 9px; overflow: hidden; position: relative; flex-shrink: 0;" },
-                  $h("img", { "class": "sw-cover", "src": d?.src, "alt": "" })
+                  $h("img", { "class": "sw-cover", "src": d?.src, "alt": "", "loading": "lazy", "decoding": "async" })
                 )
               ] : null,
               (d?.nosrc) ? [
@@ -74,10 +106,10 @@ export default class AjoutDossier extends DCLogic {
                   )
                 )
               ] : null,
-              $h("span", { "style": "flex: 1; font-size: 14px; font-weight: 600;" },
+              $h("span", { "style": "flex: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                 $t(d?.name)
               ),
-              $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+              $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
                 $t(d?.count)
               )
             )
@@ -96,16 +128,16 @@ export default class AjoutDossier extends DCLogic {
             "Tape un nom pour créer un dossier."
           )
         ] : null,
-        ($v.saved) ? [
+        ($v.inAny) ? [
           $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 4px 8px; font-size: 13px; font-weight: 600; color: var(--accent);" },
             $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": "currentColor", "stroke-width": "2.6", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
-            $t($v.savedLabel)
+            $t($v.inLabel)
           )
         ] : null,
-        $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm sw-btn-block", "type": "button", "onClick": $v.save },
-          "Enregistrer",
+        $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm sw-btn-block", "type": "button", "onClick": $v.done },
+          "Terminé",
           $h("span", { "class": "sw-btn-tile" },
             $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })

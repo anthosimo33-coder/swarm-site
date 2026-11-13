@@ -1,7 +1,53 @@
 import { authTables } from "@convex-dev/auth/server";
-import { defineSchema } from "convex/server";
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
 
-// Pour l'instant, Swarm ne stocke que les comptes (tables de Convex Auth).
 export default defineSchema({
+  // Comptes (Convex Auth).
   ...authTables,
+
+  // Les données de chaque écran de l'app, calculées depuis le Radar à chaque
+  // synchronisation (convex/radarSync.ts). Une clé par écran ou par fiche :
+  // « apps », « app:<slug> », « video:<id> », « creators:<marché> »… (docs/donnees-app.md).
+  // Ce que chaque personne garde dans l'app : apps et comptes suivis, dossiers,
+  // règles d'alerte, ce qu'elle a déjà lu. Une ligne par personne et par clé
+  // (convex/saved.ts, docs/donnees-app.md « Ce que la personne garde »).
+  saved: defineTable({
+    userId: v.id("users"),
+    key: v.string(),
+    value: v.any(),
+    updatedAt: v.number(),
+  }).index("by_user_key", ["userId", "key"]),
+
+  boards: defineTable({
+    key: v.string(),
+    data: v.any(),
+    hash: v.string(), // empreinte du contenu, hors date : on n'écrit que ce qui change
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
+
+  // Miniatures des vidéos et icônes des apps, recopiées chez Swarm (les URL de
+  // TikTok sont signées et expirent). Clé « v:<id vidéo> » ou « icon:<slug> ».
+  media: defineTable({
+    key: v.string(),
+    storageId: v.id("_storage"),
+    url: v.string(),
+    at: v.number(),
+  }).index("by_key", ["key"]),
+
+  // Fiche App Store de chaque app (trouvée par son nom, une fois).
+  appStore: defineTable({
+    slug: v.string(),
+    url: v.union(v.string(), v.null()), // null : cherchée, pas trouvée
+    at: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  // Journal des synchronisations (la dernière sert à l'écran et au suivi).
+  syncRuns: defineTable({
+    startedAt: v.number(),
+    finishedAt: v.optional(v.number()),
+    ok: v.optional(v.boolean()),
+    counts: v.optional(v.any()),
+    error: v.optional(v.string()),
+  }).index("by_started", ["startedAt"]),
 });

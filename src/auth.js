@@ -9,7 +9,7 @@ import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { ConvexError } from 'convex/values';
 import { AUTH_ERRORS } from '../convex/authErrors.ts';
 
-const client = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+export const client = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 
 // Où arrive une personne connectée : l'app.
 export const APP_HOME = '/app';

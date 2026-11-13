@@ -25,7 +25,6 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <a class="sw-side-item" href="{{n.href}}" aria-current="{{n.cur}}"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{n.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>
 </sc-for>
 <div class="sw-side-foot">
-<button class="sw-btn sw-btn-icon" type="button" aria-label="Passer au thème clair"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
 <a class="sw-avatar" href="CompteA.dc.html" aria-label="Mon compte" style="text-decoration: none;">{{me.initiale}}</a>
 </div>
 </nav>
@@ -46,86 +45,106 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
 <input class="sw-search-input" onFocus="{{openPal}}" id="q" type="search" aria-label="Chercher une app, un format ou un créateur" placeholder="Cherche une app, un format, un créateur…" style="font-size: 18px;">
 <span class="sw-kbd">⌘ K</span>
-<button class="sw-btn sw-btn-icon" type="button" onClick="{{openPal}}" aria-label="Chercher avec une capture d'écran"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
-<button class="sw-search-market" type="button" aria-haspopup="listbox" style="height: 52px; padding: 0 16px 0 12px;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Tous les marchés<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
 </div>
 
-<div class="sw-enter" style="margin-top: 22px; display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 16px; font-size: 15px; color: var(--ink-muted); animation-delay: 0.4s;">
-<span>Aucune app consultée récemment.</span>
-
-</div>
-
-<div class="sw-enter" style="margin-top: 28px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; animation-delay: 0.5s;">
+<sc-if value="{{hasNiches}}" hint-placeholder-val="{{true}}"><div class="sw-enter" style="margin-top: 28px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; animation-delay: 0.5s;">
 <span style="font-size: 14px; color: var(--ink-faint); padding-right: 4px;">Ça explose cette semaine :</span>
 <sc-for list="{{niches}}" as="t" hint-placeholder-count="5">
-<a class="sw-pill" href="AppsA.dc.html">{{t.label}}</a>
+<a class="sw-pill" href="{{t.href}}">{{t.label}}</a>
 </sc-for>
-</div>
+</div></sc-if>
 </section>
 
 <section aria-label="Raccourcis" style="position: relative; margin-top: auto; padding: 64px 0 48px 32px;">
-<div style="display: flex; gap: 16px; overflow: hidden; padding: 4px 0 24px; -webkit-mask-image: linear-gradient(to right, #000 84%, transparent 100%); mask-image: linear-gradient(to right, #000 84%, transparent 100%);">
+<div ref="{{setRow}}" style="display: flex; gap: 16px; overflow: hidden; padding: 4px 0 24px; -webkit-mask-image: linear-gradient(to right, #000 84%, transparent 100%); mask-image: linear-gradient(to right, #000 84%, transparent 100%);">
 
 <article class="sw-card" style="flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;">
-<div style="flex: 1 1 auto; border-radius: 16px; background: var(--track); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; text-align: center;">
+<sc-if value="{{fol.list}}" hint-placeholder-val="{{false}}"><div style="flex: 1 1 auto; border-radius: 16px; background: var(--track); padding: 8px 14px; display: flex; flex-direction: column;">
+<sc-for list="{{fol.rows}}" as="r" hint-placeholder-count="3">
+<a href="{{r.href}}" style="height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid {{r.sep}};">
+<span class="sw-app-icon {{r.blank}}" style="width: 30px; height: 30px; border-radius: 9px;"><sc-if value="{{r.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{r.logo}}" alt=""></sc-if><sc-if value="{{r.nologo}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;"><span class="sw-app-name">{{r.name}}</span><span class="sw-app-sub">{{r.sub}}</span></span>
+<span style="flex-shrink: 0; white-space: nowrap; font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums;">{{r.v}}</span>
+</a>
+</sc-for>
+</div></sc-if>
+<sc-if value="{{fol.empty}}" hint-placeholder-val="{{true}}"><div style="flex: 1 1 auto; border-radius: 16px; background: var(--track); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; text-align: center;">
 <span class="sw-empty-radar" aria-hidden="true" style="width: 72px; height: 72px;"></span>
-<p style="margin: 0; max-width: 220px; font-size: 14px; line-height: 1.55; color: var(--ink-muted);">Suis une app et vois chaque nouvelle vidéo, chaque pic de vues, le jour même.</p>
+<p style="margin: 0; max-width: 220px; font-size: 14px; line-height: 1.55; color: var(--ink-muted);">Suis une app depuis sa fiche pour voir ici ses vues de la semaine.</p>
 <a class="sw-btn sw-btn-primary sw-btn-sm" href="AppsA.dc.html">Parcourir les apps<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a>
-</div>
-<div style="height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px;"><span class="sw-eyebrow" style="font-size: 12px; letter-spacing: 0.08em;">Activité</span></div>
+</div></sc-if>
+<sc-if value="{{fol.wait}}" hint-placeholder-val="{{false}}"><div style="flex: 1 1 auto; border-radius: 16px; background: var(--track);"></div></sc-if>
+<div style="height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px;"><span class="sw-eyebrow" style="font-size: 12px; letter-spacing: 0.08em;">{{fol.title}}</span></div>
 </article>
 
 <article class="sw-card" style="flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;">
-<div style="flex: 1 1 auto; border-radius: 16px; background: var(--track); display: flex; flex-direction: column; padding: 14px;">
-<div class="sw-tabs" role="tablist" style="align-self: flex-start; padding: 3px;"><button class="sw-tab" role="tab" aria-selected="true" style="height: 28px; font-size: 13px;">Récents</button><button class="sw-tab" role="tab" aria-selected="false" style="height: 28px; font-size: 13px;">Activité</button></div>
+<sc-if value="{{dos.list}}" hint-placeholder-val="{{false}}"><div style="flex: 1 1 auto; border-radius: 16px; background: var(--track); padding: 8px 14px; display: flex; flex-direction: column;">
+<sc-for list="{{dos.rows}}" as="f" hint-placeholder-count="2">
+<a href="DossiersA.dc.html" style="height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid {{f.sep}};">
+<span class="sw-app-icon sw-app-blank" style="width: 30px; height: 30px; border-radius: 9px;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;"><span class="sw-app-name">{{f.name}}</span><span class="sw-app-sub">{{f.sub}}</span></span>
+</a>
+</sc-for>
+</div></sc-if>
+<sc-if value="{{dos.empty}}" hint-placeholder-val="{{true}}"><div style="flex: 1 1 auto; border-radius: 16px; background: var(--track); display: flex; flex-direction: column; padding: 14px;">
 <div style="flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;">
 <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ink-faint);"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
 <span style="font-size: 14px; color: var(--ink-muted);">Aucun dossier pour l'instant</span>
 </div>
-</div>
-<div style="height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px;"><span class="sw-eyebrow" style="font-size: 12px; letter-spacing: 0.08em;">Dossiers</span><a class="sw-more" href="DossiersA.dc.html">Tout voir<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
+</div></sc-if>
+<sc-if value="{{dos.wait}}" hint-placeholder-val="{{false}}"><div style="flex: 1 1 auto; border-radius: 16px; background: var(--track);"></div></sc-if>
+<div style="height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px;"><span class="sw-eyebrow" style="font-size: 12px; letter-spacing: 0.08em;">{{dos.title}}</span><a class="sw-more" href="DossiersA.dc.html">Tout voir<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
 </article>
 
-<article class="sw-card" style="flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;">
+<sc-if value="{{hasLook}}" hint-placeholder-val="{{true}}"><article class="sw-card" style="flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;">
 <div style="flex: 1 1 auto; border-radius: 16px; background: var(--track); padding: 8px 14px; display: flex; flex-direction: column;">
 <sc-for list="{{look}}" as="r" hint-placeholder-count="4">
-<a href="FicheA.dc.html" style="height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid {{r.sep}};">
-<span class="sw-app-icon" style="width: 30px; height: 30px; border-radius: 9px;"><img class="sw-logo-img" src="{{r.logo}}" alt=""></span>
+<a href="{{r.href}}" style="height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid {{r.sep}};">
+<span class="sw-app-icon {{r.blank}}" style="width: 30px; height: 30px; border-radius: 9px;"><sc-if value="{{r.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{r.logo}}" alt=""></sc-if><sc-if value="{{r.nologo}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span>
 <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;"><span class="sw-app-name">{{r.name}}</span><span class="sw-app-sub">{{r.sub}}</span></span>
 <span style="flex-shrink: 0; white-space: nowrap; font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums;">{{r.v}}</span>
 </a>
 </sc-for>
 </div>
 <div style="height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px;"><span class="sw-eyebrow" style="font-size: 12px; letter-spacing: 0.08em;">Ça explose</span><a class="sw-more" href="AppsA.dc.html">Tout voir<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></div>
-</article>
+</article></sc-if>
 
-<article class="sw-card" style="flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;">
+<sc-if value="{{showAlert}}" hint-placeholder-val="{{true}}"><article class="sw-card" style="flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;">
 <div style="position: relative; flex: 1 1 auto; border-radius: 16px; overflow: hidden; background: radial-gradient(60% 40% at 25% 80%, rgba(255,255,255,0.55), transparent 70%), radial-gradient(50% 35% at 85% 30%, rgba(255,255,255,0.45), transparent 70%), linear-gradient(180deg, #4C9AFF 0%, #8DC0FF 55%, #DCEDFF 100%); display: flex; align-items: center; justify-content: center;">
-<button class="sw-btn sw-btn-icon" type="button" aria-label="Masquer cette carte" style="position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; background: rgba(5,7,12,0.55); color: #FFFFFF;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
-<div class="sw-video" style="width: 118px; border-radius: 16px; box-shadow: 0 20px 40px rgba(5,7,12,0.35); animation: sw-float 6s ease-in-out infinite;"><img class="sw-cover" src="/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4" alt=""><span class="sw-video-shade"></span><span class="sw-video-app" style="font-size: 10px;"><i style="overflow: hidden;"><img class="sw-logo-img" src="/_blob/8786a14b5a2e9593ed85c3dd97461c2b" alt=""></i>Astra AI</span><div class="sw-video-foot"><span class="sw-video-views" style="font-size: 16px;">2,0 M</span></div></div>
-<div class="sw-toast" style="position: absolute; left: 14px; right: 14px; bottom: 14px; padding: 8px 12px 8px 8px; gap: 10px; animation: sw-float 7s ease-in-out infinite; animation-delay: -2s;"><span class="sw-toast-ico" style="width: 26px; height: 26px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="min-width: 0;"><span class="sw-toast-kicker">Alerte · Astra AI</span><span class="sw-toast-text" style="font-size: 12px;">Une vidéo à 2 333× sa normale</span></span></div>
+<a class="sw-video" href="{{alert.href}}" aria-label="{{alert.aria}}" style="display: block; text-decoration: none; width: 118px; border-radius: 16px; box-shadow: 0 20px 40px rgba(5,7,12,0.35); animation: sw-float 6s ease-in-out infinite;"><sc-if value="{{alert.cover}}" hint-placeholder-val="{{true}}"><img class="sw-cover" src="{{alert.cover}}" alt=""></sc-if><span class="sw-video-shade"></span><span class="sw-video-app" style="font-size: 10px;"><sc-if value="{{alert.logo}}" hint-placeholder-val="{{true}}"><i style="overflow: hidden;"><img class="sw-logo-img" src="{{alert.logo}}" alt=""></i></sc-if>{{alert.app}}</span><div class="sw-video-foot"><span class="sw-video-views" style="font-size: 16px;">{{alert.views}}</span></div></a>
+<div class="sw-toast" style="position: absolute; left: 14px; right: 14px; bottom: 14px; padding: 8px 12px 8px 8px; gap: 10px; animation: sw-float 7s ease-in-out infinite; animation-delay: -2s;"><span class="sw-toast-ico" style="width: 26px; height: 26px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="min-width: 0;"><span class="sw-toast-kicker">{{alert.kicker}}</span><span class="sw-toast-text" style="font-size: 12px;">{{alert.text}}</span></span></div>
 </div>
-<div style="height: 52px; display: flex; align-items: center; padding: 0 12px;"><a href="AlertesA.dc.html" style="font-size: 15px; font-weight: 600; color: var(--ink); text-decoration: none;">Ne rate plus une vidéo qui décolle</a></div>
-</article>
-
-<article class="sw-card" style="flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;">
-<div style="position: relative; flex: 1 1 auto; border-radius: 16px; overflow: hidden; background: var(--track); box-shadow: inset 0 0 0 1px var(--line-strong); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;">
-<span role="img" aria-label="Vidéo de prise en main à venir" style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF;"><svg width="18" height="18" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5v7l5.5-3.5z" fill="currentColor"></path></svg></span>
-<span style="font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint);">[Vidéo de prise en main à tourner]</span>
-</div>
-<div style="height: 52px; display: flex; align-items: center; padding: 0 12px;"><span style="font-size: 15px; font-weight: 600; color: var(--ink);">Lire un signal en 2 minutes</span></div>
-</article>
+<div style="height: 52px; display: flex; align-items: center; padding: 0 12px;"><a href="AlertesA.dc.html" style="font-size: 15px; font-weight: 600; color: var(--ink); text-decoration: none;">Voir les alertes de la semaine</a></div>
+</article></sc-if>
 
 </div>
-<button class="sw-btn sw-btn-icon" type="button" aria-label="Voir les cartes suivantes" style="position: absolute; right: 32px; top: calc(50% - 8px); width: 52px; height: 52px; background: var(--surface-raised); border: 1px solid var(--line); color: var(--ink); box-shadow: var(--shadow-float);"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<sc-if value="{{rowMore}}" hint-placeholder-val="{{true}}"><button class="sw-btn sw-btn-icon" type="button" onClick="{{nextCards}}" aria-label="{{rowAria}}" style="position: absolute; right: 32px; top: calc(50% - 8px); width: 52px; height: 52px; background: var(--surface-raised); border: 1px solid var(--line); color: var(--ink); box-shadow: var(--shadow-float);"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="{{rowD}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></sc-if>
 </section>
 </main>
 
-<sc-if value="{{pal}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 60;"><dc-import name="Palette" on-close="{{closePal}}" hint-size="100%,100%"></dc-import></div></sc-if>
+<sc-if value="{{pal}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 60;"><dc-import name="Palette" on-close="{{closePal}}" get="{{getFn}}" hint-size="100%,100%"></dc-import></div></sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":1440,"height":1120}}'>
 class Component extends DCLogic {
+  // La rangée de cartes défile à la flèche : la flèche n'apparaît que si des cartes dépassent.
+  componentDidMount() {
+    this.fit = () => this.measureRow();
+    window.addEventListener('resize', this.fit);
+    this.measureRow();
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.fit); }
+  componentDidUpdate() { this.measureRow(); }
+  measureRow() {
+    const el = this.row;
+    if (!el) return;
+    const st = this.state || {};
+    const max = el.scrollWidth - el.clientWidth;
+    const more = max > 2;
+    if (!more && el.scrollLeft) { el.scrollLeft = 0; this.rowAt = 0; }
+    const end = more && !!st.rowEnd && (this.rowAt || 0) >= max - 2;
+    if (!!st.rowMore !== more || !!st.rowEnd !== end) this.setState({ rowMore: more, rowEnd: end });
+  }
 
   renderVals() {
     const b = this.baseVals();
@@ -139,7 +158,7 @@ class Component extends DCLogic {
     const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
     const sb = [["accueil", "Accueil", "Main.dc.html"], ["apps", "Apps", "AppsA.dc.html"], ["formats", "Formats", "FormatsB.dc.html"], ["createurs", "Créateurs", "CreateursA.dc.html"], ["alertes", "Alertes", "AlertesA.dc.html"], ["dossiers", "Dossiers", "DossiersA.dc.html"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'accueil' ? 'page' : 'false' }));
     return {
-      sb, me,
+      sb, me, getFn: this.props && this.props.get,
       pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
       aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
     };
@@ -148,7 +167,55 @@ class Component extends DCLogic {
     const st = this.state || {};
     const u = this.props.user;
     const p = u ? (u.prenom || null) : 'Anthony';
-    return { greet: p ? 'Bon retour, ' + p + '.' : 'Bon retour.' };
+    const end = !!st.rowEnd;
+    return {
+      greet: p ? 'Bon retour, ' + p + '.' : 'Bon retour.',
+      showAlert: !!(b.alert && b.alert.on),
+      fol: this.followVals(), dos: this.folderVals(),
+      setRow: (el) => { this.row = el; },
+      rowMore: !!st.rowMore, rowD: end ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6', rowAria: end ? 'Revenir aux premières cartes' : 'Voir les cartes suivantes',
+      nextCards: () => {
+        const el = this.row;
+        if (!el) return;
+        const max = el.scrollWidth - el.clientWidth;
+        const to = end ? 0 : Math.min(max, (this.rowAt || 0) + 316);
+        this.rowAt = to;
+        el.scrollTo({ left: to, behavior: 'smooth' });
+        this.setState({ rowEnd: to >= max - 2 });
+      }
+    };
+  }
+
+  // « Apps suivies » : les apps que la personne suit (saved('follows').apps), avec leurs vues sur 7 jours
+  // (document « apps ») ; chacune mène à sa fiche. Sur le canevas : l'état vide, comme avant.
+  followVals() {
+    const P = this.props || {};
+    const site = typeof P.saved === 'function';
+    const fv = site ? P.saved('follows') : null;
+    const slugs = fv && Array.isArray(fv.apps) ? fv.apps : [];
+    const A = site && slugs.length && P.get ? P.get('apps') : null;
+    const wait = site && (fv === undefined || (slugs.length > 0 && A === undefined));
+    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+    const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %';
+    const by = A && A.apps ? Object.fromEntries(A.apps.map((a) => [a.slug, a])) : {};
+    const apps = wait ? [] : slugs.map((s) => by[s]).filter(Boolean).sort((p, q) => (q.views7 || 0) - (p.views7 || 0));
+    const rows = apps.slice(0, 4).map((a, i, xs) => ({ logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', name: a.name,
+      sub: nf(a.views7 || 0) + ' vues en 7 jours', v: typeof a.weekDelta === 'number' ? pct(a.weekDelta) : '', href: 'FicheA.dc.html?app=' + a.slug,
+      sep: i === xs.length - 1 ? 'transparent' : 'var(--line)' }));
+    const n = apps.length;
+    return { rows, list: n > 0, empty: !wait && n === 0, wait, title: n > 0 ? n + (n > 1 ? ' apps suivies' : ' app suivie') : 'Apps suivies' };
+  }
+  // « Dossiers » : ceux de la personne (saved('folders')), les plus récents d'abord ; ils mènent à l'écran Dossiers.
+  folderVals() {
+    const P = this.props || {};
+    const site = typeof P.saved === 'function';
+    const fv = site ? P.saved('folders') : null;
+    const wait = site && fv === undefined;
+    const fs = Array.isArray(fv) ? fv.filter((f) => f && typeof f === 'object').slice().sort((p, q) => (q.createdAt || 0) - (p.createdAt || 0)) : [];
+    const rows = fs.slice(0, 4).map((f, i, xs) => { const k = Array.isArray(f.items) ? f.items.length : 0;
+      return { name: f.name || 'Sans nom', sub: k === 0 ? 'Vide' : k + (k > 1 ? ' éléments' : ' élément'), sep: i === xs.length - 1 ? 'transparent' : 'var(--line)' }; });
+    const n = fs.length;
+    return { rows, list: n > 0, empty: !wait && n === 0, wait, title: n > 0 ? n + (n > 1 ? ' dossiers' : ' dossier') : 'Dossiers' };
   }
 
   baseVals() {
@@ -162,16 +229,48 @@ class Component extends DCLogic {
     };
     const nav = [['accueil', 'Accueil'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs'], ['alertes', 'Alertes'], ['dossiers', 'Dossiers']]
       .map((x, i) => ({ d: ic[x[0]], label: x[1], cur: i === 0 ? 'page' : 'false' }));
-    const look = [
+    let look = [
       { logo: '/_blob/eb5811d4931b56bb9bdef45fd0329cd9', ini: 'L', name: 'Luv or Pop', sub: 'Vidéo à 7,5 M vues', v: 'H+26', bg: 'var(--thumb-plum)' },
       { logo: '/_blob/5ba673c81ee7c31409ae18e7a2e3df45', ini: 'D', name: 'DJ Kartier', sub: 'Vidéo à 5,5 M vues', v: 'H+43', bg: 'var(--thumb-navy)' },
       { logo: '/_blob/8786a14b5a2e9593ed85c3dd97461c2b', ini: 'A', name: 'Astra AI', sub: 'Une vidéo face à sa normale', v: '2 333×', bg: 'var(--blue-600)' },
       { logo: '/_blob/b32d50dfdb2f76bd5cb72bcdcbc0e207', ini: 'L', name: 'Love8', sub: 'Comptes en une recherche', v: '+69', bg: 'var(--thumb-pine)' }
-    ].map((r, i, a) => Object.assign(r, { sep: i === a.length - 1 ? 'transparent' : 'var(--line)' }));
+    ].map((r) => Object.assign(r, { href: 'FicheA.dc.html', blank: '', nologo: false }));
+    let niches = ['Études', 'Couple', 'Séduction IA', 'Foi', 'Side hustle'];
+    let alert = { on: true, cover: '/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4', logo: '/_blob/8786a14b5a2e9593ed85c3dd97461c2b', app: 'Astra AI', views: '2,0 M',
+      kicker: 'Alerte · Astra AI', text: 'Une vidéo à 2 333× sa normale', aria: 'Voir la vidéo', href: 'VideoA.dc.html' };
+
+    // Sur le site : l'accueil depuis le Radar (document « home », convex/radarModels.ts).
+    // « Ça explose » = les 2 apps qui progressent le plus cette semaine, puis 2 vidéos qui décollent
+    // (la 1re vidéo est dans la carte d'alerte) ; chaque ligne mène à sa fiche ou à sa vidéo.
+    const D = this.props && this.props.data;
+    if (D && D.apps) {
+      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+      const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %';
+      const has = (d) => d !== null && d !== undefined;
+      const appRow = (a) => ({ logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', name: a.name,
+        sub: nf(a.views7 || 0) + ' vues en 7 jours', v: has(a.weekDelta) ? pct(a.weekDelta) : (a.bestX ? xf(a.bestX) : ''), href: 'FicheA.dc.html?app=' + a.slug });
+      const vidRow = (v) => { const logo = (v.app && v.app.icon) || v.cover || '';
+        return { logo, nologo: !logo, blank: logo ? '' : 'sw-app-blank', name: v.app ? v.app.name : '@' + v.handle,
+          sub: 'Vidéo à ' + nf(v.views) + ' vues', v: v.x ? xf(v.x) : '', href: 'VideoA.dc.html?v=' + v.id }; };
+      const apps = D.apps.slice().sort((p, q) => (has(q.weekDelta) ? q.weekDelta : -Infinity) - (has(p.weekDelta) ? p.weekDelta : -Infinity));
+      const vids = D.videos || [];
+      look = apps.slice(0, 2).map(appRow).concat(vids.slice(1, 3).map(vidRow), apps.slice(2).map(appRow)).slice(0, 4);
+      niches = D.niches || [];
+      const v0 = vids[0];
+      const who = v0 ? (v0.app ? v0.app.name : '@' + v0.handle) : '';
+      alert = v0 ? { on: true, cover: v0.cover || '', logo: (v0.app && v0.app.icon) || '', app: who, views: nf(v0.views),
+        kicker: 'Alerte · ' + who, text: v0.x ? 'Une vidéo à ' + xf(v0.x) + ' sa normale' : 'Une vidéo à ' + nf(v0.views) + ' vues',
+        aria: 'Voir la vidéo de @' + v0.handle, href: 'VideoA.dc.html?v=' + v0.id } : { on: false };
+    }
+    look = look.map((r, i, a) => Object.assign(r, { sep: i === a.length - 1 ? 'transparent' : 'var(--line)' }));
+    // Une niche mène au classement des apps filtré sur elle (/app/apps?niche=…).
+    niches = niches.map((n) => ({ label: n, href: 'AppsA.dc.html?niche=' + encodeURIComponent(n) }));
     return {
       nav,
-      look,
-      niches: [{ label: 'Études' }, { label: 'Couple' }, { label: 'Séduction IA' }, { label: 'Foi' }, { label: 'Side hustle' }]
+      look, hasLook: look.length > 0,
+      niches, hasNiches: niches.length > 0,
+      alert
     };
   }
 }

@@ -25,7 +25,6 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <a class="sw-side-item" href="{{n.href}}" aria-current="{{n.cur}}"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{n.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>
 </sc-for>
 <div class="sw-side-foot">
-<button class="sw-btn sw-btn-icon" type="button" aria-label="Passer au thème clair"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
 <a class="sw-avatar" href="CompteA.dc.html" aria-label="Mon compte" style="text-decoration: none;">{{me.initiale}}</a>
 </div>
 </nav>
@@ -43,39 +42,75 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 </header>
 
-<div style="padding: 24px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;"><div class="sw-tabs" role="tablist" aria-label="Marché"><sc-for list="{{mkt}}" as="m" hint-placeholder-count="6"><button class="sw-tab" role="tab" aria-selected="{{m.on}}" onClick="{{m.pick}}" style="height: 36px; display: inline-flex; align-items: center; gap: 8px;"><span class="sw-flag" style="width: 24px; height: 18px; font-size: 9px;">{{m.c}}</span>{{m.l}}</button></sc-for></div><span style="font-size: 13px; color: var(--ink-faint);">{{countLabel}}</span></div>
-<div style="padding: 16px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;"><div style="display: flex; gap: 8px; flex-wrap: wrap;"><sc-for list="{{filters}}" as="f" hint-placeholder-count="3"><button class="sw-pill" type="button" aria-haspopup="listbox" style="height: 40px; padding: 0 12px 0 14px; gap: 6px; background: var(--track); border-color: var(--line);"><span style="color: var(--ink-faint);">{{f.k}}</span><span style="font-weight: 600;">{{f.v}}</span><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ink-faint);"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></sc-for></div><div style="display: flex; align-items: center; gap: 16px;"><span style="font-size: 13px; color: var(--ink-faint);">Trier par <span style="color: var(--ink); font-weight: 600;">vues médianes</span></span><div class="sw-tabs" role="tablist" aria-label="Affichage"><a class="sw-tab" role="tab" aria-selected="false" href="CreateursA.dc.html" style="height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M4 15h16M10 10v9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Tableau</a><a class="sw-tab" role="tab" aria-selected="true" href="CreateursB.dc.html" style="height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Cartes</a></div></div></div>
+<div style="padding: 24px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;"><div class="sw-tabs" role="tablist" aria-label="Marché"><sc-for list="{{mkt}}" as="m" hint-placeholder-count="6"><a class="sw-tab" role="tab" aria-selected="{{m.on}}" href="{{m.href}}" style="height: 36px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;"><sc-if value="{{m.flag}}" hint-placeholder-val="{{true}}"><span class="sw-flag" style="width: 24px; height: 18px; font-size: 9px;">{{m.c}}</span></sc-if>{{m.l}}</a></sc-for></div><span style="font-size: 13px; color: var(--ink-faint);">{{countLabel}}</span></div>
+<div style="padding: 16px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;"><div style="position: relative; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;"><sc-for list="{{filters}}" as="f" hint-placeholder-count="3"><button class="sw-pill" type="button" data-menu-trigger="true" onClick="{{f.toggle}}" aria-expanded="{{f.open}}" aria-haspopup="listbox" style="height: 40px; padding: 0 12px 0 14px; gap: 6px; background: {{f.bg}}; border-color: {{f.edge}};"><span style="color: var(--ink-faint);">{{f.k}}</span><span style="font-weight: 600;">{{f.v}}</span><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ink-faint);"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></sc-for><sc-for list="{{chips}}" as="ch" hint-placeholder-count="1"><button class="sw-badge sw-badge-accent" type="button" onClick="{{ch.clear}}" aria-label="Retirer le filtre {{ch.label}}" style="height: 32px; padding: 0 8px 0 12px; border: 0; cursor: pointer; font-family: inherit; gap: 6px;">{{ch.label}}<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></sc-for><sc-if value="{{menu.on}}" hint-placeholder-val="{{false}}">
+<div ref="{{setMenu}}" role="listbox" aria-label="{{menu.title}}" style="position: absolute; top: 52px; left: {{menu.left}}; z-index: 30; width: 360px; box-sizing: border-box; padding: 8px; border-radius: 22px; background: rgba(13,17,26,0.96); border: 1px solid var(--glass-edge); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;">
+<div style="display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; margin-bottom: 6px; border-radius: 14px; background: var(--track);"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ink-faint);"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><input ref="{{setMenuInput}}" type="search" value="{{menu.q}}" onChange="{{onMq}}" onKeyDown="{{menuKeys}}" aria-label="{{menu.search}}" placeholder="{{menu.search}}" style="flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--ink); font: inherit; font-size: 14px;"></div>
+<div style="max-height: 368px; overflow-y: auto;">
+<sc-for list="{{menu.items}}" as="it" hint-placeholder-count="5">
+<button type="button" role="option" aria-selected="{{it.sel}}" onClick="{{it.pick}}" onKeyDown="{{menuKeys}}" style="width: 100%; height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 12px; background: {{it.bg}}; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; opacity: {{it.o}};">
+<span aria-hidden="true" style="width: 18px; height: 18px; border-radius: {{it.radius}}; border: 1.5px solid {{it.box}}; background: {{it.fill}}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" fill="none" stroke="{{it.tick}}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<span style="flex: 1 1 auto; min-width: 0; font-weight: {{it.w}};">{{it.label}}</span>
+<span style="font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;">{{it.n}}</span>
+</button>
+</sc-for>
+</div>
+<div style="margin-top: 6px; padding: 12px 12px 6px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+<span style="font-size: 12px; line-height: 1.4; color: var(--ink-faint); max-width: 190px;">{{menu.foot}}</span>
+<button class="sw-btn sw-btn-primary sw-btn-sm" type="button" onClick="{{closeMenu}}">{{menu.cta}}<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+</div>
+</div>
+</sc-if></div><div style="display: flex; align-items: center; gap: 16px;"><span style="font-size: 13px; color: var(--ink-faint);">Trier par <span style="color: var(--ink); font-weight: 600;">vues médianes</span></span><div class="sw-tabs" role="tablist" aria-label="Affichage"><a class="sw-tab" role="tab" aria-selected="false" href="{{tableHref}}" style="height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M4 15h16M10 10v9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Tableau</a><a class="sw-tab" role="tab" aria-selected="true" href="{{cardsHref}}" style="height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Cartes</a></div></div></div>
 
-<section style="margin: 20px 32px 0; padding: 16px 20px; border-radius: 20px; background: var(--surface-raised); border: 1px solid var(--line); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+<sc-if value="{{liveOn}}" hint-placeholder-val="{{true}}"><section style="margin: 20px 32px 0; padding: 16px 20px; border-radius: 20px; background: var(--surface-raised); border: 1px solid var(--line); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
 <span class="sw-live"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent);"></span>Actifs cette semaine</span>
-<sc-for list="{{live}}" as="c" hint-placeholder-count="4"><a href="CreateurFicheA.dc.html" style="display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;"><span style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);"><sc-if value="{{c.av}}" hint-placeholder-val="{{true}}"><img src="{{c.av}}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;"></sc-if><sc-if value="{{c.noav}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4" fill="#3A4558"></circle><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4" fill="#3A4558"></path></svg></sc-if></span><span style="display: flex; flex-direction: column;"><span style="font-size: 13px; font-weight: 600; color: var(--ink);">{{c.h}}</span><span style="font-size: 11px; color: var(--ink-faint);">{{c.last}}</span></span></a></sc-for>
-</section>
+<sc-for list="{{live}}" as="c" hint-placeholder-count="4"><a href="{{c.href}}" style="display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;"><span style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);"><sc-if value="{{c.av}}" hint-placeholder-val="{{true}}"><img src="{{c.av}}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;"></sc-if><sc-if value="{{c.noav}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4" fill="#3A4558"></circle><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4" fill="#3A4558"></path></svg></sc-if></span><span style="display: flex; flex-direction: column;"><span style="font-size: 13px; font-weight: 600; color: var(--ink);">{{c.h}}</span><span style="font-size: 11px; color: var(--ink-faint);">{{c.last}}</span></span></a></sc-for>
+</section></sc-if>
 
 <div style="padding: 28px 32px 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
 <sc-if value="{{none}}" hint-placeholder-val="{{false}}"><p style="grid-column: 1 / -1; margin: 24px 0; font-size: 15px; color: var(--ink-muted);">{{noneLabel}}</p></sc-if>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><p style="grid-column: 1 / -1; margin: 24px 0; font-size: 15px; color: var(--ink-muted);">Aucun compte pour ces filtres. <button class="sw-link" type="button" onClick="{{clearAll}}" style="border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: 600;">Effacer les filtres</button></p></sc-if>
 <sc-for list="{{cards}}" as="c" hint-placeholder-count="9">
 <article class="sw-card" style="border-radius: 26px; overflow: hidden; display: flex; flex-direction: column;">
-<a href="CreateurFicheA.dc.html" style="display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 200px; overflow: hidden; background: var(--ground);"><sc-for list="{{c.cov}}" as="v" hint-placeholder-count="3"><span style="position: relative; overflow: hidden; display: block;"><img class="sw-cover" src="{{v.src}}" alt=""><span class="sw-video-shade"></span><span style="position: absolute; right: 10px; bottom: 10px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #FFFFFF;">{{v.v}}</span></span></sc-for></a>
+<sc-if value="{{c.hasCov}}" hint-placeholder-val="{{true}}"><div style="display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 200px; overflow: hidden; background: var(--ground);"><sc-for list="{{c.cov}}" as="v" hint-placeholder-count="3"><a href="{{v.href}}" aria-label="Vidéo à {{v.v}} vues" style="position: relative; overflow: hidden; display: block;"><sc-if value="{{v.src}}" hint-placeholder-val="{{true}}"><img class="sw-cover" src="{{v.src}}" alt=""></sc-if><span class="sw-video-shade"></span><span style="position: absolute; right: 10px; bottom: 10px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #FFFFFF;">{{v.v}}</span></a></sc-for></div></sc-if><sc-if value="{{c.noCov}}" hint-placeholder-val="{{false}}"><a href="{{c.href}}" aria-label="Voir la fiche de {{c.h}}" style="display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 200px; overflow: hidden; background: var(--ground);"></a></sc-if>
 <div style="padding: 0 22px 22px; display: flex; flex-direction: column; gap: 14px;">
 <div style="position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; margin-top: -30px;"><span style="width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised), 0 8px 24px rgba(0,0,0,0.4);"><sc-if value="{{c.av}}" hint-placeholder-val="{{true}}"><img src="{{c.av}}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;"></sc-if><sc-if value="{{c.noav}}" hint-placeholder-val="{{false}}"><svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4" fill="#3A4558"></circle><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4" fill="#3A4558"></path></svg></sc-if></span><span style="display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--ink-soft);"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{c.dot}};"></span>{{c.rythme}}</span></div>
-<div style="display: flex; flex-direction: column; gap: 4px;"><a href="CreateurFicheA.dc.html" style="font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); text-decoration: none;">{{c.h}}</a><span style="font-size: 13px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{c.bio}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><a href="{{c.href}}" style="font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); text-decoration: none;">{{c.h}}</a><span style="font-size: 13px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{c.bio}}</span></div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
 <span class="sw-tile" style="padding: 10px 12px;"><span class="sw-tile-label">Abonnés</span><span class="sw-tile-value" style="font-size: 17px;">{{c.fansK}}</span></span>
 <span class="sw-tile" style="padding: 10px 12px;"><span class="sw-tile-label">Médiane</span><span class="sw-tile-value" style="font-size: 17px;">{{c.med}}</span></span>
 
 </div>
-<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span style="display: inline-flex; align-items: center; gap: 8px;"><span class="sw-app-icon {{c.app.blank}}" style="width: 26px; height: 26px; border-radius: 6px;"><sc-if value="{{c.app.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{c.app.logo}}" alt=""></sc-if><sc-if value="{{c.app.nologo}}" hint-placeholder-val="{{false}}"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span><span style="display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 13px; font-weight: 600; color: var(--ink);">{{c.appName}}</span><span style="font-size: 11px; color: var(--ink-faint);">{{c.niche}}</span></span></span><span style="display: flex; gap: 2px;"><a class="sw-btn sw-btn-icon" href="CreateurFicheA.dc.html" aria-label="Voir la fiche de {{c.h}}" style="width: 38px; height: 38px;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;"><sc-if value="{{c.hasApp}}" hint-placeholder-val="{{true}}"><a href="{{c.appHref}}" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;"><span class="sw-app-icon {{c.app.blank}}" style="width: 26px; height: 26px; border-radius: 6px;"><sc-if value="{{c.app.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{c.app.logo}}" alt=""></sc-if><sc-if value="{{c.app.nologo}}" hint-placeholder-val="{{false}}"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span><span style="display: flex; flex-direction: column; gap: 1px;"><span style="font-size: 13px; font-weight: 600; color: var(--ink);">{{c.appName}}</span><span style="font-size: 11px; color: var(--ink-faint);">{{c.niche}}</span></span></a></sc-if><span style="display: flex; gap: 2px;"><a class="sw-btn sw-btn-icon" href="{{c.href}}" aria-label="Voir la fiche de {{c.h}}" style="width: 38px; height: 38px;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></span></div>
 </div>
 </article>
 </sc-for>
+<sc-if value="{{hasMore}}" hint-placeholder-val="{{true}}"><div style="grid-column: 1 / -1; display: flex; justify-content: center; padding-top: 8px;"><button class="sw-more" type="button" onClick="{{showMore}}" style="min-height: 44px; border: 0; background: transparent; cursor: pointer; font-family: inherit; font-size: 14px;">{{moreLabel}}<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div></sc-if>
 </div>
 </main>
 
-<sc-if value="{{pal}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 60;"><dc-import name="Palette" on-close="{{closePal}}" hint-size="100%,100%"></dc-import></div></sc-if>
+<sc-if value="{{pal}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 60;"><dc-import name="Palette" on-close="{{closePal}}" get="{{getFn}}" hint-size="100%,100%"></dc-import></div></sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":1440,"height":1820}}'>
 class Component extends DCLogic {
+  componentDidMount() {
+    // Un clic hors du menu ouvert le ferme (sauf sur une pastille : elle bascule d'elle-même).
+    this.out = (e) => {
+      const st = this.state || {};
+      if (!st.open || !this.menuEl || this.menuEl.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('[data-menu-trigger]')) return;
+      this.setState({ open: '' });
+    };
+    document.addEventListener('mousedown', this.out);
+  }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.out); }
+  componentDidUpdate(pp, ps) {
+    const st = this.state || {};
+    ps = ps || {};
+    // Menu ouvert : le focus y reste (Safari ne le donne pas au bouton cliqué), pour qu'Échap le ferme.
+    if (st.open && this.menuInput && (st.open !== ps.open || !(this.menuEl && this.menuEl.contains(document.activeElement)))) this.menuInput.focus();
+  }
 
   renderVals() {
     const b = this.baseVals();
@@ -90,30 +125,142 @@ class Component extends DCLogic {
     const sb = [["accueil", "Accueil", "Main.dc.html"], ["apps", "Apps", "AppsA.dc.html"], ["formats", "Formats", "FormatsB.dc.html"], ["createurs", "Créateurs", "CreateursA.dc.html"], ["alertes", "Alertes", "AlertesA.dc.html"], ["dossiers", "Dossiers", "DossiersA.dc.html"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'createurs' ? 'page' : 'false' }));
     return {
       sb, me,
+      getFn: this.props && this.props.get,
       pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
       aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
     };
   }
   extraVals(b) {
     const st = this.state || {};
-    const market = st.market || 'FR';
-    const active = !!st.active;
-    const mkt = (b.mkt || []).map((m) => Object.assign({}, m, { on: m.c === market ? 'true' : 'false', pick: () => this.setState({ market: m.c }) }));
-    const pool = (xs) => (market === 'FR' ? (xs || []) : []).filter((c) => !active || c.active);
-    const rows = pool(b.rows).map((c, i) => Object.assign({}, c, { rank: String(i + 1).padStart(2, '0') }));
-    const name = (b.mkt || []).filter((m) => m.c === market).map((m) => m.l)[0] || market;
-    return { mkt, rows, cards: pool(b.cards), live: pool(b.live), none: (market !== 'FR'), noneLabel: 'Aucun compte relevé pour ce marché.',
-      activeOn: active ? 'true' : 'false', toggleActive: () => this.setState({ active: !active }),
-      countLabel: market === 'FR' ? (pool(b.cards).length + ' comptes suivis en France') : ('0 compte relevé pour ce marché') };
+    const open = st.open || '';
+    const niches = st.niches || [];
+    const apps = st.apps || [];
+    const fans = st.fans || 'ALL';
+    const active = false;
+    const mq = (st.mq || '').toLowerCase();
+    const set = (patch) => this.setState(patch);
+    // Tranches d'abonnés : [clé, libellé, libellé du filtre posé, de, jusqu'à (exclu)].
+    const FB = [['ALL', 'Tous', '', 0, 0], ['s', 'Moins de 1 000', 'Moins de 1 000 abonnés', 0, 1e3], ['m', '1 000 à 10 000', '1 000 à 10 000 abonnés', 1e3, 1e4],
+      ['l', '10 000 à 100 000', '10 000 à 100 000 abonnés', 1e4, 1e5], ['xl', '100 000 et plus', '100 000 abonnés et plus', 1e5, Infinity]];
+    const fb = FB.filter((x) => x[0] === fans)[0] || FB[0];
+    const okN = (c) => niches.length === 0 || niches.indexOf(c.niche) >= 0;
+    const okA = (c) => apps.length === 0 || apps.indexOf(c.appName) >= 0;
+    const okF = (c, x) => x[0] === 'ALL' || (c.nFans >= x[3] && c.nFans < x[4]);
+    const okT = (c) => !active || c.active;
+    const all = b.all || [];
+    const list = all.filter((c) => okN(c) && okA(c) && okF(c, fb) && okT(c));
+    const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); // Safari écrit « 1059 » en fr-FR
+    const comptes = (n) => grp(n) + (n > 1 ? ' comptes' : ' compte');
+    // Un menu par pastille (comme sur Apps), posé sous la pastille cliquée.
+    const many = (xs, w) => (xs.length === 0 ? 'Toutes' : xs.length === 1 ? xs[0] : xs.length + ' ' + w);
+    const mkBar = (key, k, v) => ({ k, v, open: open === key ? 'true' : 'false', bg: open === key ? 'var(--tab-on)' : 'var(--track)', edge: open === key ? 'var(--accent-edge)' : 'var(--line)',
+      toggle: (e) => set({ open: open === key ? '' : key, mq: '', left: e && e.currentTarget ? e.currentTarget.offsetLeft : 0 }) });
+    const filters = [mkBar('niche', 'Niche', many(niches, 'niches')), mkBar('app', 'App', many(apps, 'apps')), mkBar('fans', 'Abonnés', fb[1])];
+    const chips = [];
+    niches.forEach((n) => chips.push({ label: n, clear: () => set({ niches: niches.filter((x) => x !== n) }) }));
+    apps.forEach((n) => chips.push({ label: n, clear: () => set({ apps: apps.filter((x) => x !== n) }) }));
+    if (fans !== 'ALL') chips.push({ label: fb[2], clear: () => set({ fans: 'ALL' }) });
+    const radio = (on) => ({ radius: '50%', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
+    const check = (on) => ({ radius: '5px', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
+    const keep = (label) => !mq || label.toLowerCase().indexOf(mq) >= 0;
+    const item = (label, n, on, pick, box) => Object.assign({ label, n: comptes(n), sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1, pick }, box(on));
+    // Niches et apps du marché affiché, les plus fréquentes d'abord ; les nombres tiennent compte des autres filtres.
+    const tally = (key) => { const m = {}; all.forEach((c) => { if (c[key]) m[c[key]] = (m[c[key]] || 0) + 1; }); return Object.keys(m).sort((x, y) => m[y] - m[x] || x.localeCompare(y, 'fr')); };
+    const flip = (k, xs, v) => () => set({ [k]: xs.indexOf(v) >= 0 ? xs.filter((x) => x !== v) : xs.concat([v]) });
+    const foot = 'Les nombres tiennent compte des autres filtres.';
+    let menu = { on: false, items: [], left: '0px', title: '', search: '', foot: '', cta: '', q: '' };
+    if (open === 'niche') {
+      menu = { on: true, title: 'Niche', search: 'Chercher une niche', foot: 'Plusieurs niches possibles. ' + foot,
+        items: tally('niche').filter(keep).map((nm) => item(nm, all.filter((c) => c.niche === nm && okA(c) && okF(c, fb) && okT(c)).length, niches.indexOf(nm) >= 0, flip('niches', niches, nm), check)) };
+    } else if (open === 'app') {
+      menu = { on: true, title: 'App', search: 'Chercher une app', foot: 'Plusieurs apps possibles. ' + foot,
+        items: tally('appName').filter(keep).map((nm) => item(nm, all.filter((c) => c.appName === nm && okN(c) && okF(c, fb) && okT(c)).length, apps.indexOf(nm) >= 0, flip('apps', apps, nm), check)) };
+    } else if (open === 'fans') {
+      menu = { on: true, title: 'Abonnés', search: 'Chercher une tranche', foot,
+        items: FB.filter((x) => keep(x[1])).map((x) => item(x[1], all.filter((c) => okN(c) && okA(c) && okF(c, x) && okT(c)).length, fans === x[0], () => set({ fans: x[0] }), radio)) };
+    }
+    if (menu.on) Object.assign(menu, { left: (st.left || 0) + 'px', cta: 'Voir ' + comptes(list.length), q: st.mq || '' });
+    const IN = { FR: 'en France', US: 'chez les anglophones', MX: 'en Amérique latine', ES: 'en Espagne', BR: 'au Brésil et au Portugal', XX: 'dans les autres langues' };
+    const mkt = (b.mkt || []).map((m) => Object.assign({}, m, { on: m.c === b.market ? 'true' : 'false', flag: m.c !== 'XX', href: 'CreateursB.dc.html?m=' + m.c }));
+    // 50 cartes d'abord, puis 50 de plus à la demande ; filtres et « Actifs cette semaine » portent sur toute la liste.
+    const LIM = 50;
+    const lim = st.lim || LIM;
+    const cards = list.slice(0, lim).map((c) => Object.assign({}, c, { hasCov: c.cov.length > 0, noCov: c.cov.length === 0 }));
+    // Actifs cette semaine : les premiers comptes affichés qui ont publié ces 7 derniers jours (4 au plus).
+    const wk = Date.now() - 7 * 86400000;
+    const live = (b.liveAll ? b.liveAll.filter((c) => okN(c) && okA(c) && okF(c, fb)) : list.filter((c) => c.lastAt >= wk)).slice(0, 4);
+    const view = { cards, live, liveOn: live.length > 0 };
+    return Object.assign(view, { mkt, filters, chips, menu,
+      none: b.none, noneLabel: 'Aucun compte suivi pour ce marché.', empty: !b.none && !b.wait && list.length === 0,
+      // Le document garde les 200 comptes aux plus fortes vues médianes : au-delà, on le dit.
+      countLabel: b.none || b.wait ? '' : b.total > all.length && all.length > 0
+        ? 'Les ' + all.length + ' premiers en vues médianes, sur ' + comptes(b.total) + ' suivis ' + (IN[b.shown] || '')
+        : (b.total > 1 ? grp(b.total) + ' comptes suivis ' : b.total + ' compte suivi ') + (IN[b.shown] || ''),
+      hasMore: list.length > lim, moreLabel: 'Voir ' + comptes(Math.min(LIM, list.length - lim)) + ' de plus', showMore: () => set({ lim: lim + LIM }),
+      tableHref: 'CreateursA.dc.html?m=' + b.market, cardsHref: 'CreateursB.dc.html?m=' + b.market,
+      closeMenu: () => set({ open: '' }), onMq: (e) => set({ mq: e.target.value }),
+      menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
+      setMenu: (el) => { this.menuEl = el; }, setMenuInput: (el) => { this.menuInput = el; },
+      clearAll: () => set({ niches: [], apps: [], fans: 'ALL', active: false, open: '' }) });
   }
 
   baseVals() {
+    const st = this.state || {};
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "Main.dc.html", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "AppsA.dc.html", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "FormatsA.dc.html", "cur": "false"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "CreateursA.dc.html", "cur": "page"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
-    const mkt = [{"c": "FR", "l": "France", "on": "true"}, {"c": "US", "l": "États-Unis", "on": "false"}, {"c": "MX", "l": "Mexique", "on": "false"}, {"c": "BR", "l": "Brésil", "on": "false"}, {"c": "ES", "l": "Espagne", "on": "false"}, {"c": "ID", "l": "Indonésie", "on": "false"}];
-    const filters = [{"k": "Niche", "v": "Toutes"}, {"k": "App", "v": "Toutes"}, {"k": "Abonnés", "v": "Tous"}];
+    const mkt = [{"c": "FR", "l": "France"}, {"c": "US", "l": "Anglophones"}, {"c": "MX", "l": "Amérique latine"}, {"c": "ES", "l": "Espagne"}, {"c": "BR", "l": "Brésil et Portugal"}, {"c": "XX", "l": "Autres langues"}];
     const live = [{"av": "/_blob/879b81843db833a9545fa61259273052", "noav": false, "rank": "09", "h": "@zinedine.gsbb", "bio": "L'ia c'est 👇", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "appName": "Shortfy", "niche": "Side hustle", "fans": "16 200", "fansK": "16 k", "med": "8 k", "medN": "7 792", "rev": "Entre 20 et 25 €", "rythme": "3 vidéos en 7 j", "last": "Dernière il y a 2 j", "dot": "var(--accent)", "active": true, "cov": [{"src": "/_blob/0488fb4a3b81c670ae8e5e16539e99ff", "v": "2,85 M"}, {"src": "/_blob/b4bd2f77f49284da6cb01fbacea27c87", "v": "841 k"}, {"src": "/_blob/d42ca43c8e59b9ffb98eced43927e580", "v": "791 k"}], "cov1": [{"src": "/_blob/0488fb4a3b81c670ae8e5e16539e99ff", "v": "2,85 M"}]}, {"av": "/_blob/9e71d72c907c0fb26bae7e7b8984c427", "noav": false, "rank": "11", "h": "@remistudy", "bio": "eco-droit 📚", "app": {"name": "Astra AI", "logo": "/_blob/8786a14b5a2e9593ed85c3dd97461c2b", "nologo": false, "blank": ""}, "appName": "Astra AI", "niche": "Études", "fans": "1 111", "fansK": "1 k", "med": "7 k", "medN": "7 146", "rev": "Entre 20 et 25 €", "rythme": "6 vidéos en 7 j", "last": "Dernière il y a 22 h", "dot": "var(--accent)", "active": true, "cov": [{"src": "/_blob/e1c6197f31aee7438dcb4689240478e1", "v": "645 k"}, {"src": "/_blob/80840e562ab65d914272b812428ab08e", "v": "134 k"}, {"src": "/_blob/bd005e510952851f4696e90852329ec2", "v": "130 k"}], "cov1": [{"src": "/_blob/e1c6197f31aee7438dcb4689240478e1", "v": "645 k"}]}, {"av": "/_blob/a584d1f2202efd46662d7ec92baedc8b", "noav": false, "rank": "10", "h": "@toma.ia", "bio": "J'automatise mes vidéos avec l'IA", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "appName": "Shortfy", "niche": "Side hustle", "fans": "2 596", "fansK": "3 k", "med": "8 k", "medN": "7 583", "rev": "Entre 20 et 25 €", "rythme": "3 vidéos en 7 j", "last": "Dernière il y a 23 h", "dot": "var(--accent)", "active": true, "cov": [{"src": "/_blob/aed77f1709cd6e8e52638f43b380008f", "v": "100 k"}, {"src": "/_blob/1cf900fc861f4782e4602704e335a7d5", "v": "12 k"}, {"src": "/_blob/570b80a20d7dc09945ec1557166a3166", "v": "11 k"}], "cov1": [{"src": "/_blob/aed77f1709cd6e8e52638f43b380008f", "v": "100 k"}]}, {"av": "/_blob/d059f44b38535a62fae61feeabdcbcce", "noav": false, "rank": "04", "h": "@laure_acc2", "bio": "E-mail pro dans la bio", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "appName": "Shortfy", "niche": "Side hustle", "fans": "300", "fansK": "300", "med": "32 k", "medN": "31 520", "rev": "Entre 80 et 110 €", "rythme": "7 vidéos en 7 j", "last": "Dernière il y a 8 h", "dot": "var(--accent)", "active": true, "cov": [{"src": "/_blob/3d311cc9df04ec48df25bf6273370f52", "v": "105 k"}, {"src": "/_blob/e1d85fc449e02625c3b78d4d94a65b4e", "v": "92 k"}, {"src": "/_blob/b9000ec4bbec676a12fd7d82db3bf9e4", "v": "58 k"}], "cov1": [{"src": "/_blob/3d311cc9df04ec48df25bf6273370f52", "v": "105 k"}]}];
     const cards = [{"av": "", "noav": true, "rank": "01", "h": "@bobbybinks21", "bio": "Que du concret. Je teste des business", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "appName": "Shortfy", "niche": "Side hustle", "fans": "13 588", "fansK": "14 k", "med": "197 k", "medN": "197 157", "rev": "Entre 490 et 690 €", "rythme": "Rien en 7 j", "last": "Dernière il y a 13 j", "dot": "var(--line-strong)", "active": false, "cov": [{"src": "/_blob/19d2cc78672d2b74e3acaeb184e7cf66", "v": "564 k"}, {"src": "/_blob/c406311df36a68d913f0a477c4b8454a", "v": "396 k"}, {"src": "/_blob/41f89a7b769d3942e4128b714c3d582d", "v": "375 k"}], "cov1": [{"src": "/_blob/19d2cc78672d2b74e3acaeb184e7cf66", "v": "564 k"}]}, {"av": "/_blob/81f078d58dcc24255bdb300225f88d9b", "noav": false, "rank": "02", "h": "@meli83.fit", "bio": "Réponse jeux Stalkie 🫶🏼🩷", "app": {"name": "Stalkie", "logo": "/_blob/cb91fa2be6417d6f2c328ac57b0dbc42", "nologo": false, "blank": ""}, "appName": "Stalkie", "niche": "Jalousie et ex", "fans": "667", "fansK": "667", "med": "78 k", "medN": "78 037", "rev": "Entre 200 et 270 €", "rythme": "Rien en 7 j", "last": "Dernière il y a 26 j", "dot": "var(--line-strong)", "active": false, "cov": [{"src": "/_blob/08803231eb7ba99e9f91930899051246", "v": "214 k"}, {"src": "/_blob/4123877874903f5c4476b28136bedb0d", "v": "157 k"}, {"src": "/_blob/fa2875475f9f859691f6bca708d85415", "v": "109 k"}], "cov1": [{"src": "/_blob/08803231eb7ba99e9f91930899051246", "v": "214 k"}]}, {"av": "", "noav": true, "rank": "03", "h": "@paul.crown4", "bio": "Dégât dégât · The Cringe app", "app": {"name": "The Cringe", "logo": "/_blob/0e51161329a4189b50f8adb0cab1c2e3", "nologo": false, "blank": ""}, "appName": "The Cringe", "niche": "Jalousie et ex", "fans": "104", "fansK": "104", "med": "33 k", "medN": "33 347", "rev": "Entre 80 et 120 €", "rythme": "Rien en 7 j", "last": "Dernière il y a 5 mois", "dot": "var(--line-strong)", "active": false, "cov": [{"src": "/_blob/038553a877ce8b36325c1a7dffb2e12a", "v": "76 k"}, {"src": "/_blob/5e621c7ef9aae41691538726fbba1393", "v": "72 k"}], "cov1": [{"src": "/_blob/038553a877ce8b36325c1a7dffb2e12a", "v": "76 k"}]}, {"av": "/_blob/d059f44b38535a62fae61feeabdcbcce", "noav": false, "rank": "04", "h": "@laure_acc2", "bio": "E-mail pro dans la bio", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "appName": "Shortfy", "niche": "Side hustle", "fans": "300", "fansK": "300", "med": "32 k", "medN": "31 520", "rev": "Entre 80 et 110 €", "rythme": "7 vidéos en 7 j", "last": "Dernière il y a 8 h", "dot": "var(--accent)", "active": true, "cov": [{"src": "/_blob/3d311cc9df04ec48df25bf6273370f52", "v": "105 k"}, {"src": "/_blob/e1d85fc449e02625c3b78d4d94a65b4e", "v": "92 k"}, {"src": "/_blob/b9000ec4bbec676a12fd7d82db3bf9e4", "v": "58 k"}], "cov1": [{"src": "/_blob/3d311cc9df04ec48df25bf6273370f52", "v": "105 k"}]}, {"av": "/_blob/489dd79d895ff42fbf670113d1d5af6d", "noav": false, "rank": "06", "h": "@noah_031108", "bio": "Books, work… and others ⭐️", "app": {"name": "Knowunity", "logo": "/_blob/dcc1fbabb3581c11feb02163611cedd9", "nologo": false, "blank": ""}, "appName": "Knowunity", "niche": "Études", "fans": "13 409", "fansK": "13 k", "med": "13 k", "medN": "12 796", "rev": "Entre 30 et 45 €", "rythme": "Rien en 7 j", "last": "Dernière il y a 40 j", "dot": "var(--line-strong)", "active": false, "cov": [{"src": "/_blob/a7c4d5fedcf7826a22f2882c28b7eb7a", "v": "200 k"}, {"src": "/_blob/354456ba1333357e346f0904993e999e", "v": "114 k"}, {"src": "/_blob/0f20a04249db07d37eb7dc358b7d50c8", "v": "21 k"}], "cov1": [{"src": "/_blob/a7c4d5fedcf7826a22f2882c28b7eb7a", "v": "200 k"}]}, {"av": "/_blob/3086f94ffd766544a791563f7d11e6d3", "noav": false, "rank": "07", "h": "@stalkie_fr", "bio": "Deviens ambassadrice Stalkie 👇", "app": {"name": "Stalkie", "logo": "/_blob/cb91fa2be6417d6f2c328ac57b0dbc42", "nologo": false, "blank": ""}, "appName": "Stalkie", "niche": "Jalousie et ex", "fans": "3 673", "fansK": "4 k", "med": "9 k", "medN": "9 295", "rev": "Entre 25 et 35 €", "rythme": "Rien en 7 j", "last": "Dernière il y a 7 mois", "dot": "var(--line-strong)", "active": false, "cov": [{"src": "/_blob/4d277b6b8b270d5ecf2d32f3598772ed", "v": "13 k"}, {"src": "/_blob/e2db6089f9e25860b38e79456ff3c25e", "v": "11 k"}, {"src": "/_blob/8b480a4fa406ceb6e6769d2b4ce75483", "v": "10 k"}], "cov1": [{"src": "/_blob/4d277b6b8b270d5ecf2d32f3598772ed", "v": "13 k"}]}, {"av": "/_blob/879b81843db833a9545fa61259273052", "noav": false, "rank": "09", "h": "@zinedine.gsbb", "bio": "L'ia c'est 👇", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "appName": "Shortfy", "niche": "Side hustle", "fans": "16 200", "fansK": "16 k", "med": "8 k", "medN": "7 792", "rev": "Entre 20 et 25 €", "rythme": "3 vidéos en 7 j", "last": "Dernière il y a 2 j", "dot": "var(--accent)", "active": true, "cov": [{"src": "/_blob/0488fb4a3b81c670ae8e5e16539e99ff", "v": "2,85 M"}, {"src": "/_blob/b4bd2f77f49284da6cb01fbacea27c87", "v": "841 k"}, {"src": "/_blob/d42ca43c8e59b9ffb98eced43927e580", "v": "791 k"}], "cov1": [{"src": "/_blob/0488fb4a3b81c670ae8e5e16539e99ff", "v": "2,85 M"}]}, {"av": "/_blob/a584d1f2202efd46662d7ec92baedc8b", "noav": false, "rank": "10", "h": "@toma.ia", "bio": "J'automatise mes vidéos avec l'IA", "app": {"name": "Shortfy", "logo": "", "nologo": true, "blank": "sw-app-blank"}, "appName": "Shortfy", "niche": "Side hustle", "fans": "2 596", "fansK": "3 k", "med": "8 k", "medN": "7 583", "rev": "Entre 20 et 25 €", "rythme": "3 vidéos en 7 j", "last": "Dernière il y a 23 h", "dot": "var(--accent)", "active": true, "cov": [{"src": "/_blob/aed77f1709cd6e8e52638f43b380008f", "v": "100 k"}, {"src": "/_blob/1cf900fc861f4782e4602704e335a7d5", "v": "12 k"}, {"src": "/_blob/570b80a20d7dc09945ec1557166a3166", "v": "11 k"}], "cov1": [{"src": "/_blob/aed77f1709cd6e8e52638f43b380008f", "v": "100 k"}]}, {"av": "/_blob/9e71d72c907c0fb26bae7e7b8984c427", "noav": false, "rank": "11", "h": "@remistudy", "bio": "eco-droit 📚", "app": {"name": "Astra AI", "logo": "/_blob/8786a14b5a2e9593ed85c3dd97461c2b", "nologo": false, "blank": ""}, "appName": "Astra AI", "niche": "Études", "fans": "1 111", "fansK": "1 k", "med": "7 k", "medN": "7 146", "rev": "Entre 20 et 25 €", "rythme": "6 vidéos en 7 j", "last": "Dernière il y a 22 h", "dot": "var(--accent)", "active": true, "cov": [{"src": "/_blob/e1c6197f31aee7438dcb4689240478e1", "v": "645 k"}, {"src": "/_blob/80840e562ab65d914272b812428ab08e", "v": "134 k"}, {"src": "/_blob/bd005e510952851f4696e90852329ec2", "v": "130 k"}], "cov1": [{"src": "/_blob/e1c6197f31aee7438dcb4689240478e1", "v": "645 k"}]}];
-    return { nav, mkt, filters, live, cards };
+    const num = (s) => Number(String(s).replace(/\D/g, '')) || 0;
+    // L'exemple (France seulement) mis au format des lignes.
+    const norm = (c) => Object.assign({}, c, { href: 'CreateurFicheA.dc.html?h=' + c.h.slice(1), hasApp: true, appHref: 'FicheA.dc.html', nFans: num(c.fans), nMed: num(c.medN),
+      cov: c.cov.map((v) => Object.assign({ href: 'VideoA.dc.html' }, v)) });
+    let all = cards.map(norm);
+    // Sur le site : les vraies données du Radar (document « creators:<marché> », convex/radarModels.ts) ;
+    // un autre marché se lit avec get(), et la liste d'avant reste affichée tant qu'il charge.
+    // Sur le canevas : l'exemple ci-dessus.
+    const P = this.props || {};
+    const D = P.data;
+    const site = D !== undefined || typeof P.get === 'function';
+    // Le marché vient de l'adresse (?m=US) : il suit le passage Tableau ↔ Cartes et reste au retour sur la page.
+    // Sur le site, this.props.query ; sur le canevas, location.search.
+    const MK = ['FR', 'US', 'MX', 'ES', 'BR', 'XX'];
+    let qm = P.query ? P.query.m : null;
+    if (!P.query && typeof location !== 'undefined') { try { qm = new URLSearchParams(location.search).get('m'); } catch (e) { qm = null; } }
+    qm = String(qm || '').toUpperCase();
+    const market = MK.indexOf(qm) >= 0 ? qm : (D && D.market) || 'FR';
+    let shown = market, total = all.length, none = market !== 'FR', wait = false;
+    if (none) all = [];
+    if (site) {
+      // L'adresse porte creators:FR ; un autre marché se lit avec get() (undefined tant qu'il charge : ni liste ni « aucun compte »).
+      const doc = D && D.market === market ? D : (P.get ? P.get('creators:' + market) : null);
+      wait = doc === undefined;
+      none = !wait && !(doc && doc.creators && doc.creators.length);
+      shown = doc && doc.market ? doc.market : market;
+      total = wait || none ? 0 : (doc.total || doc.creators.length);
+      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+      const isN = (n) => typeof n === 'number' && isFinite(n);
+      const ago = (ms) => { const hr = Math.max(1, Math.round((Date.now() - ms) / 3600000)); const d = Math.round(hr / 24);
+        return hr < 24 ? 'il y a ' + hr + ' h' : d < 60 ? 'il y a ' + d + ' j' : d < 365 ? 'il y a ' + Math.round(d / 30.4) + ' mois' : 'il y a ' + Math.round(d / 365) + (d < 548 ? ' an' : ' ans'); };
+      // La bio en une ligne : sa première ligne qui contient du texte (pas seulement des émojis).
+      const line = (s) => { const ls = String(s || '').split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean); return ls.filter((x) => /\p{L}/u.test(x))[0] || ls[0] || ''; };
+      all = wait || none ? [] : doc.creators.map((c) => {
+        const a = c.app || null;
+        const ic = (a && a.icon) || '';
+        const on = c.posts7d > 0;
+        return {
+          h: '@' + c.handle, href: 'CreateurFicheA.dc.html?h=' + c.handle, bio: line(c.bio), av: '', noav: true,
+          app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, hasApp: !!a,
+          appName: a ? a.name : '', niche: (a && a.niche) || '', appHref: a ? 'FicheA.dc.html?app=' + a.slug : 'AppsA.dc.html',
+          fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('fr-FR') : '', fansK: isN(c.fans) ? nf(c.fans) : '', nFans: isN(c.fans) ? c.fans : -1,
+          med: isN(c.median) ? nf(c.median) : '', nMed: isN(c.median) ? c.median : 0,
+          rythme: isN(c.posts7d) ? (on ? c.posts7d + (c.posts7d > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j') : '',
+          last: c.lastPostAt ? 'Dernière ' + ago(c.lastPostAt) : '', lastAt: c.lastPostAt || 0,
+          dot: on ? 'var(--accent)' : 'var(--line-strong)', active: on,
+          cov: (c.best || []).map((v) => ({ src: v.cover || '', v: nf(v.views), href: 'VideoA.dc.html?v=' + v.id }))
+        };
+      });
+    }
+    return { nav, mkt, all, market, shown, total, none, wait, liveAll: site ? null : (none ? [] : live.map(norm)) };
   }
 }
 </script>

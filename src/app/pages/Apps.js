@@ -34,7 +34,7 @@ export default class Apps extends DCLogic {
     const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
     const sb = [["accueil", "Accueil", "/app"], ["apps", "Apps", "/app/apps"], ["formats", "Formats", "/app/formats"], ["createurs", "Créateurs", "/app/createurs"], ["alertes", "Alertes", "/app/alertes"], ["dossiers", "Dossiers", "/app/dossiers"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'apps' ? 'page' : 'false' }));
     return {
-      sb, me,
+      sb, me, getFn: this.props && this.props.get, savedFn: this.props && this.props.saved, saveFn: this.props && this.props.save,
       pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
       aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
     };
@@ -46,42 +46,70 @@ return {};
 
   baseVals() {
     const st = this.state || {};
-    const A = [["Rizz App", "Séduction IA", ["US", "ID", "MX"], 82, 332, 59.67, [0.6, 10.8, 0.5, 16.1, 23.7, 14.1], "120×", ["/media/app/v-7702250997850098958.jpg", "/media/app/v-7700724672438045965.jpg", "/media/app/v-7702290769213672718.jpg"], ["2,6 M", "2,5 M", "1,9 M"], ""], ["Astra AI", "Études", ["ID", "US", "ES", "FR", "MX", "BR"], 269, 1360, 57.66, [10.6, 9.8, 8.9, 8.5, 17.3, 18.4], "2 333×", ["/media/app/v-7700392351268752661.jpg", "/media/app/v-7697654738124442896.jpg", "/media/app/v-7702743575934684437.jpg"], ["2,6 M", "2,6 M", "2,3 M"], "/media/app/app-astra-ai.jpg"], ["Knowunity", "Études", ["US", "ID", "ES", "FR", "MX"], 55, 205, 44.43, [4.2, 0.6, 14.6, 16.8, 7.0, 6.1], "101×", ["/media/app/v-7699151144400244000.jpg", "/media/app/v-7702625361716170002.jpg", "/media/app/v-7698010148391947552.jpg"], ["5,7 M", "3,5 M", "2,5 M"], "/media/app/app-knowunity.jpg"], ["Love8", "Couple", ["ID", "US", "FR", "MX"], 83, 282, 35.06, [1.7, 3.4, 7.1, 4.0, 10.6, 12.6], "1 737×", ["/media/app/v-7705441234847862037.jpg", "/media/app/v-7705024255746002182.jpg", "/media/app/v-7701914062296337685.jpg"], ["2 M", "1,9 M", "1,8 M"], "/media/app/app-love8.jpg"], ["WRizz", "Séduction IA", ["US", "ID"], 81, 410, 31.94, [0.4, 2.5, 0.6, 8.0, 10.1, 12.4], "110×", ["/media/app/v-7706018218397273362.jpg", "/media/app/v-7700803310495829266.jpg", "/media/app/v-7701533350825037063.jpg"], ["5 M", "3 M", "1,9 M"], "/media/app/app-wrizz.jpg"], ["Wing AI", "Séduction IA", ["US", "MX"], 124, 251, 19.62, [0.7, 1.9, 1.6, 2.4, 7.0, 6.9], "109×", ["/media/app/v-7703242451120688405.jpg", "/media/app/v-7701632447951211798.jpg", "/media/app/v-7705479809580715284.jpg"], ["1,4 M", "876 k", "869 k"], "/media/app/app-wing-ai.jpg"], ["Cal AI", "Santé et physique", ["US"], 6, 42, 17.13, [0.01, 0.01, 0.3, 7.8, 5.4, 3.7], "9,5×", ["/media/app/v-7701127438704577823.jpg", "/media/app/v-7702142316479384853.jpg", "/media/app/v-7706561664451136788.jpg"], ["1,3 M", "878 k", "757 k"], "/media/app/app-cal-ai.jpg"], ["Praktika", "Langues", ["ID", "US", "FR", "BR", "MX"], 92, 577, 16.58, [5.9, 0.4, 0.4, 0.5, 7.7, 8.0], "70×", ["/media/app/v-7704867469072141588.jpg", "/media/app/v-7704226978622082324.jpg", "/media/app/v-7703758186087566612.jpg"], ["2,1 M", "1,9 M", "1,5 M"], "/media/app/app-praktika.jpg"], ["RecentFollow", "Jalousie et ex", ["US", "MX"], 39, 294, 13.06, [0.01, 0.01, 0.7, 1.1, 4.2, 7.0], "750×", ["/media/app/v-7705376808862076182.jpg", "/media/app/v-7706834426096815382.jpg", "/media/app/v-7700279402319367425.jpg"], ["1,2 M", "874 k", "854 k"], ""], ["The Cringe", "Jalousie et ex", ["US", "FR", "ID"], 18, 49, 12.18, [0.1, 0.01, 0.8, 2.9, 5.0, 3.4], "53×", ["/media/app/v-7703301496879861014.jpg", "/media/app/v-7705159889147923734.jpg", "/media/app/v-7701454363897629974.jpg"], ["2,5 M", "1,1 M", "1,1 M"], "/media/app/app-the-cringe.jpg"]];
-    const MKD = {"Astra AI": [["ID", "Indonésie et Vietnam", 65], ["US", "États-Unis", 19], ["ES", "Espagne", 8], ["BR", "Brésil et Portugal", 5], ["FR", "France", 2], ["MX", "Amérique latine", 1]], "Love8": [["US", "États-Unis", 66], ["ID", "Indonésie et Vietnam", 23], ["FR", "France", 8], ["MX", "Amérique latine", 4]]};
-    const MKS = [['ALL', 'Tous les marchés', ''], ['US', 'États-Unis', 'US'], ['ID', 'Indonésie et Vietnam', 'ID'], ['MX', 'Mexique et Amérique latine', 'MX'], ['FR', 'France', 'FR'], ['BR', 'Brésil', 'BR'], ['ES', 'Espagne', 'ES']];
-    const NIS = ['Séduction IA', 'Jalousie et ex', 'Études', 'Santé et physique', 'Couple', 'Langues', 'Side hustle', 'Foi', 'Social et loisirs', 'Beauté IA'];
+    let A = [["Rizz App", "Séduction IA", ["US", "ID", "MX"], 82, 332, 59.67, [0.6, 10.8, 0.5, 16.1, 23.7, 14.1], "120×", ["/media/app/v-7702250997850098958.jpg", "/media/app/v-7700724672438045965.jpg", "/media/app/v-7702290769213672718.jpg"], ["2,6 M", "2,5 M", "1,9 M"], ""], ["Astra AI", "Études", ["ID", "US", "ES", "FR", "MX", "BR"], 269, 1360, 57.66, [10.6, 9.8, 8.9, 8.5, 17.3, 18.4], "2 333×", ["/media/app/v-7700392351268752661.jpg", "/media/app/v-7697654738124442896.jpg", "/media/app/v-7702743575934684437.jpg"], ["2,6 M", "2,6 M", "2,3 M"], "/media/app/app-astra-ai.jpg"], ["Knowunity", "Études", ["US", "ID", "ES", "FR", "MX"], 55, 205, 44.43, [4.2, 0.6, 14.6, 16.8, 7.0, 6.1], "101×", ["/media/app/v-7699151144400244000.jpg", "/media/app/v-7702625361716170002.jpg", "/media/app/v-7698010148391947552.jpg"], ["5,7 M", "3,5 M", "2,5 M"], "/media/app/app-knowunity.jpg"], ["Love8", "Couple", ["ID", "US", "FR", "MX"], 83, 282, 35.06, [1.7, 3.4, 7.1, 4.0, 10.6, 12.6], "1 737×", ["/media/app/v-7705441234847862037.jpg", "/media/app/v-7705024255746002182.jpg", "/media/app/v-7701914062296337685.jpg"], ["2 M", "1,9 M", "1,8 M"], "/media/app/app-love8.jpg"], ["WRizz", "Séduction IA", ["US", "ID"], 81, 410, 31.94, [0.4, 2.5, 0.6, 8.0, 10.1, 12.4], "110×", ["/media/app/v-7706018218397273362.jpg", "/media/app/v-7700803310495829266.jpg", "/media/app/v-7701533350825037063.jpg"], ["5 M", "3 M", "1,9 M"], "/media/app/app-wrizz.jpg"], ["Wing AI", "Séduction IA", ["US", "MX"], 124, 251, 19.62, [0.7, 1.9, 1.6, 2.4, 7.0, 6.9], "109×", ["/media/app/v-7703242451120688405.jpg", "/media/app/v-7701632447951211798.jpg", "/media/app/v-7705479809580715284.jpg"], ["1,4 M", "876 k", "869 k"], "/media/app/app-wing-ai.jpg"], ["Cal AI", "Santé et physique", ["US"], 6, 42, 17.13, [0.01, 0.01, 0.3, 7.8, 5.4, 3.7], "9,5×", ["/media/app/v-7701127438704577823.jpg", "/media/app/v-7702142316479384853.jpg", "/media/app/v-7706561664451136788.jpg"], ["1,3 M", "878 k", "757 k"], "/media/app/app-cal-ai.jpg"], ["Praktika", "Langues", ["ID", "US", "FR", "BR", "MX"], 92, 577, 16.58, [5.9, 0.4, 0.4, 0.5, 7.7, 8.0], "70×", ["/media/app/v-7704867469072141588.jpg", "/media/app/v-7704226978622082324.jpg", "/media/app/v-7703758186087566612.jpg"], ["2,1 M", "1,9 M", "1,5 M"], "/media/app/app-praktika.jpg"], ["RecentFollow", "Jalousie et ex", ["US", "MX"], 39, 294, 13.06, [0.01, 0.01, 0.7, 1.1, 4.2, 7.0], "750×", ["/media/app/v-7705376808862076182.jpg", "/media/app/v-7706834426096815382.jpg", "/media/app/v-7700279402319367425.jpg"], ["1,2 M", "874 k", "854 k"], ""], ["The Cringe", "Jalousie et ex", ["US", "FR", "ID"], 18, 49, 12.18, [0.1, 0.01, 0.8, 2.9, 5.0, 3.4], "53×", ["/media/app/v-7703301496879861014.jpg", "/media/app/v-7705159889147923734.jpg", "/media/app/v-7701454363897629974.jpg"], ["2,5 M", "1,1 M", "1,1 M"], "/media/app/app-the-cringe.jpg"]];
+    let MKD = {"Astra AI": [["ID", "Indonésie et Vietnam", 65], ["US", "États-Unis", 19], ["ES", "Espagne", 8], ["BR", "Brésil et Portugal", 5], ["FR", "France", 2], ["MX", "Amérique latine", 1]], "Love8": [["US", "États-Unis", 66], ["ID", "Indonésie et Vietnam", 23], ["FR", "France", 8], ["MX", "Amérique latine", 4]]};
+    let MKS = [['ALL', 'Tous les marchés', ''], ['US', 'États-Unis', 'US'], ['ID', 'Indonésie et Vietnam', 'ID'], ['MX', 'Mexique et Amérique latine', 'MX'], ['FR', 'France', 'FR'], ['BR', 'Brésil', 'BR'], ['ES', 'Espagne', 'ES']];
+    let NIS = ['Séduction IA', 'Jalousie et ex', 'Études', 'Santé et physique', 'Couple', 'Langues', 'Side hustle', 'Foi', 'Social et loisirs', 'Beauté IA'];
     const T = ['t-plum', 't-navy', 't-pine', 't-violet', 't-umber', 't-amber'];
+    // Sur le site : les vraies données du Radar (document « apps », convex/radarModels.ts).
+    // Sur le canevas : l'exemple ci-dessus. A[i] = [nom, niche, marchés, comptes, vidéos/sem.,
+    // vues 30 j (M), 6 semaines (M), meilleure, miniatures, vues des miniatures, icône,
+    // slug, id des vidéos, nouvelle ?, vues 30 j TikTok (M), Instagram (M), 7 j TikTok (M), 7 j Instagram (M)]
+    const D = this.props && this.props.data;
+    const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
+    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+    const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+    if (D && D.apps) {
+      const LBL = Object.fromEntries(D.markets);
+      A = D.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, a.weeks.map((w) => w / 1e6),
+        a.bestX ? xf(a.bestX) : '—', a.top.map((t) => t.cover || ''), a.top.map((t) => nf(t.views)), a.icon || '', a.slug, a.top.map((t) => t.id), a.isNew,
+        (a.views30 - a.views30Ig) / 1e6, a.views30Ig / 1e6, (a.views7 - (a.views7Ig || 0)) / 1e6, (a.views7Ig || 0) / 1e6]);
+      MKD = Object.fromEntries(D.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || c, p])]));
+      MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c === 'XX' ? '' : c]));
+      NIS = D.niches;
+    }
+    const ficheOf = (a) => (a[11] ? '/app/apps/' + a[11] : '/app/apps/astraai');
+    const videoOf = (a, j) => '/app/videos/' + ((a[12] && a[12][j]) || vkey(a[8][j]));
     const open = st.open || '';
     const market = st.market || 'ALL';
-    const niches = st.niches || [];
+    // /app/apps?niche=<nom> (pastilles de l'accueil) : cette niche est cochée d'entrée, puis se modifie comme un filtre normal.
+    // Sur le canevas, la même valeur se lit dans location.search. Un nom inconnu est ignoré.
+    const qn = this.props && this.props.query ? this.props.query.niche : (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('niche') : null);
+    const niches = st.niches || (qn && NIS.indexOf(qn) >= 0 ? [qn] : []);
     const sort = st.sort || 'vues';
     const period = st.period || '30';
     const mq = (st.mq || '').toLowerCase();
     const fr = (x, d) => x.toFixed(d).replace('.', ',');
     const okM = (a, m) => m === 'ALL' || a[2].indexOf(m) >= 0;
     const okN = (a, ns) => ns.length === 0 || ns.indexOf(a[1]) >= 0;
-    const isNew = (a) => a[6][0] + a[6][1] < 0.2;
-    const views = (a) => (period === '7' ? a[6][5] : a[5]);
-    const dlt = (a) => (a[6][5] - a[6][4]) / a[6][4];
-    const set = (patch) => this.setState(Object.assign({ open, market, niches, sort, period }, patch));
-    let list = A.filter((a) => okM(a, market) && okN(a, niches));
+    const platform = st.platform || 'ALL';
+    const isNew = (a) => (a[13] !== undefined ? a[13] : a[6][0] + a[6][1] < 0.2);
+    // Vues de la période et de la plateforme choisies (sans découpage par plateforme dans l'exemple : le total).
+    const views = (a) => {
+      if (platform === 'tiktok' && a[14] !== undefined) return period === '7' ? a[16] : a[14];
+      if (platform === 'instagram' && a[15] !== undefined) return period === '7' ? a[17] : a[15];
+      return period === '7' ? a[6][5] : a[5];
+    };
+    const dlt = (a) => (a[6][4] > 0 ? (a[6][5] - a[6][4]) / a[6][4] : 0);
+    const set = (patch) => this.setState(Object.assign({ open, market, niches, sort, period, platform }, patch));
+    let list = A.filter((a) => okM(a, market) && okN(a, niches) && (platform === 'ALL' || views(a) > 0));
     if (sort === 'nouvelles') list = list.filter(isNew);
     list = list.slice().sort((x, y) => (sort === 'accel' ? dlt(y) - dlt(x) : views(y) - views(x)));
     const rows = list.map((a, i) => {
       const w = a[6];
-      const max = Math.max.apply(null, w);
+      const max = Math.max.apply(null, w) || 1;
       const pts = w.map((v, j) => [2 + j * 25.2, 36 - (v / max) * 30]);
       const line = 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
       const d = dlt(a);
       const up = d >= 0;
       return {
-        rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mk: a[2].slice(0, 3).map((c) => ({ c })),
+        rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mk: a[2].filter((c) => c !== 'XX').slice(0, 3).map((c) => ({ c })),
         acc: a[3], ppw: a[4].toLocaleString('fr-FR'), v30: fr(views(a), 1) + ' M',
         delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
         line, area: line + ' L127.9 40 L2 40 Z', endY: pts[5][1].toFixed(1),
         stroke: up ? '#4C9AFF' : '#8A93A3', fill: up ? 'rgba(76,154,255,0.16)' : 'rgba(138,147,163,0.12)',
         revLo: Math.round(views(a) * 2.5), revHi: Math.round(views(a) * 3.5), best: a[7],
-        thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length] })),
+        thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length], href: videoOf(a, j) })).filter((t) => t.src),
         logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank',
         bg: st.pv === a[0] ? 'var(--accent-soft)' : 'transparent',
         open: () => this.setState({ pv: a[0], open: '' })
@@ -91,10 +119,12 @@ return {};
     const nLabel = niches.length === 0 ? 'Toutes' : (niches.length === 1 ? niches[0] : niches.length + ' niches');
     const mkBar = (key, k, v) => ({ k, v, open: open === key ? 'true' : 'false', bg: open === key ? 'var(--tab-on)' : 'var(--track)', edge: open === key ? 'var(--accent-edge)' : 'var(--line)',
       toggle: () => set({ open: open === key ? '' : key, mq: '' }) });
-    const bar = [mkBar('marche', 'Marché', market === 'ALL' ? 'Tous' : mLabel), mkBar('niche', 'Niche', nLabel), mkBar('plateforme', 'Plateforme', 'Toutes')];
+    const PL = { ALL: 'Toutes', tiktok: 'TikTok', instagram: 'Instagram' };
+    const bar = [mkBar('marche', 'Marché', market === 'ALL' ? 'Tous' : mLabel), mkBar('niche', 'Niche', nLabel), mkBar('plateforme', 'Plateforme', PL[platform])];
     const chips = [];
     if (market !== 'ALL') chips.push({ label: mLabel, clear: () => set({ market: 'ALL' }) });
     niches.forEach((n) => chips.push({ label: n, clear: () => set({ niches: niches.filter((x) => x !== n) }) }));
+    if (platform !== 'ALL') chips.push({ label: PL[platform], clear: () => set({ platform: 'ALL' }) });
     const radio = (on) => ({ radius: '50%', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const check = (on) => ({ radius: '5px', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const keep = (label) => !mq || label.toLowerCase().indexOf(mq) >= 0;
@@ -110,28 +140,45 @@ return {};
             pick: () => set({ niches: on ? niches.filter((x) => x !== nm) : niches.concat([nm]) }) }, check(on)); }) };
     } else if (open === 'plateforme') {
       menu = { on: true, left: '328px', title: 'Plateforme', search: 'Chercher une plateforme', foot: 'YouTube Shorts arrive bientôt.',
-        items: [['TikTok', ''], ['Instagram', ''], ['YouTube Shorts', 'Bientôt']].filter((p) => keep(p[0])).map((p) => Object.assign({ label: p[0], flag: false, n: p[1], sel: 'false', bg: 'transparent', w: 500, o: p[1] ? 0.45 : 1, pick: () => {} }, check(false))) };
+        items: [['ALL', 'Toutes'], ['tiktok', 'TikTok'], ['instagram', 'Instagram']].filter((p) => keep(p[1])).map((p) => { const on = platform === p[0];
+          return Object.assign({ label: p[1], flag: false, n: '', sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: 1, pick: () => set({ platform: p[0] }) }, radio(on)); }) };
     }
     const sorts = [['vues', 'Les plus vues'], ['accel', 'Qui accélèrent'], ['nouvelles', 'Nouvelles']].map((s) => ({ l: s[1], on: s[0] === sort ? 'true' : 'false', pick: () => set({ sort: s[0] }) }));
     const periods = [['7', '7 jours'], ['30', '30 jours']].map((p) => ({ l: p[1], on: p[0] === period ? 'true' : 'false', pick: () => set({ period: p[0] }) }));
     const pa = A.filter((a) => a[0] === st.pv)[0];
     let pv = { on: false };
+    let ajItem = null;
+    // Suivre une app : sur le site, follows.apps (saved) par slug ; sur le canevas, l'état local par nom.
+    const P = this.props || {};
+    const live = typeof P.saved === 'function' && typeof P.save === 'function';
+    const fw = live ? P.saved('follows') : null;
+    const followed = (a) => (live ? !!(fw && a[11] && (fw.apps || []).indexOf(a[11]) >= 0) : !!(st.follow || {})[a[0]]);
+    const toggleFollow = (a) => {
+      if (!live) return this.setState({ follow: Object.assign({}, (this.state || {}).follow || {}, { [a[0]]: !followed(a) }) });
+      const cur = P.saved('follows');
+      if (cur === undefined || !a[11]) return;
+      const next = Object.assign({ apps: [], creators: [], formats: [] }, cur || {});
+      const l = next.apps || [];
+      next.apps = l.indexOf(a[11]) >= 0 ? l.filter((x) => x !== a[11]) : [a[11]].concat(l);
+      P.save('follows', next);
+    };
     if (pa) {
-      const w = pa[6]; const mx = Math.max.apply(null, w);
+      const w = pa[6]; const mx = Math.max.apply(null, w) || 1;
       const pts = w.map((v, j) => [6 + j * 90.4, 90 - v / mx * 74]);
       const line = 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
       const d = dlt(pa);
       const md = MKD[pa[0]];
-      pv = { on: true, n: pa[0], niche: pa[1], mk: pa[2].slice(0, 3).map((c) => ({ c })), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
+      pv = { on: true, n: pa[0], niche: pa[1], mk: pa[2].filter((c) => c !== 'XX').slice(0, 3).map((c) => ({ c })), logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
         lo: Math.round(pa[5] * 2.5), hi: Math.round(pa[5] * 3.5), delta: (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine',
         line, area: line + ' L458 94 L6 94 Z', ex: pts[5][0].toFixed(1), ey: pts[5][1].toFixed(1), week: fr(w[5], 1) + ' M',
         v30: fr(pa[5], 1) + ' M', acc: pa[3], ppw: pa[4].toLocaleString('fr-FR'),
-        vids: pa[8].map((src, j) => ({ src, v: pa[9][j] })),
+        vids: pa[8].map((src, j) => ({ src, v: pa[9][j], href: videoOf(pa, j) })).filter((x) => x.src), href: ficheOf(pa),
         hasMk: !!md, noMk: !md, mkd: (md || []).map((m, i) => ({ c: m[0], l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' })),
-        followLabel: (st.follow || {})[pa[0]] ? 'Suivie' : 'Suivre ' + pa[0], follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) };
+        followLabel: followed(pa) ? 'Suivie' : 'Suivre ' + pa[0], followOn: followed(pa) ? 'true' : 'false', follow: () => toggleFollow(pa) };
+      ajItem = { kind: 'app', id: pa[11] || pa[0], label: pa[0], cover: pa[10] || null };
     }
     return {
-      rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv,
+      rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv, ajItem,
       vlab: period === '7' ? 'Vues 7 j' : 'Vues 30 j', rlab: period === '7' ? 'sur 7 jours' : 'sur 30 jours', sortLabel: sort === 'accel' ? 'progression de la semaine' : (period === '7' ? 'vues 7 j' : 'vues 30 j'),
       closeMenu: () => set({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
@@ -179,11 +226,6 @@ return {};
             )
           ]),
           $h("div", { "class": "sw-side-foot" },
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Passer au thème clair" },
-              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
-            ),
             $h("a", { "class": "sw-avatar", "href": "/app/compte", "aria-label": "Mon compte", "style": "text-decoration: none;" },
               $t($v.me?.initiale)
             )
@@ -339,7 +381,7 @@ return {};
                       $h("button", { "type": "button", "class": "sw-app", "onClick": r?.open, "aria-label": `Aperçu de ${$t(r?.n)}`, "style": "border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;" },
                         $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 40px; height: 40px; border-radius: 12px;" },
                           (r?.logo) ? [
-                            $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "" })
+                            $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (r?.nologo) ? [
                             $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -379,7 +421,7 @@ return {};
                         $h("span", { "style": "font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink);" },
                           $t(r?.v30)
                         ),
-                        $h("span", { "style": `font-size: 11px; font-weight: 600; color: ${$t(r?.dInk)};` },
+                        $h("span", { "style": `font-size: 11px; font-weight: 600; white-space: nowrap; color: ${$t(r?.dInk)};` },
                           $t(r?.delta)
                         )
                       )
@@ -416,8 +458,8 @@ return {};
                     $h("td", { "style": "padding-right: 20px;" },
                       $h("span", { "style": "display: flex; gap: 6px;" },
                         ($l(r?.thumbs)).map((t) => [
-                          $h("a", { "href": "/app/videos/learnwithjoel1", "class": `sw-video ${$t(t?.t)}`, "style": "display: block; width: 44px; border-radius: 8px;" },
-                            $h("img", { "class": "sw-cover", "src": t?.src, "alt": "" }),
+                          $h("a", { "href": t?.href, "class": `sw-video ${$t(t?.t)}`, "style": "display: block; width: 44px; border-radius: 8px;" },
+                            $h("img", { "class": "sw-cover", "src": t?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
                             $h("span", { "class": "sw-video-shade" }),
                             $h("span", { "style": "position: absolute; left: 4px; bottom: 4px; font-size: 9px; font-weight: 700; color: #FFFFFF;" },
                               $t(t?.v)
@@ -458,7 +500,7 @@ return {};
                 $h("div", { "class": "sw-app", "style": "gap: 14px;" },
                   $h("span", { "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: 52px; height: 52px; border-radius: 15px;" },
                     ($v.pv?.logo) ? [
-                      $h("img", { "class": "sw-logo-img", "src": $v.pv?.logo, "alt": "" })
+                      $h("img", { "class": "sw-logo-img", "src": $v.pv?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     ($v.pv?.nologo) ? [
                       $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -489,7 +531,7 @@ return {};
                     ),
                     ($v.aj) ? [
                       $h("span", { "style": "position: absolute; top: calc(100% + 10px); right: 0; z-index: 45;" },
-                        $h(AjoutDossier, { "onClose": $v.closeAj })
+                        $h(AjoutDossier, { "onClose": $v.closeAj, "item": $v.ajItem, "saved": $v.savedFn, "save": $v.saveFn })
                       )
                     ] : null
                   ),
@@ -504,13 +546,13 @@ return {};
                 $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": "true" },
                   "Aperçu"
                 ),
-                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": "/app/apps/astra-ai#fa-vid", "style": "display: inline-flex; align-items: center; text-decoration: none;" },
+                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": `${$t($v.pv?.href)}#fa-vid`, "style": "display: inline-flex; align-items: center; text-decoration: none;" },
                   "Vidéos"
                 ),
-                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": "/app/apps/astra-ai#fa-fmt", "style": "display: inline-flex; align-items: center; text-decoration: none;" },
+                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": `${$t($v.pv?.href)}#fa-fmt`, "style": "display: inline-flex; align-items: center; text-decoration: none;" },
                   "Formats"
                 ),
-                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": "/app/apps/astra-ai#fa-cr", "style": "display: inline-flex; align-items: center; text-decoration: none;" },
+                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": `${$t($v.pv?.href)}#fa-cr`, "style": "display: inline-flex; align-items: center; text-decoration: none;" },
                   "Créateurs"
                 )
               )
@@ -578,7 +620,7 @@ return {};
                   $h("span", { "style": "font-size: 14px; font-weight: 600;" },
                     "Ses vidéos qui explosent"
                   ),
-                  $h("a", { "class": "sw-more", "href": "/app/apps/astra-ai#fa-vid" },
+                  $h("a", { "class": "sw-more", "href": `${$t($v.pv?.href)}#fa-vid` },
                     "Toutes",
                     $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -587,8 +629,8 @@ return {};
                 ),
                 $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
                   ($l($v.pv?.vids)).map((v) => [
-                    $h("a", { "href": "/app/videos/learnwithjoel1", "class": "sw-video", "style": "display: block; border-radius: 12px; text-decoration: none;" },
-                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "" }),
+                    $h("a", { "href": v?.href, "class": "sw-video", "style": "display: block; border-radius: 12px; text-decoration: none;" },
+                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
                       $h("span", { "class": "sw-video-shade" }),
                       $h("span", { "class": "sw-video-foot" },
                         $h("span", { "class": "sw-video-views", "style": "font-size: 16px;" },
@@ -636,13 +678,13 @@ return {};
               ] : null
             ),
             $h("footer", { "style": "padding: 18px 28px 24px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: flex-end; gap: 12px;" },
-              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "style": "height: 44px;" },
+              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "height: 44px;" },
                 $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 ),
                 $t($v.pv?.followLabel)
               ),
-              $h("a", { "class": "sw-btn sw-btn-primary", "href": "/app/apps/astra-ai" },
+              $h("a", { "class": "sw-btn sw-btn-primary", "href": $v.pv?.href },
                 "Ouvrir la fiche",
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -655,7 +697,7 @@ return {};
         ] : null,
         ($v.pal) ? [
           $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
-            $h(Palette, { "onClose": $v.closePal })
+            $h(Palette, { "onClose": $v.closePal, "get": $v.getFn })
           )
         ] : null
       )

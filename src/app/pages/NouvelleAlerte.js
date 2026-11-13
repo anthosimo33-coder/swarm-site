@@ -5,34 +5,52 @@ import { DCLogic, $t, $l } from '../../runtime.js';
 export default class NouvelleAlerte extends DCLogic {
   componentDidMount() { if (this.first) this.first.focus(); }
   renderVals() {
+    // Exemple du canevas : ce que l'alerte par défaut trouve dans la semaine d'exemple.
     const HITS = [{"src": "/media/app/v-7706010190566542612.jpg", "x": "1 226×"}, {"src": "/media/app/v-7706101547570171143.jpg", "x": "455×"}, {"src": "/media/app/v-7705368869250075925.jpg", "x": "2 333×"}];
     const NICHES = ["Études", "Couple", "Séduction IA", "Jalousie et ex", "Side hustle", "Santé et physique", "Langues", "Foi", "Social et loisirs", "Beauté IA"];
+    // Libellé à l'écran -> valeur gardée dans l'alerte (AlertesA l'enregistre dans saved('alertRules')) :
+    // { quoi: 'compte'|'video'|'format', niche: nom|null, seuil: nombre, marche: code du marché|null }.
+    const QUOI = [['un compte', 'compte'], ['une vidéo d’app', 'video'], ['un format', 'format']];
+    const SE = { compte: [['10×', 10], ['100×', 100], ['1 000×', 1000]], video: [['500 k', 5e5], ['1 M', 1e6], ['5 M', 5e6]], format: [['3', 3], ['5', 5], ['10', 10]] };
+    const DEF = { compte: 100, video: 1e6, format: 3 };
+    const MK = [['sur tous les marchés', null], ['en France', 'FR'], ['chez les anglophones', 'US'], ['en Amérique latine', 'MX'], ['en Espagne', 'ES'], ['au Brésil et au Portugal', 'BR'], ['dans les autres langues', 'XX']];
+    const P = this.props || {};
+    const r0 = P.rule && P.rule.quoi ? P.rule : null; // alerte à modifier, sinon une nouvelle
     const st = this.state || {};
-    const quoi = st.quoi || 'un compte';
-    const SE = { 'un compte': ['10×', '100×', '1 000×'], 'une vidéo d’app': ['500 k', '1 M', '5 M'], 'un format': ['3', '5', '10'] };
-    const DEF = { 'un compte': '100×', 'une vidéo d’app': '1 M', 'un format': '3' };
-    const seuil = SE[quoi].indexOf(st.seuil) >= 0 ? st.seuil : DEF[quoi];
-    const niche = st.niche || 'Études';
-    const marche = st.marche || 'tous les marchés';
-    const mail = st.mail === undefined ? true : st.mail;
-    const notif = st.notif === undefined ? true : st.notif;
-    const opt = (xs) => xs.map((v) => ({ v }));
-    const close = () => { if (this.props.onClose) this.props.onClose(); };
-    const T = { 'un compte': 'Un compte fait ' + seuil + ' sa normale', 'une vidéo d’app': 'Une vidéo d’app passe ' + seuil + ' de vues', 'un format': 'Un format repris par ' + seuil + ' comptes ou plus' };
+    const pick = (k, def) => (st[k] !== undefined ? st[k] : r0 && r0[k] !== undefined ? r0[k] : def);
+    const lab = (xs, v) => (xs.filter((x) => x[1] === v)[0] || xs[0])[0];
+    const val = (xs, l) => (xs.filter((x) => x[0] === l)[0] || xs[0])[1];
+    const quoi = SE[pick('quoi', 'compte')] ? pick('quoi', 'compte') : 'compte';
+    const s0 = pick('seuil', DEF[quoi]);
+    const seuil = SE[quoi].some((x) => x[1] === s0) ? s0 : DEF[quoi];
+    const niche = pick('niche', null);
+    const marche = pick('marche', null);
+    const ANY = 'n’importe quelle niche';
+    const names = (P.niches && P.niches.length ? P.niches : NICHES).slice();
+    if (niche && names.indexOf(niche) < 0) names.push(niche);
+    const NI = [[ANY, null]].concat(names.map((n) => [n, n]));
+    const opt = (xs) => xs.map((x) => ({ v: x[0] }));
+    const close = () => { if (P.onClose) P.onClose(); };
+    const rule = { quoi, niche, seuil, marche };
+    // Aperçu : ce que l'alerte trouve dans les alertes de la semaine (fourni par AlertesA ; null tant qu'il ne sait pas).
+    const pv = typeof P.preview === 'function' ? P.preview(rule) : undefined;
+    const sample = pv === undefined && quoi === 'compte' && seuil === 100 && !marche && (!niche || niche === 'Études');
     return {
-      quoi, niche, seuil, marche, hits: HITS,
-      quois: opt(['un compte', 'une vidéo d’app', 'un format']), niches: opt(NICHES), seuils: opt(SE[quoi]), marches: opt(['tous les marchés', 'la France', 'les États-Unis', 'le Mexique', 'le Brésil', 'l’Espagne', 'l’Indonésie']),
-      isCompte: quoi === 'un compte', isApp: quoi === 'une vidéo d’app', isFormat: quoi === 'un format',
-      setQuoi: (e) => this.setState({ quoi: e.target.value }), setNiche: (e) => this.setState({ niche: e.target.value }),
-      setSeuil: (e) => this.setState({ seuil: e.target.value }), setMarche: (e) => this.setState({ marche: e.target.value }),
-      mailOn: mail ? 'true' : 'false', notifOn: notif ? 'true' : 'false',
-      toggleMail: () => this.setState({ mail: !mail }), toggleNotif: () => this.setState({ notif: !notif }),
-      showHits: quoi === 'un compte' && niche === 'Études' && seuil === '100×' && marche === 'tous les marchés',
+      head: r0 ? 'Modifier l’alerte' : 'Nouvelle alerte', cta: r0 ? 'Enregistrer' : 'Créer l’alerte',
+      quoi: lab(QUOI, quoi), niche: lab(NI, niche), seuil: lab(SE[quoi], seuil), marche: lab(MK, marche),
+      deNiche: niche ? 'de la niche' : 'de',
+      quois: opt(QUOI), niches: opt(NI), seuils: opt(SE[quoi]), marches: opt(MK),
+      isCompte: quoi === 'compte', isApp: quoi === 'video', isFormat: quoi === 'format',
+      setQuoi: (e) => { const q = val(QUOI, e.target.value); this.setState({ quoi: q, seuil: DEF[q] }); },
+      setNiche: (e) => this.setState({ niche: val(NI, e.target.value) }),
+      setSeuil: (e) => this.setState({ seuil: val(SE[quoi], e.target.value) }),
+      setMarche: (e) => this.setState({ marche: val(MK, e.target.value) }),
+      showHits: pv ? true : sample, hits: pv ? pv.hits : HITS, hitsText: pv ? pv.text : 'Trois vidéos d’Astra AI, entre le 07 et le 09/11',
       setFirst: (el) => { this.first = el; },
       keys: (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } },
       close,
       create: () => {
-        if (this.props.onCreate) this.props.onCreate({ t: T[quoi], s: niche + ' · ' + marche + ' · ' + [mail ? 'e-mail' : '', notif ? 'notification' : ''].filter(Boolean).join(' et ') });
+        if (P.onCreate) P.onCreate(rule);
         close();
       }
     };
@@ -44,13 +62,13 @@ export default class NouvelleAlerte extends DCLogic {
       $h("div", { "class": "sw", "style": "position: absolute; inset: 0; color: var(--ink); font-family: var(--font-body);" },
         $h("button", { "type": "button", "aria-label": "Fermer", "onClick": $v.close, "style": "position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" }),
         $h("div", { "style": "position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; padding: 24px; box-sizing: border-box; pointer-events: none;" },
-          $h("section", { "role": "dialog", "aria-modal": "true", "aria-label": "Nouvelle alerte", "onKeyDown": $v.keys, "style": "pointer-events: auto; width: 100%; max-width: 860px; box-sizing: border-box; border-radius: 30px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); padding: 36px 44px; display: flex; flex-direction: column; gap: 24px; animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
+          $h("section", { "role": "dialog", "aria-modal": "true", "aria-label": $v.head, "onKeyDown": $v.keys, "style": "pointer-events: auto; width: 100%; max-width: 860px; box-sizing: border-box; border-radius: 30px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); padding: 36px 44px; display: flex; flex-direction: column; gap: 24px; animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
             $h("div", { "style": "display: flex; align-items: center; justify-content: space-between;" },
               $h("span", { "class": "sw-eyebrow", "style": "font-size: 13px;" },
                 $h("b", null,
                   "["
                 ),
-                " Nouvelle alerte ",
+                " ", $t($v.head), " ",
                 $h("b", null,
                   "]"
                 )
@@ -62,7 +80,7 @@ export default class NouvelleAlerte extends DCLogic {
               )
             ),
             $h("p", { "style": "margin: 0; font-family: var(--font-display); font-size: 32px; line-height: 1.8; font-weight: 700; letter-spacing: -0.035em; color: var(--ink-soft);" },
-              "Préviens-moi quand ",
+              "Montre-moi quand ",
               $h("span", { "style": "position: relative; display: inline-flex; vertical-align: middle; margin: 4px 2px;" },
                 $h("select", { "value": $v.quoi, "onChange": $v.setQuoi, "style": "appearance: none; -webkit-appearance: none; height: 46px; padding: 0 38px 0 16px; border-radius: 14px; border: 1px solid var(--accent-edge); background: var(--accent-soft); color: var(--accent); font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; cursor: pointer;" },
                   ($l($v.quois)).map((o) => [
@@ -78,7 +96,7 @@ export default class NouvelleAlerte extends DCLogic {
                 )
               ),
               ($v.isCompte) ? [
-                " de la niche ",
+                " ", $t($v.deNiche), " ",
                 $h("span", { "style": "position: relative; display: inline-flex; vertical-align: middle; margin: 4px 2px;" },
                   $h("select", { "value": $v.niche, "onChange": $v.setNiche, "style": "appearance: none; -webkit-appearance: none; height: 46px; padding: 0 38px 0 16px; border-radius: 14px; border: 1px solid var(--accent-edge); background: var(--accent-soft); color: var(--accent); font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; cursor: pointer;" },
                     ($l($v.niches)).map((o) => [
@@ -111,7 +129,7 @@ export default class NouvelleAlerte extends DCLogic {
                 " sa normale,"
               ] : null,
               ($v.isApp) ? [
-                " de la niche ",
+                " ", $t($v.deNiche), " ",
                 $h("span", { "style": "position: relative; display: inline-flex; vertical-align: middle; margin: 4px 2px;" },
                   $h("select", { "value": $v.niche, "onChange": $v.setNiche, "style": "appearance: none; -webkit-appearance: none; height: 46px; padding: 0 38px 0 16px; border-radius: 14px; border: 1px solid var(--accent-edge); background: var(--accent-soft); color: var(--accent); font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; cursor: pointer;" },
                     ($l($v.niches)).map((o) => [
@@ -144,7 +162,7 @@ export default class NouvelleAlerte extends DCLogic {
                 " de vues,"
               ] : null,
               ($v.isFormat) ? [
-                " de la niche ",
+                " ", $t($v.deNiche), " ",
                 $h("span", { "style": "position: relative; display: inline-flex; vertical-align: middle; margin: 4px 2px;" },
                   $h("select", { "value": $v.niche, "onChange": $v.setNiche, "style": "appearance: none; -webkit-appearance: none; height: 46px; padding: 0 38px 0 16px; border-radius: 14px; border: 1px solid var(--accent-edge); background: var(--accent-soft); color: var(--accent); font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; cursor: pointer;" },
                     ($l($v.niches)).map((o) => [
@@ -176,7 +194,6 @@ export default class NouvelleAlerte extends DCLogic {
                 ),
                 " comptes ou plus,"
               ] : null,
-              "\n sur ",
               $h("span", { "style": "position: relative; display: inline-flex; vertical-align: middle; margin: 4px 2px;" },
                 $h("select", { "value": $v.marche, "onChange": $v.setMarche, "style": "appearance: none; -webkit-appearance: none; height: 46px; padding: 0 38px 0 16px; border-radius: 14px; border: 1px solid var(--accent-edge); background: var(--accent-soft); color: var(--accent); font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; cursor: pointer;" },
                   ($l($v.marches)).map((o) => [
@@ -193,30 +210,19 @@ export default class NouvelleAlerte extends DCLogic {
               ),
               "."
             ),
-            $h("p", { "style": "margin: -10px 0 0; font-size: 17px; line-height: 2; color: var(--ink-muted);" },
-              "Par ",
-              $h("button", { "type": "button", "aria-pressed": $v.mailOn, "onClick": $v.toggleMail, "class": "sw-pill", "style": "height: 34px; vertical-align: middle;" },
-                "e-mail"
-              ),
-              " et ",
-              $h("button", { "type": "button", "aria-pressed": $v.notifOn, "onClick": $v.toggleNotif, "class": "sw-pill", "style": "height: 34px; vertical-align: middle;" },
-                "notification"
-              ),
-              ", au plus une fois par jour."
-            ),
             ($v.showHits) ? [
               $h("div", { "style": "border-radius: 22px; border: 1px solid var(--line); background: var(--surface); padding: 18px 20px; display: flex; align-items: center; gap: 20px;" },
                 $h("span", { "style": "flex: 1; display: flex; flex-direction: column; gap: 4px;" },
                   $h("span", { "style": "font-size: 14px; font-weight: 700;" },
-                    "Ce qu’elle t’aurait signalé cette semaine"
+                    "Dans les alertes de la semaine"
                   ),
                   $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
-                    "Trois vidéos d’Astra AI, entre le 07 et le 09/11"
+                    $t($v.hitsText)
                   )
                 ),
                 ($l($v.hits)).map((h) => [
                   $h("span", { "class": "sw-video", "style": "display: block; width: 58px; border-radius: 10px;" },
-                    $h("img", { "class": "sw-cover", "src": h?.src, "alt": "" }),
+                    $h("img", { "class": "sw-cover", "src": h?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "style": "position: absolute; left: 5px; right: 5px; bottom: 5px; font-size: 10px; font-weight: 800; color: #FFFFFF; text-align: center;" },
                       $t(h?.x)
@@ -227,7 +233,7 @@ export default class NouvelleAlerte extends DCLogic {
             ] : null,
             $h("div", { "style": "display: flex; justify-content: flex-end;" },
               $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.create },
-                "Créer l’alerte",
+                $t($v.cta),
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })

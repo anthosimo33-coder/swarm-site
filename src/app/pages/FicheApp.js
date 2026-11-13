@@ -18,15 +18,37 @@ export default class FicheApp extends DCLogic {
     const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
     const sb = [["accueil", "Accueil", "/app"], ["apps", "Apps", "/app/apps"], ["formats", "Formats", "/app/formats"], ["createurs", "Créateurs", "/app/createurs"], ["alertes", "Alertes", "/app/alertes"], ["dossiers", "Dossiers", "/app/dossiers"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'apps' ? 'page' : 'false' }));
     return {
-      sb, me,
+      sb, me, getFn: this.props && this.props.get, savedFn: this.props && this.props.saved, saveFn: this.props && this.props.save,
       pal: !!st.pal, openPal: () => { if (!(this.state || {}).pal) this.setState({ pal: true }); }, closePal: () => this.setState({ pal: false }),
       aj: !!st.aj, ajOpen: st.aj ? 'true' : 'false', toggleAj: () => this.setState({ aj: !(this.state || {}).aj }), closeAj: () => this.setState({ aj: false })
     };
   }
   extraVals(b) {
     const st = this.state || {};
-    const f = !!st.follow;
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow: () => this.setState({ follow: !f }) }, { followLabel: f ? 'Suivie' : 'Suivre Astra AI',
+    const P = this.props || {};
+    const live = typeof P.saved === 'function' && typeof P.save === 'function';
+    const D = P.data;
+    const slug = (D && D.slug) || (P.params && P.params.slug) || (live ? '' : 'astraai');
+    // Suivre : sur le site, follows.apps (saved) ; sur le canevas, l'état local.
+    const fw = live ? P.saved('follows') : null;
+    const f = live ? !!(fw && (fw.apps || []).indexOf(slug) >= 0) : !!st.follow;
+    const toggleFollow = () => {
+      if (!live) return this.setState({ follow: !f });
+      const cur = P.saved('follows');
+      if (cur === undefined || !slug) return;
+      const next = Object.assign({ apps: [], creators: [], formats: [] }, cur || {});
+      const l = next.apps || [];
+      next.apps = l.indexOf(slug) >= 0 ? l.filter((x) => x !== slug) : [slug].concat(l);
+      P.save('follows', next);
+    };
+    // Les dossiers qui la gardent (saved('folders')).
+    const fs = live ? P.saved('folders') : null;
+    const kept = (Array.isArray(fs) ? fs : []).filter((x) => (x.items || []).some((i) => i.kind === 'app' && i.id === slug)).map((x) => ({ name: x.name, href: '/app/dossiers/' + x.id }));
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, { followLabel: f ? 'Suivie' : 'Suivre ' + b.app.name,
+      kept, keptNone: kept.length === 0,
+      ajItem: { kind: 'app', id: slug, label: b.app.name, cover: b.app.icon || null },
+      copyAria: st.copied ? 'Lien copié' : 'Copier le lien de la fiche', copyBg: st.copied ? 'var(--accent-soft)' : 'var(--track)',
+      copyLink: () => { try { navigator.clipboard.writeText(window.location.href); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tmc); this.tmc = setTimeout(() => this.setState({ copied: false }), 2000); },
       sections: (b.sections || []).map((s, i) => Object.assign({}, s, { href: ['#fa-vr', '#fa-vid', '#fa-fmt', '#fa-cr', '#fa-res'][i] || '#fa-vr' })) });
   }
 
@@ -45,17 +67,11 @@ export default class FicheApp extends DCLogic {
     };
     const nav = [['accueil', 'Accueil'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs'], ['alertes', 'Alertes'], ['dossiers', 'Dossiers']]
       .map((x, i) => ({ d: ic[x[0]], label: x[1], cur: i === 1 ? 'page' : 'false' }));
-    const sections = [['radar', 'Vue d’ensemble', ''], ['formats', 'Vidéos', '2 542'], ['texte', 'Formats', '5'], ['createurs', 'Créateurs', '269']]
+    let sections = [['radar', 'Vue d’ensemble', ''], ['formats', 'Vidéos', '2 542'], ['texte', 'Formats', '5'], ['createurs', 'Créateurs', '269']]
       .map((s, i) => ({ d: ic[s[0]], label: s[1], n: s[2], cur: i === 0 ? 'page' : 'false', bg: i === 0 ? 'var(--tab-on)' : 'transparent', ink: i === 0 ? 'var(--ink)' : 'var(--ink-muted)', w: i === 0 ? 600 : 500 }));
-    const W = [10.6, 9.8, 8.9, 8.5, 17.3, 18.4];
-    const L = ['1 oct.', '8 oct.', '15 oct.', '22 oct.', '29 oct.', '5 nov.'];
-    const P = W.map((v, j) => [70 + j * 110, 200 - v / 20 * 180]);
-    const line = 'M' + P.map((p) => p[0] + ' ' + p[1].toFixed(1)).join(' L');
-    const chart = {
-      line, area: line + ' L620 200 L70 200 Z',
-      pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + ' M', label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
-    };
-    const vids = [
+    let W = [10.6, 9.8, 8.9, 8.5, 17.3, 18.4];
+    let L = ['1 oct.', '8 oct.', '15 oct.', '22 oct.', '29 oct.', '5 nov.'];
+    let vids = [
       ['t-navy', 'Who made this?', '2,6 M', '@ivylearns8', 'US', 'il y a 19 j'],
       ['t-plum', 'KISI KISI SOAL TKA UNTUK SMA', '2,6 M', '@ira.belajaryuk', 'ID', 'il y a 26 j'],
       ['t-pine', 'TKA SMP mapel apa saja', '2,3 M', '@studywithruney', 'ID', 'il y a 12 j'],
@@ -63,15 +79,15 @@ export default class FicheApp extends DCLogic {
       ['t-amber', 'Rahasia para guru akhirnya bocor!', '1,9 M', '@belajarbarengjames', 'ID', 'il y a 30 j'],
       ['t-umber', 'POV: tienes EXAMEN ORAL y no has estudiado NADA', '1,9 M', '@learnwithjoel1', 'ES', 'il y a 4 j']
     ].map((v, i) => ({ t: v[0], hook: v[1], v: v[2], h: v[3], mk: v[4], age: v[5], src: ["/media/app/v-7700392351268752661.jpg", "/media/app/v-7697654738124442896.jpg", "/media/app/v-7702743575934684437.jpg", "/media/app/v-7705368869250075925.jpg", "/media/app/v-7696248791560703252.jpg", "/media/app/v-7705929733220994337.jpg"][i] }));
-    const formats = [
+    let formats = [
       [ic.texte, '« Je supprime cette vidéo dans 24 h »', 'La même idée en vietnamien chez Astra AI et en allemand chez Retain Cards', '1 226×', '809 k vues'],
       [ic.texte, '« TRATA ESTE VÍDEO COMO QUERES QUE SEJAM AS TUAS NOTAS »', 'Portugais · 4 comptes', '11× en médiane', '2 reprises sur 4'],
       [ic.texte, '« GUARDA E PARTILHA »', 'Portugais · 3 comptes', '17× en médiane', '3 reprises sur 4'],
       [ic.son, 'Son « exam vibes »', '5 comptes · le son de la révision qui stresse', '7× en médiane', '4 reprises sur 6']
     ].map((f) => ({ icon: f[0], t: f[1], meta: f[2], x: f[3], ok: f[4] }));
-    const mk = [['ID', 'Indonésie et Vietnam', 37.47], ['US', 'États-Unis', 10.73], ['ES', 'Espagne', 4.83], ['BR', 'Brésil et Portugal', 2.91], ['FR', 'France', 1.32], ['MX', 'Amérique latine', 0.39]]
+    let mk = [['ID', 'Indonésie et Vietnam', 37.47], ['US', 'États-Unis', 10.73], ['ES', 'Espagne', 4.83], ['BR', 'Brésil et Portugal', 2.91], ['FR', 'France', 1.32], ['MX', 'Amérique latine', 0.39]]
       .map((m, i) => ({ c: m[0], l: m[1], v: m[2].toFixed(1).replace('.', ',') + ' M', p: Math.round(m[2] / 57.65 * 100) + ' %', w: (m[2] / 57.65 * 100).toFixed(1) + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
-    const creators = [
+    let creators = [
       ['I', '@ivylearns8', 'Student life + study tips', 'US', '3,1 k', '4,9 M', '17,9 k', 'var(--thumb-navy)'],
       ['I', '@ira.belajaryuk', 'belajar bareng yuk', 'ID', '4,2 k', '3,3 M', '550', 'var(--thumb-plum)'],
       ['L', '@learnwithjoel1', 'IG: joel.c.b', 'ES', '12,2 k', '3,2 M', '28,5 k', 'var(--thumb-umber)'],
@@ -79,7 +95,60 @@ export default class FicheApp extends DCLogic {
       ['S', '@studyclubbyinda', 'Studytok Yapping Club', 'ID', '26,4 k', '2,3 M', '4,6 k', 'var(--thumb-violet)'],
       ['B', '@belajarbersamaespi', 'student tips, productivity, & tech', 'ID', '6,5 k', '2,0 M', '855', 'var(--thumb-amber)']
     ].map((c) => { const av = {"@belajarbersamaespi": "/media/app/av-belajarbersamaespi.jpg", "@ira.belajaryuk": "/media/app/av-ira.belajaryuk.jpg", "@learnwithjoel1": "/media/app/av-learnwithjoel1.jpg", "@studyclubbyinda": "/media/app/av-studyclubbyinda.jpg", "@studywithruney": "/media/app/av-studywithruney.jpg"}[c[1]] || false; return { ini: c[0], h: c[1], bio: c[2], mk: c[3], fans: c[4], v: c[5], med: c[6], bg: c[7], av, noav: !av }; });
-    return { nav, sections, chart, vids, formats, mk, creators };
+    // L'en-tête et les chiffres de l'exemple (le canevas n'a pas de données).
+    let app = { icon: "/media/app/app-astra-ai.jpg", name: 'Astra AI', niche: 'Études', delta: '+6 % cette semaine', since: '06/11',
+      store: 'https://apps.apple.com/fr/app/astra-ai-r%C3%A9vision-examens/id6751030141', play: 'https://play.google.com/store/search?q=Astra%20AI&c=apps',
+      v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', lo: '144', hi: '202 k€', week: '18,4 M', wd: "+6 % face à la semaine d'avant",
+      acc: '269', ppw: '1 360', best: '2 333×', top10: '43 % des vues', vidsHref: '/app/videos/7705929733220994337', crLabel: 'Tous les créateurs' };
+    let top = 20;
+
+    // Sur le site : la fiche de l'app depuis le Radar (document « app:<slug> », convex/radarModels.ts).
+    const D = this.props && this.props.data;
+    if (D && D.name) {
+      const M = { FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', XX: 'Autres langues' };
+      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+      const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(x).replace('.', ',')) + '×';
+      const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %';
+      const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+      const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + ' j'; };
+      const rev = (v, k) => { const e = v / 1000 * k; return e >= 1000 ? Math.round(e / 1000) : Math.round(e); };
+      const kUnit = D.views30 / 1000 * 3.5 >= 1000 ? ' k€' : ' €';
+      app = {
+        icon: D.icon || '', name: D.name, niche: D.niche, delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
+        store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps',
+        v30: nf(D.views30), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
+        lo: String(rev(D.views30, 2.5)), hi: rev(D.views30, 3.5) + kUnit, week: nf(D.weeks[5]),
+        wd: D.weekDelta === null ? 'première semaine relevée' : pct(D.weekDelta) + " face à la semaine d'avant",
+        acc: D.accounts.toLocaleString('fr-FR'), ppw: D.videosPerWeek.toLocaleString('fr-FR'), best: D.bestX ? xf(D.bestX) : '—',
+        top10: D.top10Share === null ? '—' : Math.round(D.top10Share * 100) + ' % des vues',
+        vidsHref: D.videos.length ? '/app/videos/' + D.videos[0].id : '/app/videos/7705929733220994337',
+        crLabel: 'Tous les créateurs'
+      };
+      const scale = Math.max.apply(null, D.weeks) || 1;
+      top = Math.max(1, Math.ceil(scale / 1e6 / 2) * 2);
+      W = D.weeks.map((w) => w / 1e6);
+      L = D.weeks.map((_, j) => day(D.updatedAt - (6 - j) * 7 * 86400000));
+      const T = ['t-navy', 't-plum', 't-pine', 't-violet', 't-amber', 't-umber'];
+      vids = D.videos.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: '/app/videos/' + v.id }));
+      formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
+        meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
+      mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + ' %', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
+      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
+        med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: false, noav: true, page: !!c.page, href: '/app/createurs/' + c.handle }));
+      sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));
+    }
+    vids = vids.map((v) => Object.assign({ href: '/app/videos/7705929733220994337' }, v));
+    formats = formats.map((f) => Object.assign({ href: '/app/formats' }, f));
+    creators = creators.map((c) => Object.assign({ page: true, href: '/app/createurs/zinedine.gsbb' }, c));
+
+    const P = W.map((v, j) => [70 + j * 110, 200 - v / top * 180]);
+    const line = 'M' + P.map((p) => p[0] + ' ' + p[1].toFixed(1)).join(' L');
+    const chart = {
+      line, area: line + ' L620 200 L70 200 Z', top: top + ' M', mid: (top / 2).toString().replace('.', ',') + ' M',
+      aria: 'Vues par semaine de publication sur 6 semaines : ' + W.map((w) => w.toFixed(1).replace('.', ',')).join(' ; ') + ' millions',
+      pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + ' M', label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
+    };
+    return { nav, sections, chart, vids, formats, mk, creators, app };
   }
 
   render() {
@@ -119,11 +188,6 @@ export default class FicheApp extends DCLogic {
             )
           ]),
           $h("div", { "class": "sw-side-foot" },
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Passer au thème clair" },
-              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
-            ),
             $h("a", { "class": "sw-avatar", "href": "/app/compte", "aria-label": "Mon compte", "style": "text-decoration: none;" },
               $t($v.me?.initiale)
             )
@@ -153,52 +217,63 @@ export default class FicheApp extends DCLogic {
             $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);" },
               "Dans tes dossiers"
             ),
-            $h("span", { "style": "font-size: 13px; line-height: 1.5; color: var(--ink-muted);" },
-              "Pas encore gardée. Garde-la pour la retrouver avec tes notes."
-            )
+            ($v.keptNone) ? [
+              $h("span", { "style": "font-size: 13px; line-height: 1.5; color: var(--ink-muted);" },
+                "Pas encore gardée."
+              )
+            ] : null,
+            ($l($v.kept)).map((k) => [
+              $h("a", { "class": "sw-link-quiet", "href": k?.href, "style": "display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; text-decoration: none;" },
+                $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                  $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
+                $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                  $t(k?.name)
+                )
+              )
+            ])
           )
         ),
         $h("main", { "style": "flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 24px;" },
           $h("header", { "style": "display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap;" },
             $h("div", { "style": "display: flex; gap: 18px; align-items: center;" },
               $h("span", { "class": "sw-app-icon", "style": "width: 72px; height: 72px; border-radius: 20px; box-shadow: 0 14px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08);" },
-                $h("img", { "class": "sw-logo-img", "src": "/media/app/app-astra-ai.jpg", "alt": "" })
+                ($v.app?.icon) ? [
+                  $h("img", { "class": "sw-logo-img", "src": $v.app?.icon, "alt": "", "loading": "lazy", "decoding": "async" })
+                ] : null
               ),
               $h("div", { "style": "display: flex; flex-direction: column; gap: 8px;" },
                 $h("div", { "style": "display: flex; align-items: center; gap: 12px; flex-wrap: wrap;" },
                   $h("h1", { "style": "margin: 0; font-family: var(--font-display); font-size: 40px; line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
-                    "Astra AI"
+                    $t($v.app?.name)
                   ),
                   $h("span", { "class": "sw-badge" },
-                    "Études"
+                    $t($v.app?.niche)
                   ),
-                  $h("span", { "class": "sw-badge sw-badge-accent" },
-                    "+6 % cette semaine"
-                  )
+                  ($v.app?.delta) ? [
+                    $h("span", { "class": "sw-badge sw-badge-accent" },
+                      $t($v.app?.delta)
+                    )
+                  ] : null
                 ),
                 $h("span", { "style": "display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink-muted);" },
-                  "Aide aux révisions par IA",
+                  "Dans le Radar depuis le ", $t($v.app?.since),
                   $h("span", { "aria-hidden": "true" },
                     "·"
                   ),
-                  "Suivie depuis le 06/11",
-                  $h("span", { "aria-hidden": "true" },
-                    "·"
-                  ),
-                  $h("a", { "class": "sw-link-quiet", "href": "https://apps.apple.com/fr/app/astra-ai-r%C3%A9vision-examens/id6751030141", "target": "_blank", "rel": "noopener" },
-                    "App Store"
-                  ),
-                  $h("a", { "class": "sw-link-quiet", "href": "https://play.google.com/store/search?q=Astra%20AI&c=apps", "target": "_blank", "rel": "noopener" },
+                  ($v.app?.store) ? [
+                    $h("a", { "class": "sw-link-quiet", "href": $v.app?.store, "target": "_blank", "rel": "noopener" },
+                      "App Store"
+                    )
+                  ] : null,
+                  $h("a", { "class": "sw-link-quiet", "href": $v.app?.play, "target": "_blank", "rel": "noopener" },
                     "Google Play"
-                  ),
-                  $h("a", { "class": "sw-link-quiet", "href": "https://astra-ai.fr", "target": "_blank", "rel": "noopener" },
-                    "Site"
                   )
                 )
               )
             ),
             $h("div", { "style": "display: flex; gap: 8px; align-items: center;" },
-              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Copier le lien de la fiche", "title": "Copier le lien", "style": "background: var(--track);" },
+              $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.copyLink, "aria-label": $v.copyAria, "title": $v.copyAria, "style": `background: ${$t($v.copyBg)};` },
                 $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round" })
                 )
@@ -211,7 +286,7 @@ export default class FicheApp extends DCLogic {
                 ),
                 ($v.aj) ? [
                   $h("span", { "style": "position: absolute; top: calc(100% + 10px); right: 0; z-index: 45;" },
-                    $h(AjoutDossier, { "onClose": $v.closeAj })
+                    $h(AjoutDossier, { "onClose": $v.closeAj, "item": $v.ajItem, "saved": $v.savedFn, "save": $v.saveFn })
                   )
                 ] : null
               ),
@@ -242,10 +317,10 @@ export default class FicheApp extends DCLogic {
                     "Vues 30 j"
                   ),
                   $h("span", { "class": "sw-stat" },
-                    "57,7 M"
+                    $t($v.app?.v30)
                   ),
                   $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
-                    "dont 2,8 M sur Instagram"
+                    $t($v.app?.ig)
                   )
                 ),
                 $h("div", { "style": "display: flex; flex-direction: column; gap: 4px; padding-left: 20px; border-left: 1px solid var(--line);" },
@@ -257,11 +332,11 @@ export default class FicheApp extends DCLogic {
                     $h("span", { "style": "font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
                       "Entre "
                     ),
-                    "144",
+                    $t($v.app?.lo),
                     $h("span", { "style": "font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted);" },
                       " et "
                     ),
-                    "202 k€"
+                    $t($v.app?.hi)
                   ),
                   $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
                     "sur 30 jours"
@@ -272,14 +347,14 @@ export default class FicheApp extends DCLogic {
                     "Cette semaine"
                   ),
                   $h("span", { "class": "sw-stat" },
-                    "18,4 M"
+                    $t($v.app?.week)
                   ),
                   $h("span", { "style": "font-size: 12px; font-weight: 600; color: var(--accent);" },
-                    "+6 % face à la semaine d'avant"
+                    $t($v.app?.wd)
                   )
                 )
               ),
-              $h("svg", { "viewBox": "0 0 640 240", "width": "100%", "height": "240", "role": "img", "aria-label": "Vues par semaine de publication sur 6 semaines : 10,6 ; 9,8 ; 8,9 ; 8,5 ; 17,3 ; 18,4 millions" },
+              $h("svg", { "viewBox": "0 0 640 240", "width": "100%", "height": "240", "role": "img", "aria-label": $v.chart?.aria },
                 $h("defs", null,
                   $h("linearGradient", { "id": "faG", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
                     $h("stop", { "offset": "0%", "stop-color": "#4C9AFF", "stop-opacity": "0.30" }),
@@ -290,10 +365,10 @@ export default class FicheApp extends DCLogic {
                 $h("line", { "x1": "44", "y1": "110", "x2": "640", "y2": "110", "stroke": "rgba(255,255,255,0.06)" }),
                 $h("line", { "x1": "44", "y1": "200", "x2": "640", "y2": "200", "stroke": "rgba(255,255,255,0.14)" }),
                 $h("text", { "x": "0", "y": "24", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "11" },
-                  "20 M"
+                  $t($v.chart?.top)
                 ),
                 $h("text", { "x": "0", "y": "114", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "11" },
-                  "10 M"
+                  $t($v.chart?.mid)
                 ),
                 $h("text", { "x": "0", "y": "204", "fill": "#8A93A3", "font-family": "JetBrains Mono, monospace", "font-size": "11" },
                   "0"
@@ -321,7 +396,7 @@ export default class FicheApp extends DCLogic {
                     "Comptes qui la poussent"
                   ),
                   $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap;" },
-                    "269"
+                    $t($v.app?.acc)
                   )
                 ),
                 $h("div", { "class": "sw-tile", "style": "flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;" },
@@ -329,7 +404,7 @@ export default class FicheApp extends DCLogic {
                     "Vidéos par semaine"
                   ),
                   $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap;" },
-                    "1 360"
+                    $t($v.app?.ppw)
                   )
                 ),
                 $h("div", { "class": "sw-tile", "style": "flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;" },
@@ -337,7 +412,7 @@ export default class FicheApp extends DCLogic {
                     "Meilleure de la semaine"
                   ),
                   $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap; color: var(--accent);" },
-                    "2 333×"
+                    $t($v.app?.best)
                   )
                 ),
                 $h("div", { "class": "sw-tile", "style": "flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;" },
@@ -345,7 +420,7 @@ export default class FicheApp extends DCLogic {
                     "Les 10 premiers comptes"
                   ),
                   $h("span", { "class": "sw-tile-value", "style": "flex-shrink: 0; white-space: nowrap;" },
-                    "43 % des vues"
+                    $t($v.app?.top10)
                   )
                 )
               )
@@ -356,8 +431,8 @@ export default class FicheApp extends DCLogic {
               $h("h2", { "id": "fa-vid", "class": "sw-card-title" },
                 "Ses vidéos qui cartonnent"
               ),
-              $h("a", { "class": "sw-more", "href": "/app/videos/learnwithjoel1" },
-                "Les 2 542 vidéos",
+              $h("a", { "class": "sw-more", "href": $v.app?.vidsHref },
+                "Les regarder une par une",
                 $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
@@ -365,9 +440,9 @@ export default class FicheApp extends DCLogic {
             ),
             $h("div", { "style": "display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;" },
               ($l($v.vids)).map((v) => [
-                $h("a", { "href": "/app/videos/learnwithjoel1", "style": "display: flex; flex-direction: column; gap: 8px; text-decoration: none;" },
+                $h("a", { "href": v?.href, "style": "display: flex; flex-direction: column; gap: 8px; text-decoration: none;" },
                   $h("span", { "class": `sw-video ${$t(v?.t)}`, "style": "display: block;" },
-                    $h("img", { "class": "sw-cover", "src": v?.src, "alt": v?.hook }),
+                    $h("img", { "class": "sw-cover", "src": v?.src, "alt": v?.hook, "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "class": "sw-badge", "style": "position: absolute; top: 10px; left: 10px; height: 22px; font-size: 11px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
                       $t(v?.age)
@@ -397,14 +472,14 @@ export default class FicheApp extends DCLogic {
                   "Les formats qui marchent chez elle"
                 ),
                 $h("a", { "class": "sw-more", "href": "/app/formats" },
-                  "Tous",
+                  "Tous les formats",
                   $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
               ),
               ($l($v.formats)).map((f) => [
-                $h("div", { "style": "display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line);" },
+                $h("a", { "href": f?.href, "style": "text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line);" },
                   $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; background: var(--track); color: var(--ink-muted); display: inline-flex; align-items: center; justify-content: center;" },
                     $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       $h("path", { "d": f?.icon, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -469,7 +544,7 @@ export default class FicheApp extends DCLogic {
                 "Les créateurs qui la poussent"
               ),
               $h("a", { "class": "sw-more", "href": "/app/createurs" },
-                "Les 269 comptes",
+                $t($v.app?.crLabel),
                 $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
@@ -488,7 +563,7 @@ export default class FicheApp extends DCLogic {
                     "Abonnés"
                   ),
                   $h("th", { "class": "sw-num" },
-                    "Vues 30 j"
+                    "Vidéos 7 j"
                   ),
                   $h("th", { "class": "sw-num" },
                     "Vues d'habitude"
@@ -503,7 +578,7 @@ export default class FicheApp extends DCLogic {
                       $h("span", { "class": "sw-app" },
                         $h("span", { "style": "width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #1B2333; border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
                           (c?.av) ? [
-                            $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;" })
+                            $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (c?.noav) ? [
                             $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -537,12 +612,14 @@ export default class FicheApp extends DCLogic {
                       $t(c?.med)
                     ),
                     $h("td", { "class": "sw-num", "style": "padding-right: 0;" },
-                      $h("a", { "class": "sw-more", "href": "/app/createurs/zinedine-gsbb", "style": "justify-content: flex-end; color: var(--accent);" },
-                        "Voir la fiche",
-                        $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                          $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      (c?.page) ? [
+                        $h("a", { "class": "sw-more", "href": c?.href, "style": "justify-content: flex-end; color: var(--accent);" },
+                          "Voir la fiche",
+                          $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                            $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                          )
                         )
-                      )
+                      ] : null
                     )
                   )
                 ])
@@ -552,7 +629,7 @@ export default class FicheApp extends DCLogic {
         ),
         ($v.pal) ? [
           $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
-            $h(Palette, { "onClose": $v.closePal })
+            $h(Palette, { "onClose": $v.closePal, "get": $v.getFn })
           )
         ] : null
       )

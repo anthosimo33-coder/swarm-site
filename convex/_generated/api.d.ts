@@ -10,7 +10,13 @@
 
 import type * as auth from "../auth.js";
 import type * as authErrors from "../authErrors.js";
+import type * as boards from "../boards.js";
+import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as radarModels from "../radarModels.js";
+import type * as radarStore from "../radarStore.js";
+import type * as radarSync from "../radarSync.js";
+import type * as saved from "../saved.js";
 import type * as users from "../users.js";
 
 import type {
@@ -22,7 +28,13 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authErrors: typeof authErrors;
+  boards: typeof boards;
+  crons: typeof crons;
   http: typeof http;
+  radarModels: typeof radarModels;
+  radarStore: typeof radarStore;
+  radarSync: typeof radarSync;
+  saved: typeof saved;
   users: typeof users;
 }>;
 

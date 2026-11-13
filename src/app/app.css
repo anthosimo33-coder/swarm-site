@@ -3,3 +3,12 @@
 html, body { margin: 0; background: #080B12; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* Jamais de défilement horizontal de la page (iOS) ; clip et non hidden, pour garder les en-têtes sticky. */
 html, body { overflow-x: clip; max-width: 100%; }
+/* Une miniature qui ne se charge pas (URL TikTok expirée) : on la masque, la vignette
+   garde son fond (src/app/main.js pose .is-broken). */
+img.is-broken { visibility: hidden; }
+
+/* Fiche absente du Radar, ou liste pas encore calculée (src/app/main.js, Missing). */
+.app-missing { min-height: 100vh; min-height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px 16px; text-align: center; font-family: var(--font-body); color: var(--ink); }
+.app-missing h1 { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
+.app-missing p { margin: 0; max-width: 34ch; color: var(--ink-muted); font-size: 16px; line-height: 1.5; }
+.app-missing a { margin-top: 8px; display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: var(--radius-pill); background: var(--solid); color: var(--on-solid); font-size: 15px; font-weight: 600; text-decoration: none; }

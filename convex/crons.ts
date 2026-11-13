@@ -1,0 +1,10 @@
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
+
+const crons = cronJobs();
+
+// Le Radar relève ses comptes jusque tard le soir (heure de Paris) : Swarm se
+// synchronise ensuite, à 1 h 30 UTC (2 h 30 ou 3 h 30 à Paris selon la saison).
+crons.daily("synchronisation du Radar", { hourUTC: 1, minuteUTC: 30 }, internal.radarSync.run, {});
+
+export default crons;
