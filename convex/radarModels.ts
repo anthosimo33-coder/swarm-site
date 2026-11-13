@@ -123,8 +123,32 @@ const groupBy = <T, K>(xs: T[], key: (x: T) => K) => {
 /** Clé d'une miniature dans `media` : une par vidéo, une icône par app. */
 export const coverKey = (videoId: string) => `v:${videoId}`;
 export const iconKey = (slug: string) => `icon:${slug}`;
-/** Apps web (pas d'App Store) : leur site, d'où vient leur icône. */
-export const APP_SITE: Record<string, string> = { whatbrandonthinks: "www.whatbrandonthinks.com", theick: "theick.io" };
+/**
+ * Apps web (pas d'App Store) : leur site, d'où vient leur icône — ou l'adresse de l'icône elle-même (https://…)
+ * quand la page d'accueil ne la donne pas au serveur. Vérifiés à la main le 13/11 (titre du site = l'app, comptes qui le citent).
+ */
+export const APP_SITE: Record<string, string> = {
+  whatbrandonthinks: "www.whatbrandonthinks.com", theick: "theick.io", shortfy: "shortfy.io", followotter: "followotter.com",
+  cheatlove: "https://cheatlove.io/apple-icon-180.png", katch: "www.katch.io", trendsaas: "trendsaas.ai", pumpgtm: "pumpgtm.com", unrealphotos: "www.unrealphotos.io",
+  facelessclone: "facelessclone.com", "systeme.io": "systeme.io", wayinvideo: "wayin.ai",
+  quittr: "quittrapp.com", glamai: "glam.ai", // retirées de l'App Store : leur identifiant ne répond plus
+  "stealthy.lol": "stealthy.lol", "clipper.works": "clipper.works",
+};
+
+/**
+ * Fiche App Store vérifiée à la main le 13/11, prioritaire sur la recherche par nom : nom partagé par
+ * plusieurs apps (Fit AI, Parrot, Juno…) ou fiche que la recherche ne trouve pas.
+ * Preuve : la bio ou le site des comptes qui poussent l'app (« Ambassadrice FitAI », « Juno Ambassador »…).
+ */
+export const APP_STORE_ID: Record<string, string> = {
+  airbuds: "1638906106", tapcook: "6769601354", shady: "6677005589",
+  exposr: "6752903766", fitai: "6760222328", bear: "6759631411", scrollthebible: "6756558351", artie: "6746756746",
+  sauceai: "6754392050", juno: "6749455368", drawly: "6746277626", babyplate: "6744701507", nursemind: "6767489231",
+  nextrainers: "6754344542", budgetbestie: "6460258044", kairo: "6761457623", parrot: "6736955121", mealplanner: "6776097857",
+  sacredshorts: "6759298323", collect: "6752740187", settlemate: "6737785495", jetback: "6744909694", snitch: "6755113649",
+  meagain: "6744178534", kiwipop: "6484501975", claimhunt: "6755202426", recipevault: "6758783243", motonovel: "6744429534",
+  aisance: "6739868546",
+};
 
 /** La bio sans les e-mails ni numéros de téléphone : Swarm montre ce que fait un compte, pas comment le contacter. */
 export const cleanBio = (bio: string | null) => {
@@ -481,7 +505,8 @@ export function buildBoards(
     if (mediaUrl(iconKey(a.slug))) continue;
     const art = opts.artOf?.(a.slug) ?? null;
     const id = (storeOf(a.slug) ?? "").match(/\/id(\d+)/)?.[1] ?? null;
-    const src = APP_SITE[a.slug] ? `site:${APP_SITE[a.slug]}` : art ?? (id ? `itunesid:${id}` : null);
+    const site = APP_SITE[a.slug];
+    const src = site ? (site.startsWith("https://") ? site : `site:${site}`) : art ?? (id ? `itunesid:${id}` : null);
     if (src) need.set(iconKey(a.slug), src);
   }
 

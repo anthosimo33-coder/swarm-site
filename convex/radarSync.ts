@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
 import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
-import { APP_SITE, buildBoards, iconKey, type Raw } from "./radarModels";
+import { APP_SITE, APP_STORE_ID, buildBoards, iconKey, type Raw } from "./radarModels";
 
 /** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
 const STORE_RULE = 6; // 6 : à plusieurs candidates, titre exact ou nette avance en avis ; 5 : fiche exacte par l'identifiant du Radar ; sinon recherche France puis États-Unis, refusée si le nom est ambigu ; icône gardée
@@ -107,11 +107,18 @@ export const run = internalAction({
       let storeErrors = 0;
       const iconsToDrop: string[] = [];
       const storeStart = Date.now();
-      for (const a of raw.apps) {
-        if (a.mergedInto || stores[a.slug]?.v === STORE_RULE) continue;
+      // Fiche vérifiée à la main (site ou identifiant) que la fiche rangée ne suit pas encore : revue d'abord.
+      const pinnedOff = (slug: string) => {
+        const st = stores[slug];
+        if (APP_SITE[slug]) return !st || st.url !== null;
+        return !!APP_STORE_ID[slug] && !(st?.url ?? "").includes(`/id${APP_STORE_ID[slug]}`);
+      };
+      const storeQueue = [...raw.apps].sort((p, q) => Number(pinnedOff(q.slug)) - Number(pinnedOff(p.slug)));
+      for (const a of storeQueue) {
+        if (a.mergedInto || (stores[a.slug]?.v === STORE_RULE && !pinnedOff(a.slug))) continue;
         if (Date.now() - storeStart > 300_000) break;
-        const id = a.store?.storeId ? String(a.store.storeId) : null;
-        if (APP_SITE[a.slug] && !id) { // app web : pas de fiche App Store, son icône vient de son site
+        const id = APP_STORE_ID[a.slug] ?? (a.store?.storeId ? String(a.store.storeId) : null);
+        if (APP_SITE[a.slug]) { // app web : pas de fiche App Store, son icône vient de son site
           if (stores[a.slug]?.url) iconsToDrop.push(iconKey(a.slug));
           stores[a.slug] = { url: null, v: STORE_RULE, art: null };
           found.push({ slug: a.slug, url: null, v: STORE_RULE, art: null });
@@ -119,7 +126,8 @@ export const run = internalAction({
         }
         let hit: Awaited<ReturnType<typeof appStoreHit>>;
         try {
-          hit = (id ? await appStoreLookup(id) : null) ?? (await appStoreHit(a.name));
+          // Fiche épinglée : son identifiant seul (jamais la recherche par nom, qui trouverait une homonyme).
+          hit = APP_STORE_ID[a.slug] ? await appStoreLookup(APP_STORE_ID[a.slug]) : (id ? await appStoreLookup(id) : null) ?? (await appStoreHit(a.name));
         } catch {
           // L'App Store refuse ou ne répond pas : on garde la fiche d'avant, l'app sera revue au prochain passage.
           if (++storeErrors >= 5) break;
