@@ -31,11 +31,11 @@ const MEDIA_BUDGET_MS = 5 * 60_000;
  */
 const RUN_LIMIT_MS = 9 * 60_000;
 const WRITE_RESERVE_MS = 3 * 60_000;
-const WRITERS = 4; // lots de pages écrits en même temps (chaque lot touche ses propres pages)
+const WRITERS = 1; // 4 écrivains en parallèle : le 14/11 un lot ne revenait jamais (passage bloqué 3 min puis coupé) ; à 3 Mo/s, un seul suffit
 /** Le déploiement Convex refuse plus de 4 Mio écrits par seconde (TooManyWrites, dev du 14/11) : écriture cadencée sous ce plafond. */
 const WRITE_RATE = 3_000_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const PARALLEL = 6; // 20 puis 10 : pics à 740 puis 568 Mo de tas (pages TikTok lues à la fois) pour une limite de 512 Mo, passages coupés le 14/11
+const PARALLEL = 4; // 20, 10, 6 : pics à 740, 568, 514 Mo de tas (pages TikTok lues à la fois) pour une limite de 512 Mo, passages coupés le 14/11
 /** Une miniature introuvable depuis moins de 3 jours : la vidéo est retirée des listes (au-delà, on réessaie). */
 const MISS_HIDE_MS = 3 * 86_400_000;
 /** Taille d'un lot d'écriture : arguments bornés, et chaque document est relu (4 096 lectures au plus par mutation). */
@@ -104,6 +104,10 @@ export const run = internalAction({
 
       const raw = {} as Raw;
       for (const t of TABLES) { (raw as Record<string, unknown>)[t] = await fetchTable(base, secret, t); MEMLOG('export ' + t); }
+      // Essai sur le dev seulement : des comptes marqués « placement payé » à la main (variable SWARM_TEST_PLACEMENT,
+      // pseudos séparés par des virgules), tant que l'export du Radar n'envoie pas encore `placement`.
+      const testPaid = (process.env.SWARM_TEST_PLACEMENT ?? "").split(",").map((h) => h.trim().replace(/^@/, "")).filter(Boolean);
+      if (testPaid.length) for (const t of raw.tracked) if (testPaid.includes(t.handle)) t.placement = true;
 
       const now = Date.now();
       const media: Record<string, string> = {};
@@ -182,7 +186,9 @@ export const run = internalAction({
         regionOf: (h: string) => regions.get(h) ?? null,
       };
       MEMLOG('avant calcul 1');
-      let { boards, need, used, regionTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
+      // 1er calcul : seulement la liste des images à copier. Ses 52 000 pages ne sont pas gardées pendant la copie (la
+      // phase la plus gourmande) : le 14/11, les garder faisait dépasser les 512 Mo d'une action.
+      let need = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts).need;
       MEMLOG('après calcul 1');
 
       // Miniatures et icônes manquantes : 20 copies en continu, dans le temps imparti.
@@ -226,7 +232,8 @@ export const run = internalAction({
       await Promise.all(Array.from({ length: PARALLEL }, worker));
       await flushMedia();
       MEMLOG('fin copie');
-      ({ boards, need, used, regionTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts));
+      const { boards, need: need2, used, regionTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
+      need = need2;
       // Les comptes encore sans pays : notés pour que leur pays soit lu sur leurs vidéos (convex/radarRegions.ts).
       for (let i = 0; i < regionTodo.length; i += 300) await ctx.runMutation(internal.radarStore.saveRegionTodo, { items: regionTodo.slice(i, i + 300) });
       if (regionTodo.length) await ctx.scheduler.runAfter(0, internal.radarRegions.fill, {});
@@ -235,20 +242,38 @@ export const run = internalAction({
       // Les images qu'aucun document ne cite plus (vidéo sortie des listes) : effacées.
       const stale = Object.keys(media).filter((k) => !used.has(k));
       for (let i = 0; i < stale.length; i += 200) await ctx.runMutation(internal.radarStore.dropMedia, { keys: stale.slice(i, i + 200) });
+      // L'export du Radar (≈ 100 Mo avec l'historique de chaque vidéo) ne sert plus : libéré avant l'écriture des pages
+      // (le 14/11, lire les empreintes par-dessus a dépassé les 512 Mo d'une action).
+      const sizes = { apps: raw.apps.length, tracked: raw.tracked.length, trackedVideos: raw.trackedVideos.length, formats: raw.formats.length, signals: raw.signals.length };
+      for (const t of TABLES) (raw as Record<string, unknown>)[t] = [];
+      const missing = need.size;
+      need.clear();
+      used.clear();
 
       // Écriture des documents, par lots bornés, WRITERS lots à la fois.
       let written = 0;
+      // Les empreintes déjà rangées : seules les pages qui ont changé partent (le 14/11, renvoyer les 51 000 pages à
+      // chaque passage, cadencées à 3 Mo/s, a fait dépasser les 10 min d'une action quand presque toutes changeaient).
+      const existingHash = new Map<string, string>();
+      for (let cursor: string | null = null, done = false; !done; ) {
+        const page: { keys: string[]; hashes: string[]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.boardKeys, { cursor });
+        page.keys.forEach((k, i) => existingHash.set(k, page.hashes[i]));
+        cursor = page.cursor;
+        done = page.done;
+      }
       const batches: { items: { key: string; hash: string; data: unknown }[]; bytes: number }[] = [];
       let batch: { key: string; hash: string; data: unknown }[] = [];
       let size = 0;
       for (const [key, data] of boards) {
+        const hash = hashOf(data);
+        if (existingHash.get(key) === hash) continue;
         const bytes = JSON.stringify(data).length;
         if (batch.length && (size + bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS)) {
           batches.push({ items: batch, bytes: size });
           batch = [];
           size = 0;
         }
-        batch.push({ key, hash: hashOf(data), data });
+        batch.push({ key, hash, data });
         size += bytes;
       }
       if (batch.length) batches.push({ items: batch, bytes: size });
@@ -282,21 +307,13 @@ export const run = internalAction({
       }
 
       // Les documents que ce passage n'a plus produits : effacés (leur fiche mène à « introuvable »).
-      const existing: string[] = [];
-      for (let cursor: string | null = null, done = false; !done; ) {
-        const page: { keys: string[]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.boardKeys, { cursor });
-        existing.push(...page.keys);
-        cursor = page.cursor;
-        done = page.done;
-      }
-      const gone = existing.filter((k) => !boards.has(k));
+      const gone = [...existingHash.keys()].filter((k) => !boards.has(k));
       for (let i = 0; i < gone.length; i += 200) await ctx.runMutation(internal.radarStore.dropBoards, { keys: gone.slice(i, i + 200) });
 
       const counts = {
         unlocated: regionTodo.length,
-        apps: raw.apps.length, tracked: raw.tracked.length, trackedVideos: raw.trackedVideos.length,
-        formats: raw.formats.length, signals: raw.signals.length,
-        boards: boards.size, written, mediaCopied: copied, mediaMissing: need.size, mediaDropped: stale.length, boardsDropped: gone.length,
+        ...sizes,
+        boards: boards.size, written, mediaCopied: copied, mediaMissing: missing, mediaDropped: stale.length, boardsDropped: gone.length,
       };
       await ctx.runMutation(internal.radarStore.endRun, { id: runId, ok: true, counts });
       return counts;

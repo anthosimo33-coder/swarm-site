@@ -128,7 +128,7 @@ export default class MAlertes extends DCLogic {
       D.videos.forEach((v) => {
         const appN = v.app ? v.app.name : '', mk = v.market ? ML[v.market] : '';
         const million = v.views >= 1e6, acc = !million && v.x >= 100, une = 'Une vidéo ' + (appN ? de(appN) + ' ' : '');
-        items.push({ at: v.publishedAt, typ: acc ? 'Compte' : 'Vidéo', ico: acc ? ICO.compte : ICO.video,
+        items.push({ paid: !!v.paid, at: v.publishedAt, typ: acc ? 'Compte' : 'Vidéo', ico: acc ? ICO.compte : ICO.video,
           title: million ? une + 'passe ' + Math.floor(v.views / 1e6) + ' M de vues' : acc ? '@' + v.handle + ' fait ' + xf(v.x) + ' sa normale' : une + (v.x ? 'à ' + xf(v.x) + ' sa normale' : 'à ' + nf(v.views) + ' vues'),
           sub: (acc ? [appN, mk, nf(v.views) + ' vues'] : ['@' + v.handle, mk, million && v.x ? xf(v.x) + ' sa normale' : nf(v.views) + ' vues']).filter(Boolean).join(' · '),
           big: million || !v.x ? nf(v.views) : xf(v.x), cov0: v.cover || '', href: '/app/videos/' + v.id, cta: 'Voir la vidéo',
@@ -250,7 +250,17 @@ export default class MAlertes extends DCLogic {
                         $h("path", { "d": a?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       )
                     ),
-                    $t(a?.typ), " · ", $t(a?.when)
+                    $t(a?.typ), " · ", $t(a?.when),
+                    (a?.paid) ? [
+                      $h("span", { "style": "margin-left: 6px; display: inline-flex;" },
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                          $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                            "€"
+                          ),
+                          "Placement payé"
+                        )
+                      )
+                    ] : null
                   ),
                   $h("span", { "style": `font-size: 15px; font-weight: ${$t(a?.w)}; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;` },
                     $t(a?.title)

@@ -129,7 +129,7 @@ export default class Accueil extends DCLogic {
         sub: nf(a.views7 || 0) + ' vues en 7 jours', v: has(a.weekDelta) ? pct(a.weekDelta) : (a.bestX ? xf(a.bestX) : ''), href: '/app/apps/' + a.slug });
       const vidRow = (v) => { const logo = (v.app && v.app.icon) || v.cover || '';
         return { logo, nologo: !logo, blank: logo ? '' : 'sw-app-blank', name: v.app ? v.app.name : '@' + v.handle,
-          sub: 'Vidéo à ' + nf(v.views) + ' vues', v: v.x ? xf(v.x) : '', href: '/app/videos/' + v.id }; };
+          sub: 'Vidéo à ' + nf(v.views) + ' vues' + (v.paid ? ' · placement payé' : ''), v: v.x ? xf(v.x) : '', href: '/app/videos/' + v.id }; };
       const apps = D.apps.slice().sort((p, q) => (has(q.weekDelta) ? q.weekDelta : -Infinity) - (has(p.weekDelta) ? p.weekDelta : -Infinity));
       const vids = D.videos || [];
       look = apps.slice(0, 2).map(appRow).concat(vids.slice(1, 3).map(vidRow), apps.slice(2).map(appRow)).slice(0, 4);
@@ -138,7 +138,7 @@ export default class Accueil extends DCLogic {
       const who = v0 ? (v0.app ? v0.app.name : '@' + v0.handle) : '';
       alert = v0 ? { on: true, cover: v0.cover || '', logo: (v0.app && v0.app.icon) || '', app: who, views: nf(v0.views),
         kicker: 'Alerte · ' + who, text: v0.x ? 'Une vidéo à ' + xf(v0.x) + ' sa normale' : 'Une vidéo à ' + nf(v0.views) + ' vues',
-        aria: 'Voir la vidéo de @' + v0.handle, href: '/app/videos/' + v0.id } : { on: false };
+        aria: 'Voir la vidéo de @' + v0.handle, href: '/app/videos/' + v0.id, paid: !!v0.paid } : { on: false };
     }
     look = look.map((r, i, a) => Object.assign(r, { sep: i === a.length - 1 ? 'transparent' : 'var(--line)' }));
     // Une niche mène au classement des apps filtré sur elle (/app/apps?niche=…).
@@ -417,7 +417,10 @@ export default class Accueil extends DCLogic {
                       ),
                       $h("span", { "style": "min-width: 0;" },
                         $h("span", { "class": "sw-toast-kicker" },
-                          $t($v.alert?.kicker)
+                          $t($v.alert?.kicker),
+                          ($v.alert?.paid) ? [
+                            " · Placement payé"
+                          ] : null
                         ),
                         $h("span", { "class": "sw-toast-text", "style": "font-size: 12px;" },
                           $t($v.alert?.text)

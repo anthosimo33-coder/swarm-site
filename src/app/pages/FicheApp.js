@@ -49,6 +49,13 @@ export default class FicheApp extends DCLogic {
     const mkOn = !!(this.state || {}).mkAll;
     const mkVals = { mkShown: mkOn ? mkAllRows : mkAllRows.slice(0, 5), mkMore: mkAllRows.length > 5, mkOpen: mkOn ? 'true' : 'false', mkRot: mkOn ? 'rotate(180deg)' : 'none',
       mkMoreLabel: mkOn ? 'Voir moins' : 'Voir les ' + mkAllRows.length + ' pays', toggleMk: () => this.setState({ mkAll: !mkOn }) };
+    // Placements payés : toutes / sans / seulement, avec leur nombre — seulement si l'app en a.
+    const DV = (P.data && P.data.videos) || [];
+    const nPaid = DV.filter((v) => v.paid).length;
+    const vfCur = (this.state || {}).vf || 'all';
+    const vfTabs = [['all', 'Toutes', DV.length], ['sans', 'Sans les placements', DV.length - nPaid], ['seuls', 'Placements payés', nPaid]].map(([k, l, n]) => ({ l, n: String(n), coin: k === 'seuls',
+      on: vfCur === k ? 'true' : 'false', bg: vfCur === k ? 'rgba(255,255,255,0.10)' : 'transparent', ink: vfCur === k ? 'var(--ink)' : 'var(--ink-muted)', fw: vfCur === k ? 600 : 500, pick: () => this.setState({ vf: k }) }));
+    mkVals.vfOn = nPaid > 0; mkVals.vfTabs = vfTabs;
     return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, mkVals, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
       kept, keptNone: kept.length === 0,
       ajItem: { kind: 'app', id: slug, label: b.app.name, cover: b.app.icon || null },
@@ -123,7 +130,7 @@ export default class FicheApp extends DCLogic {
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + '\u202fj'; };
       app = {
-        icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, kind: (D.kind === 'app' ? 'App mobile' : D.kind === 'saas' ? 'Logiciel ou site web' : ''), delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
+        icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, kind: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[D.kind] || '', delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
         store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps',
         v30: nf(D.views30), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
         week: nf(D.weeks[5]),
@@ -138,7 +145,9 @@ export default class FicheApp extends DCLogic {
       W = D.weeks.map((w) => w / 1e6);
       L = D.weeks.map((_, j) => day(D.updatedAt - (6 - j) * 7 * 86400000));
       const T = ['t-navy', 't-plum', 't-pine', 't-violet', 't-amber', 't-umber'];
-      vids = D.videos.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: '/app/videos/' + v.id }));
+      const vf = (this.state || {}).vf || 'all';
+      const VS = (D.videos || []).filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true));
+      vids = VS.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: '/app/videos/' + v.id, paid: !!v.paid, unpaid: !v.paid }));
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
       mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
@@ -561,10 +570,29 @@ export default class FicheApp extends DCLogic {
                 ),
                 "Leurs vidéos qui cartonnent"
               ),
-              $h("a", { "class": "sw-more", "href": $v.app?.vidsHref },
-                "Les regarder une par une",
-                $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              $h("span", { "style": "display: inline-flex; align-items: center; gap: 14px;" },
+                ($v.vfOn) ? [
+                  $h("span", { "role": "tablist", "aria-label": "Placements payés", "style": "display: inline-flex; padding: 4px; border-radius: 12px; background: var(--track);" },
+                    ($l($v.vfTabs)).map((f) => [
+                      $h("button", { "type": "button", "role": "tab", "aria-selected": f?.on, "onClick": f?.pick, "style": `display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border: 0; border-radius: 9px; background: ${$t(f?.bg)}; color: ${$t(f?.ink)}; font: inherit; font-size: 13px; font-weight: ${$t(f?.fw)}; cursor: pointer; white-space: nowrap;` },
+                        (f?.coin) ? [
+                          $h("span", { "aria-hidden": "true", "style": "width: 15px; height: 15px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 9px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;" },
+                            "€"
+                          )
+                        ] : null,
+                        $t(f?.l),
+                        $h("span", { "style": "color: var(--ink-faint); font-weight: 500;" },
+                          $t(f?.n)
+                        )
+                      )
+                    ])
+                  )
+                ] : null,
+                $h("a", { "class": "sw-more", "href": $v.app?.vidsHref },
+                  "Les regarder une par une",
+                  $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
                 )
               )
             ),
@@ -574,9 +602,24 @@ export default class FicheApp extends DCLogic {
                   $h("span", { "class": `sw-video ${$t(v?.t)}`, "style": "display: block;" },
                     $h("img", { "class": "sw-cover", "src": v?.src, "alt": v?.hook, "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
-                    $h("span", { "class": "sw-badge", "style": "position: absolute; top: 10px; left: 10px; height: 22px; font-size: 11px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
-                      $t(v?.age)
-                    ),
+                    (v?.paid) ? [
+                      $h("span", { "style": "position: absolute; top: 10px; left: 10px; z-index: 2;" },
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap;" },
+                          $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                            "€"
+                          ),
+                          "Placement payé"
+                        )
+                      ),
+                      $h("span", { "class": "sw-badge", "style": "position: absolute; top: 36px; left: 10px; height: 20px; font-size: 10.5px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                        $t(v?.age)
+                      )
+                    ] : null,
+                    (v?.unpaid) ? [
+                      $h("span", { "class": "sw-badge", "style": "position: absolute; top: 10px; left: 10px; height: 22px; font-size: 11px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                        $t(v?.age)
+                      )
+                    ] : null,
                     $h("span", { "class": "sw-video-foot" },
                       $h("span", { "class": "sw-video-views" },
                         $t(v?.v)

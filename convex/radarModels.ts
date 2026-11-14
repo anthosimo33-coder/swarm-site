@@ -15,7 +15,9 @@ export type Snapshot = { at: number; views: number };
 export type RApp = { id: string; slug: string; name: string; status: string; trackedCount: number | null; mergedInto: string | null; createdAt: number;
   store?: { storeId?: string | number | null; url?: string | null; released?: string | null } | null;
   // La fiche que le Radar tient de l'app (Jarvia #505) : sa niche, et ce qu'elle est quand elle vient d'une campagne.
-  niche?: string | null; market?: { productKind?: string | null } | null };
+  niche?: string | null; market?: { productKind?: string | null } | null;
+  /** Ce qu'est l'app pour le Radar (Jarvia lot 4 B) : app, saas, jeu_mobile… ; null tant qu'elle n'est pas jugée. */
+  kind?: string | null };
 /**
  * Ce qui relie un compte à son app (Jarvia #507), sur ses 30 dernières vidéos : son pseudo, sa bio, ses vidéos qui la
  * citent (`cites` sur `of`) ; « seed » / « manual » : choisi à la main, sans preuve dans ses vidéos ; null : plus rien
@@ -27,6 +29,8 @@ export type RTracked = {
   medianViews: number | null; videosSeen: number; lastPostAt: number | null; posts7d: number | null;
   igHandle: string | null; igFans: number | null; igMedianViews: number | null; addedAt: number;
   matchedBy?: string; proof?: RProof | null;
+  /** Placement payé (Jarvia lot 4 B) : payé une ou deux fois pour l'app, ce n'est pas un de ses créateurs. */
+  placement?: boolean;
 };
 export type RVideo = {
   id: string; accountId: string; appId: string; platform: "tiktok" | "instagram"; videoId: string; publishedAt: number;
@@ -102,8 +106,9 @@ export const NICHES: Record<string, string> = {
 export const nicheOf = (a: { name: string; niche?: string | null }) => (a.niche && a.niche !== "Autres" ? a.niche : null) ?? NICHES[a.name] ?? "Autres";
 
 /** Ce qu'est une app : une app (fiche App Store, ou campagne d'app), un logiciel ou un site web, ou on ne sait pas. */
-export const kindOf = (a: RApp, store: string | null): "app" | "saas" | null =>
-  store || a.store?.storeId || a.market?.productKind === "app" ? "app" : a.market?.productKind === "software" || siteOf(a.slug) ? "saas" : null;
+export const kindOf = (a: RApp, store: string | null): "app" | "saas" | "jeu_mobile" | null =>
+  a.kind === "app" || a.kind === "saas" || a.kind === "jeu_mobile" ? a.kind
+    : store || a.store?.storeId || a.market?.productKind === "app" ? "app" : a.market?.productKind === "software" || siteOf(a.slug) ? "saas" : null;
 
 /** Une app n'est listée qu'avec au moins 2 comptes qui la poussent, prouvés (un compte n'entre que prouvé, cf Jarvia #506). */
 export const MIN_APP_ACCOUNTS = 2;
@@ -196,7 +201,7 @@ export const cleanBio = (bio: string | null) => {
 };
 
 /** Une vidéo, telle que la voient les écrans (vignette, lecteur). */
-export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null };
+export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null; paid?: boolean };
 
 // ─── Le calcul ───────────────────────────────────────────────────────────────
 
@@ -237,6 +242,12 @@ export function buildBoards(
 
   // Les comptes suivis ET prouvés : ce sont eux qui « poussent » une app (cf isProven).
   const accounts = raw.tracked.filter((t) => t.status === "active" && isProven(t));
+  // Placement payé (décision du 14/11) : un compte payé une ou deux fois pour une app n'est pas un de ses créateurs.
+  // Il sort des listes de créateurs, des pages créateur et des comptes ; ses vidéos qui citent l'app restent dans les
+  // vues de l'app, étiquetées « Placement payé » partout où elles s'affichent.
+  const paidAccounts = new Set(raw.tracked.filter((t) => t.placement).map((t) => t.id));
+  const isPaid = (accountId?: string | null) => !!accountId && paidAccounts.has(accountId);
+  const creatorAccounts = accounts.filter((t) => !t.placement);
   const accountById = new Map(raw.tracked.map((t) => [t.id, t]));
   const signalByVideo = new Map(raw.signals.filter((s) => !s.unavailable).map((s) => [s.videoId, s]));
   const trackedByVideo = new Map(raw.trackedVideos.map((v) => [v.videoId, v]));
@@ -298,6 +309,7 @@ export function buildBoards(
       // Une vidéo qui ne cite pas son app n'est pas une vidéo de l'app (sur la fiche de son créateur, sans app).
       app: citesItsApp(v) ? canonical(v.appId)?.slug ?? null : null,
       views: Math.max(v.views, s?.views ?? 0),
+      ...(isPaid(v.accountId) ? { paid: true } : {}),
       x: xOf(v, s),
       publishedAt: v.publishedAt,
       cover: cover(v.videoId, v.coverUrl ?? s?.coverUrl, acc?.handle ?? s?.authorHandle),
@@ -333,19 +345,20 @@ export function buildBoards(
   const mkOf = (accountId: string | null | undefined) => (accountId ? marketByAccount.get(accountId) ?? null : null);
   // Les marchés présents, du plus fourni au moins fourni (comptes actifs).
   const marketCount = new Map<string, number>();
-  for (const t of accounts) { const m = mkOf(t.id); if (m) marketCount.set(m, (marketCount.get(m) ?? 0) + 1); }
+  for (const t of creatorAccounts) { const m = mkOf(t.id); if (m) marketCount.set(m, (marketCount.get(m) ?? 0) + 1); }
   // Tous les pays où il y a des créateurs : le choix se fait dans une liste avec recherche (plus d'onglets).
   const MARKETS = [...marketCount.entries()]
     .filter(([, n]) => n >= MIN_MARKET_CREATORS)
     .sort((p, q) => q[1] - p[1])
     .map(([c, n]) => [c, marketLabel(c), n] as [string, string, number]);
-  const accountsByApp = groupBy(accounts, (t) => canonical(t.appId)?.id ?? "");
+  const accountsByApp = groupBy(creatorAccounts, (t) => canonical(t.appId)?.id ?? "");
   const usedVideos = new Map<string, RVideo>();
   const use = (vs: RVideo[]) => vs.forEach((v) => usedVideos.set(v.videoId, v));
 
   // ── Apps : le classement, et la fiche de chaque app ──
-  const appRows = apps.map((a) => {
-    const vids = videosByApp.get(a.id) ?? [];
+  // Les chiffres d'une app sur un ensemble de ses vidéos : toutes (la liste), celles d'un pays, d'une plateforme.
+  const dayEnd = parisDay(now);
+  const statsOf = (vids: RVideo[], nAccounts: number) => {
     const recent = vids.filter((v) => now - v.publishedAt <= 30 * DAY);
     const week = vids.filter((v) => now - v.publishedAt <= 7 * DAY);
     const weeks = Array.from({ length: 6 }, (_, i) => {
@@ -353,7 +366,6 @@ export function buildBoards(
       return vids.filter((v) => v.publishedAt > end - WEEK && v.publishedAt <= end).reduce((n, v) => n + v.views, 0);
     });
     // Vues par jour de publication sur les DAYS derniers jours (le dernier = aujourd'hui à Paris).
-    const dayEnd = parisDay(now);
     const days = new Array(DAYS).fill(0), daysIg = new Array(DAYS).fill(0);
     for (const v of vids) {
       const i = parisDay(v.publishedAt) - dayEnd + DAYS - 1;
@@ -366,42 +378,90 @@ export function buildBoards(
     const views7 = week.reduce((n, v) => n + v.views, 0);
     const views7Ig = week.filter((v) => v.platform === "instagram").reduce((n, v) => n + v.views, 0);
     const best = week.map((v) => xOf(v, signalByVideo.get(v.videoId))).filter((x): x is number => x !== null);
-    const accs = accountsByApp.get(a.id) ?? [];
     const byAccount = [...groupBy(recent, (v) => v.accountId).values()].map((vs) => vs.reduce((n, v) => n + v.views, 0)).sort((p, q) => q - p);
+    const top = withImage([...recent].sort((p, q) => q.views - p.views), 12, trackedHasImage);
+    use(top.slice(0, 3));
+    return {
+      accounts: nAccounts, videosPerWeek: week.length, dayEnd, days, daysIg,
+      views30, views30Ig, views7, views7Ig, weeks,
+      weekDelta: weeks[4] > 0 ? round((weeks[5] - weeks[4]) / weeks[4], 3) : null,
+      bestX: best.length ? Math.max(...best) : null,
+      top10Share: views30 ? round(byAccount.slice(0, 10).reduce((n, v) => n + v, 0) / views30, 3) : null,
+      videoCount: recent.length,
+      // Comptes en placement payé dont des vidéos comptent ici (ils ne sont pas dans « accounts »).
+      placements: new Set(recent.filter((v) => isPaid(v.accountId)).map((v) => v.accountId)).size,
+      top: top.slice(0, 3).map(card),
+      _top: top,
+    };
+  };
+  const appRows = apps.map((a) => {
+    const vids = videosByApp.get(a.id) ?? [];
+    const accs = accountsByApp.get(a.id) ?? [];
+    const { _top, ...st } = statsOf(vids, accs.length);
+    use(_top);
+    const recent = vids.filter((v) => now - v.publishedAt <= 30 * DAY);
     const known = recent.filter((v) => mkOf(v.accountId));
     const knownViews = known.reduce((n, v) => n + v.views, 0);
     const markets = [...groupBy(known, (v) => mkOf(v.accountId) as string).entries()]
       .map(([m, vs]) => [m, knownViews ? Math.round((vs.reduce((n, v) => n + v.views, 0) / knownViews) * 100) : 0] as [string, number])
       .filter(([, p]) => p > 0)
       .sort((p, q) => q[1] - p[1]);
-    const top = withImage([...recent].sort((p, q) => q.views - p.views), 12, trackedHasImage);
-    use(top);
     const store = storeOf(a.slug);
     const released = a.store?.released ? Date.parse(a.store.released) : NaN;
     const firstVideo = vids.length ? Math.min(...vids.map((v) => v.publishedAt)) : null;
     return {
       slug: a.slug, name: a.name, niche: nicheOf(a), icon: icon(a), kind: kindOf(a, store),
-      accounts: accs.length, videosPerWeek: week.length, dayEnd, days, daysIg,
-      views30, views30Ig, views7, views7Ig, weeks,
-      weekDelta: weeks[4] > 0 ? round((weeks[5] - weeks[4]) / weeks[4], 3) : null,
-      bestX: best.length ? Math.max(...best) : null,
-      top10Share: views30 ? round(byAccount.slice(0, 10).reduce((n, v) => n + v, 0) / views30, 3) : null,
+      ...st,
       markets,
       trackedSince: a.createdAt,
       // Nouvelle : sortie récemment, ou réseau qui vient de démarrer (et non « arrivée récemment dans le Radar » : le
       // 14/11, toutes les apps l'étaient).
       isNew: Number.isFinite(released) ? now - released <= NEW_RELEASE_DAYS * DAY : firstVideo !== null && now - firstVideo <= NEW_NETWORK_DAYS * DAY,
       released: Number.isFinite(released) ? released : null,
-      videoCount: recent.length,
       store,
-      top: top.slice(0, 3).map(card),
-      _top12: top.slice(0, 12),
+      _top12: _top.slice(0, 12),
       _accs: accs,
     };
   });
   // Une app sans réseau prouvé (2 comptes au moins) n'est pas listée : sa fiche existe, elle se montre dès qu'elle l'a.
   const appsBoard = appRows.filter((r) => r.accounts >= MIN_APP_ACCOUNTS).map(({ _top12, _accs, ...r }) => r).sort((p, q) => q.views30 - p.views30);
-  boards.set("apps", { updatedAt: now, markets: MARKETS, niches: [...new Set(appsBoard.map((a) => a.niche))].sort(), apps: appsBoard });
+  boards.set("apps", { updatedAt: now, markets: MARKETS, niches: [...new Set(appsBoard.map((a) => a.niche))].sort(), apps: appsBoard,
+    marketApps: [] as [string, number][] });
+
+  // La liste des apps pour un pays et/ou une plateforme (décision du 14/11 : « marché France » = les vues, la courbe,
+  // les vidéos qui cartonnent et la meilleure vidéo EN FRANCE ; pareil pour TikTok seul ou Instagram seul). Un
+  // document par choix : « apps:FR », « apps@instagram », « apps:FR@instagram ». share : part du pays dans les vues
+  // de l'app (30 j, comptes situés).
+  const listed = new Map(appsBoard.map((r) => [r.slug, r]));
+  const appBySlug = new Map(apps.map((a) => [a.slug, a]));
+  const marketApps = new Map<string, number>();
+  // Vidéos et comptes de chaque app rangés par pays une fois (110 pays × 3 plateformes : pas de filtre répété).
+  const vidsByAppMarket = new Map<string, Map<string, RVideo[]>>(), accsByAppMarket = new Map<string, Map<string, RTracked[]>>();
+  for (const r of listed.values()) {
+    const a = appBySlug.get(r.slug)!;
+    vidsByAppMarket.set(a.id, groupBy(videosByApp.get(a.id) ?? [], (v) => mkOf(v.accountId) ?? ""));
+    accsByAppMarket.set(a.id, groupBy(accountsByApp.get(a.id) ?? [], (t) => mkOf(t.id) ?? ""));
+  }
+  for (const plat of [null, "tiktok", "instagram"] as const) {
+    for (const code of [null, ...MARKETS.map((m) => m[0])]) {
+      if (!plat && !code) continue;
+      const rows = [];
+      for (const r of listed.values()) {
+        const a = appBySlug.get(r.slug)!;
+        let vids = code ? vidsByAppMarket.get(a.id)?.get(code) ?? [] : videosByApp.get(a.id) ?? [];
+        const accs = code ? accsByAppMarket.get(a.id)?.get(code) ?? [] : accountsByApp.get(a.id) ?? [];
+        if (plat) vids = vids.filter((v) => v.platform === plat);
+        if (!vids.length) continue;
+        const { _top, ...st } = statsOf(vids, code ? accs.length : r.accounts);
+        if (!st.views30 && !st.days.some((d) => d > 0)) continue;
+        rows.push({ ...r, ...st, share: code ? (r.markets.find((m) => m[0] === code)?.[1] ?? 0) : null });
+      }
+      rows.sort((p, q) => q.views30 - p.views30);
+      if (code && !plat) marketApps.set(code, rows.length);
+      boards.set(`apps${code ? ":" + code : ""}${plat ? "@" + plat : ""}`, { updatedAt: now, market: code ?? "ALL", platform: plat ?? "ALL", niches: [...new Set(rows.map((x) => x.niche))].sort(), apps: rows });
+    }
+  }
+  (boards.get("apps") as { marketApps: [string, number][] }).marketApps = MARKETS.map((m) => [m[0], marketApps.get(m[0]) ?? 0]);
 
   // ── Formats ──
   const accountX = (m: RFormatMember) => {
@@ -461,7 +521,7 @@ export function buildBoards(
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
   };
-  const creators = accounts.filter((t) => (t.medianViews ?? 0) > 0).map(creatorRow).sort((p, q) => (q.median ?? 0) - (p.median ?? 0));
+  const creators = creatorAccounts.filter((t) => (t.medianViews ?? 0) > 0).map(creatorRow).sort((p, q) => (q.median ?? 0) - (p.median ?? 0));
   for (const c of creators) wantAvatar(c.handle);
   // Tous les créateurs de chaque marché (plus de plafond à 200, décision du 14/11), par pages de CREATOR_PAGE :
   // « creators:<marché> » porte la 1re page et leur nombre, « creators:<marché>:2 », « :3 »… la suite.
@@ -513,6 +573,7 @@ export function buildBoards(
       id: s.videoId, platform: s.platform, handle: s.authorHandle, app: a ? { slug: a.slug, name: a.name, icon: icon(a) } : null,
       views: s.views, x: round(s.multiplier ?? 0, 1), publishedAt: s.publishedAt, cover: cover(s.videoId, s.coverUrl, s.authorHandle), hook: s.hook,
       market: s.trackedAccountId && mkOf(s.trackedAccountId) ? mkOf(s.trackedAccountId) : marketOf(s.lang, s.region), region: s.region,
+      ...(isPaid(s.trackedAccountId) ? { paid: true } : {}),
     };
   });
   const newFormats = formatRows.filter((f) => f.accounts >= 3 && now - f.firstSeenAt <= 7 * DAY).slice(0, 20);
@@ -528,7 +589,7 @@ export function buildBoards(
 
   // ── Ce que le Radar suit, pour la page d'accueil publique et la date du relevé (« Relevé du … ») ──
   // `at` change à chaque passage : ce document est réécrit chaque nuit (les autres seulement s'ils changent).
-  boards.set("stats", { updatedAt: now, at: now, apps: appsBoard.length, accounts: accounts.length, markets: MARKETS.length });
+  boards.set("stats", { updatedAt: now, at: now, apps: appsBoard.length, accounts: creatorAccounts.length, markets: MARKETS.length });
 
   // ── Recherche (palette) : un index léger ──
   boards.set("search", {
@@ -558,7 +619,7 @@ export function buildBoards(
     return {
       updatedAt: now, id, platform,
       url: s?.url ?? (platform === "instagram" ? `https://www.instagram.com/reel/${id.replace(/^ig:/, "")}/` : `https://www.tiktok.com/@${handle}/video/${id}`),
-      handle, fans: acc?.fans ?? s?.authorFans ?? null, normal: acc?.medianViews ?? null,
+      handle, fans: acc?.fans ?? s?.authorFans ?? null, normal: acc?.medianViews ?? null, paid: isPaid(acc?.id),
       app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
       market: acc ? mkOf(acc.id) ?? marketOf(s?.lang, s?.region ?? v?.region) : marketOf(s?.lang, s?.region ?? v?.region), region: s?.region ?? null,
       publishedAt: v?.publishedAt ?? s?.publishedAt ?? null, durationSec: s?.durationSec ?? null,

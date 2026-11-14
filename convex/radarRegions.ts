@@ -36,8 +36,13 @@ export const fill = internalAction({
   args: {},
   handler: async (ctx): Promise<{ read: number; found: number }> => {
     const start = Date.now();
-    const batch = await ctx.runQuery(internal.radarStore.regionBatch, { limit: BATCH, now: start });
-    if (!batch.length) return { read: 0, found: 0 };
+    const batch = await ctx.runMutation(internal.radarStore.claimRegions, { limit: BATCH, now: start });
+    if (!batch.length) {
+      // Rien à lire : des pays lus depuis la dernière synchro réussie (la relance d'après lecture a pu être refusée
+      // parce qu'une synchro tournait) ? Une synchro les met dans les écrans — au plus une par heure.
+      if (await ctx.runQuery(internal.radarStore.regionsNeedSync, { now: start })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
+      return { read: 0, found: 0 };
+    }
     const out: { handle: string; country: string | null }[] = [];
     let next = 0;
     const worker = async () => {

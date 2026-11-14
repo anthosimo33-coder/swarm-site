@@ -39,7 +39,7 @@ export default class MVideo extends DCLogic {
     let nxt = [{"src": "/media/app/v-7705368869250075925.jpg", "x": "2 333×", "t": "TKA SD kelas 6 persiapannya bisa dimulai disini", "v": "2,0 M"}, {"src": "/media/app/v-7706010190566542612.jpg", "x": "1 226×", "t": "Mình sẽ xoá vid này trong 24h nữa", "v": "809 k"}, {"src": "/media/app/v-7706101547570171143.jpg", "x": "455×", "t": "Bí mật giúp bạn học giỏi hơn đứa mình ghét", "v": "1,2 M"}];
     nxt = nxt.map((x) => Object.assign({}, x, { href: '/app/videos/' + vkey(x.src) }));
     let au = { av: '/media/app/av-learnwithjoel1.jpg', noav: true };
-    let vid = { embed: 'https://www.tiktok.com/player/v1/7705929733220994337?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0', pos: '1 sur 14', back: '/app/apps/astraai', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', hasApp: true, appName: 'Astra AI', where: 'Espagne · 08/11', mk: 'ES',
+    let vid = { embed: 'https://www.tiktok.com/player/v1/7705929733220994337?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0', pos: '1 sur 14', back: '/app/apps/astraai', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', hasApp: true, appName: 'Astra AI', where: 'Espagne · 08/11', mk: 'ES', paid: false, paidNote: '',
       views: '1,87 M', who: '@learnwithjoel1 · 12,2 k abonnés', hasDur: true, dur: '0:49', url: 'https://www.tiktok.com/@learnwithjoel1/video/7705929733220994337', hasX: true, x: '65×',
       story: '1,87 M vues en 92 heures, alors que le compte fait d’habitude 28,5 k vues. +38 % entre H+52 et H+92.',
       appHref: '/app/apps/astraai', appLink: 'Voir l’app Astra AI', copyText: 'POV: tienes EXAMEN ORAL y no has estudiado NADA' };
@@ -73,6 +73,8 @@ export default class MVideo extends DCLogic {
           : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/player/v1/' + D.id + '?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0' : '',
         pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
         hook: D.hook || D.caption || '@' + D.handle, hasApp: !!D.app, appName: D.app ? D.app.name : '',
+        // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
+        paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
         mk: D.market || '', where: [ML[D.market] || '', D.publishedAt ? day(D.publishedAt) : ''].filter(Boolean).join(' · '), views: nf(D.views || 0),
         who: '@' + D.handle + (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : ''), hasDur: dur > 0, dur: Math.floor(dur / 60) + ':' + String(dur % 60).padStart(2, '0'),
         url: D.url || 'https://www.tiktok.com/@' + D.handle, hasX: !!D.x, x: D.x ? xf(D.x) : '',
@@ -188,8 +190,8 @@ export default class MVideo extends DCLogic {
                 $t($v.vid?.where)
               )
             ),
-            $h("span", { "style": "position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;" },
-              $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
+            $h("span", { "style": "position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;" },
+              $h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px;" },
                 $h("span", { "style": "font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; color: #FFFFFF;" },
                   $t($v.vid?.views)
                 ),
@@ -207,11 +209,19 @@ export default class MVideo extends DCLogic {
                   ),
                   $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
                     $t($v.vid?.who)
-                  )
+                  ),
+                  ($v.vid?.paid) ? [
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                      $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                        "€"
+                      ),
+                      "Placement payé"
+                    )
+                  ] : null
                 )
               ),
               ($v.vid?.hasDur) ? [
-                $h("span", { "style": "font-size: 12px; color: #E4E7EC;" },
+                $h("span", { "style": "flex-shrink: 0; font-size: 12px; color: #E4E7EC;" },
                   $t($v.vid?.dur)
                 )
               ] : null
@@ -224,6 +234,13 @@ export default class MVideo extends DCLogic {
             $h("span", { "class": "sw-video-bar", "style": "width: 0;" })
           ] : null
         ),
+        ($v.vid?.paid) ? [
+          $h("div", { "style": "padding: 14px 20px 0;" },
+            $h("span", { "style": "display: block; padding: 10px 14px; border-radius: 12px; background: rgba(245,185,65,0.08); box-shadow: inset 0 0 0 1px rgba(245,185,65,0.22); font-size: 13.5px; line-height: 1.5; color: var(--ink-soft);" },
+              $t($v.vid?.paidNote)
+            )
+          )
+        ] : null,
         $h("div", { "style": "padding: 16px 20px 0; display: flex; justify-content: center;" },
           $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.openAj },
             $t($v.saveLabel),

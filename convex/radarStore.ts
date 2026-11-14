@@ -160,7 +160,7 @@ export const boardKeys = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
     const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500 });
-    return { keys: r.page.map((b) => b.key), cursor: r.continueCursor, done: r.isDone };
+    return { keys: r.page.map((b) => b.key), hashes: r.page.map((b) => b.hash), cursor: r.continueCursor, done: r.isDone };
   },
 });
 
@@ -260,6 +260,33 @@ export const saveRegionTodo = internalMutation({
       if (!row) await ctx.db.insert("accountRegions", { handle: it.handle, country: null, ids: it.ids, tries: 0, at: 0 });
       else if (!row.country && row.ids.join() !== it.ids.join()) await ctx.db.patch(row._id, { ids: it.ids, tries: 0 });
     }
+  },
+});
+
+/**
+ * Réserve les prochains comptes à lire (sans pays, moins de 3 essais, pas essayés depuis 6 h) : marqués « essayés
+ * maintenant » tout de suite, pour que deux lectures en même temps (tâche du quart d'heure, lecture lancée par la
+ * synchro) ne relisent pas les mêmes comptes — ce qui arrivait le 14/11.
+ */
+export const claimRegions = internalMutation({
+  args: { limit: v.number(), now: v.number() },
+  handler: async (ctx, { limit, now }) => {
+    const rows = await ctx.db.query("accountRegions").withIndex("by_country_at", (q) => q.eq("country", null).lt("at", now - 6 * 3_600_000))
+      .filter((q) => q.lt(q.field("tries"), 3)).take(limit);
+    for (const r of rows) await ctx.db.patch(r._id, { at: now });
+    return rows.map((r) => ({ handle: r.handle, ids: r.ids, tries: r.tries }));
+  },
+});
+
+/** Faut-il une synchro ? Des pays lus depuis le début de la dernière synchro réussie, et aucune synchro depuis 1 h. */
+export const regionsNeedSync = internalQuery({
+  args: { now: v.number() },
+  handler: async (ctx, { now }) => {
+    const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(20);
+    if (runs[0] && now - runs[0].startedAt < 3_600_000) return false;
+    const lastOk = runs.find((r) => r.ok)?.startedAt ?? 0;
+    const fresh = await ctx.db.query("accountRegions").filter((q) => q.and(q.neq(q.field("country"), null), q.gt(q.field("at"), lastOk))).first();
+    return !!fresh;
   },
 });
 

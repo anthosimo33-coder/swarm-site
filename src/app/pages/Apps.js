@@ -53,6 +53,9 @@ return {};
     let MKD = {"Astra AI": [["ID", "Indonésie", 65], ["US", "États-Unis", 19], ["ES", "Espagne", 8], ["BR", "Brésil", 5], ["FR", "France", 2], ["MX", "Mexique", 1]], "Love8": [["US", "États-Unis", 66], ["ID", "Indonésie", 23], ["FR", "France", 8], ["MX", "Mexique", 4]]};
     let MKS = [['ALL', 'Tous les marchés', ''], ['US', 'États-Unis', 'US'], ['ID', 'Indonésie', 'ID'], ['MX', 'Mexique', 'MX'], ['FR', 'France', 'FR'], ['BR', 'Brésil', 'BR'], ['ES', 'Espagne', 'ES']];
     let NIS = ['Séduction IA', 'Jalousie et ex', 'Études', 'Santé et physique', 'Couple', 'Langues', 'Side hustle', 'Foi', 'Social et loisirs', 'Beauté IA'];
+    let MAPPS = null; // nombre d'apps de chaque pays (document « apps »)
+    const a2has = (r, m) => r[2].indexOf(m) >= 0;
+    const PREP = (n) => { n = String(n || ''); if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return ['aux', 'les ']; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return ['en', 'l’']; return /e$/.test(n) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? ['en', 'la '] : ['au', 'le ']; };
     const T = ['t-plum', 't-navy', 't-pine', 't-violet', 't-umber', 't-amber'];
     // Sur le site : les vraies données du Radar (document « apps », convex/radarModels.ts).
     // Sur le canevas : l'exemple ci-dessus. A[i] = [nom, niche, marchés, comptes, vidéos/sem.,
@@ -65,14 +68,27 @@ return {};
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
     const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
+    // Un pays ou une plateforme choisis : leur propre liste (« apps:FR », « apps@instagram », « apps:FR@instagram »),
+    // où vues, courbe, vidéos qui cartonnent et meilleure vidéo ne comptent que ce pays et cette plateforme.
+    const st0 = this.state || {};
+    const srcKey = 'apps' + ((st0.market || 'ALL') !== 'ALL' ? ':' + st0.market : '') + ((st0.platform || 'ALL') !== 'ALL' ? '@' + st0.platform : '');
+    let SRC = D;
+    if (D && D.apps && srcKey !== 'apps' && this.props && typeof this.props.get === 'function') {
+      const g = this.props.get(srcKey);
+      if (g === undefined) SRC = this.lastSrc && this.lastSrcKey === srcKey ? this.lastSrc : (this.lastSrc || D);
+      else { SRC = g && g.apps ? g : { apps: [] }; this.lastSrc = SRC; this.lastSrcKey = srcKey; }
+    }
+    const scoped = SRC !== D && SRC && SRC.market && SRC.market !== 'ALL';
     if (D && D.apps) {
       const LBL = Object.fromEntries(D.markets);
-      A = D.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, a.weeks.map((w) => w / 1e6),
+      A = SRC.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, a.weeks.map((w) => w / 1e6),
         a.bestX ? xf(a.bestX) : '—', a.top.map((t) => t.cover || ''), a.top.map((t) => nf(t.views)), a.icon || '', a.slug, a.top.map((t) => t.id), a.isNew,
         (a.views30 - a.views30Ig) / 1e6, a.views30Ig / 1e6, (a.views7 - (a.views7Ig || 0)) / 1e6, (a.views7Ig || 0) / 1e6,
-        a.top10Share, a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null, a.videoCount, a.bestX || 0, a.trackedSince || 0, a.days || null, a.daysIg || null]);
+        a.top10Share, a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null, a.videoCount, a.bestX || 0, a.trackedSince || 0, a.days || null, a.daysIg || null,
+        typeof a.share === 'number' ? a.share : null, a.top.map((t) => !!t.paid), a.placements || 0, a.kind || null]);
       DAYEND = D.apps.length && typeof D.apps[0].dayEnd === 'number' ? D.apps[0].dayEnd : null;
-      MKD = Object.fromEntries(D.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || c, p])]));
+      MKD = Object.fromEntries(SRC.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || c, p])]));
+      MAPPS = Object.fromEntries(D.marketApps || []);
       MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c]));
       NIS = D.niches;
     }
@@ -98,7 +114,7 @@ return {};
     const sumR = (arr) => { let n = 0; for (let i = range.a; i <= range.b; i++) n += arr[i] || 0; return n / 1e6; };
     const mq = (st.mq || '').toLowerCase();
     const fr = (x, d) => x.toFixed(d).replace('.', ',');
-    const okM = (a, m) => m === 'ALL' || a[2].indexOf(m) >= 0;
+    const okM = (a, m) => m === 'ALL' || scoped || a[2].indexOf(m) >= 0;
     const okN = (a, ns) => ns.length === 0 || ns.indexOf(a[1]) >= 0;
     const platform = st.platform || 'ALL';
     const isNew = (a) => (a[13] !== undefined ? a[13] : a[6][0] + a[6][1] < 0.2);
@@ -138,14 +154,16 @@ return {};
       const d = dlt(a);
       const up = d >= 0;
       return {
-        rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], nicheIc: NIC[a[1]] || NIC0, mkText: mkText(a), mks: mkList(a),
-        net: Number(a[3]).toLocaleString('fr-FR') + ' comptes · ' + Number(a[4]).toLocaleString('fr-FR') + ' vidéos / sem.',
+        rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], nicheIc: NIC[a[1]] || NIC0, mkText: mkText(a),
+        mks: market !== 'ALL' ? [{ c: market, p: (a[25] === null || a[25] === undefined ? '' : (a[25] < 1 ? '<\u202f1' : a[25]) + '\u202f% de ses vues'), t: (MKS.filter((m) => m[0] === market)[0] || [0, market])[1] }] : mkList(a),
+        net: Number(a[3]).toLocaleString('fr-FR') + ' comptes · ' + Number(a[4]).toLocaleString('fr-FR') + ' vidéos / sem.' + (a[27] > 0 ? ' · ' + a[27] + (a[27] > 1 ? ' placements payés' : ' placement payé') : ''),
         count: typeof a[20] === 'number' && a[20] > 0 ? a[20].toLocaleString('fr-FR') : '', v30: fr(views(a), 1) + '\u202fM',
         delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f% cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
         line, area: line + ' L127 40 L3 40 Z', ex: pts[5][0].toFixed(1), ey: pts[5][1].toFixed(1), gid: 'apl' + i,
         stroke: up ? '#4C9AFF' : '#8A93A3',
         best: a[7],
-        thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length], href: videoOf(a, j) })).filter((t) => t.src),
+        thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length], href: videoOf(a, j), paid: !!(a[26] && a[26][j]) })).filter((t) => t.src),
+        kindL: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[a[28]] || '',
         logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank',
         bg: st.pv === a[0] ? 'var(--accent-soft)' : 'transparent',
         open: () => this.setState({ pv: a[0], open: '' })
@@ -170,7 +188,7 @@ return {};
     let menu = { on: false, items: [], left: '0px', title: '', search: '', foot: '' };
     if (open === 'marche') {
       menu = { on: true, left: menuLeft('0px'), title: 'Marché', search: 'Chercher un marché', foot: 'Le marché choisi vaut pour tout le classement.',
-        items: MKS.filter((m) => keep(m[1])).map((m) => { const n = A.filter((r) => okM(r, m[0]) && okN(r, niches)).length; const on = market === m[0];
+        items: MKS.filter((m) => keep(m[1])).map((m) => { const n = m[0] === 'ALL' ? (D && D.apps ? D.apps.length : A.length) : (MAPPS && MAPPS[m[0]] !== undefined ? MAPPS[m[0]] : A.filter((r) => a2has(r, m[0])).length); const on = market === m[0];
           return Object.assign({ label: m[1], flag: m[2] || false, n: n + ' apps', sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1, pick: () => set({ market: m[0] }) }, radio(on)); }) };
     } else if (open === 'niche') {
       menu = { on: true, left: menuLeft('190px'), title: 'Niche', search: 'Chercher une niche', foot: 'Plusieurs niches possibles. Les nombres tiennent compte du marché.',
@@ -226,7 +244,7 @@ return {};
       const t10 = typeof pa[18] === 'number' && pa[3] > 10 ? pa[18] : null;
       const t0 = pa[19] || null;
       const v1 = pa[8][0] ? { cover: pa[8][0], views: pa[9][0] + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xf(t0.x) + ' sa normale' : '',
-        who: t0 && t0.handle ? '@' + t0.handle : '', aria: 'Lire la vidéo' + (t0 && t0.handle ? ' de @' + t0.handle : '') } : null;
+        who: t0 && t0.handle ? '@' + t0.handle : '', aria: 'Lire la vidéo' + (t0 && t0.handle ? ' de @' + t0.handle : ''), paid: !!(pa[26] && pa[26][0]) } : null;
       pv = { on: true, n: pa[0], niche: pa[1], logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
         vLabel: 'Vues sur 30 jours', v30: fr(pa[5], 1) + '\u202fM', week: fr(w[5], 1) + '\u202fM',
         delta: d === null ? '' : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%',
@@ -306,6 +324,7 @@ return {};
       toggle: () => set({ open: open === 'periode' ? '' : 'periode', draft: range || { a: NDAYS - 30, b: NDAYS - 1 }, calShift: 0 }) };
     const perEdge = open === 'periode' ? 'var(--accent-edge)' : 'transparent';
     return {
+      lede: market === 'ALL' ? 'Les apps que les réseaux de créateurs poussent, classées par vues.' : 'Les apps qui font le plus de vues ' + PREP(mLabel)[0] + ' ' + mLabel + ' : vues, courbes et vidéos de ce pays seulement.',
       releve: (() => { const S = this.props && typeof this.props.get === 'function' ? this.props.get('stats') : null; if (!S || !S.at) return ''; const d = new Date(S.at); return 'Relevé le ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }).replace(':', ' h ') + '.'; })(), sortMenu, sortBtn, hd, cal, cust, perEdge,
       rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv, ajItem,
       vlab: period === 'custom' ? 'Vues · ' + rangeLabel : (period === '7' ? 'Vues 7 j' : 'Vues 30 j'), sortLabel: SLAB[sortBy],
@@ -367,7 +386,7 @@ return {};
                 "Apps"
               ),
               $h("p", { "style": "margin: 0; font-size: 15px; color: var(--ink-muted);" },
-                "Les apps que les réseaux de créateurs poussent, classées par vues.",
+                $t($v.lede),
                 ($v.releve) ? [
                   " ", $t($v.releve)
                 ] : null
@@ -742,8 +761,15 @@ return {};
                             ] : null
                           ),
                           $h("span", { "style": "min-width: 0; display: flex; flex-direction: column; gap: 3px;" },
-                            $h("span", { "class": "sw-app-name", "style": "font-size: 15px; font-weight: 600; letter-spacing: -0.01em;" },
-                              $t(r?.n)
+                            $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; min-width: 0;" },
+                              $h("span", { "class": "sw-app-name", "style": "font-size: 15px; font-weight: 600; letter-spacing: -0.01em;" },
+                                $t(r?.n)
+                              ),
+                              (r?.kindL) ? [
+                                $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 11px; font-weight: 600; color: var(--ink-soft);" },
+                                  $t(r?.kindL)
+                                )
+                              ] : null
                             ),
                             $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
                               $t(r?.net)
@@ -777,6 +803,11 @@ return {};
                             $h("a", { "href": t?.href, "class": `sw-video ${$t(t?.t)}`, "style": "display: block; width: 58px; height: 78px; aspect-ratio: auto; border-radius: 10px;" },
                               $h("img", { "class": "sw-cover", "src": t?.src, "alt": "", "loading": "lazy" }),
                               $h("span", { "class": "sw-video-shade" }),
+                              (t?.paid) ? [
+                                $h("span", { "title": "Placement payé : compte payé pour cette vidéo", "aria-label": "Placement payé", "style": "position: absolute; top: 4px; left: 4px; z-index: 2; width: 18px; height: 18px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px rgba(5,7,12,0.6);" },
+                                  "€"
+                                )
+                              ] : null,
                               $h("span", { "style": "position: absolute; left: 6px; bottom: 5px; font-size: 11px; font-weight: 700; color: #FFFFFF;" },
                                 $t(t?.v)
                               )
@@ -1004,6 +1035,14 @@ return {};
                       ($v.pv?.top?.x) ? [
                         $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--accent-soft); font-size: 12px; font-weight: 600; color: var(--accent);" },
                           $t($v.pv?.top?.x)
+                        )
+                      ] : null,
+                      ($v.pv?.top?.paid) ? [
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                          $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                            "€"
+                          ),
+                          "Placement payé"
                         )
                       ] : null,
                       $h("span", { "style": "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },

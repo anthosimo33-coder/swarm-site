@@ -147,7 +147,7 @@ export default class Alertes extends DCLogic {
           title: million ? une + 'passe ' + Math.floor(v.views / 1e6) + ' M de vues' : acc ? '@' + v.handle + ' fait ' + xf(v.x) + ' sa normale' : une + (v.x ? 'à ' + xf(v.x) + ' sa normale' : 'à ' + nf(v.views) + ' vues'),
           sub: (acc ? [app, mk, nf(v.views) + ' vues'] : ['@' + v.handle, mk, million && v.x ? xf(v.x) + ' sa normale' : nf(v.views) + ' vues']).filter(Boolean).join(' · '),
           big: million || !v.x ? nf(v.views) : xf(v.x), covs: v.cover ? [{ src: v.cover }] : [], href: '/app/videos/' + v.id,
-          kind: 'video', views: v.views, x: v.x || 0, slug: v.app ? v.app.slug : '', market: v.market || '' });
+          kind: 'video', views: v.views, x: v.x || 0, slug: v.app ? v.app.slug : '', market: v.market || '', paid: !!v.paid });
       });
       (D.formats || []).forEach((f) => {
         const names = (f.apps || []).filter(Boolean).map((a) => a.name);
@@ -286,8 +286,18 @@ export default class Alertes extends DCLogic {
                         )
                       ),
                       $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;" },
-                        $h("span", { "style": `font-size: 15px; font-weight: ${$t(a?.w)}; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` },
-                          $t(a?.title)
+                        $h("span", { "style": "display: flex; align-items: center; gap: 8px; min-width: 0;" },
+                          $h("span", { "style": `min-width: 0; font-size: 15px; font-weight: ${$t(a?.w)}; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` },
+                            $t(a?.title)
+                          ),
+                          (a?.paid) ? [
+                            $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                              $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                                "€"
+                              ),
+                              "Placement payé"
+                            )
+                          ] : null
                         ),
                         $h("span", { "style": "font-size: 13px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                           $t(a?.sub)

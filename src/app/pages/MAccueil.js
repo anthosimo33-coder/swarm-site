@@ -54,14 +54,14 @@ export default class MAccueil extends DCLogic {
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const has = (d) => d !== null && d !== undefined;
       const appRow = (a) => Object.assign({ name: a.name, sub: nf(a.views7 || 0) + ' vues en 7 jours', v: has(a.weekDelta) ? pct(a.weekDelta) : (a.bestX ? xf(a.bestX) : ''), href: '/app/apps/' + a.slug }, ico(a));
-      const vidRow = (v) => Object.assign({ name: v.app ? v.app.name : '@' + v.handle, sub: 'Vidéo à ' + nf(v.views) + ' vues', v: v.x ? xf(v.x) : '', href: '/app/videos/' + v.id }, ico(v.app));
+      const vidRow = (v) => Object.assign({ name: v.app ? v.app.name : '@' + v.handle, sub: 'Vidéo à ' + nf(v.views) + ' vues' + (v.paid ? ' · placement payé' : ''), v: v.x ? xf(v.x) : '', href: '/app/videos/' + v.id }, ico(v.app));
       const apps = D.apps.slice().sort((p, q) => (has(q.weekDelta) ? q.weekDelta : -Infinity) - (has(p.weekDelta) ? p.weekDelta : -Infinity));
       const vids = D.videos || [];
       look = apps.slice(0, 2).map(appRow).concat(vids.slice(1, 3).map(vidRow), apps.slice(2).map(appRow)).slice(0, 4);
       niches = (D.niches || []).map((n) => ({ l: n }));
       const v0 = vids[0];
       const who = v0 ? (v0.app ? v0.app.name : '@' + v0.handle) : '';
-      alert = v0 ? { on: true, src: v0.cover || '', views: nf(v0.views), kicker: 'Alerte · ' + who,
+      alert = v0 ? { on: true, paid: !!v0.paid, src: v0.cover || '', views: nf(v0.views), kicker: 'Alerte · ' + who,
         text: v0.x ? 'Une vidéo à ' + xf(v0.x) + ' sa normale' : 'Une vidéo à ' + nf(v0.views) + ' vues', href: '/app/videos/' + v0.id } : { on: false };
     }
     return { niches, look, alert, noLook: look.length === 0, hasNiches: niches.length > 0 };
@@ -192,6 +192,16 @@ export default class MAccueil extends DCLogic {
               $h("span", { "style": "font-size: 12px; font-weight: 600; color: var(--accent);" },
                 $t($v.alert?.kicker)
               ),
+              ($v.alert?.paid) ? [
+                $h("span", { "style": "display: flex;" },
+                  $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                    $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                      "€"
+                    ),
+                    "Placement payé"
+                  )
+                )
+              ] : null,
               $h("span", { "style": "font-size: 16px; font-weight: 700; line-height: 1.3;" },
                 $t($v.alert?.text)
               ),

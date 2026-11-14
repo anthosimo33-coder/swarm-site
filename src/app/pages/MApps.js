@@ -46,11 +46,22 @@ return {};
     const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
     const nfm = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
     const xfm = (x) => (x >= 100 ? Math.round(x).toLocaleString('en-US').replace(/,/g, '\u202f') : x >= 10 ? String(Math.round(x)) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
+    // Un pays choisi : sa propre liste (« apps:FR »), où vues, courbe et vidéos ne comptent que ce pays.
+    const mk0 = (this.state || {}).market || 'ALL';
+    let SRC = D;
+    if (D && D.apps && mk0 !== 'ALL' && this.props && typeof this.props.get === 'function') {
+      const g = this.props.get('apps:' + mk0);
+      if (g === undefined) SRC = this.lastSrc || D; else { SRC = g && g.apps ? g : { apps: [] }; this.lastSrc = SRC; }
+    }
+    const scoped = SRC !== D && SRC && SRC.market && SRC.market !== 'ALL';
+    let MAPPS = null;
     if (D && D.apps) {
       const LBL = Object.fromEntries(D.markets);
-      A = D.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, (a.weeks || []).map((w) => w / 1e6),
-        a.bestX ? xfm(a.bestX) : '—', (a.top || []).map((t) => t.cover || ''), (a.top || []).map((t) => nfm(t.views)), a.icon || '', a.slug, (a.top || []).map((t) => t.id), !!a.isNew, a.weekDelta === undefined ? null : a.weekDelta, typeof a.top10Share === 'number' ? a.top10Share : null, a.top && a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null]);
-      MKD = Object.fromEntries(D.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || MKN(c) || c, p])]));
+      MAPPS = Object.fromEntries(D.marketApps || []);
+      A = SRC.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, (a.weeks || []).map((w) => w / 1e6),
+        a.bestX ? xfm(a.bestX) : '—', (a.top || []).map((t) => t.cover || ''), (a.top || []).map((t) => nfm(t.views)), a.icon || '', a.slug, (a.top || []).map((t) => t.id), !!a.isNew, a.weekDelta === undefined ? null : a.weekDelta, typeof a.top10Share === 'number' ? a.top10Share : null, a.top && a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null,
+        (a.top || []).map((t) => !!t.paid), a.placements || 0, a.kind || null]);
+      MKD = Object.fromEntries(SRC.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || MKN(c) || c, p])]));
       MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l || MKN(c) || c, c]));
       NIS = D.niches;
     } else if (D === null) {
@@ -64,7 +75,7 @@ return {};
     const qn = this.props && this.props.query && this.props.query.niche;
     const market = st.market || 'ALL', niches = st.niches || (qn ? [qn] : []), sort = st.sort || 'vues', period = st.period || '30';
     const fr = (x, d) => x.toFixed(d).replace('.', ',');
-    const okM = (a, m) => m === 'ALL' || a[2].indexOf(m) >= 0;
+    const okM = (a, m) => m === 'ALL' || scoped || a[2].indexOf(m) >= 0;
     const okN = (a, ns) => ns.length === 0 || ns.indexOf(a[1]) >= 0;
     const views = (a) => (period === '7' ? a[6][5] : a[5]);
     // Variation de la semaine : celle du document (null quand la semaine d'avant est vide), sinon calculée sur l'exemple.
@@ -88,13 +99,14 @@ return {};
       return { rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mkText: mkText(a), mks: mkList(a), v30: nfm(views(a) * 1e6),
         hasDelta: d !== null, delta: d === null ? '' : dfmt(d), dInk: up ? 'var(--accent)' : 'var(--ink-faint)', stroke: up ? '#4C9AFF' : '#8A93A3',
         line, area: line + ' L100 40 L0 40 Z', gid: 'mapl' + i, ex: '100', ey: (pts[5][1] / 40 * 100).toFixed(1), hasW: !!a[6],
-        covs: a[8].map((src, j) => ({ src, v: a[9][j] || '', href: videoOf(a, j) })).filter((c) => c.src), logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank', open: () => this.setState({ pv: a[0] }) }; });
+        covs: a[8].map((src, j) => ({ src, v: a[9][j] || '', href: videoOf(a, j), paid: !!(a[17] && a[17][j]) })).filter((c) => c.src),
+        kindL: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[a[19]] || '', plc: a[18] > 0 ? a[18] + (a[18] > 1 ? ' placements payés' : ' placement payé') : '', logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank', open: () => this.setState({ pv: a[0] }) }; });
     const mLabel = market === 'ALL' ? 'Tous' : MKS.filter((m) => m[0] === market)[0][1];
     const chips = [];
     if (market !== 'ALL') chips.push({ label: mLabel, clear: () => this.setState({ market: 'ALL' }) });
     niches.forEach((n) => chips.push({ label: n, clear: () => this.setState({ niches: niches.filter((x) => x !== n) }) }));
     const radio = (on) => ({ box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
-    const mItems = MKS.map((m) => { const n = A.filter((r) => okM(r, m[0]) && okN(r, niches) && avail(r)).length; const on = market === m[0];
+    const mItems = MKS.map((m) => { const n = m[0] === 'ALL' ? (D && D.apps ? D.apps.length : A.length) : (MAPPS && MAPPS[m[0]] !== undefined ? MAPPS[m[0]] : A.filter((r) => r[2].indexOf(m[0]) >= 0).length); const on = market === m[0];
       return Object.assign({ label: m[1], flag: m[2] || false, n: n + ' apps', sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1, pick: () => this.setState({ market: m[0] }) }, radio(on)); });
     const nItems = NIS.map((nm) => { const n = A.filter((r) => okM(r, market) && r[1] === nm && avail(r)).length; const on = niches.indexOf(nm) >= 0;
       return { label: nm, n, sel: on ? 'true' : 'false', o: n === 0 ? 0.45 : 1, pick: () => this.setState({ niches: on ? niches.filter((x) => x !== nm) : niches.concat([nm]) }) }; });
@@ -126,7 +138,7 @@ return {};
         bars: shown.map((x) => ({ h: Math.max(4, Math.round(x[5] / (pool[0][5] || 1) * 100)) + '%', bg: x === pa ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : hatchB })),
         acc: grp(pa[3]), accLabel: pa[3] > 1 ? 'comptes' : 'compte', hasTop10: t10 !== null, top10: Math.round((t10 || 0) * 100) + '\u202f%',
         waffle: Array.from({ length: 20 }, (_, c) => ({ bg: c < Math.round((t10 || 0) * 20) ? '#4C9AFF' : 'rgba(255,255,255,0.08)' })),
-        hasTop: !!pa[8][0], top: pa[8][0] ? { cover: pa[8][0], views: (pa[9][0] || '') + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xfm(t0.x) + ' sa normale' : '', who: t0 && t0.handle ? '@' + t0.handle : '' } : {},
+        hasTop: !!pa[8][0], top: pa[8][0] ? { cover: pa[8][0], views: (pa[9][0] || '') + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xfm(t0.x) + ' sa normale' : '', who: t0 && t0.handle ? '@' + t0.handle : '', paid: !!(pa[17] && pa[17][0]) } : {},
         ppw: grp(pa[4]), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
         hasMk: !!md, noMk: !md, mkd: (md || []).slice(0, 2).map((m, n) => ({ c: m[0], l: m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
         followLabel: (st.follow || {})[pa[0]] ? 'Suivi' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
@@ -274,8 +286,15 @@ return {};
                   ] : null
                 ),
                 $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;" },
-                  $h("span", { "style": "max-width: 100%; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
-                    $t(r?.n)
+                  $h("span", { "style": "max-width: 100%; min-width: 0; display: inline-flex; align-items: center; gap: 8px;" },
+                    $h("span", { "style": "min-width: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                      $t(r?.n)
+                    ),
+                    (r?.kindL) ? [
+                      $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 11px; font-weight: 600; color: var(--ink-soft);" },
+                        $t(r?.kindL)
+                      )
+                    ] : null
                   ),
                   $h("span", { "class": "m-tagn" },
                     $h("span", { "class": "m-ic", "data-i": r?.niche, "aria-hidden": "true" }),
@@ -288,7 +307,15 @@ return {};
                         $t(k?.p)
                       )
                     ])
-                  )
+                  ),
+                  (r?.plc) ? [
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
+                      $h("span", { "aria-hidden": "true", "style": "width: 15px; height: 15px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 9px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
+                        "€"
+                      ),
+                      $t(r?.plc)
+                    )
+                  ] : null
                 ),
                 $h("span", { "style": "flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;" },
                   $h("span", { "style": "font-family: var(--font-display); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-size: 22px; letter-spacing: -0.03em; white-space: nowrap;" },
@@ -321,6 +348,11 @@ return {};
                       $h("a", { "href": c?.href, "class": "sw-video", "aria-label": `Vidéo à ${$t(c?.v)} vues`, "style": "display: block; width: 56px; border-radius: 10px;" },
                         $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy" }),
                         $h("span", { "class": "sw-video-shade" }),
+                        (c?.paid) ? [
+                          $h("span", { "title": "Placement payé : compte payé pour cette vidéo", "aria-label": "Placement payé", "style": "position: absolute; top: 4px; left: 4px; z-index: 2; width: 18px; height: 18px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px rgba(5,7,12,0.6);" },
+                            "€"
+                          )
+                        ] : null,
                         $h("span", { "style": "position: absolute; left: 6px; bottom: 5px; font-size: 11px; font-weight: 700; color: #FFFFFF;" },
                           $t(c?.v)
                         )
@@ -576,6 +608,14 @@ return {};
                       ($v.pv?.top?.x) ? [
                         $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--accent-soft); font-weight: 600; color: var(--accent);" },
                           $t($v.pv?.top?.x)
+                        )
+                      ] : null,
+                      ($v.pv?.top?.paid) ? [
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                          $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                            "€"
+                          ),
+                          "Placement payé"
                         )
                       ] : null,
                       $h("span", { "style": "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },

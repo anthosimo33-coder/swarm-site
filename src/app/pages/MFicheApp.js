@@ -62,6 +62,7 @@ export default class MFicheApp extends DCLogic {
     let LB = ['01/10', '08/10', '15/10', '22/10', '29/10', '05/11'];
     let src = { views30: 57.7e6, ig: 2.8e6, weekDelta: 0.06, accounts: 269, ppw: 1360, bestX: 2333, top10: 0.43, videoCount: 2552,
       rank: 1, rankOf: 5, share: 0.41, scope: 'Études', top: null };
+    let vfOn = false, vfTabs = [];
     // Sur le site : la fiche de l'app (document « app:<slug> »), lue comme FicheA.
     const D = this.props && this.props.data;
     if (D && D.name) {
@@ -79,7 +80,7 @@ export default class MFicheApp extends DCLogic {
       const hasD = D.weekDelta !== null && D.weekDelta !== undefined;
       const W = D.weeks || [];
       a = Object.assign({ name: D.name, mk: flags((D.markets || []).map((x) => x[0])) }, ico(D));
-      app = { name: D.name, niche: D.niche || '', kind: (D.kind === 'app' ? 'App mobile' : D.kind === 'saas' ? 'Logiciel ou site web' : ''), hasDelta: hasD, delta: hasD ? pct(D.weekDelta) + ' cette semaine' : '', hasDesc: false, desc: '',
+      app = { name: D.name, niche: D.niche || '', kind: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[D.kind] || '', hasDelta: hasD, delta: hasD ? pct(D.weekDelta) + ' cette semaine' : '', hasDesc: false, desc: '',
         hasStore: !!D.store, store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps', hasSite: false, site: '',
         v30: nf(D.views30 || 0), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
         week: nf(W[W.length - 1] || 0), wd: hasD ? pct(D.weekDelta) + ' face à la semaine d’avant' : 'première semaine suivie',
@@ -87,7 +88,15 @@ export default class MFicheApp extends DCLogic {
       const mx = Math.max.apply(null, W.concat([1]));
       wk = W.map((w, j) => ({ h: Math.max(4, Math.round(w / mx * 120)), v: nf(w), bg: j === W.length - 1 ? 'var(--accent)' : 'var(--line-strong)', ink: j === W.length - 1 ? 'var(--ink)' : 'var(--ink-faint)',
         l: new Date((D.updatedAt || Date.now()) - (W.length - 1 - j) * 7 * 86400000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) }));
-      fv = (D.videos || []).slice(0, 6).map((v) => ({ src: v.cover || '', v: nf(v.views), h: '@' + v.handle, age: ago(v.publishedAt), href: '/app/videos/' + v.id }));
+      // Placements payés : toutes / sans / seulement, avec leur nombre — seulement si l'app en a (comme FicheA).
+      const DV = D.videos || [];
+      const nPaid = DV.filter((v) => v.paid).length;
+      const vf = (this.state || {}).vf || 'all';
+      vfOn = nPaid > 0;
+      vfTabs = [['all', 'Toutes', DV.length], ['sans', 'Sans les placements', DV.length - nPaid], ['seuls', 'Placements payés', nPaid]].map(([k, l, n]) => ({ l, n: String(n), coin: k === 'seuls',
+        on: vf === k ? 'true' : 'false', pick: () => this.setState({ vf: k }) }));
+      fv = DV.filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true)).slice(0, 6)
+        .map((v) => ({ src: v.cover || '', v: nf(v.views), h: '@' + v.handle, age: ago(v.publishedAt), href: '/app/videos/' + v.id, paid: !!v.paid }));
       ff = (D.formats || []).slice(0, 4).map((f) => ({ ico: f.kind === 'sound' ? SON : TXT, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         m: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', o: nf(f.maxViews || 0) + ' vues au mieux', href: '/app/formats/' + f.id }));
       fm = (D.markets || []).map(([c, p], i) => ({ c, l: ML[c] || c, v: nf((D.views30 || 0) * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
@@ -154,7 +163,7 @@ export default class MFicheApp extends DCLogic {
       vid30: grp(src.videoCount), best: src.bestX ? xfD(src.bestX) : '—',
     };
     app.hasLinks = !!(app.hasStore || app.hasSite);
-    return { a, secs, wk, fv, ff, fm, fc, app, dash, hasFv: fv.length > 0, hasFf: ff.length > 0, hasFc: fc.length > 0 };
+    return { a, secs, wk, fv, ff, fm, fc, app, dash, vfOn, vfTabs, fvNone: vfOn && fv.length === 0, hasFv: fv.length > 0 || vfOn, hasFf: ff.length > 0, hasFc: fc.length > 0 };
   }
 
   render() {
@@ -466,12 +475,46 @@ export default class MFicheApp extends DCLogic {
                 "Leurs vidéos qui cartonnent"
               )
             ),
+            ($v.vfOn) ? [
+              $h("div", { "style": "padding: 0 20px;" },
+                $h("div", { "class": "m-tc is-scroll", "role": "tablist", "aria-label": "Placements payés" },
+                  ($l($v.vfTabs)).map((f) => [
+                    $h("button", { "class": "sw-tab", "type": "button", "role": "tab", "aria-selected": f?.on, "onClick": f?.pick },
+                      (f?.coin) ? [
+                        $h("span", { "aria-hidden": "true", "style": "width: 15px; height: 15px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 9px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
+                          "€"
+                        )
+                      ] : null,
+                      $t(f?.l),
+                      $h("span", { "style": "color: var(--ink-faint); font-weight: 500;" },
+                        $t(f?.n)
+                      )
+                    )
+                  ])
+                )
+              )
+            ] : null,
+            ($v.fvNone) ? [
+              $h("p", { "style": "margin: 0; padding: 0 20px; font-size: 14px; color: var(--ink-muted);" },
+                "Aucune vidéo pour ce choix."
+              )
+            ] : null,
             $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
               ($l($v.fv)).map((v) => [
                 $h("a", { "href": v?.href, "style": "flex-shrink: 0; width: 132px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
                   $h("span", { "class": "sw-video", "style": "display: block; border-radius: 16px;" },
                     $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
+                    (v?.paid) ? [
+                      $h("span", { "style": "position: absolute; top: 8px; left: 8px; z-index: 2; display: flex;" },
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                          $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                            "€"
+                          ),
+                          "Placement payé"
+                        )
+                      )
+                    ] : null,
                     $h("span", { "class": "sw-video-foot" },
                       $h("span", { "class": "sw-video-views", "style": "font-size: 18px;" },
                         $t(v?.v)

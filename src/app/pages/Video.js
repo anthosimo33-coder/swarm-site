@@ -119,6 +119,8 @@ export default class Video extends DCLogic {
         url: D.url, appName: D.app ? D.app.name : '', appHref: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
         market: D.market ? M[D.market] : '', mk: D.market || '', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
         handle: '@' + D.handle, whoMeta: (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : '') + (D.normal ? " · fait d'habitude " + nf(D.normal) + ' vues' : ''),
+        // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
+        paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
         x: D.x ? xf(D.x) : '—', views: nf(D.views) + ' vues',
         age: (hours >= 48 ? 'en ' + Math.round(hours / 24) + ' jours' : 'en ' + hours + ' heures') + (D.fans ? ' · ' + xf(Math.round(D.views / Math.max(D.fans, 100))) + ' ses abonnés' : ''),
         growth: '',
@@ -257,12 +259,27 @@ export default class Video extends DCLogic {
                   )
                 ] : null
               ),
-              $h("span", { "style": "font-size: 15px; color: var(--ink-muted);" },
-                $h("span", { "style": "color: var(--ink); font-weight: 700;" },
-                  $t($v.vid?.handle)
+              $h("span", { "style": "display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 15px; color: var(--ink-muted);" },
+                $h("span", null,
+                  $h("span", { "style": "color: var(--ink); font-weight: 700;" },
+                    $t($v.vid?.handle)
+                  ),
+                  $t($v.vid?.whoMeta)
                 ),
-                $t($v.vid?.whoMeta)
+                ($v.vid?.paid) ? [
+                  $h("span", { "style": "display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px 0 5px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                    $h("span", { "aria-hidden": "true", "style": "width: 16px; height: 16px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 10px;" },
+                      "€"
+                    ),
+                    "Placement payé"
+                  )
+                ] : null
               ),
+              ($v.vid?.paid) ? [
+                $h("span", { "style": "padding: 10px 14px; border-radius: 12px; background: rgba(245,185,65,0.08); box-shadow: inset 0 0 0 1px rgba(245,185,65,0.22); font-size: 13.5px; line-height: 1.5; color: var(--ink-soft);" },
+                  $t($v.vid?.paidNote)
+                )
+              ] : null,
               $h("div", { "class": "sw-card", "style": "padding: 18px 22px; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 24px;" },
                 $h("div", { "style": "display: flex; flex-direction: column; gap: 6px;" },
                   $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
