@@ -664,7 +664,7 @@ return {};
           $h("div", { "style": "margin: 16px 32px 0; overflow-x: auto; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
             $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1120px;" },
               $h("thead", null,
-                $h("tr", { "style": "background: rgba(255,255,255,0.02);" },
+                $h("tr", null,
                   $h("th", { "aria-sort": $v.hd?.name?.aria, "style": "width: 270px; padding-top: 9px; padding-bottom: 9px; padding-left: 20px;" },
                     $h("button", { "type": "button", "onClick": $v.hd?.name?.pick, "style": `display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; border: 0; background: transparent; color: ${$t($v.hd?.name?.ink)}; font: inherit; font-size: 12px; font-weight: ${$t($v.hd?.name?.fw)}; cursor: pointer;` },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t($v.hd?.name?.ic)};` },
