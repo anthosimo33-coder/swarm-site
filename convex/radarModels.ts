@@ -167,7 +167,7 @@ export const APP_SITE: Record<string, string> = {
   quittr: "quittrapp.com", glamai: "glam.ai", // retirées de l'App Store : leur identifiant ne répond plus
   "stealthy.lol": "stealthy.lol", "clipper.works": "clipper.works",
   // 14/11 : apps ajoutées au Radar le jour même (titre du site = l'app ; lien dans la bio des comptes quand il y en a)
-  beehiiv: "www.beehiiv.com", metaklage: "www.meta-klage.de", ppcleaner: "ppcleaner.com", higgsfield: "higgsfield.ai",
+  beehiiv: "www.beehiiv.com", metaklage: "www.meta-klage.de", ppcleaner: "ppcleaner.com", higgsfield: "https://higgsfield.ai/icon.png", // accueil de 770 Ko : son icône est hors des 200 000 premiers caractères lus
   vestmarkets: "www.vestmarkets.com", testmuai: "www.testmuai.com", recademics: "recademics.com",
   sundreamstudio: "sundream.studio", cheatgpt: "www.cheatgpt.app",
 };
