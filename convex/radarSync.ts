@@ -32,6 +32,9 @@ const MEDIA_BUDGET_MS = 5 * 60_000;
 const RUN_LIMIT_MS = 9 * 60_000;
 const WRITE_RESERVE_MS = 3 * 60_000;
 const WRITERS = 4; // lots de pages écrits en même temps (chaque lot touche ses propres pages)
+/** Le déploiement Convex refuse plus de 4 Mio écrits par seconde (TooManyWrites, dev du 14/11) : écriture cadencée sous ce plafond. */
+const WRITE_RATE = 3_000_000;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const PARALLEL = 10; // 20 : pics à 740 Mo de tas (pages TikTok lues à la fois), passage coupé faute de mémoire le 14/11
 /** Une miniature introuvable depuis moins de 3 jours : la vidéo est retirée des listes (au-delà, on réessaie). */
 const MISS_HIDE_MS = 3 * 86_400_000;
@@ -223,25 +226,40 @@ export const run = internalAction({
 
       // Écriture des documents, par lots bornés, WRITERS lots à la fois.
       let written = 0;
-      const batches: { key: string; hash: string; data: unknown }[][] = [];
+      const batches: { items: { key: string; hash: string; data: unknown }[]; bytes: number }[] = [];
       let batch: { key: string; hash: string; data: unknown }[] = [];
       let size = 0;
       for (const [key, data] of boards) {
         const bytes = JSON.stringify(data).length;
         if (batch.length && (size + bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS)) {
-          batches.push(batch);
+          batches.push({ items: batch, bytes: size });
           batch = [];
           size = 0;
         }
         batch.push({ key, hash: hashOf(data), data });
         size += bytes;
       }
-      if (batch.length) batches.push(batch);
+      if (batch.length) batches.push({ items: batch, bytes: size });
       let nextBatch = 0;
+      let sent = 0;
+      const writeStart = Date.now();
       const writer = async () => {
         while (nextBatch < batches.length && Date.now() - runStart < RUN_LIMIT_MS) {
-          const n = await ctx.runMutation(internal.radarStore.saveBoards, { items: batches[nextBatch++], now });
-          written += n; // pas « written += await … » : lu avant l'attente, les 4 écrivains s'écraseraient
+          const b = batches[nextBatch++];
+          // Cadence : chaque lot part quand les octets déjà envoyés le permettent (WRITE_RATE par seconde).
+          sent += b.bytes;
+          const wait = writeStart + ((sent - b.bytes) / WRITE_RATE) * 1000 - Date.now();
+          if (wait > 0) await sleep(wait);
+          for (let attempt = 0; ; attempt++) {
+            try {
+              const n = await ctx.runMutation(internal.radarStore.saveBoards, { items: b.items, now });
+              written += n; // pas « written += await … » : lu avant l'attente, les 4 écrivains s'écraseraient
+              break;
+            } catch (e) {
+              if (attempt >= 4 || !/TooManyWrites/.test(String(e))) throw e;
+              await sleep(2_000 * (attempt + 1));
+            }
+          }
         }
       };
       await Promise.all(Array.from({ length: WRITERS }, writer));

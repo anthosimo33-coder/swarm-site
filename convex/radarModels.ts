@@ -115,7 +115,7 @@ export const nicheOf = (a: { name: string; niche?: string | null }) => (a.niche 
 
 /** Ce qu'est une app : une app (fiche App Store, ou campagne d'app), un logiciel ou un site web, ou on ne sait pas. */
 export const kindOf = (a: RApp, store: string | null): "app" | "saas" | null =>
-  store || a.store?.storeId || a.market?.productKind === "app" ? "app" : a.market?.productKind === "software" || APP_SITE[a.slug] ? "saas" : null;
+  store || a.store?.storeId || a.market?.productKind === "app" ? "app" : a.market?.productKind === "software" || siteOf(a.slug) ? "saas" : null;
 
 /** Une app n'est listée qu'avec au moins 2 comptes qui la poussent, prouvés (un compte n'entre que prouvé, cf Jarvia #506). */
 export const MIN_APP_ACCOUNTS = 2;
