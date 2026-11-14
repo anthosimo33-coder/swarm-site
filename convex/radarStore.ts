@@ -313,12 +313,16 @@ export const saveRegions = internalMutation({
 
 // ─── Carrousels (convex/radarSlides.ts) ────────────────────────────────────────────────────────
 
-/** Les vidéos déjà lues, page par page : [id, nombre de photos] (0 : pas un carrousel). */
+/**
+ * Toutes les vidéos de la file, page par page : [id, nombre de photos] (0 : pas un carrousel, -1 : pas encore lue).
+ * Les vidéos en attente comptent aussi : la synchro ne les ré-enregistre pas (le 14/11, ré-enregistrer 45 000 vidéos
+ * avant d'écrire les pages a fait manquer le temps à la synchro de prod).
+ */
 export const slidePage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
     const r = await ctx.db.query("videoSlides").paginate({ cursor, numItems: 4000 });
-    return { items: r.page.filter((x) => x.slideshow !== null).map((x) => [x.videoId, x.slideshow ? x.images ?? 1 : 0] as [string, number]),
+    return { items: r.page.map((x) => [x.videoId, x.slideshow === null ? -1 : x.slideshow ? x.images ?? 1 : 0] as [string, number]),
       cursor: r.continueCursor, done: r.isDone };
   },
 });
@@ -379,21 +383,21 @@ export const slidesNeedSync = internalQuery({
 
 const RETRY_MS = 6 * 3_600_000;
 
-/** Les vidéos lues : [id, type, texte à l'écran]. */
+/** Toutes les vidéos de la file : [id, type, texte à l'écran, lue ? 1 : 0] (en attente : connues, pas ré-enregistrées). */
 export const videoAiPage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
-    const r = await ctx.db.query("videoAi").withIndex("by_done_at", (q) => q.eq("done", true)).paginate({ cursor, numItems: 3000 });
-    return { items: r.page.map((x) => [x.videoId, x.type ?? "", x.text ?? ""] as [string, string, string]), cursor: r.continueCursor, done: r.isDone };
+    const r = await ctx.db.query("videoAi").paginate({ cursor, numItems: 3000 });
+    return { items: r.page.map((x) => [x.videoId, x.type ?? "", x.text ?? "", x.done ? 1 : 0] as [string, string, string, number]), cursor: r.continueCursor, done: r.isDone };
   },
 });
 
-/** Les genres lus : [pseudo, genre]. */
+/** Tous les comptes de la file : [pseudo, genre, lu ? 1 : 0]. */
 export const genderPage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
-    const r = await ctx.db.query("accountAi").withIndex("by_done_at", (q) => q.eq("done", true)).paginate({ cursor, numItems: 4000 });
-    return { items: r.page.map((x) => [x.handle, x.gender ?? ""] as [string, string]), cursor: r.continueCursor, done: r.isDone };
+    const r = await ctx.db.query("accountAi").paginate({ cursor, numItems: 4000 });
+    return { items: r.page.map((x) => [x.handle, x.gender ?? "", x.done ? 1 : 0] as [string, string, number]), cursor: r.continueCursor, done: r.isDone };
   },
 });
 

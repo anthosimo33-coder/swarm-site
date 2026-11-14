@@ -32,6 +32,8 @@ const MEDIA_BUDGET_MS = 5 * 60_000;
  */
 const RUN_LIMIT_MS = 9 * 60_000;
 const WRITE_RESERVE_MS = 3 * 60_000;
+/** Nouvelles vidéos (ou comptes) mises en file de vérification à chaque passage, au plus. */
+const TODO_MAX = 15_000;
 const WRITERS = 1; // 4 écrivains en parallèle : le 14/11 un lot ne revenait jamais (passage bloqué 3 min puis coupé) ; à 3 Mo/s, un seul suffit
 /** Le déploiement Convex refuse plus de 4 Mio écrits par seconde (TooManyWrites, dev du 14/11) : écriture cadencée sous ce plafond. */
 const WRITE_RATE = 3_000_000;
@@ -173,24 +175,27 @@ export const run = internalAction({
       }
       // Carrousels lus par Swarm sur la page publique des vidéos (convex/radarSlides.ts) : id → nombre de photos (0 : non).
       const slides = new Map<string, number>();
+      const slideKnown = new Set<string>(); // lues ou en attente : pas à ré-enregistrer
       for (let cursor: string | null = null, done = false; !done; ) {
         const page: { items: [string, number][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.slidePage, { cursor });
-        for (const [id, n] of page.items) slides.set(id, n);
+        for (const [id, n] of page.items) { slideKnown.add(id); if (n >= 0) slides.set(id, n); }
         cursor = page.cursor;
         done = page.done;
       }
       // Lectures IA (convex/radarAi.ts) : type et texte à l'écran de chaque vidéo, genre des comptes « ambassadeur ».
       const ai = new Map<string, { type: string; text: string }>();
+      const aiKnown = new Set<string>();
       for (let cursor: string | null = null, done = false; !done; ) {
-        const page: { items: [string, string, string][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.videoAiPage, { cursor });
-        for (const [id, type, text] of page.items) ai.set(id, { type, text });
+        const page: { items: [string, string, string, number][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.videoAiPage, { cursor });
+        for (const [id, type, text, ok] of page.items) { aiKnown.add(id); if (ok) ai.set(id, { type, text }); }
         cursor = page.cursor;
         done = page.done;
       }
       const genders = new Map<string, string>();
+      const genderKnown = new Set<string>();
       for (let cursor: string | null = null, done = false; !done; ) {
-        const page: { items: [string, string][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.genderPage, { cursor });
-        for (const [h, g] of page.items) genders.set(h, g);
+        const page: { items: [string, string, number][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.genderPage, { cursor });
+        for (const [h, g, ok] of page.items) { genderKnown.add(h); if (ok) genders.set(h, g); }
         cursor = page.cursor;
         done = page.done;
       }
@@ -267,14 +272,11 @@ export const run = internalAction({
       // Les comptes encore sans pays : notés pour que leur pays soit lu sur leurs vidéos (convex/radarRegions.ts).
       for (let i = 0; i < regionTodo.length; i += 300) await ctx.runMutation(internal.radarStore.saveRegionTodo, { items: regionTodo.slice(i, i + 300) });
       if (regionTodo.length) await ctx.scheduler.runAfter(0, internal.radarRegions.fill, {});
-      // Les vidéos montrées jamais vérifiées : notées pour savoir si ce sont des carrousels (convex/radarSlides.ts).
-      for (let i = 0; i < slideTodo.length; i += 500) await ctx.runMutation(internal.radarStore.saveSlideTodo, { ids: slideTodo.slice(i, i + 500) });
-      if (slideTodo.length) await ctx.scheduler.runAfter(0, internal.radarSlides.fill, {});
-      // Lectures IA à faire : vidéos montrées jamais lues, comptes « ambassadeur » sans genre (convex/radarAi.ts).
-      for (let i = 0; i < videoAiTodo.length; i += 500) await ctx.runMutation(internal.radarStore.saveVideoAiTodo, { ids: videoAiTodo.slice(i, i + 500) });
-      for (let i = 0; i < genderTodo.length; i += 300) await ctx.runMutation(internal.radarStore.saveGenderTodo, { items: genderTodo.slice(i, i + 300) });
-      if (videoAiTodo.length) await ctx.scheduler.runAfter(0, internal.radarAi.fillVideos, {});
-      if (genderTodo.length) await ctx.scheduler.runAfter(0, internal.radarAi.fillGender, {});
+      // Les nouvelles vidéos à vérifier (carrousel, lecture IA) et les comptes à genrer : seulement celles qui ne sont
+      // pas déjà en file, enregistrées APRÈS l'écriture des pages (elles ne doivent pas lui prendre son temps).
+      const newSlides = slideTodo.filter((id) => !slideKnown.has(id)).slice(0, TODO_MAX);
+      const newAi = videoAiTodo.filter((id) => !aiKnown.has(id)).slice(0, TODO_MAX);
+      const newGender = genderTodo.filter((x) => !genderKnown.has(x.handle)).slice(0, TODO_MAX);
       MEMLOG('après calcul 2');
 
       // Les images qu'aucun document ne cite plus (vidéo sortie des listes) : effacées.
@@ -354,6 +356,14 @@ export const run = internalAction({
         boards: boards.size, written, mediaCopied: copied, mediaMissing: missing, mediaDropped: stale.length, boardsDropped: gone.length,
       };
       await ctx.runMutation(internal.radarStore.endRun, { id: runId, ok: true, counts });
+      // Les files de vérification (convex/radarSlides.ts, convex/radarAi.ts), une fois les pages écrites ; le reste au
+      // passage suivant si le temps manque (seules les nouvelles y entrent).
+      for (let i = 0; i < newSlides.length; i += 500) await ctx.runMutation(internal.radarStore.saveSlideTodo, { ids: newSlides.slice(i, i + 500) });
+      for (let i = 0; i < newAi.length; i += 500) await ctx.runMutation(internal.radarStore.saveVideoAiTodo, { ids: newAi.slice(i, i + 500) });
+      for (let i = 0; i < newGender.length; i += 300) await ctx.runMutation(internal.radarStore.saveGenderTodo, { items: newGender.slice(i, i + 300) });
+      await ctx.scheduler.runAfter(0, internal.radarSlides.fill, {});
+      await ctx.scheduler.runAfter(0, internal.radarAi.fillVideos, {});
+      await ctx.scheduler.runAfter(0, internal.radarAi.fillGender, {});
       return counts;
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e);
