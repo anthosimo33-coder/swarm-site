@@ -361,7 +361,8 @@ export function buildBoards(
       x: xOf(v, s),
       publishedAt: v.publishedAt,
       cover: cover(v.videoId, v.coverUrl ?? s?.coverUrl, acc?.handle ?? s?.authorHandle),
-      hook: screenText(v, v.hook ?? s?.hook, v.videoId),
+      // Court dans les cartes (elles en montrent deux lignes) : le texte complet alourdissait chaque page (14/11).
+      hook: clip(screenText(v, v.hook ?? s?.hook, v.videoId), 160),
     };
   };
 
@@ -416,6 +417,8 @@ export function buildBoards(
     const g = genderOf(t.handle);
     return g && g !== "incertain" ? g : null;
   };
+  // Coupé par caractère entier : couper un émoji en deux laisse un demi-caractère que Convex refuse (14/11).
+  const clip = (t: string | null, n: number) => { if (!t) return t; const c = Array.from(t); return c.length > n ? c.slice(0, n - 1).join("").trimEnd() + "…" : t; };
   // Texte à l'écran : celui du Radar, ou celui lu par l'IA quand le Radar n'en a pas ou l'a coupé (plus long, même début).
   const screenText = (v: RVideo | null, radar: string | null | undefined, id: string): string | null => {
     const ai = (v ? aiOf(v.videoId)?.text : aiOf(id)?.text) || "";

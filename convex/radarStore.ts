@@ -493,3 +493,31 @@ export const aiNeedSync = internalQuery({
     return false;
   },
 });
+
+// ─── Bail des lectures de fond ────────────────────────────────────────────────────────────────
+
+/**
+ * Prend (ou renouvelle) le bail `name` pour `token` : faux si une autre chaîne le tient, ou si une synchro tourne.
+ * 14/11 : chaque tâche du quart d'heure lançait une chaîne de plus (lecture IA, carrousels) ; elles s'empilaient et
+ * appelaient /cover en même temps que la synchro, morte en route à 21h43.
+ */
+export const takeLease = internalMutation({
+  args: { name: v.string(), token: v.string(), ms: v.number(), now: v.number() },
+  handler: async (ctx, { name, token, ms, now }) => {
+    const run = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").first();
+    if (run && !run.finishedAt && now - run.startedAt < 12 * 60_000) return false;
+    const row = await ctx.db.query("leases").withIndex("by_name", (q) => q.eq("name", name)).first();
+    if (row && row.until > now && row.token !== token) return false;
+    if (row) await ctx.db.patch(row._id, { token, until: now + ms });
+    else await ctx.db.insert("leases", { name, token, until: now + ms });
+    return true;
+  },
+});
+
+export const dropLease = internalMutation({
+  args: { name: v.string(), token: v.string() },
+  handler: async (ctx, { name, token }) => {
+    const row = await ctx.db.query("leases").withIndex("by_name", (q) => q.eq("name", name)).first();
+    if (row && row.token === token) await ctx.db.patch(row._id, { until: 0 });
+  },
+});

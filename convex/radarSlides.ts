@@ -1,6 +1,7 @@
 "use node";
 
 import { internal } from "./_generated/api";
+import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { videoFacts } from "./radarRegions";
 
@@ -15,11 +16,15 @@ const PARALLEL = 6;
 const BUDGET_MS = 240_000;
 
 export const fill = internalAction({
-  args: {},
-  handler: async (ctx): Promise<{ read: number; slideshows: number }> => {
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args): Promise<{ read: number; slideshows: number }> => {
     const start = Date.now();
+    // Une seule chaîne à la fois, et rien pendant une synchro (convex/radarStore.ts, takeLease).
+    const token = args.token ?? Math.random().toString(36).slice(2);
+    if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: "slides", token, ms: 6 * 60_000, now: start }))) return { read: 0, slideshows: 0 };
     const ids = await ctx.runMutation(internal.radarStore.claimSlides, { limit: BATCH, now: start });
     if (!ids.length) {
+      await ctx.runMutation(internal.radarStore.dropLease, { name: "slides", token });
       if (await ctx.runQuery(internal.radarStore.slidesNeedSync, { now: start })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
       return { read: 0, slideshows: 0 };
     }
@@ -41,7 +46,8 @@ export const fill = internalAction({
       await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
     }
     // Il en reste : le lot suivant tout de suite (10 s), sans attendre la tâche planifiée du quart d'heure.
-    if (left && out.length === ids.length) await ctx.scheduler.runAfter(10_000, internal.radarSlides.fill, {});
+    if (left && out.length === ids.length) await ctx.scheduler.runAfter(10_000, internal.radarSlides.fill, { token });
+    else await ctx.runMutation(internal.radarStore.dropLease, { name: "slides", token });
     console.log(`[carrousels] ${out.length} vidéos lues, ${slideshows} carrousels, ${out.filter((x) => x.slideshow === null).length} illisibles, ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, slideshows };
   },

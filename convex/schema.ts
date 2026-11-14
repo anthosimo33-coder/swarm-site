@@ -86,6 +86,9 @@ export default defineSchema({
     at: v.number(),
   }).index("by_handle", ["handle"]).index("by_done_at", ["done", "at"]),
 
+  // Bail d'une tâche de fond (une seule chaîne de lecture à la fois) : jeton du détenteur, valable jusqu'à `until`.
+  leases: defineTable({ name: v.string(), token: v.string(), until: v.number() }).index("by_name", ["name"]),
+
   videoSlides: defineTable({
     videoId: v.string(),
     slideshow: v.union(v.boolean(), v.null()),

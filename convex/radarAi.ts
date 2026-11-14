@@ -3,6 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema";
 import { internal } from "./_generated/api";
+import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 
 /**
@@ -77,14 +78,21 @@ async function pool<T, R>(items: T[], start: number, work: (x: T) => Promise<R>)
   return out;
 }
 
+const LEASE_MS = 6 * 60_000;
+const newToken = () => Math.random().toString(36).slice(2);
+
 export const fillVideos = internalAction({
-  args: {},
-  handler: async (ctx): Promise<{ read: number; cost: number }> => {
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args): Promise<{ read: number; cost: number }> => {
     const start = Date.now();
     const site = process.env.CONVEX_SITE_URL;
     if (!process.env.ANTHROPIC_API_KEY || !site) return { read: 0, cost: 0 };
+    // Une seule chaîne à la fois, et rien pendant une synchro.
+    const token = args.token ?? newToken();
+    if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: "ai-videos", token, ms: LEASE_MS, now: start }))) return { read: 0, cost: 0 };
     const ids = await ctx.runMutation(internal.radarStore.claimVideoAi, { limit: 150, now: start, max: limit() });
     if (!ids.length) {
+      await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-videos", token });
       if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: start })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
       return { read: 0, cost: 0 };
     }
@@ -102,7 +110,7 @@ export const fillVideos = internalAction({
         tin += r.usage.input_tokens; tout += r.usage.output_tokens;
         const p = r.parsed_output;
         if (r.stop_reason !== "end_turn" || !p) return { videoId, ok: false };
-        return { videoId, ok: true, type: p.type, text: p.text.trim().slice(0, 1500) };
+        return { videoId, ok: true, type: p.type, text: Array.from(p.text.trim()).slice(0, 1500).join("") };
       } catch (e) {
         console.error(`[ia vidéos] ${videoId} : ${e instanceof Error ? e.message : String(e)}`);
         return { videoId, ok: false };
@@ -112,21 +120,26 @@ export const fillVideos = internalAction({
     const cost = tin * PRICE_IN + tout * PRICE_OUT;
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "videoAi", now: Date.now() });
     const capped = limit() !== null && out.length < ids.length;
-    if (left && !capped && out.length === ids.length) await ctx.scheduler.runAfter(5_000, internal.radarAi.fillVideos, {});
-    else if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
+    if (left && !capped && out.length === ids.length) await ctx.scheduler.runAfter(5_000, internal.radarAi.fillVideos, { token });
+    else {
+      await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-videos", token });
+      if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
+    }
     console.log(`[ia vidéos] ${out.length} lues, ${out.filter((x) => x.ok).length} réussies, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, cost };
   },
 });
 
 export const fillGender = internalAction({
-  args: {},
-  handler: async (ctx): Promise<{ read: number; cost: number }> => {
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args): Promise<{ read: number; cost: number }> => {
     const start = Date.now();
     const site = process.env.CONVEX_SITE_URL;
     if (!process.env.ANTHROPIC_API_KEY || !site) return { read: 0, cost: 0 };
+    const token = args.token ?? newToken();
+    if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: "ai-gender", token, ms: LEASE_MS, now: start }))) return { read: 0, cost: 0 };
     const rows = await ctx.runMutation(internal.radarStore.claimGender, { limit: 100, now: start, max: limit() });
-    if (!rows.length) return { read: 0, cost: 0 };
+    if (!rows.length) { await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-gender", token }); return { read: 0, cost: 0 }; }
     const client = new Anthropic();
     let tin = 0, tout = 0;
     const out = await pool(rows, start, async ({ handle, ids }) => {
@@ -151,8 +164,11 @@ export const fillGender = internalAction({
     for (let i = 0; i < out.length; i += 100) await ctx.runMutation(internal.radarStore.saveGender, { items: out.slice(i, i + 100), now: Date.now() });
     const cost = tin * PRICE_IN + tout * PRICE_OUT;
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "accountAi", now: Date.now() });
-    if (left && out.length === rows.length) await ctx.scheduler.runAfter(5_000, internal.radarAi.fillGender, {});
-    else if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
+    if (left && out.length === rows.length) await ctx.scheduler.runAfter(5_000, internal.radarAi.fillGender, { token });
+    else {
+      await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-gender", token });
+      if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
+    }
     console.log(`[ia genre] ${out.length} comptes lus, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, cost };
   },
