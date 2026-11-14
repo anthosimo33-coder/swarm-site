@@ -654,12 +654,12 @@ return {};
                   )
                 ] : null
               ),
-              $h("section", { "aria-label": "Où ses vues se font", "style": "min-width: 0; border-radius: 20px; background: var(--track); padding: clamp(10px, 1.6vh, 14px) 14px; display: flex; flex-direction: column; gap: 6px;" },
+              $h("section", { "aria-label": "D’où publient ses comptes", "style": "min-width: 0; border-radius: 20px; background: var(--track); padding: clamp(10px, 1.6vh, 14px) 14px; display: flex; flex-direction: column; gap: 6px;" },
                 $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
                   $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                     $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
-                  "Où ses vues se font"
+                  "D’où publient ses comptes"
                 ),
                 ($v.pv?.hasMk) ? [
                   ($l($v.pv?.mkd)).map((m) => [

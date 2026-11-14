@@ -1081,9 +1081,9 @@ return {};
                   ] : null
                 )
               ),
-              $h("section", { "aria-label": "Où ses vues se font", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
+              $h("section", { "aria-label": "D’où publient ses comptes", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                  "Où ses vues se font"
+                  "D’où publient ses comptes"
                 ),
                 ($l($v.pv?.mkd)).map((m) => [
                   $h("span", { "style": "display: flex; flex-direction: column; gap: 5px;" },

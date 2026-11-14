@@ -44,7 +44,7 @@ export default class FicheApp extends DCLogic {
     // Les dossiers qui la gardent (saved('folders')).
     const fs = live ? P.saved('folders') : null;
     const kept = (Array.isArray(fs) ? fs : []).filter((x) => (x.items || []).some((i) => i.kind === 'app' && i.id === slug)).map((x) => ({ name: x.name, href: '/app/dossiers/' + x.id }));
-    // Où leurs vues se font : les 5 premiers pays, puis tous à la demande (un pays par ligne, jamais regroupés).
+    // D’où publient ses comptes : les 5 premiers pays, puis tous à la demande (un pays par ligne, jamais regroupés).
     const mkAllRows = b.mk || [];
     const mkOn = !!(this.state || {}).mkAll;
     const mkVals = { mkShown: mkOn || mkAllRows.length <= 6 ? mkAllRows : mkAllRows.slice(0, 5), mkMore: mkAllRows.length > 6, mkOpen: mkOn ? 'true' : 'false', mkRot: mkOn ? 'rotate(180deg)' : 'none',
@@ -685,7 +685,7 @@ export default class FicheApp extends DCLogic {
                   $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                     $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
-                  "Où leurs vues se font"
+                  "D’où publient ses comptes"
                 ),
                 $h("span", { "class": "sw-card-sub" },
                   "Vues 30 j"

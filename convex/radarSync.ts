@@ -5,6 +5,7 @@ import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
 import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
 import { APP_STORE_ID, buildBoards, iconKey, siteOf, type Raw } from "./radarModels";
+import { textLang } from "./textLang";
 
 /** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
 const STORE_RULE = 6; // 6 : à plusieurs candidates, titre exact ou nette avance en avis ; 5 : fiche exacte par l'identifiant du Radar ; sinon recherche France puis États-Unis, refusée si le nom est ambigu ; icône gardée
@@ -179,11 +180,14 @@ export const run = internalAction({
         done = page.done;
       }
       const site = process.env.CONVEX_SITE_URL ?? null;
+      const langs = new Map<string, string | null>();
       const opts = {
         missing: (k: string) => (misses.get(k) ?? 0) > now - MISS_HIDE_MS,
         coverUrl: (id: string) => (site && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) ? `${site}/cover/${id}` : null),
         artOf,
         regionOf: (h: string) => regions.get(h) ?? null,
+        // Lue une fois par vidéo : le 2e calcul la reprend (52 000 vidéos, ~3 Mo).
+        textLang: (id: string, text: string) => { if (!langs.has(id)) langs.set(id, textLang(text)); return langs.get(id) ?? null; },
       };
       MEMLOG('avant calcul 1');
       // 1er calcul : seulement la liste des images à copier. Ses 52 000 pages ne sont pas gardées pendant la copie (la

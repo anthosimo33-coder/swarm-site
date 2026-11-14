@@ -95,7 +95,13 @@ export default class FicheCreateur extends DCLogic {
     // Sur le site : la fiche du créateur depuis le Radar (document « creator:<handle> », convex/radarModels.ts).
     const D = this.props && this.props.data;
     if (D && D.handle) {
-      const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKN = (c) => c === 'XX' ? 'Pays inconnu' : ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      // « depuis la France », « depuis les États-Unis », « depuis l’Allemagne », « depuis Singapour » ; rien pour un pays inconnu.
+      const DEPUIS = (n) => { n = String(n || ''); if (!n || n === 'Pays inconnu' || /^[A-Z]{2}$/.test(n)) return ''; if (/^(Singapour|Chypre|Cuba|Madagascar|Taïwan|Porto Rico|Malte|Haïti|Bahreïn|Israël|Monaco|Oman|Hong Kong|Maurice|La Réunion|Djibouti)$/.test(n)) return 'depuis ' + n;
+        if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return 'depuis les ' + n; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return 'depuis l’' + n;
+        return 'depuis ' + (/e$/.test(n.split(/[\s-]/)[0]) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? 'la ' : 'le ') + n; };
+      // La langue de ses vidéos quand ce n'en est pas une de son pays (otherLang, calculé par la synchro) : « en espagnol ».
+      const LANGN = (l) => { if (!l) return ''; try { return 'en ' + new Intl.DisplayNames(['fr'], { type: 'language' }).of(l); } catch (e) { return ''; } };
       const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
       const M = MKW({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil' });
       const DAY = 86400000;
@@ -112,7 +118,7 @@ export default class FicheCreateur extends DCLogic {
       const a = D.app;
       z = {
         av: D.avatar || '', noav: true, h: '@' + D.handle, bio: D.bio ? D.bio.replace(/\s+/g, ' ').trim() : '',
-        mk: M[D.market] || '', flag: D.market || '', mkHref: '/app/createurs' + (D.market ? '?m=' + D.market : ''), tt: 'https://www.tiktok.com/@' + D.handle,
+        mk: M[D.market] || '', mkHero: D.market && DEPUIS(M[D.market]) ? ['Publie ' + DEPUIS(M[D.market]), LANGN(D.otherLang)].filter(Boolean).join(' · ') : (M[D.market] || ''), flag: D.market || '', mkHref: '/app/createurs' + (D.market ? '?m=' + D.market : ''), tt: 'https://www.tiktok.com/@' + D.handle,
         app: a ? { name: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
                : { name: '', niche: '', logo: '', nologo: true, blank: 'sw-app-blank', href: '' }
       };
@@ -273,7 +279,7 @@ export default class FicheCreateur extends DCLogic {
                       $t($v.z?.flag)
                     )
                   ] : null,
-                  $t($v.z?.mk)
+                  $t($v.z?.mkHero)
                 )
               )
             ),

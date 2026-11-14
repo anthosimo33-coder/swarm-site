@@ -51,7 +51,13 @@ export default class MVideo extends DCLogic {
       const pct = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%');
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? 'aujourd’hui' : 'il y a ' + d + '\u202fj'; };
-      const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKN = (c) => c === 'XX' ? 'Pays inconnu' : ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      // « depuis la France », « depuis les États-Unis », « depuis l’Allemagne », « depuis Singapour » ; rien pour un pays inconnu.
+      const DEPUIS = (n) => { n = String(n || ''); if (!n || n === 'Pays inconnu' || /^[A-Z]{2}$/.test(n)) return ''; if (/^(Singapour|Chypre|Cuba|Madagascar|Taïwan|Porto Rico|Malte|Haïti|Bahreïn|Israël|Monaco|Oman|Hong Kong|Maurice|La Réunion|Djibouti)$/.test(n)) return 'depuis ' + n;
+        if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return 'depuis les ' + n; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return 'depuis l’' + n;
+        return 'depuis ' + (/e$/.test(n.split(/[\s-]/)[0]) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? 'la ' : 'le ') + n; };
+      // La langue de ses vidéos quand ce n'en est pas une de son pays (otherLang, calculé par la synchro) : « en espagnol ».
+      const LANGN = (l) => { if (!l) return ''; try { return 'en ' + new Intl.DisplayNames(['fr'], { type: 'language' }).of(l); } catch (e) { return ''; } };
       const ML = new Proxy({}, { get: (o, c) => MKN(String(c)) });
       const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
       const flags = (cs) => (cs || []).filter((c) => c).slice(0, 3).map((c) => ({ c }));
@@ -75,7 +81,7 @@ export default class MVideo extends DCLogic {
         hook: D.hook || D.caption || '@' + D.handle, hasApp: !!D.app, appName: D.app ? D.app.name : '',
         // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
         paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
-        mk: D.market || '', where: [ML[D.market] || '', D.publishedAt ? day(D.publishedAt) : ''].filter(Boolean).join(' · '), views: nf(D.views || 0),
+        mk: D.market || '', when: D.publishedAt ? 'Le ' + day(D.publishedAt) : '', where: [D.market && DEPUIS(ML[D.market]) ? 'Publiée ' + DEPUIS(ML[D.market]) : '', LANGN(D.otherLang)].filter(Boolean).join(' · '), views: nf(D.views || 0),
         who: '@' + D.handle + (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : ''), hasDur: dur > 0, dur: Math.floor(dur / 60) + ':' + String(dur % 60).padStart(2, '0'),
         url: D.url || 'https://www.tiktok.com/@' + D.handle, hasX: !!D.x, x: D.x ? xf(D.x) : '',
         story: nf(D.views || 0) + ' vues ' + (hours >= 48 ? 'en ' + Math.round(hours / 24) + ' jours' : 'en ' + hours + ' heures')
@@ -176,7 +182,7 @@ export default class MVideo extends DCLogic {
                 )
               )
             ),
-            $h("span", { "style": "position: absolute; top: 14px; left: 14px; display: flex; gap: 6px;" },
+            $h("span", { "style": "position: absolute; top: 14px; left: 14px; right: 70px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px;" },
               ($v.vid?.hasApp) ? [
                 $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
                   $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
@@ -185,10 +191,19 @@ export default class MVideo extends DCLogic {
                   $t($v.vid?.appName)
                 )
               ] : null,
-              $h("span", { "class": "sw-badge", "style": "gap: 6px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
-                $h("span", { "class": "sw-flag", "data-c": $v.vid?.mk, "aria-hidden": "true" }),
-                $t($v.vid?.where)
-              )
+              ($v.vid?.where) ? [
+                $h("span", { "class": "sw-badge", "style": "gap: 6px; max-width: 100%; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                  $h("span", { "class": "sw-flag", "data-c": $v.vid?.mk, "aria-hidden": "true" }),
+                  $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                    $t($v.vid?.where)
+                  )
+                )
+              ] : null,
+              ($v.vid?.when) ? [
+                $h("span", { "class": "sw-badge", "style": "background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                  $t($v.vid?.when)
+                )
+              ] : null
             ),
             $h("span", { "style": "position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;" },
               $h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px;" },

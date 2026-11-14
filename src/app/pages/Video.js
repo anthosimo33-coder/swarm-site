@@ -97,9 +97,15 @@ export default class Video extends DCLogic {
     // Sur le site : la vidéo depuis le Radar (document « video:<id> », convex/radarModels.ts).
     const D = this.props && this.props.data;
     if (D && D.id) {
-      const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKN = (c) => c === 'XX' ? 'Pays inconnu' : ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      // « depuis la France », « depuis les États-Unis », « depuis l’Allemagne », « depuis Singapour » ; rien pour un pays inconnu.
+      const DEPUIS = (n) => { n = String(n || ''); if (!n || n === 'Pays inconnu' || /^[A-Z]{2}$/.test(n)) return ''; if (/^(Singapour|Chypre|Cuba|Madagascar|Taïwan|Porto Rico|Malte|Haïti|Bahreïn|Israël|Monaco|Oman|Hong Kong|Maurice|La Réunion|Djibouti)$/.test(n)) return 'depuis ' + n;
+        if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return 'depuis les ' + n; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return 'depuis l’' + n;
+        return 'depuis ' + (/e$/.test(n.split(/[\s-]/)[0]) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? 'la ' : 'le ') + n; };
+      // La langue de ses vidéos quand ce n'en est pas une de son pays (otherLang, calculé par la synchro) : « en espagnol ».
+      const LANGN = (l) => { if (!l) return ''; try { return 'en ' + new Intl.DisplayNames(['fr'], { type: 'language' }).of(l); } catch (e) { return ''; } };
       const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
-      const M = MKW({ FR: 'France', US: 'Anglophone', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil' });
+      const M = MKW({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil' });
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + '\u202fM' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fk' : String(Math.round(n)));
       const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const list = D.playlist || [];
@@ -117,7 +123,7 @@ export default class Video extends DCLogic {
         embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
           : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/player/v1/' + D.id + '?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0' : '',
         url: D.url, appName: D.app ? D.app.name : '', appHref: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
-        market: D.market ? M[D.market] : '', mk: D.market || '', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
+        market: D.market && DEPUIS(M[D.market]) ? ['Publiée ' + DEPUIS(M[D.market]), LANGN(D.otherLang)].filter(Boolean).join(' · ') : '', mk: D.market || '', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
         handle: '@' + D.handle, whoMeta: (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : '') + (D.normal ? " · fait d'habitude " + nf(D.normal) + ' vues' : ''),
         // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
         paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
@@ -248,7 +254,7 @@ export default class Video extends DCLogic {
                   $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
                     $h("path", { "d": "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
-                  "Publiée le ", $t($v.vid?.date)
+                  "Le ", $t($v.vid?.date)
                 ),
                 ($v.vid?.dur) ? [
                   $h("span", { "class": "sw-badge", "style": "display: inline-flex; align-items: center; gap: 6px;" },

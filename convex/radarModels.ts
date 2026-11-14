@@ -87,6 +87,26 @@ export const marketLabel = (code: string) => (code === "XX" ? "Pays inconnu" : (
 export const marketOf = (_lang: string | null | undefined, region?: string | null) => countryCode(region);
 
 /**
+ * Les langues de chaque pays : une langue qui n'en est pas une s'affiche à côté du pays (« France · en espagnol »).
+ * Un pays absent de la table n'affiche jamais de langue (on ne sait pas). Les États-Unis sont « en » seul : un compte
+ * américain en espagnol vise l'Amérique latine, c'est utile à voir.
+ */
+export const COUNTRY_LANGS: Record<string, string[]> = {
+  US: ["en"], GB: ["en"], CA: ["en", "fr"], AU: ["en"], NZ: ["en"], IE: ["en"], NG: ["en"], KE: ["en"], ZA: ["en"], GH: ["en"], UG: ["en"],
+  JM: ["en"], IN: ["en"], PK: ["en"], PH: ["en", "tl"], SG: ["en"], MY: ["en", "id"], LK: ["en"], NA: ["en"], ET: ["en"], NP: ["en"], BD: ["en"],
+  FR: ["fr"], BE: ["fr", "nl", "de"], CH: ["de", "fr", "it"], LU: ["fr", "de"], MC: ["fr"], RE: ["fr"], PF: ["fr"], CI: ["fr"], SN: ["fr"],
+  CM: ["fr", "en"], CD: ["fr"], CG: ["fr"], BF: ["fr"], TG: ["fr"], BJ: ["fr"], NE: ["fr"], MG: ["fr"], HT: ["fr"], BI: ["fr"],
+  MA: ["ar", "fr"], DZ: ["ar", "fr"], TN: ["ar", "fr"], LB: ["ar", "fr"],
+  ES: ["es"], MX: ["es"], AR: ["es"], CL: ["es"], CO: ["es"], PE: ["es"], VE: ["es"], EC: ["es"], NI: ["es"], HN: ["es"], UY: ["es"], DO: ["es"],
+  PY: ["es"], CR: ["es"], BO: ["es"], PA: ["es"], GT: ["es"], SV: ["es"], CU: ["es"], PR: ["es", "en"],
+  BR: ["pt"], PT: ["pt"], AO: ["pt"], MZ: ["pt"],
+  DE: ["de"], AT: ["de"], IT: ["it"], NL: ["nl"], PL: ["pl"], RO: ["ro"], MD: ["ro", "ru"], HU: ["hu"], CZ: ["cs"], SK: ["cs"], SE: ["sv"],
+  DK: ["da"], FI: ["fi", "sv"], GR: ["el"], CY: ["el", "tr"], TR: ["tr"], UA: ["uk", "ru"], RU: ["ru"], BY: ["ru"], KZ: ["ru"], IL: ["he", "ar"],
+  EG: ["ar"], SA: ["ar"], AE: ["ar", "en"], KW: ["ar"], OM: ["ar"], QA: ["ar"], JO: ["ar"], IQ: ["ar"],
+  JP: ["ja"], KR: ["ko"], VN: ["vi"], TH: ["th"], ID: ["id"],
+};
+
+/**
  * Parts entières qui font 100 pile (méthode du plus fort reste) : chaque part est arrondie à l'inférieur, puis les
  * points manquants vont aux plus gros restes. Les parts tombées à 0 sont retirées ; le total affiché reste 100.
  */
@@ -215,7 +235,7 @@ export const cleanBio = (bio: string | null) => {
 };
 
 /** Une vidéo, telle que la voient les écrans (vignette, lecteur). */
-export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null; paid?: boolean };
+export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null; paid?: boolean; otherLang?: string | null };
 
 // ─── Le calcul ───────────────────────────────────────────────────────────────
 
@@ -236,6 +256,8 @@ export function buildBoards(
     artOf?: (slug: string) => string | null;
     /** Pays lu par Swarm sur la page publique d'une vidéo du compte (comptes sans pays relevé). */
     regionOf?: (handle: string) => string | null;
+    /** Langue du texte d'une vidéo (convex/textLang.ts, action Node seulement : le détecteur pèse 600 Ko). */
+    textLang?: (videoId: string, text: string) => string | null;
   } = {},
 ): { boards: Boards; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[] } {
   const missing = opts.missing ?? (() => false);
@@ -324,6 +346,7 @@ export function buildBoards(
       app: citesItsApp(v) ? canonical(v.appId)?.slug ?? null : null,
       views: Math.max(v.views, s?.views ?? 0),
       ...(isPaid(v.accountId) ? { paid: true } : {}),
+      ...(otherLangOf(v.accountId) ? { otherLang: otherLangOf(v.accountId) } : {}),
       x: xOf(v, s),
       publishedAt: v.publishedAt,
       cover: cover(v.videoId, v.coverUrl ?? s?.coverUrl, acc?.handle ?? s?.authorHandle),
@@ -357,6 +380,28 @@ export function buildBoards(
     for (const t of ts) if (!marketByAccount.get(t.id)) marketByAccount.set(t.id, top[0]);
   }
   const mkOf = (accountId: string | null | undefined) => (accountId ? marketByAccount.get(accountId) ?? null : null);
+  // Sa langue : celle de la plupart de ses vidéos (légende + texte à l'écran), si au moins 2 sont sûres, 60 % d'accord,
+  // et qu'au moins un quart de ses vidéos se lisent (14/11 : @dailytyrel, légendes allemandes trop courtes pour être
+  // lues et 2 anglaises sur une douzaine, sortait « en anglais »).
+  const textLang = opts.textLang ?? (() => null);
+  const langByAccount = new Map<string, string>();
+  for (const [accId, all] of videosByAccount) {
+    const vs = all.slice(0, 30);
+    const n = new Map<string, number>();
+    let tot = 0;
+    for (const v of vs) {
+      const l = textLang(v.videoId, `${v.caption ?? ""} ${v.hook ?? ""}`);
+      if (l) { n.set(l, (n.get(l) ?? 0) + 1); tot++; }
+    }
+    const top = [...n.entries()].sort((p, q) => q[1] - p[1])[0];
+    if (top && top[1] >= 2 && top[1] >= 0.6 * tot && tot >= Math.max(2, 0.25 * vs.length)) langByAccount.set(accId, top[0]);
+  }
+  // Sa langue seulement quand ce n'en est pas une de son pays (« France · en espagnol ») : le pays dit d'où il publie,
+  // pas où sont ceux qui regardent (14/11, @historiaas.en.chat publie depuis la France en espagnol).
+  const otherLangOf = (accountId: string | null | undefined) => {
+    const m = mkOf(accountId), l = accountId ? langByAccount.get(accountId) : undefined;
+    return m && l && COUNTRY_LANGS[m] && !COUNTRY_LANGS[m].includes(l) ? l : null;
+  };
   // Les marchés présents, du plus fourni au moins fourni (comptes actifs).
   const marketCount = new Map<string, number>();
   for (const t of creatorAccounts) { const m = mkOf(t.id); if (m) marketCount.set(m, (marketCount.get(m) ?? 0) + 1); }
@@ -530,7 +575,7 @@ export function buildBoards(
     const a = canonical(t.appId);
     return {
       handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
-      market: mkOf(t.id), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
+      market: mkOf(t.id), otherLang: otherLangOf(t.id), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
       // Ce qui le relie à son app (RProof) reste interne au Radar : jamais dans les documents de Swarm (décision du 14/11).
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
@@ -636,6 +681,7 @@ export function buildBoards(
       handle, fans: acc?.fans ?? s?.authorFans ?? null, normal: acc?.medianViews ?? null, paid: isPaid(acc?.id),
       app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
       market: acc ? mkOf(acc.id) ?? marketOf(s?.lang, s?.region ?? v?.region) : marketOf(s?.lang, s?.region ?? v?.region), region: s?.region ?? null,
+      otherLang: acc ? otherLangOf(acc.id) : null,
       publishedAt: v?.publishedAt ?? s?.publishedAt ?? null, durationSec: s?.durationSec ?? null,
       views, x: v ? xOf(v, s) : s?.multiplier ? round(s.multiplier, 1) : null,
       likes: s?.likes ?? null, comments: s?.comments ?? null, shares: s?.shares ?? null, saves: s?.saves ?? null,

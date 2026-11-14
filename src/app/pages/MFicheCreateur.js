@@ -57,7 +57,13 @@ export default class MFicheCreateur extends DCLogic {
       const pct = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%');
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? 'aujourd’hui' : 'il y a ' + d + '\u202fj'; };
-      const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKN = (c) => c === 'XX' ? 'Pays inconnu' : ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      // « depuis la France », « depuis les États-Unis », « depuis l’Allemagne », « depuis Singapour » ; rien pour un pays inconnu.
+      const DEPUIS = (n) => { n = String(n || ''); if (!n || n === 'Pays inconnu' || /^[A-Z]{2}$/.test(n)) return ''; if (/^(Singapour|Chypre|Cuba|Madagascar|Taïwan|Porto Rico|Malte|Haïti|Bahreïn|Israël|Monaco|Oman|Hong Kong|Maurice|La Réunion|Djibouti)$/.test(n)) return 'depuis ' + n;
+        if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return 'depuis les ' + n; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return 'depuis l’' + n;
+        return 'depuis ' + (/e$/.test(n.split(/[\s-]/)[0]) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? 'la ' : 'le ') + n; };
+      // La langue de ses vidéos quand ce n'en est pas une de son pays (otherLang, calculé par la synchro) : « en espagnol ».
+      const LANGN = (l) => { if (!l) return ''; try { return 'en ' + new Intl.DisplayNames(['fr'], { type: 'language' }).of(l); } catch (e) { return ''; } };
       const ML = new Proxy({}, { get: (o, c) => MKN(String(c)) });
       const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
       const flags = (cs) => (cs || []).filter((c) => c).slice(0, 3).map((c) => ({ c }));
@@ -77,7 +83,7 @@ export default class MFicheCreateur extends DCLogic {
         fans: typeof D.fans === 'number' ? big(D.fans) : '—', med: D.median ? big(D.median) : '—', p7: n7 ? n7 + (n7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j',
         best: top ? nf(top.views) : '—', bestX: top && top.x ? xf(top.x) + ' sa normale' : (top ? day(top.publishedAt) : ''),
         app: a ? ico(a) : { logo: '', nologo: true, blank: 'sw-app-blank' }, hasApp: !!a, appLine: a ? 'Pousse ' + a.name : '', niche: (a && a.niche) || '',
-        flag: D.market || '', tt: 'https://www.tiktok.com/@' + D.handle,
+        flag: D.market || '', lang: LANGN(D.otherLang), tt: 'https://www.tiktok.com/@' + D.handle,
         hasTip: hits.length > 0 && V.length > 1, tipB: hits.length + (hits.length > 1 ? ' vidéos' : ' vidéo') + ' sur ' + V.length + ' à plus de 10× sa normale,',
         tipT: hits.length ? (hits.length > 1 ? 'la dernière le ' : 'le ') + day(hits[0].publishedAt) + '.' : '', nv: String(V.length) });
       vids = V.map((x) => { const hit = x.x >= 10;
@@ -162,6 +168,11 @@ export default class MFicheCreateur extends DCLogic {
             ] : null,
             ($v.z?.flag) ? [
               $h("span", { "class": "sw-flag", "data-c": $v.z?.flag, "aria-hidden": "true" })
+            ] : null,
+            ($v.z?.lang) ? [
+              $h("span", { "style": "font-size: 12px; color: var(--ink-soft); white-space: nowrap;" },
+                $t($v.z?.lang)
+              )
             ] : null
           ),
           $h("span", { "style": "display: flex; gap: 6px;" },
