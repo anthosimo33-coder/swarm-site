@@ -216,8 +216,10 @@ class Component extends DCLogic {
     // Où leurs vues se font : les 5 premiers pays, puis tous à la demande (un pays par ligne, jamais regroupés).
     const mkAllRows = b.mk || [];
     const mkOn = !!(this.state || {}).mkAll;
-    const mkVals = { mkShown: mkOn ? mkAllRows : mkAllRows.slice(0, 5), mkMore: mkAllRows.length > 5, mkOpen: mkOn ? 'true' : 'false', mkRot: mkOn ? 'rotate(180deg)' : 'none',
-      mkMoreLabel: mkOn ? 'Voir moins' : 'Voir les ' + mkAllRows.length + ' pays', toggleMk: () => this.setState({ mkAll: !mkOn }) };
+    const mkVals = { mkShown: mkOn || mkAllRows.length <= 6 ? mkAllRows : mkAllRows.slice(0, 5), mkMore: mkAllRows.length > 6, mkOpen: mkOn ? 'true' : 'false', mkRot: mkOn ? 'rotate(180deg)' : 'none',
+      // Fermé, le bouton dit ce qui manque (« Voir les 11 autres pays · 13 % ») : les lignes visibles + lui = 100 %.
+      mkMoreLabel: mkOn ? 'Voir moins' : 'Voir les ' + (mkAllRows.length - 5) + ' autres pays · ' + mkAllRows.slice(5).reduce((n, m) => n + (parseInt(m.p, 10) || 0), 0) + '\u202f%',
+      toggleMk: () => this.setState({ mkAll: !mkOn }) };
     // Placements payés : toutes / sans / seulement, avec leur nombre — seulement si l'app en a.
     const DV = (P.data && P.data.videos) || [];
     const nPaid = DV.filter((v) => v.paid).length;
@@ -290,7 +292,7 @@ class Component extends DCLogic {
     // Sur le site : la fiche de l'app depuis le Radar (document « app:<slug> », convex/radarModels.ts).
     const D = this.props && this.props.data;
     if (D && D.name) {
-      const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKN = (c) => c === 'XX' ? 'Pays inconnu' : ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
       const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
       const M = MKW({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil' });
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
@@ -319,7 +321,7 @@ class Component extends DCLogic {
       vids = VS.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: 'VideoA.dc.html?v=' + v.id, paid: !!v.paid, unpaid: !v.paid }));
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: 'FormatFicheA.dc.html?f=' + f.id }));
-      mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
+      mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: c === 'XX' ? 'Pays inconnu' : M[c] || c, v: nf(D.views30 * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
       creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market || 'XX', mkl: c.market ? M[c.market] || '' : 'Pays inconnu', fans: nf(c.fans), v: String(c.posts7d),
         med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: c.avatar || '', noav: true, page: !!c.page, href: 'CreateurFicheA.dc.html?h=' + c.handle }));
       sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));

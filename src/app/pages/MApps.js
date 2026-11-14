@@ -43,7 +43,7 @@ return {};
     // Sur le site : le classement du Radar (document « apps »), lu comme AppsA. A[i] = [nom, niche, marchés, comptes,
     // vidéos/sem., vues 30 j (M), 6 semaines (M), meilleure, miniatures, vues des miniatures, icône, slug, id des vidéos, nouvelle ?]
     const D = this.props && this.props.data;
-    const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+    const MKN = (c) => c === 'XX' ? 'Pays inconnu' : ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
     const nfm = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
     const xfm = (x) => (x >= 100 ? Math.round(x).toLocaleString('en-US').replace(/,/g, '\u202f') : x >= 10 ? String(Math.round(x)) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     // Un pays choisi : sa propre liste (« apps:FR »), où vues, courbe et vidéos ne comptent que ce pays.
@@ -93,7 +93,10 @@ return {};
       return l.filter((m) => m[0]).slice(0, 2).map(([c, p]) => c + (p !== null && p !== undefined ? ' ' + p + '\u202f%' : '')).join(' · '); };
     // Les mêmes marchés en drapeaux (data-c = code du marché, n'importe quel code pays ISO).
     const mkList = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2], m[1]]) : a[2].map((c) => [c, null, c]);
-      return l.filter((m) => m[0]).slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + '\u202f%' : '', t })); };
+      // La ligne garde ses 2 premiers pays, sans repère pour le reste (demande du 14/11) : les parts
+      // complètes sont dans l'aperçu et sur la fiche.
+      const k = l.filter((m) => m[0]);
+      return k.slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + '\u202f%' : '', t })); };
     const rows = list.slice(0, limit).map((a, i) => { const w = a[6] || [1, 1, 1, 1, 1, 1], mx = Math.max.apply(null, w) || 1, d = a[6] ? dlt(a) : null, up = d === null || d >= 0;
       const pts = w.map((v, j) => [j * 20, 36 - (v / mx) * 32]);
       const line = 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
@@ -141,7 +144,12 @@ return {};
         waffle: Array.from({ length: 20 }, (_, c) => ({ bg: c < Math.round((t10 || 0) * 20) ? '#4C9AFF' : 'rgba(255,255,255,0.08)' })),
         hasTop: !!pa[8][0], top: pa[8][0] ? { cover: pa[8][0], views: (pa[9][0] || '') + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xfm(t0.x) + ' sa normale' : '', who: t0 && t0.handle ? '@' + t0.handle : '', paid: !!(pa[17] && pa[17][0]) } : {},
         ppw: grp(pa[4]), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
-        hasMk: !!md, noMk: !md, mkd: (md || []).slice(0, 2).map((m, n) => ({ c: m[0], l: m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
+        hasMk: !!md, noMk: !md, mkd: (() => {
+          const l = md || [], top = l.length === 3 ? l : l.slice(0, 2), rest = l.slice(top.length);
+          const out = top.map((m, n) => ({ c: m[0], l: m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)', stack: false, fl: [] }));
+          if (rest.length) { const rp = rest.reduce((n, m) => n + m[2], 0);
+            out.push({ c: '', l: '+' + rest.length + '\u00a0pays', p: rp + '\u202f%', w: rp + '%', bg: 'rgba(255,255,255,0.24)', stack: true, fl: rest.slice(0, 3).map((m, j) => ({ c: m[0], ml: j ? '-5px' : '0' })) }); }
+          return out; })(),
         followLabel: (st.follow || {})[pa[0]] ? 'Suivi' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
     const swipe = (k) => ({ s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false, pv: null }); this.y0 = null; } });
     return {
@@ -659,6 +667,13 @@ return {};
                       $h("span", { "style": "display: flex; justify-content: space-between; gap: 6px; font-size: 11px;" },
                         $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--ink-soft);" },
                           $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
+                          (m?.stack) ? [
+                            $h("span", { "aria-hidden": "true", "style": "display: inline-flex; flex-shrink: 0;" },
+                              ($l(m?.fl)).map((f) => [
+                                $h("span", { "class": "sw-flag", "data-c": f?.c, "style": `margin-left: ${$t(f?.ml)}; box-shadow: 0 0 0 2px rgba(12,15,22,0.95);` })
+                              ])
+                            )
+                          ] : null,
                           $h("span", { "style": "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                             $t(m?.l)
                           )

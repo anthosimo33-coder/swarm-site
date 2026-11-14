@@ -89,7 +89,8 @@ return {};
         a.top10Share, a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null, a.videoCount, a.bestX || 0, a.trackedSince || 0, a.days || null, a.daysIg || null,
         typeof a.share === 'number' ? a.share : null, a.top.map((t) => !!t.paid), a.placements || 0, a.kind || null]);
       DAYEND = D.apps.length && typeof D.apps[0].dayEnd === 'number' ? D.apps[0].dayEnd : null;
-      MKD = Object.fromEntries(SRC.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || c, p])]));
+      const MKN = (c) => (c === 'XX' ? 'Pays inconnu' : LBL[c] || (() => { try { return new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c; } catch (e) { return c; } })());
+      MKD = Object.fromEntries(SRC.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, MKN(c), p])]));
       MAPPS = Object.fromEntries(D.marketApps || []);
       MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c]));
       NIS = D.niches;
@@ -145,9 +146,12 @@ return {};
       'Social et loisirs': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Santé et physique': 'M3 12h4l3-8 4 16 3-8h4', 'Beauté IA': 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z' };
     const NIC0 = 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z';
     const mkList = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2], m[1]]) : a[2].map((c) => [c, null, c]);
-      return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + '\u202f%' : '', t })); };
+      // La ligne garde ses 2 premiers pays, sans repère pour le reste (demande du 14/11) : les parts
+      // complètes sont dans l'aperçu et sur la fiche.
+      const k = l.filter((m) => m[1] !== null || m[0] !== 'XX');
+      return k.slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + '\u202f%' : '', t })); };
     const mkText = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2]]) : a[2].map((c) => [c, null]);
-      return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p]) => (c === 'XX' ? 'Autres' : c) + (p !== null && p !== undefined ? ' ' + p + '\u202f%' : '')).join(' · '); };
+      return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p]) => (c === 'XX' ? 'Pays inconnu' : c) + (p !== null && p !== undefined ? ' ' + p + '\u202f%' : '')).join(' · '); };
     const rows = list.map((a, i) => {
       const w = a[6];
       const max = Math.max.apply(null, w) || 1;
@@ -259,7 +263,13 @@ return {};
         hasTop: !!v1, top: v1 || {},
         rows: v1 ? 'minmax(0, 1.2fr) minmax(0, 1.06fr) minmax(0, 0.86fr) minmax(0, 0.88fr)' : 'minmax(0, 1.3fr) minmax(0, 1.06fr) minmax(0, 0.88fr)',
         ppw: Number(pa[4]).toLocaleString('fr-FR'), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
-        mkd: (md || pa[2].map((c) => [c, c, null])).filter((m) => m[2] !== null).slice(0, 2).map((m, n) => ({ c: m[0], l: m[1], full: m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
+        mkd: (() => {
+          const l = (md || []).filter((m) => m[2] !== null), top = l.length === 3 ? l : l.slice(0, 2), rest = l.slice(top.length);
+          const out = top.map((m, n) => ({ c: m[0], l: m[1], full: m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)', stack: false, fl: [] }));
+          if (rest.length) { const rp = rest.reduce((n, m) => n + m[2], 0);
+            out.push({ c: '', l: rest.length + ' autres pays', full: rest.map((m) => m[1] + ' ' + m[2] + '\u202f%').join(', '), p: rp + '\u202f%', w: rp + '%', bg: 'rgba(255,255,255,0.24)',
+              stack: true, fl: rest.slice(0, 3).map((m, j) => ({ c: m[0], ml: j ? '-6px' : '0' })) }); }
+          return out; })(),
         href: ficheOf(pa),
         followLabel: followed(pa) ? 'Suivi' : 'Suivre', followOn: followed(pa) ? 'true' : 'false', follow: () => toggleFollow(pa) };
       ajItem = { kind: 'app', id: pa[11] || pa[0], label: pa[0], cover: pa[10] || null };
@@ -1080,6 +1090,13 @@ return {};
                     $h("span", { "style": "display: flex; justify-content: space-between; gap: 8px; font-size: 12px;" },
                       $h("span", { "style": "display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--ink-soft);" },
                         $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true", "style": "flex-shrink: 0;" }),
+                        (m?.stack) ? [
+                          $h("span", { "aria-hidden": "true", "style": "display: inline-flex; flex-shrink: 0;" },
+                            ($l(m?.fl)).map((f) => [
+                              $h("span", { "class": "sw-flag", "data-c": f?.c, "style": `margin-left: ${$t(f?.ml)}; box-shadow: 0 0 0 2px rgba(12,15,22,0.95);` })
+                            ])
+                          )
+                        ] : null,
                         $h("span", { "title": m?.full, "style": "min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                           $t(m?.l)
                         )

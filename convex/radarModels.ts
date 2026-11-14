@@ -87,6 +87,20 @@ export const marketLabel = (code: string) => (code === "XX" ? "Pays inconnu" : (
 export const marketOf = (_lang: string | null | undefined, region?: string | null) => countryCode(region);
 
 /**
+ * Parts entières qui font 100 pile (méthode du plus fort reste) : chaque part est arrondie à l'inférieur, puis les
+ * points manquants vont aux plus gros restes. Les parts tombées à 0 sont retirées ; le total affiché reste 100.
+ */
+export const percents = (rows: [string, number][]): [string, number][] => {
+  const total = rows.reduce((n, r) => n + r[1], 0);
+  if (!total) return [];
+  const exact = rows.map(([k, v]) => ({ k, e: (v / total) * 100 }));
+  const out = exact.map((r) => ({ ...r, p: Math.floor(r.e) }));
+  let left = 100 - out.reduce((n, r) => n + r.p, 0);
+  for (const r of [...out].sort((p, q) => (q.e - q.p) - (p.e - p.p))) { if (left <= 0) break; r.p++; left--; }
+  return out.filter((r) => r.p > 0).map((r) => [r.k, r.p] as [string, number]).sort((p, q) => q[1] - p[1]);
+};
+
+/**
  * Niche de chaque app : celle de la fiche du Radar (Jarvia #505, 16 niches), sinon ce classement éditorial de Swarm
  * (les 49 apps du 13/11, que le Radar a repris tel quel). Jusqu'au 15/11, seul ce tableau comptait : 102 apps sur 147
  * tombaient en « Autres ».
@@ -400,12 +414,12 @@ export function buildBoards(
     const { _top, ...st } = statsOf(vids, accs.length);
     use(_top);
     const recent = vids.filter((v) => now - v.publishedAt <= 30 * DAY);
-    const known = recent.filter((v) => mkOf(v.accountId));
-    const knownViews = known.reduce((n, v) => n + v.views, 0);
-    const markets = [...groupBy(known, (v) => mkOf(v.accountId) as string).entries()]
-      .map(([m, vs]) => [m, knownViews ? Math.round((vs.reduce((n, v) => n + v.views, 0) / knownViews) * 100) : 0] as [string, number])
-      .filter(([, p]) => p > 0)
-      .sort((p, q) => q[1] - p[1]);
+    // Part de ses vues 30 j par pays de ses comptes. Le total fait 100 pile : toutes ses vues comptent (un compte sans
+    // pays → « Pays inconnu », XX, en dernier) et l'arrondi au plus fort reste (le 14/11, 44 apps sur 171 faisaient
+    // 98 à 101 % en arrondissant chaque pays de son côté).
+    const markets = percents([...groupBy(recent, (v) => mkOf(v.accountId) ?? "XX").entries()]
+      .map(([m, vs]) => [m, vs.reduce((n, v) => n + v.views, 0)] as [string, number]))
+      .sort((p, q) => (p[0] === "XX" ? 1 : 0) - (q[0] === "XX" ? 1 : 0) || q[1] - p[1]);
     const store = storeOf(a.slug);
     const released = a.store?.released ? Date.parse(a.store.released) : NaN;
     const firstVideo = vids.length ? Math.min(...vids.map((v) => v.publishedAt)) : null;
