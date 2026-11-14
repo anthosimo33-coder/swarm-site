@@ -89,6 +89,9 @@ export default defineSchema({
   // Bail d'une tâche de fond (une seule chaîne de lecture à la fois) : jeton du détenteur, valable jusqu'à `until`.
   leases: defineTable({ name: v.string(), token: v.string(), until: v.number() }).index("by_name", ["name"]),
 
+  // Langue des comptes (convex/radarLang.ts), calculée hors de la synchro ; null = on ne sait pas.
+  accountLangs: defineTable({ accountId: v.string(), lang: v.union(v.string(), v.null()), at: v.number() }).index("by_account", ["accountId"]),
+
   videoSlides: defineTable({
     videoId: v.string(),
     slideshow: v.union(v.boolean(), v.null()),

@@ -1,11 +1,12 @@
 "use node";
 
+import v8 from "node:v8";
+import vm from "node:vm";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
 import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
 import { APP_STORE_ID, buildBoards, iconKey, siteOf, type Raw } from "./radarModels";
-import { textLang } from "./textLang";
 
 /** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
 const STORE_RULE = 6; // 6 : à plusieurs candidates, titre exact ou nette avance en avis ; 5 : fiche exacte par l'identifiant du Radar ; sinon recherche France puis États-Unis, refusée si le nom est ambigu ; icône gardée
@@ -23,8 +24,11 @@ const DEFAULT_EXPORT_URL = "https://giddy-bass-969.eu-west-1.convex.site";
 const TABLES = ["apps", "tracked", "trackedVideos", "formats", "signals"] as const;
 /** Miniatures recopiées par passage, et temps qu'on leur donne : le reste attend le passage suivant
  * (l'URL source sert en attendant). Un passage tient sous les 10 min d'une action. */
-const MEDIA_PER_RUN = 8000;
-const MEDIA_BUDGET_MS = 5 * 60_000;
+const MEDIA_PER_RUN = 400;
+// 14/11 : 1 min (au lieu de 5) — copier 546 miniatures en 4 min faisait passer la synchro de 387 à 502 Mo (mémoire de
+// sharp non rendue), et elle mourait à l'écriture des pages (limite 512 Mo). Les miniatures non copiées le sont à la
+// première demande de /cover (la lecture IA les demande toutes) ; les icônes passent d'abord.
+const MEDIA_BUDGET_MS = 60_000;
 /**
  * Une action Convex est coupée à 10 min, sans rien noter. Le passage s'arrête de lui-même à 9 min,
  * et la copie des images laisse 3 min aux écritures (quand les icônes changent, presque toutes les
@@ -42,10 +46,24 @@ const PARALLEL = 4; // 20, 10, 6 : pics à 740, 568, 514 Mo de tas (pages TikTok
 /** Une miniature introuvable depuis moins de 3 jours : la vidéo est retirée des listes (au-delà, on réessaie). */
 const MISS_HIDE_MS = 3 * 86_400_000;
 /** Taille d'un lot d'écriture : arguments bornés, et chaque document est relu (4 096 lectures au plus par mutation). */
-const BATCH_BYTES = 3_000_000;
+const BATCH_BYTES = 1_500_000;
+/**
+ * Mémoire au-delà de laquelle on cesse d'écrire (limite des actions : 512 Mo). 14/11 : la synchro de prod est morte à
+ * l'écriture des pages ; désormais elle s'arrête proprement et se relance pour écrire le reste.
+ */
+const MEM_STOP = (Number(process.env.SWARM_MEM_STOP_MB) || Infinity) * 1024 * 1024; // prod : 480 ; dev : sans (processus réutilisés, déjà gros au départ)
 const BATCH_ITEMS = 400;
 
 /** Mémoire de l'action à chaque étape (journal Convex) : la limite est de 512 Mo. */
+/**
+ * Ramasse-miettes forcé. Node se croit loin de sa limite (fixée d'après la mémoire de la machine), alors que l'action
+ * meurt à 512 Mo : il laisse s'accumuler les textes jetables (52 000 pages mises en texte pour leur empreinte) — la
+ * synchro de prod est morte ainsi le 14/11 à 22h30, 30 s après le calcul des pages.
+ */
+const gc: () => void = (() => {
+  try { v8.setFlagsFromString("--expose-gc"); return vm.runInNewContext("gc") as () => void; } catch { return () => {}; }
+})();
+
 const MEMLOG = (label: string) => { const m = process.memoryUsage(); console.log(`[mem] ${label} rss=${Math.round(m.rss / 1e6)} heap=${Math.round(m.heapUsed / 1e6)} ext=${Math.round(m.external / 1e6)} buf=${Math.round(m.arrayBuffers / 1e6)}`); };
 async function fetchTable(base: string, secret: string, table: (typeof TABLES)[number]) {
   const rows: unknown[] = [];
@@ -62,18 +80,25 @@ async function fetchTable(base: string, secret: string, table: (typeof TABLES)[n
   throw new Error(`export ${table} : trop de pages`);
 }
 
-/** Empreinte rapide (FNV-1a sur 2×32 bits) du contenu, sans la date de calcul. */
-function hashOf(data: unknown): string {
+/** Empreinte et taille (une seule mise en texte : 52 000 pages à empreinter, 14/11 la mémoire manquait). */
+function hashLen(data: unknown): { hash: string; bytes: number } {
   const { updatedAt: _ignored, ...rest } = (data ?? {}) as Record<string, unknown>;
   const s = JSON.stringify(rest);
+  return { hash: fnv(s), bytes: s.length + 40 };
+}
+
+function fnv(s: string): string {
   let h1 = 0x811c9dc5, h2 = 0x01000193;
   for (let i = 0; i < s.length; i++) {
     const c = s.charCodeAt(i);
     h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
     h2 = Math.imul(h2 ^ c, 2246822519) >>> 0;
   }
-  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0"); // même format que hashOf (empreintes rangées)
 }
+
+/** Empreinte rapide (FNV-1a sur 2×32 bits) du contenu, sans la date de calcul. */
+const hashOf = (data: unknown): string => hashLen(data).hash;
 
 /**
  * Réparation (13/11) : efface les images rangées en HEIC, recopiées ensuite en JPEG/WebP par
@@ -208,7 +233,14 @@ export const run = internalAction({
         done = page.done;
       }
       const site = process.env.CONVEX_SITE_URL ?? null;
+      // Langue des comptes, calculée hors de la synchro (convex/radarLang.ts).
       const langs = new Map<string, string | null>();
+      for (let cursor: string | null = null, done = false; !done; ) {
+        const page: { items: [string, string][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.langPage, { cursor });
+        for (const [id, l] of page.items) langs.set(id, l || null);
+        cursor = page.cursor;
+        done = page.done;
+      }
       const opts = {
         missing: (k: string) => (misses.get(k) ?? 0) > now - MISS_HIDE_MS,
         coverUrl: (id: string) => (site && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) ? `${site}/cover/${id}` : null),
@@ -218,7 +250,7 @@ export const run = internalAction({
         aiOf: (id: string) => ai.get(id),
         genderOf: (h: string) => genders.get(h),
         // Lue une fois par vidéo : le 2e calcul la reprend (52 000 vidéos, ~3 Mo).
-        textLang: (id: string, text: string) => { if (!langs.has(id)) langs.set(id, textLang(text)); return langs.get(id) ?? null; },
+        langOf: (id: string) => (langs.has(id) ? langs.get(id) ?? null : undefined),
       };
       MEMLOG('avant calcul 1');
       // 1er calcul : seulement la liste des images à copier. Ses 52 000 pages ne sont pas gardées pendant la copie (la
@@ -266,8 +298,9 @@ export const run = internalAction({
       };
       await Promise.all(Array.from({ length: PARALLEL }, worker));
       await flushMedia();
+      gc();
       MEMLOG('fin copie');
-      const { boards, need: need2, used, regionTodo, slideTodo, videoAiTodo, genderTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
+      const { boards, need: need2, used, regionTodo, slideTodo, videoAiTodo, genderTodo, langTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
       need = need2;
       // Les comptes encore sans pays : notés pour que leur pays soit lu sur leurs vidéos (convex/radarRegions.ts).
       for (let i = 0; i < regionTodo.length; i += 300) await ctx.runMutation(internal.radarStore.saveRegionTodo, { items: regionTodo.slice(i, i + 300) });
@@ -277,6 +310,7 @@ export const run = internalAction({
       const newSlides = slideTodo.filter((id) => !slideKnown.has(id)).slice(0, TODO_MAX);
       const newAi = videoAiTodo.filter((id) => !aiKnown.has(id)).slice(0, TODO_MAX);
       const newGender = genderTodo.filter((x) => !genderKnown.has(x.handle)).slice(0, TODO_MAX);
+      gc();
       MEMLOG('après calcul 2');
 
       // Les images qu'aucun document ne cite plus (vidéo sortie des listes) : effacées.
@@ -301,13 +335,16 @@ export const run = internalAction({
         cursor = page.cursor;
         done = page.done;
       }
+      // Toutes les clés produites, gardées à part : les pages écrites quittent `boards` pour libérer la mémoire.
+      const allKeys = new Set(boards.keys());
       const batches: { items: { key: string; hash: string; data: unknown }[]; bytes: number }[] = [];
       let batch: { key: string; hash: string; data: unknown }[] = [];
       let size = 0;
+      let seen = 0;
       for (const [key, data] of boards) {
-        const hash = hashOf(data);
+        if (++seen % 2000 === 0) gc();
+        const { hash, bytes } = hashLen(data);
         if (existingHash.get(key) === hash) continue;
-        const bytes = JSON.stringify(data).length;
         if (batch.length && (size + bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS)) {
           batches.push({ items: batch, bytes: size });
           batch = [];
@@ -319,9 +356,12 @@ export const run = internalAction({
       if (batch.length) batches.push({ items: batch, bytes: size });
       let nextBatch = 0;
       let sent = 0;
+      let memStop = false;
       const writeStart = Date.now();
       const writer = async () => {
         while (nextBatch < batches.length && Date.now() - runStart < RUN_LIMIT_MS) {
+          if (nextBatch % 4 === 0) gc();
+          if (process.memoryUsage().rss > MEM_STOP) { gc(); if (process.memoryUsage().rss > MEM_STOP) { memStop = true; break; } }
           const b = batches[nextBatch++];
           // Cadence : chaque lot part quand les octets déjà envoyés le permettent (WRITE_RATE par seconde).
           sent += b.bytes;
@@ -330,6 +370,9 @@ export const run = internalAction({
           for (let attempt = 0; ; attempt++) {
             try {
               const n = await ctx.runMutation(internal.radarStore.saveBoards, { items: b.items, now });
+              // Écrit : la page n'a plus à rester en mémoire (la mémoire baisse au fil de l'écriture).
+              for (const it of b.items) boards.delete(it.key);
+              b.items = [];
               written += n; // pas « written += await … » : lu avant l'attente, les 4 écrivains s'écraseraient
               break;
             } catch (e) {
@@ -342,18 +385,20 @@ export const run = internalAction({
       await Promise.all(Array.from({ length: WRITERS }, writer));
       MEMLOG('écriture ' + written);
       if (nextBatch < batches.length) {
-        // Temps écoulé : ce qui est écrit reste (empreintes), le passage suivant reprend le reste.
-        throw new Error(`temps écoulé : ${batches.length - nextBatch} lots de pages sur ${batches.length} non écrits`);
+        // Temps écoulé ou mémoire pleine : ce qui est écrit reste (empreintes) ; un passage repart dans 1 min pour écrire
+        // le reste, tant que chacun avance (le suivant ne réécrit que ce qui manque).
+        if (written > 0) await ctx.scheduler.runAfter(60_000, internal.radarSync.run, {});
+        throw new Error(`${memStop ? "mémoire pleine" : "temps écoulé"} : ${batches.length - nextBatch} lots de pages sur ${batches.length} non écrits${written > 0 ? ", suite dans 1 min" : ""}`);
       }
 
       // Les documents que ce passage n'a plus produits : effacés (leur fiche mène à « introuvable »).
-      const gone = [...existingHash.keys()].filter((k) => !boards.has(k));
+      const gone = [...existingHash.keys()].filter((k) => !allKeys.has(k));
       for (let i = 0; i < gone.length; i += 200) await ctx.runMutation(internal.radarStore.dropBoards, { keys: gone.slice(i, i + 200) });
 
       const counts = {
         unlocated: regionTodo.length,
         ...sizes,
-        boards: boards.size, written, mediaCopied: copied, mediaMissing: missing, mediaDropped: stale.length, boardsDropped: gone.length,
+        boards: allKeys.size, written, mediaCopied: copied, mediaMissing: missing, mediaDropped: stale.length, boardsDropped: gone.length,
       };
       await ctx.runMutation(internal.radarStore.endRun, { id: runId, ok: true, counts });
       // Les files de vérification (convex/radarSlides.ts, convex/radarAi.ts), une fois les pages écrites ; le reste au
@@ -361,6 +406,8 @@ export const run = internalAction({
       for (let i = 0; i < newSlides.length; i += 500) await ctx.runMutation(internal.radarStore.saveSlideTodo, { ids: newSlides.slice(i, i + 500) });
       for (let i = 0; i < newAi.length; i += 500) await ctx.runMutation(internal.radarStore.saveVideoAiTodo, { ids: newAi.slice(i, i + 500) });
       for (let i = 0; i < newGender.length; i += 300) await ctx.runMutation(internal.radarStore.saveGenderTodo, { items: newGender.slice(i, i + 300) });
+      // Langue des comptes jamais calculés : par lots de 200, chacun dans sa propre action (le détecteur hors synchro).
+      for (let i = 0; i < Math.min(langTodo.length, TODO_MAX); i += 200) await ctx.scheduler.runAfter(i * 50, internal.radarLang.detect, { items: langTodo.slice(i, i + 200) });
       await ctx.scheduler.runAfter(0, internal.radarSlides.fill, {});
       await ctx.scheduler.runAfter(0, internal.radarAi.fillVideos, {});
       await ctx.scheduler.runAfter(0, internal.radarAi.fillGender, {});

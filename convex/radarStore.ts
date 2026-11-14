@@ -521,3 +521,25 @@ export const dropLease = internalMutation({
     if (row && row.token === token) await ctx.db.patch(row._id, { until: 0 });
   },
 });
+
+// ─── Langue des comptes (convex/radarLang.ts) ──────────────────────────────────────────────────
+
+/** Les comptes calculés : [id, langue] ("" : on ne sait pas). */
+export const langPage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("accountLangs").paginate({ cursor, numItems: 5000 });
+    return { items: r.page.map((x) => [x.accountId, x.lang ?? ""] as [string, string]), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+export const saveLangs = internalMutation({
+  args: { items: v.array(v.object({ accountId: v.string(), lang: v.union(v.string(), v.null()) })), now: v.number() },
+  handler: async (ctx, { items, now }) => {
+    for (const it of items) {
+      const row = await ctx.db.query("accountLangs").withIndex("by_account", (q) => q.eq("accountId", it.accountId)).first();
+      if (row) await ctx.db.patch(row._id, { lang: it.lang, at: now });
+      else await ctx.db.insert("accountLangs", { accountId: it.accountId, lang: it.lang, at: now });
+    }
+  },
+});

@@ -35,3 +35,17 @@ export function textLang(text: string | null | undefined): string | null {
   if (!a || a.accuracy < 0.1 || (b && a.accuracy < 2 * b.accuracy)) return null;
   return KEEP.has(a.lang) && (!SCRIPT[a.lang] || SCRIPT[a.lang].test(t)) ? a.lang : null;
 }
+
+/**
+ * La langue d'un compte d'après les textes de ses vidéos (30 au plus) : la plus fréquente, si au moins 2 sont sûres,
+ * 60 % d'accord, et qu'au moins un quart des vidéos se lisent (14/11 : @dailytyrel, légendes allemandes trop courtes
+ * pour être lues et 2 anglaises sur une douzaine, sortait « en anglais »). null : on ne sait pas.
+ */
+export function accountLang(texts: string[]): string | null {
+  const vs = texts.slice(0, 30);
+  const n = new Map<string, number>();
+  let tot = 0;
+  for (const t of vs) { const l = textLang(t); if (l) { n.set(l, (n.get(l) ?? 0) + 1); tot++; } }
+  const top = [...n.entries()].sort((p, q) => q[1] - p[1])[0];
+  return top && top[1] >= 2 && top[1] >= 0.6 * tot && tot >= Math.max(2, 0.25 * vs.length) ? top[0] : null;
+}

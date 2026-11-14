@@ -256,8 +256,8 @@ export function buildBoards(
     artOf?: (slug: string) => string | null;
     /** Pays lu par Swarm sur la page publique d'une vidéo du compte (comptes sans pays relevé). */
     regionOf?: (handle: string) => string | null;
-    /** Langue du texte d'une vidéo (convex/textLang.ts, action Node seulement : le détecteur pèse 600 Ko). */
-    textLang?: (videoId: string, text: string) => string | null;
+    /** Langue d'un compte, calculée hors synchro (convex/radarLang.ts) : null si inconnue, undefined si pas calculée. */
+    langOf?: (accountId: string) => string | null | undefined;
     /** Carrousel lu par Swarm (convex/radarSlides.ts) : nombre de photos, 0 si ce n'en est pas un, undefined si pas encore lu. */
     slidesOf?: (videoId: string) => number | undefined;
     /** Lecture IA de la miniature (convex/radarAi.ts) : type de contenu et texte à l'écran ; undefined si pas encore lue. */
@@ -267,7 +267,7 @@ export function buildBoards(
   } = {},
 ): {
   boards: Boards; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[]; slideTodo: string[];
-  videoAiTodo: string[]; genderTodo: { handle: string; ids: string[] }[];
+  videoAiTodo: string[]; genderTodo: { handle: string; ids: string[] }[]; langTodo: { accountId: string; texts: string[] }[];
 } {
   const missing = opts.missing ?? (() => false);
   const coverUrl = opts.coverUrl ?? (() => null);
@@ -395,7 +395,7 @@ export function buildBoards(
   // Sa langue : celle de la plupart de ses vidéos (légende + texte à l'écran), si au moins 2 sont sûres, 60 % d'accord,
   // et qu'au moins un quart de ses vidéos se lisent (14/11 : @dailytyrel, légendes allemandes trop courtes pour être
   // lues et 2 anglaises sur une douzaine, sortait « en anglais »).
-  const textLang = opts.textLang ?? (() => null);
+  const langOf = opts.langOf ?? (() => undefined);
   const slidesOf = opts.slidesOf ?? (() => undefined);
   const aiOf = opts.aiOf ?? (() => undefined);
   const genderOf = opts.genderOf ?? (() => undefined);
@@ -426,17 +426,14 @@ export function buildBoards(
     const norm = (x: string) => x.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
     return ai.length > radar.length + 10 && norm(ai).startsWith(norm(radar).slice(0, 16)) ? ai : radar;
   };
+  // Sa langue : calculée hors de la synchro (convex/radarLang.ts) sur les textes de ses vidéos ; les comptes jamais
+  // calculés partent dans `langTodo`.
   const langByAccount = new Map<string, string>();
+  const langTodo: { accountId: string; texts: string[] }[] = [];
   for (const [accId, all] of videosByAccount) {
-    const vs = all.slice(0, 30);
-    const n = new Map<string, number>();
-    let tot = 0;
-    for (const v of vs) {
-      const l = textLang(v.videoId, `${v.caption ?? ""} ${v.hook ?? ""}`);
-      if (l) { n.set(l, (n.get(l) ?? 0) + 1); tot++; }
-    }
-    const top = [...n.entries()].sort((p, q) => q[1] - p[1])[0];
-    if (top && top[1] >= 2 && top[1] >= 0.6 * tot && tot >= Math.max(2, 0.25 * vs.length)) langByAccount.set(accId, top[0]);
+    const l = langOf(accId);
+    if (l) langByAccount.set(accId, l);
+    else if (l === undefined) langTodo.push({ accountId: accId, texts: all.slice(0, 20).map((v) => Array.from(`${v.caption ?? ""} ${v.hook ?? ""}`).slice(0, 300).join("")) });
   }
   // Sa langue seulement quand ce n'en est pas une de son pays (« France · en espagnol ») : le pays dit d'où il publie,
   // pas où sont ceux qui regardent (14/11, @historiaas.en.chat publie depuis la France en espagnol).
@@ -763,5 +760,5 @@ export function buildBoards(
     handle: t.handle,
     ids: (videosByAccount.get(t.id) ?? []).filter((v) => typeOf(v) === "ambassadeur").sort((p, q) => q.views - p.views).slice(0, 3).map((v) => v.videoId),
   })).filter((x) => x.ids.length);
-  return { boards, need, used, regionTodo, slideTodo, videoAiTodo, genderTodo };
+  return { boards, need, used, regionTodo, slideTodo, videoAiTodo, genderTodo, langTodo };
 }

@@ -17,6 +17,7 @@ import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as imageCopy from "../imageCopy.js";
 import type * as radarAi from "../radarAi.js";
+import type * as radarLang from "../radarLang.js";
 import type * as radarModels from "../radarModels.js";
 import type * as radarRegions from "../radarRegions.js";
 import type * as radarSlides from "../radarSlides.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   imageCopy: typeof imageCopy;
   radarAi: typeof radarAi;
+  radarLang: typeof radarLang;
   radarModels: typeof radarModels;
   radarRegions: typeof radarRegions;
   radarSlides: typeof radarSlides;
