@@ -241,6 +241,8 @@ export async function shrink(buf: ArrayBuffer, type: string, key: string): Promi
   }
   try {
     const sharp = (await import("sharp")).default;
+    sharp.cache(false); // pas de cache d'images décodées : une action Convex a 512 Mo
+    sharp.concurrency(1);
     const img = sharp(Buffer.from(buf)).rotate();
     const out = key.startsWith("icon:")
       ? await img.resize({ width: ICON_SIZE, height: ICON_SIZE, fit: "cover" }).webp({ quality: 85 }).toBuffer()

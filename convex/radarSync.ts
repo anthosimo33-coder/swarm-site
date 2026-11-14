@@ -24,13 +24,15 @@ const TABLES = ["apps", "tracked", "trackedVideos", "formats", "signals"] as con
  * (l'URL source sert en attendant). Un passage tient sous les 10 min d'une action. */
 const MEDIA_PER_RUN = 8000;
 const MEDIA_BUDGET_MS = 5 * 60_000;
-const PARALLEL = 20;
+const PARALLEL = 10; // 20 : pics à 740 Mo de tas (pages TikTok lues à la fois), passage coupé faute de mémoire le 14/11
 /** Une miniature introuvable depuis moins de 3 jours : la vidéo est retirée des listes (au-delà, on réessaie). */
 const MISS_HIDE_MS = 3 * 86_400_000;
 /** Taille d'un lot d'écriture : arguments bornés, et chaque document est relu (4 096 lectures au plus par mutation). */
 const BATCH_BYTES = 3_000_000;
 const BATCH_ITEMS = 400;
 
+/** Mémoire de l'action à chaque étape (journal Convex) : la limite est de 512 Mo. */
+const MEMLOG = (label: string) => { const m = process.memoryUsage(); console.log(`[mem] ${label} rss=${Math.round(m.rss / 1e6)} heap=${Math.round(m.heapUsed / 1e6)} ext=${Math.round(m.external / 1e6)} buf=${Math.round(m.arrayBuffers / 1e6)}`); };
 async function fetchTable(base: string, secret: string, table: (typeof TABLES)[number]) {
   const rows: unknown[] = [];
   let cursor: string | null = null;
@@ -89,7 +91,7 @@ export const run = internalAction({
       if (!secret) throw new Error("JARVIA_EXPORT_SECRET absente");
 
       const raw = {} as Raw;
-      for (const t of TABLES) (raw as Record<string, unknown>)[t] = await fetchTable(base, secret, t);
+      for (const t of TABLES) { (raw as Record<string, unknown>)[t] = await fetchTable(base, secret, t); MEMLOG('export ' + t); }
 
       const now = Date.now();
       const media: Record<string, string> = {};
@@ -158,7 +160,9 @@ export const run = internalAction({
         coverUrl: (id: string) => (site && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) ? `${site}/cover/${id}` : null),
         artOf,
       };
+      MEMLOG('avant calcul 1');
       let { boards, need, used } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
+      MEMLOG('après calcul 1');
 
       // Miniatures et icônes manquantes : 20 copies en continu, dans le temps imparti.
       // Les icônes d'abord (peu nombreuses, visibles partout), puis les miniatures.
@@ -169,9 +173,18 @@ export const run = internalAction({
       let copied = 0;
       const got: { key: string; storageId: Id<"_storage">; url: string }[] = [];
       const failed: string[] = [];
+      // Un lot refusé (le site range des images au même moment) est retenté, puis laissé : ces images
+      // seront recopiées au passage suivant, le passage lui-même continue.
+      const retried = async (run: () => Promise<unknown>) => {
+        for (let i = 0; i < 3; i++) {
+          try { await run(); return; } catch { await new Promise((r) => setTimeout(r, 500 * (i + 1))); }
+        }
+      };
       const flushMedia = async () => {
-        if (got.length) await ctx.runMutation(internal.radarStore.saveMedia, { items: got.splice(0) });
-        if (failed.length) await ctx.runMutation(internal.radarStore.markMisses, { keys: failed.splice(0) });
+        const items = got.splice(0), keys = failed.splice(0);
+        if (copied % 1000 < 100) MEMLOG('copie ' + copied);
+        if (items.length) await retried(() => ctx.runMutation(internal.radarStore.saveMedia, { items }));
+        if (keys.length) await retried(() => ctx.runMutation(internal.radarStore.markMisses, { keys }));
       };
       let next = 0;
       const worker = async () => {
@@ -191,7 +204,9 @@ export const run = internalAction({
       };
       await Promise.all(Array.from({ length: PARALLEL }, worker));
       await flushMedia();
+      MEMLOG('fin copie');
       ({ boards, need, used } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts));
+      MEMLOG('après calcul 2');
 
       // Les images qu'aucun document ne cite plus (vidéo sortie des listes) : effacées.
       const stale = Object.keys(media).filter((k) => !used.has(k));

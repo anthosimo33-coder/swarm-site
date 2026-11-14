@@ -14,13 +14,20 @@ export const mediaPage = internalQuery({
   },
 });
 
-/** La liste des vidéos à ne plus montrer : ajoute (introuvable) ou retire (image rangée). */
+/**
+ * La liste des vidéos à ne plus montrer : ajoute (introuvable) ou retire (image rangée).
+ * Un seul document, lu par chaque image rangée : on ne le réécrit que s'il change vraiment. Le
+ * réécrire à chaque image faisait échouer les lots de la synchro dès que le site copiait des
+ * miniatures en même temps (conflit d'écriture à chaque essai : passage prod du 14/11, 11 h 22).
+ */
 async function setHidden(ctx: MutationCtx, add: string[], remove: string[]) {
   if (!add.length && !remove.length) return;
   const row = await ctx.db.query("hidden").first();
   const ids = new Set(row?.ids ?? []);
-  for (const k of add) ids.add(k.replace(/^v:/, ""));
-  for (const k of remove) ids.delete(k.replace(/^v:/, ""));
+  let changed = false;
+  for (const k of add) { const id = k.replace(/^v:/, ""); if (!ids.has(id)) { ids.add(id); changed = true; } }
+  for (const k of remove) if (ids.delete(k.replace(/^v:/, ""))) changed = true;
+  if (!changed) return;
   const list = [...ids].slice(-8000); // une valeur Convex : 8 192 éléments au plus
   if (row) await ctx.db.patch(row._id, { ids: list, at: Date.now() });
   else await ctx.db.insert("hidden", { ids: list, at: Date.now() });
