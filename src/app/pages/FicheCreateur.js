@@ -83,11 +83,10 @@ export default class FicheCreateur extends DCLogic {
   }
 
   baseVals() {
-    const PROOF = (p) => !p || !p.by ? '' : p.by === 'handle' ? 'Son pseudo porte l’app' : p.by === 'bio' ? 'Sa bio nomme l’app' : p.by === 'videos' ? p.cites + (p.cites > 1 ? ' vidéos' : ' vidéo') + ' sur ' + p.of + (p.cites > 1 ? ' la citent' : ' la cite') : 'Repéré par l’équipe';
 
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "/app", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "/app/apps", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "/app/formats", "cur": "false"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "/app/createurs", "cur": "page"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
     let z = {"av": "/media/app/av-zinedine.gsbb.jpg", "noav": false, "h": "@zinedine.gsbb", "bio": "L'ia c'est 👇", "fans": "16 200", "med": "7 792", "p7": "3 vidéos en 7 j", "views": "4,7 M", "best": "2,85 M", "app": {"name": "Shortfy", "niche": "Side hustle", "logo": "", "nologo": true, "blank": "sw-app-blank", "href": '/app/apps/' + 'shortfy'}, "hits": 4,
-      "mk": "France", "flag": "FR", "tt": "https://www.tiktok.com/@zinedine.gsbb"};
+      "mk": "France", "flag": "FR", "mkHref": "/app/createurs?m=FR", "tt": "https://www.tiktok.com/@zinedine.gsbb"};
     let ins = { b: '4 vidéos sur 10 à plus de 10× sa normale,', r: ' toutes publiées entre le 24/10 et le 31/10. Depuis, aucune n’a dépassé 2×.' };
     let fmts = [];
     let tiles = [{"l": "Abonnés", "v": "16 200", "s": " ", "ink": "var(--ink)"}, {"l": "Vues médianes", "v": "7 792", "s": "sa normale", "ink": "var(--ink)"}, {"l": "Rythme", "v": "3 vidéos en 7 j", "s": "dernière il y a 2 j", "ink": "var(--ink)"}, {"l": "Meilleure vidéo", "v": "2,85 M", "s": "366× sa normale", "ink": "var(--accent)"}];
@@ -100,12 +99,12 @@ export default class FicheCreateur extends DCLogic {
       const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
       const M = MKW({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' });
       const DAY = 86400000;
-      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
       const xf = (x) => (x < 0.05 ? '< 0,1' : x >= 10 ? Math.round(x).toLocaleString('fr-FR') : x.toFixed(1).replace(/\.0$/, '').replace('.', ',')) + '×';
       const big = (n) => (n >= 1e6 ? nf(n) : Math.round(n).toLocaleString('fr-FR'));
       // jj/mm, avec l'année quand ce n'est pas celle d'aujourd'hui.
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', new Date(ms).getFullYear() === new Date().getFullYear() ? { day: '2-digit', month: '2-digit' } : { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / DAY)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + ' j'; };
+      const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / DAY)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + '\u202fj'; };
       const plural = (n, w) => n + ' ' + w + (n > 1 ? 's' : '');
       const V = (D.videos || []).slice().sort((p, q) => q.publishedAt - p.publishedAt);
       const ref = D.updatedAt || Date.now();
@@ -113,8 +112,8 @@ export default class FicheCreateur extends DCLogic {
       const a = D.app;
       z = {
         av: D.avatar || '', noav: true, h: '@' + D.handle, bio: D.bio ? D.bio.replace(/\s+/g, ' ').trim() : '',
-        mk: M[D.market] || '', flag: D.market || '', tt: 'https://www.tiktok.com/@' + D.handle,
-        app: a ? { name: a.name, niche: a.niche || '', proof: PROOF(D.proof), logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
+        mk: M[D.market] || '', flag: D.market || '', mkHref: '/app/createurs' + (D.market ? '?m=' + D.market : ''), tt: 'https://www.tiktok.com/@' + D.handle,
+        app: a ? { name: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
                : { name: '', niche: '', logo: '', nologo: true, blank: 'sw-app-blank', href: '' }
       };
       // Rythme : le compte, complété par ses vidéos de la liste (une vidéo Instagram n'est pas dans posts7d).
@@ -207,7 +206,10 @@ export default class FicheCreateur extends DCLogic {
             $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
-            $h("span", null,
+            $h("a", { "class": "sw-link-quiet", "href": $v.z?.mkHref, "style": "display: inline-flex; align-items: center; gap: 6px;" },
+              ($v.z?.flag) ? [
+                $h("span", { "class": "sw-flag", "data-c": $v.z?.flag, "aria-hidden": "true" })
+              ] : null,
               $t($v.z?.mk)
             ),
             $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -263,11 +265,6 @@ export default class FicheCreateur extends DCLogic {
                       $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
                     $t($v.z?.app?.niche)
-                  )
-                ] : null,
-                ($v.z?.app?.proof) ? [
-                  $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                    $t($v.z?.app?.proof)
                   )
                 ] : null,
                 $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft);" },

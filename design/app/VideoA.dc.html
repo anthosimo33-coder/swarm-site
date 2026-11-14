@@ -212,7 +212,7 @@ class Component extends DCLogic {
       };
     };
     let chart = makeChart([{ h: 52, v: 1360000 }, { h: 67, v: 1530000 }, { h: 92, v: 1870000 }], 1870000, 28500,
-      (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + ' M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(n)));
+      (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + '\u202fM' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fk' : String(n)));
 
     // Sur le site : la vidéo depuis le Radar (document « video:<id> », convex/radarModels.ts).
     const D = this.props && this.props.data;
@@ -220,7 +220,7 @@ class Component extends DCLogic {
       const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
       const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
       const M = MKW({ FR: 'France', US: 'Anglophone', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' });
-      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + ' M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(Math.round(n)));
+      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + '\u202fM' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fk' : String(Math.round(n)));
       const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const list = D.playlist || [];
       const idx = list.indexOf(D.id);
@@ -255,7 +255,7 @@ class Component extends DCLogic {
         const last = obs[obs.length - 1];
         const ref = obs.slice(0, -1).reverse().find((p) => last.h - p.h >= 20) || obs[0];
         const gain = last.v - ref.v, span = last.h - ref.h;
-        const per = span >= 20 && span <= 30 ? 'sur les dernières 24 h' : span >= 48 ? 'en ' + Math.round(span / 24) + ' jours' : 'en ' + Math.max(1, span) + ' h';
+        const per = span >= 20 && span <= 30 ? 'sur les dernières 24 h' : span >= 48 ? 'en ' + Math.round(span / 24) + ' jours' : 'en ' + Math.max(1, span) + '\u202fh';
         vid.growth = gain > Math.max(50, last.v * 0.01) ? '+' + nf(gain) + ' vues ' + per + ' : elle continue de monter.'
           : 'Presque plus de nouvelles vues ' + per + ' : l’essentiel est fait.';
       }

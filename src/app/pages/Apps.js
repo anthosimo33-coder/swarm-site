@@ -63,7 +63,7 @@ return {};
     const D = this.props && this.props.data;
     let DAYEND = null; // dernier jour de l'historique (jours depuis 1970, heure de Paris)
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
-    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
     const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     if (D && D.apps) {
       const LBL = Object.fromEntries(D.markets);
@@ -127,9 +127,9 @@ return {};
       'Social et loisirs': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Santé et physique': 'M3 12h4l3-8 4 16 3-8h4', 'Beauté IA': 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z' };
     const NIC0 = 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z';
     const mkList = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2], m[1]]) : a[2].map((c) => [c, null, c]);
-      return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + ' %' : '', t })); };
+      return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + '\u202f%' : '', t })); };
     const mkText = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2]]) : a[2].map((c) => [c, null]);
-      return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p]) => (c === 'XX' ? 'Autres' : c) + (p !== null && p !== undefined ? ' ' + p + ' %' : '')).join(' · '); };
+      return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p]) => (c === 'XX' ? 'Autres' : c) + (p !== null && p !== undefined ? ' ' + p + '\u202f%' : '')).join(' · '); };
     const rows = list.map((a, i) => {
       const w = a[6];
       const max = Math.max.apply(null, w) || 1;
@@ -140,8 +140,8 @@ return {};
       return {
         rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], nicheIc: NIC[a[1]] || NIC0, mkText: mkText(a), mks: mkList(a),
         net: Number(a[3]).toLocaleString('fr-FR') + ' comptes · ' + Number(a[4]).toLocaleString('fr-FR') + ' vidéos / sem.',
-        count: typeof a[20] === 'number' && a[20] > 0 ? a[20].toLocaleString('fr-FR') : '', v30: fr(views(a), 1) + ' M',
-        delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' % cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
+        count: typeof a[20] === 'number' && a[20] > 0 ? a[20].toLocaleString('fr-FR') : '', v30: fr(views(a), 1) + '\u202fM',
+        delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f% cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
         line, area: line + ' L127 40 L3 40 Z', ex: pts[5][0].toFixed(1), ey: pts[5][1].toFixed(1), gid: 'apl' + i,
         stroke: up ? '#4C9AFF' : '#8A93A3',
         best: a[7],
@@ -228,18 +228,18 @@ return {};
       const v1 = pa[8][0] ? { cover: pa[8][0], views: pa[9][0] + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xf(t0.x) + ' sa normale' : '',
         who: t0 && t0.handle ? '@' + t0.handle : '', aria: 'Lire la vidéo' + (t0 && t0.handle ? ' de @' + t0.handle : '') } : null;
       pv = { on: true, n: pa[0], niche: pa[1], logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
-        vLabel: 'Vues sur 30 jours', v30: fr(pa[5], 1) + ' M', week: fr(w[5], 1) + ' M',
-        delta: d === null ? '' : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %',
+        vLabel: 'Vues sur 30 jours', v30: fr(pa[5], 1) + '\u202fM', week: fr(w[5], 1) + '\u202fM',
+        delta: d === null ? '' : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%',
         dBg: d !== null && d >= 0 ? 'var(--accent-soft)' : 'rgba(255,255,255,0.09)', dInk: d !== null && d >= 0 ? 'var(--accent)' : 'var(--ink-soft)',
         line, area: line + ' L430 72 L6 72 Z', labels,
         rank: at1 >= 0 ? 'N°' + (at1 + 1) : '—', rankOf: 'sur ' + pool.length + ' apps ' + (inNiche ? 'de ' + pa[1] : 'du Radar'), bars,
         acc: Number(pa[3]).toLocaleString('fr-FR'), accLabel: pa[3] > 1 ? 'comptes' : 'compte',
-        hasTop10: t10 !== null, top10: Math.round((t10 || 0) * 100) + ' %',
+        hasTop10: t10 !== null, top10: Math.round((t10 || 0) * 100) + '\u202f%',
         waffle: Array.from({ length: 20 }, (_, c) => ({ bg: c < Math.round((t10 || 0) * 20) ? '#4C9AFF' : 'rgba(255,255,255,0.08)' })),
         hasTop: !!v1, top: v1 || {},
         rows: v1 ? 'minmax(0, 1.2fr) minmax(0, 1.06fr) minmax(0, 0.86fr) minmax(0, 0.88fr)' : 'minmax(0, 1.3fr) minmax(0, 1.06fr) minmax(0, 0.88fr)',
         ppw: Number(pa[4]).toLocaleString('fr-FR'), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
-        mkd: (md || pa[2].map((c) => [c, c, null])).filter((m) => m[2] !== null).slice(0, 2).map((m, n) => ({ c: m[0], l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
+        mkd: (md || pa[2].map((c) => [c, c, null])).filter((m) => m[2] !== null).slice(0, 2).map((m, n) => ({ c: m[0], l: ({ US: 'Anglophones', BR: 'Brésil', DE: 'Germanophones', RU: 'Russophones' })[m[0]] || m[1], full: m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
         href: ficheOf(pa),
         followLabel: followed(pa) ? 'Suivi' : 'Suivre', followOn: followed(pa) ? 'true' : 'false', follow: () => toggleFollow(pa) };
       ajItem = { kind: 'app', id: pa[11] || pa[0], label: pa[0], cover: pa[10] || null };
@@ -1037,11 +1037,13 @@ return {};
                 ($l($v.pv?.mkd)).map((m) => [
                   $h("span", { "style": "display: flex; flex-direction: column; gap: 5px;" },
                     $h("span", { "style": "display: flex; justify-content: space-between; gap: 8px; font-size: 12px;" },
-                      $h("span", { "style": "display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
-                        $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
-                        $t(m?.l)
+                      $h("span", { "style": "display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--ink-soft);" },
+                        $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true", "style": "flex-shrink: 0;" }),
+                        $h("span", { "title": m?.full, "style": "min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                          $t(m?.l)
+                        )
                       ),
-                      $h("span", { "style": "font-weight: 600;" },
+                      $h("span", { "style": "flex-shrink: 0; font-weight: 600; white-space: nowrap;" },
                         $t(m?.p)
                       )
                     ),

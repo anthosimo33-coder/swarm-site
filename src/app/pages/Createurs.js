@@ -115,7 +115,7 @@ export default class Createurs extends DCLogic {
       countLabel: b.none || b.wait ? '' : b.total > all.length && all.length > 0
         ? 'Les ' + all.length + ' premiers en vues médianes, sur ' + comptes(b.total) + ' suivis ' + (IN[b.shown] || '')
         : (b.total > 1 ? grp(b.total) + ' comptes suivis ' : b.total + ' compte suivi ') + (IN[b.shown] || ''),
-      hasMore: list.length > lim, moreLabel: 'Voir ' + comptes(Math.min(LIM, list.length - lim)) + ' de plus', showMore: () => set({ lim: lim + LIM }),
+      hasMore: list.length > lim || (!!this._partial && lim < b.total), moreLabel: 'Voir ' + comptes(Math.min(LIM, (this._partial ? Math.max(list.length, b.total) : list.length) - lim)) + ' de plus', showMore: () => set({ lim: lim + LIM }),
       tableHref: '/app/createurs?m=' + b.market, cardsHref: '/app/createurs/cartes?m=' + b.market,
       closeMenu: () => set({ open: '' }), onMq: (e) => set({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
@@ -134,11 +134,11 @@ export default class Createurs extends DCLogic {
     const F = typeof P.get === 'function' ? P.get('creator:' + h) : null;
     const D = F || {};
     const grp = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
-    const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(Math.round(n)));
+    const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fk' : String(Math.round(n)));
     const xf = (x) => (x >= 10 ? String(Math.round(x)) : (Math.round(x * 10) / 10).toString().replace('.', ',')) + '×';
     const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     const ago = (ms) => { const hr = Math.max(1, Math.round((Date.now() - ms) / 3600000)); const d = Math.round(hr / 24);
-      return hr < 24 ? 'il y a ' + hr + ' h' : d < 60 ? 'il y a ' + d + ' j' : d < 365 ? 'il y a ' + Math.round(d / 30.4) + ' mois' : 'il y a ' + Math.round(d / 365) + ' an' + (d >= 730 ? 's' : ''); };
+      return hr < 24 ? 'il y a ' + hr + '\u202fh' : d < 60 ? 'il y a ' + d + '\u202fj' : d < 365 ? 'il y a ' + Math.round(d / 30.4) + ' mois' : 'il y a ' + Math.round(d / 365) + ' an' + (d >= 730 ? 's' : ''); };
     const fans = typeof D.fans === 'number' ? D.fans : row.nFans || 0;
     const med = typeof D.median === 'number' ? D.median : row.nMed || 0;
     const p7 = typeof D.posts7d === 'number' ? D.posts7d : null;
@@ -178,6 +178,23 @@ export default class Createurs extends DCLogic {
       follow, followOn: followed ? 'true' : 'false', followLabel: followed ? 'Suivi' : 'Suivre' };
   }
 
+  // Les créateurs d'un marché arrivent par pages de 500 (« creators:<marché> », puis « :2 », « :3 »…) : la suite se
+  // lit quand la liste affichée s'en approche, et toute la liste dès qu'un filtre porte sur elle. Plus de plafond.
+  creatorsOf(doc, market, P) {
+    const st = this.state || {};
+    const pages = doc && doc.pages > 1 ? doc.pages : 1;
+    const whole = !!((st.niches && st.niches.length) || (st.apps && st.apps.length) || (st.fans && st.fans !== 'ALL') || st.active);
+    const want = whole ? pages : Math.min(pages, Math.ceil(((st.lim || 50) + 100) / 500));
+    let out = (doc && doc.creators) || [];
+    let partial = want < pages;
+    for (let i = 2; i <= want; i++) {
+      const pg = typeof P.get === 'function' ? P.get('creators:' + ((doc && doc.market) || market) + ':' + i) : null;
+      if (pg && pg.creators) out = out.concat(pg.creators); else partial = true;
+    }
+    this._partial = partial;
+    return out;
+  }
+
   baseVals() {
     const st = this.state || {};
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "/app", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "/app/apps", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "/app/formats", "cur": "false"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "/app/createurs", "cur": "page"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
@@ -212,13 +229,13 @@ export default class Createurs extends DCLogic {
       none = !wait && !(doc && doc.creators && doc.creators.length);
       shown = doc && doc.market ? doc.market : market;
       total = wait || none ? 0 : (doc.total || doc.creators.length);
-      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
       const isN = (n) => typeof n === 'number' && isFinite(n);
       const ago = (ms) => { const hr = Math.max(1, Math.round((Date.now() - ms) / 3600000)); const d = Math.round(hr / 24);
-        return hr < 24 ? 'il y a ' + hr + ' h' : d < 60 ? 'il y a ' + d + ' j' : d < 365 ? 'il y a ' + Math.round(d / 30.4) + ' mois' : 'il y a ' + Math.round(d / 365) + (d < 548 ? ' an' : ' ans'); };
+        return hr < 24 ? 'il y a ' + hr + '\u202fh' : d < 60 ? 'il y a ' + d + '\u202fj' : d < 365 ? 'il y a ' + Math.round(d / 30.4) + ' mois' : 'il y a ' + Math.round(d / 365) + (d < 548 ? ' an' : ' ans'); };
       // La bio en une ligne : sa première ligne qui contient du texte (pas seulement des émojis).
       const line = (s) => { const ls = String(s || '').split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean); return ls.filter((x) => /\p{L}/u.test(x))[0] || ls[0] || ''; };
-      all = wait || none ? [] : doc.creators.map((c) => {
+      all = wait || none ? [] : this.creatorsOf(doc, market, P).map((c) => {
         const a = c.app || null;
         const ic = (a && a.icon) || '';
         const on = c.posts7d > 0;
@@ -305,9 +322,6 @@ export default class Createurs extends DCLogic {
                   $t(m?.l)
                 )
               ])
-            ),
-            $h("span", { "style": "flex-shrink: 0; max-width: 380px; font-size: 13px; color: var(--ink-faint); text-align: right;" },
-              $t($v.countLabel)
             )
           ),
           $h("div", { "style": "margin: -1px 32px 0; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-radius: 0 0 20px 20px; background: var(--card-bottom); box-shadow: inset 0 0 0 1px var(--card-edge);" },

@@ -72,8 +72,8 @@ export default class Accueil extends DCLogic {
     const slugs = fv && Array.isArray(fv.apps) ? fv.apps : [];
     const A = site && slugs.length && P.get ? P.get('apps') : null;
     const wait = site && (fv === undefined || (slugs.length > 0 && A === undefined));
-    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
-    const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %';
+    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
+    const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%';
     const by = A && A.apps ? Object.fromEntries(A.apps.map((a) => [a.slug, a])) : {};
     const apps = wait ? [] : slugs.map((s) => by[s]).filter(Boolean).sort((p, q) => (q.views7 || 0) - (p.views7 || 0));
     const rows = apps.slice(0, 4).map((a, i, xs) => ({ logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', name: a.name,
@@ -121,9 +121,9 @@ export default class Accueil extends DCLogic {
     // (la 1re vidéo est dans la carte d'alerte) ; chaque ligne mène à sa fiche ou à sa vidéo.
     const D = this.props && this.props.data;
     if (D && D.apps) {
-      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
       const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
-      const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %';
+      const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%';
       const has = (d) => d !== null && d !== undefined;
       const appRow = (a) => ({ logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', name: a.name,
         sub: nf(a.views7 || 0) + ' vues en 7 jours', v: has(a.weekDelta) ? pct(a.weekDelta) : (a.bestX ? xf(a.bestX) : ''), href: '/app/apps/' + a.slug });

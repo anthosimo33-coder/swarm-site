@@ -53,7 +53,6 @@ export default class FicheApp extends DCLogic {
   }
 
   baseVals() {
-    const PROOF = (p) => !p || !p.by ? '' : p.by === 'handle' ? 'Son pseudo porte l’app' : p.by === 'bio' ? 'Sa bio nomme l’app' : p.by === 'videos' ? p.cites + (p.cites > 1 ? ' vidéos' : ' vidéo') + ' sur ' + p.of + (p.cites > 1 ? ' la citent' : ' la cite') : 'Repéré par l’équipe';
 
     const ic = {
       accueil: 'M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z',
@@ -88,7 +87,7 @@ export default class FicheApp extends DCLogic {
       [ic.son, 'Son « exam vibes »', '5 comptes · le son de la révision qui stresse', '7× en médiane', '4 reprises sur 6']
     ].map((f) => ({ icon: f[0], t: f[1], meta: f[2], x: f[3], ok: f[4] }));
     let mk = [['ID', 'Indonésie et Vietnam', 37.47], ['US', 'États-Unis', 10.73], ['ES', 'Espagne', 4.83], ['BR', 'Brésil et Portugal', 2.91], ['FR', 'France', 1.32], ['MX', 'Amérique latine', 0.39]]
-      .map((m, i) => ({ c: m[0], l: m[1], v: m[2].toFixed(1).replace('.', ',') + ' M', p: Math.round(m[2] / 57.65 * 100) + ' %', w: (m[2] / 57.65 * 100).toFixed(1) + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
+      .map((m, i) => ({ c: m[0], l: m[1], v: m[2].toFixed(1).replace('.', ',') + '\u202fM', p: Math.round(m[2] / 57.65 * 100) + '\u202f%', w: (m[2] / 57.65 * 100).toFixed(1) + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
     let creators = [
       ['I', '@ivylearns8', 'Student life + study tips', 'US', '3,1 k', '4,9 M', '17,9 k', 'var(--thumb-navy)'],
       ['I', '@ira.belajaryuk', 'belajar bareng yuk', 'ID', '4,2 k', '3,3 M', '550', 'var(--thumb-plum)'],
@@ -113,11 +112,11 @@ export default class FicheApp extends DCLogic {
       const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
       const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
       const M = MKW({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' });
-      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
       const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
-      const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %';
+      const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%';
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-      const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + ' j'; };
+      const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + '\u202fj'; };
       app = {
         icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, kind: (D.kind === 'app' ? 'App mobile' : D.kind === 'saas' ? 'Logiciel ou site web' : ''), delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
         store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps',
@@ -125,7 +124,7 @@ export default class FicheApp extends DCLogic {
         week: nf(D.weeks[5]),
         wd: D.weekDelta === null ? 'première semaine relevée' : pct(D.weekDelta) + " face à la semaine d'avant",
         acc: D.accounts.toLocaleString('fr-FR'), ppw: D.videosPerWeek.toLocaleString('fr-FR'), best: D.bestX ? xf(D.bestX) : '—',
-        top10: D.top10Share === null ? '—' : Math.round(D.top10Share * 100) + ' % des vues',
+        top10: D.top10Share === null ? '—' : Math.round(D.top10Share * 100) + '\u202f% des vues',
         vidsHref: D.videos.length ? '/app/videos/' + D.videos[0].id : '/app/videos/7705929733220994337',
         crLabel: 'Tous les créateurs'
       };
@@ -137,8 +136,8 @@ export default class FicheApp extends DCLogic {
       vids = D.videos.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: '/app/videos/' + v.id }));
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
-      mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + ' %', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
-      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: PROOF(c.proof), mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
+      mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
+      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
         med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: c.avatar || '', noav: true, page: !!c.page, href: '/app/createurs/' + c.handle }));
       sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));
       // Rang : dans sa niche (document « apps », toujours chargé), sinon parmi toutes les apps du Radar.
@@ -156,7 +155,7 @@ export default class FicheApp extends DCLogic {
         scope: inNiche ? D.niche : '', top: t0 ? { cover: t0.cover || '', views: t0.views, handle: t0.handle, x: t0.x, at: t0.publishedAt, href: '/app/videos/' + t0.id } : null };
     }
     // ── Tableau de bord ──
-    const nfD = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+    const nfD = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
     const grp = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
     const xfD = (x) => (x >= 100 ? grp(x) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     const wk = W.map((v) => v * 1e6);
@@ -166,14 +165,14 @@ export default class FicheApp extends DCLogic {
     const dash = {
       v30: nfD(src.views30),
       v30Sub: 'vues sur 30 jours' + (src.ig > 0 ? ', dont ' + nfD(src.ig) + ' sur Instagram' : ''),
-      delta: src.weekDelta === null ? '' : (src.weekDelta >= 0 ? '+' : '−') + Math.round(Math.abs(src.weekDelta) * 100) + ' % cette semaine',
+      delta: src.weekDelta === null ? '' : (src.weekDelta >= 0 ? '+' : '−') + Math.round(Math.abs(src.weekDelta) * 100) + '\u202f% cette semaine',
       deltaBg: src.weekDelta >= 0 ? 'rgba(76,154,255,0.16)' : 'rgba(255,255,255,0.09)', deltaInk: src.weekDelta >= 0 ? '#4C9AFF' : '#E6E9EF',
       weeks: wk.map((v, i) => {
         const now = i === wk.length - 1;
         const prev = i ? wk[i - 1] : 0;
         const noise = Math.max(v, prev) < Math.max(...wk) * 0.08; // deux semaines quasi vides : la variation ne dit rien
         const r = prev > 0 && !noise ? v / prev : null;
-        const chip = r === null ? '' : r >= 2 ? '×' + (Math.round(r * 10) / 10).toString().replace('.', ',') : (r >= 1 ? '+' : '−') + Math.round(Math.abs(r - 1) * 100) + ' %';
+        const chip = r === null ? '' : r >= 2 ? '×' + (Math.round(r * 10) / 10).toString().replace('.', ',') : (r >= 1 ? '+' : '−') + Math.round(Math.abs(r - 1) * 100) + '\u202f%';
         const up = r !== null && r >= 1;
         return { isNow: now, val: nfD(v), title: (now ? 'Cette semaine' : 'Semaine du ' + L[i]) + ' : ' + nfD(v) + ' vues',
           label: now ? 'Cette sem.' : L[i], pct: ((v / wTop) * 100).toFixed(1),
@@ -183,12 +182,12 @@ export default class FicheApp extends DCLogic {
           fw: now ? '600' : '400', labelInk: now ? '#FFFFFF' : '#8A93A3' };
       }),
       avgPct: ((mean / wTop) * 100).toFixed(1), avgLabel: nfD(mean),
-      shareLabel: src.scope ? 'Part de sa niche' : 'Part du Radar', share: src.share > 0 && src.share < 0.005 ? '< 1 %' : Math.round(src.share * 100) + ' %', shareW: Math.min(100, Math.round(src.share * 100)) + '%',
+      shareLabel: src.scope ? 'Part de sa niche' : 'Part du Radar', share: src.share > 0 && src.share < 0.005 ? '< 1\u202f%' : Math.round(src.share * 100) + '\u202f%', shareW: Math.min(100, Math.round(src.share * 100)) + '%',
       rank: src.rank ? 'N°' + src.rank : '—', rankOf: src.rank ? 'sur ' + src.rankOf + ' apps ' + (src.scope ? 'de ' + src.scope : 'du Radar') : '',
       rankBadge: src.scope && src.rank && src.rank <= 3 ? 'N°' + src.rank + ' de sa niche' : '',
       acc: grp(src.accounts), accLabel: src.accounts > 1 ? 'comptes' : 'compte', ppw: grp(src.ppw) + ' vidéos / sem.',
-      hasTop10: src.top10 !== null && src.accounts > 10, top10: Math.round((src.top10 || 0) * 100) + ' %', top10W: Math.round((src.top10 || 0) * 100) + '%',
-      othersLine: 'Les ' + (src.accounts - 10) + ' autres : ' + (100 - Math.round((src.top10 || 0) * 100)) + ' %',
+      hasTop10: src.top10 !== null && src.accounts > 10, top10: Math.round((src.top10 || 0) * 100) + '\u202f%', top10W: Math.round((src.top10 || 0) * 100) + '%',
+      othersLine: 'Les ' + (src.accounts - 10) + ' autres : ' + (100 - Math.round((src.top10 || 0) * 100)) + '\u202f%',
       hasTop: !!src.top || !(this.props && this.props.data),
       top: src.top ? { cover: src.top.cover, href: src.top.href, views: nfD(src.top.views) + ' vues', x: src.top.x ? xfD(src.top.x) + ' sa normale' : '',
         who: '@' + src.top.handle + ' · ' + new Date(src.top.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }), aria: 'Lire la vidéo de @' + src.top.handle }
@@ -203,9 +202,9 @@ export default class FicheApp extends DCLogic {
     const P = W.map((v, j) => [70 + j * 110, 200 - v / top * 180]);
     const line = 'M' + P.map((p) => p[0] + ' ' + p[1].toFixed(1)).join(' L');
     const chart = {
-      line, area: line + ' L620 200 L70 200 Z', top: top + ' M', mid: (top / 2).toString().replace('.', ',') + ' M',
+      line, area: line + ' L620 200 L70 200 Z', top: top + '\u202fM', mid: (top / 2).toString().replace('.', ',') + '\u202fM',
       aria: 'Vues par semaine de publication sur 6 semaines : ' + W.map((w) => w.toFixed(1).replace('.', ',')).join(' ; ') + ' millions',
-      pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + ' M', label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
+      pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + '\u202fM', label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
     };
     return { nav, sections, chart, vids, formats, mk, creators, app, dash };
   }
@@ -644,12 +643,15 @@ export default class FicheApp extends DCLogic {
               ),
               ($l($v.mk)).map((m) => [
                 $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1fr) 60px; gap: 12px; align-items: center;" },
-                  $h("span", { "style": "display: flex; flex-direction: column; gap: 6px;" },
-                    $h("span", { "style": "display: flex; justify-content: space-between; font-size: 13px;" },
-                      $h("span", { "style": "color: var(--ink-soft);" },
-                        $t(m?.l)
+                  $h("span", { "style": "display: flex; flex-direction: column; gap: 6px; min-width: 0;" },
+                    $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px;" },
+                      $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink-soft);" },
+                        $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true", "style": "flex-shrink: 0;" }),
+                        $h("span", { "style": "min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                          $t(m?.l)
+                        )
                       ),
-                      $h("span", { "style": "color: var(--ink-faint);" },
+                      $h("span", { "style": "flex-shrink: 0; white-space: nowrap; color: var(--ink-faint);" },
                         $t(m?.v)
                       )
                     ),
@@ -657,7 +659,7 @@ export default class FicheApp extends DCLogic {
                       $h("span", { "style": `display: block; height: 6px; width: ${$t(m?.w)}; background: ${$t(m?.bg)}; border-radius: 3px;` })
                     )
                   ),
-                  $h("span", { "style": "text-align: right; font-family: var(--font-display); font-size: 17px; font-weight: 700;" },
+                  $h("span", { "style": "text-align: right; white-space: nowrap; font-family: var(--font-display); font-size: 17px; font-weight: 700;" },
                     $t(m?.p)
                   )
                 )

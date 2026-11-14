@@ -125,7 +125,7 @@ export default class Alertes extends DCLogic {
     const D = this.props && this.props.data;
     if (D && D.videos) {
       const M = { FR: 'France', US: 'Anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' };
-      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + ' M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' k' : String(Math.round(n)));
+      const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + '\u202fM' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fk' : String(Math.round(n)));
       const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const de = (n) => (/^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? 'd’' : 'de ') + n;
       const ICO = { video: 'M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6', compte: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
@@ -135,7 +135,7 @@ export default class Alertes extends DCLogic {
       const ago = (ms) => Math.max(0, Math.round((today - day0(ms)) / 86400000));
       const dayLabel = (ms) => { const k = ago(ms); if (k === 0) return 'Aujourd’hui'; if (k === 1) return 'Hier';
         const s = new Date(ms).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: '2-digit' }); return s.charAt(0).toUpperCase() + s.slice(1); };
-      const when = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' · ' + String(new Date(ms).getHours()).padStart(2, '0') + ' h';
+      const when = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' · ' + String(new Date(ms).getHours()).padStart(2, '0') + '\u202fh';
       const items = [];
       D.videos.forEach((v) => {
         const app = v.app ? v.app.name : '';

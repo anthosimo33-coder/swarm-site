@@ -6,6 +6,23 @@ import MPalette from './MPalette.js';
 
 export default class MCreateurs extends DCLogic {
 
+  // Les créateurs d'un marché arrivent par pages de 500 (« creators:<marché> », puis « :2 », « :3 »…) : la suite se
+  // lit quand la liste affichée s'en approche, et toute la liste dès qu'un filtre porte sur elle. Plus de plafond.
+  creatorsOf(doc, market, P) {
+    const st = this.state || {};
+    const pages = doc && doc.pages > 1 ? doc.pages : 1;
+    const whole = !!((st.niches && st.niches.length) || (st.apps && st.apps.length) || (st.fans && st.fans !== 'ALL') || st.active);
+    const want = whole ? pages : Math.min(pages, Math.ceil(((st.lim || 50) + 100) / 500));
+    let out = (doc && doc.creators) || [];
+    let partial = want < pages;
+    for (let i = 2; i <= want; i++) {
+      const pg = typeof P.get === 'function' ? P.get('creators:' + ((doc && doc.market) || market) + ':' + i) : null;
+      if (pg && pg.creators) out = out.concat(pg.creators); else partial = true;
+    }
+    this._partial = partial;
+    return out;
+  }
+
   renderVals() {
     const b = this.baseVals();
     return Object.assign({}, b, this.shellVals(), this.extraVals(b));
@@ -46,13 +63,13 @@ export default class MCreateurs extends DCLogic {
       let doc = D && D.market === market ? D : (P.get ? P.get('creators:' + market) : null);
       if (doc === undefined) doc = this.lastDoc === undefined ? null : this.lastDoc;
       else this.lastDoc = doc;
-      const list = doc && doc.creators ? doc.creators : [];
+      const list = doc && doc.creators ? this.creatorsOf(doc, market, P) : [];
       none = list.length === 0;
       total = doc && doc.total ? doc.total : list.length;
-      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
       const isN = (n) => typeof n === 'number' && isFinite(n);
       const ago = (ms) => { const hr = Math.max(1, Math.round((Date.now() - ms) / 3600000)); const d = Math.round(hr / 24);
-        return hr < 24 ? 'il y a ' + hr + ' h' : d < 60 ? 'il y a ' + d + ' j' : d < 365 ? 'il y a ' + Math.round(d / 30.4) + ' mois' : 'il y a ' + Math.round(d / 365) + (d < 548 ? ' an' : ' ans'); };
+        return hr < 24 ? 'il y a ' + hr + '\u202fh' : d < 60 ? 'il y a ' + d + '\u202fj' : d < 365 ? 'il y a ' + Math.round(d / 30.4) + ' mois' : 'il y a ' + Math.round(d / 365) + (d < 548 ? ' an' : ' ans'); };
       const line = (s) => { const ls = String(s || '').split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean); return ls.filter((x) => /\p{L}/u.test(x))[0] || ls[0] || ''; };
       const all = list.map((c) => {
         const a = c.app || null, ic = (a && a.icon) || '', on = c.posts7d > 0, bst = (c.best || [])[0];
@@ -75,7 +92,7 @@ export default class MCreateurs extends DCLogic {
     const more = shownAll.length - lim;
     return { mkt: MK.map((m) => Object.assign({}, m, { flag: m.c, on: m.c === market ? 'true' : 'false', pick: () => this.setState({ market: m.c, lim: LIM }) })),
       rows: rowsAll.slice(0, lim), cards: cardsAll.slice(0, lim), live: pool(src.live).map((c) => Object.assign({ href: '/app/createurs/zinedine.gsbb' }, c)), none, tip,
-      hasMore: more > 0, moreLabel: 'Voir ' + Math.min(LIM, more) + ' comptes de plus', showMore: () => this.setState({ lim: lim + LIM }),
+      hasMore: more > 0 || !!this._partial, moreLabel: 'Voir ' + Math.min(LIM, Math.max(more, (total || 0) - lim)) + ' comptes de plus', showMore: () => this.setState({ lim: lim + LIM }),
       activeOn: active ? 'true' : 'false', toggleActive: () => this.setState({ active: !active, lim: LIM }),
       countLabel: total !== null ? (none ? 'Aucun compte suivi ' + (PH[market] || '') : total.toLocaleString('en-US').replace(/,/g, '\u202f') + ' comptes ' + (PH[market] || ''))
         : (market === 'FR' ? shownAll.length + ' comptes en France' : 'Aucun compte suivi ici') };

@@ -109,7 +109,7 @@ return {};
     // vidéos/sem., vues 30 j (M), 6 semaines (M), meilleure, miniatures, vues des miniatures, icône, slug, id des vidéos, nouvelle ?]
     const D = this.props && this.props.data;
     const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
-    const nfm = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 999.5 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+    const nfm = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
     const xfm = (x) => (x >= 100 ? Math.round(x).toLocaleString('en-US').replace(/,/g, '\u202f') : x >= 10 ? String(Math.round(x)) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     if (D && D.apps) {
       const LBL = Object.fromEntries(D.markets);
@@ -134,7 +134,7 @@ return {};
     const views = (a) => (period === '7' ? a[6][5] : a[5]);
     // Variation de la semaine : celle du document (null quand la semaine d'avant est vide), sinon calculée sur l'exemple.
     const dlt = (a) => (a[14] !== undefined ? a[14] : a[6] && a[6][4] > 0 ? (a[6][5] - a[6][4]) / a[6][4] : null);
-    const dfmt = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + ' %');
+    const dfmt = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%');
     const dv = (a) => { const d = dlt(a); return d === null ? -1e9 : d; };
     const avail = (a) => !!a[6] || (period !== '7' && sort === 'vues');
     let list = A.filter((a) => okM(a, market) && okN(a, niches) && avail(a));
@@ -143,10 +143,10 @@ return {};
     const limit = st.limit || 30, total = list.length;
     // Marchés en texte (« US 88 % · MX 12 % ») : les parts du document quand on les a, sinon les codes.
     const mkText = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2]]) : a[2].map((c) => [c, null]);
-      return l.filter((m) => m[0]).slice(0, 2).map(([c, p]) => c + (p !== null && p !== undefined ? ' ' + p + ' %' : '')).join(' · '); };
+      return l.filter((m) => m[0]).slice(0, 2).map(([c, p]) => c + (p !== null && p !== undefined ? ' ' + p + '\u202f%' : '')).join(' · '); };
     // Les mêmes marchés en drapeaux (data-c = code du marché, n'importe quel code pays ISO).
     const mkList = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2], m[1]]) : a[2].map((c) => [c, null, c]);
-      return l.filter((m) => m[0]).slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + ' %' : '', t })); };
+      return l.filter((m) => m[0]).slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + '\u202f%' : '', t })); };
     const rows = list.slice(0, limit).map((a, i) => { const w = a[6] || [1, 1, 1, 1, 1, 1], mx = Math.max.apply(null, w) || 1, d = a[6] ? dlt(a) : null, up = d === null || d >= 0;
       const pts = w.map((v, j) => [j * 20, 36 - (v / mx) * 32]);
       const line = 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
@@ -189,11 +189,11 @@ return {};
         labels: w.map((_, j) => ({ t: j === 5 ? 'Cette sem.' : at ? day(at - (6 - j) * 7 * 86400000) : 'S−' + (5 - j), ink: j === 5 ? '#FFFFFF' : '#8A93A3', fw: j === 5 ? '600' : '400' })),
         rank: at1 >= 0 ? 'N°' + (at1 + 1) : '—', rankOf: 'sur ' + pool.length + ' apps ' + (inNiche ? 'de ' + pa[1] : 'du Radar'),
         bars: shown.map((x) => ({ h: Math.max(4, Math.round(x[5] / (pool[0][5] || 1) * 100)) + '%', bg: x === pa ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : hatchB })),
-        acc: grp(pa[3]), accLabel: pa[3] > 1 ? 'comptes' : 'compte', hasTop10: t10 !== null, top10: Math.round((t10 || 0) * 100) + ' %',
+        acc: grp(pa[3]), accLabel: pa[3] > 1 ? 'comptes' : 'compte', hasTop10: t10 !== null, top10: Math.round((t10 || 0) * 100) + '\u202f%',
         waffle: Array.from({ length: 20 }, (_, c) => ({ bg: c < Math.round((t10 || 0) * 20) ? '#4C9AFF' : 'rgba(255,255,255,0.08)' })),
         hasTop: !!pa[8][0], top: pa[8][0] ? { cover: pa[8][0], views: (pa[9][0] || '') + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xfm(t0.x) + ' sa normale' : '', who: t0 && t0.handle ? '@' + t0.handle : '' } : {},
         ppw: grp(pa[4]), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
-        hasMk: !!md, noMk: !md, mkd: (md || []).slice(0, 2).map((m, n) => ({ c: m[0], l: m[1], p: m[2] + ' %', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
+        hasMk: !!md, noMk: !md, mkd: (md || []).slice(0, 2).map((m, n) => ({ c: m[0], l: ({ US: 'Anglophones', BR: 'Brésil', DE: 'Germanophones', RU: 'Russophones' })[m[0]] || m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)' })),
         followLabel: (st.follow || {})[pa[0]] ? 'Suivi' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
     const swipe = (k) => ({ s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false, pv: null }); this.y0 = null; } });
     return {

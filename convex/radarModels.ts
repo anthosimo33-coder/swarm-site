@@ -91,6 +91,25 @@ const countryMarket = (c: string | null | undefined) => {
   const k = (c ?? "").trim().toUpperCase();
   return /^[A-Z]{2}$/.test(k) ? COUNTRY_GROUP[k] ?? k : null;
 };
+/**
+ * Langue des textes d'un compte (bio, accroches, légendes) quand le Radar n'en a relevé aucune : mots-outils
+ * propres à chaque langue. Le 14/11, @intrvbl_31000 et @tlmsaasia (TrendSaaS) n'avaient ni langue, ni pays,
+ * ni région de vidéo : pas de marché, pas de drapeau. Rien de net (moins de 4 mots, ou pas 2 fois plus que la
+ * suivante) : null.
+ */
+const STOPWORDS: [string, string[]][] = [
+  ["fr", "le les des est pas une pour je tu ça c'est mon ma mes sur avec dans qui vous nous ton ta sont fait faire très aussi comme quand trop moi toi".split(" ")],
+  ["en", "the and you is to my this that it for with me your what are was have just like when how don't i'm can not".split(" ")],
+  ["es-am", "el los las es por para con una mi pero que muy cuando como esto porque está yo tú también".split(" ")],
+  ["pt", "o os não um uma você meu minha com para está isso também muito quando eu é".split(" ")],
+];
+export const textLang = (texts: (string | null | undefined)[]): string | null => {
+  const words = texts.filter(Boolean).join(" ").toLowerCase().replace(/[’]/g, "'").split(/[^a-zà-ÿ']+/).filter(Boolean);
+  if (words.length < 4) return null;
+  const score = STOPWORDS.map(([l, w]) => { const set = new Set(w); return [l, words.filter((x) => set.has(x)).length] as [string, number]; }).sort((p, q) => q[1] - p[1]);
+  return score[0][1] >= 4 && score[0][1] >= 2 * score[1][1] ? score[0][0] : null;
+};
+
 /** Marché d'une vidéo ou d'un signal sans compte suivi : sa langue, sinon sa région. */
 export const marketOf = (lang: string | null | undefined, region?: string | null) => (lang && LANG_MARKET[lang]) || countryMarket(region);
 
@@ -119,6 +138,8 @@ export const kindOf = (a: RApp, store: string | null): "app" | "saas" | null =>
 
 /** Une app n'est listée qu'avec au moins 2 comptes qui la poussent, prouvés (un compte n'entre que prouvé, cf Jarvia #506). */
 export const MIN_APP_ACCOUNTS = 2;
+/** Créateurs par document de liste (~1 Ko chacun ; un document Convex : 1 Mio au plus). */
+export const CREATOR_PAGE = 500;
 /** Un marché a son onglet à partir de 10 créateurs ; les autres restent sur chaque créateur (son drapeau) et dans « Tous ». */
 export const MIN_MARKET_CREATORS = 10;
 /** « Nouvelle » : sortie sur l'App Store il y a 60 jours au plus ; sans date de sortie, réseau dont la 1re vidéo a 30 jours au plus. */
@@ -325,7 +346,16 @@ export function buildBoards(
       for (const v of videosByAccount.get(t.id) ?? []) { const r = countryMarket(v.region); if (r) n.set(r, (n.get(r) ?? 0) + 1); }
       m = [...n.entries()].sort((p, q) => q[1] - p[1])[0]?.[0] ?? null;
     }
+    if (!m) { const l = textLang([t.bio, ...(videosByAccount.get(t.id) ?? []).flatMap((v) => [v.hook, v.caption])]); m = l ? LANG_MARKET[l] ?? null : null; }
     marketByAccount.set(t.id, m);
+  }
+  // Dernier recours : le marché de son app, quand ses autres comptes sont presque tous du même (80 % au moins, 3 au
+  // moins). Le 14/11, deux comptes de TrendSaaS (app française) n'avaient ni langue, ni pays, ni région, ni texte lu.
+  for (const ts of groupBy(raw.tracked, (t) => canonical(t.appId)?.id ?? "").values()) {
+    const known = ts.map((t) => marketByAccount.get(t.id)).filter((m): m is string => !!m);
+    const top = [...known.reduce((n, m) => n.set(m, (n.get(m) ?? 0) + 1), new Map<string, number>())].sort((p, q) => q[1] - p[1])[0];
+    if (!top || top[1] < 3 || top[1] < 0.8 * known.length) continue;
+    for (const t of ts) if (!marketByAccount.get(t.id)) marketByAccount.set(t.id, top[0]);
   }
   const mkOf = (accountId: string | null | undefined) => (accountId ? marketByAccount.get(accountId) ?? null : null);
   // Les marchés présents, du plus fourni au moins fourni (comptes actifs).
@@ -454,19 +484,23 @@ export function buildBoards(
     return {
       handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
       market: mkOf(t.id), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
-      // Ce qui le relie à son app (cf RProof), montré sur sa fiche et dans les listes.
-      proof: t.proof ?? null,
+      // Ce qui le relie à son app (RProof) reste interne au Radar : jamais dans les documents de Swarm (décision du 14/11).
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
   };
   const creators = accounts.filter((t) => (t.medianViews ?? 0) > 0).map(creatorRow).sort((p, q) => (q.median ?? 0) - (p.median ?? 0));
   for (const c of creators) wantAvatar(c.handle);
-  for (const [code] of MARKETS) {
-    const list = creators.filter((c) => c.market === code).slice(0, 200).map(({ _vids, ...c }) => c);
-    boards.set(`creators:${code}`, { updatedAt: now, market: code, markets: MARKETS, total: creators.filter((c) => c.market === code).length, creators: list });
-  }
-  boards.set("creators:ALL", { updatedAt: now, market: "ALL", markets: MARKETS, total: creators.length, creators: creators.slice(0, 200).map(({ _vids, ...c }) => c) });
-  const creatorPages = new Set(MARKETS.flatMap(([code]) => creators.filter((c) => c.market === code).slice(0, 200).map((c) => c.handle)));
+  // Tous les créateurs de chaque marché (plus de plafond à 200, décision du 14/11), par pages de CREATOR_PAGE :
+  // « creators:<marché> » porte la 1re page et leur nombre, « creators:<marché>:2 », « :3 »… la suite.
+  const pagesOf = (code: string, list: typeof creators) => {
+    const plain = list.map(({ _vids, ...c }) => c);
+    const pages = Math.max(1, Math.ceil(plain.length / CREATOR_PAGE));
+    boards.set(`creators:${code}`, { updatedAt: now, market: code, markets: MARKETS, total: plain.length, pages, creators: plain.slice(0, CREATOR_PAGE) });
+    for (let i = 2; i <= pages; i++) boards.set(`creators:${code}:${i}`, { updatedAt: now, market: code, page: i, creators: plain.slice((i - 1) * CREATOR_PAGE, i * CREATOR_PAGE) });
+  };
+  for (const [code] of MARKETS) pagesOf(code, creators.filter((c) => c.market === code));
+  pagesOf("ALL", creators);
+  const creatorPages = new Set(creators.map((c) => c.handle));
   for (const c of creators) {
     if (!creatorPages.has(c.handle)) continue;
     const t = trackedByHandle.get(c.handle)!;
@@ -488,7 +522,7 @@ export function buildBoards(
       .filter((t) => (t.medianViews ?? 0) > 0)
       .sort((p, q) => (q.medianViews ?? 0) - (p.medianViews ?? 0))
       .slice(0, 10)
-      .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle), proof: t.proof ?? null }));
+      .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle) }));
     const appFormats = formatRows.filter((f) => f.apps.some((x) => x?.slug === a.slug)).slice(0, 8).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX, maxViews: f.maxViews }));
     const { _top12, _accs, ...row } = r;
     boards.set(`app:${a.slug}`, { updatedAt: now, ...row, videos: _top12.map(card), formats: appFormats, creators: appCreators });
