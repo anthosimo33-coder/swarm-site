@@ -240,7 +240,8 @@ export const run = internalAction({
       let nextBatch = 0;
       const writer = async () => {
         while (nextBatch < batches.length && Date.now() - runStart < RUN_LIMIT_MS) {
-          written += await ctx.runMutation(internal.radarStore.saveBoards, { items: batches[nextBatch++], now });
+          const n = await ctx.runMutation(internal.radarStore.saveBoards, { items: batches[nextBatch++], now });
+          written += n; // pas « written += await … » : lu avant l'attente, les 4 écrivains s'écraseraient
         }
       };
       await Promise.all(Array.from({ length: WRITERS }, writer));

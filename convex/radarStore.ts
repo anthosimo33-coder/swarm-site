@@ -226,3 +226,16 @@ export const saveAppStore = internalMutation({
     }
   },
 });
+
+/**
+ * Efface les empreintes des pages (une page par appel de 500) : le passage suivant les réécrit
+ * toutes. Sert à éprouver le cas lourd (nouvelles icônes partout) sur le dev avant la prod.
+ */
+export const resetHashes = internalMutation({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500 });
+    for (const b of r.page) await ctx.db.patch(b._id, { hash: "" });
+    return { n: r.page.length, cursor: r.continueCursor, done: r.isDone };
+  },
+});
