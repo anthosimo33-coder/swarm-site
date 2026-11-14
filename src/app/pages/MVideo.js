@@ -29,7 +29,10 @@ export default class MVideo extends DCLogic {
     const vid0 = (P.data && P.data.id) || (P.params && P.params.id) || '';
     const fsv = typeof P.saved === 'function' ? P.saved('folders') : null;
     const kept = !!vid0 && Array.isArray(fsv) && fsv.some((x) => (x.items || []).some((i) => i.kind === 'video' && i.id === vid0));
-    return { ajItem: vid0 ? { kind: 'video', id: vid0, label: b.vid.hook || b.vid.who || '', cover: (b.v && b.v.src) || null } : null, saveLabel: kept ? 'Dans tes dossiers' : 'Enregistrer dans un dossier', setChartBox: (el) => { this.box = el; } };
+    return { ajItem: vid0 ? { kind: 'video', id: vid0, label: b.vid.hook || b.vid.who || '', cover: (b.v && b.v.src) || null } : null, saveLabel: kept ? 'Dans tes dossiers' : 'Enregistrer dans un dossier',
+      // ← du haut : ferme la visionneuse d'un coup, vers l'écran d'où elle a été ouverte (sinon le lien : fiche de l'app).
+      closeV: (e) => { const n = (window.history.state && window.history.state.viewer) || 0; if (n > 0) { e.preventDefault(); window.history.go(-n); } },
+      setChartBox: (el) => { this.box = el; } };
   }
 
   baseVals() {
@@ -55,7 +58,7 @@ export default class MVideo extends DCLogic {
       // « depuis la France », « depuis les États-Unis », « depuis l’Allemagne », « depuis Singapour » ; rien pour un pays inconnu.
       const DEPUIS = (n) => { n = String(n || ''); if (!n || n === 'Pays inconnu' || /^[A-Z]{2}$/.test(n)) return ''; if (/^(Singapour|Chypre|Cuba|Madagascar|Taïwan|Porto Rico|Malte|Haïti|Bahreïn|Israël|Monaco|Oman|Hong Kong|Maurice|La Réunion|Djibouti)$/.test(n)) return 'depuis ' + n;
         if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return 'depuis les ' + n; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return 'depuis l’' + n;
-        return 'depuis ' + (/e$/.test(n.split(/[\s-]/)[0]) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? 'la ' : 'le ') + n; };
+        return 'depuis ' + (/e$/.test(n.split(/[\s-]/)[0]) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize|Royaume-Uni|Suriname)$/.test(n) ? 'la ' : 'le ') + n; };
       // La langue de ses vidéos quand ce n'en est pas une de son pays (otherLang, calculé par la synchro) : « en espagnol ».
       const LANGN = (l) => { if (!l) return ''; try { return 'en ' + new Intl.DisplayNames(['fr'], { type: 'language' }).of(l); } catch (e) { return ''; } };
       const ML = new Proxy({}, { get: (o, c) => MKN(String(c)) });
@@ -153,7 +156,7 @@ export default class MVideo extends DCLogic {
       $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(32px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("header", { "style": "position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
           $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;" },
-            $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.back, "aria-label": "Retour", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;" },
+            $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.back, "onClick": $v.closeV, "aria-label": "Fermer la vidéo", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )

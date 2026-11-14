@@ -162,7 +162,12 @@ function App() {
         return; // ancre de la même page : le navigateur s'en charge
       }
       event.preventDefault();
-      window.history.pushState(null, '', next + url.hash);
+      // Visionneuse (« Regarder une par une ») : chaque vidéo ouverte retient combien de vidéos on a enchaînées depuis
+      // l'écran d'origine, pour que la croix y ramène d'un coup (history.go(-n)) au lieu de revenir à la vidéo d'avant.
+      const VIDEOS = HOME + '/videos/';
+      const depth = url.pathname.startsWith(VIDEOS)
+        ? (window.location.pathname.startsWith(VIDEOS) ? ((window.history.state && window.history.state.viewer) || 0) + 1 : 1) : 0;
+      window.history.pushState(depth ? { viewer: depth } : null, '', next + url.hash);
       setPath(next);
     };
     const onPop = () => setPath(here());
