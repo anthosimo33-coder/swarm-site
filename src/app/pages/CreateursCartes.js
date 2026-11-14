@@ -67,6 +67,22 @@ export default class CreateursCartes extends DCLogic {
     const mkBar = (key, k, v) => ({ k, v, d: BIC[key], open: open === key ? 'true' : 'false', bg: open === key ? 'var(--tab-on)' : 'var(--track)', edge: open === key ? 'var(--accent-edge)' : 'var(--line)',
       toggle: (e) => set({ open: open === key ? '' : key, mq: '', left: e && e.currentTarget ? e.currentTarget.offsetLeft : 0 }) });
     const filters = [mkBar('niche', 'Niche', many(niches, 'niches')), mkBar('app', 'App', many(apps, 'apps')), mkBar('fans', 'Abonnés', fb[1])];
+    // Le marché : un bouton, et la liste complète des pays (les plus suivis d'abord, avec leur nombre de comptes).
+    const mkAll = b.mkt || [];
+    const mkMax = Math.max(1, ...mkAll.map((m) => m.n || 0));
+    const mkq = String(st.mq || '').trim().toLowerCase();
+    const mkFit = (m) => !mkq || String(m.l).toLowerCase().indexOf(mkq) >= 0;
+    const mkRow = (m) => { const on = m.c === b.market; return { c: m.c, l: m.l, n: grp(m.n || 0), href: '/app/createurs/cartes?m=' + m.c, sel: on ? 'true' : 'false',
+      bg: on ? 'var(--accent-soft)' : 'transparent', fw: on ? 600 : 500, w: Math.max(3, Math.round(90 * (m.n || 0) / mkMax)) + 'px', bar: on ? 'var(--accent)' : 'rgba(255,255,255,0.28)', tick: on ? '1' : '0' }; };
+    const mkSorted = mkAll.slice().sort((p, q) => (q.n || 0) - (p.n || 0));
+    const mkTop = mkSorted.slice(0, 6).filter(mkFit).map(mkRow), mkRest = mkSorted.slice(6).filter(mkFit).map(mkRow);
+    const allOn = b.market === 'ALL';
+    const mkShowAll = !mkq || 'tous les marchés'.indexOf(mkq) >= 0;
+    const mkb = { c: allOn ? '' : b.market, flag: !allOn, all: allOn, l: allOn ? 'Tous les marchés' : ((mkAll.filter((m) => m.c === b.market)[0] || {}).l || b.market),
+      open: open === 'market' ? 'true' : 'false', toggle: () => set({ open: open === 'market' ? '' : 'market', mq: '' }) };
+    const mkm = { on: open === 'market', q: st.mq || '', top: mkTop, rest: mkRest, hasTop: mkTop.length > 0, hasRest: mkRest.length > 0, nRest: Math.max(0, mkSorted.length - 6), showAll: mkShowAll,
+      all: { href: '/app/createurs/cartes?m=ALL', sel: allOn ? 'true' : 'false', bg: allOn ? 'var(--accent-soft)' : 'transparent', fw: allOn ? 600 : 500, n: grp(mkAll.reduce((s, m) => s + (m.n || 0), 0)), tick: allOn ? '1' : '0' },
+      none: !mkTop.length && !mkRest.length && !mkShowAll };
     const chips = [];
     niches.forEach((n) => chips.push({ label: n, clear: () => set({ niches: niches.filter((x) => x !== n) }) }));
     apps.forEach((n) => chips.push({ label: n, clear: () => set({ apps: apps.filter((x) => x !== n) }) }));
@@ -98,12 +114,12 @@ export default class CreateursCartes extends DCLogic {
     // 50 cartes d'abord, puis 50 de plus à la demande ; filtres et « Actifs cette semaine » portent sur toute la liste.
     const LIM = 50;
     const lim = st.lim || LIM;
-    const cards = list.slice(0, lim).map((c) => Object.assign({}, c, { hasCov: c.cov.length > 0, noCov: c.cov.length === 0 }));
+    const cards = list.slice(0, lim).map((c) => Object.assign({}, c, { hasCov: c.cov.length > 0, noCov: c.cov.length === 0, mk: c.market || (b.market !== 'ALL' ? b.market : '') }));
     // Actifs cette semaine : les premiers comptes affichés qui ont publié ces 7 derniers jours (4 au plus).
     const wk = Date.now() - 7 * 86400000;
     const live = (b.liveAll ? b.liveAll.filter((c) => okN(c) && okA(c) && okF(c, fb)) : list.filter((c) => c.lastAt >= wk)).slice(0, 4);
     const view = { cards, live, liveOn: live.length > 0 };
-    return Object.assign(view, { mkt, filters, chips, menu,
+    return Object.assign(view, { mkt, filters, chips, menu, mkb, mkm,
       none: b.none, noneLabel: 'Aucun compte suivi pour ce marché.', empty: !b.none && !b.wait && list.length === 0,
       // Le document garde les 200 comptes aux plus fortes vues médianes : au-delà, on le dit.
       countLabel: b.none || b.wait ? '' : b.total > all.length && all.length > 0
@@ -159,7 +175,7 @@ export default class CreateursCartes extends DCLogic {
     let qm = P.query ? P.query.m : null;
     if (!P.query && typeof location !== 'undefined') { try { qm = new URLSearchParams(location.search).get('m'); } catch (e) { qm = null; } }
     qm = String(qm || '').toUpperCase();
-    const market = MK.indexOf(qm) >= 0 ? qm : (D && D.market && D.market !== 'ALL' ? D.market : MK[0] || 'FR');
+    const market = MK.indexOf(qm) >= 0 || qm === 'ALL' ? qm : (D && D.market && D.market !== 'ALL' ? D.market : MK[0] || 'FR');
     let shown = market, total = all.length, none = market !== 'FR', wait = false;
     if (none) all = [];
     if (site) {
@@ -180,7 +196,7 @@ export default class CreateursCartes extends DCLogic {
         const ic = (a && a.icon) || '';
         const on = c.posts7d > 0;
         return {
-          h: '@' + c.handle, href: '/app/createurs/' + c.handle, bio: line(c.bio), av: c.avatar || '', noav: true,
+          h: '@' + c.handle, market: c.market || '', href: '/app/createurs/' + c.handle, bio: line(c.bio), av: c.avatar || '', noav: true,
           app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, hasApp: !!a,
           appName: a ? a.name : '', niche: (a && a.niche) || '', appHref: a ? '/app/apps/' + a.slug : '/app/apps',
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('fr-FR') : '', fansK: isN(c.fans) ? nf(c.fans) : '', nFans: isN(c.fans) ? c.fans : -1,
@@ -254,18 +270,103 @@ export default class CreateursCartes extends DCLogic {
               $h("input", { "class": "sw-search-input", "onFocus": $v.openPal, "id": "qcb", "type": "search", "aria-label": "Chercher un compte", "placeholder": "Chercher un compte…", "style": "font-size: 15px;" })
             )
           ),
-          $h("div", { "style": "margin: 24px 32px 0; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-radius: 20px 20px 0 0; background: var(--card-top); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-            $h("div", { "role": "tablist", "aria-label": "Marché", "style": "flex: 1 1 auto; min-width: 0; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 92%, transparent); mask-image: linear-gradient(to right, #000 92%, transparent);" },
-              ($l($v.mkt)).map((m) => [
-                $h("a", { "role": "tab", "aria-selected": m?.on, "href": m?.href, "style": `flex-shrink: 0; white-space: nowrap; height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 10px; background: ${$t(m?.bg)}; color: ${$t(m?.ink)}; font-size: 14px; font-weight: ${$t(m?.fw)}; text-decoration: none;` },
-                  $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
-                  $t(m?.l)
-                )
-              ])
-            )
-          ),
-          $h("div", { "style": "margin: -1px 32px 0; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-radius: 0 0 20px 20px; background: var(--card-bottom); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+          $h("div", { "style": "position: relative; z-index: 5; margin: 24px 32px 0; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
             $h("div", { "style": "position: relative; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;" },
+              $h("button", { "type": "button", "data-menu-trigger": "true", "onClick": $v.mkb?.toggle, "aria-expanded": $v.mkb?.open, "aria-haspopup": "listbox", "aria-label": `Marché : ${$t($v.mkb?.l)}`, "style": "display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px 0 9px; border: 0; border-radius: 12px; background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-edge); color: var(--ink); font: inherit; cursor: pointer;" },
+                ($v.mkb?.flag) ? [
+                  $h("span", { "class": "sw-flag sw-flag-24", "data-c": $v.mkb?.c, "aria-hidden": "true" })
+                ] : null,
+                ($v.mkb?.all) ? [
+                  $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
+                    $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                ] : null,
+                $h("span", { "style": "display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15;" },
+                  $h("span", { "style": "font-size: 11px; color: var(--ink-muted);" },
+                    "Marché"
+                  ),
+                  $h("span", { "style": "font-size: 14px; font-weight: 700; white-space: nowrap;" },
+                    $t($v.mkb?.l)
+                  )
+                ),
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink);" },
+                  $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              ),
+              $h("span", { "aria-hidden": "true", "style": "width: 1px; height: 28px; margin: 0 4px; background: var(--line);" }),
+              ($v.mkm?.on) ? [
+                $h("div", { "ref": $v.setMenu, "role": "listbox", "aria-label": "Marché", "style": "position: absolute; top: 54px; left: 0; z-index: 30; width: 480px; box-sizing: border-box; padding: 10px; border-radius: 22px; background: rgba(13,17,26,0.97); border: 1px solid var(--glass-edge); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;" },
+                  $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; margin-bottom: 6px; border-radius: 14px; background: var(--track);" },
+                    $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                      $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ),
+                    $h("input", { "ref": $v.setMenuInput, "type": "search", "value": $v.mkm?.q, "onInput": $v.onMq, "onKeyDown": $v.menuKeys, "aria-label": "Chercher un pays", "placeholder": "Chercher un pays", "style": "flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--ink); font: inherit; font-size: 14px;" })
+                  ),
+                  $h("div", { "style": "max-height: min(520px, 62vh); overflow-y: auto; display: flex; flex-direction: column; gap: 2px;" },
+                    ($v.mkm?.showAll) ? [
+                      $h("a", { "role": "option", "aria-selected": $v.mkm?.all?.sel, "href": $v.mkm?.all?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t($v.mkm?.all?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t($v.mkm?.all?.fw)};` },
+                        $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
+                          $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        ),
+                        $h("span", { "style": "flex: 1 1 auto;" },
+                          "Tous les marchés"
+                        ),
+                        $h("span", { "style": "flex-shrink: 0; width: 54px; text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap;" },
+                          $t($v.mkm?.all?.n)
+                        ),
+                        $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: var(--accent); opacity: ${$t($v.mkm?.all?.tick)};` },
+                          $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      )
+                    ] : null,
+                    ($v.mkm?.hasTop) ? [
+                      $h("span", { "style": "margin: 8px 12px 4px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--ink-faint);" },
+                        "LES PLUS SUIVIS"
+                      ),
+                      ($l($v.mkm?.top)).map((m) => [
+                        $h("a", { "role": "option", "aria-selected": m?.sel, "href": m?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t(m?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t(m?.fw)};` },
+                          $h("span", { "class": "sw-flag sw-flag-22", "data-c": m?.c, "aria-hidden": "true" }),
+                          $h("span", { "style": "flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                            $t(m?.l)
+                          ),
+                          $h("span", { "aria-hidden": "true", "style": "flex-shrink: 0; width: 90px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08);" },
+                            $h("span", { "style": `display: block; width: ${$t(m?.w)}; height: 4px; border-radius: 2px; background: ${$t(m?.bar)};` })
+                          ),
+                          $h("span", { "style": "flex-shrink: 0; width: 54px; text-align: right; font-size: 13px; font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap;" },
+                            $t(m?.n)
+                          ),
+                          $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: var(--accent); opacity: ${$t(m?.tick)};` },
+                            $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                          )
+                        )
+                      ])
+                    ] : null,
+                    ($v.mkm?.hasRest) ? [
+                      $h("span", { "style": "margin: 8px 12px 4px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--ink-faint);" },
+                        "AUTRES PAYS · ", $t($v.mkm?.nRest)
+                      ),
+                      $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 8px;" },
+                        ($l($v.mkm?.rest)).map((m) => [
+                          $h("a", { "role": "option", "aria-selected": m?.sel, "href": m?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 10px; border-radius: 10px; background: ${$t(m?.bg)}; color: var(--ink-soft); text-decoration: none; font-size: 13px; font-weight: ${$t(m?.fw)}; min-width: 0;` },
+                            $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
+                            $h("span", { "style": "flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                              $t(m?.l)
+                            ),
+                            $h("span", { "style": "flex-shrink: 0; color: var(--ink-faint); font-variant-numeric: tabular-nums;" },
+                              $t(m?.n)
+                            )
+                          )
+                        ])
+                      )
+                    ] : null,
+                    ($v.mkm?.none) ? [
+                      $h("p", { "style": "margin: 10px 12px; font-size: 14px; color: var(--ink-muted);" },
+                        "Aucun pays ne correspond."
+                      )
+                    ] : null
+                  )
+                )
+              ] : null,
               ($l($v.filters)).map((f) => [
                 $h("button", { "type": "button", "data-menu-trigger": "true", "onClick": f?.toggle, "aria-expanded": f?.open, "aria-haspopup": "listbox", "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: ${$t(f?.bg)}; box-shadow: inset 0 0 0 1px ${$t(f?.edge)}; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;` },
                   $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
@@ -421,15 +522,20 @@ export default class CreateursCartes extends DCLogic {
                 ] : null,
                 $h("div", { "style": "padding: 0 22px 22px; display: flex; flex-direction: column; gap: 14px;" },
                   $h("div", { "style": "position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; margin-top: -30px;" },
-                    $h("span", { "style": "position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised), 0 8px 24px rgba(0,0,0,0.4);" },
-                      (c?.av) ? [
-                        $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
-                      ] : null,
-                      (c?.noav) ? [
-                        $h("svg", { "width": "32", "height": "32", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                          $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
-                          $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
-                        )
+                    $h("span", { "style": "position: relative; flex-shrink: 0; display: inline-flex;" },
+                      $h("span", { "style": "position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised), 0 8px 24px rgba(0,0,0,0.4);" },
+                        (c?.av) ? [
+                          $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                        ] : null,
+                        (c?.noav) ? [
+                          $h("svg", { "width": "32", "height": "32", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                            $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
+                            $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
+                          )
+                        ] : null
+                      ),
+                      (c?.mk) ? [
+                        $h("span", { "class": "sw-flag sw-flag-22", "data-c": c?.mk, "aria-hidden": "true", "style": "position: absolute; right: -2px; bottom: -2px; z-index: 2; box-shadow: 0 0 0 3px var(--surface-raised);" })
                       ] : null
                     ),
                     $h("span", { "style": "display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--ink-soft);" },

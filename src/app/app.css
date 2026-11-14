@@ -45,6 +45,9 @@ img.is-broken { visibility: hidden; }
 .sw-flag[data-c] { display: inline-block !important; width: 18px !important; height: 18px !important; min-width: 18px; border-radius: 50% !important; overflow: hidden; vertical-align: middle; flex-shrink: 0;
   background-size: cover !important; background-position: center !important; font-size: 0 !important; line-height: 0; color: transparent !important; }
 .sw-flag[data-c=""], .sw-flag[data-c="ALL"] { display: none !important; }
+/* Drapeaux plus grands : bouton et liste des marchés (Créateurs). */
+.sw-flag.sw-flag-22[data-c] { width: 22px !important; height: 22px !important; min-width: 22px; }
+.sw-flag.sw-flag-24[data-c] { width: 24px !important; height: 24px !important; min-width: 24px; }
 
 /* Aperçu au survol d'une miniature (src/app/main.js) : la vidéo flotte à côté et se lance sans le son. */
 .sw-hoverplay { position: fixed; z-index: 90; border-radius: 20px; overflow: hidden; pointer-events: none; background: #000 center / cover no-repeat;

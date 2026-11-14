@@ -137,7 +137,7 @@ export default class FicheApp extends DCLogic {
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
       mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
-      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
+      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, mkl: M[c.market] || '', fans: nf(c.fans), v: String(c.posts7d),
         med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: c.avatar || '', noav: true, page: !!c.page, href: '/app/createurs/' + c.handle }));
       sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));
       // Rang : dans sa niche (document « apps », toujours chargé), sinon parmi toutes les apps du Radar.
@@ -681,105 +681,73 @@ export default class FicheApp extends DCLogic {
                 )
               )
             ),
-            $h("table", { "class": "sw-table" },
-              $h("thead", null,
-                $h("tr", null,
-                  $h("th", { "style": "padding-left: 0;" },
-                    $h("span", { "class": "sw-th" },
-                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
-                        $h("path", { "d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                      ),
-                      "Compte"
-                    )
-                  ),
-                  $h("th", null,
-                    $h("span", { "class": "sw-th" },
-                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
-                        $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                      ),
-                      "Marché"
-                    )
-                  ),
-                  $h("th", { "class": "sw-num" },
-                    $h("span", { "class": "sw-th" },
-                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
-                        $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                      ),
-                      "Abonnés"
-                    )
-                  ),
-                  $h("th", { "class": "sw-num" },
-                    $h("span", { "class": "sw-th" },
-                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
-                        $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                      ),
-                      "Vidéos 7 j"
-                    )
-                  ),
-                  $h("th", { "class": "sw-num" },
-                    $h("span", { "class": "sw-th" },
-                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
-                        $h("path", { "d": "M3 3v18h18M7 15l4-4 3 3 5-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                      ),
-                      "Vues d'habitude"
-                    )
-                  ),
-                  $h("th", { "class": "sw-num", "style": "padding-right: 0;" })
-                )
+            $h("div", { "role": "table", "aria-label": "Les créateurs qui le poussent", "style": "margin-top: 18px;" },
+              $h("div", { "role": "row", "style": "display: grid; grid-template-columns: minmax(0, 1fr) 140px 140px 170px 130px; align-items: center; column-gap: 16px; padding-bottom: 10px;" },
+                $h("span", { "role": "columnheader", "style": "text-align: left; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-faint); white-space: nowrap;" },
+                  "COMPTE"
+                ),
+                $h("span", { "role": "columnheader", "style": "text-align: right; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-faint); white-space: nowrap;" },
+                  "ABONNÉS"
+                ),
+                $h("span", { "role": "columnheader", "style": "text-align: right; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-faint); white-space: nowrap;" },
+                  "VIDÉOS 7 J"
+                ),
+                $h("span", { "role": "columnheader", "style": "text-align: right; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-faint); white-space: nowrap;" },
+                  "VUES D’HABITUDE"
+                ),
+                $h("span", { "role": "columnheader", "aria-label": "Fiche" })
               ),
-              $h("tbody", null,
-                ($l($v.creators)).map((c) => [
-                  $h("tr", null,
-                    $h("td", { "style": "padding-left: 0;" },
-                      $h("span", { "class": "sw-app" },
-                        $h("span", { "style": "position: relative; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #1B2333; border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                          (c?.av) ? [
-                            $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
-                          ] : null,
-                          (c?.noav) ? [
-                            $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                              $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
-                              $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
-                            )
-                          ] : null
-                        ),
-                        $h("span", { "style": "display: flex; flex-direction: column;" },
-                          $h("span", { "class": "sw-app-name" },
-                            $t(c?.h)
-                          ),
-                          $h("span", { "class": "sw-app-sub" },
-                            $t(c?.bio)
+              ($l($v.creators)).map((c) => [
+                $h("div", { "role": "row", "style": "display: grid; grid-template-columns: minmax(0, 1fr) 140px 140px 170px 130px; align-items: center; column-gap: 16px; min-height: 64px; border-top: 1px solid var(--line);" },
+                  $h("span", { "role": "cell", "style": "display: inline-flex; align-items: center; gap: 14px; min-width: 0;" },
+                    $h("span", { "style": "position: relative; flex-shrink: 0; width: 40px; height: 40px;" },
+                      $h("span", { "style": "position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: #1B2333; display: flex; align-items: center; justify-content: center;" },
+                        (c?.av) ? [
+                          $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" })
+                        ] : null,
+                        (c?.noav) ? [
+                          $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                            $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
+                            $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
                           )
-                        )
-                      )
+                        ] : null
+                      ),
+                      (c?.mk) ? [
+                        $h("span", { "class": "sw-flag", "data-c": c?.mk, "title": c?.mkl, "style": "position: absolute; right: -3px; bottom: -3px; width: 15px; height: 15px; box-shadow: 0 0 0 2px #121722;" })
+                      ] : null
                     ),
-                    $h("td", null,
-                      $h("span", { "class": "sw-flag", "data-c": c?.mk },
-                        $t(c?.mk)
-                      )
-                    ),
-                    $h("td", { "class": "sw-num", "style": "color: var(--ink-soft); font-weight: 500;" },
-                      $t(c?.fans)
-                    ),
-                    $h("td", { "class": "sw-num" },
-                      $t(c?.v)
-                    ),
-                    $h("td", { "class": "sw-num", "style": "color: var(--ink-soft); font-weight: 500;" },
-                      $t(c?.med)
-                    ),
-                    $h("td", { "class": "sw-num", "style": "padding-right: 0;" },
-                      (c?.page) ? [
-                        $h("a", { "class": "sw-more", "href": c?.href, "style": "justify-content: flex-end; color: var(--accent);" },
-                          "Voir la fiche",
-                          $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                            $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                          )
+                    $h("span", { "style": "display: flex; flex-direction: column; gap: 2px; min-width: 0;" },
+                      $h("span", { "style": "font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                        $t(c?.h)
+                      ),
+                      (c?.bio) ? [
+                        $h("span", { "style": "font-size: 13px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                          $t(c?.bio)
                         )
                       ] : null
                     )
+                  ),
+                  $h("span", { "role": "cell", "style": "text-align: right; font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink-soft);" },
+                    $t(c?.fans)
+                  ),
+                  $h("span", { "role": "cell", "style": "text-align: right; font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink-soft);" },
+                    $t(c?.v)
+                  ),
+                  $h("span", { "role": "cell", "style": "text-align: right; font-family: var(--font-display); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;" },
+                    $t(c?.med)
+                  ),
+                  $h("span", { "role": "cell", "style": "text-align: right;" },
+                    (c?.page) ? [
+                      $h("a", { "class": "sw-more", "href": c?.href, "style": "justify-content: flex-end; color: var(--accent); white-space: nowrap;" },
+                        "Voir la fiche",
+                        $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      )
+                    ] : null
                   )
-                ])
-              )
+                )
+              ])
             )
           )
         ),
