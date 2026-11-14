@@ -265,9 +265,9 @@ return {};
         ppw: Number(pa[4]).toLocaleString('fr-FR'), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
         mkd: (() => {
           const l = (md || []).filter((m) => m[2] !== null), top = l.length === 3 ? l : l.slice(0, 2), rest = l.slice(top.length);
-          const out = top.map((m, n) => ({ c: m[0], l: m[1], full: m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)', stack: false, fl: [] }));
+          const out = top.map((m, n) => ({ c: m[0], l: m[1], full: m[1], p: m[2] + '\u202f%', w: m[2] + '%', flex: m[2] + ' 1 0%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)', stack: false, fl: [] }));
           if (rest.length) { const rp = rest.reduce((n, m) => n + m[2], 0);
-            out.push({ c: '', l: rest.length + ' autres pays', full: rest.map((m) => m[1] + ' ' + m[2] + '\u202f%').join(', '), p: rp + '\u202f%', w: rp + '%', bg: 'rgba(255,255,255,0.24)',
+            out.push({ c: '', l: rest.length + ' autres pays', full: rest.map((m) => m[1] + ' ' + m[2] + '\u202f%').join(', '), p: rp + '\u202f%', w: rp + '%', flex: rp + ' 1 0%', bg: 'rgba(255,255,255,0.28)',
               stack: true, fl: rest.slice(0, 3).map((m, j) => ({ c: m[0], ml: j ? '-6px' : '0' })) }); }
           return out; })(),
         href: ficheOf(pa),
@@ -1081,35 +1081,42 @@ return {};
                   ] : null
                 )
               ),
-              $h("section", { "aria-label": "D’où publient ses comptes", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
+              $h("section", { "class": "sw-mk-card", "aria-label": "D’où publient ses comptes", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "D’où publient ses comptes"
                 ),
-                ($l($v.pv?.mkd)).map((m) => [
-                  $h("span", { "style": "display: flex; flex-direction: column; gap: 5px;" },
-                    $h("span", { "style": "display: flex; justify-content: space-between; gap: 8px; font-size: 12px;" },
-                      $h("span", { "style": "display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--ink-soft);" },
-                        $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true", "style": "flex-shrink: 0;" }),
-                        (m?.stack) ? [
-                          $h("span", { "aria-hidden": "true", "style": "display: inline-flex; flex-shrink: 0;" },
-                            ($l(m?.fl)).map((f) => [
-                              $h("span", { "class": "sw-flag", "data-c": f?.c, "style": `margin-left: ${$t(f?.ml)}; box-shadow: 0 0 0 2px rgba(12,15,22,0.95);` })
-                            ])
+                $h("span", { "style": "display: flex; flex-direction: column; gap: 7px;" },
+                  $h("span", { "class": "sw-mk-bar", "aria-hidden": "true", "style": "display: flex; gap: 2px; height: 6px; border-radius: 3px; overflow: hidden; flex-shrink: 0;" },
+                    ($l($v.pv?.mkd)).map((m) => [
+                      $h("span", { "style": `flex: ${$t(m?.flex)}; min-width: 3px; background: ${$t(m?.bg)};` })
+                    ])
+                  ),
+                  $h("span", { "class": "sw-mk-rows", "style": "display: flex; flex-direction: column; gap: 3px;" },
+                    ($l($v.pv?.mkd)).map((m) => [
+                      $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 16px;" },
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--ink-soft);" },
+                          $h("span", { "class": "sw-flag sw-flag-16", "data-c": m?.c, "aria-hidden": "true", "style": "flex-shrink: 0;" }),
+                          (m?.stack) ? [
+                            $h("span", { "aria-hidden": "true", "style": "display: inline-flex; flex-shrink: 0;" },
+                              ($l(m?.fl)).map((f) => [
+                                $h("span", { "class": "sw-flag sw-flag-16", "data-c": f?.c, "style": `margin-left: ${$t(f?.ml)}; box-shadow: 0 0 0 2px rgba(12,15,22,0.95);` })
+                              ])
+                            )
+                          ] : null,
+                          $h("span", { "title": m?.full, "style": "min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                            $t(m?.l)
                           )
-                        ] : null,
-                        $h("span", { "title": m?.full, "style": "min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
-                          $t(m?.l)
+                        ),
+                        $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap;" },
+                          $h("span", { "aria-hidden": "true", "style": `width: 7px; height: 7px; border-radius: 2px; background: ${$t(m?.bg)};` }),
+                          $h("span", { "style": "min-width: 3.1em; text-align: right; font-variant-numeric: tabular-nums;" },
+                            $t(m?.p)
+                          )
                         )
-                      ),
-                      $h("span", { "style": "flex-shrink: 0; font-weight: 600; white-space: nowrap;" },
-                        $t(m?.p)
                       )
-                    ),
-                    $h("span", { "aria-hidden": "true", "style": "height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08);" },
-                      $h("span", { "style": `display: block; width: ${$t(m?.w)}; height: 6px; border-radius: 3px; background: ${$t(m?.bg)};` })
-                    )
+                    ])
                   )
-                ])
+                )
               )
             ),
             $h("footer", { "style": "flex-shrink: 0; padding: clamp(10px, 1.7vh, 16px) 24px clamp(12px, 2.6vh, 24px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px;" },

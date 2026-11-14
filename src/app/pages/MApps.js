@@ -146,9 +146,9 @@ return {};
         ppw: grp(pa[4]), best: pa[7] && pa[7] !== '—' ? pa[7] : '',
         hasMk: !!md, noMk: !md, mkd: (() => {
           const l = md || [], top = l.length === 3 ? l : l.slice(0, 2), rest = l.slice(top.length);
-          const out = top.map((m, n) => ({ c: m[0], l: m[1], p: m[2] + '\u202f%', w: m[2] + '%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)', stack: false, fl: [] }));
+          const out = top.map((m, n) => ({ c: m[0], l: m[1], full: m[1], p: m[2] + '\u202f%', w: m[2] + '%', flex: m[2] + ' 1 0%', bg: n === 0 ? '#4C9AFF' : 'rgba(76,154,255,0.55)', stack: false, fl: [] }));
           if (rest.length) { const rp = rest.reduce((n, m) => n + m[2], 0);
-            out.push({ c: '', l: '+' + rest.length + '\u00a0pays', p: rp + '\u202f%', w: rp + '%', bg: 'rgba(255,255,255,0.24)', stack: true, fl: rest.slice(0, 3).map((m, j) => ({ c: m[0], ml: j ? '-5px' : '0' })) }); }
+            out.push({ c: '', l: '+' + rest.length + '\u00a0pays', full: rest.map((m) => m[1] + ' ' + m[2] + '\u202f%').join(', '), p: rp + '\u202f%', w: rp + '%', flex: rp + ' 1 0%', bg: 'rgba(255,255,255,0.28)', stack: true, fl: rest.slice(0, 2).map((m, j) => ({ c: m[0], ml: j ? '-6px' : '0' })) }); }
           return out; })(),
         followLabel: (st.follow || {})[pa[0]] ? 'Suivi' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
     const swipe = (k) => ({ s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false, pv: null }); this.y0 = null; } });
@@ -655,38 +655,45 @@ return {};
                 ] : null
               ),
               $h("section", { "aria-label": "D’où publient ses comptes", "style": "min-width: 0; border-radius: 20px; background: var(--track); padding: clamp(10px, 1.6vh, 14px) 14px; display: flex; flex-direction: column; gap: 6px;" },
-                $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
+                $h("span", { "style": "display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 1.3; color: var(--ink-muted);" },
                   $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                     $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
                   "D’où publient ses comptes"
                 ),
                 ($v.pv?.hasMk) ? [
-                  ($l($v.pv?.mkd)).map((m) => [
+                  $h("span", { "style": "display: flex; flex-direction: column; gap: 8px; margin-top: 2px;" },
+                    $h("span", { "aria-hidden": "true", "style": "display: flex; gap: 2px; height: 6px; border-radius: 3px; overflow: hidden; flex-shrink: 0;" },
+                      ($l($v.pv?.mkd)).map((m) => [
+                        $h("span", { "style": `flex: ${$t(m?.flex)}; min-width: 3px; background: ${$t(m?.bg)};` })
+                      ])
+                    ),
                     $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-                      $h("span", { "style": "display: flex; justify-content: space-between; gap: 6px; font-size: 11px;" },
-                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--ink-soft);" },
-                          $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
-                          (m?.stack) ? [
-                            $h("span", { "aria-hidden": "true", "style": "display: inline-flex; flex-shrink: 0;" },
-                              ($l(m?.fl)).map((f) => [
-                                $h("span", { "class": "sw-flag", "data-c": f?.c, "style": `margin-left: ${$t(f?.ml)}; box-shadow: 0 0 0 2px rgba(12,15,22,0.95);` })
-                              ])
+                      ($l($v.pv?.mkd)).map((m) => [
+                        $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 11px; line-height: 18px;" },
+                          $h("span", { "style": "display: inline-flex; align-items: center; gap: 5px; min-width: 0; color: var(--ink-soft);" },
+                            $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true", "style": "flex-shrink: 0;" }),
+                            (m?.stack) ? [
+                              $h("span", { "aria-hidden": "true", "style": "display: inline-flex; flex-shrink: 0;" },
+                                ($l(m?.fl)).map((f) => [
+                                  $h("span", { "class": "sw-flag", "data-c": f?.c, "style": `margin-left: ${$t(f?.ml)}; box-shadow: 0 0 0 2px rgba(12,15,22,0.95);` })
+                                ])
+                              )
+                            ] : null,
+                            $h("span", { "title": m?.full, "style": "min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                              $t(m?.l)
                             )
-                          ] : null,
-                          $h("span", { "style": "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
-                            $t(m?.l)
+                          ),
+                          $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; font-weight: 600; white-space: nowrap;" },
+                            $h("span", { "aria-hidden": "true", "style": `width: 7px; height: 7px; border-radius: 2px; background: ${$t(m?.bg)};` }),
+                            $h("span", { "style": "min-width: 2.7em; text-align: right; font-variant-numeric: tabular-nums;" },
+                              $t(m?.p)
+                            )
                           )
-                        ),
-                        $h("span", { "style": "flex-shrink: 0; font-weight: 600; white-space: nowrap;" },
-                          $t(m?.p)
                         )
-                      ),
-                      $h("span", { "aria-hidden": "true", "style": "display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08);" },
-                        $h("span", { "style": `display: block; width: ${$t(m?.w)}; height: 5px; border-radius: 3px; background: ${$t(m?.bg)};` })
-                      )
+                      ])
                     )
-                  ])
+                  )
                 ] : null,
                 ($v.pv?.noMk) ? [
                   $h("span", { "style": "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" },
