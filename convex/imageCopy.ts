@@ -25,6 +25,12 @@ const ICON_SIZE = 256;
 /** Photo de profil : affichée en 36 à 120 px. */
 const AVATAR_SIZE = 240;
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+/**
+ * Un serveur qui ne répond plus ne doit pas bloquer la synchro (une action Convex : 10 min au plus,
+ * coupée sans rien écrire — 14/11, 10 h 09) : 15 s par appel, lecture du corps comprise.
+ */
+const FETCH_MS = 15_000;
+const get = (url: string, init: RequestInit = {}) => fetch(url, { ...init, signal: AbortSignal.timeout(FETCH_MS) });
 
 type StoreHit = { artworkUrl512?: string; artworkUrl100?: string; trackViewUrl?: string; trackName?: string; trackId?: number; userRatingCount?: number };
 const normName = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
@@ -65,7 +71,7 @@ async function storeGet(url: string): Promise<{ results?: StoreHit[] }> {
   const wait = nextCall - Date.now();
   nextCall = Math.max(Date.now(), nextCall) + 3_200;
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  const res = await fetch(url);
+  const res = await get(url);
   if (!res.ok) throw new Error(`App Store ${res.status}`); // refus ou panne : ce n'est pas « aucune fiche »
   return (await res.json()) as { results?: StoreHit[] };
 }
@@ -109,7 +115,7 @@ export async function appStoreLookup(id: string): Promise<StoreHit | null> {
 export async function siteIcon(domain: string): Promise<string | null> {
   try {
     const base = `https://${domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")}/`;
-    const res = await fetch(base, { headers: { "User-Agent": UA, Accept: "text/html" }, redirect: "follow" });
+    const res = await get(base, { headers: { "User-Agent": UA, Accept: "text/html" }, redirect: "follow" });
     if (!res.ok) return null;
     const html = (await res.text()).slice(0, 200_000);
     const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((m) => m[0]);
@@ -128,7 +134,7 @@ export async function siteIcon(domain: string): Promise<string | null> {
 /** La miniature d'une vidéo TikTok, lue dans les données de sa page publique (URL signée, fraîche). */
 export async function tiktokCover(handle: string, id: string): Promise<string | null> {
   try {
-    const res = await fetch(`https://www.tiktok.com/@${encodeURIComponent(handle || "tiktok")}/video/${id}`, {
+    const res = await get(`https://www.tiktok.com/@${encodeURIComponent(handle || "tiktok")}/video/${id}`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
     });
     if (!res.ok) return null;
@@ -154,7 +160,7 @@ export async function tiktokCover(handle: string, id: string): Promise<string | 
 /** La photo de profil d'un compte TikTok, lue dans les données de sa page publique. */
 export async function tiktokAvatar(handle: string): Promise<string | null> {
   try {
-    const res = await fetch(`https://www.tiktok.com/@${encodeURIComponent(handle)}`, {
+    const res = await get(`https://www.tiktok.com/@${encodeURIComponent(handle)}`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
     });
     if (!res.ok) return null;
@@ -173,7 +179,7 @@ export async function tiktokAvatar(handle: string): Promise<string | null> {
 export async function instagramCover(code: string): Promise<string | null> {
   const decode = (u: string) => u.replace(/&amp;/g, "&");
   try {
-    const res = await fetch(`https://www.instagram.com/reel/${encodeURIComponent(code)}/embed/`, {
+    const res = await get(`https://www.instagram.com/reel/${encodeURIComponent(code)}/embed/`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
     });
     if (res.ok) {
@@ -181,7 +187,7 @@ export async function instagramCover(code: string): Promise<string | null> {
       const m = html.match(/class="EmbeddedMediaImage"[^>]*src="([^"]+)"/) ?? html.match(/src="([^"]+)"[^>]*class="EmbeddedMediaImage"/);
       if (m) return decode(m[1]);
     }
-    const page = await fetch(`https://www.instagram.com/reel/${encodeURIComponent(code)}/`, { headers: { "User-Agent": UA } });
+    const page = await get(`https://www.instagram.com/reel/${encodeURIComponent(code)}/`, { headers: { "User-Agent": UA } });
     if (!page.ok) return null;
     const og = (await page.text()).match(/property="og:image" content="([^"]+)"/);
     return og ? decode(og[1]) : null;
@@ -253,13 +259,13 @@ export async function copyImage(ctx: ActionCtx, key: string, source: string) {
   try {
     let url = await imageUrl(source);
     if (!url) return null;
-    let res = await fetch(url, { headers: { "User-Agent": UA } });
+    let res = await get(url, { headers: { "User-Agent": UA } });
     // Lien signé expiré : la page publique de la vidéo (TikTok ou Instagram) en donne un neuf.
     if (!res.ok && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
       const id = key.slice(2);
       url = /^\d+$/.test(id) ? await tiktokCover("tiktok", id) : id.startsWith("ig:") ? await instagramCover(id.slice(3)) : null;
       if (!url) return null;
-      res = await fetch(url, { headers: { "User-Agent": UA } });
+      res = await get(url, { headers: { "User-Agent": UA } });
     }
     const type = res.headers.get("content-type") ?? "";
     if (!res.ok || !type.startsWith("image/")) return null;

@@ -36,7 +36,7 @@ async function fetchTable(base: string, secret: string, table: (typeof TABLES)[n
   let cursor: string | null = null;
   for (let page = 0; page < 500; page++) {
     const url = `${base}/swarm/export?table=${table}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${secret}` } });
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(90_000) });
     if (!res.ok) throw new Error(`export ${table} : HTTP ${res.status}`);
     const body = (await res.json()) as { rows: unknown[]; cursor: string; done: boolean };
     rows.push(...body.rows);
@@ -116,7 +116,7 @@ export const run = internalAction({
       const storeQueue = [...raw.apps].sort((p, q) => Number(pinnedOff(q.slug)) - Number(pinnedOff(p.slug)));
       for (const a of storeQueue) {
         if (a.mergedInto || (stores[a.slug]?.v === STORE_RULE && !pinnedOff(a.slug))) continue;
-        if (Date.now() - storeStart > 300_000) break;
+        if (Date.now() - storeStart > 180_000) break; // 3 min : le reste du passage doit tenir dans les 10 min d'une action
         const id = APP_STORE_ID[a.slug] ?? (a.store?.storeId ? String(a.store.storeId) : null);
         if (APP_SITE[a.slug]) { // app web : pas de fiche App Store, son icône vient de son site
           if (stores[a.slug]?.url) iconsToDrop.push(iconKey(a.slug));
