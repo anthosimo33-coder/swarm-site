@@ -250,6 +250,8 @@ return {};
     if (D && D.apps && srcKey !== 'apps' && this.props && typeof this.props.get === 'function') {
       const g = this.props.get(srcKey);
       if (g === undefined) SRC = this.lastSrc && this.lastSrcKey === srcKey ? this.lastSrc : (this.lastSrc || D);
+      // Liste absente (pas encore produite par la synchro) : la liste de tous les pays, filtrée comme avant.
+      else if (g === null) SRC = D;
       else { SRC = g && g.apps ? g : { apps: [] }; this.lastSrc = SRC; this.lastSrcKey = srcKey; }
     }
     const scoped = SRC !== D && SRC && SRC.market && SRC.market !== 'ALL';
