@@ -62,6 +62,16 @@ export default defineSchema({
     at: v.number(), // dernier essai (0 : jamais)
   }).index("by_handle", ["handle"]).index("by_country_at", ["country", "at"]),
 
+  // Carrousels (diaporamas de photos) : TikTok le dit sur la page publique de la vidéo (`imagePost`), le Radar ne le
+  // garde pas sur les vidéos qu'il suit. null = pas encore lu ; images = nombre de photos.
+  videoSlides: defineTable({
+    videoId: v.string(),
+    slideshow: v.union(v.boolean(), v.null()),
+    images: v.optional(v.number()),
+    tries: v.number(),
+    at: v.number(), // dernier essai (0 : jamais)
+  }).index("by_video", ["videoId"]).index("by_slideshow_at", ["slideshow", "at"]),
+
   syncRuns: defineTable({
     startedAt: v.number(),
     finishedAt: v.optional(v.number()),

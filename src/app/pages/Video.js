@@ -126,7 +126,7 @@ export default class Video extends DCLogic {
         market: D.market && DEPUIS(M[D.market]) ? ['Publiée ' + DEPUIS(M[D.market]), LANGN(D.otherLang)].filter(Boolean).join(' · ') : '', mk: D.market || '', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
         handle: '@' + D.handle, whoMeta: (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : '') + (D.normal ? " · fait d'habitude " + nf(D.normal) + ' vues' : ''),
         // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
-        paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
+        car: D.carousel ? 'Carrousel · ' + D.carousel + ' photos' : '', paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
         x: D.x ? xf(D.x) : '—', views: nf(D.views) + ' vues',
         age: (hours >= 48 ? 'en ' + Math.round(hours / 24) + ' jours' : 'en ' + hours + ' heures') + (D.fans ? ' · ' + xf(Math.round(D.views / Math.max(D.fans, 100))) + ' ses abonnés' : ''),
         growth: '',
@@ -248,6 +248,14 @@ export default class Video extends DCLogic {
                   $h("span", { "class": "sw-badge", "style": "display: inline-flex; align-items: center; gap: 6px;" },
                     $h("span", { "class": "sw-flag", "data-c": $v.vid?.mk, "aria-hidden": "true", "style": "width: 14px; height: 14px;" }),
                     $t($v.vid?.market)
+                  )
+                ] : null,
+                ($v.vid?.car) ? [
+                  $h("span", { "class": "sw-badge", "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                    $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                      $h("path", { "d": "M8 8h12v12H8zM4 16V4h12", "fill": "none", "stroke": "currentColor", "stroke-width": "2.6", "stroke-linejoin": "round" })
+                    ),
+                    $t($v.vid?.car)
                   )
                 ] : null,
                 $h("span", { "class": "sw-badge", "style": "display: inline-flex; align-items: center; gap: 6px;" },

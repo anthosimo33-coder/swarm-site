@@ -235,7 +235,7 @@ export const cleanBio = (bio: string | null) => {
 };
 
 /** Une vidéo, telle que la voient les écrans (vignette, lecteur). */
-export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null; paid?: boolean; otherLang?: string | null };
+export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null; paid?: boolean; otherLang?: string | null; carousel?: number };
 
 // ─── Le calcul ───────────────────────────────────────────────────────────────
 
@@ -258,8 +258,10 @@ export function buildBoards(
     regionOf?: (handle: string) => string | null;
     /** Langue du texte d'une vidéo (convex/textLang.ts, action Node seulement : le détecteur pèse 600 Ko). */
     textLang?: (videoId: string, text: string) => string | null;
+    /** Carrousel lu par Swarm (convex/radarSlides.ts) : nombre de photos, 0 si ce n'en est pas un, undefined si pas encore lu. */
+    slidesOf?: (videoId: string) => number | undefined;
   } = {},
-): { boards: Boards; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[] } {
+): { boards: Boards; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[]; slideTodo: string[] } {
   const missing = opts.missing ?? (() => false);
   const coverUrl = opts.coverUrl ?? (() => null);
   const boards: Boards = new Map();
@@ -347,6 +349,7 @@ export function buildBoards(
       views: Math.max(v.views, s?.views ?? 0),
       ...(isPaid(v.accountId) ? { paid: true } : {}),
       ...(otherLangOf(v.accountId) ? { otherLang: otherLangOf(v.accountId) } : {}),
+      ...(slidesOf(v.videoId) ? { carousel: slidesOf(v.videoId) } : {}),
       x: xOf(v, s),
       publishedAt: v.publishedAt,
       cover: cover(v.videoId, v.coverUrl ?? s?.coverUrl, acc?.handle ?? s?.authorHandle),
@@ -384,6 +387,7 @@ export function buildBoards(
   // et qu'au moins un quart de ses vidéos se lisent (14/11 : @dailytyrel, légendes allemandes trop courtes pour être
   // lues et 2 anglaises sur une douzaine, sortait « en anglais »).
   const textLang = opts.textLang ?? (() => null);
+  const slidesOf = opts.slidesOf ?? (() => undefined);
   const langByAccount = new Map<string, string>();
   for (const [accId, all] of videosByAccount) {
     const vs = all.slice(0, 30);
@@ -682,6 +686,7 @@ export function buildBoards(
       app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
       market: acc ? mkOf(acc.id) ?? marketOf(s?.lang, s?.region ?? v?.region) : marketOf(s?.lang, s?.region ?? v?.region), region: s?.region ?? null,
       otherLang: acc ? otherLangOf(acc.id) : null,
+      carousel: slidesOf(id) || null,
       publishedAt: v?.publishedAt ?? s?.publishedAt ?? null, durationSec: s?.durationSec ?? null,
       views, x: v ? xOf(v, s) : s?.multiplier ? round(s.multiplier, 1) : null,
       likes: s?.likes ?? null, comments: s?.comments ?? null, shares: s?.shares ?? null, saves: s?.saves ?? null,
@@ -708,5 +713,8 @@ export function buildBoards(
   const regionTodo = accounts.filter((t) => !mkOf(t.id)).map((t) => ({ handle: t.handle,
     ids: (videosByAccount.get(t.id) ?? []).filter((v) => /^\d{6,25}$/.test(v.videoId)).sort((p, q) => q.publishedAt - p.publishedAt).slice(0, 3).map((v) => v.videoId) }))
     .filter((x) => x.ids.length);
-  return { boards, need, used, regionTodo };
+  // Les vidéos TikTok montrées dont on ne sait pas encore si ce sont des carrousels, les plus vues d'abord.
+  const slideTodo = [...usedVideos.values()].filter((v) => v.platform !== "instagram" && /^\d{6,25}$/.test(v.videoId) && slidesOf(v.videoId) === undefined)
+    .sort((p, q) => q.views - p.views).map((v) => v.videoId);
+  return { boards, need, used, regionTodo, slideTodo };
 }

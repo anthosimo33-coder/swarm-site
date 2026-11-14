@@ -16,6 +16,14 @@ const BUDGET_MS = 240_000;
 
 /** Le pays de création d'une vidéo TikTok, lu sur sa page publique ; null si la page ne le donne pas. */
 export async function videoCountry(id: string): Promise<string | null> {
+  return (await videoFacts(id))?.country ?? null;
+}
+
+/**
+ * Ce que la page publique d'une vidéo TikTok dit d'elle : son pays de création, et si c'est un carrousel (diaporama
+ * de photos, `imagePost`) avec son nombre de photos. null : page illisible (vidéo supprimée, privée, refus).
+ */
+export async function videoFacts(id: string): Promise<{ country: string | null; slideshow: boolean; images: number } | null> {
   try {
     const res = await fetch(`https://www.tiktok.com/@tiktok/video/${id}`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" }, signal: AbortSignal.timeout(15_000),
@@ -25,8 +33,10 @@ export async function videoCountry(id: string): Promise<string | null> {
     const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
     if (!m) return null;
     const item = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.video-detail"]?.itemInfo?.itemStruct;
-    const c = String(item?.locationCreated ?? "").toUpperCase();
-    return /^[A-Z]{2}$/.test(c) ? c : null;
+    if (!item?.id) return null;
+    const c = String(item.locationCreated ?? "").toUpperCase();
+    const images = Array.isArray(item.imagePost?.images) ? item.imagePost.images.length : 0;
+    return { country: /^[A-Z]{2}$/.test(c) ? c : null, slideshow: !!item.imagePost, images };
   } catch {
     return null;
   }

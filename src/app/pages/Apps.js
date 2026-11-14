@@ -87,7 +87,7 @@ return {};
         a.bestX ? xf(a.bestX) : '—', a.top.map((t) => t.cover || ''), a.top.map((t) => nf(t.views)), a.icon || '', a.slug, a.top.map((t) => t.id), a.isNew,
         (a.views30 - a.views30Ig) / 1e6, a.views30Ig / 1e6, (a.views7 - (a.views7Ig || 0)) / 1e6, (a.views7Ig || 0) / 1e6,
         a.top10Share, a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null, a.videoCount, a.bestX || 0, a.trackedSince || 0, a.days || null, a.daysIg || null,
-        typeof a.share === 'number' ? a.share : null, a.top.map((t) => !!t.paid), a.placements || 0, a.kind || null]);
+        typeof a.share === 'number' ? a.share : null, a.top.map((t) => !!t.paid), a.placements || 0, a.kind || null, a.top.map((t) => t.carousel || 0)]);
       DAYEND = D.apps.length && typeof D.apps[0].dayEnd === 'number' ? D.apps[0].dayEnd : null;
       const MKN = (c) => (c === 'XX' ? 'Pays inconnu' : LBL[c] || (() => { try { return new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c; } catch (e) { return c; } })());
       MKD = Object.fromEntries(SRC.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, MKN(c), p])]));
@@ -168,7 +168,7 @@ return {};
         line, area: line + ' L127 40 L3 40 Z', ex: pts[5][0].toFixed(1), ey: pts[5][1].toFixed(1), gid: 'apl' + i,
         stroke: up ? '#4C9AFF' : '#8A93A3',
         best: a[7],
-        thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length], href: videoOf(a, j), paid: !!(a[26] && a[26][j]) })).filter((t) => t.src),
+        thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length], href: videoOf(a, j), paid: !!(a[26] && a[26][j]), car: a[29] && a[29][j] ? String(a[29][j]) : '' })).filter((t) => t.src),
         kindL: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[a[28]] || '',
         logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank',
         bg: st.pv === a[0] ? 'var(--accent-soft)' : 'transparent',
@@ -815,6 +815,14 @@ return {};
                             $h("a", { "href": t?.href, "class": `sw-video ${$t(t?.t)}`, "style": "display: block; width: 58px; height: 78px; aspect-ratio: auto; border-radius: 10px;" },
                               $h("img", { "class": "sw-cover", "src": t?.src, "alt": "", "loading": "lazy" }),
                               $h("span", { "class": "sw-video-shade" }),
+                              (t?.car) ? [
+                                $h("span", { "title": `Carrousel de ${$t(t?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 4px; right: 4px; z-index: 2; height: 18px; padding: 0 5px; border-radius: 999px; background: rgba(5,7,12,0.66); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" },
+                                  $h("svg", { "width": "10", "height": "10", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                                    $h("path", { "d": "M8 8h12v12H8zM4 16V4h12", "fill": "none", "stroke": "currentColor", "stroke-width": "2.6", "stroke-linejoin": "round" })
+                                  ),
+                                  $t(t?.car)
+                                )
+                              ] : null,
                               (t?.paid) ? [
                                 $h("span", { "title": "Placement payé : compte payé pour cette vidéo", "aria-label": "Placement payé", "style": "position: absolute; top: 4px; left: 4px; z-index: 2; width: 18px; height: 18px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px rgba(5,7,12,0.6);" },
                                   "€"

@@ -88,7 +88,7 @@ export default class MFicheCreateur extends DCLogic {
         tipT: hits.length ? (hits.length > 1 ? 'la dernière le ' : 'le ') + day(hits[0].publishedAt) + '.' : '', nv: String(V.length) });
       vids = V.map((x) => { const hit = x.x >= 10;
         return { src: x.cover || '', v: nf(x.views), x: typeof x.x === 'number' ? xf(x.x) : '', hit, date: day(x.publishedAt), ago: ago(x.publishedAt), t: x.hook || '',
-          badge: hit ? 'var(--blue-600)' : 'rgba(5,7,12,0.55)', href: '/app/videos/' + x.id }; });
+          badge: hit ? 'var(--blue-600)' : 'rgba(5,7,12,0.55)', href: '/app/videos/' + x.id, car: x.carousel ? String(x.carousel) : '' }; });
     }
     return { z, vids, hasVids: vids.length > 0 };
   }
@@ -276,6 +276,14 @@ export default class MFicheCreateur extends DCLogic {
             $h("a", { "href": v?.href, "class": "sw-video", "style": "display: block; border-radius: 12px;" },
               $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
               $h("span", { "class": "sw-video-shade" }),
+              (v?.car) ? [
+                $h("span", { "title": `Carrousel de ${$t(v?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 6px; right: 6px; z-index: 2; height: 20px; padding: 0 7px; border-radius: 999px; background: rgba(5,7,12,0.62); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" },
+                  $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M8 8h12v12H8zM4 16V4h12", "fill": "none", "stroke": "currentColor", "stroke-width": "2.6", "stroke-linejoin": "round" })
+                  ),
+                  $t(v?.car)
+                )
+              ] : null,
               $h("span", { "class": "sw-badge", "style": `position: absolute; top: 6px; left: 6px; height: 20px; padding: 0 6px; font-size: 10px; background: ${$t(v?.badge)}; color: #FFFFFF;` },
                 $t(v?.x)
               ),

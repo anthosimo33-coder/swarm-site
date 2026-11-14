@@ -18,6 +18,7 @@ import type * as http from "../http.js";
 import type * as imageCopy from "../imageCopy.js";
 import type * as radarModels from "../radarModels.js";
 import type * as radarRegions from "../radarRegions.js";
+import type * as radarSlides from "../radarSlides.js";
 import type * as radarStore from "../radarStore.js";
 import type * as radarSync from "../radarSync.js";
 import type * as saved from "../saved.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   imageCopy: typeof imageCopy;
   radarModels: typeof radarModels;
   radarRegions: typeof radarRegions;
+  radarSlides: typeof radarSlides;
   radarStore: typeof radarStore;
   radarSync: typeof radarSync;
   saved: typeof saved;

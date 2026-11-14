@@ -149,7 +149,7 @@ export default class FicheApp extends DCLogic {
       const T = ['t-navy', 't-plum', 't-pine', 't-violet', 't-amber', 't-umber'];
       const vf = (this.state || {}).vf || 'all';
       const VS = (D.videos || []).filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true));
-      vids = VS.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: '/app/videos/' + v.id, paid: !!v.paid, unpaid: !v.paid }));
+      vids = VS.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: '/app/videos/' + v.id, paid: !!v.paid, unpaid: !v.paid, car: v.carousel ? String(v.carousel) : '' }));
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
       mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: c === 'XX' ? 'Pays inconnu' : M[c] || c, v: nf(D.views30 * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
@@ -604,6 +604,14 @@ export default class FicheApp extends DCLogic {
                   $h("span", { "class": `sw-video ${$t(v?.t)}`, "style": "display: block;" },
                     $h("img", { "class": "sw-cover", "src": v?.src, "alt": v?.hook, "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
+                    (v?.car) ? [
+                      $h("span", { "title": `Carrousel de ${$t(v?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 10px; right: 10px; z-index: 2; height: 22px; padding: 0 7px; border-radius: 999px; background: rgba(5,7,12,0.62); color: #FFFFFF; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" },
+                        $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                          $h("path", { "d": "M8 8h12v12H8zM4 16V4h12", "fill": "none", "stroke": "currentColor", "stroke-width": "2.6", "stroke-linejoin": "round" })
+                        ),
+                        $t(v?.car)
+                      )
+                    ] : null,
                     (v?.paid) ? [
                       $h("span", { "style": "position: absolute; top: 10px; left: 10px; z-index: 2;" },
                         $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap;" },

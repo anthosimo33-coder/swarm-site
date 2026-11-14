@@ -310,3 +310,67 @@ export const saveRegions = internalMutation({
     }
   },
 });
+
+// ─── Carrousels (convex/radarSlides.ts) ────────────────────────────────────────────────────────
+
+/** Les vidéos déjà lues, page par page : [id, nombre de photos] (0 : pas un carrousel). */
+export const slidePage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("videoSlides").paginate({ cursor, numItems: 4000 });
+    return { items: r.page.filter((x) => x.slideshow !== null).map((x) => [x.videoId, x.slideshow ? x.images ?? 1 : 0] as [string, number]),
+      cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+/** Les vidéos à vérifier (synchro) : celles que les écrans montrent et qu'on n'a jamais lues. */
+export const saveSlideTodo = internalMutation({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) => {
+    for (const videoId of ids) {
+      const row = await ctx.db.query("videoSlides").withIndex("by_video", (q) => q.eq("videoId", videoId)).first();
+      if (!row) await ctx.db.insert("videoSlides", { videoId, slideshow: null, tries: 0, at: 0 });
+    }
+  },
+});
+
+const slideTodo = (ctx: QueryCtx, now: number, limit: number) =>
+  ctx.db.query("videoSlides").withIndex("by_slideshow_at", (q) => q.eq("slideshow", null).lt("at", now - 6 * 3_600_000))
+    .filter((q) => q.lt(q.field("tries"), 3)).take(limit);
+
+/** Réserve les prochaines vidéos à lire (marquées « essayées maintenant » : deux lectures ne prennent pas les mêmes). */
+export const claimSlides = internalMutation({
+  args: { limit: v.number(), now: v.number() },
+  handler: async (ctx, { limit, now }) => {
+    const rows = await slideTodo(ctx, now, limit);
+    for (const r of rows) await ctx.db.patch(r._id, { at: now });
+    return rows.map((r) => r.videoId);
+  },
+});
+
+export const slideLeft = internalQuery({
+  args: { now: v.number() },
+  handler: async (ctx, { now }) => (await slideTodo(ctx, now, 1)).length > 0,
+});
+
+/** Le résultat d'une lecture : carrousel ou non (null : page illisible, un essai de plus). */
+export const saveSlides = internalMutation({
+  args: { items: v.array(v.object({ videoId: v.string(), slideshow: v.union(v.boolean(), v.null()), images: v.number() })), now: v.number() },
+  handler: async (ctx, { items, now }) => {
+    for (const it of items) {
+      const row = await ctx.db.query("videoSlides").withIndex("by_video", (q) => q.eq("videoId", it.videoId)).first();
+      if (row) await ctx.db.patch(row._id, { slideshow: it.slideshow, ...(it.slideshow ? { images: it.images } : {}), tries: row.tries + 1, at: now });
+    }
+  },
+});
+
+/** Faut-il une synchro ? Des carrousels trouvés depuis le début de la dernière synchro réussie, aucune synchro depuis 1 h. */
+export const slidesNeedSync = internalQuery({
+  args: { now: v.number() },
+  handler: async (ctx, { now }) => {
+    const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(20);
+    if (runs[0] && now - runs[0].startedAt < 3_600_000) return false;
+    const lastOk = runs.find((r) => r.ok)?.startedAt ?? 0;
+    return !!(await ctx.db.query("videoSlides").withIndex("by_slideshow_at", (q) => q.eq("slideshow", true).gt("at", lastOk)).first());
+  },
+});

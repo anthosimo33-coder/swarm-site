@@ -61,7 +61,7 @@ return {};
       MAPPS = Object.fromEntries(D.marketApps || []);
       A = SRC.apps.map((a) => [a.name, a.niche, a.markets.map((m) => m[0]), a.accounts, a.videosPerWeek, a.views30 / 1e6, (a.weeks || []).map((w) => w / 1e6),
         a.bestX ? xfm(a.bestX) : '—', (a.top || []).map((t) => t.cover || ''), (a.top || []).map((t) => nfm(t.views)), a.icon || '', a.slug, (a.top || []).map((t) => t.id), !!a.isNew, a.weekDelta === undefined ? null : a.weekDelta, typeof a.top10Share === 'number' ? a.top10Share : null, a.top && a.top[0] ? { x: a.top[0].x, handle: a.top[0].handle } : null,
-        (a.top || []).map((t) => !!t.paid), a.placements || 0, a.kind || null]);
+        (a.top || []).map((t) => !!t.paid), a.placements || 0, a.kind || null, (a.top || []).map((t) => t.carousel || 0)]);
       MKD = Object.fromEntries(SRC.apps.map((a) => [a.name, a.markets.map(([c, p]) => [c, LBL[c] || MKN(c) || c, p])]));
       MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l || MKN(c) || c, c]));
       NIS = D.niches;
@@ -103,7 +103,7 @@ return {};
       return { rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], mkText: mkText(a), mks: mkList(a), v30: nfm(views(a) * 1e6),
         hasDelta: d !== null, delta: d === null ? '' : dfmt(d), dInk: up ? 'var(--accent)' : 'var(--ink-faint)', stroke: up ? '#4C9AFF' : '#8A93A3',
         line, area: line + ' L100 40 L0 40 Z', gid: 'mapl' + i, ex: '100', ey: (pts[5][1] / 40 * 100).toFixed(1), hasW: !!a[6],
-        covs: a[8].map((src, j) => ({ src, v: a[9][j] || '', href: videoOf(a, j), paid: !!(a[17] && a[17][j]) })).filter((c) => c.src),
+        covs: a[8].map((src, j) => ({ src, v: a[9][j] || '', href: videoOf(a, j), paid: !!(a[17] && a[17][j]), car: a[20] && a[20][j] ? String(a[20][j]) : '' })).filter((c) => c.src),
         kindL: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[a[19]] || '', plc: a[18] > 0 ? a[18] + (a[18] > 1 ? ' placements payés' : ' placement payé') : '', logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank', open: () => this.setState({ pv: a[0] }) }; });
     const mLabel = market === 'ALL' ? 'Tous' : MKS.filter((m) => m[0] === market)[0][1];
     const chips = [];
@@ -357,6 +357,14 @@ return {};
                       $h("a", { "href": c?.href, "class": "sw-video", "aria-label": `Vidéo à ${$t(c?.v)} vues`, "style": "display: block; width: 56px; border-radius: 10px;" },
                         $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy" }),
                         $h("span", { "class": "sw-video-shade" }),
+                        (c?.car) ? [
+                          $h("span", { "title": `Carrousel de ${$t(c?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 4px; right: 4px; z-index: 2; height: 18px; padding: 0 5px; border-radius: 999px; background: rgba(5,7,12,0.66); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" },
+                            $h("svg", { "width": "10", "height": "10", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                              $h("path", { "d": "M8 8h12v12H8zM4 16V4h12", "fill": "none", "stroke": "currentColor", "stroke-width": "2.6", "stroke-linejoin": "round" })
+                            ),
+                            $t(c?.car)
+                          )
+                        ] : null,
                         (c?.paid) ? [
                           $h("span", { "title": "Placement payé : compte payé pour cette vidéo", "aria-label": "Placement payé", "style": "position: absolute; top: 4px; left: 4px; z-index: 2; width: 18px; height: 18px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px rgba(5,7,12,0.6);" },
                             "€"

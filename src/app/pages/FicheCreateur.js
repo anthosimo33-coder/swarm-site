@@ -60,7 +60,7 @@ export default class FicheCreateur extends DCLogic {
         const aj = st.ajV === id;
         const copied = st.copied === id;
         return { href: v.href || '/app/videos/7705929733220994337', src: v.src, v: v.v, x: v.x, xBg: typeof v.xr === 'number' && v.xr >= 2 ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : 'rgba(5,7,12,0.6)',
-          plat: v.ig ? 'Instagram' : 'TikTok', url: v.url || z.tt, urlLabel: v.ig ? 'VOIR SUR INSTAGRAM' : 'VOIR SUR TIKTOK',
+          plat: v.ig ? 'Instagram' : v.car ? 'Carrousel · ' + v.car + ' photos' : 'TikTok', url: v.url || z.tt, urlLabel: v.ig ? 'VOIR SUR INSTAGRAM' : 'VOIR SUR TIKTOK',
           av: z.av || '', noav: !z.av, ini: String(z.h || '').replace(/^@/, '').charAt(0).toUpperCase(), h: z.h, flag: z.flag || '', mk: z.mk || '',
           appName: app.name || '', appIcon: app.logo || '', appBlank: app.logo ? '' : 'sw-app-blank', appLine: app.name ? app.name + (app.niche ? ' · ' + app.niche : '') : '',
           ago: v.ago || v.date || '', st: typeof v.xr === 'number' ? (up ? 'AU-DESSUS DE SA NORMALE' : 'SOUS SA NORMALE') : '', stInk: up ? '#4C9AFF' : '#8A93A3',
@@ -136,7 +136,7 @@ export default class FicheCreateur extends DCLogic {
       const isX = (v) => typeof v.x === 'number';
       vids = V.map((v) => ({ src: v.cover || '', v: nf(v.views), raw: v.views, x: isX(v) ? xf(v.x) : '', xr: isX(v) ? v.x : null, hit: isX(v) && v.x >= 10,
         date: day(v.publishedAt), ago: ago(v.publishedAt), t: v.hook || '', badge: isX(v) && v.x >= 10 ? 'var(--blue-600)' : 'rgba(5,7,12,0.55)', href: '/app/videos/' + v.id,
-        id: v.id, ig: v.platform === 'instagram',
+        id: v.id, ig: v.platform === 'instagram', car: v.carousel || 0,
         url: v.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(v.id).replace(/^ig:/, '') + '/' : 'https://www.tiktok.com/@' + D.handle + '/video/' + v.id }));
       // Le bandeau : ses vidéos à 10× sa normale ou plus, et ce qui a suivi la dernière. Rien à dire, pas de bandeau.
       const hits = V.filter((v) => isX(v) && v.x >= 10);
