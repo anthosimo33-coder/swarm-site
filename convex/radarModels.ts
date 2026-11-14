@@ -13,16 +13,27 @@
 
 export type Snapshot = { at: number; views: number };
 export type RApp = { id: string; slug: string; name: string; status: string; trackedCount: number | null; mergedInto: string | null; createdAt: number;
-  store?: { storeId?: string | number | null; url?: string | null } | null };
+  store?: { storeId?: string | number | null; url?: string | null; released?: string | null } | null;
+  // La fiche que le Radar tient de l'app (Jarvia #505) : sa niche, et ce qu'elle est quand elle vient d'une campagne.
+  niche?: string | null; market?: { productKind?: string | null } | null };
+/**
+ * Ce qui relie un compte à son app (Jarvia #507), sur ses 30 dernières vidéos : son pseudo, sa bio, ses vidéos qui la
+ * citent (`cites` sur `of`) ; « seed » / « manual » : choisi à la main, sans preuve dans ses vidéos ; null : plus rien
+ * ne le prouve.
+ */
+export type RProof = { by: "handle" | "bio" | "videos" | "seed" | "manual" | null; cites: number; of: number };
 export type RTracked = {
   id: string; handle: string; appId: string; status: string; fans: number; bio: string | null; lang: string | null; country?: string | null;
   medianViews: number | null; videosSeen: number; lastPostAt: number | null; posts7d: number | null;
   igHandle: string | null; igFans: number | null; igMedianViews: number | null; addedAt: number;
+  matchedBy?: string; proof?: RProof | null;
 };
 export type RVideo = {
   id: string; accountId: string; appId: string; platform: "tiktok" | "instagram"; videoId: string; publishedAt: number;
   views: number; snapshots: Snapshot[]; caption: string | null; hook: string | null; hookKey: string | null;
   musicTitle: string | null; coverUrl: string | null; region?: string | null;
+  /** La vidéo cite-t-elle l'app sous laquelle elle est rangée (légende, texte à l'écran, pseudo) ? null : on ne sait pas. */
+  cites?: boolean | null;
 };
 export type RFormatMember = { accountId: string; handle: string; appId: string; videoId: string; publishedAt: number; views: number; multiplier?: number; hook?: string; platform?: string };
 export type RFormat = {
@@ -35,6 +46,7 @@ export type RSignal = {
   views: number; likes: number; comments: number; shares: number; saves: number; ratio: number; snapshots: Snapshot[];
   appId: string | null; appName: string | null; trackedAccountId: string | null; multiplier: number | null; hook: string | null;
   musicTitle: string | null; transcript: string | null; unavailable: string | null;
+  cites?: boolean | null;
 };
 export type Raw = { apps: RApp[]; tracked: RTracked[]; trackedVideos: RVideo[]; formats: RFormat[]; signals: RSignal[] };
 
@@ -82,7 +94,11 @@ const countryMarket = (c: string | null | undefined) => {
 /** Marché d'une vidéo ou d'un signal sans compte suivi : sa langue, sinon sa région. */
 export const marketOf = (lang: string | null | undefined, region?: string | null) => (lang && LANG_MARKET[lang]) || countryMarket(region);
 
-/** Niche de chaque app (classement éditorial de Swarm ; le Radar n'en a pas). */
+/**
+ * Niche de chaque app : celle de la fiche du Radar (Jarvia #505, 16 niches), sinon ce classement éditorial de Swarm
+ * (les 49 apps du 13/11, que le Radar a repris tel quel). Jusqu'au 15/11, seul ce tableau comptait : 102 apps sur 147
+ * tombaient en « Autres ».
+ */
 export const NICHES: Record<string, string> = {
   "Rizz App": "Séduction IA", "Astra AI": "Études", Knowunity: "Études", Love8: "Couple", WRizz: "Séduction IA", "Wing AI": "Séduction IA",
   "Cal AI": "Santé et physique", Praktika: "Langues", RecentFollow: "Jalousie et ex", "The Cringe": "Jalousie et ex", "Plug AI": "Séduction IA",
@@ -95,7 +111,24 @@ export const NICHES: Record<string, string> = {
   Katch: "Jalousie et ex", Palima: "Autres", Lurk: "Jalousie et ex", TrendSaaS: "Side hustle", Susly: "Jalousie et ex",
   "Kairo Alarme": "Autres", "Leaked DMs": "Jalousie et ex", "Crush Tracker": "Jalousie et ex",
 };
-export const nicheOf = (name: string) => NICHES[name] ?? "Autres";
+export const nicheOf = (a: { name: string; niche?: string | null }) => (a.niche && a.niche !== "Autres" ? a.niche : null) ?? NICHES[a.name] ?? "Autres";
+
+/** Ce qu'est une app : une app (fiche App Store, ou campagne d'app), un logiciel ou un site web, ou on ne sait pas. */
+export const kindOf = (a: RApp, store: string | null): "app" | "saas" | null =>
+  store || a.store?.storeId || a.market?.productKind === "app" ? "app" : a.market?.productKind === "software" || APP_SITE[a.slug] ? "saas" : null;
+
+/** Une app n'est listée qu'avec au moins 2 comptes qui la poussent, prouvés (un compte n'entre que prouvé, cf Jarvia #506). */
+export const MIN_APP_ACCOUNTS = 2;
+/** Un marché a son onglet à partir de 10 créateurs ; les autres restent sur chaque créateur (son drapeau) et dans « Tous ». */
+export const MIN_MARKET_CREATORS = 10;
+/** « Nouvelle » : sortie sur l'App Store il y a 60 jours au plus ; sans date de sortie, réseau dont la 1re vidéo a 30 jours au plus. */
+const NEW_RELEASE_DAYS = 60;
+const NEW_NETWORK_DAYS = 30;
+
+/** Un compte que plus rien ne relie à son app (Jarvia #507 : `proof.by` null) n'est montré nulle part. */
+export const isProven = (t: RTracked) => !(t.proof && t.proof.by === null);
+/** Une vidéo qui ne cite pas son app ne compte pas pour elle (vues, classements, alertes) ; elle reste sur la fiche de son créateur. */
+export const citesItsApp = (v: { cites?: boolean | null }) => v.cites !== false;
 
 // ─── Outils ──────────────────────────────────────────────────────────────────
 
@@ -201,7 +234,8 @@ export function buildBoards(
   const apps = raw.apps.filter((a) => !a.mergedInto && a.status === "active");
   const icon = (a: RApp) => (used.add(iconKey(a.slug)), mediaUrl(iconKey(a.slug)));
 
-  const accounts = raw.tracked.filter((t) => t.status === "active");
+  // Les comptes suivis ET prouvés : ce sont eux qui « poussent » une app (cf isProven).
+  const accounts = raw.tracked.filter((t) => t.status === "active" && isProven(t));
   const accountById = new Map(raw.tracked.map((t) => [t.id, t]));
   const signalByVideo = new Map(raw.signals.filter((s) => !s.unavailable).map((s) => [s.videoId, s]));
   const trackedByVideo = new Map(raw.trackedVideos.map((v) => [v.videoId, v]));
@@ -260,7 +294,8 @@ export function buildBoards(
       id: v.videoId,
       platform: v.platform,
       handle: acc?.handle ?? s?.authorHandle ?? "",
-      app: canonical(v.appId)?.slug ?? null,
+      // Une vidéo qui ne cite pas son app n'est pas une vidéo de l'app (sur la fiche de son créateur, sans app).
+      app: citesItsApp(v) ? canonical(v.appId)?.slug ?? null : null,
       views: Math.max(v.views, s?.views ?? 0),
       x: xOf(v, s),
       publishedAt: v.publishedAt,
@@ -269,7 +304,9 @@ export function buildBoards(
     };
   };
 
-  const videosByApp = groupBy(raw.trackedVideos, (v) => canonical(v.appId)?.id ?? "");
+  // Sous une app, seulement les vidéos qui la citent : le 14/11, 27 % des vidéos des comptes suivis ne citaient pas
+  // la leur (vidéos perso d'un vrai créateur, vidéos d'une autre app) et gonflaient vues, top et « meilleure ».
+  const videosByApp = groupBy(raw.trackedVideos.filter(citesItsApp), (v) => canonical(v.appId)?.id ?? "");
   const videosByAccount = groupBy(raw.trackedVideos, (v) => v.accountId);
   const marketByAccount = new Map<string, string | null>();
   for (const t of raw.tracked) {
@@ -285,7 +322,11 @@ export function buildBoards(
   // Les marchés présents, du plus fourni au moins fourni (comptes actifs).
   const marketCount = new Map<string, number>();
   for (const t of accounts) { const m = mkOf(t.id); if (m) marketCount.set(m, (marketCount.get(m) ?? 0) + 1); }
-  const MARKETS = [...marketCount.entries()].sort((p, q) => q[1] - p[1]).map(([c, n]) => [c, marketLabel(c), n] as [string, string, number]);
+  // Un onglet par marché fourni (10 créateurs au moins) : le 13/11, 22 onglets sur 30 avaient 5 créateurs ou moins.
+  const MARKETS = [...marketCount.entries()]
+    .filter(([, n]) => n >= MIN_MARKET_CREATORS)
+    .sort((p, q) => q[1] - p[1])
+    .map(([c, n]) => [c, marketLabel(c), n] as [string, string, number]);
   const accountsByApp = groupBy(accounts, (t) => canonical(t.appId)?.id ?? "");
   const usedVideos = new Map<string, RVideo>();
   const use = (vs: RVideo[]) => vs.forEach((v) => usedVideos.set(v.videoId, v));
@@ -323,8 +364,11 @@ export function buildBoards(
       .sort((p, q) => q[1] - p[1]);
     const top = withImage([...recent].sort((p, q) => q.views - p.views), 12, trackedHasImage);
     use(top);
+    const store = storeOf(a.slug);
+    const released = a.store?.released ? Date.parse(a.store.released) : NaN;
+    const firstVideo = vids.length ? Math.min(...vids.map((v) => v.publishedAt)) : null;
     return {
-      slug: a.slug, name: a.name, niche: nicheOf(a.name), icon: icon(a),
+      slug: a.slug, name: a.name, niche: nicheOf(a), icon: icon(a), kind: kindOf(a, store),
       accounts: accs.length, videosPerWeek: week.length, dayEnd, days, daysIg,
       views30, views30Ig, views7, views7Ig, weeks,
       weekDelta: weeks[4] > 0 ? round((weeks[5] - weeks[4]) / weeks[4], 3) : null,
@@ -332,15 +376,19 @@ export function buildBoards(
       top10Share: views30 ? round(byAccount.slice(0, 10).reduce((n, v) => n + v, 0) / views30, 3) : null,
       markets,
       trackedSince: a.createdAt,
-      isNew: now - a.createdAt <= 14 * DAY,
+      // Nouvelle : sortie récemment, ou réseau qui vient de démarrer (et non « arrivée récemment dans le Radar » : le
+      // 14/11, toutes les apps l'étaient).
+      isNew: Number.isFinite(released) ? now - released <= NEW_RELEASE_DAYS * DAY : firstVideo !== null && now - firstVideo <= NEW_NETWORK_DAYS * DAY,
+      released: Number.isFinite(released) ? released : null,
       videoCount: recent.length,
-      store: storeOf(a.slug),
+      store,
       top: top.slice(0, 3).map(card),
       _top12: top.slice(0, 12),
       _accs: accs,
     };
   });
-  const appsBoard = appRows.map(({ _top12, _accs, ...r }) => r).sort((p, q) => q.views30 - p.views30);
+  // Une app sans réseau prouvé (2 comptes au moins) n'est pas listée : sa fiche existe, elle se montre dès qu'elle l'a.
+  const appsBoard = appRows.filter((r) => r.accounts >= MIN_APP_ACCOUNTS).map(({ _top12, _accs, ...r }) => r).sort((p, q) => q.views30 - p.views30);
   boards.set("apps", { updatedAt: now, markets: MARKETS, niches: [...new Set(appsBoard.map((a) => a.niche))].sort(), apps: appsBoard });
 
   // ── Formats ──
@@ -365,10 +413,12 @@ export function buildBoards(
         const tv = trackedByVideo.get(m.videoId);
         return { _video: tv ?? memberVideo(m), handle: m.handle, videoId: m.videoId, views: m.views, x: accountX(m), publishedAt: m.publishedAt, cover: coverOf(m) };
       });
-      const appsOf = [...new Set(f.appIds.map((id) => canonical(id)?.id).filter(Boolean) as string[])].map(appMini).filter(Boolean);
+      const appIdsOf = [...new Set(f.appIds.map((id) => canonical(id)?.id).filter(Boolean) as string[])];
+      const appsOf = appIdsOf.map(appMini).filter(Boolean);
+      const firstApp = appIdsOf.length ? appById.get(appIdsOf[0]) : undefined;
       return {
         id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount, apps: appsOf,
-        niche: appsOf[0] ? nicheOf(appsOf[0]!.name) : "Autres", market: (f.lang && LANG_MARKET[f.lang]) || majority(f.members.map((m) => mkOf(m.accountId))),
+        niche: firstApp ? nicheOf(firstApp) : "Autres", market: (f.lang && LANG_MARKET[f.lang]) || majority(f.members.map((m) => mkOf(m.accountId))),
         maxViews: f.maxViews, medX: roundOrNull(median(xs), 1), wins: xs.filter((x) => x > 1).length, n: f.members.length,
         lastPostAt: f.lastPostAt, firstSeenAt: f.firstSeenAt, members,
       };
@@ -394,7 +444,9 @@ export function buildBoards(
     const a = canonical(t.appId);
     return {
       handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
-      market: mkOf(t.id), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a.name) } : null,
+      market: mkOf(t.id), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
+      // Ce qui le relie à son app (cf RProof), montré sur sa fiche et dans les listes.
+      proof: t.proof ?? null,
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
   };
@@ -427,7 +479,7 @@ export function buildBoards(
       .filter((t) => (t.medianViews ?? 0) > 0)
       .sort((p, q) => (q.medianViews ?? 0) - (p.medianViews ?? 0))
       .slice(0, 10)
-      .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle) }));
+      .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle), proof: t.proof ?? null }));
     const appFormats = formatRows.filter((f) => f.apps.some((x) => x?.slug === a.slug)).slice(0, 8).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX, maxViews: f.maxViews }));
     const { _top12, _accs, ...row } = r;
     boards.set(`app:${a.slug}`, { updatedAt: now, ...row, videos: _top12.map(card), formats: appFormats, creators: appCreators });
@@ -435,7 +487,7 @@ export function buildBoards(
 
   // ── Vidéos qui décollent : alertes et accueil ──
   const hot = withImage(
-    raw.signals.filter((s) => !s.unavailable && s.multiplier && now - s.publishedAt <= 7 * DAY).sort((p, q) => (q.multiplier ?? 0) - (p.multiplier ?? 0)),
+    raw.signals.filter((s) => !s.unavailable && citesItsApp(s) && s.multiplier && now - s.publishedAt <= 7 * DAY).sort((p, q) => (q.multiplier ?? 0) - (p.multiplier ?? 0)),
     40,
     (s) => cover(s.videoId, s.coverUrl, s.authorHandle) !== null,
   );
@@ -458,6 +510,10 @@ export function buildBoards(
     formats: formatRows.slice(0, 3).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX })),
   });
 
+  // ── Ce que le Radar suit, pour la page d'accueil publique et la date du relevé (« Relevé du … ») ──
+  // `at` change à chaque passage : ce document est réécrit chaque nuit (les autres seulement s'ils changent).
+  boards.set("stats", { updatedAt: now, at: now, apps: appsBoard.length, accounts: accounts.length, markets: MARKETS.length });
+
   // ── Recherche (palette) : un index léger ──
   boards.set("search", {
     updatedAt: now,
@@ -476,7 +532,8 @@ export function buildBoards(
 
   function videoPage(v: RVideo | null, s: RSignal | null) {
     const acc = v ? accountById.get(v.accountId) : s?.trackedAccountId ? accountById.get(s.trackedAccountId) : undefined;
-    const a = canonical(v?.appId ?? s?.appId ?? null);
+    // Une vidéo qui ne cite pas son app n'est rattachée à aucune.
+    const a = (v && !citesItsApp(v)) || (s && !citesItsApp(s)) ? null : canonical(v?.appId ?? s?.appId ?? null);
     const id = (v?.videoId ?? s?.videoId)!;
     const views = Math.max(v?.views ?? 0, s?.views ?? 0);
     const handle = acc?.handle ?? s?.authorHandle ?? "";
@@ -486,7 +543,7 @@ export function buildBoards(
       updatedAt: now, id, platform,
       url: s?.url ?? (platform === "instagram" ? `https://www.instagram.com/reel/${id.replace(/^ig:/, "")}/` : `https://www.tiktok.com/@${handle}/video/${id}`),
       handle, fans: acc?.fans ?? s?.authorFans ?? null, normal: acc?.medianViews ?? null,
-      app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a.name) } : null,
+      app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
       market: acc ? mkOf(acc.id) ?? marketOf(s?.lang, s?.region ?? v?.region) : marketOf(s?.lang, s?.region ?? v?.region), region: s?.region ?? null,
       publishedAt: v?.publishedAt ?? s?.publishedAt ?? null, durationSec: s?.durationSec ?? null,
       views, x: v ? xOf(v, s) : s?.multiplier ? round(s.multiplier, 1) : null,

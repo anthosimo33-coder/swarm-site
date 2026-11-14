@@ -109,7 +109,7 @@ export default class MAccueil extends DCLogic {
             $t($v.greet)
           ),
           $h("p", { "style": "margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-muted);" },
-            "Ce qui explose sur TikTok, Instagram et YouTube Shorts, app par app, marché par marché."
+            "Ce qui explose sur TikTok et Instagram, app par app, marché par marché."
           )
         ),
         $h("button", { "type": "button", "onClick": $v.openPal, "class": "sw-search", "style": "margin: 18px 20px 0; width: calc(100% - 40px); box-sizing: border-box; height: 54px; padding: 0 8px 0 16px; color: var(--ink-faint); box-shadow: none; font: inherit; text-align: left; cursor: pointer;" },

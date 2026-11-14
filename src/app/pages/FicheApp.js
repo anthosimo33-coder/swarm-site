@@ -53,6 +53,8 @@ export default class FicheApp extends DCLogic {
   }
 
   baseVals() {
+    const PROOF = (p) => !p || !p.by ? '' : p.by === 'handle' ? 'Son pseudo porte l’app' : p.by === 'bio' ? 'Sa bio nomme l’app' : p.by === 'videos' ? p.cites + (p.cites > 1 ? ' vidéos' : ' vidéo') + ' sur ' + p.of + (p.cites > 1 ? ' la citent' : ' la cite') : 'Repéré par l’équipe';
+
     const ic = {
       accueil: 'M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z',
       apps: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
@@ -96,7 +98,7 @@ export default class FicheApp extends DCLogic {
       ['B', '@belajarbersamaespi', 'student tips, productivity, & tech', 'ID', '6,5 k', '2,0 M', '855', 'var(--thumb-amber)']
     ].map((c) => { const av = {"@belajarbersamaespi": "/media/app/av-belajarbersamaespi.jpg", "@ira.belajaryuk": "/media/app/av-ira.belajaryuk.jpg", "@learnwithjoel1": "/media/app/av-learnwithjoel1.jpg", "@studyclubbyinda": "/media/app/av-studyclubbyinda.jpg", "@studywithruney": "/media/app/av-studywithruney.jpg"}[c[1]] || false; return { ini: c[0], h: c[1], bio: c[2], mk: c[3], fans: c[4], v: c[5], med: c[6], bg: c[7], av, noav: !av }; });
     // L'en-tête et les chiffres de l'exemple (le canevas n'a pas de données).
-    let app = { icon: "/media/app/app-astra-ai.jpg", name: 'Astra AI', niche: 'Études', delta: '+6 % cette semaine', since: '06/11',
+    let app = { icon: "/media/app/app-astra-ai.jpg", name: 'Astra AI', niche: 'Études', kind: 'App mobile', delta: '+6 % cette semaine', since: '06/11',
       store: 'https://apps.apple.com/fr/app/astra-ai-r%C3%A9vision-examens/id6751030141', play: 'https://play.google.com/store/search?q=Astra%20AI&c=apps',
       v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', week: '18,4 M', wd: "+6 % face à la semaine d'avant",
       acc: '269', ppw: '1 360', best: '2 333×', top10: '43 % des vues', vidsHref: '/app/videos/7705929733220994337', crLabel: 'Tous les créateurs' };
@@ -117,7 +119,7 @@ export default class FicheApp extends DCLogic {
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + ' j'; };
       app = {
-        icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
+        icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, kind: (D.kind === 'app' ? 'App mobile' : D.kind === 'saas' ? 'Logiciel ou site web' : ''), delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
         store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps',
         v30: nf(D.views30), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
         week: nf(D.weeks[5]),
@@ -136,7 +138,7 @@ export default class FicheApp extends DCLogic {
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
       mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + ' %', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
-      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
+      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: PROOF(c.proof), mk: c.market === 'XX' ? '…' : c.market, fans: nf(c.fans), v: String(c.posts7d),
         med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: c.avatar || '', noav: true, page: !!c.page, href: '/app/createurs/' + c.handle }));
       sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));
       // Rang : dans sa niche (document « apps », toujours chargé), sinon parmi toutes les apps du Radar.
@@ -315,6 +317,11 @@ export default class FicheApp extends DCLogic {
                     ),
                     $t($v.app?.niche)
                   ),
+                  ($v.app?.kind) ? [
+                    $h("span", { "class": "sw-badge" },
+                      $t($v.app?.kind)
+                    )
+                  ] : null,
                   ($v.dash?.rankBadge) ? [
                     $h("span", { "class": "sw-badge sw-badge-accent" },
                       $t($v.dash?.rankBadge)

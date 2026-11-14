@@ -11,6 +11,9 @@ export default class LP extends DCLogic {
     clearInterval(this.timer);
   }
   renderVals() {
+    const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
+    const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
+
     const st = this.state || {};
     const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
     const blue = this.props.blue ?? '#0B6FE0';
@@ -187,6 +190,7 @@ export default class LP extends DCLogic {
 
 
     return {
+      rs,
       blue,
       menuOpen,
       menu,
@@ -210,7 +214,7 @@ export default class LP extends DCLogic {
         { v: '1,9 M', img: '/media/v-7705929733220994337.jpg' },
         { v: '1,2 M', img: '/media/v-7704074126801046804.jpg' }
       ],
-      pills: [{ t: '+1 000 apps, +100 000 comptes' }, { t: 'Tous les marchés' }, { t: 'En ce moment, en continu' }, { t: 'Les créateurs derrière chaque app' }],
+      pills: [{ t: '+' + rs.apps + ' apps, +' + rs.accounts + ' comptes' }, { t: 'Tous les marchés' }, { t: 'En ce moment, en continu' }, { t: 'Les créateurs derrière chaque app' }],
       arc,
       cur: { app: c[0], label: c[4], value: c[5] },
       avis,
@@ -326,7 +330,7 @@ export default class LP extends DCLogic {
             $h("span", { "style": `width: 8px; height: 8px; border-radius: 50%; background: ${$t($v.blue)}; animation: lp-pulse 1.8s infinite;` }),
             $h("span", null,
               $h("span", { "style": "font-weight: 600;" },
-                "+100 000 comptes"
+                "+", $t($v.rs?.accounts), " comptes"
               ),
               " passés au crible chaque jour"
             )
@@ -442,13 +446,6 @@ export default class LP extends DCLogic {
                 $h("circle", { "cx": "17.2", "cy": "6.8", "r": "1.3", "fill": "url(#igD)" })
               ),
               "Instagram"
-            ),
-            $h("span", { "style": "display: inline-flex; align-items: center; gap: 12px;" },
-              $h("svg", { "width": "30", "height": "30", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("rect", { "x": "2", "y": "5", "width": "20", "height": "14", "rx": "4.5", "fill": "#FF0033" }),
-                $h("path", { "d": "M10 9l5.2 3-5.2 3z", "fill": "#FFFFFF" })
-              ),
-              "YouTube Shorts"
             )
           )
         ),
@@ -469,7 +466,7 @@ export default class LP extends DCLogic {
                   "Les apps qui explosent, en ce moment."
                 ),
                 $h("p", { "style": "margin: 0; max-width: 700px; font-size: 20px; line-height: 1.55; color: #4A4F57;" },
-                  "Plus de 1 000 apps et 100 000 comptes suivis en continu sur TikTok, Instagram et YouTube Shorts, sur tous les marchés. Choisis un marché, une niche, et plonge dans les formats et les créateurs de n'importe quelle app."
+                  "Plus de ", $t($v.rs?.apps), " apps et ", $t($v.rs?.accounts), " comptes suivis en continu sur TikTok et Instagram, sur tous les marchés. Choisis un marché, une niche, et plonge dans les formats et les créateurs de n'importe quelle app."
                 )
               ),
               $h("a", { "href": "/inscription", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
@@ -665,7 +662,7 @@ export default class LP extends DCLogic {
                   $h("rect", { "x": "3", "y": "11.5", "width": "5.5", "height": "5.5", "rx": "1.5", "fill": $v.blue, "fill-opacity": "0.45" }),
                   $h("rect", { "x": "11.5", "y": "11.5", "width": "5.5", "height": "5.5", "rx": "1.5", "fill": $v.blue })
                 ),
-                "+1 000 apps, +100 000 comptes"
+                "+", $t($v.rs?.apps), " apps, +", $t($v.rs?.accounts), " comptes"
               ),
               $h("span", { "style": "display: inline-flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid #EDEDF0; border-radius: 14px; padding: 12px 20px; font-size: 17px; font-weight: 500; box-shadow: 0 6px 16px rgba(16,24,40,0.05);" },
                 $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
@@ -961,7 +958,7 @@ export default class LP extends DCLogic {
                   )
                 ),
                 $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.6; color: #9AA3B2;" },
-                  "Les apps et les formats qui explosent sur TikTok, Instagram et YouTube Shorts, et les créateurs derrière."
+                  "Les apps et les formats qui explosent sur TikTok et Instagram, et les créateurs derrière."
                 )
               ),
               $h("nav", { "aria-label": "Pied de page", "style": "flex: 1 1 600px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 40px;" },

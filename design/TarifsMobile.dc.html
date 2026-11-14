@@ -45,7 +45,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 <section style="padding: 32px 20px 28px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px;">
 <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #3A3F47; animation: blurIn 0.8s ease-out both;"><span style="color: #0B6FE0;">[</span> TARIFS <span style="color: #0B6FE0;">]</span></span>
 <h1 style="margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(36px, 11vw, 46px); line-height: 1.04; letter-spacing: -0.05em; animation: blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.1s;">Un seul plan. <span style="color: #0B6FE0;">Tout Swarm.</span></h1>
-<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #3A3F47; animation: blurIn 0.9s ease-out both; animation-delay: 0.25s;">Les apps et les formats qui explosent en ce moment sur TikTok, Instagram et YouTube Shorts, sur n'importe quel marché, et les créateurs derrière.</p>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #3A3F47; animation: blurIn 0.9s ease-out both; animation-delay: 0.25s;">Les apps et les formats qui explosent en ce moment sur TikTok et Instagram, sur n'importe quel marché, et les créateurs derrière.</p>
 <div role="group" aria-label="Facturation" style="position: relative; width: 100%; margin-top: 6px; display: flex; padding: 5px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 24px rgba(16,24,40,0.08); animation: blurIn 0.9s ease-out both; animation-delay: 0.4s;">
 <span aria-hidden="true" style="position: absolute; top: 5px; bottom: 5px; left: {{thumbL}}; width: calc(50% - 5px); border-radius: 999px; background: #0E0F12; box-shadow: 0 6px 16px rgba(14,15,18,0.25); transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);"></span>
 <button type="button" aria-pressed="{{isM}}" onClick="{{toM}}" style="position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: {{inkM}}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: color 0.3s ease;">Mensuel</button>
@@ -125,7 +125,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 <div style="flex: 1 0 auto; padding: 48px 20px 24px; display: flex; flex-direction: column; gap: 36px;">
 <div style="display: flex; flex-direction: column; gap: 12px;">
 <a href="LPMobile.dc.html" style="display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"></circle><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"></circle></svg><span style="font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: #FFFFFF;">swarm</span></a>
-<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9AA3B2;">Les apps et les formats qui explosent sur TikTok, Instagram et YouTube Shorts, et les créateurs derrière.</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9AA3B2;">Les apps et les formats qui explosent sur TikTok et Instagram, et les créateurs derrière.</p>
 </div>
 <nav aria-label="Pied de page" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 16px;">
 <sc-for list="{{cols}}" as="c" hint-placeholder-count="2">
@@ -182,6 +182,9 @@ class Component extends DCLogic {
     clearInterval(this.timer);
   }
   renderVals() {
+    const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
+    const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
+
     const st = this.state || {};
     const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
     const annual = st.bill === 'y';
@@ -203,7 +206,7 @@ class Component extends DCLogic {
     const spec = [
       ['01', 'Spot it', 'repérer ce qui explose', [['apps', 'Les apps qui explosent'], ['radar', 'Nouvelles apps repérées'], ['alertes', 'Alertes « vidéo qui explose »']]],
       ['02', 'Copy it', 'copier ce qui marche', [['videos', 'Les formats qui explosent'], ['fiche', 'Fiches d’app décortiquées']]],
-      ['03', 'Launch it', 'lancer la tienne', [['createurs', 'Les créateurs derrière chaque app'], ['marches', 'Tous les marchés'], ['export', 'Export CSV']]]
+      ['03', 'Launch it', 'lancer la tienne', [['createurs', 'Les créateurs derrière chaque app'], ['marches', 'Tous les marchés']]]
     ];
     const groups = spec.map((g, gi) => ({
       n: g[0], title: g[1], sub: g[2],

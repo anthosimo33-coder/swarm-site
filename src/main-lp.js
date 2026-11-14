@@ -5,4 +5,9 @@ import LPMobile from './pages/LPMobile.js';
 import './styles/lp.css';
 import './styles/lpm.css';
 
-render(h(Responsive, { desktop: LP, mobile: LPMobile }), document.getElementById('app'));
+import { fetchStats } from './stats.js';
+
+// La page s'affiche tout de suite (chiffres du dernier relevé connu), puis avec ceux du Radar.
+const show = (stats) => render(h(Responsive, { desktop: LP, mobile: LPMobile, props: { stats } }), document.getElementById('app'));
+show(null);
+fetchStats().then(show);

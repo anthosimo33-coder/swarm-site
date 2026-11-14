@@ -79,7 +79,7 @@ export default class MFicheApp extends DCLogic {
       const hasD = D.weekDelta !== null && D.weekDelta !== undefined;
       const W = D.weeks || [];
       a = Object.assign({ name: D.name, mk: flags((D.markets || []).map((x) => x[0])) }, ico(D));
-      app = { name: D.name, niche: D.niche || '', hasDelta: hasD, delta: hasD ? pct(D.weekDelta) + ' cette semaine' : '', hasDesc: false, desc: '',
+      app = { name: D.name, niche: D.niche || '', kind: (D.kind === 'app' ? 'App mobile' : D.kind === 'saas' ? 'Logiciel ou site web' : ''), hasDelta: hasD, delta: hasD ? pct(D.weekDelta) + ' cette semaine' : '', hasDesc: false, desc: '',
         hasStore: !!D.store, store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps', hasSite: false, site: '',
         v30: nf(D.views30 || 0), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
         week: nf(W[W.length - 1] || 0), wd: hasD ? pct(D.weekDelta) + ' face à la semaine d’avant' : 'première semaine suivie',
@@ -209,6 +209,11 @@ export default class MFicheApp extends DCLogic {
                   $h("span", { "class": "m-ic", "data-i": $v.app?.niche, "aria-hidden": "true" }),
                   $t($v.app?.niche)
                 ),
+                ($v.app?.kind) ? [
+                  $h("span", { "class": "m-tagn" },
+                    $t($v.app?.kind)
+                  )
+                ] : null,
                 ($v.dash?.rankBadge) ? [
                   $h("span", { "class": "sw-badge sw-badge-accent", "style": "height: 24px;" },
                     $t($v.dash?.rankBadge)

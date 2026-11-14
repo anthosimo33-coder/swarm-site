@@ -3,8 +3,9 @@
 // par leurs props. Sur le canevas, il manque et les pages gardent leur comportement de maquette.
 // L'app (src/app/main.js) réutilise le même client et le même montage.
 import { h, render } from 'preact';
-import { useEffect, useMemo } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { ConvexReactClient, useConvexAuth } from 'convex/react';
+import { FALLBACK, fetchStats } from './stats.js';
 import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { ConvexError } from 'convex/values';
 import { AUTH_ERRORS } from '../convex/authErrors.ts';
@@ -61,7 +62,15 @@ function AuthPage({ Page }) {
     },
   }), [signIn]);
 
-  return h(Page, { auth });
+  // Les chiffres du Radar affichés à côté du formulaire (convex/stats.ts), arrondis comme sur l'accueil. Lus à part :
+  // une réponse en échec laisse les chiffres connus, jamais une page de connexion cassée.
+  const [stats, setStats] = useState(FALLBACK);
+  useEffect(() => {
+    let live = true;
+    fetchStats().then((s) => live && setStats(s));
+    return () => { live = false; };
+  }, []);
+  return h(Page, { auth, stats });
 }
 
 export const mountAuthPage = (Page) => mount(h(AuthPage, { Page }));

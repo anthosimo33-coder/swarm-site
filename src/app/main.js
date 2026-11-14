@@ -30,7 +30,7 @@ const clean = (path) => (path.length > 1 ? path.replace(/\/+$/, '') : path);
 /** L'adresse affichée : chemin + requête (« /app/apps?niche=Foi »), sans l'ancre. */
 const here = () => clean(window.location.pathname) + window.location.search;
 // Les listes que l'on garde chaudes toute la session : la navigation n'attend rien.
-const WARM = ['home', 'apps', 'formats', 'creators:FR', 'alerts', 'search'];
+const WARM = ['home', 'apps', 'formats', 'creators:FR', 'alerts', 'search', 'stats'];
 const SAVED = ['follows', 'folders', 'alertRules', 'seen'];
 
 /** L'adresse -> sa route, ses paramètres et la clé de ses données. */

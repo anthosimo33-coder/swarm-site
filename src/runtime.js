@@ -34,7 +34,8 @@ export class Responsive extends Component {
     this.mq.removeEventListener('change', this.onChange);
   }
 
-  render({ desktop, mobile }, { mobile: isMobile }) {
-    return h(isMobile ? mobile : desktop, null);
+  // `props` : ce que la page reçoit (les chiffres du Radar sur les pages publiques, cf src/stats.js).
+  render({ desktop, mobile, props }, { mobile: isMobile }) {
+    return h(isMobile ? mobile : desktop, props ?? null);
   }
 }

@@ -83,6 +83,8 @@ export default class FicheCreateur extends DCLogic {
   }
 
   baseVals() {
+    const PROOF = (p) => !p || !p.by ? '' : p.by === 'handle' ? 'Son pseudo porte l’app' : p.by === 'bio' ? 'Sa bio nomme l’app' : p.by === 'videos' ? p.cites + (p.cites > 1 ? ' vidéos' : ' vidéo') + ' sur ' + p.of + (p.cites > 1 ? ' la citent' : ' la cite') : 'Repéré par l’équipe';
+
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "/app", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "/app/apps", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "/app/formats", "cur": "false"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "/app/createurs", "cur": "page"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
     let z = {"av": "/media/app/av-zinedine.gsbb.jpg", "noav": false, "h": "@zinedine.gsbb", "bio": "L'ia c'est 👇", "fans": "16 200", "med": "7 792", "p7": "3 vidéos en 7 j", "views": "4,7 M", "best": "2,85 M", "app": {"name": "Shortfy", "niche": "Side hustle", "logo": "", "nologo": true, "blank": "sw-app-blank", "href": '/app/apps/' + 'shortfy'}, "hits": 4,
       "mk": "France", "flag": "FR", "tt": "https://www.tiktok.com/@zinedine.gsbb"};
@@ -112,7 +114,7 @@ export default class FicheCreateur extends DCLogic {
       z = {
         av: D.avatar || '', noav: true, h: '@' + D.handle, bio: D.bio ? D.bio.replace(/\s+/g, ' ').trim() : '',
         mk: M[D.market] || '', flag: D.market || '', tt: 'https://www.tiktok.com/@' + D.handle,
-        app: a ? { name: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
+        app: a ? { name: a.name, niche: a.niche || '', proof: PROOF(D.proof), logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
                : { name: '', niche: '', logo: '', nologo: true, blank: 'sw-app-blank', href: '' }
       };
       // Rythme : le compte, complété par ses vidéos de la liste (une vidéo Instagram n'est pas dans posts7d).
@@ -261,6 +263,11 @@ export default class FicheCreateur extends DCLogic {
                       $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
                     $t($v.z?.app?.niche)
+                  )
+                ] : null,
+                ($v.z?.app?.proof) ? [
+                  $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
+                    $t($v.z?.app?.proof)
                   )
                 ] : null,
                 $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft);" },

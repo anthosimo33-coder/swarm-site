@@ -48,12 +48,19 @@ Le marché d'un compte est la langue de ses vidéos : `FR` France, `US` anglopho
 
 ### `apps` — classement (AppsA, MApps)
 `{ updatedAt, markets: [[code, libellé]], niches: [nom], apps: [App] }`, apps triées par `views30`.
-`App = { slug, name, niche, icon, accounts, videosPerWeek, views30, views30Ig, views7, views7Ig, weeks: [6 nombres, du plus ancien au plus récent], weekDelta: ratio|null, bestX, top10Share: ratio|null, markets: [[code, %]], trackedSince, isNew, videoCount, store: URL App Store|null, top: [VideoCard ×3] }`
+`App = { slug, name, niche, kind: 'app'|'saas'|null, icon, accounts, videosPerWeek, views30, views30Ig, views7, views7Ig, weeks: [6 nombres, du plus ancien au plus récent], weekDelta: ratio|null, bestX, top10Share: ratio|null, markets: [[code, %]], trackedSince, isNew, released: ms|null, videoCount, store: URL App Store|null, top: [VideoCard ×3] }`
+
+Règles (15/11/2026, lot 2 du dig Radar → Swarm) :
+- une app n'est listée qu'avec au moins 2 comptes prouvés (`MIN_APP_ACCOUNTS`) ; sa fiche `app:<slug>` existe quand même ;
+- `accounts`, vues, top, meilleure vidéo et marchés ne comptent que les comptes prouvés (`proof.by` non null) et les vidéos qui citent l'app (`cites` non faux, règle du Radar) ;
+- `niche` : la niche de la fiche du Radar (16 niches), sinon la table `NICHES` de Swarm, sinon « Autres » ;
+- `kind` : `app` (fiche App Store, campagne d'app), `saas` (logiciel ou site web), null si on ne sait pas ;
+- `isNew` : sortie sur l'App Store il y a 60 jours au plus, sinon réseau dont la première vidéo a 30 jours au plus.
 
 ### `app:<slug>` — fiche d'une app (FicheA, MFiche)
 L'`App` ci-dessus, plus `videos: [VideoCard ×12]` (les plus vues sur 30 j, ordre du lecteur),
 `formats: [{ id, kind: 'hook'|'sound', label, accounts, medX, maxViews }]`,
-`creators: [{ handle, fans, median, posts7d, market, page: a-t-il une fiche ? }]`.
+`creators: [{ handle, fans, median, posts7d, market, page: a-t-il une fiche ?, proof }]`.
 
 ### `video:<id>` — lecteur (VideoA, MVideo)
 `{ id, platform, url, handle, fans, normal: vues médianes du compte, app: {slug, name, icon, niche}|null, market, region,
@@ -70,7 +77,11 @@ Le `Format` complet (`members` jusqu'à 30).
 
 ### `creators:<marché>` — créateurs (CreateursA/B, MCreateurs…)
 Marché `FR`, `US`, `MX`, `ES`, `BR`, `XX` ou `ALL`. `{ updatedAt, market, total, creators: [Creator] }` (200 au plus, triés par vues médianes).
-`Creator = { handle, bio, fans, median, posts7d, lastPostAt, market, app: {slug, name, icon, niche}|null, igHandle, best: [VideoCard ×3] }`
+`Creator = { handle, bio, fans, median, posts7d, lastPostAt, market, app: {slug, name, icon, niche}|null, proof, igHandle, best: [VideoCard ×3] }`
+
+`proof = { by: 'handle'|'bio'|'videos'|'seed'|'manual', cites, of }|null` : ce qui relie le compte à son app (son pseudo, sa bio,
+`cites` de ses `of` dernières vidéos, ou choisi par l'équipe). Un compte que plus rien ne prouve (`by` null) n'apparaît nulle part.
+Les onglets de marché (`markets`) ne gardent que les marchés d'au moins 10 créateurs ; les autres restent sur chaque créateur et dans `ALL`.
 
 ### `creator:<handle>` — fiche d'un créateur (CreateurFicheA, MCreateurFiche)
 Le `Creator`, plus `videos: [VideoCard ×15]` (les plus récentes) et `formats: [{ id, kind, label, accounts }]`.
@@ -80,6 +91,10 @@ Le `Creator`, plus `videos: [VideoCard ×15]` (les plus récentes) et `formats: 
 
 ### `home` — accueil (Main, MAccueil)
 `{ updatedAt, niches: [nom], apps: [{slug, name, icon, views7, weekDelta, bestX}] ×4, videos: [carte d'alerte] ×4, formats: [{id, kind, label, accounts, medX}] ×3 }`
+
+### `stats` — ce que le Radar suit (pages publiques, « Relevé le … »)
+`{ updatedAt, at: ms du passage, apps: apps listées, accounts: comptes prouvés, markets: onglets de marché }` — réécrit à chaque
+synchronisation. Lisible sans compte par `stats.get` (convex/stats.ts), arrondi vers le bas par `src/stats.js`.
 
 ### `search` — recherche ⌘K (Palette)
 `{ apps: [{slug, name, icon, niche, views30}], creators: [{handle, app, fans, median}], formats: [{id, kind, label, accounts}] }`

@@ -20,6 +20,7 @@ import type * as radarModels from "../radarModels.js";
 import type * as radarStore from "../radarStore.js";
 import type * as radarSync from "../radarSync.js";
 import type * as saved from "../saved.js";
+import type * as stats from "../stats.js";
 import type * as users from "../users.js";
 
 import type {
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   radarStore: typeof radarStore;
   radarSync: typeof radarSync;
   saved: typeof saved;
+  stats: typeof stats;
   users: typeof users;
 }>;
 

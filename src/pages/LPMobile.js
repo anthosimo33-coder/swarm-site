@@ -11,6 +11,9 @@ export default class LPMobile extends DCLogic {
     clearInterval(this.timer);
   }
   renderVals() {
+    const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
+    const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
+
     const st = this.state || {};
     const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
     const blue = '#0B6FE0';
@@ -120,6 +123,7 @@ export default class LPMobile extends DCLogic {
     const mk = (title, links) => ({ title, links: links.map((l) => ({ t: l[0], href: l[1] })) });
 
     return {
+      rs,
       typed: w.slice(0, Math.max(0, n)),
       q: search.q, ph: search.ph, animO: search.animO, onQ: search.onQ, onFocus: search.onFocus, onBlur: search.onBlur, submitSearch: search.submitSearch,
       miniApps: [
@@ -212,7 +216,7 @@ export default class LPMobile extends DCLogic {
               $h("span", { "style": "width: 6px; height: 6px; border-radius: 50%; background: #0B6FE0; animation: lpm-pulse 1.8s infinite;" }),
               $h("span", null,
                 $h("span", { "style": "font-weight: 600;" },
-                  "+100 000 comptes"
+                  "+", $t($v.rs?.accounts), " comptes"
                 ),
                 " passés au crible"
               )
@@ -323,13 +327,6 @@ export default class LPMobile extends DCLogic {
                   $h("circle", { "cx": "17.2", "cy": "6.8", "r": "1.3", "fill": "url(#igM)" })
                 ),
                 "Instagram"
-              ),
-              $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
-                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("rect", { "x": "2", "y": "5", "width": "20", "height": "14", "rx": "4.5", "fill": "#FF0033" }),
-                  $h("path", { "d": "M10 9l5.2 3-5.2 3z", "fill": "#FFFFFF" })
-                ),
-                "YouTube Shorts"
               )
             )
           ),
@@ -348,7 +345,7 @@ export default class LPMobile extends DCLogic {
                 "Les apps qui explosent, en ce moment."
               ),
               $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.55; color: #4A4F57;" },
-                "Plus de 1 000 apps et 100 000 comptes suivis en continu sur TikTok, Instagram et YouTube Shorts, sur tous les marchés. Choisis un marché, une niche, et vois ce qui y explose."
+                "Plus de ", $t($v.rs?.apps), " apps et ", $t($v.rs?.accounts), " comptes suivis en continu sur TikTok et Instagram, sur tous les marchés. Choisis un marché, une niche, et vois ce qui y explose."
               )
             ),
             $h("div", { "class": "snap", "role": "list", "aria-label": "Ce que tu vois dans Swarm", "style": "margin-top: 12px; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; padding: 0 20px 8px; scrollbar-width: none;" },
@@ -674,7 +671,7 @@ export default class LPMobile extends DCLogic {
                 )
               ),
               $h("p", { "style": "margin: 0; font-size: 15px; line-height: 1.55; color: #9AA3B2;" },
-                "Les apps et les formats qui explosent sur TikTok, Instagram et YouTube Shorts, et les créateurs derrière."
+                "Les apps et les formats qui explosent sur TikTok et Instagram, et les créateurs derrière."
               )
             ),
             $h("nav", { "aria-label": "Pied de page", "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 16px;" },

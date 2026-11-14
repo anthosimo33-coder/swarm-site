@@ -4,6 +4,9 @@ import { DCLogic, $t, $l } from '../runtime.js';
 
 export default class Connexion extends DCLogic {
   renderVals() {
+    const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
+    const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
+
     const ic = {
       apps: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
       createurs: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
@@ -13,8 +16,8 @@ export default class Connexion extends DCLogic {
       alertes: 'M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0'
     };
     const tiles = [
-      ['apps', '+1 000', 'apps suivies'],
-      ['createurs', '+100 000', 'comptes passés au crible'],
+      ['apps', '+' + rs.apps, 'apps suivies'],
+      ['createurs', '+' + rs.accounts, 'comptes passés au crible'],
       ['tendance', '7,5 M vues', 'Luv or Pop, repérée à H+26'],
       ['radar', '2 333×', 'une vidéo d’Astra AI face à sa normale'],
       ['marche', 'Tous', 'les marchés, toutes les langues'],

@@ -15,6 +15,9 @@ export default class TarifsMobile extends DCLogic {
     clearInterval(this.timer);
   }
   renderVals() {
+    const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
+    const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
+
     const st = this.state || {};
     const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
     const annual = st.bill === 'y';
@@ -36,7 +39,7 @@ export default class TarifsMobile extends DCLogic {
     const spec = [
       ['01', 'Spot it', 'repérer ce qui explose', [['apps', 'Les apps qui explosent'], ['radar', 'Nouvelles apps repérées'], ['alertes', 'Alertes « vidéo qui explose »']]],
       ['02', 'Copy it', 'copier ce qui marche', [['videos', 'Les formats qui explosent'], ['fiche', 'Fiches d’app décortiquées']]],
-      ['03', 'Launch it', 'lancer la tienne', [['createurs', 'Les créateurs derrière chaque app'], ['marches', 'Tous les marchés'], ['export', 'Export CSV']]]
+      ['03', 'Launch it', 'lancer la tienne', [['createurs', 'Les créateurs derrière chaque app'], ['marches', 'Tous les marchés']]]
     ];
     const groups = spec.map((g, gi) => ({
       n: g[0], title: g[1], sub: g[2],
@@ -147,7 +150,7 @@ export default class TarifsMobile extends DCLogic {
               )
             ),
             $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.55; color: #3A3F47; animation: tfm-blurIn 0.9s ease-out both; animation-delay: 0.25s;" },
-              "Les apps et les formats qui explosent en ce moment sur TikTok, Instagram et YouTube Shorts, sur n'importe quel marché, et les créateurs derrière."
+              "Les apps et les formats qui explosent en ce moment sur TikTok et Instagram, sur n'importe quel marché, et les créateurs derrière."
             ),
             $h("div", { "role": "group", "aria-label": "Facturation", "style": "position: relative; width: 100%; margin-top: 6px; display: flex; padding: 5px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 24px rgba(16,24,40,0.08); animation: tfm-blurIn 0.9s ease-out both; animation-delay: 0.4s;" },
               $h("span", { "aria-hidden": "true", "style": `position: absolute; top: 5px; bottom: 5px; left: ${$t($v.thumbL)}; width: calc(50% - 5px); border-radius: 999px; background: #0E0F12; box-shadow: 0 6px 16px rgba(14,15,18,0.25); transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);` }),
@@ -349,7 +352,7 @@ export default class TarifsMobile extends DCLogic {
                 )
               ),
               $h("p", { "style": "margin: 0; font-size: 15px; line-height: 1.55; color: #9AA3B2;" },
-                "Les apps et les formats qui explosent sur TikTok, Instagram et YouTube Shorts, et les créateurs derrière."
+                "Les apps et les formats qui explosent sur TikTok et Instagram, et les créateurs derrière."
               )
             ),
             $h("nav", { "aria-label": "Pied de page", "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 16px;" },
