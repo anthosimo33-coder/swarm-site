@@ -166,6 +166,10 @@ export const APP_SITE: Record<string, string> = {
   facelessclone: "facelessclone.com", "systeme.io": "systeme.io", wayinvideo: "wayin.ai",
   quittr: "quittrapp.com", glamai: "glam.ai", // retirées de l'App Store : leur identifiant ne répond plus
   "stealthy.lol": "stealthy.lol", "clipper.works": "clipper.works",
+  // 14/11 : apps ajoutées au Radar le jour même (titre du site = l'app ; lien dans la bio des comptes quand il y en a)
+  beehiiv: "www.beehiiv.com", metaklage: "www.meta-klage.de", ppcleaner: "ppcleaner.com", higgsfield: "higgsfield.ai",
+  vestmarkets: "www.vestmarkets.com", testmuai: "www.testmuai.com", recademics: "recademics.com",
+  sundreamstudio: "sundream.studio", cheatgpt: "www.cheatgpt.app",
 };
 
 /**
@@ -180,8 +184,13 @@ export const APP_STORE_ID: Record<string, string> = {
   nextrainers: "6754344542", budgetbestie: "6460258044", kairo: "6761457623", parrot: "6736955121", mealplanner: "6776097857",
   sacredshorts: "6759298323", collect: "6752740187", settlemate: "6737785495", jetback: "6744909694", snitch: "6755113649",
   meagain: "6744178534", kiwipop: "6484501975", claimhunt: "6755202426", recipevault: "6758783243", motonovel: "6744429534",
-  aisance: "6739868546",
+  aisance: "6739868546", hairlyai: "6754688430", medidojo: "6503365052", rivetlive: "6756558210", liftly: "6762517196",
 };
+
+/** Un nom d'app qui est un domaine (pen.dev, flip.gg, relay.fast) : l'app est ce site. */
+const DOMAIN_NAME = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.[a-z]{2,}$/;
+/** Le site d'où vient l'icône d'une app web : déclaré à la main, sinon son nom quand c'est un domaine (et pas de fiche épinglée). */
+export const siteOf = (slug: string): string | null => APP_SITE[slug] ?? (!APP_STORE_ID[slug] && DOMAIN_NAME.test(slug) ? slug : null);
 
 /** La bio sans les e-mails ni numéros de téléphone : Swarm montre ce que fait un compte, pas comment le contacter. */
 export const cleanBio = (bio: string | null) => {
@@ -562,7 +571,7 @@ export function buildBoards(
     if (mediaUrl(iconKey(a.slug))) continue;
     const art = opts.artOf?.(a.slug) ?? null;
     const id = (storeOf(a.slug) ?? "").match(/\/id(\d+)/)?.[1] ?? null;
-    const site = APP_SITE[a.slug];
+    const site = siteOf(a.slug);
     const src = site ? (site.startsWith("https://") ? site : `site:${site}`) : art ?? (id ? `itunesid:${id}` : null);
     if (src) need.set(iconKey(a.slug), src);
   }
