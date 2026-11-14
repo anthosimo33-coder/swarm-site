@@ -83,7 +83,7 @@ export default class MFicheCreateur extends DCLogic {
         fans: typeof D.fans === 'number' ? big(D.fans) : '—', med: D.median ? big(D.median) : '—', p7: n7 ? n7 + (n7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j',
         best: top ? nf(top.views) : '—', bestX: top && top.x ? xf(top.x) + ' sa normale' : (top ? day(top.publishedAt) : ''),
         app: a ? ico(a) : { logo: '', nologo: true, blank: 'sw-app-blank' }, hasApp: !!a, appLine: a ? 'Pousse ' + a.name : '', niche: (a && a.niche) || '',
-        flag: D.market || '', lang: LANGN(D.otherLang), tt: 'https://www.tiktok.com/@' + D.handle,
+        flag: D.market || '', lang: LANGN(D.otherLang), kindL: ((KINDL) => KINDL(D.kind, D.gender))((k, g) => ({ ambassadeur: g === 'femme' ? 'Ambassadrice' : 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte' })[k] || ''), tt: 'https://www.tiktok.com/@' + D.handle,
         hasTip: hits.length > 0 && V.length > 1, tipB: hits.length + (hits.length > 1 ? ' vidéos' : ' vidéo') + ' sur ' + V.length + ' à plus de 10× sa normale,',
         tipT: hits.length ? (hits.length > 1 ? 'la dernière le ' : 'le ') + day(hits[0].publishedAt) + '.' : '', nv: String(V.length) });
       vids = V.map((x) => { const hit = x.x >= 10;
@@ -168,6 +168,11 @@ export default class MFicheCreateur extends DCLogic {
             ] : null,
             ($v.z?.flag) ? [
               $h("span", { "class": "sw-flag", "data-c": $v.z?.flag, "aria-hidden": "true" })
+            ] : null,
+            ($v.z?.kindL) ? [
+              $h("span", { "class": "m-tagn" },
+                $t($v.z?.kindL)
+              )
             ] : null,
             ($v.z?.lang) ? [
               $h("span", { "style": "font-size: 12px; color: var(--ink-soft); white-space: nowrap;" },

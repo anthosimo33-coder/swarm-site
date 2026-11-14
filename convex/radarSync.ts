@@ -179,6 +179,21 @@ export const run = internalAction({
         cursor = page.cursor;
         done = page.done;
       }
+      // Lectures IA (convex/radarAi.ts) : type et texte à l'écran de chaque vidéo, genre des comptes « ambassadeur ».
+      const ai = new Map<string, { type: string; text: string }>();
+      for (let cursor: string | null = null, done = false; !done; ) {
+        const page: { items: [string, string, string][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.videoAiPage, { cursor });
+        for (const [id, type, text] of page.items) ai.set(id, { type, text });
+        cursor = page.cursor;
+        done = page.done;
+      }
+      const genders = new Map<string, string>();
+      for (let cursor: string | null = null, done = false; !done; ) {
+        const page: { items: [string, string][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.genderPage, { cursor });
+        for (const [h, g] of page.items) genders.set(h, g);
+        cursor = page.cursor;
+        done = page.done;
+      }
       // Miniatures introuvables récemment (vidéo supprimée, compte privé) : ces vidéos n'apparaissent pas.
       const misses = new Map<string, number>();
       for (let cursor: string | null = null, done = false; !done; ) {
@@ -195,6 +210,8 @@ export const run = internalAction({
         artOf,
         regionOf: (h: string) => regions.get(h) ?? null,
         slidesOf: (id: string) => slides.get(id),
+        aiOf: (id: string) => ai.get(id),
+        genderOf: (h: string) => genders.get(h),
         // Lue une fois par vidéo : le 2e calcul la reprend (52 000 vidéos, ~3 Mo).
         textLang: (id: string, text: string) => { if (!langs.has(id)) langs.set(id, textLang(text)); return langs.get(id) ?? null; },
       };
@@ -245,7 +262,7 @@ export const run = internalAction({
       await Promise.all(Array.from({ length: PARALLEL }, worker));
       await flushMedia();
       MEMLOG('fin copie');
-      const { boards, need: need2, used, regionTodo, slideTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
+      const { boards, need: need2, used, regionTodo, slideTodo, videoAiTodo, genderTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
       need = need2;
       // Les comptes encore sans pays : notés pour que leur pays soit lu sur leurs vidéos (convex/radarRegions.ts).
       for (let i = 0; i < regionTodo.length; i += 300) await ctx.runMutation(internal.radarStore.saveRegionTodo, { items: regionTodo.slice(i, i + 300) });
@@ -253,6 +270,11 @@ export const run = internalAction({
       // Les vidéos montrées jamais vérifiées : notées pour savoir si ce sont des carrousels (convex/radarSlides.ts).
       for (let i = 0; i < slideTodo.length; i += 500) await ctx.runMutation(internal.radarStore.saveSlideTodo, { ids: slideTodo.slice(i, i + 500) });
       if (slideTodo.length) await ctx.scheduler.runAfter(0, internal.radarSlides.fill, {});
+      // Lectures IA à faire : vidéos montrées jamais lues, comptes « ambassadeur » sans genre (convex/radarAi.ts).
+      for (let i = 0; i < videoAiTodo.length; i += 500) await ctx.runMutation(internal.radarStore.saveVideoAiTodo, { ids: videoAiTodo.slice(i, i + 500) });
+      for (let i = 0; i < genderTodo.length; i += 300) await ctx.runMutation(internal.radarStore.saveGenderTodo, { items: genderTodo.slice(i, i + 300) });
+      if (videoAiTodo.length) await ctx.scheduler.runAfter(0, internal.radarAi.fillVideos, {});
+      if (genderTodo.length) await ctx.scheduler.runAfter(0, internal.radarAi.fillGender, {});
       MEMLOG('après calcul 2');
 
       // Les images qu'aucun document ne cite plus (vidéo sortie des listes) : effacées.

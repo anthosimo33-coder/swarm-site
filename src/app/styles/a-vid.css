@@ -1,14 +1,12 @@
 /* Généré par scripts/dc2preact.py depuis design/app/VideoA.dc.html */
 /* L'écran tient dans la fenêtre : la vidéo prend la hauteur disponible, en 9:16, 420 px de large au plus. */
 .va-frame { width: min(calc((100vh - 244px) * 9 / 16), 420px); flex-shrink: 0; }
-.va-mid { scrollbar-width: none; max-width: 780px; }
+.va-mid { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; max-width: 780px; }
 .va-chart { display: block; height: auto; aspect-ratio: 380 / 176; max-height: 230px; }
 @media (max-height: 900px) { .va-chart { max-height: 176px; } }
-/* Écran bas (portable 13", 720 px) : courbe plus basse, une ligne par fait, sans les réactions, « Ensuite » compact. */
+/* Écran bas (portable 13", 720 px) : courbe plus basse, « Ensuite » compact. Les faits restent en entier (texte à copier, 14/11) : la colonne défile. */
 @media (max-height: 780px) {
   .va-chart { max-height: 138px; }
-  .va-facts > div > span:last-child { -webkit-line-clamp: 1 !important; }
-  .va-facts > div:nth-of-type(n+4) { display: none !important; }
   .va-next { grid-template-columns: 44px minmax(0, 1fr) !important; padding: 8px !important; }
   .va-next > .sw-video { width: 44px !important; }
 }

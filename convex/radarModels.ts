@@ -235,7 +235,7 @@ export const cleanBio = (bio: string | null) => {
 };
 
 /** Une vidéo, telle que la voient les écrans (vignette, lecteur). */
-export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null; paid?: boolean; otherLang?: string | null; carousel?: number };
+export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null; paid?: boolean; otherLang?: string | null; carousel?: number; kind?: string };
 
 // ─── Le calcul ───────────────────────────────────────────────────────────────
 
@@ -260,8 +260,15 @@ export function buildBoards(
     textLang?: (videoId: string, text: string) => string | null;
     /** Carrousel lu par Swarm (convex/radarSlides.ts) : nombre de photos, 0 si ce n'en est pas un, undefined si pas encore lu. */
     slidesOf?: (videoId: string) => number | undefined;
+    /** Lecture IA de la miniature (convex/radarAi.ts) : type de contenu et texte à l'écran ; undefined si pas encore lue. */
+    aiOf?: (videoId: string) => { type: string; text: string } | undefined;
+    /** Genre apparent lu par l'IA pour un compte « ambassadeur » ; undefined si pas encore lu. */
+    genderOf?: (handle: string) => string | undefined;
   } = {},
-): { boards: Boards; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[]; slideTodo: string[] } {
+): {
+  boards: Boards; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[]; slideTodo: string[];
+  videoAiTodo: string[]; genderTodo: { handle: string; ids: string[] }[];
+} {
   const missing = opts.missing ?? (() => false);
   const coverUrl = opts.coverUrl ?? (() => null);
   const boards: Boards = new Map();
@@ -350,10 +357,11 @@ export function buildBoards(
       ...(isPaid(v.accountId) ? { paid: true } : {}),
       ...(otherLangOf(v.accountId) ? { otherLang: otherLangOf(v.accountId) } : {}),
       ...(slidesOf(v.videoId) ? { carousel: slidesOf(v.videoId) } : {}),
+      ...((typeOf(v) ?? mainType.get(v.accountId)) ? { kind: typeOf(v) ?? mainType.get(v.accountId) } : {}),
       x: xOf(v, s),
       publishedAt: v.publishedAt,
       cover: cover(v.videoId, v.coverUrl ?? s?.coverUrl, acc?.handle ?? s?.authorHandle),
-      hook: v.hook ?? s?.hook ?? null,
+      hook: screenText(v, v.hook ?? s?.hook, v.videoId),
     };
   };
 
@@ -388,6 +396,33 @@ export function buildBoards(
   // lues et 2 anglaises sur une douzaine, sortait « en anglais »).
   const textLang = opts.textLang ?? (() => null);
   const slidesOf = opts.slidesOf ?? (() => undefined);
+  const aiOf = opts.aiOf ?? (() => undefined);
+  const genderOf = opts.genderOf ?? (() => undefined);
+  // Type de contenu d'une vidéo : carrousel (dit par TikTok) avant tout, sinon celui lu par l'IA sur sa miniature.
+  const typeOf = (v: RVideo): string | null => (slidesOf(v.videoId) ? "carrousel" : aiOf(v.videoId)?.type || null);
+  // Le type d'un compte : celui de la plupart de ses vidéos lues (« autre » ne compte pas).
+  const mainType = new Map<string, string>();
+  for (const [accId, vs] of videosByAccount) {
+    const n = new Map<string, number>();
+    for (const v of vs) { const t = typeOf(v); if (t && t !== "autre") n.set(t, (n.get(t) ?? 0) + 1); }
+    const top = [...n.entries()].sort((p, q) => q[1] - p[1])[0];
+    if (top) mainType.set(accId, top[0]);
+  }
+  // Son genre : lu par l'IA pour un compte « ambassadeur » (la personne qui se filme), « sans visage » pour les autres.
+  const genderFor = (t: RTracked): string | null => {
+    const m = mainType.get(t.id);
+    if (!m) return null;
+    if (m !== "ambassadeur") return "sans_visage";
+    const g = genderOf(t.handle);
+    return g && g !== "incertain" ? g : null;
+  };
+  // Texte à l'écran : celui du Radar, ou celui lu par l'IA quand le Radar n'en a pas ou l'a coupé (plus long, même début).
+  const screenText = (v: RVideo | null, radar: string | null | undefined, id: string): string | null => {
+    const ai = (v ? aiOf(v.videoId)?.text : aiOf(id)?.text) || "";
+    if (!radar) return ai || null;
+    const norm = (x: string) => x.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+    return ai.length > radar.length + 10 && norm(ai).startsWith(norm(radar).slice(0, 16)) ? ai : radar;
+  };
   const langByAccount = new Map<string, string>();
   for (const [accId, all] of videosByAccount) {
     const vs = all.slice(0, 30);
@@ -579,7 +614,7 @@ export function buildBoards(
     const a = canonical(t.appId);
     return {
       handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
-      market: mkOf(t.id), otherLang: otherLangOf(t.id), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
+      market: mkOf(t.id), otherLang: otherLangOf(t.id), kind: mainType.get(t.id) ?? null, gender: genderFor(t), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
       // Ce qui le relie à son app (RProof) reste interne au Radar : jamais dans les documents de Swarm (décision du 14/11).
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
@@ -687,11 +722,12 @@ export function buildBoards(
       market: acc ? mkOf(acc.id) ?? marketOf(s?.lang, s?.region ?? v?.region) : marketOf(s?.lang, s?.region ?? v?.region), region: s?.region ?? null,
       otherLang: acc ? otherLangOf(acc.id) : null,
       carousel: slidesOf(id) || null,
+      kind: slidesOf(id) ? "carrousel" : aiOf(id)?.type || (acc ? mainType.get(acc.id) ?? null : null),
       publishedAt: v?.publishedAt ?? s?.publishedAt ?? null, durationSec: s?.durationSec ?? null,
       views, x: v ? xOf(v, s) : s?.multiplier ? round(s.multiplier, 1) : null,
       likes: s?.likes ?? null, comments: s?.comments ?? null, shares: s?.shares ?? null, saves: s?.saves ?? null,
       snapshots: (s?.snapshots?.length ? s.snapshots : v?.snapshots ?? []).slice(-12),
-      hook: v?.hook ?? s?.hook ?? null, caption: v?.caption ?? s?.caption ?? null, transcript: s?.transcript ?? null,
+      hook: screenText(v, v?.hook ?? s?.hook, id), caption: v?.caption ?? s?.caption ?? null, transcript: s?.transcript ?? null,
       music: v?.musicTitle ?? s?.musicTitle ?? null,
       cover: cover(id, v?.coverUrl ?? s?.coverUrl, handle),
       playlist,
@@ -716,5 +752,13 @@ export function buildBoards(
   // Les vidéos TikTok montrées dont on ne sait pas encore si ce sont des carrousels, les plus vues d'abord.
   const slideTodo = [...usedVideos.values()].filter((v) => v.platform !== "instagram" && /^\d{6,25}$/.test(v.videoId) && slidesOf(v.videoId) === undefined)
     .sort((p, q) => q.views - p.views).map((v) => v.videoId);
-  return { boards, need, used, regionTodo, slideTodo };
+  // Lecture IA : les vidéos montrées pas encore lues (les plus vues d'abord), et les comptes « ambassadeur » sans genre
+  // (ses vidéos « ambassadeur » les plus vues, 3 au plus, montrées à l'IA avec sa photo de profil).
+  const videoAiTodo = [...usedVideos.values()].filter((v) => aiOf(v.videoId) === undefined && trackedHasImage(v))
+    .sort((p, q) => q.views - p.views).map((v) => v.videoId);
+  const genderTodo = creatorAccounts.filter((t) => mainType.get(t.id) === "ambassadeur" && genderOf(t.handle) === undefined).map((t) => ({
+    handle: t.handle,
+    ids: (videosByAccount.get(t.id) ?? []).filter((v) => typeOf(v) === "ambassadeur").sort((p, q) => q.views - p.views).slice(0, 3).map((v) => v.videoId),
+  })).filter((x) => x.ids.length);
+  return { boards, need, used, regionTodo, slideTodo, videoAiTodo, genderTodo };
 }

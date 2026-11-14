@@ -119,6 +119,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 
 <section aria-labelledby="fa-vid" style="display: flex; flex-direction: column; gap: 14px;">
 <div class="sw-card-head"><h2 id="fa-vid" class="sw-card-title" style="display: flex; align-items: center; gap: 9px;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Leurs vidéos qui cartonnent</h2><span style="display: inline-flex; align-items: center; gap: 14px;"><sc-if value="{{vfOn}}" hint-placeholder-val="{{false}}"><span role="tablist" aria-label="Placements payés" style="display: inline-flex; padding: 4px; border-radius: 12px; background: var(--track);"><sc-for list="{{vfTabs}}" as="f" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{f.on}}" onClick="{{f.pick}}" style="display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border: 0; border-radius: 9px; background: {{f.bg}}; color: {{f.ink}}; font: inherit; font-size: 13px; font-weight: {{f.fw}}; cursor: pointer; white-space: nowrap;"><sc-if value="{{f.coin}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="width: 15px; height: 15px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 9px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">€</span></sc-if>{{f.l}}<span style="color: var(--ink-faint); font-weight: 500;">{{f.n}}</span></button></sc-for></span></sc-if><a class="sw-more" href="{{app.vidsHref}}">Les regarder une par une<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></span></div>
+<sc-if value="{{kfOn}}" hint-placeholder-val="{{false}}"><div role="tablist" aria-label="Type de contenu" style="display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 14px;"><sc-for list="{{kfTabs}}" as="k" hint-placeholder-count="4"><button type="button" role="tab" aria-selected="{{k.on}}" onClick="{{k.pick}}" style="display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: {{k.bg}}; color: {{k.ink}}; font: inherit; font-size: 13px; font-weight: {{k.fw}}; cursor: pointer; white-space: nowrap;">{{k.l}}<span style="color: var(--ink-faint); font-weight: 500;">{{k.n}}</span></button></sc-for></div></sc-if>
 <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;">
 <sc-for list="{{vids}}" as="v" hint-placeholder-count="6">
 <a href="{{v.href}}" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none;">
@@ -227,6 +228,15 @@ class Component extends DCLogic {
     const vfTabs = [['all', 'Toutes', DV.length], ['sans', 'Sans les placements', DV.length - nPaid], ['seuls', 'Placements payés', nPaid]].map(([k, l, n]) => ({ l, n: String(n), coin: k === 'seuls',
       on: vfCur === k ? 'true' : 'false', bg: vfCur === k ? 'rgba(255,255,255,0.10)' : 'transparent', ink: vfCur === k ? 'var(--ink)' : 'var(--ink-muted)', fw: vfCur === k ? 600 : 500, pick: () => this.setState({ vf: k }) }));
     mkVals.vfOn = nPaid > 0; mkVals.vfTabs = vfTabs;
+    // Type de contenu de ses vidéos (lu sur chaque miniature ; le carrousel vient de TikTok) : un filtre dès 2 types.
+    const KN = { ambassadeur: 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte', autre: 'Autre' };
+    const kfCur = (this.state || {}).kf || 'all';
+    const kCount = {}; DV.forEach((v) => { if (v.kind) kCount[v.kind] = (kCount[v.kind] || 0) + 1; });
+    const kTypes = Object.keys(kCount).filter((k) => KN[k]).sort((x, y) => kCount[y] - kCount[x]);
+    mkVals.kfOn = kTypes.length >= 2;
+    mkVals.kfTabs = [['all', 'Tous les types', DV.length]].concat(kTypes.map((k) => [k, KN[k], kCount[k]])).map(([k, l, n]) => ({ l, n: String(n),
+      on: kfCur === k ? 'true' : 'false', bg: kfCur === k ? 'var(--accent-soft)' : 'var(--track)', ink: kfCur === k ? 'var(--accent)' : 'var(--ink-muted)', fw: kfCur === k ? 600 : 500,
+      pick: () => this.setState({ kf: k }) }));
     return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, mkVals, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
       kept, keptNone: kept.length === 0,
       ajItem: { kind: 'app', id: slug, label: b.app.name, cover: b.app.icon || null },
@@ -317,7 +327,8 @@ class Component extends DCLogic {
       L = D.weeks.map((_, j) => day(D.updatedAt - (6 - j) * 7 * 86400000));
       const T = ['t-navy', 't-plum', 't-pine', 't-violet', 't-amber', 't-umber'];
       const vf = (this.state || {}).vf || 'all';
-      const VS = (D.videos || []).filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true));
+      const kf = (this.state || {}).kf || 'all';
+      const VS = (D.videos || []).filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true) && (kf === 'all' || v.kind === kf));
       vids = VS.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: 'VideoA.dc.html?v=' + v.id, paid: !!v.paid, unpaid: !v.paid, car: v.carousel ? String(v.carousel) : '' }));
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: 'FormatFicheA.dc.html?f=' + f.id }));

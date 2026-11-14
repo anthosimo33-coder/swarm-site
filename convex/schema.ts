@@ -64,6 +64,28 @@ export default defineSchema({
 
   // Carrousels (diaporamas de photos) : TikTok le dit sur la page publique de la vidéo (`imagePost`), le Radar ne le
   // garde pas sur les vidéos qu'il suit. null = pas encore lu ; images = nombre de photos.
+  // Lecture IA (Claude Haiku 5.5, convex/radarAi.ts) de la miniature de chaque vidéo montrée : son type de contenu et le
+  // texte incrusté à l'écran (le Radar n'a pas celui des montages CapCut, et coupe les longs). done = lue.
+  videoAi: defineTable({
+    videoId: v.string(),
+    done: v.boolean(),
+    type: v.optional(v.string()),
+    text: v.optional(v.string()),
+    tries: v.number(),
+    at: v.number(),
+  }).index("by_video", ["videoId"]).index("by_done_at", ["done", "at"]),
+
+  // Genre apparent de la personne qui se filme, pour les comptes dont les vidéos sont surtout « ambassadeur »
+  // (les autres sont « sans visage » sans appel). ids = ses vidéos montrées à l'IA.
+  accountAi: defineTable({
+    handle: v.string(),
+    done: v.boolean(),
+    gender: v.optional(v.string()),
+    ids: v.array(v.string()),
+    tries: v.number(),
+    at: v.number(),
+  }).index("by_handle", ["handle"]).index("by_done_at", ["done", "at"]),
+
   videoSlides: defineTable({
     videoId: v.string(),
     slideshow: v.union(v.boolean(), v.null()),

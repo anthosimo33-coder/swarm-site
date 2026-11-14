@@ -58,6 +58,15 @@ export default class FicheApp extends DCLogic {
     const vfTabs = [['all', 'Toutes', DV.length], ['sans', 'Sans les placements', DV.length - nPaid], ['seuls', 'Placements payés', nPaid]].map(([k, l, n]) => ({ l, n: String(n), coin: k === 'seuls',
       on: vfCur === k ? 'true' : 'false', bg: vfCur === k ? 'rgba(255,255,255,0.10)' : 'transparent', ink: vfCur === k ? 'var(--ink)' : 'var(--ink-muted)', fw: vfCur === k ? 600 : 500, pick: () => this.setState({ vf: k }) }));
     mkVals.vfOn = nPaid > 0; mkVals.vfTabs = vfTabs;
+    // Type de contenu de ses vidéos (lu sur chaque miniature ; le carrousel vient de TikTok) : un filtre dès 2 types.
+    const KN = { ambassadeur: 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte', autre: 'Autre' };
+    const kfCur = (this.state || {}).kf || 'all';
+    const kCount = {}; DV.forEach((v) => { if (v.kind) kCount[v.kind] = (kCount[v.kind] || 0) + 1; });
+    const kTypes = Object.keys(kCount).filter((k) => KN[k]).sort((x, y) => kCount[y] - kCount[x]);
+    mkVals.kfOn = kTypes.length >= 2;
+    mkVals.kfTabs = [['all', 'Tous les types', DV.length]].concat(kTypes.map((k) => [k, KN[k], kCount[k]])).map(([k, l, n]) => ({ l, n: String(n),
+      on: kfCur === k ? 'true' : 'false', bg: kfCur === k ? 'var(--accent-soft)' : 'var(--track)', ink: kfCur === k ? 'var(--accent)' : 'var(--ink-muted)', fw: kfCur === k ? 600 : 500,
+      pick: () => this.setState({ kf: k }) }));
     return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, mkVals, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
       kept, keptNone: kept.length === 0,
       ajItem: { kind: 'app', id: slug, label: b.app.name, cover: b.app.icon || null },
@@ -148,7 +157,8 @@ export default class FicheApp extends DCLogic {
       L = D.weeks.map((_, j) => day(D.updatedAt - (6 - j) * 7 * 86400000));
       const T = ['t-navy', 't-plum', 't-pine', 't-violet', 't-amber', 't-umber'];
       const vf = (this.state || {}).vf || 'all';
-      const VS = (D.videos || []).filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true));
+      const kf = (this.state || {}).kf || 'all';
+      const VS = (D.videos || []).filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true) && (kf === 'all' || v.kind === kf));
       vids = VS.slice(0, 6).map((v, i) => ({ t: T[i % T.length], hook: v.hook || '', v: nf(v.views), h: '@' + v.handle, mk: '', age: ago(v.publishedAt), src: v.cover || '', href: '/app/videos/' + v.id, paid: !!v.paid, unpaid: !v.paid, car: v.carousel ? String(v.carousel) : '' }));
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
@@ -598,6 +608,18 @@ export default class FicheApp extends DCLogic {
                 )
               )
             ),
+            ($v.kfOn) ? [
+              $h("div", { "role": "tablist", "aria-label": "Type de contenu", "style": "display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 14px;" },
+                ($l($v.kfTabs)).map((k) => [
+                  $h("button", { "type": "button", "role": "tab", "aria-selected": k?.on, "onClick": k?.pick, "style": `display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: ${$t(k?.bg)}; color: ${$t(k?.ink)}; font: inherit; font-size: 13px; font-weight: ${$t(k?.fw)}; cursor: pointer; white-space: nowrap;` },
+                    $t(k?.l),
+                    $h("span", { "style": "color: var(--ink-faint); font-weight: 500;" },
+                      $t(k?.n)
+                    )
+                  )
+                ])
+              )
+            ] : null,
             $h("div", { "style": "display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;" },
               ($l($v.vids)).map((v) => [
                 $h("a", { "href": v?.href, "style": "display: flex; flex-direction: column; gap: 8px; text-decoration: none;" },

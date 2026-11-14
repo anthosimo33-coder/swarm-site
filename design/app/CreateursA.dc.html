@@ -181,6 +181,8 @@ class Component extends DCLogic {
     const niches = st.niches || [];
     const apps = st.apps || [];
     const fans = st.fans || 'ALL';
+    const kinds = st.kinds || [];
+    const gender = st.gender || 'ALL';
     const active = !!st.active;
     const mq = (st.mq || '').toLowerCase();
     const set = (patch) => this.setState(patch);
@@ -192,16 +194,25 @@ class Component extends DCLogic {
     const okA = (c) => apps.length === 0 || apps.indexOf(c.appName) >= 0;
     const okF = (c, x) => x[0] === 'ALL' || (c.nFans >= x[3] && c.nFans < x[4]);
     const okT = (c) => !active || c.active;
+    // Type de contenu (lu par l'IA sur ses miniatures, carrousel dit par TikTok) et genre de la personne qui se filme.
+    const KL = [['ambassadeur', 'Ambassadeur'], ['carrousel', 'Carrousel'], ['extrait_repris', 'Extrait repris'], ['histoire_messages', 'Histoire en messages'],
+      ['demo_ecran', 'Démo d’écran'], ['motion', 'Motion'], ['ambiance_texte', 'Ambiance + texte']];
+    const GL = [['ALL', 'Tous', ''], ['femme', 'Femmes', 'Femmes'], ['homme', 'Hommes', 'Hommes'], ['sans_visage', 'Sans visage', 'Sans visage']];
+    const kl = (k) => (KL.filter((x) => x[0] === k)[0] || [k, k])[1];
+    const gl = GL.filter((x) => x[0] === gender)[0] || GL[0];
+    const okK = (c) => kinds.length === 0 || kinds.indexOf(c.kind) >= 0;
+    const okG = (c, g) => g === 'ALL' || c.gender === g;
     const all = b.all || [];
-    const list = all.filter((c) => okN(c) && okA(c) && okF(c, fb) && okT(c));
+    const list = all.filter((c) => okN(c) && okA(c) && okF(c, fb) && okT(c) && okK(c) && okG(c, gender));
     const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); // Safari écrit « 1059 » en fr-FR
     const comptes = (n) => grp(n) + (n > 1 ? ' comptes' : ' compte');
     // Un menu par pastille (comme sur Apps), posé sous la pastille cliquée.
     const many = (xs, w) => (xs.length === 0 ? 'Toutes' : xs.length === 1 ? xs[0] : xs.length + ' ' + w);
-    const BIC = { niche: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.01', app: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', fans: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3' };
+    const BIC = { kind: 'M4 5h16v14H4zM10 9l5 3-5 3z', gender: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 21c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5', niche: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.01', app: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', fans: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3' };
     const mkBar = (key, k, v) => ({ k, v, d: BIC[key], open: open === key ? 'true' : 'false', bg: open === key ? 'var(--tab-on)' : 'var(--track)', edge: open === key ? 'var(--accent-edge)' : 'var(--line)',
       toggle: (e) => set({ open: open === key ? '' : key, mq: '', left: e && e.currentTarget ? e.currentTarget.offsetLeft : 0 }) });
-    const filters = [mkBar('niche', 'Niche', many(niches, 'niches')), mkBar('app', 'App', many(apps, 'apps')), mkBar('fans', 'Abonnés', fb[1])];
+    const filters = [mkBar('niche', 'Niche', many(niches, 'niches')), mkBar('app', 'App', many(apps, 'apps')), mkBar('fans', 'Abonnés', fb[1]),
+      mkBar('kind', 'Contenu', kinds.length === 0 ? 'Tous' : kinds.length === 1 ? kl(kinds[0]) : kinds.length + ' types'), mkBar('gender', 'Genre', gl[1])];
     // Le marché : un bouton, et la liste complète des pays (les plus suivis d'abord, avec leur nombre de comptes).
     const mkAll = b.mkt || [];
     const mkMax = Math.max(1, ...mkAll.map((m) => m.n || 0));
@@ -222,6 +233,8 @@ class Component extends DCLogic {
     niches.forEach((n) => chips.push({ label: n, clear: () => set({ niches: niches.filter((x) => x !== n) }) }));
     apps.forEach((n) => chips.push({ label: n, clear: () => set({ apps: apps.filter((x) => x !== n) }) }));
     if (fans !== 'ALL') chips.push({ label: fb[2], clear: () => set({ fans: 'ALL' }) });
+    kinds.forEach((k) => chips.push({ label: kl(k), clear: () => set({ kinds: kinds.filter((x) => x !== k) }) }));
+    if (gender !== 'ALL') chips.push({ label: gl[2], clear: () => set({ gender: 'ALL' }) });
     const radio = (on) => ({ radius: '50%', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const check = (on) => ({ radius: '5px', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const keep = (label) => !mq || label.toLowerCase().indexOf(mq) >= 0;
@@ -233,13 +246,20 @@ class Component extends DCLogic {
     let menu = { on: false, items: [], left: '0px', title: '', search: '', foot: '', cta: '', q: '' };
     if (open === 'niche') {
       menu = { on: true, title: 'Niche', search: 'Chercher une niche', foot: 'Plusieurs niches possibles. ' + foot,
-        items: tally('niche').filter(keep).map((nm) => item(nm, all.filter((c) => c.niche === nm && okA(c) && okF(c, fb) && okT(c)).length, niches.indexOf(nm) >= 0, flip('niches', niches, nm), check)) };
+        items: tally('niche').filter(keep).map((nm) => item(nm, all.filter((c) => c.niche === nm && okA(c) && okF(c, fb) && okT(c) && okK(c) && okG(c, gender)).length, niches.indexOf(nm) >= 0, flip('niches', niches, nm), check)) };
     } else if (open === 'app') {
       menu = { on: true, title: 'App', search: 'Chercher une app', foot: 'Plusieurs apps possibles. ' + foot,
-        items: tally('appName').filter(keep).map((nm) => item(nm, all.filter((c) => c.appName === nm && okN(c) && okF(c, fb) && okT(c)).length, apps.indexOf(nm) >= 0, flip('apps', apps, nm), check)) };
+        items: tally('appName').filter(keep).map((nm) => item(nm, all.filter((c) => c.appName === nm && okN(c) && okF(c, fb) && okT(c) && okK(c) && okG(c, gender)).length, apps.indexOf(nm) >= 0, flip('apps', apps, nm), check)) };
     } else if (open === 'fans') {
       menu = { on: true, title: 'Abonnés', search: 'Chercher une tranche', foot,
-        items: FB.filter((x) => keep(x[1])).map((x) => item(x[1], all.filter((c) => okN(c) && okA(c) && okF(c, x) && okT(c)).length, fans === x[0], () => set({ fans: x[0] }), radio)) };
+        items: FB.filter((x) => keep(x[1])).map((x) => item(x[1], all.filter((c) => okN(c) && okA(c) && okF(c, x) && okT(c) && okK(c) && okG(c, gender)).length, fans === x[0], () => set({ fans: x[0] }), radio)) };
+    }
+    else if (open === 'kind') {
+      menu = { on: true, title: 'Type de contenu', search: 'Chercher un type', foot: 'Lu sur ses vidéos ; le carrousel vient de TikTok. Plusieurs types possibles. ' + foot,
+        items: KL.filter((x) => keep(x[1])).map((x) => item(x[1], all.filter((c) => c.kind === x[0] && okN(c) && okA(c) && okF(c, fb) && okT(c) && okG(c, gender)).length, kinds.indexOf(x[0]) >= 0, flip('kinds', kinds, x[0]), check)) };
+    } else if (open === 'gender') {
+      menu = { on: true, title: 'Genre', search: 'Chercher', foot: 'Genre apparent de la personne qui se filme ; « sans visage » : personne ne se filme. ' + foot,
+        items: GL.filter((x) => keep(x[1])).map((x) => item(x[1], all.filter((c) => okN(c) && okA(c) && okF(c, fb) && okT(c) && okK(c) && okG(c, x[0])).length, gender === x[0], () => set({ gender: x[0] }), radio)) };
     }
     if (menu.on) Object.assign(menu, { left: (st.left || 0) + 'px', cta: 'Voir ' + comptes(list.length), q: st.mq || '' });
     const IN0 = {};
@@ -271,7 +291,7 @@ class Component extends DCLogic {
       closeMenu: () => set({ open: '' }), onMq: (e) => set({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
       setMenu: (el) => { this.menuEl = el; }, setMenuInput: (el) => { this.menuInput = el; },
-      clearAll: () => set({ niches: [], apps: [], fans: 'ALL', active: false, open: '' }),
+      clearAll: () => set({ niches: [], apps: [], fans: 'ALL', kinds: [], gender: 'ALL', active: false, open: '' }),
       pv, closePv: () => this.setState({ pv: null }), setPvClose: (el) => { this.pvClose = el; },
       pvKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ pv: null }); } } });
   }
@@ -391,7 +411,7 @@ class Component extends DCLogic {
         const ic = (a && a.icon) || '';
         const on = c.posts7d > 0;
         return {
-          h: '@' + c.handle, market: c.market || '', href: 'CreateurFicheA.dc.html?h=' + c.handle, bio: line(c.bio), av: c.avatar || '', noav: true,
+          h: '@' + c.handle, market: c.market || '', kind: c.kind || '', gender: c.gender || '', href: 'CreateurFicheA.dc.html?h=' + c.handle, bio: line(c.bio), av: c.avatar || '', noav: true,
           app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, hasApp: !!a,
           appName: a ? a.name : '', niche: (a && a.niche) || '', appHref: a ? 'FicheA.dc.html?app=' + a.slug : 'AppsA.dc.html',
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('fr-FR') : '', fansK: isN(c.fans) ? nf(c.fans) : '', nFans: isN(c.fans) ? c.fans : -1,

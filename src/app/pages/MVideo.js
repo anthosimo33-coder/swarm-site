@@ -78,12 +78,14 @@ export default class MVideo extends DCLogic {
       }
       const dur = Math.round(D.durationSec || 0);
       au = { av: D.avatar || '', noav: true };
+      // Type de contenu de la vidéo (lu sur sa miniature ; le carrousel a sa propre pastille).
+      const KINDL = (k, g) => ({ ambassadeur: g === 'femme' ? 'Ambassadrice' : 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte' })[k] || '';
       vid = { embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
           : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/player/v1/' + D.id + '?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0' : '',
         pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
         hook: D.hook || D.caption || '@' + D.handle, hasApp: !!D.app, appName: D.app ? D.app.name : '',
         // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
-        car: D.carousel ? 'Carrousel · ' + D.carousel + ' photos' : '', paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
+        car: D.carousel ? 'Carrousel · ' + D.carousel + ' photos' : '', kindL: D.kind && D.kind !== 'carrousel' ? KINDL(D.kind) : '', paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
         mk: D.market || '', when: D.publishedAt ? 'Le ' + day(D.publishedAt) : '', where: [D.market && DEPUIS(ML[D.market]) ? 'Publiée ' + DEPUIS(ML[D.market]) : '', LANGN(D.otherLang)].filter(Boolean).join(' · '), views: nf(D.views || 0),
         who: '@' + D.handle + (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : ''), hasDur: dur > 0, dur: Math.floor(dur / 60) + ':' + String(dur % 60).padStart(2, '0'),
         url: D.url || 'https://www.tiktok.com/@' + D.handle, hasX: !!D.x, x: D.x ? xf(D.x) : '',
@@ -200,6 +202,14 @@ export default class MVideo extends DCLogic {
                   $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
                     $t($v.vid?.where)
                   )
+                )
+              ] : null,
+              ($v.vid?.kindL) ? [
+                $h("span", { "class": "sw-badge", "style": "gap: 6px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                  ),
+                  $t($v.vid?.kindL)
                 )
               ] : null,
               ($v.vid?.car) ? [
@@ -344,7 +354,7 @@ export default class MVideo extends DCLogic {
                 $h("span", { "class": "m-ic", "data-i": f?.k, "aria-hidden": "true", "style": "width: 14px; height: 14px;" }),
                 $t(f?.k)
               ),
-              $h("span", { "style": "font-size: 15px; line-height: 1.5; color: var(--ink-soft);" },
+              $h("span", { "style": "font-size: 15px; line-height: 1.5; color: var(--ink-soft); white-space: pre-wrap; overflow-wrap: anywhere; user-select: text;" },
                 $t(f?.v)
               )
             )

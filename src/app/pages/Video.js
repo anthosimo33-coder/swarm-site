@@ -119,6 +119,8 @@ export default class Video extends DCLogic {
       const href = (id) => '/app/videos/' + id;
       const H = (ms) => Math.max(0, Math.round((ms - D.publishedAt) / 3600000));
       const hours = H(Date.now());
+      // Type de contenu de la vidéo (lu sur sa miniature ; le carrousel a sa propre puce).
+      const KINDL = (k, g) => ({ ambassadeur: g === 'femme' ? 'Ambassadrice' : 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte' })[k] || '';
       vid = {
         pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : '', progress: idx >= 0 ? Math.round((idx + 1) / list.length * 100) + '%' : '0%',
         prevHref: idx > 0 ? href(list[idx - 1]) : href(D.id), prevO: idx > 0 ? 1 : 0.4,
@@ -132,7 +134,7 @@ export default class Video extends DCLogic {
         market: D.market && DEPUIS(M[D.market]) ? ['Publiée ' + DEPUIS(M[D.market]), LANGN(D.otherLang)].filter(Boolean).join(' · ') : '', mk: D.market || '', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
         handle: '@' + D.handle, whoMeta: (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : '') + (D.normal ? " · fait d'habitude " + nf(D.normal) + ' vues' : ''),
         // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
-        car: D.carousel ? 'Carrousel · ' + D.carousel + ' photos' : '', paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
+        car: D.carousel ? 'Carrousel · ' + D.carousel + ' photos' : '', kindL: D.kind && D.kind !== 'carrousel' ? KINDL(D.kind) : '', paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
         x: D.x ? xf(D.x) : '—', views: nf(D.views) + ' vues',
         age: (hours >= 48 ? 'en ' + Math.round(hours / 24) + ' jours' : 'en ' + hours + ' heures') + (D.fans ? ' · ' + xf(Math.round(D.views / Math.max(D.fans, 100))) + ' ses abonnés' : ''),
         growth: '',
@@ -256,6 +258,14 @@ export default class Video extends DCLogic {
                     $t($v.vid?.market)
                   )
                 ] : null,
+                ($v.vid?.kindL) ? [
+                  $h("span", { "class": "sw-badge", "title": "Type de contenu, lu sur la vidéo", "style": "display: inline-flex; align-items: center; gap: 6px;" },
+                    $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
+                      $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                    ),
+                    $t($v.vid?.kindL)
+                  )
+                ] : null,
                 ($v.vid?.car) ? [
                   $h("span", { "class": "sw-badge", "style": "display: inline-flex; align-items: center; gap: 6px;" },
                     $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
@@ -373,7 +383,7 @@ export default class Video extends DCLogic {
                       ),
                       $t(f?.k)
                     ),
-                    $h("span", { "title": f?.v, "style": "color: var(--ink-soft); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" },
+                    $h("span", { "style": "color: var(--ink-soft); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text;" },
                       $t(f?.v)
                     )
                   )

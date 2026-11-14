@@ -118,7 +118,7 @@ export default class FicheCreateur extends DCLogic {
       const a = D.app;
       z = {
         av: D.avatar || '', noav: true, h: '@' + D.handle, bio: D.bio ? D.bio.replace(/\s+/g, ' ').trim() : '',
-        mk: M[D.market] || '', mkHero: D.market && DEPUIS(M[D.market]) ? ['Publie ' + DEPUIS(M[D.market]), LANGN(D.otherLang)].filter(Boolean).join(' · ') : (M[D.market] || ''), flag: D.market || '', mkHref: '/app/createurs' + (D.market ? '?m=' + D.market : ''), tt: 'https://www.tiktok.com/@' + D.handle,
+        kindL: ((KINDL) => KINDL(D.kind, D.gender))((k, g) => ({ ambassadeur: g === 'femme' ? 'Ambassadrice' : 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte' })[k] || ''), mk: M[D.market] || '', mkHero: D.market && DEPUIS(M[D.market]) ? ['Publie ' + DEPUIS(M[D.market]), LANGN(D.otherLang)].filter(Boolean).join(' · ') : (M[D.market] || ''), flag: D.market || '', mkHref: '/app/createurs' + (D.market ? '?m=' + D.market : ''), tt: 'https://www.tiktok.com/@' + D.handle,
         app: a ? { name: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
                : { name: '', niche: '', logo: '', nologo: true, blank: 'sw-app-blank', href: '' }
       };
@@ -280,7 +280,15 @@ export default class FicheCreateur extends DCLogic {
                     )
                   ] : null,
                   $t($v.z?.mkHero)
-                )
+                ),
+                ($v.z?.kindL) ? [
+                  $h("span", { "title": "Type de contenu, lu sur ses vidéos", "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft);" },
+                    $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                      $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                    ),
+                    $t($v.z?.kindL)
+                  )
+                ] : null
               )
             ),
             $h("div", { "style": "position: relative; display: flex; align-items: center; gap: 12px;" },

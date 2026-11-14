@@ -374,3 +374,118 @@ export const slidesNeedSync = internalQuery({
     return !!(await ctx.db.query("videoSlides").withIndex("by_slideshow_at", (q) => q.eq("slideshow", true).gt("at", lastOk)).first());
   },
 });
+
+// ─── Lecture IA des vidéos et des comptes (convex/radarAi.ts) ──────────────────────────────────
+
+const RETRY_MS = 6 * 3_600_000;
+
+/** Les vidéos lues : [id, type, texte à l'écran]. */
+export const videoAiPage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("videoAi").withIndex("by_done_at", (q) => q.eq("done", true)).paginate({ cursor, numItems: 3000 });
+    return { items: r.page.map((x) => [x.videoId, x.type ?? "", x.text ?? ""] as [string, string, string]), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+/** Les genres lus : [pseudo, genre]. */
+export const genderPage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("accountAi").withIndex("by_done_at", (q) => q.eq("done", true)).paginate({ cursor, numItems: 4000 });
+    return { items: r.page.map((x) => [x.handle, x.gender ?? ""] as [string, string]), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+export const saveVideoAiTodo = internalMutation({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) => {
+    for (const videoId of ids) {
+      if (!(await ctx.db.query("videoAi").withIndex("by_video", (q) => q.eq("videoId", videoId)).first())) {
+        await ctx.db.insert("videoAi", { videoId, done: false, tries: 0, at: 0 });
+      }
+    }
+  },
+});
+
+export const saveGenderTodo = internalMutation({
+  args: { items: v.array(v.object({ handle: v.string(), ids: v.array(v.string()) })) },
+  handler: async (ctx, { items }) => {
+    for (const it of items) {
+      const row = await ctx.db.query("accountAi").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
+      if (!row) await ctx.db.insert("accountAi", { handle: it.handle, done: false, ids: it.ids, tries: 0, at: 0 });
+    }
+  },
+});
+
+/** Réserve les prochaines vidéos à lire ; `max` : plafond de vidéos lues en tout (dev : SWARM_KINDS_LIMIT). */
+export const claimVideoAi = internalMutation({
+  args: { limit: v.number(), now: v.number(), max: v.union(v.number(), v.null()) },
+  handler: async (ctx, { limit, now, max }) => {
+    let take = limit;
+    if (max !== null) take = Math.min(limit, Math.max(0, max - (await ctx.db.query("videoAi").withIndex("by_done_at", (q) => q.eq("done", true)).take(max)).length));
+    if (!take) return [];
+    const rows = await ctx.db.query("videoAi").withIndex("by_done_at", (q) => q.eq("done", false).lt("at", now - RETRY_MS))
+      .filter((q) => q.lt(q.field("tries"), 3)).take(take);
+    for (const r of rows) await ctx.db.patch(r._id, { at: now });
+    return rows.map((r) => r.videoId);
+  },
+});
+
+export const claimGender = internalMutation({
+  args: { limit: v.number(), now: v.number(), max: v.union(v.number(), v.null()) },
+  handler: async (ctx, { limit, now, max }) => {
+    let take = limit;
+    if (max !== null) take = Math.min(limit, Math.max(0, max - (await ctx.db.query("accountAi").withIndex("by_done_at", (q) => q.eq("done", true)).take(max)).length));
+    if (!take) return [];
+    const rows = await ctx.db.query("accountAi").withIndex("by_done_at", (q) => q.eq("done", false).lt("at", now - RETRY_MS))
+      .filter((q) => q.lt(q.field("tries"), 3)).take(take);
+    for (const r of rows) await ctx.db.patch(r._id, { at: now });
+    return rows.map((r) => ({ handle: r.handle, ids: r.ids }));
+  },
+});
+
+export const saveVideoAi = internalMutation({
+  args: { items: v.array(v.object({ videoId: v.string(), ok: v.boolean(), type: v.optional(v.string()), text: v.optional(v.string()) })), now: v.number() },
+  handler: async (ctx, { items, now }) => {
+    for (const it of items) {
+      const row = await ctx.db.query("videoAi").withIndex("by_video", (q) => q.eq("videoId", it.videoId)).first();
+      if (!row) continue;
+      if (it.ok) await ctx.db.patch(row._id, { done: true, type: it.type, text: it.text, tries: row.tries + 1, at: now });
+      else await ctx.db.patch(row._id, { tries: row.tries + 1, at: now });
+    }
+  },
+});
+
+export const saveGender = internalMutation({
+  args: { items: v.array(v.object({ handle: v.string(), ok: v.boolean(), gender: v.optional(v.string()) })), now: v.number() },
+  handler: async (ctx, { items, now }) => {
+    for (const it of items) {
+      const row = await ctx.db.query("accountAi").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
+      if (!row) continue;
+      if (it.ok) await ctx.db.patch(row._id, { done: true, gender: it.gender, tries: row.tries + 1, at: now });
+      else await ctx.db.patch(row._id, { tries: row.tries + 1, at: now });
+    }
+  },
+});
+
+/** Reste-t-il à lire (vidéos ou comptes) ? */
+export const aiLeft = internalQuery({
+  args: { table: v.union(v.literal("videoAi"), v.literal("accountAi")), now: v.number() },
+  handler: async (ctx, { table, now }) =>
+    !!(await ctx.db.query(table).withIndex("by_done_at", (q) => q.eq("done", false).lt("at", now - RETRY_MS)).filter((q) => q.lt(q.field("tries"), 3)).first()),
+});
+
+/** Faut-il une synchro ? Des lectures faites depuis le début de la dernière synchro réussie, et aucune synchro depuis 1 h. */
+export const aiNeedSync = internalQuery({
+  args: { now: v.number() },
+  handler: async (ctx, { now }) => {
+    const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(20);
+    if (runs[0] && now - runs[0].startedAt < 3_600_000) return false;
+    const lastOk = runs.find((r) => r.ok)?.startedAt ?? 0;
+    for (const t of ["videoAi", "accountAi"] as const) {
+      if (await ctx.db.query(t).withIndex("by_done_at", (q) => q.eq("done", true).gt("at", lastOk)).first()) return true;
+    }
+    return false;
+  },
+});
