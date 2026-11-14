@@ -44,22 +44,23 @@ export default class MCreateurs extends DCLogic {
     const D = P.data;
     const site = D !== undefined || typeof P.get === 'function';
     // Les marchés : ceux du document (du plus fourni au moins fourni), sinon les cinq de l'exemple ; ?m= n'est retenu que s'il en fait partie.
-    const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+    const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
     const MKD = D && Array.isArray(D.markets) && D.markets.length ? D.markets : null;
     const MKC = MKD ? MKD.map((m) => m[0]) : ['FR', 'US', 'MX', 'ES', 'BR'];
     const qm = String((P.query && P.query.m) || '').toUpperCase();
     const market = st.market || (MKC.indexOf(qm) >= 0 ? qm : '') || (D && D.market) || MKC[0] || 'FR';
     const active = !!st.active, lim = st.lim || LIM;
-    const PH0 = { FR: 'en France', US: 'anglophones', MX: 'en Amérique latine', ES: 'en Espagne', BR: 'au Brésil et au Portugal', DE: 'germanophones', SA: 'dans le monde arabe', RU: 'russophones' };
+    const PH0 = {};
     // Les autres pays : « en <pays> » à partir du nom du marché (Italie, Indonésie…).
-    const PH = new Proxy(PH0, { get: (t, c) => t[c] || ((MKD || []).filter((m) => m[0] === c).map((m) => 'en ' + (m[1] || MKN(c)))[0]) || (MKN(String(c)) ? 'en ' + MKN(String(c)) : '') });
+    const PREP = (n) => { n = String(n || ''); if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return ['aux', 'les ']; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return ['en', 'l’']; return /e$/.test(n) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? ['en', 'la '] : ['au', 'le ']; }; // « en France », « au Mexique », « aux États-Unis »
+    const PH = new Proxy(PH0, { get: (t, c) => { const n = t[c] || ((MKD || []).filter((m) => m[0] === c).map((m) => m[1] || MKN(c))[0]) || MKN(String(c)); return n ? PREP(n)[0] + ' ' + n : ''; } });
     let src = { rows: b.rows, cards: b.cards, live: b.live }, none = market !== 'FR', total = null, tip = { on: true, text: '@paul.crown4 : 104 abonnés, 33 k vues médianes.' };
     let MK = b.mkt || [];
     if (!site && none) src = { rows: [], cards: [], live: [] };
     if (site) {
       // Sur le site : les créateurs d'un marché (document « creators:<marché> ») ; un autre marché se lit avec get(),
       // et la liste d'avant reste affichée pendant qu'il charge. Lu comme CreateursA.
-      MK = (MKD || [['FR', 'France'], ['US', 'Anglophones'], ['MX', 'Amérique latine'], ['ES', 'Espagne'], ['BR', 'Brésil et Portugal']]).map((x) => ({ c: x[0], l: x[1] || MKN(x[0]) || x[0], n: x[2] }));
+      MK = (MKD || [['FR', 'France'], ['US', 'Anglophones'], ['MX', 'Mexique'], ['ES', 'Espagne'], ['BR', 'Brésil']]).map((x) => ({ c: x[0], l: x[1] || MKN(x[0]) || x[0], n: x[2] }));
       let doc = D && D.market === market ? D : (P.get ? P.get('creators:' + market) : null);
       if (doc === undefined) doc = this.lastDoc === undefined ? null : this.lastDoc;
       else this.lastDoc = doc;

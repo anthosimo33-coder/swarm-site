@@ -52,6 +52,16 @@ export default defineSchema({
   // Miniatures introuvables (vidéo supprimée, page refusée) : pas de nouvel essai avant 6 h.
   mediaMiss: defineTable({ key: v.string(), at: v.number() }).index("by_key", ["key"]),
 
+  // Pays des comptes que le Radar ne situe pas, lu par Swarm sur la page publique d'une de leurs vidéos
+  // (« locationCreated », gratuit ; convex/radarRegions.ts). country null : pas encore lu, ou rien trouvé.
+  accountRegions: defineTable({
+    handle: v.string(),
+    country: v.union(v.string(), v.null()),
+    ids: v.array(v.string()), // ses vidéos les plus récentes, essayées tour à tour
+    tries: v.number(),
+    at: v.number(), // dernier essai (0 : jamais)
+  }).index("by_handle", ["handle"]).index("by_country_at", ["country", "at"]),
+
   syncRuns: defineTable({
     startedAt: v.number(),
     finishedAt: v.optional(v.number()),

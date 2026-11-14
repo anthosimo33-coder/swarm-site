@@ -35,7 +35,7 @@ const WRITERS = 4; // lots de pages écrits en même temps (chaque lot touche se
 /** Le déploiement Convex refuse plus de 4 Mio écrits par seconde (TooManyWrites, dev du 14/11) : écriture cadencée sous ce plafond. */
 const WRITE_RATE = 3_000_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const PARALLEL = 10; // 20 : pics à 740 Mo de tas (pages TikTok lues à la fois), passage coupé faute de mémoire le 14/11
+const PARALLEL = 6; // 20 puis 10 : pics à 740 puis 568 Mo de tas (pages TikTok lues à la fois) pour une limite de 512 Mo, passages coupés le 14/11
 /** Une miniature introuvable depuis moins de 3 jours : la vidéo est retirée des listes (au-delà, on réessaie). */
 const MISS_HIDE_MS = 3 * 86_400_000;
 /** Taille d'un lot d'écriture : arguments bornés, et chaque document est relu (4 096 lectures au plus par mutation). */
@@ -158,6 +158,14 @@ export const run = internalAction({
       if (iconsToDrop.length) await ctx.runMutation(internal.radarStore.dropMedia, { keys: iconsToDrop });
       const storeOf = (slug: string) => stores[slug]?.url ?? null;
       const artOf = (slug: string) => stores[slug]?.art ?? null;
+      // Pays lus par Swarm sur la page publique d'une vidéo, pour les comptes que le Radar ne situe pas.
+      const regions = new Map<string, string>();
+      for (let cursor: string | null = null, done = false; !done; ) {
+        const page: { items: [string, string][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.regionPage, { cursor });
+        for (const [h, c] of page.items) regions.set(h, c);
+        cursor = page.cursor;
+        done = page.done;
+      }
       // Miniatures introuvables récemment (vidéo supprimée, compte privé) : ces vidéos n'apparaissent pas.
       const misses = new Map<string, number>();
       for (let cursor: string | null = null, done = false; !done; ) {
@@ -171,9 +179,10 @@ export const run = internalAction({
         missing: (k: string) => (misses.get(k) ?? 0) > now - MISS_HIDE_MS,
         coverUrl: (id: string) => (site && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) ? `${site}/cover/${id}` : null),
         artOf,
+        regionOf: (h: string) => regions.get(h) ?? null,
       };
       MEMLOG('avant calcul 1');
-      let { boards, need, used } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
+      let { boards, need, used, regionTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
       MEMLOG('après calcul 1');
 
       // Miniatures et icônes manquantes : 20 copies en continu, dans le temps imparti.
@@ -194,7 +203,7 @@ export const run = internalAction({
       };
       const flushMedia = async () => {
         const items = got.splice(0), keys = failed.splice(0);
-        if (copied % 1000 < 100) MEMLOG('copie ' + copied);
+        if (copied % 500 < 100) MEMLOG('copie ' + copied + ' en ' + Math.round((Date.now() - mediaStart) / 1000) + ' s');
         if (items.length) await retried(() => ctx.runMutation(internal.radarStore.saveMedia, { items }));
         if (keys.length) await retried(() => ctx.runMutation(internal.radarStore.markMisses, { keys }));
       };
@@ -217,7 +226,10 @@ export const run = internalAction({
       await Promise.all(Array.from({ length: PARALLEL }, worker));
       await flushMedia();
       MEMLOG('fin copie');
-      ({ boards, need, used } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts));
+      ({ boards, need, used, regionTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts));
+      // Les comptes encore sans pays : notés pour que leur pays soit lu sur leurs vidéos (convex/radarRegions.ts).
+      for (let i = 0; i < regionTodo.length; i += 300) await ctx.runMutation(internal.radarStore.saveRegionTodo, { items: regionTodo.slice(i, i + 300) });
+      if (regionTodo.length) await ctx.scheduler.runAfter(0, internal.radarRegions.fill, {});
       MEMLOG('après calcul 2');
 
       // Les images qu'aucun document ne cite plus (vidéo sortie des listes) : effacées.
@@ -281,6 +293,7 @@ export const run = internalAction({
       for (let i = 0; i < gone.length; i += 200) await ctx.runMutation(internal.radarStore.dropBoards, { keys: gone.slice(i, i + 200) });
 
       const counts = {
+        unlocated: regionTodo.length,
         apps: raw.apps.length, tracked: raw.tracked.length, trackedVideos: raw.trackedVideos.length,
         formats: raw.formats.length, signals: raw.signals.length,
         boards: boards.size, written, mediaCopied: copied, mediaMissing: need.size, mediaDropped: stale.length, boardsDropped: gone.length,

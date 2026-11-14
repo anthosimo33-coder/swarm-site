@@ -116,7 +116,7 @@ export default class Formats extends DCLogic {
       cov: c.cov.map((v) => Object.assign({ href: '/app/videos/7705929733220994337' }, v)), cov4: c.cov4.map((v) => Object.assign({ href: '/app/videos/7705929733220994337' }, v))
     }));
     let nicheNames = niches.slice(1).map((c) => c.l);
-    let MKS = [['ALL', 'Tous les marchés', ''], ['US', 'États-Unis', 'US'], ['MX', 'Amérique latine', 'MX'], ['BR', 'Brésil', 'BR'], ['DE', 'Allemagne', 'DE'], ['ID', 'Indonésie', 'ID']];
+    let MKS = [['ALL', 'Tous les marchés', ''], ['US', 'États-Unis', 'US'], ['MX', 'Mexique', 'MX'], ['BR', 'Brésil', 'BR'], ['DE', 'Allemagne', 'DE'], ['ID', 'Indonésie', 'ID']];
     let live = false;
 
     // Sur le site : les vraies données du Radar (document « formats », convex/radarModels.ts).

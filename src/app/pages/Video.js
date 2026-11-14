@@ -97,9 +97,9 @@ export default class Video extends DCLogic {
     // Sur le site : la vidéo depuis le Radar (document « video:<id> », convex/radarModels.ts).
     const D = this.props && this.props.data;
     if (D && D.id) {
-      const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
       const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
-      const M = MKW({ FR: 'France', US: 'Anglophone', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' });
+      const M = MKW({ FR: 'France', US: 'Anglophone', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil' });
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/0$/, '').replace('.', ',') + '\u202fM' : n >= 1e3 ? (n / 1e3).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fk' : String(Math.round(n)));
       const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const list = D.playlist || [];

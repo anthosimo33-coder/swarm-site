@@ -66,52 +66,21 @@ const parisOffset = (t: number) => {
 export const parisDay = (t: number) => Math.floor((t + parisOffset(t)) / DAY);
 
 /**
- * Marché d'un compte : la langue de ses vidéos quand le Radar la relève (fr, en, es-am, es-es, pt),
- * sinon son pays, sinon le pays d'où il publie le plus. Code = pays ISO (un drapeau par marché) ;
- * les pays d'une même langue se regroupent (anglophones, Amérique latine, germanophones, monde arabe…).
- * Jamais de fourre-tout « autres langues » : un compte sans aucun indice n'a pas de marché (null).
+ * Marché = un PAYS (code ISO, un drapeau), jamais un groupe de pays. Décision du 14/11 : les États-Unis et le
+ * Royaume-Uni ne sont pas le même marché, le Brésil et le Portugal non plus, et « Amérique latine » ne dit pas si
+ * c'est le Mexique ou le Chili. Jusque-là la langue passait avant le pays : 1 271 comptes sur 2 724 étaient rangés
+ * hors de leur propre pays (des Britanniques, des comptes en Allemagne ou aux Philippines « anglophones »…).
+ * La langue ne donne plus jamais un pays (l'anglais se parle partout).
  */
-const LANG_MARKET: Record<string, string> = { fr: "FR", en: "US", "es-am": "MX", "es-es": "ES", pt: "BR" };
-const COUNTRY_GROUP: Record<string, string> = Object.fromEntries([
-  ["US", "US GB CA AU NZ IE ZA NG GH KE JM TT UG ZW ZM"],
-  ["MX", "MX AR CO CL PE VE EC BO PY UY GT HN SV NI CR PA DO CU PR"],
-  ["BR", "BR PT AO MZ"],
-  ["FR", "FR MC LU"],
-  ["DE", "DE AT CH LI"],
-  ["SA", "SA AE IQ KW QA BH OM JO LB SY YE EG LY SD DZ MA TN PS"],
-  ["RU", "RU BY KZ KG TJ UZ"],
-].flatMap(([m, cs]) => cs.split(" ").map((c) => [c, m])));
-const MARKET_LABEL: Record<string, string> = {
-  FR: "France", US: "États-Unis et anglophones", MX: "Amérique latine", ES: "Espagne", BR: "Brésil et Portugal",
-  DE: "Allemagne et germanophones", SA: "Monde arabe", RU: "Russie et russophones",
+export const countryCode = (c: string | null | undefined) => {
+  const k = (c ?? "").trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(k) && k !== "XX" ? k : null;
 };
 const regionNames = new Intl.DisplayNames(["fr"], { type: "region" });
-export const marketLabel = (code: string) => MARKET_LABEL[code] ?? (() => { try { return regionNames.of(code) ?? code; } catch { return code; } })();
-const countryMarket = (c: string | null | undefined) => {
-  const k = (c ?? "").trim().toUpperCase();
-  return /^[A-Z]{2}$/.test(k) ? COUNTRY_GROUP[k] ?? k : null;
-};
-/**
- * Langue des textes d'un compte (bio, accroches, légendes) quand le Radar n'en a relevé aucune : mots-outils
- * propres à chaque langue. Le 14/11, @intrvbl_31000 et @tlmsaasia (TrendSaaS) n'avaient ni langue, ni pays,
- * ni région de vidéo : pas de marché, pas de drapeau. Rien de net (moins de 4 mots, ou pas 2 fois plus que la
- * suivante) : null.
- */
-const STOPWORDS: [string, string[]][] = [
-  ["fr", "le les des est pas une pour je tu ça c'est mon ma mes sur avec dans qui vous nous ton ta sont fait faire très aussi comme quand trop moi toi".split(" ")],
-  ["en", "the and you is to my this that it for with me your what are was have just like when how don't i'm can not".split(" ")],
-  ["es-am", "el los las es por para con una mi pero que muy cuando como esto porque está yo tú también".split(" ")],
-  ["pt", "o os não um uma você meu minha com para está isso também muito quando eu é".split(" ")],
-];
-export const textLang = (texts: (string | null | undefined)[]): string | null => {
-  const words = texts.filter(Boolean).join(" ").toLowerCase().replace(/[’]/g, "'").split(/[^a-zà-ÿ']+/).filter(Boolean);
-  if (words.length < 4) return null;
-  const score = STOPWORDS.map(([l, w]) => { const set = new Set(w); return [l, words.filter((x) => set.has(x)).length] as [string, number]; }).sort((p, q) => q[1] - p[1]);
-  return score[0][1] >= 4 && score[0][1] >= 2 * score[1][1] ? score[0][0] : null;
-};
+export const marketLabel = (code: string) => (code === "XX" ? "Pays inconnu" : (() => { try { return regionNames.of(code) ?? code; } catch { return code; } })());
 
-/** Marché d'une vidéo ou d'un signal sans compte suivi : sa langue, sinon sa région. */
-export const marketOf = (lang: string | null | undefined, region?: string | null) => (lang && LANG_MARKET[lang]) || countryMarket(region);
+/** Marché d'une vidéo ou d'un signal sans compte suivi : le pays où la vidéo a été créée. */
+export const marketOf = (_lang: string | null | undefined, region?: string | null) => countryCode(region);
 
 /**
  * Niche de chaque app : celle de la fiche du Radar (Jarvia #505, 16 niches), sinon ce classement éditorial de Swarm
@@ -141,7 +110,7 @@ export const MIN_APP_ACCOUNTS = 2;
 /** Créateurs par document de liste (~1 Ko chacun ; un document Convex : 1 Mio au plus). */
 export const CREATOR_PAGE = 500;
 /** Un marché a son onglet à partir de 10 créateurs ; les autres restent sur chaque créateur (son drapeau) et dans « Tous ». */
-export const MIN_MARKET_CREATORS = 10;
+export const MIN_MARKET_CREATORS = 1;
 /** « Nouvelle » : sortie sur l'App Store il y a 60 jours au plus ; sans date de sortie, réseau dont la 1re vidéo a 30 jours au plus. */
 const NEW_RELEASE_DAYS = 60;
 const NEW_NETWORK_DAYS = 30;
@@ -246,8 +215,10 @@ export function buildBoards(
     coverUrl?: (videoId: string) => string | null;
     /** Icône de la fiche App Store retenue (adresse mzstatic), copiée sans rappeler l'App Store. */
     artOf?: (slug: string) => string | null;
+    /** Pays lu par Swarm sur la page publique d'une vidéo du compte (comptes sans pays relevé). */
+    regionOf?: (handle: string) => string | null;
   } = {},
-): { boards: Boards; need: MediaNeed; used: Set<string> } {
+): { boards: Boards; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[] } {
   const missing = opts.missing ?? (() => false);
   const coverUrl = opts.coverUrl ?? (() => null);
   const boards: Boards = new Map();
@@ -339,18 +310,20 @@ export function buildBoards(
   const videosByApp = groupBy(raw.trackedVideos.filter(citesItsApp), (v) => canonical(v.appId)?.id ?? "");
   const videosByAccount = groupBy(raw.trackedVideos, (v) => v.accountId);
   const marketByAccount = new Map<string, string | null>();
+  // Son pays : celui que le Radar relève (le plus fréquent de ses vidéos), sinon celui de création de ses vidéos de
+  // l'export, sinon celui que Swarm a lu sur la page publique d'une de ses vidéos (convex/radarRegions.ts).
+  const regionOf = opts.regionOf ?? (() => null);
   for (const t of raw.tracked) {
-    let m = (t.lang && LANG_MARKET[t.lang]) || countryMarket(t.country);
+    let m = countryCode(t.country);
     if (!m) {
       const n = new Map<string, number>();
-      for (const v of videosByAccount.get(t.id) ?? []) { const r = countryMarket(v.region); if (r) n.set(r, (n.get(r) ?? 0) + 1); }
+      for (const v of videosByAccount.get(t.id) ?? []) { const r = countryCode(v.region); if (r) n.set(r, (n.get(r) ?? 0) + 1); }
       m = [...n.entries()].sort((p, q) => q[1] - p[1])[0]?.[0] ?? null;
     }
-    if (!m) { const l = textLang([t.bio, ...(videosByAccount.get(t.id) ?? []).flatMap((v) => [v.hook, v.caption])]); m = l ? LANG_MARKET[l] ?? null : null; }
+    if (!m) m = countryCode(regionOf(t.handle));
     marketByAccount.set(t.id, m);
   }
-  // Dernier recours : le marché de son app, quand ses autres comptes sont presque tous du même (80 % au moins, 3 au
-  // moins). Le 14/11, deux comptes de TrendSaaS (app française) n'avaient ni langue, ni pays, ni région, ni texte lu.
+  // Dernier recours : le pays de son app, quand ses autres comptes y sont presque tous (80 % au moins, 3 au moins).
   for (const ts of groupBy(raw.tracked, (t) => canonical(t.appId)?.id ?? "").values()) {
     const known = ts.map((t) => marketByAccount.get(t.id)).filter((m): m is string => !!m);
     const top = [...known.reduce((n, m) => n.set(m, (n.get(m) ?? 0) + 1), new Map<string, number>())].sort((p, q) => q[1] - p[1])[0];
@@ -361,7 +334,7 @@ export function buildBoards(
   // Les marchés présents, du plus fourni au moins fourni (comptes actifs).
   const marketCount = new Map<string, number>();
   for (const t of accounts) { const m = mkOf(t.id); if (m) marketCount.set(m, (marketCount.get(m) ?? 0) + 1); }
-  // Un onglet par marché fourni (10 créateurs au moins) : le 13/11, 22 onglets sur 30 avaient 5 créateurs ou moins.
+  // Tous les pays où il y a des créateurs : le choix se fait dans une liste avec recherche (plus d'onglets).
   const MARKETS = [...marketCount.entries()]
     .filter(([, n]) => n >= MIN_MARKET_CREATORS)
     .sort((p, q) => q[1] - p[1])
@@ -457,7 +430,7 @@ export function buildBoards(
       const firstApp = appIdsOf.length ? appById.get(appIdsOf[0]) : undefined;
       return {
         id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount, apps: appsOf,
-        niche: firstApp ? nicheOf(firstApp) : "Autres", market: (f.lang && LANG_MARKET[f.lang]) || majority(f.members.map((m) => mkOf(m.accountId))),
+        niche: firstApp ? nicheOf(firstApp) : "Autres", market: majority(f.members.map((m) => mkOf(m.accountId))),
         maxViews: f.maxViews, medX: roundOrNull(median(xs), 1), wins: xs.filter((x) => x > 1).length, n: f.members.length,
         lastPostAt: f.lastPostAt, firstSeenAt: f.firstSeenAt, members,
       };
@@ -610,5 +583,9 @@ export function buildBoards(
     if (src) need.set(iconKey(a.slug), src);
   }
 
-  return { boards, need, used };
+  // Comptes sans pays : 3 de leurs vidéos les plus récentes, pour que Swarm lise leur pays de création.
+  const regionTodo = accounts.filter((t) => !mkOf(t.id)).map((t) => ({ handle: t.handle,
+    ids: (videosByAccount.get(t.id) ?? []).filter((v) => /^\d{6,25}$/.test(v.videoId)).sort((p, q) => q.publishedAt - p.publishedAt).slice(0, 3).map((v) => v.videoId) }))
+    .filter((x) => x.ids.length);
+  return { boards, need, used, regionTodo };
 }

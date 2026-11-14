@@ -13,7 +13,9 @@ export default class NouvelleAlerte extends DCLogic {
     const QUOI = [['un compte', 'compte'], ['une vidéo d’app', 'video'], ['un format', 'format']];
     const SE = { compte: [['10×', 10], ['100×', 100], ['1 000×', 1000]], video: [['500 k', 5e5], ['1 M', 1e6], ['5 M', 5e6]], format: [['3', 3], ['5', 5], ['10', 10]] };
     const DEF = { compte: 100, video: 1e6, format: 3 };
-    const MK = [['sur tous les marchés', null], ['en France', 'FR'], ['chez les anglophones', 'US'], ['en Amérique latine', 'MX'], ['en Espagne', 'ES'], ['au Brésil et au Portugal', 'BR'], ['dans les autres langues', 'XX']];
+    const PREP = (n) => { n = String(n || ''); if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return ['aux', 'les ']; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return ['en', 'l’']; return /e$/.test(n) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? ['en', 'la '] : ['au', 'le ']; }; // « en France », « au Mexique », « aux États-Unis »
+    const ADM = this.props && typeof this.props.get === 'function' ? this.props.get('apps') : null;
+    const MK = [['sur tous les marchés', null]].concat(((ADM && ADM.markets) || [['FR', 'France'], ['US', 'États-Unis'], ['MX', 'Mexique'], ['ES', 'Espagne'], ['BR', 'Brésil']]).filter((m) => m[0] && m[0] !== 'XX').map((m) => [PREP(m[1])[0] + ' ' + m[1], m[0]]));
     const P = this.props || {};
     const r0 = P.rule && P.rule.quoi ? P.rule : null; // alerte à modifier, sinon une nouvelle
     const st = this.state || {};

@@ -239,3 +239,47 @@ export const resetHashes = internalMutation({
     return { n: r.page.length, cursor: r.continueCursor, done: r.isDone };
   },
 });
+
+// ─── Pays des comptes sans pays relevé (convex/radarRegions.ts) ────────────────────────────────
+
+/** Les pays déjà lus, page par page : [pseudo, pays]. */
+export const regionPage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("accountRegions").paginate({ cursor, numItems: 4000 });
+    return { items: r.page.filter((x) => x.country).map((x) => [x.handle, x.country] as [string, string]), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+/** Les comptes à situer (synchro) : ajoutés, ou leurs vidéos mises à jour ; un compte déjà situé ne bouge pas. */
+export const saveRegionTodo = internalMutation({
+  args: { items: v.array(v.object({ handle: v.string(), ids: v.array(v.string()) })) },
+  handler: async (ctx, { items }) => {
+    for (const it of items) {
+      const row = await ctx.db.query("accountRegions").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
+      if (!row) await ctx.db.insert("accountRegions", { handle: it.handle, country: null, ids: it.ids, tries: 0, at: 0 });
+      else if (!row.country && row.ids.join() !== it.ids.join()) await ctx.db.patch(row._id, { ids: it.ids, tries: 0 });
+    }
+  },
+});
+
+/** Les prochains comptes à lire : sans pays, moins de 3 essais, pas essayés depuis 6 h. */
+export const regionBatch = internalQuery({
+  args: { limit: v.number(), now: v.number() },
+  handler: async (ctx, { limit, now }) => {
+    const rows = await ctx.db.query("accountRegions").withIndex("by_country_at", (q) => q.eq("country", null).lt("at", now - 6 * 3_600_000))
+      .filter((q) => q.lt(q.field("tries"), 3)).take(limit);
+    return rows.map((r) => ({ handle: r.handle, ids: r.ids, tries: r.tries }));
+  },
+});
+
+/** Le résultat d'une lecture : le pays trouvé (ou null), un essai de plus. */
+export const saveRegions = internalMutation({
+  args: { items: v.array(v.object({ handle: v.string(), country: v.union(v.string(), v.null()) })), now: v.number() },
+  handler: async (ctx, { items, now }) => {
+    for (const it of items) {
+      const row = await ctx.db.query("accountRegions").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
+      if (row) await ctx.db.patch(row._id, { country: it.country, tries: row.tries + 1, at: now });
+    }
+  },
+});

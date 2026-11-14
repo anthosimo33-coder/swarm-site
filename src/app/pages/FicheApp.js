@@ -44,7 +44,12 @@ export default class FicheApp extends DCLogic {
     // Les dossiers qui la gardent (saved('folders')).
     const fs = live ? P.saved('folders') : null;
     const kept = (Array.isArray(fs) ? fs : []).filter((x) => (x.items || []).some((i) => i.kind === 'app' && i.id === slug)).map((x) => ({ name: x.name, href: '/app/dossiers/' + x.id }));
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
+    // Où leurs vues se font : les 5 premiers pays, puis tous à la demande (un pays par ligne, jamais regroupés).
+    const mkAllRows = b.mk || [];
+    const mkOn = !!(this.state || {}).mkAll;
+    const mkVals = { mkShown: mkOn ? mkAllRows : mkAllRows.slice(0, 5), mkMore: mkAllRows.length > 5, mkOpen: mkOn ? 'true' : 'false', mkRot: mkOn ? 'rotate(180deg)' : 'none',
+      mkMoreLabel: mkOn ? 'Voir moins' : 'Voir les ' + mkAllRows.length + ' pays', toggleMk: () => this.setState({ mkAll: !mkOn }) };
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, mkVals, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
       kept, keptNone: kept.length === 0,
       ajItem: { kind: 'app', id: slug, label: b.app.name, cover: b.app.icon || null },
       copyAria: st.copied ? 'Lien copié' : 'Copier le lien de la fiche', copyBg: st.copied ? 'var(--accent-soft)' : 'var(--track)',
@@ -86,7 +91,7 @@ export default class FicheApp extends DCLogic {
       [ic.texte, '« GUARDA E PARTILHA »', 'Portugais · 3 comptes', '17× en médiane', '3 reprises sur 4'],
       [ic.son, 'Son « exam vibes »', '5 comptes · le son de la révision qui stresse', '7× en médiane', '4 reprises sur 6']
     ].map((f) => ({ icon: f[0], t: f[1], meta: f[2], x: f[3], ok: f[4] }));
-    let mk = [['ID', 'Indonésie et Vietnam', 37.47], ['US', 'États-Unis', 10.73], ['ES', 'Espagne', 4.83], ['BR', 'Brésil et Portugal', 2.91], ['FR', 'France', 1.32], ['MX', 'Amérique latine', 0.39]]
+    let mk = [['ID', 'Indonésie', 37.47], ['US', 'États-Unis', 10.73], ['ES', 'Espagne', 4.83], ['BR', 'Brésil', 2.91], ['FR', 'France', 1.32], ['MX', 'Mexique', 0.39]]
       .map((m, i) => ({ c: m[0], l: m[1], v: m[2].toFixed(1).replace('.', ',') + '\u202fM', p: Math.round(m[2] / 57.65 * 100) + '\u202f%', w: (m[2] / 57.65 * 100).toFixed(1) + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
     let creators = [
       ['I', '@ivylearns8', 'Student life + study tips', 'US', '3,1 k', '4,9 M', '17,9 k', 'var(--thumb-navy)'],
@@ -109,9 +114,9 @@ export default class FicheApp extends DCLogic {
     // Sur le site : la fiche de l'app depuis le Radar (document « app:<slug> », convex/radarModels.ts).
     const D = this.props && this.props.data;
     if (D && D.name) {
-      const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+      const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
       const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays, pas de « autres langues »
-      const M = MKW({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal' });
+      const M = MKW({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil' });
       const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
       const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
       const pct = (d) => (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%';
@@ -137,7 +142,7 @@ export default class FicheApp extends DCLogic {
       formats = D.formats.map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         meta: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', ok: nf(f.maxViews) + ' vues au mieux', href: '/app/formats/' + f.id }));
       mk = D.markets.map(([c, p], i) => ({ c: c === 'XX' ? '…' : c, l: M[c] || c, v: nf(D.views30 * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
-      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market === 'XX' ? '…' : c.market, mkl: M[c.market] || '', fans: nf(c.fans), v: String(c.posts7d),
+      creators = D.creators.slice(0, 6).map((c) => ({ ini: c.handle.charAt(0).toUpperCase(), h: '@' + c.handle, bio: '', mk: c.market || 'XX', mkl: c.market ? M[c.market] || '' : 'Pays inconnu', fans: nf(c.fans), v: String(c.posts7d),
         med: c.median ? nf(c.median) : '—', bg: 'var(--thumb-navy)', av: c.avatar || '', noav: true, page: !!c.page, href: '/app/createurs/' + c.handle }));
       sections = sections.map((x, i) => Object.assign({}, x, { n: ['', String(D.videoCount || D.videos.length), String(D.formats.length), D.accounts.toLocaleString('fr-FR')][i] }));
       // Rang : dans sa niche (document « apps », toujours chargé), sinon parmi toutes les apps du Radar.
@@ -641,7 +646,7 @@ export default class FicheApp extends DCLogic {
                   "Vues 30 j"
                 )
               ),
-              ($l($v.mk)).map((m) => [
+              ($l($v.mkShown)).map((m) => [
                 $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1fr) 60px; gap: 12px; align-items: center;" },
                   $h("span", { "style": "display: flex; flex-direction: column; gap: 6px; min-width: 0;" },
                     $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px;" },
@@ -663,7 +668,15 @@ export default class FicheApp extends DCLogic {
                     $t(m?.p)
                   )
                 )
-              ])
+              ]),
+              ($v.mkMore) ? [
+                $h("button", { "type": "button", "onClick": $v.toggleMk, "aria-expanded": $v.mkOpen, "style": "align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 0; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;" },
+                  $t($v.mkMoreLabel),
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `transform: ${$t($v.mkRot)};` },
+                    $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                )
+              ] : null
             )
           ),
           $h("section", { "class": "sw-card", "aria-labelledby": "fa-cr", "style": "padding: 8px 24px 12px;" },

@@ -24,12 +24,13 @@ export default class MNouvelleAlerte extends DCLogic {
     const SV = { compte: [[10, '10×'], [100, '100×'], [1000, '1 000×']], video: [[5e5, '500 k'], [1e6, '1 M'], [5e6, '5 M']], format: [[3, '3'], [5, '5'], [10, '10']] };
     const DEF = { compte: 100, video: 1e6, format: 3 };
     // Les marchés : les cinq langues du Radar, puis ceux du document « apps » (du plus fourni au moins fourni).
-    const MKN = (c) => ({ FR: 'France', US: 'États-Unis et anglophones', MX: 'Amérique latine', ES: 'Espagne', BR: 'Brésil et Portugal', DE: 'Allemagne et germanophones', SA: 'Monde arabe', RU: 'Russie et russophones' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+    const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
     const AD = this.props && typeof this.props.get === 'function' ? this.props.get('apps') : null;
-    const MK0 = [['', 'tous les marchés'], ['FR', 'la France'], ['US', 'les pays anglophones'], ['MX', 'l’Amérique latine'], ['ES', 'l’Espagne'], ['BR', 'le Brésil et le Portugal']];
-    const MKX = { DE: 'les germanophones', SA: 'le monde arabe', RU: 'les russophones' };
+    const PREP = (n) => { n = String(n || ''); if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return ['aux', 'les ']; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return ['en', 'l’']; return /e$/.test(n) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? ['en', 'la '] : ['au', 'le ']; }; // « en France », « au Mexique », « aux États-Unis »
+    const MK0 = [['', 'tous les marchés']];
+    const MKX = {};
     const MK = MK0.concat(((AD && AD.markets) || []).filter((m) => m[0] && m[0] !== 'XX' && !MK0.some((x) => x[0] === m[0]))
-      .map((m) => [m[0], MKX[m[0]] || 'le marché ' + (m[1] || MKN(m[0]) || m[0])]));
+      .map((m) => { const n = m[1] || MKN(m[0]) || m[0]; return [m[0], PREP(n)[1] + n]; }));
     const NS = Array.isArray(P.niches) && P.niches.length ? P.niches.filter((n) => n !== 'Autres') : NICHES;
     const quoi = SV[st.quoi] ? st.quoi : (R0 && SV[R0.quoi] ? R0.quoi : 'compte');
     const sv = SV[quoi];
