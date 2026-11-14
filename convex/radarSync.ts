@@ -24,6 +24,14 @@ const TABLES = ["apps", "tracked", "trackedVideos", "formats", "signals"] as con
  * (l'URL source sert en attendant). Un passage tient sous les 10 min d'une action. */
 const MEDIA_PER_RUN = 8000;
 const MEDIA_BUDGET_MS = 5 * 60_000;
+/**
+ * Une action Convex est coupée à 10 min, sans rien noter. Le passage s'arrête de lui-même à 9 min,
+ * et la copie des images laisse 3 min aux écritures (quand les icônes changent, presque toutes les
+ * pages sont réécrites : plus de 3 min à un lot à la fois, passage prod du 14/11 à 12 h 15).
+ */
+const RUN_LIMIT_MS = 9 * 60_000;
+const WRITE_RESERVE_MS = 3 * 60_000;
+const WRITERS = 4; // lots de pages écrits en même temps (chaque lot touche ses propres pages)
 const PARALLEL = 10; // 20 : pics à 740 Mo de tas (pages TikTok lues à la fois), passage coupé faute de mémoire le 14/11
 /** Une miniature introuvable depuis moins de 3 jours : la vidéo est retirée des listes (au-delà, on réessaie). */
 const MISS_HIDE_MS = 3 * 86_400_000;
@@ -83,6 +91,7 @@ export const repairHeic = internalAction({
 export const run = internalAction({
   args: {},
   handler: async (ctx): Promise<Record<string, number>> => {
+    const runStart = Date.now();
     const runId = await ctx.runMutation(internal.radarStore.startRun, {});
     if (runId === null) return { skipped: 1 }; // un passage tourne déjà
     try {
@@ -169,7 +178,7 @@ export const run = internalAction({
       const todo = [...need.entries()].sort((p, q) => Number(q[0].startsWith("icon:")) - Number(p[0].startsWith("icon:"))).slice(0, MEDIA_PER_RUN);
       const mediaStart = Date.now();
       // Le temps pris par les fiches App Store est retiré de celui des miniatures (une action : 10 min au plus).
-      const mediaBudget = Math.max(60_000, MEDIA_BUDGET_MS - (mediaStart - storeStart));
+      const mediaBudget = Math.max(30_000, Math.min(MEDIA_BUDGET_MS - (mediaStart - storeStart), runStart + RUN_LIMIT_MS - WRITE_RESERVE_MS - mediaStart));
       let copied = 0;
       const got: { key: string; storageId: Id<"_storage">; url: string }[] = [];
       const failed: string[] = [];
@@ -212,23 +221,34 @@ export const run = internalAction({
       const stale = Object.keys(media).filter((k) => !used.has(k));
       for (let i = 0; i < stale.length; i += 200) await ctx.runMutation(internal.radarStore.dropMedia, { keys: stale.slice(i, i + 200) });
 
-      // Écriture des documents, par lots bornés.
+      // Écriture des documents, par lots bornés, WRITERS lots à la fois.
       let written = 0;
+      const batches: { key: string; hash: string; data: unknown }[][] = [];
       let batch: { key: string; hash: string; data: unknown }[] = [];
       let size = 0;
-      const flush = async () => {
-        if (!batch.length) return;
-        written += await ctx.runMutation(internal.radarStore.saveBoards, { items: batch, now });
-        batch = [];
-        size = 0;
-      };
       for (const [key, data] of boards) {
         const bytes = JSON.stringify(data).length;
-        if (size + bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS) await flush();
+        if (batch.length && (size + bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS)) {
+          batches.push(batch);
+          batch = [];
+          size = 0;
+        }
         batch.push({ key, hash: hashOf(data), data });
         size += bytes;
       }
-      await flush();
+      if (batch.length) batches.push(batch);
+      let nextBatch = 0;
+      const writer = async () => {
+        while (nextBatch < batches.length && Date.now() - runStart < RUN_LIMIT_MS) {
+          written += await ctx.runMutation(internal.radarStore.saveBoards, { items: batches[nextBatch++], now });
+        }
+      };
+      await Promise.all(Array.from({ length: WRITERS }, writer));
+      MEMLOG('écriture ' + written);
+      if (nextBatch < batches.length) {
+        // Temps écoulé : ce qui est écrit reste (empreintes), le passage suivant reprend le reste.
+        throw new Error(`temps écoulé : ${batches.length - nextBatch} lots de pages sur ${batches.length} non écrits`);
+      }
 
       // Les documents que ce passage n'a plus produits : effacés (leur fiche mène à « introuvable »).
       const existing: string[] = [];
