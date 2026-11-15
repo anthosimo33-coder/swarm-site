@@ -8,7 +8,8 @@ export default class CreateursCartes extends DCLogic {
     // Un clic hors du menu ouvert le ferme (sauf sur une pastille : elle bascule d'elle-même).
     this.out = (e) => {
       const st = this.state || {};
-      if (!st.open || !this.menuEl || this.menuEl.contains(e.target)) return;
+      const el = st.open === 'sort' ? this.sortEl : this.menuEl;
+      if (!st.open || !el || el.contains(e.target)) return;
       if (e.target.closest && e.target.closest('[data-menu-trigger]')) return;
       this.setState({ open: '' });
     };
@@ -69,6 +70,9 @@ export default class CreateursCartes extends DCLogic {
     const okG = (c, g) => g === 'ALL' || c.gender === g;
     const all = b.all || [];
     const list = all.filter((c) => okN(c) && okA(c) && okF(c, fb) && okT(c) && okK(c) && okG(c, gender));
+    // Le tri choisi dans la barre de résultats (15/11) ; vues médianes par défaut.
+    const SORTKEY = { med: (c) => c.nMed, fans: (c) => c.nFans, pace: (c) => c.n7 || 0, recent: (c) => c.lastAt || 0 };
+    if (st.sort && st.sort !== 'med' && SORTKEY[st.sort]) list.sort((x, y) => SORTKEY[st.sort](y) - SORTKEY[st.sort](x));
     const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); // Safari écrit « 1059 » en fr-FR
     const comptes = (n) => grp(n) + (n > 1 ? ' comptes' : ' compte');
     // Un menu par pastille (comme sur Apps), posé sous la pastille cliquée.
@@ -101,6 +105,9 @@ export default class CreateursCartes extends DCLogic {
     kinds.forEach((k) => chips.push({ label: kl(k), clear: () => set({ kinds: kinds.filter((x) => x !== k) }) }));
     if (gender !== 'ALL') chips.push({ label: gl[2], clear: () => set({ gender: 'ALL' }) });
     const radio = (on) => ({ radius: '50%', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
+    const SORTS = [['med', 'Vues médianes', 'vues médianes'], ['fans', 'Abonnés', 'abonnés'], ['pace', 'Rythme', 'rythme (vidéos en 7 j)'], ['recent', 'Dernière vidéo', 'dernière vidéo']];
+    const sortK = SORTS.some((x) => x[0] === st.sort) ? st.sort : 'med';
+    const sortDef = SORTS.filter((x) => x[0] === sortK)[0];
     const check = (on) => ({ radius: '5px', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const keep = (label) => !mq || label.toLowerCase().indexOf(mq) >= 0;
     const item = (label, n, on, pick, box) => Object.assign({ label, n: comptes(n), sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1, pick }, box(on));
@@ -147,6 +154,12 @@ export default class CreateursCartes extends DCLogic {
         ? 'Les ' + all.length + ' premiers en vues médianes, sur ' + comptes(b.total) + ' suivis ' + (IN[b.shown] || '')
         : (b.total > 1 ? grp(b.total) + ' comptes suivis ' : b.total + ' compte suivi ') + (IN[b.shown] || ''),
       hasMore: list.length > lim || (!!this._partial && lim < b.total), moreLabel: 'Voir ' + comptes(Math.min(LIM, (this._partial ? Math.max(list.length, b.total) : list.length) - lim)) + ' de plus', showMore: () => set({ lim: lim + LIM }),
+      // Barre de résultats (15/11) : ce qu'on regarde (marché, nombre, tri) au-dessus de la liste.
+      resTitle: b.market === 'ALL' ? 'Tous les créateurs' : 'Créateurs ' + (IN[b.shown] || ''),
+      resSub: b.none || b.wait ? '' : comptes((niches.length || apps.length || fans !== 'ALL' || kinds.length || gender !== 'ALL' || active) ? list.length : Math.max(b.total || 0, list.length)) + ' · classés par ' + sortDef[2],
+      sortLabel: sortDef[1], sortOn: open === 'sort', sortOpen: open === 'sort' ? 'true' : 'false',
+      toggleSort: () => set({ open: open === 'sort' ? '' : 'sort' }), setSortEl: (el) => { this.sortEl = el; },
+      sorts: SORTS.map(([k, l]) => Object.assign({ label: l, sel: sortK === k ? 'true' : 'false', bg: sortK === k ? 'var(--accent-soft)' : 'transparent', w: sortK === k ? 600 : 500, pick: () => set({ sort: k, open: '' }) }, radio(sortK === k))),
       tableHref: '/app/createurs?m=' + b.market, cardsHref: '/app/createurs/cartes?m=' + b.market,
       closeMenu: () => set({ open: '' }), onMq: (e) => set({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
@@ -159,7 +172,9 @@ export default class CreateursCartes extends DCLogic {
   creatorsOf(doc, market, P) {
     const st = this.state || {};
     const pages = doc && doc.pages > 1 ? doc.pages : 1;
-    const whole = !!((st.niches && st.niches.length) || (st.apps && st.apps.length) || (st.fans && st.fans !== 'ALL') || st.active);
+    // Toute la liste dès qu'un filtre ou un autre tri est posé (sinon on ne filtrerait / trierait que les 500 premiers).
+    const whole = !!((st.niches && st.niches.length) || (st.apps && st.apps.length) || (st.fans && st.fans !== 'ALL') || st.active
+      || (st.kinds && st.kinds.length) || (st.gender && st.gender !== 'ALL') || (st.sort && st.sort !== 'med'));
     const want = whole ? pages : Math.min(pages, Math.ceil(((st.lim || 50) + 100) / 500));
     let out = (doc && doc.creators) || [];
     let partial = want < pages;
@@ -223,7 +238,7 @@ export default class CreateursCartes extends DCLogic {
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('fr-FR') : '', fansK: isN(c.fans) ? nf(c.fans) : '', nFans: isN(c.fans) ? c.fans : -1,
           med: isN(c.median) ? nf(c.median) : '', nMed: isN(c.median) ? c.median : 0,
           rythme: isN(c.posts7d) ? (on ? c.posts7d + (c.posts7d > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j') : '',
-          last: c.lastPostAt ? 'Dernière ' + ago(c.lastPostAt) : '', lastAt: c.lastPostAt || 0,
+          last: c.lastPostAt ? 'Dernière ' + ago(c.lastPostAt) : '', n7: isN(c.posts7d) ? c.posts7d : 0, lastAt: c.lastPostAt || 0,
           dot: on ? 'var(--accent)' : 'var(--line-strong)', active: on,
           cov: (c.best || []).map((v) => ({ src: v.cover || '', v: nf(v.views), href: '/app/videos/' + v.id }))
         };
@@ -452,28 +467,6 @@ export default class CreateursCartes extends DCLogic {
                   )
                 )
               ] : null
-            ),
-            $h("div", { "style": "display: flex; align-items: center; gap: 16px;" },
-              $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
-                "Trier par ",
-                $h("span", { "style": "color: var(--ink); font-weight: 600;" },
-                  "vues médianes"
-                )
-              ),
-              $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Affichage" },
-                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": $v.tableHref, "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
-                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M4 5h16v14H4zM4 10h16M4 15h16M10 10v9", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  ),
-                  "Tableau"
-                ),
-                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "true", "href": $v.cardsHref, "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
-                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  ),
-                  "Cartes"
-                )
-              )
             )
           ),
           ($v.liveOn) ? [
@@ -507,7 +500,61 @@ export default class CreateursCartes extends DCLogic {
               ])
             )
           ] : null,
-          $h("div", { "style": "padding: 28px 32px 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;" },
+          $h("div", { "style": "margin: 24px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;" },
+            $h("div", { "style": "display: flex; align-items: baseline; gap: 10px; min-width: 0; flex-wrap: wrap;" },
+              $h("h2", { "style": "margin: 0; font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;" },
+                $t($v.resTitle)
+              ),
+              $h("span", { "style": "font-size: 13px; color: var(--ink-faint); white-space: nowrap;" },
+                $t($v.resSub)
+              )
+            ),
+            $h("div", { "style": "position: relative; display: flex; align-items: center; gap: 8px;" },
+              $h("button", { "type": "button", "data-menu-trigger": "true", "onClick": $v.toggleSort, "aria-expanded": $v.sortOpen, "aria-haspopup": "listbox", "style": "display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap;" },
+                $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
+                $h("span", { "style": "color: var(--ink-muted);" },
+                  "Trier"
+                ),
+                $h("span", { "style": "font-weight: 600;" },
+                  $t($v.sortLabel)
+                ),
+                $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              ),
+              ($v.sortOn) ? [
+                $h("div", { "ref": $v.setSortEl, "role": "listbox", "aria-label": "Trier par", "style": "position: absolute; top: 44px; right: 0; z-index: 30; width: 280px; box-sizing: border-box; padding: 8px; border-radius: 18px; background: rgba(13,17,26,0.97); border: 1px solid var(--glass-edge); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;" },
+                  ($l($v.sorts)).map((o) => [
+                    $h("button", { "type": "button", "role": "option", "aria-selected": o?.sel, "onClick": o?.pick, "style": `width: 100%; height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 12px; background: ${$t(o?.bg)}; color: var(--ink); font: inherit; font-size: 14px; font-weight: ${$t(o?.w)}; text-align: left; cursor: pointer;` },
+                      $h("span", { "aria-hidden": "true", "style": `width: 18px; height: 18px; border-radius: ${$t(o?.radius)}; border: 1.5px solid ${$t(o?.box)}; background: ${$t(o?.fill)}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;` },
+                        $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": o?.tick, "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      ),
+                      $t(o?.label)
+                    )
+                  ])
+                )
+              ] : null,
+              $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Affichage" },
+                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": $v.tableHref, "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M4 5h16v14H4zM4 10h16M4 15h16M10 10v9", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  "Tableau"
+                ),
+                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "true", "href": $v.cardsHref, "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  "Cartes"
+                )
+              )
+            )
+          ),
+          $h("div", { "style": "padding: 16px 32px 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;" },
             ($v.none) ? [
               $h("p", { "style": "grid-column: 1 / -1; margin: 24px 0; font-size: 15px; color: var(--ink-muted);" },
                 $t($v.noneLabel)

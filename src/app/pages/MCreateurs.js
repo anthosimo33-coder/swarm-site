@@ -11,7 +11,9 @@ export default class MCreateurs extends DCLogic {
   creatorsOf(doc, market, P) {
     const st = this.state || {};
     const pages = doc && doc.pages > 1 ? doc.pages : 1;
-    const whole = !!((st.niches && st.niches.length) || (st.apps && st.apps.length) || (st.fans && st.fans !== 'ALL') || st.active);
+    // Toute la liste dès qu'un filtre ou un autre tri est posé (sinon on ne filtrerait / trierait que les 500 premiers).
+    const whole = !!((st.niches && st.niches.length) || (st.apps && st.apps.length) || (st.fans && st.fans !== 'ALL') || st.active
+      || (st.kinds && st.kinds.length) || (st.gender && st.gender !== 'ALL') || (st.sort && st.sort !== 'med'));
     const want = whole ? pages : Math.min(pages, Math.ceil(((st.lim || 50) + 100) / 500));
     let out = (doc && doc.creators) || [];
     let partial = want < pages;
