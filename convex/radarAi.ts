@@ -38,8 +38,12 @@ const VIDEO_SYSTEM = `Tu reçois la miniature (première image) d'une vidéo Tik
 ${TYPE_RULES}
 2. text : le texte incrusté dans l'image (titre, sous-titres, phrases posées sur la vidéo, messages d'une conversation), recopié EXACTEMENT, dans sa langue, sans traduire ni corriger, émojis compris ; une ligne de texte par ligne. Ignore l'interface de TikTok ou d'Instagram (boutons, pseudo, compteurs, durée) et les mots isolés d'un décor. Chaîne vide s'il n'y a pas de texte.`;
 
-const GENDER_SYSTEM = `Ces images viennent d'un compte TikTok qui fait la promotion d'une application : sa photo de profil puis des miniatures de ses vidéos où la personne qui tient le compte se filme.
-gender : le genre apparent de cette personne — femme, homme, ou incertain si on ne la voit pas clairement, si ce sont plusieurs personnes différentes, ou si c'est une célébrité reprise. Ne te fonde jamais sur un pseudo seul.`;
+const GENDER_SYSTEM = `Ces images viennent d'un compte TikTok qui fait la promotion d'une application : sa photo de profil puis des miniatures de ses vidéos ou de ses carrousels de photos.
+gender : la personne qui incarne ce compte, c'est-à-dire celle qui se montre elle-même (se filme, ou pose sur ses propres photos, selfies compris), souvent la même que sur la photo de profil.
+- femme ou homme : son genre apparent, si on la voit clairement ;
+- sans_visage : personne n'incarne le compte (pas de personne, ou seulement des célébrités, des personnages, des images reprises, des mains) ;
+- incertain : plusieurs personnes différentes, ou impossible à dire.
+Ne te fonde jamais sur un pseudo seul.`;
 
 const videoSchema = {
   type: "object", additionalProperties: false, required: ["type", "text"],
@@ -47,7 +51,7 @@ const videoSchema = {
 } as const;
 const genderSchema = {
   type: "object", additionalProperties: false, required: ["gender"],
-  properties: { gender: { type: "string", enum: ["femme", "homme", "incertain"] } },
+  properties: { gender: { type: "string", enum: ["femme", "homme", "sans_visage", "incertain"] } },
 } as const;
 
 type Img = { type: "image"; source: { type: "base64"; media_type: "image/jpeg" | "image/png" | "image/webp" | "image/gif"; data: string } };

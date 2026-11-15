@@ -86,6 +86,7 @@ export const marketLabel = (code: string) => (code === "XX" ? "Pays inconnu" : (
 /** Marché d'une vidéo ou d'un signal sans compte suivi : le pays où la vidéo a été créée. */
 export const marketOf = (_lang: string | null | undefined, region?: string | null) => countryCode(region);
 
+
 /**
  * Les langues de chaque pays : une langue qui n'en est pas une s'affiche à côté du pays (« France · en espagnol »).
  * Un pays absent de la table n'affiche jamais de langue (on ne sait pas). Les États-Unis sont « en » seul : un compte
@@ -409,11 +410,10 @@ export function buildBoards(
     const top = [...n.entries()].sort((p, q) => q[1] - p[1])[0];
     if (top) mainType.set(accId, top[0]);
   }
-  // Son genre : lu par l'IA pour un compte « ambassadeur » (la personne qui se filme), « sans visage » pour les autres.
+  // Son genre : lu par l'IA pour chaque compte (photo de profil + 3 miniatures), qui dit aussi « sans visage ». Le
+  // déduire du type se trompait : @matbbt67 (15/11) publie des carrousels de ses selfies, et passait « sans visage ».
   const genderFor = (t: RTracked): string | null => {
-    const m = mainType.get(t.id);
-    if (!m) return null;
-    if (m !== "ambassadeur") return "sans_visage";
+    if (!mainType.get(t.id)) return null;
     const g = genderOf(t.handle);
     return g && g !== "incertain" ? g : null;
   };
@@ -756,9 +756,9 @@ export function buildBoards(
   // (ses vidéos « ambassadeur » les plus vues, 3 au plus, montrées à l'IA avec sa photo de profil).
   const videoAiTodo = [...usedVideos.values()].filter((v) => aiOf(v.videoId) === undefined && trackedHasImage(v))
     .sort((p, q) => q.views - p.views).map((v) => v.videoId);
-  const genderTodo = creatorAccounts.filter((t) => mainType.get(t.id) === "ambassadeur" && genderOf(t.handle) === undefined).map((t) => ({
+  const genderTodo = creatorAccounts.filter((t) => mainType.get(t.id) && genderOf(t.handle) === undefined).map((t) => ({
     handle: t.handle,
-    ids: (videosByAccount.get(t.id) ?? []).filter((v) => typeOf(v) === "ambassadeur").sort((p, q) => q.views - p.views).slice(0, 3).map((v) => v.videoId),
+    ids: (videosByAccount.get(t.id) ?? []).filter((v) => typeOf(v) === mainType.get(t.id) && trackedHasImage(v)).sort((p, q) => q.views - p.views).slice(0, 3).map((v) => v.videoId),
   })).filter((x) => x.ids.length);
   return { boards, need, used, regionTodo, slideTodo, videoAiTodo, genderTodo, langTodo };
 }
