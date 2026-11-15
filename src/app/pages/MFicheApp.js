@@ -96,7 +96,7 @@ export default class MFicheApp extends DCLogic {
       vfTabs = [['all', 'Toutes', DV.length], ['sans', 'Sans les placements', DV.length - nPaid], ['seuls', 'Placements payés', nPaid]].map(([k, l, n]) => ({ l, n: String(n), coin: k === 'seuls',
         on: vf === k ? 'true' : 'false', pick: () => this.setState({ vf: k }) }));
       fv = DV.filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true)).slice(0, 6)
-        .map((v) => ({ src: v.cover || '', v: nf(v.views), h: '@' + v.handle, age: ago(v.publishedAt), href: '/app/videos/' + v.id, paid: !!v.paid, car: v.carousel ? String(v.carousel) : '' }));
+        .map((v) => ({ src: v.cover || '', v: nf(v.views), h: '@' + v.handle, age: ago(v.publishedAt), href: '/app/videos/' + v.id, paid: !!v.paid, car: v.carousel ? String(v.carousel) : '', bTop: v.carousel ? '17px' : '8px', segs: Array.from({ length: Math.min(+(v.carousel || 0), 12) }, (_, j) => ({ bg: j === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.34)' })) }));
       ff = (D.formats || []).slice(0, 4).map((f) => ({ ico: f.kind === 'sound' ? SON : TXT, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
         m: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', o: nf(f.maxViews || 0) + ' vues au mieux', href: '/app/formats/' + f.id }));
       fm = (D.markets || []).map(([c, p], i) => ({ c, l: ML[c] || c, v: nf((D.views30 || 0) * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
@@ -506,7 +506,14 @@ export default class MFicheApp extends DCLogic {
                     $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     (v?.car) ? [
-                      $h("span", { "title": `Carrousel de ${$t(v?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 8px; right: 8px; z-index: 2; height: 20px; padding: 0 7px; border-radius: 999px; background: rgba(5,7,12,0.62); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" },
+                      $h("span", { "aria-hidden": "true", "style": "position: absolute; top: 6px; left: 8px; right: 8px; z-index: 3; display: flex; gap: 3px;" },
+                        ($l(v?.segs)).map((g) => [
+                          $h("span", { "style": `flex: 1; height: 3px; border-radius: 2px; background: ${$t(g?.bg)}; box-shadow: 0 1px 3px rgba(0,0,0,0.25);` })
+                        ])
+                      )
+                    ] : null,
+                    (v?.car) ? [
+                      $h("span", { "title": `Carrousel de ${$t(v?.car)} photos`, "aria-label": "Carrousel", "style": `position: absolute; top: ${$t(v?.bTop)}; right: 8px; z-index: 2; height: 20px; padding: 0 7px; border-radius: 999px; background: rgba(5,7,12,0.62); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;` },
                         $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                           $h("path", { "d": "M8 8h12v12H8zM4 16V4h12", "fill": "none", "stroke": "currentColor", "stroke-width": "2.6", "stroke-linejoin": "round" })
                         ),
@@ -514,7 +521,7 @@ export default class MFicheApp extends DCLogic {
                       )
                     ] : null,
                     (v?.paid) ? [
-                      $h("span", { "style": "position: absolute; top: 8px; left: 8px; z-index: 2; display: flex;" },
+                      $h("span", { "style": `position: absolute; top: ${$t(v?.bTop)}; left: 8px; z-index: 2; display: flex;` },
                         $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
                           $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
                             "€"

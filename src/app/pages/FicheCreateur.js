@@ -60,12 +60,16 @@ export default class FicheCreateur extends DCLogic {
         const aj = st.ajV === id;
         const copied = st.copied === id;
         return { href: v.href || '/app/videos/7705929733220994337', src: v.src, v: v.v, x: v.x, xBg: typeof v.xr === 'number' && v.xr >= 2 ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : 'rgba(5,7,12,0.6)',
-          plat: v.ig ? 'Instagram' : v.car ? 'Carrousel · ' + v.car + ' photos' : 'TikTok', url: v.url || z.tt, urlLabel: v.ig ? 'VOIR SUR INSTAGRAM' : 'VOIR SUR TIKTOK',
+          // Carrousel (15/11) : barre de diaporama en haut (un segment par photo, 12 au plus), « ⧉ N » à droite sous la
+          // barre ; plus de pastille « TikTok » (évident), Instagram reste signalé.
+          plat: v.ig ? 'Instagram' : '', carN: v.car ? String(v.car) : '', carT: v.car ? 'Carrousel de ' + v.car + ' photos' : '',
+          segs: Array.from({ length: Math.min(v.car || 0, 12) }, (_, j) => ({ bg: j === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.34)' })), bTop: v.car ? '20px' : '10px',
+          url: v.url || z.tt, urlLabel: v.ig ? 'Instagram' : 'TikTok',
           av: z.av || '', noav: !z.av, ini: String(z.h || '').replace(/^@/, '').charAt(0).toUpperCase(), h: z.h, flag: z.flag || '', mk: z.mk || '',
           appName: app.name || '', appIcon: app.logo || '', appBlank: app.logo ? '' : 'sw-app-blank', appLine: app.name ? app.name + (app.niche ? ' · ' + app.niche : '') : '',
           ago: v.ago || v.date || '', st: typeof v.xr === 'number' ? (up ? 'AU-DESSUS DE SA NORMALE' : 'SOUS SA NORMALE') : '', stInk: up ? '#4C9AFF' : '#8A93A3',
           t: v.t || '', tShown: v.t || 'Pas d’accroche lue sur cette vidéo.', tInk: v.t ? 'var(--ink-soft)' : 'var(--ink-faint)',
-          copyLabel: copied ? 'Accroche copiée' : 'Copier l’accroche', copyInk: copied ? 'var(--accent)' : 'var(--ink-muted)', copyIc: copied ? 'M5 12.5l4.5 4.5L19 7.5' : 'M9 9h10v11H9zM5 15V4h10',
+          copyLabel: copied ? 'Accroche copiée' : 'Copier l’accroche', copyInk: copied ? 'var(--accent)' : 'var(--ink)', copyIc: copied ? 'M5 12.5l4.5 4.5L19 7.5' : 'M9 9h10v11H9zM5 15V4h10',
           copy: () => { const done = () => { this.setState({ copied: id }); clearTimeout(this.copyT); this.copyT = setTimeout(() => { if ((this.state || {}).copied === id) this.setState({ copied: null }); }, 1800); };
             const legacy = () => { const ta = document.createElement('textarea'); ta.value = v.t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
               document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); if (ok) done(); };
@@ -427,14 +431,31 @@ export default class FicheCreateur extends DCLogic {
                       $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy" })
                     ] : null,
                     $h("span", { "class": "sw-video-shade" }),
+                    (v?.carN) ? [
+                      $h("span", { "aria-hidden": "true", "style": "position: absolute; top: 8px; left: 10px; right: 10px; z-index: 3; display: flex; gap: 3px;" },
+                        ($l(v?.segs)).map((g) => [
+                          $h("span", { "style": `flex: 1; height: 3px; border-radius: 2px; background: ${$t(g?.bg)}; box-shadow: 0 1px 3px rgba(0,0,0,0.25);` })
+                        ])
+                      )
+                    ] : null,
                     (v?.x) ? [
-                      $h("span", { "style": `position: absolute; top: 10px; left: 10px; z-index: 2; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: ${$t(v?.xBg)}; font-size: 12px; font-weight: 700; color: #FFFFFF;` },
+                      $h("span", { "style": `position: absolute; top: ${$t(v?.bTop)}; left: 10px; z-index: 2; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: ${$t(v?.xBg)}; font-size: 12px; font-weight: 700; color: #FFFFFF;` },
                         $t(v?.x), " sa normale"
                       )
                     ] : null,
-                    $h("span", { "style": "position: absolute; top: 10px; right: 10px; z-index: 2; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: rgba(5,7,12,0.6); font-size: 11px; font-weight: 600; color: #FFFFFF;" },
-                      $t(v?.plat)
-                    ),
+                    (v?.carN) ? [
+                      $h("span", { "title": v?.carT, "aria-label": v?.carT, "style": "position: absolute; top: 20px; right: 10px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px 0 8px; border-radius: 999px; background: rgba(5,7,12,0.62); backdrop-filter: blur(8px); font-size: 12px; font-weight: 700; color: #FFFFFF;" },
+                        $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                          $h("path", { "d": "M8 8h12v12H8zM4 16V4h12", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linejoin": "round" })
+                        ),
+                        $t(v?.carN)
+                      )
+                    ] : null,
+                    (v?.plat) ? [
+                      $h("span", { "style": "position: absolute; top: 10px; right: 10px; z-index: 2; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: rgba(5,7,12,0.6); font-size: 11px; font-weight: 600; color: #FFFFFF;" },
+                        $t(v?.plat)
+                      )
+                    ] : null,
                     $h("span", { "style": "position: absolute; left: 12px; bottom: 10px; z-index: 2; font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #FFFFFF;" },
                       $t(v?.v)
                     )
@@ -463,21 +484,21 @@ export default class FicheCreateur extends DCLogic {
                     $t(v?.tShown)
                   ),
                   $h("footer", { "style": "margin-top: auto; padding-top: 12px;" },
-                    $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 12px; border-top: 1px solid var(--line);" },
-                      $h("a", { "href": v?.url, "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 6px; height: 32px; flex-shrink: 0; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em; color: var(--ink-faint); text-decoration: none; white-space: nowrap;" },
-                        $t(v?.urlLabel),
-                        $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                          $h("path", { "d": "M7 17L17 7M9 7h8v8", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                        )
-                      ),
+                    $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px; border-top: 1px solid var(--line);" },
                       (v?.t) ? [
-                        $h("button", { "type": "button", "onClick": v?.copy, "aria-live": "polite", "style": `display: inline-flex; align-items: center; gap: 6px; height: 32px; min-width: 0; padding: 0 6px; border: 0; border-radius: 9px; background: transparent; color: ${$t(v?.copyInk)}; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; overflow: hidden;` },
+                        $h("button", { "type": "button", "onClick": v?.copy, "aria-live": "polite", "style": `display: inline-flex; align-items: center; gap: 6px; height: 32px; flex-shrink: 0; padding: 0 8px; border: 0; border-radius: 9px; background: transparent; color: ${$t(v?.copyInk)}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;` },
                           $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                             $h("path", { "d": v?.copyIc, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                           ),
                           $t(v?.copyLabel)
                         )
-                      ] : null
+                      ] : null,
+                      $h("a", { "href": v?.url, "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 5px; height: 32px; min-width: 0; margin-left: auto; padding: 0 8px; font-size: 12px; color: var(--ink-faint); text-decoration: none; white-space: nowrap;" },
+                        $t(v?.urlLabel),
+                        $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M7 17L17 7M9 7h8v8", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      )
                     )
                   )
                 )

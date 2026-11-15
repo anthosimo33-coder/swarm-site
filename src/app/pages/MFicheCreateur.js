@@ -88,7 +88,7 @@ export default class MFicheCreateur extends DCLogic {
         tipT: hits.length ? (hits.length > 1 ? 'la dernière le ' : 'le ') + day(hits[0].publishedAt) + '.' : '', nv: String(V.length) });
       vids = V.map((x) => { const hit = x.x >= 10;
         return { src: x.cover || '', v: nf(x.views), x: typeof x.x === 'number' ? xf(x.x) : '', hit, date: day(x.publishedAt), ago: ago(x.publishedAt), t: x.hook || '',
-          badge: hit ? 'var(--blue-600)' : 'rgba(5,7,12,0.55)', href: '/app/videos/' + x.id, car: x.carousel ? String(x.carousel) : '' }; });
+          badge: hit ? 'var(--blue-600)' : 'rgba(5,7,12,0.55)', href: '/app/videos/' + x.id, car: x.carousel ? String(x.carousel) : '', bTop: x.carousel ? '14px' : '6px', segs: Array.from({ length: Math.min(+(x.carousel || 0), 12) }, (_, j) => ({ bg: j === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.34)' })) }; });
     }
     return { z, vids, hasVids: vids.length > 0 };
   }
@@ -282,14 +282,21 @@ export default class MFicheCreateur extends DCLogic {
               $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
               $h("span", { "class": "sw-video-shade" }),
               (v?.car) ? [
-                $h("span", { "title": `Carrousel de ${$t(v?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 6px; right: 6px; z-index: 2; height: 20px; padding: 0 7px; border-radius: 999px; background: rgba(5,7,12,0.62); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" },
+                $h("span", { "aria-hidden": "true", "style": "position: absolute; top: 5px; left: 6px; right: 6px; z-index: 3; display: flex; gap: 2px;" },
+                  ($l(v?.segs)).map((g) => [
+                    $h("span", { "style": `flex: 1; height: 3px; border-radius: 2px; background: ${$t(g?.bg)}; box-shadow: 0 1px 3px rgba(0,0,0,0.25);` })
+                  ])
+                )
+              ] : null,
+              (v?.car) ? [
+                $h("span", { "title": `Carrousel de ${$t(v?.car)} photos`, "aria-label": "Carrousel", "style": `position: absolute; top: ${$t(v?.bTop)}; right: 6px; z-index: 2; height: 20px; padding: 0 7px; border-radius: 999px; background: rgba(5,7,12,0.62); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;` },
                   $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                     $h("path", { "d": "M8 8h12v12H8zM4 16V4h12", "fill": "none", "stroke": "currentColor", "stroke-width": "2.6", "stroke-linejoin": "round" })
                   ),
                   $t(v?.car)
                 )
               ] : null,
-              $h("span", { "class": "sw-badge", "style": `position: absolute; top: 6px; left: 6px; height: 20px; padding: 0 6px; font-size: 10px; background: ${$t(v?.badge)}; color: #FFFFFF;` },
+              $h("span", { "class": "sw-badge", "style": `position: absolute; top: ${$t(v?.bTop)}; left: 6px; height: 20px; padding: 0 6px; font-size: 10px; background: ${$t(v?.badge)}; color: #FFFFFF;` },
                 $t(v?.x)
               ),
               $h("span", { "style": "position: absolute; left: 7px; bottom: 6px; display: flex; flex-direction: column;" },
