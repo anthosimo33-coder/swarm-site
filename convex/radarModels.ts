@@ -267,8 +267,8 @@ export function buildBoards(
     genderOf?: (handle: string) => string | undefined;
   } = {},
 ): {
-  boards: Boards; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[]; slideTodo: string[];
-  videoAiTodo: string[]; genderTodo: { handle: string; ids: string[] }[]; langTodo: { accountId: string; texts: string[] }[];
+  boards: Boards; lazy: Map<string, () => unknown>; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[];
+  laterTodos: () => { slideTodo: string[]; videoAiTodo: string[] }; genderTodo: { handle: string; ids: string[] }[]; langTodo: { accountId: string; texts: string[] }[];
 } {
   const missing = opts.missing ?? (() => false);
   const coverUrl = opts.coverUrl ?? (() => null);
@@ -451,7 +451,20 @@ export function buildBoards(
     .map(([c, n]) => [c, marketLabel(c), n] as [string, string, number]);
   const accountsByApp = groupBy(creatorAccounts, (t) => canonical(t.appId)?.id ?? "");
   const usedVideos = new Map<string, RVideo>();
-  const use = (vs: RVideo[]) => vs.forEach((v) => usedVideos.set(v.videoId, v));
+  // Pages produites à l'écriture, une à une (15/11 : la synchro de prod mourait à 512 Mo en les gardant toutes) :
+  // pages vidéo, fiches créateur, listes d'apps par pays et plateforme. Une fiche produite à l'écriture qui cite une
+  // vidéo lui ajoute sa page (la boucle d'écriture la reprend : une Map parcourue voit ce qu'on y ajoute).
+  const lazy = new Map<string, () => unknown>();
+  const videoPageKeys = new Set<string>();
+  let videoPagesOpen = false;
+  const addVideoPage = (v: RVideo) => {
+    const k = `video:${v.videoId}`;
+    if (videoPageKeys.has(k)) return;
+    videoPageKeys.add(k);
+    used.add(coverKey(v.videoId));
+    lazy.set(k, () => videoPage(v, signalByVideo.get(v.videoId) ?? null));
+  };
+  const use = (vs: RVideo[]) => vs.forEach((v) => { usedVideos.set(v.videoId, v); if (videoPagesOpen) addVideoPage(v); });
 
   // ── Apps : le classement, et la fiche de chaque app ──
   // Les chiffres d'une app sur un ensemble de ses vidéos : toutes (la liste), celles d'un pays, d'une plateforme.
@@ -540,23 +553,33 @@ export function buildBoards(
     vidsByAppMarket.set(a.id, groupBy(videosByApp.get(a.id) ?? [], (v) => mkOf(v.accountId) ?? ""));
     accsByAppMarket.set(a.id, groupBy(accountsByApp.get(a.id) ?? [], (t) => mkOf(t.id) ?? ""));
   }
+  const recentDays = Math.max(30, DAYS) * DAY;
+  for (const [code] of MARKETS) {
+    let n = 0;
+    for (const r of listed.values()) {
+      const vids = vidsByAppMarket.get(appBySlug.get(r.slug)!.id)?.get(code) ?? [];
+      if (vids.some((v) => v.views > 0 && now - v.publishedAt <= recentDays)) n++;
+    }
+    marketApps.set(code, n);
+  }
   for (const plat of [null, "tiktok", "instagram"] as const) {
     for (const code of [null, ...MARKETS.map((m) => m[0])]) {
       if (!plat && !code) continue;
-      const rows = [];
-      for (const r of listed.values()) {
-        const a = appBySlug.get(r.slug)!;
-        let vids = code ? vidsByAppMarket.get(a.id)?.get(code) ?? [] : videosByApp.get(a.id) ?? [];
-        const accs = code ? accsByAppMarket.get(a.id)?.get(code) ?? [] : accountsByApp.get(a.id) ?? [];
-        if (plat) vids = vids.filter((v) => v.platform === plat);
-        if (!vids.length) continue;
-        const { _top, ...st } = statsOf(vids, code ? accs.length : r.accounts);
-        if (!st.views30 && !st.days.some((d) => d > 0)) continue;
-        rows.push({ ...r, ...st, share: code ? (r.markets.find((m) => m[0] === code)?.[1] ?? 0) : null });
-      }
-      rows.sort((p, q) => q.views30 - p.views30);
-      if (code && !plat) marketApps.set(code, rows.length);
-      boards.set(`apps${code ? ":" + code : ""}${plat ? "@" + plat : ""}`, { updatedAt: now, market: code ?? "ALL", platform: plat ?? "ALL", niches: [...new Set(rows.map((x) => x.niche))].sort(), apps: rows });
+      lazy.set(`apps${code ? ":" + code : ""}${plat ? "@" + plat : ""}`, () => {
+        const rows = [];
+        for (const r of listed.values()) {
+          const a = appBySlug.get(r.slug)!;
+          let vids = code ? vidsByAppMarket.get(a.id)?.get(code) ?? [] : videosByApp.get(a.id) ?? [];
+          const accs = code ? accsByAppMarket.get(a.id)?.get(code) ?? [] : accountsByApp.get(a.id) ?? [];
+          if (plat) vids = vids.filter((v) => v.platform === plat);
+          if (!vids.length) continue;
+          const { _top, ...st } = statsOf(vids, code ? accs.length : r.accounts);
+          if (!st.views30 && !st.days.some((d) => d > 0)) continue;
+          rows.push({ ...r, ...st, share: code ? (r.markets.find((m) => m[0] === code)?.[1] ?? 0) : null });
+        }
+        rows.sort((p, q) => q.views30 - p.views30);
+        return { updatedAt: now, market: code ?? "ALL", platform: plat ?? "ALL", niches: [...new Set(rows.map((x) => x.niche))].sort(), apps: rows };
+      });
     }
   }
   (boards.get("apps") as { marketApps: [string, number][] }).marketApps = MARKETS.map((m) => [m[0], marketApps.get(m[0]) ?? 0]);
@@ -623,8 +646,9 @@ export function buildBoards(
   for (const c of creators) wantAvatar(c.handle);
   // Tous les créateurs de chaque marché (plus de plafond à 200, décision du 14/11), par pages de CREATOR_PAGE :
   // « creators:<marché> » porte la 1re page et leur nombre, « creators:<marché>:2 », « :3 »… la suite.
+  const plainOf = new Map(creators.map(({ _vids, ...c }) => [c.handle, c]));
   const pagesOf = (code: string, list: typeof creators) => {
-    const plain = list.map(({ _vids, ...c }) => c);
+    const plain = list.map((c) => plainOf.get(c.handle)!);
     const pages = Math.max(1, Math.ceil(plain.length / CREATOR_PAGE));
     boards.set(`creators:${code}`, { updatedAt: now, market: code, markets: MARKETS, total: plain.length, pages, creators: plain.slice(0, CREATOR_PAGE) });
     for (let i = 2; i <= pages; i++) boards.set(`creators:${code}:${i}`, { updatedAt: now, market: code, page: i, creators: plain.slice((i - 1) * CREATOR_PAGE, i * CREATOR_PAGE) });
@@ -634,15 +658,16 @@ export function buildBoards(
   const creatorPages = new Set(creators.map((c) => c.handle));
   for (const c of creators) {
     if (!creatorPages.has(c.handle)) continue;
-    const t = trackedByHandle.get(c.handle)!;
-    const vids = withImage(c._vids, 15, trackedHasImage);
-    use(vids);
-    const fmts = (formatsByAccount.get(t.id) ?? []).map((x) => x.f).filter((f, i, arr) => arr.indexOf(f) === i && f.accountCount >= 3);
-    const { _vids, ...row } = c;
-    boards.set(`creator:${c.handle}`, {
-      updatedAt: now, ...row,
-      videos: vids.map(card),
-      formats: fmts.slice(0, 10).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount })),
+    lazy.set(`creator:${c.handle}`, () => {
+      const t = trackedByHandle.get(c.handle)!;
+      const vids = withImage(c._vids, 15, trackedHasImage);
+      use(vids);
+      const fmts = (formatsByAccount.get(t.id) ?? []).map((x) => x.f).filter((f, i, arr) => arr.indexOf(f) === i && f.accountCount >= 3);
+      return {
+        updatedAt: now, ...plainOf.get(c.handle)!,
+        videos: vids.map(card),
+        formats: fmts.slice(0, 10).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount })),
+      };
     });
   }
 
@@ -702,8 +727,15 @@ export function buildBoards(
     const tv = trackedByVideo.get(s.videoId);
     if (tv) usedVideos.set(tv.videoId, tv);
   }
-  for (const v of usedVideos.values()) boards.set(`video:${v.videoId}`, videoPage(v, signalByVideo.get(v.videoId) ?? null));
-  for (const s of hot.slice(0, 40)) if (!usedVideos.has(s.videoId)) boards.set(`video:${s.videoId}`, videoPage(null, s));
+  // Les pages vidéo (≈ 45 000) sont produites à l'écriture, une à une (`lazy`), pas gardées toutes en mémoire (15/11).
+  // Leurs miniatures sont déjà comptées (cartes) ; on les note quand même, pour que la copie rangée ne soit pas effacée.
+  for (const v of usedVideos.values()) addVideoPage(v);
+  for (const s of hot.slice(0, 40)) if (!usedVideos.has(s.videoId)) { used.add(coverKey(s.videoId)); lazy.set(`video:${s.videoId}`, () => videoPage(null, s)); }
+  videoPagesOpen = true;
+  // La suite de lecture de chaque app (identifiants seulement), relevée maintenant : à l'écriture, la fiche de l'app a
+  // déjà quitté `boards` quand ses pages vidéo sont produites (15/11, banc : 39 000 pages vidéo sans suite).
+  const playlists = new Map<string, string[]>();
+  for (const [k, b] of boards) if (k.startsWith("app:")) playlists.set(k.slice(4), ((b as { videos?: VideoCard[] }).videos ?? []).map((c) => c.id));
 
   function videoPage(v: RVideo | null, s: RSignal | null) {
     const acc = v ? accountById.get(v.accountId) : s?.trackedAccountId ? accountById.get(s.trackedAccountId) : undefined;
@@ -713,7 +745,7 @@ export function buildBoards(
     const views = Math.max(v?.views ?? 0, s?.views ?? 0);
     const handle = acc?.handle ?? s?.authorHandle ?? "";
     const platform = v?.platform ?? s?.platform ?? "tiktok";
-    const playlist = a ? ((boards.get(`app:${a.slug}`) as { videos?: VideoCard[] } | undefined)?.videos ?? []).map((c) => c.id) : [];
+    const playlist = a ? playlists.get(a.slug) ?? [] : [];
     return {
       updatedAt: now, id, platform,
       url: s?.url ?? (platform === "instagram" ? `https://www.instagram.com/reel/${id.replace(/^ig:/, "")}/` : `https://www.tiktok.com/@${handle}/video/${id}`),
@@ -750,15 +782,15 @@ export function buildBoards(
     ids: (videosByAccount.get(t.id) ?? []).filter((v) => /^\d{6,25}$/.test(v.videoId)).sort((p, q) => q.publishedAt - p.publishedAt).slice(0, 3).map((v) => v.videoId) }))
     .filter((x) => x.ids.length);
   // Les vidéos TikTok montrées dont on ne sait pas encore si ce sont des carrousels, les plus vues d'abord.
-  const slideTodo = [...usedVideos.values()].filter((v) => v.platform !== "instagram" && /^\d{6,25}$/.test(v.videoId) && slidesOf(v.videoId) === undefined)
-    .sort((p, q) => q.views - p.views).map((v) => v.videoId);
+  const laterTodos = () => ({ slideTodo: [...usedVideos.values()].filter((v) => v.platform !== "instagram" && /^\d{6,25}$/.test(v.videoId) && slidesOf(v.videoId) === undefined)
+    .sort((p, q) => q.views - p.views).map((v) => v.videoId),
   // Lecture IA : les vidéos montrées pas encore lues (les plus vues d'abord), et les comptes « ambassadeur » sans genre
   // (ses vidéos « ambassadeur » les plus vues, 3 au plus, montrées à l'IA avec sa photo de profil).
-  const videoAiTodo = [...usedVideos.values()].filter((v) => aiOf(v.videoId) === undefined && trackedHasImage(v))
-    .sort((p, q) => q.views - p.views).map((v) => v.videoId);
+  videoAiTodo: [...usedVideos.values()].filter((v) => aiOf(v.videoId) === undefined && trackedHasImage(v))
+    .sort((p, q) => q.views - p.views).map((v) => v.videoId) });
   const genderTodo = creatorAccounts.filter((t) => mainType.get(t.id) && genderOf(t.handle) === undefined).map((t) => ({
     handle: t.handle,
     ids: (videosByAccount.get(t.id) ?? []).filter((v) => typeOf(v) === mainType.get(t.id) && trackedHasImage(v)).sort((p, q) => q.views - p.views).slice(0, 3).map((v) => v.videoId),
   })).filter((x) => x.ids.length);
-  return { boards, need, used, regionTodo, slideTodo, videoAiTodo, genderTodo, langTodo };
+  return { boards, lazy, need, used, regionTodo, laterTodos, genderTodo, langTodo };
 }

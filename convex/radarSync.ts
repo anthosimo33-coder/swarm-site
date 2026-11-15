@@ -2,6 +2,7 @@
 
 import v8 from "node:v8";
 import vm from "node:vm";
+import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction } from "./_generated/server";
@@ -28,7 +29,7 @@ const MEDIA_PER_RUN = 400;
 // 14/11 : 1 min (au lieu de 5) — copier 546 miniatures en 4 min faisait passer la synchro de 387 à 502 Mo (mémoire de
 // sharp non rendue), et elle mourait à l'écriture des pages (limite 512 Mo). Les miniatures non copiées le sont à la
 // première demande de /cover (la lecture IA les demande toutes) ; les icônes passent d'abord.
-const MEDIA_BUDGET_MS = 60_000;
+const MEDIA_BUDGET_MS = 4 * 60_000; // copie dans sa propre action (copyMedia), après la synchro
 /**
  * Une action Convex est coupée à 10 min, sans rien noter. Le passage s'arrête de lui-même à 9 min,
  * et la copie des images laisse 3 min aux écritures (quand les icônes changent, presque toutes les
@@ -65,7 +66,27 @@ const gc: () => void = (() => {
 })();
 
 const MEMLOG = (label: string) => { const m = process.memoryUsage(); console.log(`[mem] ${label} rss=${Math.round(m.rss / 1e6)} heap=${Math.round(m.heapUsed / 1e6)} ext=${Math.round(m.external / 1e6)} buf=${Math.round(m.arrayBuffers / 1e6)}`); };
-async function fetchTable(base: string, secret: string, table: (typeof TABLES)[number]) {
+/**
+ * Une ligne de l'export, réduite à ce que Swarm utilise (15/11 : 86 000 vidéos, 76 Mo de JSON, la synchro de prod mourait
+ * à 512 Mo). Vidéos suivies : sans l'adresse signée de la miniature (23 % du poids ; la copie lit la page publique),
+ * les 12 derniers relevés de vues (ceux de la page vidéo), identifiants de compte et d'app partagés au lieu d'être
+ * dupliqués à chaque ligne. La ligne est RECONSTRUITE, champs toujours dans le même ordre : y retirer des champs
+ * (`delete`) faisait passer chaque objet en mode dictionnaire, plus du double en mémoire (banc du 15/11).
+ */
+type Slim = { intern: (s: string) => string; now: number };
+const internOf = (k: Slim, x: unknown) => (typeof x === "string" ? k.intern(x) : x);
+function slimRow(table: string, row: Record<string, unknown>, k: Slim): unknown {
+  if (table === "trackedVideos") {
+    return {
+      accountId: internOf(k, row.accountId), appId: internOf(k, row.appId), platform: row.platform, videoId: row.videoId,
+      publishedAt: row.publishedAt, views: row.views, snapshots: Array.isArray(row.snapshots) ? row.snapshots.slice(-12) : [],
+      caption: row.caption, hook: row.hook, musicTitle: row.musicTitle, coverUrl: null, region: row.region, cites: row.cites,
+    };
+  }
+  return row;
+}
+
+async function fetchTable(base: string, secret: string, table: (typeof TABLES)[number], k: Slim) {
   const rows: unknown[] = [];
   let cursor: string | null = null;
   for (let page = 0; page < 500; page++) {
@@ -73,7 +94,7 @@ async function fetchTable(base: string, secret: string, table: (typeof TABLES)[n
     const res = await fetch(url, { headers: { Authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(90_000) });
     if (!res.ok) throw new Error(`export ${table} : HTTP ${res.status}`);
     const body = (await res.json()) as { rows: unknown[]; cursor: string; done: boolean };
-    rows.push(...body.rows);
+    for (const r of body.rows) rows.push(slimRow(table, r as Record<string, unknown>, k));
     if (body.done) return rows;
     cursor = body.cursor;
   }
@@ -119,6 +140,38 @@ export const repairHeic = internalAction({
   },
 });
 
+/**
+ * Copie des images demandées par la synchro (icônes d'abord, puis miniatures et photos de profil), dans sa propre action :
+ * sharp garde sa mémoire, et la copie faite au milieu de la synchro la faisait dépasser 512 Mo (15/11).
+ */
+export const copyMedia = internalAction({
+  args: { items: v.array(v.object({ key: v.string(), src: v.string() })) },
+  handler: async (ctx, { items }): Promise<{ copied: number; failed: number }> => {
+    const start = Date.now();
+    const got: { key: string; storageId: Id<"_storage">; url: string }[] = [];
+    const failed: string[] = [];
+    let copied = 0, nfail = 0, next = 0;
+    const retried = async (go: () => Promise<unknown>) => { for (let i = 0; i < 3; i++) { try { await go(); return; } catch { await sleep(500 * (i + 1)); } } };
+    const flush = async () => {
+      const its = got.splice(0), keys = failed.splice(0);
+      if (its.length) await retried(() => ctx.runMutation(internal.radarStore.saveMedia, { items: its }));
+      if (keys.length) await retried(() => ctx.runMutation(internal.radarStore.markMisses, { keys }));
+    };
+    const worker = async () => {
+      while (next < items.length && Date.now() - start < MEDIA_BUDGET_MS) {
+        const { key, src } = items[next++];
+        const r = await copyImage(ctx, key, src);
+        if (r) { got.push(r); copied++; } else if (key.startsWith("v:")) { failed.push(key); nfail++; }
+        if (got.length + failed.length >= 100) await flush();
+      }
+    };
+    await Promise.all(Array.from({ length: PARALLEL }, worker));
+    await flush();
+    console.log(`[copie] ${copied} images copiées, ${nfail} introuvables, ${items.length - next} laissées pour le passage suivant`);
+    return { copied, failed: nfail };
+  },
+});
+
 export const run = internalAction({
   args: {},
   handler: async (ctx): Promise<Record<string, number>> => {
@@ -130,8 +183,13 @@ export const run = internalAction({
       const secret = process.env.JARVIA_EXPORT_SECRET;
       if (!secret) throw new Error("JARVIA_EXPORT_SECRET absente");
 
+      gc(); // un processus réutilisé garde les restes du passage d'avant (15/11 : 509 Mo au départ du passage de 17h15)
+      MEMLOG('départ');
       const raw = {} as Raw;
-      for (const t of TABLES) { (raw as Record<string, unknown>)[t] = await fetchTable(base, secret, t); MEMLOG('export ' + t); }
+      const pool = new Map<string, string>();
+      const slim: Slim = { intern: (x) => { const y = pool.get(x); if (y) return y; pool.set(x, x); return x; }, now: Date.now() };
+      for (const t of TABLES) { (raw as Record<string, unknown>)[t] = await fetchTable(base, secret, t, slim); gc(); MEMLOG('export ' + t); }
+      pool.clear();
       // Essai sur le dev seulement : des comptes marqués « placement payé » à la main (variable SWARM_TEST_PLACEMENT,
       // pseudos séparés par des virgules), tant que l'export du Radar n'envoie pas encore `placement`.
       const testPaid = (process.env.SWARM_TEST_PLACEMENT ?? "").split(",").map((h) => h.trim().replace(/^@/, "")).filter(Boolean);
@@ -252,77 +310,29 @@ export const run = internalAction({
         // Lue une fois par vidéo : le 2e calcul la reprend (52 000 vidéos, ~3 Mo).
         langOf: (id: string) => (langs.has(id) ? langs.get(id) ?? null : undefined),
       };
-      MEMLOG('avant calcul 1');
-      // 1er calcul : seulement la liste des images à copier. Ses 52 000 pages ne sont pas gardées pendant la copie (la
-      // phase la plus gourmande) : le 14/11, les garder faisait dépasser les 512 Mo d'une action.
-      let need = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts).need;
-      MEMLOG('après calcul 1');
-
-      // Miniatures et icônes manquantes : 20 copies en continu, dans le temps imparti.
-      // Les icônes d'abord (peu nombreuses, visibles partout), puis les miniatures.
-      const todo = [...need.entries()].sort((p, q) => Number(q[0].startsWith("icon:")) - Number(p[0].startsWith("icon:"))).slice(0, MEDIA_PER_RUN);
-      const mediaStart = Date.now();
-      // Le temps pris par les fiches App Store est retiré de celui des miniatures (une action : 10 min au plus).
-      const mediaBudget = Math.max(30_000, Math.min(MEDIA_BUDGET_MS - (mediaStart - storeStart), runStart + RUN_LIMIT_MS - WRITE_RESERVE_MS - mediaStart));
-      let copied = 0;
-      const got: { key: string; storageId: Id<"_storage">; url: string }[] = [];
-      const failed: string[] = [];
-      // Un lot refusé (le site range des images au même moment) est retenté, puis laissé : ces images
-      // seront recopiées au passage suivant, le passage lui-même continue.
-      const retried = async (run: () => Promise<unknown>) => {
-        for (let i = 0; i < 3; i++) {
-          try { await run(); return; } catch { await new Promise((r) => setTimeout(r, 500 * (i + 1))); }
-        }
-      };
-      const flushMedia = async () => {
-        const items = got.splice(0), keys = failed.splice(0);
-        if (copied % 500 < 100) MEMLOG('copie ' + copied + ' en ' + Math.round((Date.now() - mediaStart) / 1000) + ' s');
-        if (items.length) await retried(() => ctx.runMutation(internal.radarStore.saveMedia, { items }));
-        if (keys.length) await retried(() => ctx.runMutation(internal.radarStore.markMisses, { keys }));
-      };
-      let next = 0;
-      const worker = async () => {
-        while (next < todo.length && Date.now() - mediaStart < mediaBudget) {
-          const [k, src] = todo[next++];
-          const r = await copyImage(ctx, k, src);
-          if (r) {
-            got.push(r);
-            media[r.key] = r.url;
-            copied++;
-          } else if (k.startsWith("v:")) {
-            failed.push(k);
-            misses.set(k, Date.now());
-          }
-          if (got.length + failed.length >= 100) await flushMedia();
-        }
-      };
-      await Promise.all(Array.from({ length: PARALLEL }, worker));
-      await flushMedia();
       gc();
-      MEMLOG('fin copie');
-      const { boards, need: need2, used, regionTodo, slideTodo, videoAiTodo, genderTodo, langTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
-      need = need2;
+      MEMLOG('avant calcul');
+      // Un seul calcul (15/11 : le 1er, qui ne servait qu'à lister les images à copier, doublait le pic). Les pages
+      // vidéo (≈ 45 000) ne sont pas construites ici : `lazy` les produit une à une à l'écriture, puis elles sont libérées.
+      const { boards, lazy, need, used, regionTodo, laterTodos, genderTodo, langTodo } = buildBoards(raw, now, (k) => media[k] ?? null, storeOf, opts);
+      // Les images à copier (icônes d'abord) : copiées APRÈS la synchro, dans leur propre action (copyMedia) ; les pages
+      // montrent d'ici là la miniature servie par /cover (copiée à la 1re vue).
+      const copyTodo = [...need.entries()].sort((p, q) => Number(q[0].startsWith("icon:")) - Number(p[0].startsWith("icon:"))).slice(0, MEDIA_PER_RUN);
       // Les comptes encore sans pays : notés pour que leur pays soit lu sur leurs vidéos (convex/radarRegions.ts).
       for (let i = 0; i < regionTodo.length; i += 300) await ctx.runMutation(internal.radarStore.saveRegionTodo, { items: regionTodo.slice(i, i + 300) });
       if (regionTodo.length) await ctx.scheduler.runAfter(0, internal.radarRegions.fill, {});
       // Les nouvelles vidéos à vérifier (carrousel, lecture IA) et les comptes à genrer : seulement celles qui ne sont
       // pas déjà en file, enregistrées APRÈS l'écriture des pages (elles ne doivent pas lui prendre son temps).
-      const newSlides = slideTodo.filter((id) => !slideKnown.has(id)).slice(0, TODO_MAX);
-      const newAi = videoAiTodo.filter((id) => !aiKnown.has(id)).slice(0, TODO_MAX);
       const newGender = genderTodo.filter((x) => !genderKnown.has(x.handle)).slice(0, TODO_MAX);
       gc();
-      MEMLOG('après calcul 2');
+      MEMLOG('après calcul');
 
-      // Les images qu'aucun document ne cite plus (vidéo sortie des listes) : effacées.
-      const stale = Object.keys(media).filter((k) => !used.has(k));
-      for (let i = 0; i < stale.length; i += 200) await ctx.runMutation(internal.radarStore.dropMedia, { keys: stale.slice(i, i + 200) });
       // L'export du Radar (≈ 100 Mo avec l'historique de chaque vidéo) ne sert plus : libéré avant l'écriture des pages
       // (le 14/11, lire les empreintes par-dessus a dépassé les 512 Mo d'une action).
       const sizes = { apps: raw.apps.length, tracked: raw.tracked.length, trackedVideos: raw.trackedVideos.length, formats: raw.formats.length, signals: raw.signals.length };
       for (const t of TABLES) (raw as Record<string, unknown>)[t] = [];
       const missing = need.size;
       need.clear();
-      used.clear();
 
       // Écriture des documents, par lots bornés, WRITERS lots à la fois.
       let written = 0;
@@ -335,62 +345,61 @@ export const run = internalAction({
         cursor = page.cursor;
         done = page.done;
       }
-      // Toutes les clés produites, gardées à part : les pages écrites quittent `boards` pour libérer la mémoire.
-      const allKeys = new Set(boards.keys());
-      const batches: { items: { key: string; hash: string; data: unknown }[]; bytes: number }[] = [];
-      let batch: { key: string; hash: string; data: unknown }[] = [];
-      let size = 0;
-      let seen = 0;
-      for (const [key, data] of boards) {
-        if (++seen % 2000 === 0) gc();
-        const { hash, bytes } = hashLen(data);
-        if (existingHash.get(key) === hash) continue;
-        if (batch.length && (size + bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS)) {
-          batches.push({ items: batch, bytes: size });
-          batch = [];
-          size = 0;
-        }
-        batch.push({ key, hash, data });
-        size += bytes;
+      // Toutes les clés produites, notées au fil de l'écriture : les pages quittent la mémoire une fois écrites, et les
+      // listes et fiches produites à la volée ajoutent les pages de leurs vidéos pendant l'écriture (le 15/11, une liste
+      // figée avant l'écriture les a fait passer pour disparues : 60 000 pages effacées sur le dev).
+      const allKeys = new Set<string>();
+      // Écriture en flux (15/11) : les pages sont produites, mises en texte et comparées une à une ; un lot plein part
+      // aussitôt (cadencé à WRITE_RATE), puis est oublié. Plus de liste de tous les lots en mémoire.
+      function* pages(): Generator<[string, unknown]> {
+        for (const [k, d] of boards) { boards.delete(k); allKeys.add(k); yield [k, d]; }
+        for (const [k, f] of lazy) { lazy.delete(k); allKeys.add(k); yield [k, f()]; }
       }
-      if (batch.length) batches.push({ items: batch, bytes: size });
-      let nextBatch = 0;
-      let sent = 0;
-      let memStop = false;
+      let batch: { key: string; hash: string; data: unknown }[] = [];
+      let size = 0, sent = 0, seen = 0, left = 0;
+      let stopped: "" | "mémoire pleine" | "temps écoulé" = "";
       const writeStart = Date.now();
-      const writer = async () => {
-        while (nextBatch < batches.length && Date.now() - runStart < RUN_LIMIT_MS) {
-          if (nextBatch % 4 === 0) gc();
-          if (process.memoryUsage().rss > MEM_STOP) { gc(); if (process.memoryUsage().rss > MEM_STOP) { memStop = true; break; } }
-          const b = batches[nextBatch++];
-          // Cadence : chaque lot part quand les octets déjà envoyés le permettent (WRITE_RATE par seconde).
-          sent += b.bytes;
-          const wait = writeStart + ((sent - b.bytes) / WRITE_RATE) * 1000 - Date.now();
-          if (wait > 0) await sleep(wait);
-          for (let attempt = 0; ; attempt++) {
-            try {
-              const n = await ctx.runMutation(internal.radarStore.saveBoards, { items: b.items, now });
-              // Écrit : la page n'a plus à rester en mémoire (la mémoire baisse au fil de l'écriture).
-              for (const it of b.items) boards.delete(it.key);
-              b.items = [];
-              written += n; // pas « written += await … » : lu avant l'attente, les 4 écrivains s'écraseraient
-              break;
-            } catch (e) {
-              if (attempt >= 4 || !/TooManyWrites/.test(String(e))) throw e;
-              await sleep(2_000 * (attempt + 1));
-            }
+      const flush = async () => {
+        if (!batch.length) return;
+        const items = batch, bytes = size;
+        batch = []; size = 0;
+        sent += bytes;
+        const wait = writeStart + ((sent - bytes) / WRITE_RATE) * 1000 - Date.now();
+        if (wait > 0) await sleep(wait);
+        for (let attempt = 0; ; attempt++) {
+          try { written += await ctx.runMutation(internal.radarStore.saveBoards, { items, now }); break; } catch (e) {
+            if (attempt >= 4 || !/TooManyWrites/.test(String(e))) throw e;
+            await sleep(2_000 * (attempt + 1));
           }
         }
       };
-      await Promise.all(Array.from({ length: WRITERS }, writer));
+      for (const [key, data] of pages()) {
+        if (++seen % 1000 === 0) gc();
+        if (Date.now() - runStart > RUN_LIMIT_MS) { stopped = "temps écoulé"; left = 1; break; }
+        if (process.memoryUsage().rss > MEM_STOP) { gc(); if (process.memoryUsage().rss > MEM_STOP) { stopped = "mémoire pleine"; left = 1; break; } }
+        const { hash, bytes } = hashLen(data);
+        if (existingHash.get(key) === hash) continue;
+        if (batch.length && (size + bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS)) await flush();
+        batch.push({ key, hash, data });
+        size += bytes;
+      }
+      if (!stopped) await flush(); else left += batch.length + boards.size + lazy.size; // ce qui n'a pas été produit
       MEMLOG('écriture ' + written);
-      if (nextBatch < batches.length) {
-        // Temps écoulé ou mémoire pleine : ce qui est écrit reste (empreintes) ; un passage repart dans 1 min pour écrire
-        // le reste, tant que chacun avance (le suivant ne réécrit que ce qui manque).
+      if (stopped) {
+        // Ce qui est écrit reste (empreintes) ; un passage repart dans 1 min pour écrire le reste, tant que chacun avance.
         if (written > 0) await ctx.scheduler.runAfter(60_000, internal.radarSync.run, {});
-        throw new Error(`${memStop ? "mémoire pleine" : "temps écoulé"} : ${batches.length - nextBatch} lots de pages sur ${batches.length} non écrits${written > 0 ? ", suite dans 1 min" : ""}`);
+        throw new Error(`${stopped} : ${left} pages non écrites (${written} écrites)${written > 0 ? ", suite dans 1 min" : ""}`);
       }
 
+      // Les images qu'aucun document ne cite plus (vidéo sortie des listes) : effacées. Après l'écriture : les fiches
+      // produites à la volée y notent les leurs.
+      const stale = Object.keys(media).filter((k) => !used.has(k));
+      for (let i = 0; i < stale.length; i += 200) await ctx.runMutation(internal.radarStore.dropMedia, { keys: stale.slice(i, i + 200) });
+      used.clear();
+      // Vidéos à vérifier (carrousel, lecture IA) : connues seulement une fois toutes les fiches produites.
+      const later = laterTodos();
+      const newSlides = later.slideTodo.filter((id) => !slideKnown.has(id)).slice(0, TODO_MAX);
+      const newAi = later.videoAiTodo.filter((id) => !aiKnown.has(id)).slice(0, TODO_MAX);
       // Les documents que ce passage n'a plus produits : effacés (leur fiche mène à « introuvable »).
       const gone = [...existingHash.keys()].filter((k) => !allKeys.has(k));
       for (let i = 0; i < gone.length; i += 200) await ctx.runMutation(internal.radarStore.dropBoards, { keys: gone.slice(i, i + 200) });
@@ -398,7 +407,7 @@ export const run = internalAction({
       const counts = {
         unlocated: regionTodo.length,
         ...sizes,
-        boards: allKeys.size, written, mediaCopied: copied, mediaMissing: missing, mediaDropped: stale.length, boardsDropped: gone.length,
+        boards: allKeys.size, written, mediaToCopy: copyTodo.length, mediaMissing: missing, mediaDropped: stale.length, boardsDropped: gone.length,
       };
       await ctx.runMutation(internal.radarStore.endRun, { id: runId, ok: true, counts });
       // Les files de vérification (convex/radarSlides.ts, convex/radarAi.ts), une fois les pages écrites ; le reste au
@@ -408,6 +417,7 @@ export const run = internalAction({
       for (let i = 0; i < newGender.length; i += 300) await ctx.runMutation(internal.radarStore.saveGenderTodo, { items: newGender.slice(i, i + 300) });
       // Langue des comptes jamais calculés : par lots de 200, chacun dans sa propre action (le détecteur hors synchro).
       for (let i = 0; i < Math.min(langTodo.length, TODO_MAX); i += 200) await ctx.scheduler.runAfter(i * 50, internal.radarLang.detect, { items: langTodo.slice(i, i + 200) });
+      if (copyTodo.length) await ctx.scheduler.runAfter(0, internal.radarSync.copyMedia, { items: copyTodo.map(([key, src]) => ({ key, src })) });
       await ctx.scheduler.runAfter(0, internal.radarSlides.fill, {});
       await ctx.scheduler.runAfter(0, internal.radarAi.fillVideos, {});
       await ctx.scheduler.runAfter(0, internal.radarAi.fillGender, {});
