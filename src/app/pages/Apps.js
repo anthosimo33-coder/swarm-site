@@ -117,6 +117,8 @@ return {};
     const sumR = (arr) => { let n = 0; for (let i = range.a; i <= range.b; i++) n += arr[i] || 0; return n / 1e6; };
     const mq = (st.mq || '').toLowerCase();
     const fr = (x, d) => x.toFixed(d).replace('.', ',');
+    // Des vues données en millions : « 43,6 M », mais « 245 k » ou « 830 » sous le million (jamais « 0,0 M », 15/11).
+    const vm = (m) => { const n = (m || 0) * 1e6; return n >= 999500 ? fr(n / 1e6, 1) + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)); };
     const okM = (a, m) => m === 'ALL' || scoped || a[2].indexOf(m) >= 0;
     const okN = (a, ns) => ns.length === 0 || ns.indexOf(a[1]) >= 0;
     const platform = st.platform || 'ALL';
@@ -163,7 +165,7 @@ return {};
         rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], nicheIc: NIC[a[1]] || NIC0, mkText: mkText(a),
         mks: market !== 'ALL' ? [{ c: market, p: (a[25] === null || a[25] === undefined ? '' : (a[25] < 1 ? '<\u202f1' : a[25]) + '\u202f% de ses vues'), t: (MKS.filter((m) => m[0] === market)[0] || [0, market])[1] }] : mkList(a),
         net: Number(a[3]).toLocaleString('fr-FR') + ' comptes · ' + Number(a[4]).toLocaleString('fr-FR') + ' vidéos / sem.' + (a[27] > 0 ? ' · ' + a[27] + (a[27] > 1 ? ' placements payés' : ' placement payé') : ''),
-        count: typeof a[20] === 'number' && a[20] > 0 ? a[20].toLocaleString('fr-FR') : '', v30: fr(views(a), 1) + '\u202fM',
+        count: typeof a[20] === 'number' && a[20] > 0 ? a[20].toLocaleString('fr-FR') : '', v30: vm(views(a)),
         delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f% cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
         line, area: line + ' L127 40 L3 40 Z', ex: pts[5][0].toFixed(1), ey: pts[5][1].toFixed(1), gid: 'apl' + i,
         stroke: up ? '#4C9AFF' : '#8A93A3',
@@ -245,14 +247,14 @@ return {};
       const at1 = pool.indexOf(pa);
       const hatchB = 'repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 1px, transparent 1px 6px), rgba(255,255,255,0.04)';
       const shown = at1 < 6 ? pool.slice(0, 6) : pool.slice(0, 5).concat([pa]);
-      const bars = shown.map((a) => ({ title: a[0] + ' : ' + fr(a[5], 1) + ' M vues', h: Math.max(3, Math.round((a[5] / (pool[0][5] || 1)) * 100)) + '%',
+      const bars = shown.map((a) => ({ title: a[0] + ' : ' + vm(a[5]) + ' vues', h: Math.max(3, Math.round((a[5] / (pool[0][5] || 1)) * 100)) + '%',
         bg: a === pa ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : hatchB }));
       const t10 = typeof pa[18] === 'number' && pa[3] > 10 ? pa[18] : null;
       const t0 = pa[19] || null;
       const v1 = pa[8][0] ? { cover: pa[8][0], views: pa[9][0] + ' vues', href: videoOf(pa, 0), x: t0 && t0.x ? xf(t0.x) + ' sa normale' : '',
         who: t0 && t0.handle ? '@' + t0.handle : '', aria: 'Lire la vidéo' + (t0 && t0.handle ? ' de @' + t0.handle : ''), paid: !!(pa[26] && pa[26][0]) } : null;
       pv = { on: true, n: pa[0], niche: pa[1], logo: pa[10] || false, nologo: !pa[10], blank: pa[10] ? '' : 'sw-app-blank',
-        vLabel: 'Vues sur 30 jours', v30: fr(pa[5], 1) + '\u202fM', week: fr(w[5], 1) + '\u202fM',
+        vLabel: 'Vues sur 30 jours', v30: vm(pa[5]), week: vm(w[5]),
         delta: d === null ? '' : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%',
         dBg: d !== null && d >= 0 ? 'var(--accent-soft)' : 'rgba(255,255,255,0.09)', dInk: d !== null && d >= 0 ? 'var(--accent)' : 'var(--ink-soft)',
         line, area: line + ' L430 72 L6 72 Z', labels,

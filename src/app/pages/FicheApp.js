@@ -226,11 +226,12 @@ export default class FicheApp extends DCLogic {
     creators = creators.map((c) => Object.assign({ page: true, href: '/app/createurs/zinedine.gsbb' }, c));
 
     const P = W.map((v, j) => [70 + j * 110, 200 - v / top * 180]);
+    const vm = (m) => { const n = (m || 0) * 1e6; return n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)); };
     const line = 'M' + P.map((p) => p[0] + ' ' + p[1].toFixed(1)).join(' L');
     const chart = {
-      line, area: line + ' L620 200 L70 200 Z', top: top + '\u202fM', mid: (top / 2).toString().replace('.', ',') + '\u202fM',
+      line, area: line + ' L620 200 L70 200 Z', top: vm(top), mid: vm(top / 2),
       aria: 'Vues par semaine de publication sur 6 semaines : ' + W.map((w) => w.toFixed(1).replace('.', ',')).join(' ; ') + ' millions',
-      pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: W[j].toFixed(1).replace('.', ',') + '\u202fM', label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
+      pts: P.map((p, j) => ({ x: p[0], y: p[1].toFixed(1), ty: (p[1] - 14).toFixed(1), v: vm(W[j]), label: L[j], lx: j === 5 ? 636 : p[0], anchor: j === 5 ? 'end' : 'middle', r: j === 5 ? 6 : 4, fill: j === 5 ? '#4C9AFF' : '#0D111A', ink: j === 5 ? '#FFFFFF' : '#9AA3B2', fw: j === 5 ? 700 : 500 }))
     };
     return { nav, sections, chart, vids, formats, mk, creators, app, dash };
   }
