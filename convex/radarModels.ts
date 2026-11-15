@@ -240,6 +240,29 @@ export type VideoCard = { id: string; platform: string; handle: string; app: str
 
 // ─── Le calcul ───────────────────────────────────────────────────────────────
 
+/**
+ * Synchro par groupes d'apps (15/11 : à 24 000 comptes, une seule action ne tient ni les 512 Mo ni les 10 min).
+ * Une étape « groupe » reçoit TOUS les comptes, formats et signaux, mais seulement les vidéos des apps de son groupe
+ * (un compte et ses vidéos sont toujours rangés sous la même app) ; elle produit les fiches d'app, de créateur et les
+ * pages vidéo de son groupe, et transmet à l'étape « globale » ce que les pages communes demandent. L'étape globale
+ * n'a aucune vidéo suivie : listes d'apps, créateurs, formats, alertes, accueil, recherche, et les pages vidéo des
+ * reprises ou signaux qu'aucun groupe ne suit. Sans `part` : tout d'un coup, comme avant (le banc compare les deux).
+ */
+export type AccountFacts = [market: string | null, otherLang: string | null, mainType: string | null];
+export type GroupOut = {
+  /** Ligne de chaque app du groupe (celle de la liste des apps), sa suite de lecture, ses pays aux vidéos récentes. */
+  apps: { slug: string; row: Record<string, unknown>; playlist: string[]; recent: string[] }[];
+  /** Lignes des apps du groupe dans chaque liste `apps:<pays>@<plateforme>`, tous pays vus. */
+  lists: Record<string, Record<string, unknown>[]>;
+  /** Créateurs du groupe (ligne de la liste), avec leur rang parmi tous les comptes. */
+  creators: { i: number; row: Record<string, unknown> }[];
+  /** Pays, langue montrée et type de chaque compte du groupe. */
+  accounts: Record<string, AccountFacts>;
+  /** Vidéos du groupe qui sont des reprises de formats ou des signaux : leur page est écrite par le groupe. */
+  tracked: string[];
+};
+export type Part = { kind: "group"; apps: Set<string> } | { kind: "global"; outs: GroupOut[] };
+
 export type Boards = Map<string, unknown>;
 export type MediaNeed = Map<string, string>; // clé media -> URL source (TikTok, signée)
 
@@ -265,10 +288,16 @@ export function buildBoards(
     aiOf?: (videoId: string) => { type: string; text: string } | undefined;
     /** Genre apparent lu par l'IA pour un compte « ambassadeur » ; undefined si pas encore lu. */
     genderOf?: (handle: string) => string | undefined;
+    /** Étape de la synchro par groupes (voir `Part`) ; sans : tout d'un coup. */
+    part?: Part;
   } = {},
 ): {
   boards: Boards; lazy: Map<string, () => unknown>; need: MediaNeed; used: Set<string>; regionTodo: { handle: string; ids: string[] }[];
   laterTodos: () => { slideTodo: string[]; videoAiTodo: string[] }; genderTodo: { handle: string; ids: string[] }[]; langTodo: { accountId: string; texts: string[] }[];
+  /** Étape « groupe » : ce qu'elle transmet à l'étape globale. */
+  out: GroupOut | null;
+  /** Les pays retenus (une étape « groupe » ne les connaît qu'à peu près : l'étape globale compare). */
+  markets: string[];
 } {
   const missing = opts.missing ?? (() => false);
   const coverUrl = opts.coverUrl ?? (() => null);
@@ -285,6 +314,15 @@ export function buildBoards(
   };
   const apps = raw.apps.filter((a) => !a.mergedInto && a.status === "active");
   const icon = (a: RApp) => (used.add(iconKey(a.slug)), mediaUrl(iconKey(a.slug)));
+  const G = opts.part?.kind === "group" ? opts.part : null;
+  const GL = opts.part?.kind === "global" ? opts.part : null;
+  /** Étape « groupe » : l'app (canonique) ou le compte est-il du groupe ? Sans groupe : tout l'est. */
+  const ownsApp = (id: string | null | undefined) => !G || G.apps.has(id ?? "");
+  const ownsAccount = (t: RTracked) => !G || G.apps.has(canonical(t.appId)?.id ?? "");
+  const facts = new Map<string, AccountFacts>();
+  if (GL) for (const o of GL.outs) for (const [id, f] of Object.entries(o.accounts)) facts.set(id, f);
+  /** Étape globale : les vidéos qu'un groupe suit (sa page est la sienne). */
+  const trackedElsewhere = new Set(GL ? GL.outs.flatMap((o) => o.tracked) : []);
 
   // Les comptes suivis ET prouvés : ce sont eux qui « poussent » une app (cf isProven).
   const accounts = raw.tracked.filter((t) => t.status === "active" && isProven(t));
@@ -392,6 +430,7 @@ export function buildBoards(
     if (!top || top[1] < 3 || top[1] < 0.8 * known.length) continue;
     for (const t of ts) if (!marketByAccount.get(t.id)) marketByAccount.set(t.id, top[0]);
   }
+  if (GL) for (const [id, f] of facts) marketByAccount.set(id, f[0]);
   const mkOf = (accountId: string | null | undefined) => (accountId ? marketByAccount.get(accountId) ?? null : null);
   // Sa langue : celle de la plupart de ses vidéos (légende + texte à l'écran), si au moins 2 sont sûres, 60 % d'accord,
   // et qu'au moins un quart de ses vidéos se lisent (14/11 : @dailytyrel, légendes allemandes trop courtes pour être
@@ -410,6 +449,7 @@ export function buildBoards(
     const top = [...n.entries()].sort((p, q) => q[1] - p[1])[0];
     if (top) mainType.set(accId, top[0]);
   }
+  if (GL) for (const [id, f] of facts) if (f[2]) mainType.set(id, f[2]);
   // Son genre : lu par l'IA pour chaque compte (photo de profil + 3 miniatures), qui dit aussi « sans visage ». Le
   // déduire du type se trompait : @matbbt67 (15/11) publie des carrousels de ses selfies, et passait « sans visage ».
   const genderFor = (t: RTracked): string | null => {
@@ -438,6 +478,7 @@ export function buildBoards(
   // Sa langue seulement quand ce n'en est pas une de son pays (« France · en espagnol ») : le pays dit d'où il publie,
   // pas où sont ceux qui regardent (14/11, @historiaas.en.chat publie depuis la France en espagnol).
   const otherLangOf = (accountId: string | null | undefined) => {
+    if (GL) return accountId ? facts.get(accountId)?.[1] ?? null : null;
     const m = mkOf(accountId), l = accountId ? langByAccount.get(accountId) : undefined;
     return m && l && COUNTRY_LANGS[m] && !COUNTRY_LANGS[m].includes(l) ? l : null;
   };
@@ -505,7 +546,8 @@ export function buildBoards(
       _top: top,
     };
   };
-  const appRows = apps.map((a) => {
+  const fromGroups = new Map(GL ? GL.outs.flatMap((o) => o.apps.map((x) => [x.slug, x] as const)) : []);
+  const appRowOf = (a: RApp) => {
     const vids = videosByApp.get(a.id) ?? [];
     const accs = accountsByApp.get(a.id) ?? [];
     const { _top, ...st } = statsOf(vids, accs.length);
@@ -533,6 +575,11 @@ export function buildBoards(
       _top12: _top.slice(0, 12),
       _accs: accs,
     };
+  };
+  // Étape globale : la ligne de chaque app vient de son groupe (ses vidéos n'y sont pas).
+  const appRows = apps.map((a) => {
+    const g = fromGroups.get(a.slug);
+    return g ? { ...(g.row as Omit<ReturnType<typeof appRowOf>, "_top12" | "_accs">), _top12: [] as RVideo[], _accs: accountsByApp.get(a.id) ?? [] } : appRowOf(a);
   });
   // Une app sans réseau prouvé (2 comptes au moins) n'est pas listée : sa fiche existe, elle se montre dès qu'elle l'a.
   const appsBoard = appRows.filter((r) => r.accounts >= MIN_APP_ACCOUNTS).map(({ _top12, _accs, ...r }) => r).sort((p, q) => q.views30 - p.views30);
@@ -554,32 +601,60 @@ export function buildBoards(
     accsByAppMarket.set(a.id, groupBy(accountsByApp.get(a.id) ?? [], (t) => mkOf(t.id) ?? ""));
   }
   const recentDays = Math.max(30, DAYS) * DAY;
-  for (const [code] of MARKETS) {
-    let n = 0;
+  const listKey = (code: string | null, plat: string | null) => `apps${code ? ":" + code : ""}${plat ? "@" + plat : ""}`;
+  // Les lignes des apps d'une liste, dans l'ordre de la liste des apps (avant le tri de la liste elle-même).
+  const listRows = (code: string | null, plat: "tiktok" | "instagram" | null) => {
+    const rows = [];
     for (const r of listed.values()) {
-      const vids = vidsByAppMarket.get(appBySlug.get(r.slug)!.id)?.get(code) ?? [];
-      if (vids.some((v) => v.views > 0 && now - v.publishedAt <= recentDays)) n++;
+      const a = appBySlug.get(r.slug)!;
+      let vids = code ? vidsByAppMarket.get(a.id)?.get(code) ?? [] : videosByApp.get(a.id) ?? [];
+      const accs = code ? accsByAppMarket.get(a.id)?.get(code) ?? [] : accountsByApp.get(a.id) ?? [];
+      if (plat) vids = vids.filter((v) => v.platform === plat);
+      if (!vids.length) continue;
+      const { _top, ...st } = statsOf(vids, code ? accs.length : r.accounts);
+      if (!st.views30 && !st.days.some((d) => d > 0)) continue;
+      rows.push({ ...r, ...st, share: code ? (r.markets.find((m) => m[0] === code)?.[1] ?? 0) : null });
     }
-    marketApps.set(code, n);
-  }
-  for (const plat of [null, "tiktok", "instagram"] as const) {
-    for (const code of [null, ...MARKETS.map((m) => m[0])]) {
+    return rows;
+  };
+  const listPage = (code: string | null, plat: string | null, rows: { views30: number; niche: string }[]) => {
+    rows.sort((p, q) => q.views30 - p.views30);
+    return { updatedAt: now, market: code ?? "ALL", platform: plat ?? "ALL", niches: [...new Set(rows.map((x) => x.niche))].sort(), apps: rows };
+  };
+  const PLATS = [null, "tiktok", "instagram"] as const;
+  const groupOut: GroupOut | null = G ? { apps: [], lists: {}, creators: [], accounts: {}, tracked: [] } : null;
+  if (groupOut) {
+    // Étape « groupe » : les lignes de ses apps dans chaque liste, pour tous les pays où elles ont des vidéos (l'étape
+    // globale garde les pays retenus). Calculées ici : elles notent les vidéos montrées, dont le groupe écrit la page.
+    const codes = new Set(MARKETS.map((m) => m[0]));
+    for (const plat of PLATS) for (const code of [null, ...codes]) {
       if (!plat && !code) continue;
-      lazy.set(`apps${code ? ":" + code : ""}${plat ? "@" + plat : ""}`, () => {
-        const rows = [];
-        for (const r of listed.values()) {
-          const a = appBySlug.get(r.slug)!;
-          let vids = code ? vidsByAppMarket.get(a.id)?.get(code) ?? [] : videosByApp.get(a.id) ?? [];
-          const accs = code ? accsByAppMarket.get(a.id)?.get(code) ?? [] : accountsByApp.get(a.id) ?? [];
-          if (plat) vids = vids.filter((v) => v.platform === plat);
-          if (!vids.length) continue;
-          const { _top, ...st } = statsOf(vids, code ? accs.length : r.accounts);
-          if (!st.views30 && !st.days.some((d) => d > 0)) continue;
-          rows.push({ ...r, ...st, share: code ? (r.markets.find((m) => m[0] === code)?.[1] ?? 0) : null });
-        }
-        rows.sort((p, q) => q.views30 - p.views30);
-        return { updatedAt: now, market: code ?? "ALL", platform: plat ?? "ALL", niches: [...new Set(rows.map((x) => x.niche))].sort(), apps: rows };
-      });
+      const rows = listRows(code, plat);
+      if (rows.length) groupOut.lists[listKey(code, plat)] = rows;
+    }
+  } else if (GL) {
+    // Étape globale : les lignes de tous les groupes, remises dans l'ordre de la liste des apps, puis triées.
+    const rank = new Map([...listed.keys()].map((slug, i) => [slug, i]));
+    for (const [code] of MARKETS) marketApps.set(code, [...listed.keys()].filter((slug) => fromGroups.get(slug)?.recent.includes(code)).length);
+    for (const plat of PLATS) for (const code of [null, ...MARKETS.map((m) => m[0])]) {
+      if (!plat && !code) continue;
+      const k = listKey(code, plat);
+      const rows = GL.outs.flatMap((o) => (o.lists[k] ?? []) as (Record<string, unknown> & { slug: string; views30: number; niche: string })[])
+        .filter((r) => rank.has(r.slug)).sort((p, q) => rank.get(p.slug)! - rank.get(q.slug)!);
+      lazy.set(k, () => listPage(code, plat, rows));
+    }
+  } else {
+    for (const [code] of MARKETS) {
+      let n = 0;
+      for (const r of listed.values()) {
+        const vids = vidsByAppMarket.get(appBySlug.get(r.slug)!.id)?.get(code) ?? [];
+        if (vids.some((v) => v.views > 0 && now - v.publishedAt <= recentDays)) n++;
+      }
+      marketApps.set(code, n);
+    }
+    for (const plat of PLATS) for (const code of [null, ...MARKETS.map((m) => m[0])]) {
+      if (!plat && !code) continue;
+      lazy.set(listKey(code, plat), () => listPage(code, plat, listRows(code, plat)));
     }
   }
   (boards.get("apps") as { marketApps: [string, number][] }).marketApps = MARKETS.map((m) => [m[0], marketApps.get(m[0]) ?? 0]);
@@ -620,10 +695,18 @@ export function buildBoards(
     .sort((p, q) => q.accounts - p.accounts || (q.medX ?? 0) - (p.medX ?? 0));
   // Chaque reprise montrée mène à sa vidéo : elle a sa page dans le lecteur.
   const shown = formatRows.slice(0, 150);
-  for (const f of shown) for (const m of f.members.slice(0, 30)) if (!usedVideos.has(m.videoId)) usedVideos.set(m.videoId, m._video);
+  for (const f of shown) for (const m of f.members.slice(0, 30)) {
+    if (usedVideos.has(m.videoId)) continue;
+    // Une reprise suivie a sa page dans le groupe qui la suit ; une reprise que personne ne suit, à l'étape globale.
+    if (G && !trackedByVideo.has(m.videoId)) continue;
+    if (GL && trackedElsewhere.has(m.videoId)) continue;
+    usedVideos.set(m.videoId, m._video);
+  }
   const plain = (ms: (typeof formatRows)[number]["members"]) => ms.map(({ _video, ...m }) => m);
-  boards.set("formats", { updatedAt: now, markets: MARKETS, formats: shown.map((f) => ({ ...f, members: plain(f.members.slice(0, 4)) })) });
-  for (const f of shown) boards.set(`format:${f.id}`, { updatedAt: now, ...f, members: plain(f.members.slice(0, 30)) });
+  if (!G) {
+    boards.set("formats", { updatedAt: now, markets: MARKETS, formats: shown.map((f) => ({ ...f, members: plain(f.members.slice(0, 4)) })) });
+    for (const f of shown) boards.set(`format:${f.id}`, { updatedAt: now, ...f, members: plain(f.members.slice(0, 30)) });
+  }
   const formatsByAccount = groupBy(
     raw.formats.flatMap((f) => f.members.map((m) => ({ accountId: m.accountId, f }))),
     (x) => x.accountId,
@@ -642,7 +725,13 @@ export function buildBoards(
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
   };
-  const creators = creatorAccounts.filter((t) => (t.medianViews ?? 0) > 0).map(creatorRow).sort((p, q) => (q.median ?? 0) - (p.median ?? 0));
+  // Leur rang parmi les comptes : le tri par médiane le garde à égalité (l'étape globale remet les groupes dans cet ordre).
+  const creatorRank = new Map(creatorAccounts.map((t, i) => [t.handle, i]));
+  type CreatorRow = ReturnType<typeof creatorRow>;
+  const creators: CreatorRow[] = GL
+    ? GL.outs.flatMap((o) => o.creators).sort((p, q) => p.i - q.i).map((c) => c.row as CreatorRow)
+    : creatorAccounts.filter((t) => (t.medianViews ?? 0) > 0).map(creatorRow);
+  creators.sort((p, q) => (q.median ?? 0) - (p.median ?? 0));
   for (const c of creators) wantAvatar(c.handle);
   // Tous les créateurs de chaque marché (plus de plafond à 200, décision du 14/11), par pages de CREATOR_PAGE :
   // « creators:<marché> » porte la 1re page et leur nombre, « creators:<marché>:2 », « :3 »… la suite.
@@ -653,11 +742,15 @@ export function buildBoards(
     boards.set(`creators:${code}`, { updatedAt: now, market: code, markets: MARKETS, total: plain.length, pages, creators: plain.slice(0, CREATOR_PAGE) });
     for (let i = 2; i <= pages; i++) boards.set(`creators:${code}:${i}`, { updatedAt: now, market: code, page: i, creators: plain.slice((i - 1) * CREATOR_PAGE, i * CREATOR_PAGE) });
   };
-  for (const [code] of MARKETS) pagesOf(code, creators.filter((c) => c.market === code));
-  pagesOf("ALL", creators);
+  if (!G) {
+    for (const [code] of MARKETS) pagesOf(code, creators.filter((c) => c.market === code));
+    pagesOf("ALL", creators);
+  }
   const creatorPages = new Set(creators.map((c) => c.handle));
   for (const c of creators) {
-    if (!creatorPages.has(c.handle)) continue;
+    if (!creatorPages.has(c.handle) || GL) continue;
+    if (G && !ownsAccount(trackedByHandle.get(c.handle)!)) continue;
+    if (groupOut) groupOut.creators.push({ i: creatorRank.get(c.handle)!, row: plainOf.get(c.handle)! });
     lazy.set(`creator:${c.handle}`, () => {
       const t = trackedByHandle.get(c.handle)!;
       const vids = withImage(c._vids, 15, trackedHasImage);
@@ -673,7 +766,9 @@ export function buildBoards(
 
   // ── Fiche de chaque app (après les formats et créateurs, qu'elle cite) ──
   for (const r of appRows) {
+    if (GL) break;
     const a = apps.find((x) => x.slug === r.slug)!;
+    if (!ownsApp(a.id)) continue;
     const appCreators = r._accs
       .filter((t) => (t.medianViews ?? 0) > 0)
       .sort((p, q) => (q.medianViews ?? 0) - (p.medianViews ?? 0))
@@ -700,9 +795,9 @@ export function buildBoards(
     };
   });
   const newFormats = formatRows.filter((f) => f.accounts >= 3 && now - f.firstSeenAt <= 7 * DAY).slice(0, 20);
-  boards.set("alerts", { updatedAt: now, videos: hotCards, formats: newFormats.map((f) => ({ ...f, members: plain(f.members.slice(0, 3)) })) });
+  if (!G) boards.set("alerts", { updatedAt: now, videos: hotCards, formats: newFormats.map((f) => ({ ...f, members: plain(f.members.slice(0, 3)) })) });
   const nicheViews = [...groupBy(appsBoard, (a) => a.niche).entries()].map(([n, as]) => [n, as.reduce((s, a) => s + a.views7, 0)] as [string, number]).sort((p, q) => q[1] - p[1]);
-  boards.set("home", {
+  if (!G) boards.set("home", {
     updatedAt: now,
     niches: nicheViews.filter(([n]) => n !== "Autres").slice(0, 6).map(([n]) => n),
     apps: appsBoard.slice(0, 4).map((a) => ({ slug: a.slug, name: a.name, icon: a.icon, views7: a.views7, weekDelta: a.weekDelta, bestX: a.bestX })),
@@ -712,10 +807,10 @@ export function buildBoards(
 
   // ── Ce que le Radar suit, pour la page d'accueil publique et la date du relevé (« Relevé du … ») ──
   // `at` change à chaque passage : ce document est réécrit chaque nuit (les autres seulement s'ils changent).
-  boards.set("stats", { updatedAt: now, at: now, apps: appsBoard.length, accounts: creatorAccounts.length, markets: MARKETS.length });
+  if (!G) boards.set("stats", { updatedAt: now, at: now, apps: appsBoard.length, accounts: creatorAccounts.length, markets: MARKETS.length });
 
   // ── Recherche (palette) : un index léger ──
-  boards.set("search", {
+  if (!G) boards.set("search", {
     updatedAt: now,
     apps: appsBoard.map((a) => ({ slug: a.slug, name: a.name, icon: a.icon, niche: a.niche, views30: a.views30 })),
     creators: creators.filter((c) => creatorPages.has(c.handle)).map((c) => ({ handle: c.handle, app: c.app?.name ?? null, fans: c.fans, median: c.median })),
@@ -730,12 +825,17 @@ export function buildBoards(
   // Les pages vidéo (≈ 45 000) sont produites à l'écriture, une à une (`lazy`), pas gardées toutes en mémoire (15/11).
   // Leurs miniatures sont déjà comptées (cartes) ; on les note quand même, pour que la copie rangée ne soit pas effacée.
   for (const v of usedVideos.values()) addVideoPage(v);
-  for (const s of hot.slice(0, 40)) if (!usedVideos.has(s.videoId)) { used.add(coverKey(s.videoId)); lazy.set(`video:${s.videoId}`, () => videoPage(null, s)); }
+  for (const s of hot.slice(0, 40)) {
+    if (G || usedVideos.has(s.videoId) || trackedElsewhere.has(s.videoId)) continue;
+    used.add(coverKey(s.videoId));
+    lazy.set(`video:${s.videoId}`, () => videoPage(null, s));
+  }
   videoPagesOpen = true;
   // La suite de lecture de chaque app (identifiants seulement), relevée maintenant : à l'écriture, la fiche de l'app a
   // déjà quitté `boards` quand ses pages vidéo sont produites (15/11, banc : 39 000 pages vidéo sans suite).
   const playlists = new Map<string, string[]>();
   for (const [k, b] of boards) if (k.startsWith("app:")) playlists.set(k.slice(4), ((b as { videos?: VideoCard[] }).videos ?? []).map((c) => c.id));
+  for (const [slug, g] of fromGroups) playlists.set(slug, g.playlist);
 
   function videoPage(v: RVideo | null, s: RSignal | null) {
     const acc = v ? accountById.get(v.accountId) : s?.trackedAccountId ? accountById.get(s.trackedAccountId) : undefined;
@@ -792,5 +892,22 @@ export function buildBoards(
     handle: t.handle,
     ids: (videosByAccount.get(t.id) ?? []).filter((v) => typeOf(v) === mainType.get(t.id) && trackedHasImage(v)).sort((p, q) => q.views - p.views).slice(0, 3).map((v) => v.videoId),
   })).filter((x) => x.ids.length);
-  return { boards, lazy, need, used, regionTodo, laterTodos, genderTodo, langTodo };
+  if (groupOut) {
+    // Étape « groupe » : seules ses fiches d'app restent dans `boards` (le reste est aux pages communes).
+    for (const k of [...boards.keys()]) if (!k.startsWith("app:")) boards.delete(k);
+    const listedSlugs = new Set(listed.keys());
+    for (const r of appRows) {
+      const a = appBySlug.get(r.slug);
+      if (!a || !ownsApp(a.id)) continue;
+      const { _top12, _accs, ...row } = r;
+      const byMarket = vidsByAppMarket.get(a.id);
+      const recent = listedSlugs.has(r.slug) && byMarket
+        ? [...byMarket.entries()].filter(([code, vs]) => code && vs.some((v) => v.views > 0 && now - v.publishedAt <= recentDays)).map(([code]) => code) : [];
+      groupOut.apps.push({ slug: r.slug, row, playlist: playlists.get(r.slug) ?? [], recent });
+    }
+    for (const t of raw.tracked) if (ownsAccount(t)) groupOut.accounts[t.id] = [mkOf(t.id), otherLangOf(t.id), mainType.get(t.id) ?? null];
+    const memberIds = new Set(raw.formats.flatMap((f) => f.members.map((m) => m.videoId)));
+    groupOut.tracked = raw.trackedVideos.filter((v) => signalByVideo.has(v.videoId) || memberIds.has(v.videoId)).map((v) => v.videoId);
+  }
+  return { boards, lazy, need, used, regionTodo, laterTodos, genderTodo, langTodo, out: groupOut, markets: MARKETS.map((m) => m[0]) };
 }

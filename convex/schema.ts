@@ -106,5 +106,10 @@ export default defineSchema({
     ok: v.optional(v.boolean()),
     counts: v.optional(v.any()),
     error: v.optional(v.string()),
+    // Synchro par groupes (15/11) : dernier signe de vie d'une étape, état des étapes (fichiers rangés, groupes), et
+    // fichiers d'étape effacés.
+    beatAt: v.optional(v.number()),
+    stage: v.optional(v.any()),
+    cleaned: v.optional(v.boolean()),
   }).index("by_started", ["startedAt"]),
 });

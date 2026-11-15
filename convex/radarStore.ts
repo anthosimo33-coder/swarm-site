@@ -191,13 +191,96 @@ export const saveBoards = internalMutation({
   },
 });
 
-/** Démarre un passage ; null si un autre tourne déjà (lancé il y a moins de 12 min et pas fini). */
+/**
+ * Un passage tourne-t-il ? Pas fini, et une de ses étapes a donné signe de vie il y a moins de 12 min (une étape dure
+ * 10 min au plus ; la synchro par groupes en enchaîne plusieurs).
+ */
+const runAlive = (r: { finishedAt?: number; startedAt: number; beatAt?: number } | null, now: number) =>
+  !!r && !r.finishedAt && now - (r.beatAt ?? r.startedAt) < 12 * 60_000;
+
+/** Démarre un passage ; null si un autre tourne déjà. Un passage resté sans fin (étape coupée) est noté comme tel. */
 export const startRun = internalMutation({
   args: {},
   handler: async (ctx) => {
+    const now = Date.now();
     const last = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").first();
-    if (last && !last.finishedAt && Date.now() - last.startedAt < 12 * 60_000) return null;
-    return ctx.db.insert("syncRuns", { startedAt: Date.now() });
+    if (runAlive(last, now)) return null;
+    if (last && !last.finishedAt) await ctx.db.patch(last._id, { finishedAt: now, ok: false, error: last.error ?? "interrompu : une étape s'est arrêtée sans finir" });
+    return ctx.db.insert("syncRuns", { startedAt: now, beatAt: now });
+  },
+});
+
+/** Signe de vie d'une étape. */
+export const beat = internalMutation({
+  args: { id: v.id("syncRuns") },
+  handler: async (ctx, { id }) => ctx.db.patch(id, { beatAt: Date.now() }),
+});
+
+export const setStage = internalMutation({
+  args: { id: v.id("syncRuns"), stage: v.any() },
+  handler: async (ctx, { id, stage }) => ctx.db.patch(id, { stage, beatAt: Date.now() }),
+});
+
+/** L'état des étapes d'un passage en cours ; null s'il est fini (ou abandonné). */
+export const getStage = internalQuery({
+  args: { id: v.id("syncRuns") },
+  handler: async (ctx, { id }) => {
+    const r = await ctx.db.get(id);
+    return r && !r.finishedAt ? r.stage ?? null : null;
+  },
+});
+
+/** Une étape de groupe finie : le fichier de ce qu'elle transmet. */
+export const groupDone = internalMutation({
+  args: { id: v.id("syncRuns"), i: v.number(), out: v.id("_storage"), tail: v.id("_storage"), written: v.number() },
+  handler: async (ctx, { id, i, out, tail, written }) => {
+    const r = await ctx.db.get(id);
+    if (!r?.stage) return;
+    const outs = [...r.stage.outs]; outs[i] = out;
+    const tails = [...(r.stage.tails ?? r.stage.outs.map(() => null))]; tails[i] = tail;
+    const writtenBy = [...(r.stage.writtenBy ?? [])]; writtenBy[i] = written;
+    await ctx.db.patch(id, { stage: { ...r.stage, outs, tails, writtenBy }, beatAt: Date.now() });
+  },
+});
+
+/** Une étape coupée (temps, mémoire) : compte ses reprises, pour abandonner celle qui n'avance plus. */
+export const stepRetry = internalMutation({
+  args: { id: v.id("syncRuns"), step: v.string() },
+  handler: async (ctx, { id, step }) => {
+    const r = await ctx.db.get(id);
+    if (!r?.stage) return 0;
+    const retries = { ...(r.stage.retries ?? {}) };
+    retries[step] = (retries[step] ?? 0) + 1;
+    await ctx.db.patch(id, { stage: { ...r.stage, retries }, beatAt: Date.now() });
+    return retries[step] as number;
+  },
+});
+
+/** Fichiers d'étape des passages finis (ou abandonnés) pas encore effacés. */
+export const staleStages = internalQuery({
+  args: { keep: v.id("syncRuns") },
+  handler: async (ctx, { keep }) => {
+    const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(30);
+    const now = Date.now();
+    return runs.filter((r) => r._id !== keep && r.stage && !r.cleaned && !runAlive(r, now)).map((r) => {
+      const st = r.stage as { globals?: Record<string, string[]>; outs?: (string | null)[]; tails?: (string | null)[] };
+      return { id: r._id, ids: [...Object.values(st.globals ?? {}).flat(), ...[...(st.outs ?? []), ...(st.tails ?? [])].filter((x): x is string => !!x)] };
+    });
+  },
+});
+
+export const stageCleaned = internalMutation({
+  args: { id: v.id("syncRuns") },
+  handler: async (ctx, { id }) => ctx.db.patch(id, { cleaned: true }),
+});
+
+/** Empreinte rangée de chaque page demandée (null : pas de page) : l'écriture n'envoie que les pages qui changent. */
+export const boardHashes = internalQuery({
+  args: { keys: v.array(v.string()) },
+  handler: async (ctx, { keys }) => {
+    const out: (string | null)[] = [];
+    for (const key of keys) out.push((await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", key)).first())?.hash ?? null);
+    return out;
   },
 });
 
@@ -505,7 +588,7 @@ export const takeLease = internalMutation({
   args: { name: v.string(), token: v.string(), ms: v.number(), now: v.number() },
   handler: async (ctx, { name, token, ms, now }) => {
     const run = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").first();
-    if (run && !run.finishedAt && now - run.startedAt < 12 * 60_000) return false;
+    if (runAlive(run, now)) return false;
     const row = await ctx.db.query("leases").withIndex("by_name", (q) => q.eq("name", name)).first();
     if (row && row.until > now && row.token !== token) return false;
     if (row) await ctx.db.patch(row._id, { token, until: now + ms });
