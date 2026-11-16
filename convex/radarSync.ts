@@ -439,7 +439,8 @@ export const run = internalAction({
       // Fiche App Store des apps pas encore cherchées avec la règle actuelle (titre qui commence par le
       // nom de l'app) ; une fiche qui change efface l'icône rangée, recopiée depuis la bonne fiche.
       // L'App Store limite à ~20 recherches par minute : une toutes les 3,2 s, 3 min au plus.
-      const stores: Stores = await ctx.runQuery(internal.radarStore.appStoreMap, {});
+      const stores: Stores = {};
+      await readPages<[string, string | null, number, string | null]>(ctx, internal.radarStore.appStorePage, ([slug, url, v, art]) => { stores[slug] = { url, v, art }; });
       const found: { slug: string; url: string | null; v: number; art: string | null }[] = [];
       let storeErrors = 0;
       const iconsToDrop: string[] = [];

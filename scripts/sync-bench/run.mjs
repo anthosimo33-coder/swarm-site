@@ -114,20 +114,36 @@ const nameOf = (r) => r.__path.split(":").slice(-2).join(":");
 const DUMP = new Set((process.env.BENCH_DUMP || "").split(",")), dumped = fs.existsSync(`${S}dump-${TAG}.json`) && FN !== "run" ? JSON.parse(fs.readFileSync(`${S}dump-${TAG}.json`, "utf8")) : {};
 let mutBytes = 0, nextId = fs.existsSync(`${STATE}next`) ? Number(fs.readFileSync(`${STATE}next`, "utf8")) : 1;
 const LIMITS = process.env.BENCH_LIMITS ? (fs.existsSync(`${STATE}limits.json`) ? JSON.parse(fs.readFileSync(`${STATE}limits.json`, "utf8")) : {}) : null;
-let keysCache = null, parts = 0; // comme la vraie requête : une page à la fois, sans recopier toute la table à chaque appel
-const ctx = {
-  runQuery: async (r, a) => {
+let keysCache = null, parts = 0;
+// Comme Convex, pour toute valeur qui passe une frontière (retour de requête, arguments de mutation ou d'action planifiée) :
+// 8 192 éléments par liste, 1 024 champs par objet, 64 niveaux, 16 Mio (5 Mio pour une action Node). Mêmes limites sur
+// tous les plans : le 16/11, deux synchros de prod sont tombées sur la liste, puis sur les champs.
+const checkValue = (x, where, maxBytes = 16 * 1048576) => {
+  const walk = (v, d) => {
+    if (d > 64) throw new Error(`${where} : imbrication de plus de 64 niveaux`);
+    if (Array.isArray(v)) { if (v.length > 8192) throw new Error(`${where} : Array length is too long (${v.length} > maximum length 8192)`); for (const e of v) walk(e, d + 1); }
+    else if (v && typeof v === "object") { const ks = Object.keys(v); if (ks.length > 1024) throw new Error(`${where} : Object has too many fields (${ks.length} > maximum number 1024)`); for (const k of ks) walk(v[k], d + 1); }
+  };
+  walk(x, 0);
+  const size = JSON.stringify(x ?? null).length;
+  if (size > maxBytes) throw new Error(`${where} : ${size} octets > ${maxBytes}`);
+  return x;
+}; // comme la vraie requête : une page à la fois, sans recopier toute la table à chaque appel
+async function query(r, a) {
     sample();
     const fn = nameOf(r).split(":")[1];
-    if (fn === "appStoreMap") return structuredClone(appStoreMap);
+    // Fiches App Store : autant que d'apps (×N, slugs suffixés comme l'export) ; l'ancienne forme (un objet) pour comparer.
+    const storesN = () => Object.fromEntries(Array.from({ length: N }, (_, c) => Object.entries(appStoreMap).map(([slug, x]) => [c ? `${slug}-${c}` : slug, x])).flat());
+    if (fn === "appStoreMap") return structuredClone(storesN());
+    if (fn === "appStorePage") { const all = Object.entries(storesN()), i = Number(a.cursor || 0); return { items: all.slice(i, i + 2000).map(([slug, x]) => [slug, x.url, x.v ?? 1, x.art ?? null]), cursor: String(i + 2000), done: i + 2000 >= all.length }; }
     if (fn === "boardKeys") { const all = (keysCache ??= [...saved]), i = Number(a.cursor || 0), sl = all.slice(i, i + 500); return { keys: sl.map((x) => x[0]), hashes: sl.map((x) => x[1]), cursor: String(i + 500), done: i + 500 >= all.length }; }
     if (fn === "boardHashes") return a.keys.map((k) => saved.get(k) ?? null);
     if (fn === "getStage") return runs[a.id] && !runs[a.id].finishedAt ? runs[a.id].stage ?? null : null;
     if (fn === "staleStages") return [];
     if (storePages[fn]) { const i = Number(a.cursor || 0); const p = JSON.parse(storePages[fn][i]); return { ...p, cursor: String(i + 1), done: i + 1 >= storePages[fn].length }; }
     throw new Error("requête inconnue " + fn);
-  },
-  runMutation: async (r, a) => {
+}
+async function mutation(r, a) {
     sample();
     const fn = nameOf(r).split(":")[1];
     mutBytes += JSON.stringify(a).length; // comme Convex : les arguments sont mis en texte
@@ -161,13 +177,16 @@ const ctx = {
       for (const it of a.items) { saved.set(it.key, it.hash); if (DUMP.has(it.key)) dumped[it.key] = it.data; } return a.items.length; }
     if (fn === "dropBoards") { for (const k of a.keys) saved.delete(k); return null; }
     return null;
-  },
+}
+const ctx = {
+  runQuery: async (r, a) => checkValue(await query(r, a), `${nameOf(r)} (retour)`),
+  runMutation: async (r, a) => { checkValue(a, `${nameOf(r)} (arguments)`); return mutation(r, a); },
   storage: {
     store: async (blob) => { const id = `f${nextId++}`; fs.writeFileSync(`${STATE}storage/${id}`, Buffer.from(await blob.arrayBuffer())); return id; },
     get: async (id) => (fs.existsSync(`${STATE}storage/${id}`) ? new Blob([fs.readFileSync(`${STATE}storage/${id}`)]) : null),
     delete: async (id) => fs.rmSync(`${STATE}storage/${id}`, { force: true }),
   },
-  scheduler: { runAfter: async (_ms, ref, args) => { const fn = nameOf(ref); if (fn.startsWith("radarSync:") && fn !== "radarSync:copyMedia") queue.push([fn.split(":")[1], args]); return null; } },
+  scheduler: { runAfter: async (_ms, ref, args) => { checkValue(args, `${nameOf(ref)} (arguments d'action)`, 5 * 1048576); const fn = nameOf(ref); if (fn.startsWith("radarSync:") && fn !== "radarSync:copyMedia") queue.push([fn.split(":")[1], args]); return null; } },
 };
 process.env.JARVIA_EXPORT_SECRET = "banc";
 process.env.CONVEX_SITE_URL = "https://blessed-hedgehog-69.convex.site";

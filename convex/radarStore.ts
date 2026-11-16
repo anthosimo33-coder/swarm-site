@@ -307,13 +307,15 @@ export const endRun = internalMutation({
   handler: async (ctx, { id, ...rest }) => ctx.db.patch(id, { finishedAt: Date.now(), ...rest }),
 });
 
-/** Fiches App Store déjà cherchées : slug -> URL (ou null si introuvable). */
-export const appStoreMap = internalQuery({
-  args: {},
-  handler: async (ctx) => {
-    const out: Record<string, { url: string | null; v: number; art: string | null }> = {};
-    for await (const r of ctx.db.query("appStore")) out[r.slug] = { url: r.url, v: r.v ?? 1, art: r.art ?? null };
-    return out;
+/**
+ * Fiches App Store déjà cherchées, page par page : [slug, URL (null si introuvable), version de la règle, icône].
+ * Plus un objet à une clé par app : le 16/11, à 1 036 apps, Convex l'a refusé (1 024 champs au plus par objet).
+ */
+export const appStorePage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("appStore").paginate({ cursor, numItems: 2000 });
+    return { items: r.page.map((x) => [x.slug, x.url, x.v ?? 1, x.art ?? null] as [string, string | null, number, string | null]), cursor: r.continueCursor, done: r.isDone };
   },
 });
 
