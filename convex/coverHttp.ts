@@ -21,7 +21,7 @@ export const avatar = httpAction(async (ctx, request) => {
   let url = found.url;
   if (!url) {
     if (!found.known) return missing(3_600);
-    url = await ctx.runAction(internal.covers.ensureAvatar, { handle });
+    url = (await ctx.runAction(internal.covers.ensureAvatar, { handle })).url;
   }
   if (!url) return missing(3_600);
   return new Response(null, { status: 302, headers: { Location: url, "Cache-Control": "public, max-age=86400" } });

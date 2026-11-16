@@ -89,6 +89,7 @@ export default defineSchema({
     gender: v.optional(v.string()),
     ids: v.array(v.string()),
     tries: v.number(),
+    quiet: v.optional(v.number()), // silences de TikTok d'affilée
     at: v.number(),
   }).index("by_handle", ["handle"]).index("by_done_at", ["done", "at"]).index("by_done_tries_at", ["done", "tries", "at"]),
 

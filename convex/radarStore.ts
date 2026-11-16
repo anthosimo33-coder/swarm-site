@@ -596,12 +596,21 @@ export const saveVideoAi = internalMutation({
 });
 
 export const saveGender = internalMutation({
-  args: { items: v.array(v.object({ handle: v.string(), ok: v.boolean(), gender: v.optional(v.string()) })), now: v.number() },
+  args: {
+    items: v.array(v.object({ handle: v.string(), ok: v.boolean(), gender: v.optional(v.string()), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()) })),
+    now: v.number(),
+  },
   handler: async (ctx, { items, now }) => {
     for (const it of items) {
       const row = await ctx.db.query("accountAi").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
       if (!row) continue;
       if (it.ok) await ctx.db.patch(row._id, { done: true, gender: it.gender, tries: row.tries + 1, at: now });
+      // Comme les vidéos : sans réponse de TikTok, reprise sans essai (un au 6e silence) ; compte disparu, abandonné.
+      else if (it.retry) {
+        const quiet = (row.quiet ?? 0) + 1;
+        await ctx.db.patch(row._id, quiet >= 6 ? { quiet: 0, tries: row.tries + 1, at: now } : { quiet, at: now });
+      }
+      else if (it.gone) await ctx.db.patch(row._id, { tries: 3, at: now });
       else await ctx.db.patch(row._id, { tries: row.tries + 1, at: now });
     }
   },

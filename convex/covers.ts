@@ -17,18 +17,20 @@ const RETRY_MS = 6 * 3_600_000;
 /** La photo de profil d'un compte TikTok, copiée à la première demande (/avatar/<handle>). */
 export const ensureAvatar = internalAction({
   args: { handle: v.string() },
-  handler: async (ctx, { handle }): Promise<string | null> => {
+  handler: async (ctx, { handle }): Promise<{ url: string | null; gone: boolean; blank?: boolean }> => {
     const key = `a:${handle}`;
     const known: { url: string | null; missAt: number | null } = await ctx.runQuery(internal.radarStore.mediaGet, { key });
-    if (known.url) return known.url;
-    if (known.missAt && Date.now() - known.missAt < RETRY_MS) return null;
-    const got = await copyImage(ctx, key, `ttavatar:${handle}`);
+    if (known.url) return { url: known.url, gone: false };
+    if (known.missAt && Date.now() - known.missAt < RETRY_MS) return { url: null, gone: false, blank: true };
+    const report: { gone: boolean; blank?: boolean } = { gone: false };
+    const got = await copyImage(ctx, key, `ttavatar:${handle}`, report);
     if (!got) {
-      await ctx.runMutation(internal.radarStore.markMiss, { key });
-      return null;
+      // « Introuvable » seulement si TikTok le dit (compte disparu, ou sans photo) : pas sur un refus passager (16/11).
+      if (report.gone || report.blank) await ctx.runMutation(internal.radarStore.markMiss, { key });
+      return { url: null, gone: report.gone, blank: !!report.blank };
     }
     await ctx.runMutation(internal.radarStore.saveMedia, { items: [got] });
-    return got.url;
+    return { url: got.url, gone: false };
   },
 });
 

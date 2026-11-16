@@ -167,22 +167,27 @@ export async function tiktokCoverState(handle: string, id: string): Promise<{ ur
 export const tiktokCover = async (handle: string, id: string): Promise<string | null> => (await tiktokCoverState(handle, id)).url ?? null;
 
 /** La photo de profil d'un compte TikTok, lue dans les données de sa page publique. */
-export async function tiktokAvatar(handle: string): Promise<string | null> {
+/** La photo de profil d'un compte TikTok : `gone` (TikTok dit que le compte n'existe pas ou plus), `blank` (pas de photo), sinon pas de réponse. */
+export async function tiktokAvatarState(handle: string): Promise<{ url?: string; gone?: boolean; blank?: boolean }> {
   try {
     const res = await get(`https://www.tiktok.com/@${encodeURIComponent(handle)}`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return {};
     const html = await res.text();
     const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
-    if (!m) return null;
-    const user = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.user-detail"]?.userInfo?.user;
+    if (!m) return {};
+    const detail = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.user-detail"];
+    if (detail && typeof detail.statusCode === "number" && detail.statusCode !== 0) return { gone: true };
+    const user = detail?.userInfo?.user;
     const url = user?.avatarMedium || user?.avatarLarger || user?.avatarThumb;
-    return typeof url === "string" && url.startsWith("https://") ? url : null;
+    if (typeof url === "string" && url.startsWith("https://")) return { url };
+    return user ? { blank: true } : {};
   } catch {
-    return null;
+    return {};
   }
 }
+export const tiktokAvatar = async (handle: string): Promise<string | null> => (await tiktokAvatarState(handle)).url ?? null;
 
 /** La miniature d'un reel Instagram, lue sur sa page d'intégration publique (sans connexion). */
 export async function instagramCover(code: string): Promise<string | null> {
@@ -225,7 +230,11 @@ async function imageUrl(source: string, report?: Report): Promise<string | null>
     return st.url ?? null;
   }
   if (source.startsWith("igpage:")) return instagramCover(source.slice("igpage:".length));
-  if (source.startsWith("ttavatar:")) return tiktokAvatar(source.slice("ttavatar:".length));
+  if (source.startsWith("ttavatar:")) {
+    const st = await tiktokAvatarState(source.slice("ttavatar:".length));
+    if (report) { if (st.gone) report.gone = true; if (st.blank) report.blank = true; }
+    return st.url ?? null;
+  }
   return source;
 }
 
