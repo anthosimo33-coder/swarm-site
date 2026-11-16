@@ -574,12 +574,22 @@ export const claimGender = internalMutation({
 });
 
 export const saveVideoAi = internalMutation({
-  args: { items: v.array(v.object({ videoId: v.string(), ok: v.boolean(), type: v.optional(v.string()), text: v.optional(v.string()) })), now: v.number() },
+  args: {
+    items: v.array(v.object({ videoId: v.string(), ok: v.boolean(), type: v.optional(v.string()), text: v.optional(v.string()), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()) })),
+    now: v.number(),
+  },
   handler: async (ctx, { items, now }) => {
     for (const it of items) {
       const row = await ctx.db.query("videoAi").withIndex("by_video", (q) => q.eq("videoId", it.videoId)).first();
       if (!row) continue;
       if (it.ok) await ctx.db.patch(row._id, { done: true, type: it.type, text: it.text, tries: row.tries + 1, at: now });
+      // Sans réponse de TikTok : reprise dans 6 h, sans compter d'essai — sauf au 6e silence (36 h), qui en compte un ;
+      // disparue : abandonnée (3 essais).
+      else if (it.retry) {
+        const quiet = (row.quiet ?? 0) + 1;
+        await ctx.db.patch(row._id, quiet >= 6 ? { quiet: 0, tries: row.tries + 1, at: now } : { quiet, at: now });
+      }
+      else if (it.gone) await ctx.db.patch(row._id, { tries: 3, at: now });
       else await ctx.db.patch(row._id, { tries: row.tries + 1, at: now });
     }
   },

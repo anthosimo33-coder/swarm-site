@@ -174,7 +174,7 @@ export const copyMedia = internalAction({
     const start = Date.now();
     const got: { key: string; storageId: Id<"_storage">; url: string }[] = [];
     const failed: string[] = [];
-    let copied = 0, nfail = 0, next = 0;
+    let copied = 0, nfail = 0, next = 0, skipped = 0;
     const retried = async (go: () => Promise<unknown>) => { for (let i = 0; i < 3; i++) { try { await go(); return; } catch { await sleep(500 * (i + 1)); } } };
     const flush = async () => {
       const its = got.splice(0), keys = failed.splice(0);
@@ -184,14 +184,17 @@ export const copyMedia = internalAction({
     const worker = async () => {
       while (next < items.length && Date.now() - start < MEDIA_BUDGET_MS) {
         const { key, src } = items[next++];
-        const r = await copyImage(ctx, key, src);
-        if (r) { got.push(r); copied++; } else if (key.startsWith("v:")) { failed.push(key); nfail++; }
+        const report: { gone: boolean; blank?: boolean } = { gone: false };
+        const r = await copyImage(ctx, key, src, report);
+        // Notée introuvable (cachée des listes 3 jours) seulement si la plateforme le dit : un refus passager de TikTok
+        // n'efface plus une vidéo vivante des listes (16/11). Instagram et liens directs : comme avant.
+        if (r) { got.push(r); copied++; } else if (key.startsWith("v:") && (report.gone || report.blank || !src.startsWith("ttpage:"))) { failed.push(key); nfail++; } else if (key.startsWith("v:")) skipped++;
         if (got.length + failed.length >= 100) await flush();
       }
     };
     await Promise.all(Array.from({ length: PARALLEL }, worker));
     await flush();
-    console.log(`[copie] ${copied} images copiées, ${nfail} introuvables, ${items.length - next} laissées pour le passage suivant`);
+    console.log(`[copie] ${copied} images copiées, ${nfail} introuvables, ${skipped} sans réponse de TikTok (réessayées plus tard), ${items.length - next} laissées pour le passage suivant`);
     return { copied, failed: nfail };
   },
 });

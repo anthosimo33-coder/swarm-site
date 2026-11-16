@@ -83,6 +83,11 @@ async function pool<T, R>(items: T[], start: number, work: (x: T) => Promise<R>)
 }
 
 const LEASE_MS = 6 * 60_000;
+/**
+ * Lectures de pages TikTok à la fois, pour les miniatures pas encore rangées. 16/11 : 6 à la fois, ~900 en 6 min depuis les
+ * serveurs de Convex, et TikTok ne répondait plus à la moitié du dernier lot (vidéos pourtant vivantes, lues une à une).
+ */
+const TIKTOK_AT_ONCE = 2;
 const newToken = () => Math.random().toString(36).slice(2);
 
 export const fillVideos = internalAction({
@@ -102,9 +107,32 @@ export const fillVideos = internalAction({
     }
     const client = new Anthropic();
     let tin = 0, tout = 0;
-    const out = await pool(ids, start, async (videoId) => {
-      const img = await image(`${site}/cover/${videoId}`);
-      if (!img) return { videoId, ok: false };
+    // La miniature : rangée chez Swarm, sinon lue chez TikTok (TIKTOK_AT_ONCE à la fois). Trois issues sans image :
+    // « disparue » (TikTok le dit : abandonnée), « sans réponse » (refus passager : reprise plus tard sans compter
+    // d'essai), « inconnue » (pas de page vidéo chez Swarm pour en trouver le compte : un essai).
+    let busy = 0;
+    const waiting: (() => void)[] = [];
+    const tiktokSlot = async <T,>(f: () => Promise<T>): Promise<T> => {
+      while (busy >= TIKTOK_AT_ONCE) await new Promise<void>((r) => waiting.push(r));
+      busy++;
+      try { return await f(); } finally { busy--; waiting.shift()?.(); }
+    };
+    type Out = { videoId: string; ok: boolean; type?: string; text?: string; retry?: boolean; gone?: boolean; why?: string };
+    const out: Out[] = await pool(ids, start, async (videoId): Promise<Out> => {
+      const found: { url: string | null; handle: string | null } = await ctx.runQuery(internal.radarStore.coverLookup, { id: videoId });
+      let url = found.url;
+      if (!url && found.handle) {
+        const r: { url: string | null; gone: boolean; blank?: boolean } = await tiktokSlot(() => ctx.runAction(internal.covers.ensure, { id: videoId, handle: found.handle! }));
+        url = r.url;
+        if (!url) {
+          if (r.gone) return { videoId, ok: false, gone: true, why: "disparue" };
+          if (r.blank) return { videoId, ok: false, why: "sans miniature chez TikTok" }; // un essai : elle peut venir
+          return { videoId, ok: false, retry: true, why: "sans réponse" };
+        }
+      }
+      if (!url) return { videoId, ok: false, why: "inconnue" };
+      const img = await image(url);
+      if (!img) return { videoId, ok: false, why: "image illisible" }; // rangée mais vide ou minuscule : réessayer n'y change rien
       try {
         const r = await client.messages.parse({
           model: MODEL, max_tokens: 1500, system: VIDEO_SYSTEM,
@@ -113,14 +141,15 @@ export const fillVideos = internalAction({
         });
         tin += r.usage.input_tokens; tout += r.usage.output_tokens;
         const p = r.parsed_output;
-        if (r.stop_reason !== "end_turn" || !p) return { videoId, ok: false };
+        if (r.stop_reason !== "end_turn" || !p) return { videoId, ok: false, why: `réponse ${r.stop_reason}` };
         return { videoId, ok: true, type: p.type, text: Array.from(p.text.trim()).slice(0, 1500).join("") };
       } catch (e) {
         console.error(`[ia vidéos] ${videoId} : ${e instanceof Error ? e.message : String(e)}`);
-        return { videoId, ok: false };
+        return { videoId, ok: false, why: "erreur" };
       }
     });
-    for (let i = 0; i < out.length; i += 100) await ctx.runMutation(internal.radarStore.saveVideoAi, { items: out.slice(i, i + 100), now: Date.now() });
+    const whys = Object.entries(out.reduce((n, x) => (x.why ? { ...n, [x.why]: (n[x.why] ?? 0) + 1 } : n), {} as Record<string, number>)).map(([k, n]) => `${n} ${k}`).join(", ");
+    for (let i = 0; i < out.length; i += 100) await ctx.runMutation(internal.radarStore.saveVideoAi, { items: out.slice(i, i + 100).map(({ why: _w, ...x }) => x), now: Date.now() });
     const cost = tin * PRICE_IN + tout * PRICE_OUT;
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "videoAi", now: Date.now() });
     const capped = limit() !== null && out.length < ids.length;
@@ -129,7 +158,7 @@ export const fillVideos = internalAction({
       await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-videos", token });
       if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
     }
-    console.log(`[ia vidéos] ${out.length} lues, ${out.filter((x) => x.ok).length} réussies, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
+    console.log(`[ia vidéos] ${out.length} lues, ${out.filter((x) => x.ok).length} réussies${whys ? ` (échecs : ${whys})` : ""}, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, cost };
   },
 });

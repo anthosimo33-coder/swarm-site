@@ -34,10 +34,10 @@ export const ensureAvatar = internalAction({
 
 export const ensure = internalAction({
   args: { id: v.string(), handle: v.string() },
-  handler: async (ctx, { id, handle }): Promise<string | null> => {
+  handler: async (ctx, { id, handle }): Promise<{ url: string | null; gone: boolean; blank?: boolean }> => {
     const key = `v:${id}`;
     const known: { url: string | null; missAt: number | null; heic: Id<"_storage"> | null } = await ctx.runQuery(internal.radarStore.mediaGet, { key });
-    if (known.url) return known.url;
+    if (known.url) return { url: known.url, gone: false };
     // Copie rangée en HEIC (avant le 13/11) : convertie sur place, sans repasser par TikTok.
     if (known.heic) {
       const blob = await ctx.storage.get(known.heic);
@@ -47,18 +47,25 @@ export const ensure = internalAction({
         const url = await ctx.storage.getUrl(storageId);
         if (url) {
           await ctx.runMutation(internal.radarStore.saveMedia, { items: [{ key, storageId, url }] });
-          return url;
+          return { url, gone: false };
         }
       }
     }
-    if (known.missAt && Date.now() - known.missAt < RETRY_MS) return null;
+    // Échec récent (TikTok a dit « disparue » ou « sans miniature ») : pas de nouvel essai avant 6 h ; rendu comme « sans
+    // miniature » (un essai pour la lecture IA, qui abandonne au 3e) plutôt que « disparue » (abandon d'emblée).
+    if (known.missAt && Date.now() - known.missAt < RETRY_MS) return { url: null, gone: false, blank: true };
     const source = id.startsWith("ig:") ? `igpage:${id.slice(3)}` : `ttpage:${handle}/${id}`;
-    const got = await copyImage(ctx, key, source);
+    const report: { gone: boolean; blank?: boolean } = { gone: false };
+    const got = await copyImage(ctx, key, source, report);
     if (!got) {
-      await ctx.runMutation(internal.radarStore.markMiss, { key });
-      return null;
+      // « Introuvable » (6 h sans réessai, vidéo cachée des listes et de sa page) seulement si TikTok le dit : vidéo
+      // disparue, ou sans miniature ; un refus passager ne laisse pas de trace (16/11 : il cachait des vidéos bien
+      // vivantes). Instagram : comme avant.
+      const gone = report.gone || source.startsWith("igpage:");
+      if (gone || report.blank) await ctx.runMutation(internal.radarStore.markMiss, { key });
+      return { url: null, gone, blank: !!report.blank };
     }
     await ctx.runMutation(internal.radarStore.saveMedia, { items: [got] });
-    return got.url;
+    return { url: got.url, gone: false };
   },
 });

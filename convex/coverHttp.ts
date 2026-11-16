@@ -35,7 +35,7 @@ export const cover = httpAction(async (ctx, request) => {
   let url = found.url;
   if (!url) {
     if (found.handle === null) return missing(86_400);
-    url = await ctx.runAction(internal.covers.ensure, { id, handle: found.handle });
+    url = (await ctx.runAction(internal.covers.ensure, { id, handle: found.handle })).url;
   }
   if (!url) return missing(300); // vidéo privée ou supprimée : le navigateur peut redemander bientôt
   return new Response(null, { status: 302, headers: { Location: url, "Cache-Control": "public, max-age=86400" } });

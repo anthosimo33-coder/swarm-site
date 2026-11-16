@@ -77,6 +77,7 @@ export default defineSchema({
     type: v.optional(v.string()),
     text: v.optional(v.string()),
     tries: v.number(),
+    quiet: v.optional(v.number()), // silences de TikTok d'affilée (miniature introuvable faute de réponse)
     at: v.number(),
   }).index("by_video", ["videoId"]).index("by_done_at", ["done", "at"]).index("by_done_tries_at", ["done", "tries", "at"]),
 

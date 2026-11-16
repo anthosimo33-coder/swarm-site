@@ -131,31 +131,40 @@ export async function siteIcon(domain: string): Promise<string | null> {
   }
 }
 
-/** La miniature d'une vidéo TikTok, lue dans les données de sa page publique (URL signée, fraîche). */
-export async function tiktokCover(handle: string, id: string): Promise<string | null> {
+/**
+ * La miniature d'une vidéo TikTok, lue dans les données de sa page publique (URL signée, fraîche). `gone` : TikTok dit
+ * que la vidéo n'existe plus ou n'est pas visible (statusCode non nul, 10204 « item doesn't exist »…). Ni l'un ni
+ * l'autre : TikTok n'a pas répondu comme d'habitude (page de contrôle, refus passager) — rien n'est sûr (16/11 : sur
+ * 12 vidéos ratées par la lecture IA, 11 existaient, lues une à une sans souci).
+ */
+export async function tiktokCoverState(handle: string, id: string): Promise<{ url?: string; gone?: boolean; blank?: boolean }> {
   try {
     const res = await get(`https://www.tiktok.com/@${encodeURIComponent(handle || "tiktok")}/video/${id}`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return {};
     const html = await res.text();
     const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
     if (m) {
       try {
-        const data = JSON.parse(m[1]);
-        const video = data?.__DEFAULT_SCOPE__?.["webapp.video-detail"]?.itemInfo?.itemStruct?.video;
+        const detail = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.video-detail"];
+        if (detail && typeof detail.statusCode === "number" && detail.statusCode !== 0) return { gone: true };
+        const video = detail?.itemInfo?.itemStruct?.video;
         const url = video?.cover || video?.originCover || video?.dynamicCover;
-        if (typeof url === "string" && url.startsWith("https://")) return url;
+        if (typeof url === "string" && url.startsWith("https://")) return { url };
+        // La vidéo existe, mais TikTok ne lui donne pas (encore) de miniature (16/11 : cover, originCover, dynamicCover vides).
+        if (detail?.statusCode === 0 && video) return { blank: true };
       } catch {
         // données illisibles : on essaie la recherche simple ci-dessous
       }
     }
     const r = html.match(/"cover":"(https:[^"]+)"/);
-    return r ? (JSON.parse(`"${r[1]}"`) as string) : null;
+    return r ? { url: JSON.parse(`"${r[1]}"`) as string } : {};
   } catch {
-    return null;
+    return {};
   }
 }
+export const tiktokCover = async (handle: string, id: string): Promise<string | null> => (await tiktokCoverState(handle, id)).url ?? null;
 
 /** La photo de profil d'un compte TikTok, lue dans les données de sa page publique. */
 export async function tiktokAvatar(handle: string): Promise<string | null> {
@@ -196,8 +205,9 @@ export async function instagramCover(code: string): Promise<string | null> {
   }
 }
 
-/** L'URL de l'image à télécharger pour une source. */
-async function imageUrl(source: string): Promise<string | null> {
+/** L'URL de l'image à télécharger pour une source ; `report` : la vidéo n'existe plus (gone), ou n'a pas de miniature (blank). */
+type Report = { gone: boolean; blank?: boolean };
+async function imageUrl(source: string, report?: Report): Promise<string | null> {
   if (source.startsWith("itunesid:") || source.startsWith("itunes:")) {
     try {
       const hit = source.startsWith("itunesid:") ? await appStoreLookup(source.slice("itunesid:".length)) : await appStoreHit(source.slice("itunes:".length));
@@ -209,7 +219,10 @@ async function imageUrl(source: string): Promise<string | null> {
   if (source.startsWith("site:")) return siteIcon(source.slice("site:".length));
   if (source.startsWith("ttpage:")) {
     const [handle, id] = source.slice("ttpage:".length).split("/");
-    return id ? tiktokCover(handle, id) : null;
+    if (!id) return null;
+    const st = await tiktokCoverState(handle, id);
+    if (report) { if (st.gone) report.gone = true; if (st.blank) report.blank = true; }
+    return st.url ?? null;
   }
   if (source.startsWith("igpage:")) return instagramCover(source.slice("igpage:".length));
   if (source.startsWith("ttavatar:")) return tiktokAvatar(source.slice("ttavatar:".length));
@@ -256,16 +269,23 @@ export async function shrink(buf: ArrayBuffer, type: string, key: string): Promi
   }
 }
 
-/** Télécharge, réduit et range l'image ; null si la source ne donne rien (vidéo supprimée, lien expiré). */
-export async function copyImage(ctx: ActionCtx, key: string, source: string) {
+/**
+ * Télécharge, réduit et range l'image ; null si la source ne donne rien. `report.gone` : la vidéo n'existe plus (dit par
+ * TikTok) ; sinon un null peut n'être qu'un refus passager, à ne pas noter « introuvable ».
+ */
+export async function copyImage(ctx: ActionCtx, key: string, source: string, report?: Report) {
   try {
-    let url = await imageUrl(source);
+    let url = await imageUrl(source, report);
     if (!url) return null;
     let res = await get(url, { headers: { "User-Agent": UA } });
     // Lien signé expiré : la page publique de la vidéo (TikTok ou Instagram) en donne un neuf.
     if (!res.ok && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
       const id = key.slice(2);
-      url = /^\d+$/.test(id) ? await tiktokCover("tiktok", id) : id.startsWith("ig:") ? await instagramCover(id.slice(3)) : null;
+      if (/^\d+$/.test(id)) {
+        const st = await tiktokCoverState("tiktok", id);
+        if (report) { if (st.gone) report.gone = true; if (st.blank) report.blank = true; }
+        url = st.url ?? null;
+      } else url = id.startsWith("ig:") ? await instagramCover(id.slice(3)) : null;
       if (!url) return null;
       res = await get(url, { headers: { "User-Agent": UA } });
     }
