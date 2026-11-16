@@ -24,7 +24,11 @@ export default defineSchema({
     data: v.any(),
     hash: v.string(), // empreinte du contenu, hors date : on n'écrit que ce qui change
     updatedAt: v.number(),
+    // Page rangée en morceaux de texte (boardParts) : `data` vaut alors null (16/11 : une page peut dépasser 1 Mio ou
+    // une liste 8 192 éléments, limites de Convex identiques sur tous les plans ; boards.get la recolle).
+    parts: v.optional(v.number()),
   }).index("by_key", ["key"]),
+  boardParts: defineTable({ key: v.string(), i: v.number(), text: v.string() }).index("by_key_i", ["key", "i"]),
 
   // Miniatures des vidéos et icônes des apps, recopiées chez Swarm (les URL de
   // TikTok sont signées et expirent). Clé « v:<id vidéo> » ou « icon:<slug> ».

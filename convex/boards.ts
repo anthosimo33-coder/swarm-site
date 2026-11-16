@@ -44,6 +44,12 @@ export const get = query({
     if (!row) return null;
     const hidden = new Set((await ctx.db.query("hidden").first())?.ids ?? []);
     if (key.startsWith("video:") && hidden.has(key.slice("video:".length))) return null; // fiche « introuvable »
+    // Grosse page rangée en morceaux de texte (convex/radarStore.ts, saveBoards) : recollée ici.
+    if (row.parts) {
+      const parts = await ctx.db.query("boardParts").withIndex("by_key_i", (q) => q.eq("key", key)).collect();
+      if (parts.length !== row.parts) return null; // en cours de réécriture : jamais une page tronquée
+      return withCovers(JSON.parse(parts.map((p) => p.text).join("")), hidden);
+    }
     return withCovers(row.data, hidden);
   },
 });

@@ -55,6 +55,9 @@ const BATCH_BYTES = 1_500_000;
  */
 const MEM_STOP = (Number(process.env.SWARM_MEM_STOP_MB) || Infinity) * 1024 * 1024; // prod : 480 ; dev : sans (processus réutilisés, déjà gros au départ)
 const BATCH_ITEMS = 400;
+/** Au-delà (caractères), une page est rangée en morceaux. Abaissé sur le dev (SWARM_PART_MIN=100000) : le chemin des
+ * morceaux y tourne à chaque passage, au lieu de n'être éprouvé que le jour où une page de prod grossit. */
+const PART_MIN = Number(process.env.SWARM_PART_MIN) || 600_000;
 
 /** Mémoire de l'action à chaque étape (journal Convex) : la limite est de 512 Mo. */
 /**
@@ -66,7 +69,9 @@ const gc: () => void = (() => {
   try { v8.setFlagsFromString("--expose-gc"); return vm.runInNewContext("gc") as () => void; } catch { return () => {}; }
 })();
 
-const MEMLOG = (label: string) => { const m = process.memoryUsage(); console.log(`[mem] ${label} rss=${Math.round(m.rss / 1e6)} heap=${Math.round(m.heapUsed / 1e6)} ext=${Math.round(m.external / 1e6)} buf=${Math.round(m.arrayBuffers / 1e6)}`); };
+/** Pic de tas de l'étape (Mo), relevé à chaque MEMLOG : noté dans syncRuns pour suivre la marge sans les journaux. */
+let heapPeak = 0;
+const MEMLOG = (label: string) => { const m = process.memoryUsage(); heapPeak = Math.max(heapPeak, Math.round(m.heapUsed / 1e6)); console.log(`[mem] ${label} rss=${Math.round(m.rss / 1e6)} heap=${Math.round(m.heapUsed / 1e6)} ext=${Math.round(m.external / 1e6)} buf=${Math.round(m.arrayBuffers / 1e6)}`); };
 /**
  * Une ligne de l'export, réduite à ce que Swarm utilise (15/11 : 86 000 vidéos, 76 Mo de JSON, la synchro de prod mourait
  * à 512 Mo). Vidéos suivies : sans l'adresse signée de la miniature (23 % du poids ; la copie lit la page publique),
@@ -221,11 +226,12 @@ type Stage = {
   tails?: (Id<"_storage"> | null)[];
   writtenBy?: number[];
   retries?: Record<string, number>;
+  heapPrep?: number;
   sizes: Record<string, number>;
 };
 type Stores = Record<string, { url: string | null; v: number; art: string | null }>;
 /** Ce qu'une étape de groupe range pour l'étape globale (en plus de `GroupOut`). */
-type GroupFile = { out: GroupOut; markets: string[]; written: number; videos: number; refused?: string[] };
+type GroupFile = { out: GroupOut; markets: string[]; written: number; videos: number; refused?: string[]; heap?: number; biggest?: [number, string]; inParts?: number };
 type GroupTail = { used: string[]; need: [string, string][]; keys: string[] };
 
 /** Des lignes rangées en fichiers JSON de `per` lignes (lus un à un : jamais tout le texte à la fois). */
@@ -323,7 +329,8 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
   // Une page que Convex refuse (liste de plus de 8 192 éléments, document de plus de 1 Mio…) est écartée et notée :
   // elle ne bloque plus tout le passage (16/11 : l'index de recherche refusé a fait échouer 8 synchros de suite).
   const refused: string[] = [];
-  const save = async (items: { key: string; hash: string; data: unknown }[]): Promise<void> => {
+  type Item = { key: string; hash: string; data?: unknown; text?: string };
+  const save = async (items: Item[]): Promise<void> => {
     for (let attempt = 0; ; attempt++) {
       try { written += await ctx.runMutation(internal.radarStore.saveBoards, { items, now }); return; } catch (e) {
         const msg = String(e);
@@ -337,7 +344,7 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
       }
     }
   };
-  const send = async (items: { key: string; hash: string; data: unknown }[], bytes: number) => {
+  const send = async (items: Item[], bytes: number) => {
     sent += bytes;
     const wait = writeStart + ((sent - bytes) / WRITE_RATE) * 1000 - Date.now();
     if (wait > 0) await sleep(wait);
@@ -345,17 +352,28 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
   };
   let pending: { key: string; hash: string; data: unknown; bytes: number }[] = [];
   let pendingBytes = 0;
+  // Une page trop grosse pour un document (1 Mio) ou qui porte une liste de plus de 8 000 éléments (Convex : 8 192, sur
+  // tous les plans) part en texte, rangée en morceaux (radarStore.saveBoards). Une liste de 8 000 éléments demande au
+  // moins 16 000 caractères : en deçà, rien à vérifier.
+  let biggest: [number, string] = [0, ""], inParts = 0;
+  const longest = (x: unknown): number => (Array.isArray(x) ? Math.max(x.length, ...x.map(longest)) : x && typeof x === "object" ? Math.max(0, ...Object.values(x).map(longest)) : 0);
+  const asItem = (x: { key: string; hash: string; data: unknown; bytes: number }) => {
+    if (x.bytes > biggest[0]) biggest = [x.bytes, x.key];
+    if (x.bytes < 16_000 || (x.bytes < PART_MIN && longest(x.data) <= 8_000)) return { key: x.key, hash: x.hash, data: x.data };
+    inParts++;
+    return { key: x.key, hash: x.hash, text: JSON.stringify(x.data) };
+  };
   const flush = async () => {
     if (!pending.length) return;
     const items = pending;
     pending = []; pendingBytes = 0;
     const old: (string | null)[] = await ctx.runQuery(internal.radarStore.boardHashes, { keys: items.map((x) => x.key) });
-    let batch: { key: string; hash: string; data: unknown }[] = [], size = 0;
+    let batch: Item[] = [], size = 0;
     for (let j = 0; j < items.length; j++) {
       const x = items[j];
-      if (old[j] === x.hash) continue;
+      if (old[j] === x.hash) { if (x.bytes > biggest[0]) biggest = [x.bytes, x.key]; continue; }
       if (batch.length && (size + x.bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS)) { await send(batch, size); batch = []; size = 0; }
-      batch.push({ key: x.key, hash: x.hash, data: x.data });
+      batch.push(asItem(x));
       size += x.bytes;
     }
     if (batch.length) await send(batch, size);
@@ -370,7 +388,8 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
     if (pending.length >= 400 || pendingBytes >= 3 * BATCH_BYTES) await flush();
   }
   if (!stopped) await flush();
-  return { written, keys, stopped, refused, left: stopped ? pending.length + boards.size + lazy.size : 0 };
+  if (biggest[0] > 300_000) console.log(`[page] la plus grosse : ${biggest[1]}, ${Math.round(biggest[0] / 1024)} Kio${inParts ? ` ; ${inParts} rangées en morceaux` : ""}`);
+  return { written, keys, stopped, refused, biggest, inParts, left: stopped ? pending.length + boards.size + lazy.size : 0 };
 }
 
 /** Échec d'une étape : le passage est noté raté et ses fichiers effacés (le suivant repart de zéro). */
@@ -467,7 +486,9 @@ export const run = internalAction({
       for (const t of raw.tracked) { const c = canon(t.appId); weight.set(c, (weight.get(c) ?? 0) + 1); }
       const groups: string[][] = [];
       let cur: string[] = [], n = 0;
-      for (const c of [...new Set(raw.apps.map((a) => canon(a.id)))].sort((p, q) => (weight.get(q) ?? 0) - (weight.get(p) ?? 0) || (p < q ? -1 : 1))) {
+      // Une app sans compte exporté et pas active (en pause, à l'essai : 1 083 le 16/11) n'a ni vidéo ni fiche : hors groupes.
+      const active = new Set(raw.apps.filter((a) => !a.mergedInto && a.status === "active").map((a) => a.id));
+      for (const c of [...new Set(raw.apps.map((a) => canon(a.id)))].filter((c) => active.has(c) || (weight.get(c) ?? 0) > 0).sort((p, q) => (weight.get(q) ?? 0) - (weight.get(p) ?? 0) || (p < q ? -1 : 1))) {
         const w = weight.get(c) ?? 0;
         if (cur.length && n + w > GROUP_ACCOUNTS) { groups.push(cur); cur = []; n = 0; }
         cur.push(c);
@@ -484,8 +505,9 @@ export const run = internalAction({
           signals: await stageWrite(ctx, raw.signals, 2000), stores: await stageWrite(ctx, [stores]),
         },
       };
-      await ctx.runMutation(internal.radarStore.setStage, { id: runId, stage: st });
       MEMLOG(`préparation : ${groups.length} groupes`);
+      st.heapPrep = heapPeak;
+      await ctx.runMutation(internal.radarStore.setStage, { id: runId, stage: st });
       await ctx.scheduler.runAfter(0, internal.radarSync.runGroup, { id: runId, i: 0 });
       return sizes;
     } catch (e) {
@@ -561,7 +583,7 @@ export const runGroup = internalAction({
       for (let j = 0; j < newGender.length; j += 300) await ctx.runMutation(internal.radarStore.saveGenderTodo, { items: newGender.slice(j, j + 300) });
       // Langue des comptes jamais calculés : par lots de 200, chacun dans sa propre action (le détecteur hors synchro).
       for (let j = 0; j < Math.min(res.langTodo.length, TODO_MAX); j += 200) await ctx.scheduler.runAfter(60_000 + j * 50, internal.radarLang.detect, { items: res.langTodo.slice(j, j + 200) });
-      const file: GroupFile = { out: res.out!, markets: res.markets, written: w.written, videos: trackedVideos.length, refused: w.refused };
+      const file: GroupFile = { out: res.out!, markets: res.markets, written: w.written, videos: trackedVideos.length, refused: w.refused, heap: heapPeak, biggest: w.biggest, inParts: w.inParts };
       // Images : celles de ses vidéos et de ses comptes seulement (icônes, photos de profil, reprises et alertes sont
       // aussi vues par l'étape globale, qui les compte).
       const ownSlugs = new Set(apps.filter((a) => set.has(canon(a.id))).map((a) => a.slug));
@@ -611,7 +633,7 @@ export const runGlobal = internalAction({
       MEMLOG('global après calcul');
       const w = await writePages(ctx, res.boards as Map<string, unknown>, res.lazy, st.now, runStart);
       MEMLOG(`global écriture ${w.written}`);
-      const later = res.laterTodos(), markets = res.markets, resUsed = res.used, resNeed = res.need;
+      const later = res.laterTodos(), resUsed = res.used, resNeed = res.need;
       res = null; // le calcul n'est plus utile : libéré avant le ménage
       gc();
       if (w.stopped) {
@@ -661,9 +683,6 @@ export const runGlobal = internalAction({
       const copyTodo = [...icons, ...others].slice(0, MEDIA_PER_RUN);
       const newSlides = later.slideTodo.filter((x) => !store.slideKnown.has(x)).slice(0, TODO_MAX);
       const newAi = later.videoAiTodo.filter((x) => !store.aiKnown.has(x)).slice(0, TODO_MAX);
-      // Pays retenus : chaque groupe ne les connaît qu'à peu près (vidéos des autres groupes absentes) ; un écart ici
-      // veut dire qu'une liste par pays a pu manquer des lignes ce passage (noté, jamais vu au banc).
-      const exact = [...new Set(markets)].sort().join(",");
       // Pages refusées par Convex (écartées, notées) : une page refusée garde sa version d'avant, jamais effacée.
       const refusedAll = [...w.refused, ...files.flatMap((f) => f.refused ?? [])];
       const counts = {
@@ -672,7 +691,12 @@ export const runGlobal = internalAction({
         mediaToCopy: copyTodo.length, mediaMissing: needCount, mediaDropped: staleOk ? stale.length : 0, boardsDropped: goneOk ? gone.length : 0,
         ...(staleOk ? {} : { mediaDropRefused: stale.length }), ...(goneOk ? {} : { boardsDropRefused: gone.length }),
         ...(refusedAll.length ? { pagesRefused: refusedAll.length, pagesRefusedKeys: refusedAll.slice(0, 20) } : {}),
-        marketsMismatch: files.filter((f) => [...new Set(f.markets)].sort().join(",") !== exact).length,
+        // La marge sur les limites de Convex, pour la voir fondre avant qu'une limite casse : pic de tas par étape (sur
+        // 512 Mo d'action) et plus grosse page (rangée en morceaux au-delà de 600 000 caractères).
+        heapMaxMo: Math.max(heapPeak, st.heapPrep ?? 0, ...files.map((f) => f.heap ?? 0)),
+        biggestPageKio: Math.round(Math.max(w.biggest[0], ...files.map((f) => f.biggest?.[0] ?? 0)) / 1024),
+        biggestPage: ([w.biggest, ...files.map((f) => f.biggest ?? [0, ""])] as [number, string][]).sort((p, q) => q[0] - p[0])[0][1],
+        pagesInParts: w.inParts + files.reduce((n, f) => n + (f.inParts ?? 0), 0),
         minutes: Math.round((Date.now() - (st.now)) / 6_000) / 10,
       };
       await ctx.runMutation(internal.radarStore.endRun, { id, ok: true, counts });

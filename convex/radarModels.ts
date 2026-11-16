@@ -626,9 +626,12 @@ export function buildBoards(
   const PLATS = [null, "tiktok", "instagram"] as const;
   const groupOut: GroupOut | null = G ? { apps: [], lists: {}, creators: [], accounts: {}, tracked: [] } : null;
   if (groupOut) {
-    // Étape « groupe » : les lignes de ses apps dans chaque liste, pour tous les pays où elles ont des vidéos (l'étape
-    // globale garde les pays retenus). Calculées ici : elles notent les vidéos montrées, dont le groupe écrit la page.
-    const codes = new Set(MARKETS.map((m) => m[0]));
+    // Étape « groupe » : les lignes de ses apps dans chaque liste, pour TOUS les pays de ses vidéos (ses comptes sont à
+    // lui : leur pays est exact) ; l'étape globale ne garde que les pays retenus. Pas les pays retenus vus d'ici : un
+    // groupe ne connaît le pays des comptes des autres qu'à peu près (le 16/11, 4 groupes sur 5 en voyaient d'autres, et
+    // une liste par pays aurait pu manquer leurs lignes). Calculées ici : elles notent les vidéos montrées.
+    const codes = new Set<string>();
+    for (const r of listed.values()) for (const c of vidsByAppMarket.get(appBySlug.get(r.slug)!.id)?.keys() ?? []) if (c) codes.add(c);
     for (const plat of PLATS) for (const code of [null, ...codes]) {
       if (!plat && !code) continue;
       const rows = listRows(code, plat);

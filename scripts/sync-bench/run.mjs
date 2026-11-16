@@ -34,6 +34,13 @@ if (process.argv[2] !== "--step") {
   }
   const hashes = JSON.parse(fs.readFileSync(`${STATE}hashes.json`, "utf8"));
   fs.writeFileSync(`${S}hashes-${TAG}-x${N}.json`, JSON.stringify(hashes));
+  if (fs.existsSync(`${STATE}limits.json`)) {
+    const L = JSON.parse(fs.readFileSync(`${STATE}limits.json`, "utf8"));
+    const pct = (v, max) => Math.round((100 * v) / max);
+    console.log("[limites] type : pages | plus gros document (% de 1 Mio) | plus longue liste (% de 8 192) | imbrication (sur 16)");
+    for (const [p, x] of Object.entries(L).sort((a, b) => b[1].bytes[0] - a[1].bytes[0]))
+      console.log(`[limites] ${p} : ${x.n} | ${Math.round(x.bytes[0] / 1024)} Kio ${pct(x.bytes[0], 1048576)} % (${x.bytes[1]}) | ${x.arr[0]} ${pct(x.arr[0], 8192)} % (${x.arr[1]}) | ${x.depth[0]}`);
+  }
   const left = fs.readdirSync(`${STATE}storage`).length;
   console.log(`[banc] ×${N} : ${Object.keys(hashes).length} pages | pic de tas par étape (Mo) ${peaks.join(" ")} | fichiers d'étape restants ${left}`);
   process.exit(0);
@@ -106,7 +113,8 @@ const queue = JSON.parse(fs.readFileSync(`${STATE}queue.json`, "utf8"));
 const nameOf = (r) => r.__path.split(":").slice(-2).join(":");
 const DUMP = new Set((process.env.BENCH_DUMP || "").split(",")), dumped = fs.existsSync(`${S}dump-${TAG}.json`) && FN !== "run" ? JSON.parse(fs.readFileSync(`${S}dump-${TAG}.json`, "utf8")) : {};
 let mutBytes = 0, nextId = fs.existsSync(`${STATE}next`) ? Number(fs.readFileSync(`${STATE}next`, "utf8")) : 1;
-let keysCache = null; // comme la vraie requête : une page à la fois, sans recopier toute la table à chaque appel
+const LIMITS = process.env.BENCH_LIMITS ? (fs.existsSync(`${STATE}limits.json`) ? JSON.parse(fs.readFileSync(`${STATE}limits.json`, "utf8")) : {}) : null;
+let keysCache = null, parts = 0; // comme la vraie requête : une page à la fois, sans recopier toute la table à chaque appel
 const ctx = {
   runQuery: async (r, a) => {
     sample();
@@ -133,7 +141,23 @@ const ctx = {
       // Comme Convex : une liste de plus de 8 192 éléments est refusée (BENCH_ARRAY_MAX pour forcer un refus au banc).
       const max = Number(process.env.BENCH_ARRAY_MAX || 8192);
       const longest = (x) => (Array.isArray(x) ? Math.max(x.length, ...x.map(longest)) : x && typeof x === "object" ? Math.max(0, ...Object.values(x).map(longest)) : 0);
-      for (const it of a.items) { const n = longest(it.data); if (n > max) throw new Error(`Invalid arguments for radarStore.js:saveBoards: Array length is too long (${n} > maximum length ${max})`); }
+      for (const it of a.items) {
+        if (it.text !== undefined) { parts += Math.ceil(it.text.length / 250_000); continue; } // rangée en morceaux
+        const n = longest(it.data); if (n > max) throw new Error(`Invalid arguments for radarStore.js:saveBoards: Array length is too long (${n} > maximum length ${max})`);
+        const size = JSON.stringify(it.data).length; if (size > 1_048_576) throw new Error(`Value is too large (${size} bytes > maximum size 1 MiB)`);
+      }
+      if (LIMITS) for (const it of a.items) {
+        // Chaque page contre les limites de Convex (identiques sur tous les plans) : 1 Mio par document, 8 192 éléments par
+        // liste, 16 niveaux d'imbrication.
+        const p = it.key.split(":")[0].split("@")[0], bytes = it.text !== undefined ? 0 : JSON.stringify(it.data).length; // en morceaux : plus de limite
+        const depth = (x) => (x && typeof x === "object" ? 1 + Math.max(0, ...Object.values(x).map(depth)) : 0);
+        const longest2 = (x) => (Array.isArray(x) ? Math.max(x.length, ...x.map(longest2)) : x && typeof x === "object" ? Math.max(0, ...Object.values(x).map(longest2)) : 0);
+        const L = (LIMITS[p] ??= { n: 0, bytes: [0, ""], arr: [0, ""], depth: [0, ""] });
+        L.n++;
+        if (bytes > L.bytes[0]) L.bytes = [bytes, it.key];
+        const n = it.text !== undefined ? 0 : longest2(it.data); if (n > L.arr[0]) L.arr = [n, it.key];
+        const d = depth(it.data) + 1; if (d > L.depth[0]) L.depth = [d, it.key];
+      }
       for (const it of a.items) { saved.set(it.key, it.hash); if (DUMP.has(it.key)) dumped[it.key] = it.data; } return a.items.length; }
     if (fn === "dropBoards") { for (const k of a.keys) saved.delete(k); return null; }
     return null;
@@ -156,7 +180,9 @@ sample();
 fs.writeFileSync(HASHES, JSON.stringify(Object.fromEntries(saved)));
 fs.writeFileSync(RUNS, JSON.stringify(runs));
 fs.writeFileSync(`${STATE}next`, String(nextId));
+if (LIMITS) fs.writeFileSync(`${STATE}limits.json`, JSON.stringify(LIMITS));
 fs.writeFileSync(`${STATE}queue.json`, JSON.stringify(queue));
 if (process.env.BENCH_DUMP) fs.writeFileSync(`${S}dump-${TAG}.json`, JSON.stringify(dumped, null, 1));
+if (parts) console.log(`[banc] morceaux rangés : ${parts}`);
 console.log(`[banc] pic rss=${Math.round(peak.rss / 1e6)} tas=${Math.round(peak.heap / 1e6)} Mo | ${Math.round((Date.now() - t0) / 1000)} s | export ${fetches} demandes | mutations ${Math.round(mutBytes / 1e6)} Mo`);
 process.exit(0);

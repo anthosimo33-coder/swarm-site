@@ -164,27 +164,45 @@ export const boardKeys = internalQuery({
   },
 });
 
+/** Morceaux de texte d'une grosse page : 250 000 caractères, au plus 750 Ko en UTF-8 (un document : 1 Mio). */
+export const PART_CHARS = 250_000;
+const dropParts = async (ctx: MutationCtx, key: string) => {
+  for (const p of await ctx.db.query("boardParts").withIndex("by_key_i", (q) => q.eq("key", key)).collect()) await ctx.db.delete(p._id);
+};
+
 /** Efface les documents qu'un passage n'a plus produits (fiche sortie du Radar). */
 export const dropBoards = internalMutation({
   args: { keys: v.array(v.string()) },
   handler: async (ctx, { keys }) => {
     for (const key of keys) {
       const row = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", key)).first();
+      if (row?.parts) await dropParts(ctx, key);
       if (row) await ctx.db.delete(row._id);
     }
   },
 });
 
-/** Écrit les documents des écrans ; un document inchangé (même empreinte) n'est pas réécrit. */
+/**
+ * Écrit les documents des écrans ; un document inchangé (même empreinte) n'est pas réécrit. Une page envoyée en texte
+ * (`text`, trop grosse pour un document ou une liste de Convex) est rangée en morceaux (boardParts), recollés par
+ * boards.get ; une page redevenue petite reprend `data` et perd ses morceaux.
+ */
 export const saveBoards = internalMutation({
-  args: { items: v.array(v.object({ key: v.string(), hash: v.string(), data: v.any() })), now: v.number() },
+  args: { items: v.array(v.object({ key: v.string(), hash: v.string(), data: v.optional(v.any()), text: v.optional(v.string()) })), now: v.number() },
   handler: async (ctx, { items, now }) => {
     let written = 0;
     for (const it of items) {
       const old = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", it.key)).first();
       if (old && old.hash === it.hash) continue;
-      if (old) await ctx.db.patch(old._id, { data: it.data, hash: it.hash, updatedAt: now });
-      else await ctx.db.insert("boards", { key: it.key, data: it.data, hash: it.hash, updatedAt: now });
+      if (old?.parts) await dropParts(ctx, it.key);
+      let row: { data: unknown; parts: number | undefined };
+      if (it.text !== undefined) {
+        const n = Math.max(1, Math.ceil(it.text.length / PART_CHARS));
+        for (let i = 0; i < n; i++) await ctx.db.insert("boardParts", { key: it.key, i, text: it.text.slice(i * PART_CHARS, (i + 1) * PART_CHARS) });
+        row = { data: null, parts: n };
+      } else row = { data: it.data ?? null, parts: undefined };
+      if (old) await ctx.db.patch(old._id, { ...row, hash: it.hash, updatedAt: now });
+      else await ctx.db.insert("boards", { key: it.key, ...row, hash: it.hash, updatedAt: now });
       written++;
     }
     return written;
