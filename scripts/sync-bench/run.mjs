@@ -175,7 +175,7 @@ async function mutation(r, a) {
         const d = depth(it.data) + 1; if (d > L.depth[0]) L.depth = [d, it.key];
       }
       for (const it of a.items) { saved.set(it.key, it.hash); if (DUMP.has(it.key)) dumped[it.key] = it.data; } return a.items.length; }
-    if (fn === "dropBoards") { for (const k of a.keys) saved.delete(k); return null; }
+    if (fn === "dropBoards") { for (const k of a.keys) saved.delete(k); return []; } // comme la vraie : les clés restantes
     return null;
 }
 const ctx = {

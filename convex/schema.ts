@@ -64,7 +64,8 @@ export default defineSchema({
     ids: v.array(v.string()), // ses vidéos les plus récentes, essayées tour à tour
     tries: v.number(),
     at: v.number(), // dernier essai (0 : jamais)
-  }).index("by_handle", ["handle"]).index("by_country_at", ["country", "at"]),
+    foundAt: v.optional(v.number()), // pays trouvé à cette date (regionsNeedSync)
+  }).index("by_handle", ["handle"]).index("by_country_at", ["country", "at"]).index("by_country_tries_at", ["country", "tries", "at"]).index("by_found", ["foundAt"]),
 
   // Carrousels (diaporamas de photos) : TikTok le dit sur la page publique de la vidéo (`imagePost`), le Radar ne le
   // garde pas sur les vidéos qu'il suit. null = pas encore lu ; images = nombre de photos.
@@ -77,7 +78,7 @@ export default defineSchema({
     text: v.optional(v.string()),
     tries: v.number(),
     at: v.number(),
-  }).index("by_video", ["videoId"]).index("by_done_at", ["done", "at"]),
+  }).index("by_video", ["videoId"]).index("by_done_at", ["done", "at"]).index("by_done_tries_at", ["done", "tries", "at"]),
 
   // Genre apparent de la personne qui se filme, pour les comptes dont les vidéos sont surtout « ambassadeur »
   // (les autres sont « sans visage » sans appel). ids = ses vidéos montrées à l'IA.
@@ -88,7 +89,7 @@ export default defineSchema({
     ids: v.array(v.string()),
     tries: v.number(),
     at: v.number(),
-  }).index("by_handle", ["handle"]).index("by_done_at", ["done", "at"]),
+  }).index("by_handle", ["handle"]).index("by_done_at", ["done", "at"]).index("by_done_tries_at", ["done", "tries", "at"]),
 
   // Bail d'une tâche de fond (une seule chaîne de lecture à la fois) : jeton du détenteur, valable jusqu'à `until`.
   leases: defineTable({ name: v.string(), token: v.string(), until: v.number() }).index("by_name", ["name"]),
@@ -102,7 +103,7 @@ export default defineSchema({
     images: v.optional(v.number()),
     tries: v.number(),
     at: v.number(), // dernier essai (0 : jamais)
-  }).index("by_video", ["videoId"]).index("by_slideshow_at", ["slideshow", "at"]),
+  }).index("by_video", ["videoId"]).index("by_slideshow_at", ["slideshow", "at"]).index("by_slideshow_tries_at", ["slideshow", "tries", "at"]),
 
   syncRuns: defineTable({
     startedAt: v.number(),

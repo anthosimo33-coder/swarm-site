@@ -128,7 +128,8 @@ async function fetchGroupVideos(base: string, secret: string, k: Slim, ids: stri
 function hashLen(data: unknown): { hash: string; bytes: number } {
   const { updatedAt: _ignored, ...rest } = (data ?? {}) as Record<string, unknown>;
   const s = JSON.stringify(rest);
-  return { hash: fnv(s), bytes: s.length + 40 };
+  // En octets UTF-8, comme Convex compte (1 Mio par document) : une page en coréen ou en émojis pèse jusqu'à 3 fois ses caractères.
+  return { hash: fnv(s), bytes: Buffer.byteLength(s, "utf8") + 40 };
 }
 
 function fnv(s: string): string {
@@ -356,10 +357,24 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
   // tous les plans) part en texte, rangée en morceaux (radarStore.saveBoards). Une liste de 8 000 éléments demande au
   // moins 16 000 caractères : en deçà, rien à vérifier.
   let biggest: [number, string] = [0, ""], inParts = 0;
-  const longest = (x: unknown): number => (Array.isArray(x) ? Math.max(x.length, ...x.map(longest)) : x && typeof x === "object" ? Math.max(0, ...Object.values(x).map(longest)) : 0);
-  const asItem = (x: { key: string; hash: string; data: unknown; bytes: number }) => {
+  // La plus longue liste et le plus grand objet d'une page : au-delà de 8 192 éléments ou 1 024 champs, Convex refuse la
+  // valeur, à l'écriture comme au retour de boards.get. Une telle page est refusée et signalée (pagesRefused) : la ranger
+  // en morceaux la ferait seulement échouer à l'écran. Les pages sont bornées par construction (banc à ×5).
+  const shape = (x: unknown, acc = { list: 0, fields: 0 }) => {
+    if (Array.isArray(x)) { acc.list = Math.max(acc.list, x.length); for (const e of x) shape(e, acc); }
+    else if (x && typeof x === "object") { const ks = Object.keys(x); acc.fields = Math.max(acc.fields, ks.length); for (const k of ks) shape((x as Record<string, unknown>)[k], acc); }
+    return acc;
+  };
+  const asItem = (x: { key: string; hash: string; data: unknown; bytes: number }): Item | null => {
     if (x.bytes > biggest[0]) biggest = [x.bytes, x.key];
-    if (x.bytes < 16_000 || (x.bytes < PART_MIN && longest(x.data) <= 8_000)) return { key: x.key, hash: x.hash, data: x.data };
+    // Sous 4 000 octets, ni 1 000 champs ni 8 000 éléments ne tiennent : rien à mesurer.
+    const sh = x.bytes < 4_000 ? { list: 0, fields: 0 } : shape(x.data);
+    if (sh.list > 8_000 || sh.fields > 1_000 || x.bytes > 12_000_000) {
+      refused.push(x.key);
+      console.log(`[page refusée] ${x.key} : ${Math.round(x.bytes / 1024)} Kio, liste de ${sh.list}, objet de ${sh.fields} champs (Convex : 8 192 éléments, 1 024 champs ; boards.get rend 16 Mio au plus)`);
+      return null;
+    }
+    if (x.bytes < PART_MIN) return { key: x.key, hash: x.hash, data: x.data };
     inParts++;
     return { key: x.key, hash: x.hash, text: JSON.stringify(x.data) };
   };
@@ -372,8 +387,10 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
     for (let j = 0; j < items.length; j++) {
       const x = items[j];
       if (old[j] === x.hash) { if (x.bytes > biggest[0]) biggest = [x.bytes, x.key]; continue; }
+      const item = asItem(x);
+      if (!item) continue;
       if (batch.length && (size + x.bytes > BATCH_BYTES || batch.length >= BATCH_ITEMS)) { await send(batch, size); batch = []; size = 0; }
-      batch.push(asItem(x));
+      batch.push(item);
       size += x.bytes;
     }
     if (batch.length) await send(batch, size);
@@ -583,7 +600,9 @@ export const runGroup = internalAction({
       for (let j = 0; j < newAi.length; j += 500) await ctx.runMutation(internal.radarStore.saveVideoAiTodo, { ids: newAi.slice(j, j + 500) });
       for (let j = 0; j < newGender.length; j += 300) await ctx.runMutation(internal.radarStore.saveGenderTodo, { items: newGender.slice(j, j + 300) });
       // Langue des comptes jamais calculés : par lots de 200, chacun dans sa propre action (le détecteur hors synchro).
-      for (let j = 0; j < Math.min(res.langTodo.length, TODO_MAX); j += 200) await ctx.scheduler.runAfter(60_000 + j * 50, internal.radarLang.detect, { items: res.langTodo.slice(j, j + 200) });
+      // Par lots de 100 : 20 textes de 300 caractères par compte, jusqu'à 2,4 Mo en écritures non latines, sous les 5 Mio
+      // qu'accepte une action Node.
+      for (let j = 0; j < Math.min(res.langTodo.length, TODO_MAX); j += 100) await ctx.scheduler.runAfter(60_000 + j * 100, internal.radarLang.detect, { items: res.langTodo.slice(j, j + 100) });
       const file: GroupFile = { out: res.out!, markets: res.markets, written: w.written, videos: trackedVideos.length, refused: w.refused, heap: heapPeak, biggest: w.biggest, inParts: w.inParts };
       // Images : celles de ses vidéos et de ses comptes seulement (icônes, photos de profil, reprises et alertes sont
       // aussi vues par l'étape globale, qui les compte).
@@ -679,7 +698,10 @@ export const runGlobal = internalAction({
       MEMLOG(`global pages rangées : ${existing.length}`);
       const gone = existing.filter((k) => !produced.has(k));
       const goneOk = gone.length <= existing.length / 3;
-      if (goneOk) for (let j = 0; j < gone.length; j += 200) await ctx.runMutation(internal.radarStore.dropBoards, { keys: gone.slice(j, j + 200) });
+      // Par lots de 200, chaque lot relancé avec ce qu'il n'a pas pu effacer (8 Mo lus au plus par appel).
+      if (goneOk) for (let j = 0; j < gone.length; j += 200) {
+        for (let keys = gone.slice(j, j + 200); keys.length; ) keys = await ctx.runMutation(internal.radarStore.dropBoards, { keys });
+      }
       // Les images à copier : icônes d'abord, MEDIA_PER_RUN au plus (le reste à la première vue, par /cover).
       const copyTodo = [...icons, ...others].slice(0, MEDIA_PER_RUN);
       const newSlides = later.slideTodo.filter((x) => !store.slideKnown.has(x)).slice(0, TODO_MAX);

@@ -159,10 +159,25 @@ export const dropMedia = internalMutation({
 export const boardKeys = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
-    const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500 });
+    // Borné en octets aussi : chaque page est lue entière (jusqu'à 600 Ko), et une requête lit 16 Mio au plus.
+    const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500, maximumBytesRead: 8_000_000 });
     return { keys: r.page.map((b) => b.key), hashes: r.page.map((b) => b.hash), cursor: r.continueCursor, done: r.isDone };
   },
 });
+
+/**
+ * Les lignes d'une file à (re)lire : moins de 3 essais, pas essayées depuis 6 h. Une plage d'index par nombre d'essais
+ * (0, 1, 2) : les lignes abandonnées (3 essais) ne sont jamais lues. Avant (16/11), une seule plage filtrée par essais
+ * les lisait toutes, en tête, à chaque réservation : à 32 000 lignes lues, Convex aurait refusé la requête.
+ */
+async function pendingRows<T>(take: number, range: (tries: number) => { take: (n: number) => Promise<T[]> }): Promise<T[]> {
+  const out: T[] = [];
+  for (const tries of [0, 1, 2]) {
+    if (out.length >= take) break;
+    out.push(...(await range(tries).take(take - out.length)));
+  }
+  return out;
+}
 
 /** Morceaux de texte d'une grosse page : 250 000 caractères, au plus 750 Ko en UTF-8 (un document : 1 Mio). */
 export const PART_CHARS = 250_000;
@@ -173,12 +188,18 @@ const dropParts = async (ctx: MutationCtx, key: string) => {
 /** Efface les documents qu'un passage n'a plus produits (fiche sortie du Radar). */
 export const dropBoards = internalMutation({
   args: { keys: v.array(v.string()) },
-  handler: async (ctx, { keys }) => {
-    for (const key of keys) {
-      const row = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", key)).first();
-      if (row?.parts) await dropParts(ctx, key);
-      if (row) await ctx.db.delete(row._id);
+  handler: async (ctx, { keys }): Promise<string[]> => {
+    // Chaque page est lue avant d'être effacée : au-delà de 8 Mo lus, le reste est rendu (l'appelant le renvoie).
+    let read = 0;
+    for (let i = 0; i < keys.length; i++) {
+      if (read > 8_000_000) return keys.slice(i);
+      const row = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", keys[i])).first();
+      if (!row) continue;
+      read += row.parts ? row.parts * PART_CHARS * 3 : JSON.stringify(row.data ?? null).length * 3;
+      if (row.parts) await dropParts(ctx, keys[i]);
+      await ctx.db.delete(row._id);
     }
+    return [];
   },
 });
 
@@ -289,7 +310,12 @@ export const staleStages = internalQuery({
 
 export const stageCleaned = internalMutation({
   args: { id: v.id("syncRuns") },
-  handler: async (ctx, { id }) => ctx.db.patch(id, { cleaned: true }),
+  handler: async (ctx, { id }) => {
+    // Les listes d'apps par groupe ne servent plus : seul un résumé reste (les passages sont relus 20 par 20).
+    const r = await ctx.db.get(id);
+    const st = (r?.stage ?? {}) as { groups?: unknown[]; retries?: unknown; writtenBy?: unknown; heapPrep?: unknown };
+    await ctx.db.patch(id, { cleaned: true, stage: { groups: st.groups?.length ?? 0, retries: st.retries ?? null, writtenBy: st.writtenBy ?? null, heapPrep: st.heapPrep ?? null } });
+  },
 });
 
 /** Empreinte rangée de chaque page demandée (null : pas de page) : l'écriture n'envoie que les pages qui changent. */
@@ -337,7 +363,7 @@ export const saveAppStore = internalMutation({
 export const resetHashes = internalMutation({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
-    const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500 });
+    const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500, maximumBytesRead: 6_000_000 });
     for (const b of r.page) await ctx.db.patch(b._id, { hash: "" });
     return { n: r.page.length, cursor: r.continueCursor, done: r.isDone };
   },
@@ -361,7 +387,7 @@ export const saveRegionTodo = internalMutation({
     for (const it of items) {
       const row = await ctx.db.query("accountRegions").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
       if (!row) await ctx.db.insert("accountRegions", { handle: it.handle, country: null, ids: it.ids, tries: 0, at: 0 });
-      else if (!row.country && row.ids.join() !== it.ids.join()) await ctx.db.patch(row._id, { ids: it.ids, tries: 0 });
+      else if (!row.country && row.ids.join() !== it.ids.join()) await ctx.db.patch(row._id, { ids: it.ids, tries: 0, at: 0 });
     }
   },
 });
@@ -374,8 +400,7 @@ export const saveRegionTodo = internalMutation({
 export const claimRegions = internalMutation({
   args: { limit: v.number(), now: v.number() },
   handler: async (ctx, { limit, now }) => {
-    const rows = await ctx.db.query("accountRegions").withIndex("by_country_at", (q) => q.eq("country", null).lt("at", now - 6 * 3_600_000))
-      .filter((q) => q.lt(q.field("tries"), 3)).take(limit);
+    const rows = await pendingRows(limit, (tries) => ctx.db.query("accountRegions").withIndex("by_country_tries_at", (q) => q.eq("country", null).eq("tries", tries).lt("at", now - 6 * 3_600_000)));
     for (const r of rows) await ctx.db.patch(r._id, { at: now });
     return rows.map((r) => ({ handle: r.handle, ids: r.ids, tries: r.tries }));
   },
@@ -388,8 +413,8 @@ export const regionsNeedSync = internalQuery({
     const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(20);
     if (runs[0] && now - runs[0].startedAt < 3_600_000) return false;
     const lastOk = runs.find((r) => r.ok)?.startedAt ?? 0;
-    const fresh = await ctx.db.query("accountRegions").filter((q) => q.and(q.neq(q.field("country"), null), q.gt(q.field("at"), lastOk))).first();
-    return !!fresh;
+    // Par l'index des pays trouvés (plus de parcours de toute la table, refusé au-delà de 32 000 lignes lues).
+    return !!(await ctx.db.query("accountRegions").withIndex("by_found", (q) => q.gt("foundAt", lastOk)).first());
   },
 });
 
@@ -397,8 +422,7 @@ export const regionsNeedSync = internalQuery({
 export const regionBatch = internalQuery({
   args: { limit: v.number(), now: v.number() },
   handler: async (ctx, { limit, now }) => {
-    const rows = await ctx.db.query("accountRegions").withIndex("by_country_at", (q) => q.eq("country", null).lt("at", now - 6 * 3_600_000))
-      .filter((q) => q.lt(q.field("tries"), 3)).take(limit);
+    const rows = await pendingRows(limit, (tries) => ctx.db.query("accountRegions").withIndex("by_country_tries_at", (q) => q.eq("country", null).eq("tries", tries).lt("at", now - 6 * 3_600_000)));
     return rows.map((r) => ({ handle: r.handle, ids: r.ids, tries: r.tries }));
   },
 });
@@ -409,7 +433,7 @@ export const saveRegions = internalMutation({
   handler: async (ctx, { items, now }) => {
     for (const it of items) {
       const row = await ctx.db.query("accountRegions").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
-      if (row) await ctx.db.patch(row._id, { country: it.country, tries: row.tries + 1, at: now });
+      if (row) await ctx.db.patch(row._id, { country: it.country, tries: row.tries + 1, at: now, ...(it.country ? { foundAt: now } : {}) });
     }
   },
 });
@@ -442,8 +466,7 @@ export const saveSlideTodo = internalMutation({
 });
 
 const slideTodo = (ctx: QueryCtx, now: number, limit: number) =>
-  ctx.db.query("videoSlides").withIndex("by_slideshow_at", (q) => q.eq("slideshow", null).lt("at", now - 6 * 3_600_000))
-    .filter((q) => q.lt(q.field("tries"), 3)).take(limit);
+  pendingRows(limit, (tries) => ctx.db.query("videoSlides").withIndex("by_slideshow_tries_at", (q) => q.eq("slideshow", null).eq("tries", tries).lt("at", now - 6 * 3_600_000)));
 
 /** Réserve les prochaines vidéos à lire (marquées « essayées maintenant » : deux lectures ne prennent pas les mêmes). */
 export const claimSlides = internalMutation({
@@ -490,7 +513,7 @@ const RETRY_MS = 6 * 3_600_000;
 export const videoAiPage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
-    const r = await ctx.db.query("videoAi").paginate({ cursor, numItems: 3000 });
+    const r = await ctx.db.query("videoAi").paginate({ cursor, numItems: 1000, maximumBytesRead: 6_000_000 });
     return { items: r.page.map((x) => [x.videoId, x.type ?? "", x.text ?? "", x.done ? 1 : 0] as [string, string, string, number]), cursor: r.continueCursor, done: r.isDone };
   },
 });
@@ -532,8 +555,7 @@ export const claimVideoAi = internalMutation({
     let take = limit;
     if (max !== null) take = Math.min(limit, Math.max(0, max - (await ctx.db.query("videoAi").withIndex("by_done_at", (q) => q.eq("done", true)).take(max)).length));
     if (!take) return [];
-    const rows = await ctx.db.query("videoAi").withIndex("by_done_at", (q) => q.eq("done", false).lt("at", now - RETRY_MS))
-      .filter((q) => q.lt(q.field("tries"), 3)).take(take);
+    const rows = await pendingRows(take, (tries) => ctx.db.query("videoAi").withIndex("by_done_tries_at", (q) => q.eq("done", false).eq("tries", tries).lt("at", now - RETRY_MS)));
     for (const r of rows) await ctx.db.patch(r._id, { at: now });
     return rows.map((r) => r.videoId);
   },
@@ -545,8 +567,7 @@ export const claimGender = internalMutation({
     let take = limit;
     if (max !== null) take = Math.min(limit, Math.max(0, max - (await ctx.db.query("accountAi").withIndex("by_done_at", (q) => q.eq("done", true)).take(max)).length));
     if (!take) return [];
-    const rows = await ctx.db.query("accountAi").withIndex("by_done_at", (q) => q.eq("done", false).lt("at", now - RETRY_MS))
-      .filter((q) => q.lt(q.field("tries"), 3)).take(take);
+    const rows = await pendingRows(take, (tries) => ctx.db.query("accountAi").withIndex("by_done_tries_at", (q) => q.eq("done", false).eq("tries", tries).lt("at", now - RETRY_MS)));
     for (const r of rows) await ctx.db.patch(r._id, { at: now });
     return rows.map((r) => ({ handle: r.handle, ids: r.ids }));
   },
@@ -580,7 +601,7 @@ export const saveGender = internalMutation({
 export const aiLeft = internalQuery({
   args: { table: v.union(v.literal("videoAi"), v.literal("accountAi")), now: v.number() },
   handler: async (ctx, { table, now }) =>
-    !!(await ctx.db.query(table).withIndex("by_done_at", (q) => q.eq("done", false).lt("at", now - RETRY_MS)).filter((q) => q.lt(q.field("tries"), 3)).first()),
+    (await pendingRows(1, (tries) => ctx.db.query(table).withIndex("by_done_tries_at", (q) => q.eq("done", false).eq("tries", tries).lt("at", now - RETRY_MS)))).length > 0,
 });
 
 /** Faut-il une synchro ? Des lectures faites depuis le début de la dernière synchro réussie, et aucune synchro depuis 1 h. */
