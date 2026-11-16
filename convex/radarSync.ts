@@ -225,7 +225,7 @@ type Stage = {
 };
 type Stores = Record<string, { url: string | null; v: number; art: string | null }>;
 /** Ce qu'une étape de groupe range pour l'étape globale (en plus de `GroupOut`). */
-type GroupFile = { out: GroupOut; markets: string[]; written: number; videos: number };
+type GroupFile = { out: GroupOut; markets: string[]; written: number; videos: number; refused?: string[] };
 type GroupTail = { used: string[]; need: [string, string][]; keys: string[] };
 
 /** Des lignes rangées en fichiers JSON de `per` lignes (lus un à un : jamais tout le texte à la fois). */
@@ -320,16 +320,28 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
   let written = 0, sent = 0, seen = 0;
   let stopped: "" | "mémoire pleine" | "temps écoulé" = "";
   const writeStart = Date.now();
+  // Une page que Convex refuse (liste de plus de 8 192 éléments, document de plus de 1 Mio…) est écartée et notée :
+  // elle ne bloque plus tout le passage (16/11 : l'index de recherche refusé a fait échouer 8 synchros de suite).
+  const refused: string[] = [];
+  const save = async (items: { key: string; hash: string; data: unknown }[]): Promise<void> => {
+    for (let attempt = 0; ; attempt++) {
+      try { written += await ctx.runMutation(internal.radarStore.saveBoards, { items, now }); return; } catch (e) {
+        const msg = String(e);
+        if (/TooManyWrites/.test(msg) && attempt < 4) { await sleep(2_000 * (attempt + 1)); continue; }
+        if (!/Invalid arguments|too large|too long|maximum/i.test(msg)) throw e;
+        if (items.length === 1) { refused.push(items[0].key); console.log(`[page refusée] ${items[0].key} : ${msg.slice(0, 200)}`); return; }
+        const half = Math.ceil(items.length / 2);
+        await save(items.slice(0, half));
+        await save(items.slice(half));
+        return;
+      }
+    }
+  };
   const send = async (items: { key: string; hash: string; data: unknown }[], bytes: number) => {
     sent += bytes;
     const wait = writeStart + ((sent - bytes) / WRITE_RATE) * 1000 - Date.now();
     if (wait > 0) await sleep(wait);
-    for (let attempt = 0; ; attempt++) {
-      try { written += await ctx.runMutation(internal.radarStore.saveBoards, { items, now }); return; } catch (e) {
-        if (attempt >= 4 || !/TooManyWrites/.test(String(e))) throw e;
-        await sleep(2_000 * (attempt + 1));
-      }
-    }
+    await save(items);
   };
   let pending: { key: string; hash: string; data: unknown; bytes: number }[] = [];
   let pendingBytes = 0;
@@ -358,7 +370,7 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
     if (pending.length >= 400 || pendingBytes >= 3 * BATCH_BYTES) await flush();
   }
   if (!stopped) await flush();
-  return { written, keys, stopped, left: stopped ? pending.length + boards.size + lazy.size : 0 };
+  return { written, keys, stopped, refused, left: stopped ? pending.length + boards.size + lazy.size : 0 };
 }
 
 /** Échec d'une étape : le passage est noté raté et ses fichiers effacés (le suivant repart de zéro). */
@@ -549,7 +561,7 @@ export const runGroup = internalAction({
       for (let j = 0; j < newGender.length; j += 300) await ctx.runMutation(internal.radarStore.saveGenderTodo, { items: newGender.slice(j, j + 300) });
       // Langue des comptes jamais calculés : par lots de 200, chacun dans sa propre action (le détecteur hors synchro).
       for (let j = 0; j < Math.min(res.langTodo.length, TODO_MAX); j += 200) await ctx.scheduler.runAfter(60_000 + j * 50, internal.radarLang.detect, { items: res.langTodo.slice(j, j + 200) });
-      const file: GroupFile = { out: res.out!, markets: res.markets, written: w.written, videos: trackedVideos.length };
+      const file: GroupFile = { out: res.out!, markets: res.markets, written: w.written, videos: trackedVideos.length, refused: w.refused };
       // Images : celles de ses vidéos et de ses comptes seulement (icônes, photos de profil, reprises et alertes sont
       // aussi vues par l'étape globale, qui les compte).
       const ownSlugs = new Set(apps.filter((a) => set.has(canon(a.id))).map((a) => a.slug));
@@ -652,11 +664,14 @@ export const runGlobal = internalAction({
       // Pays retenus : chaque groupe ne les connaît qu'à peu près (vidéos des autres groupes absentes) ; un écart ici
       // veut dire qu'une liste par pays a pu manquer des lignes ce passage (noté, jamais vu au banc).
       const exact = [...new Set(markets)].sort().join(",");
+      // Pages refusées par Convex (écartées, notées) : une page refusée garde sa version d'avant, jamais effacée.
+      const refusedAll = [...w.refused, ...files.flatMap((f) => f.refused ?? [])];
       const counts = {
         ...st.sizes, trackedVideos: files.reduce((n, f) => n + f.videos, 0),
         boards: produced.size, written: w.written + files.reduce((n, f) => n + f.written, 0), writtenGlobal: w.written,
         mediaToCopy: copyTodo.length, mediaMissing: needCount, mediaDropped: staleOk ? stale.length : 0, boardsDropped: goneOk ? gone.length : 0,
         ...(staleOk ? {} : { mediaDropRefused: stale.length }), ...(goneOk ? {} : { boardsDropRefused: gone.length }),
+        ...(refusedAll.length ? { pagesRefused: refusedAll.length, pagesRefusedKeys: refusedAll.slice(0, 20) } : {}),
         marketsMismatch: files.filter((f) => [...new Set(f.markets)].sort().join(",") !== exact).length,
         minutes: Math.round((Date.now() - (st.now)) / 6_000) / 10,
       };

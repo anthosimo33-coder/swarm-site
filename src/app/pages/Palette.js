@@ -16,11 +16,14 @@ export default class Palette extends DCLogic {
     // vignettes). Un champ que ces documents ne donnent pas n'est pas affiché. Sur le canevas : l'exemple ci-dessus.
     const get = this.props && this.props.get;
     const S = get && get('search');
+    // Les créateurs de l'index, par documents de 4 000 : « search », puis « search:creators:2 », « :3 »… (16/11 : Convex
+    // refuse une liste de plus de 8 192 éléments).
+    const SC = S && S.creatorPages > 1 ? Array.from({ length: S.creatorPages - 1 }, (_, j) => get('search:creators:' + (j + 2))) : [];
     const real = !!(S && S.apps);
     if (real) {
       const AD = get('apps'), FD = get('formats');
       const ix = this.ix;
-      if (!ix || ix.S !== S || ix.AD !== AD || ix.FD !== FD) {
+      if (!ix || ix.S !== S || ix.AD !== AD || ix.FD !== FD || ix.SC.length !== SC.length || ix.SC.some((d, j) => d !== SC[j])) {
         const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)));
         const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
         const has = (n) => n !== null && n !== undefined;
@@ -46,12 +49,12 @@ export default class Palette extends DCLogic {
             hasStats: !!full, med: full && full.medX ? xf(full.medX) : '—', ok: full && full.n ? full.wins + ' sur ' + full.n : '—', max: full ? nf(full.maxViews || 0) : '',
             apps: and(names), hasCov: covs.length > 0, covs, href: '/app/formats/' + f.id, key: f.label + ' ' + names.join(' ') + ' ' + ((full && full.niche) || '') };
         });
-        const C2 = (S.creators || []).map((c) => ({ k: 'cr', av: c.avatar || '', noav: true, h: '@' + c.handle, handle: c.handle, app: c.app || '',
+        const C2 = (S.creators || []).concat(...SC.map((d) => (d && d.creators) || [])).map((c) => ({ k: 'cr', av: c.avatar || '', noav: true, h: '@' + c.handle, handle: c.handle, app: c.app || '',
           s: [c.app || '', has(c.fans) ? nf(c.fans) + ' abonnés' : '', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
           med: c.median ? nf(c.median) : '—', rytL: 'Abonnés', ryt: has(c.fans) ? nf(c.fans) : '—',
           hasCov: false, covs: [], href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || '') }));
         [A2, F2, C2].forEach((l) => l.forEach((x) => { x.nk = norm(x.key); }));
-        this.ix = { S, AD, FD, AP: A2, FM: F2, CR: C2 };
+        this.ix = { S, AD, FD, SC, AP: A2, FM: F2, CR: C2 };
       }
       AP = this.ix.AP; FM = this.ix.FM; CR = this.ix.CR;
     }

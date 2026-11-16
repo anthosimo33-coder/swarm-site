@@ -149,6 +149,8 @@ export const kindOf = (a: RApp, store: string | null): "app" | "saas" | "jeu_mob
 export const MIN_APP_ACCOUNTS = 2;
 /** Créateurs par document de liste (~1 Ko chacun ; un document Convex : 1 Mio au plus). */
 export const CREATOR_PAGE = 500;
+/** Créateurs par document de l'index de recherche (« search », « search:creators:2 »…). */
+export const SEARCH_CREATORS = 4_000;
 /** Un marché a son onglet à partir de 10 créateurs ; les autres restent sur chaque créateur (son drapeau) et dans « Tous ». */
 export const MIN_MARKET_CREATORS = 1;
 /** « Nouvelle » : sortie sur l'App Store il y a 60 jours au plus ; sans date de sortie, réseau dont la 1re vidéo a 30 jours au plus. */
@@ -810,12 +812,20 @@ export function buildBoards(
   if (!G) boards.set("stats", { updatedAt: now, at: now, apps: appsBoard.length, accounts: creatorAccounts.length, markets: MARKETS.length });
 
   // ── Recherche (palette) : un index léger ──
-  if (!G) boards.set("search", {
-    updatedAt: now,
-    apps: appsBoard.map((a) => ({ slug: a.slug, name: a.name, icon: a.icon, niche: a.niche, views30: a.views30 })),
-    creators: creators.filter((c) => creatorPages.has(c.handle)).map((c) => ({ handle: c.handle, app: c.app?.name ?? null, fans: c.fans, median: c.median })),
-    formats: formatRows.slice(0, 150).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts })),
-  });
+  // Les créateurs par documents de SEARCH_CREATORS : « search » porte les premiers et leur nombre de documents,
+  // « search:creators:2 », « :3 »… la suite (16/11 : à 8 316 créateurs, Convex a refusé la liste, plus de 8 192 éléments,
+  // et toutes les synchros de la nuit ont échoué ; un document est aussi borné à 1 Mio).
+  if (!G) {
+    const index = creators.filter((c) => creatorPages.has(c.handle)).map((c) => ({ handle: c.handle, app: c.app?.name ?? null, fans: c.fans, median: c.median }));
+    const parts = Math.max(1, Math.ceil(index.length / SEARCH_CREATORS));
+    boards.set("search", {
+      updatedAt: now,
+      apps: appsBoard.map((a) => ({ slug: a.slug, name: a.name, icon: a.icon, niche: a.niche, views30: a.views30 })),
+      creators: index.slice(0, SEARCH_CREATORS), creatorPages: parts,
+      formats: formatRows.slice(0, 150).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts })),
+    });
+    for (let i = 2; i <= parts; i++) boards.set(`search:creators:${i}`, { updatedAt: now, creators: index.slice((i - 1) * SEARCH_CREATORS, i * SEARCH_CREATORS) });
+  }
 
   // ── Lecteur : une page par vidéo citée ailleurs ──
   for (const s of hot.slice(0, 40)) {

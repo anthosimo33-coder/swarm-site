@@ -37,7 +37,9 @@ export default class MPalette extends DCLogic {
         return { k: 'fm', t: hook ? '« ' + f.label + ' »' : 'Son « ' + f.label + ' »', kind: hook ? 'Accroche' : 'Son', ico: hook ? TXT : SON,
           sub: [hook ? 'Accroche' : 'Son', f.accounts + ' comptes', full && full.medX ? xf(full.medX) + ' la normale' : ''].filter(Boolean).join(' · '),
           href: '/app/formats/' + f.id, key: f.label }; });
-      CR = S.creators.map((c) => ({ av: c.avatar || '', noav: true, handle: c.handle, k: 'cr', h: '@' + c.handle, s: [c.app, nf(c.fans || 0) + ' abonnés', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
+      // Les créateurs de l'index, par documents de 4 000 : « search », puis « search:creators:2 », « :3 »… (16/11).
+      const SC = S.creatorPages > 1 ? Array.from({ length: S.creatorPages - 1 }, (_, j) => get('search:creators:' + (j + 2))) : [];
+      CR = (S.creators || []).concat(...SC.map((d) => (d && d.creators) || [])).map((c) => ({ av: c.avatar || '', noav: true, handle: c.handle, k: 'cr', h: '@' + c.handle, s: [c.app, nf(c.fans || 0) + ' abonnés', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
         href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || '') }));
     }
     const st = this.state || {};

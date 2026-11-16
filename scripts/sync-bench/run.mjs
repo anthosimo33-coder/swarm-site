@@ -129,7 +129,12 @@ const ctx = {
     if (fn === "stepRetry") { const st = runs[a.id].stage; st.retries ??= {}; st.retries[a.step] = (st.retries[a.step] ?? 0) + 1; return st.retries[a.step]; }
     if (fn === "endRun") { Object.assign(runs[a.id], { finishedAt: Date.now(), ok: a.ok, counts: a.counts, error: a.error }); console.log(`[banc] fin ok=${a.ok} ${a.error ?? ""} ${JSON.stringify(a.counts ?? {})}`); return null; }
     if (fn === "saveBoards" || fn === "dropBoards") keysCache = null;
-    if (fn === "saveBoards") { for (const it of a.items) { saved.set(it.key, it.hash); if (DUMP.has(it.key)) dumped[it.key] = it.data; } return a.items.length; }
+    if (fn === "saveBoards") {
+      // Comme Convex : une liste de plus de 8 192 éléments est refusée (BENCH_ARRAY_MAX pour forcer un refus au banc).
+      const max = Number(process.env.BENCH_ARRAY_MAX || 8192);
+      const longest = (x) => (Array.isArray(x) ? Math.max(x.length, ...x.map(longest)) : x && typeof x === "object" ? Math.max(0, ...Object.values(x).map(longest)) : 0);
+      for (const it of a.items) { const n = longest(it.data); if (n > max) throw new Error(`Invalid arguments for radarStore.js:saveBoards: Array length is too long (${n} > maximum length ${max})`); }
+      for (const it of a.items) { saved.set(it.key, it.hash); if (DUMP.has(it.key)) dumped[it.key] = it.data; } return a.items.length; }
     if (fn === "dropBoards") { for (const k of a.keys) saved.delete(k); return null; }
     return null;
   },
