@@ -11,27 +11,16 @@ import { internalAction } from "./_generated/server";
  */
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 const BATCH = 150;
-const PARALLEL = 6;
+// 2 pages TikTok à la fois, comme la lecture IA et les carrousels (16/11 : à 6, des vagues de refus passagers).
+const PARALLEL = 2;
 const BUDGET_MS = 240_000;
-
-/** Le pays de création d'une vidéo TikTok, lu sur sa page publique ; null si la page ne le donne pas. */
-export async function videoCountry(id: string): Promise<string | null> {
-  return (await videoFacts(id))?.country ?? null;
-}
-
-/**
- * Ce que la page publique d'une vidéo TikTok dit d'elle : son pays de création, et si c'est un carrousel (diaporama
- * de photos, `imagePost`) avec son nombre de photos. null : page illisible (vidéo supprimée, privée, refus).
- */
-export async function videoFacts(id: string): Promise<{ country: string | null; slideshow: boolean; images: number } | null> {
-  return (await videoFactsState(id)).facts ?? null;
-}
 
 type Facts = { country: string | null; slideshow: boolean; images: number };
 /**
- * La même lecture, avec la raison d'un échec (16/11 : 260 carrousels ratés en une heure, refus passagers de TikTok
- * comptés comme des essais) : `gone`, TikTok dit que la vidéo n'existe pas ou plus ; `unread`, la page répond mais
- * sans la vidéo lisible ; rien, pas de réponse (refus, délai, page sans données).
+ * Ce que la page publique d'une vidéo TikTok dit d'elle (`facts`) : son pays de création, et si c'est un carrousel
+ * (diaporama de photos, `imagePost`) avec son nombre de photos. Sinon la raison de l'échec (16/11 : 260 carrousels
+ * ratés en une heure, refus passagers de TikTok comptés comme des essais) : `gone`, TikTok dit que la vidéo n'existe
+ * pas ou plus ; `unread`, la page répond mais sans la vidéo lisible ; rien, pas de réponse (refus, délai, page vide).
  */
 export async function videoFactsState(id: string): Promise<{ facts?: Facts; gone?: boolean; unread?: boolean }> {
   try {
@@ -65,23 +54,28 @@ export const fill = internalAction({
       if (await ctx.runQuery(internal.radarStore.regionsNeedSync, { now: start })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
       return { read: 0, found: 0 };
     }
-    const out: { handle: string; country: string | null }[] = [];
+    // Un essai par vidéo, la suivante à l'essai d'après : une vidéo disparue, sans pays ou illisible compte un essai ;
+    // sans réponse de TikTok, la même vidéo est reprise sans compter d'essai (16/11 : refus passagers comptés).
+    const out: { handle: string; country: string | null; retry?: boolean; why?: string }[] = [];
     let next = 0;
     const worker = async () => {
       while (next < batch.length && Date.now() - start < BUDGET_MS) {
         const r = batch[next++];
-        out.push({ handle: r.handle, country: await videoCountry(r.ids[r.tries % r.ids.length]) });
+        const f = await videoFactsState(r.ids[r.tries % r.ids.length]);
+        out.push(f.facts?.country ? { handle: r.handle, country: f.facts.country }
+          : { handle: r.handle, country: null, ...(f.facts ? { why: "sans pays" } : f.gone ? { why: "vidéo disparue" } : f.unread ? { why: "illisible" } : { retry: true, why: "sans réponse" }) });
       }
     };
     await Promise.all(Array.from({ length: PARALLEL }, worker));
-    await ctx.runMutation(internal.radarStore.saveRegions, { items: out, now: Date.now() });
+    await ctx.runMutation(internal.radarStore.saveRegions, { items: out.map(({ why: _w, ...x }) => x), now: Date.now() });
     const found = out.filter((x) => x.country).length;
     // Plus rien à lire maintenant, et des pays trouvés : une synchro les met tout de suite dans les écrans.
     const left = await ctx.runQuery(internal.radarStore.regionBatch, { limit: 1, now: Date.now() });
     if (found > 0 && left.length === 0) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
     // Il en reste : le lot suivant tout de suite (10 s), sans attendre la tâche planifiée du quart d'heure.
     if (left.length > 0 && out.length === batch.length) await ctx.scheduler.runAfter(10_000, internal.radarRegions.fill, {});
-    console.log(`[pays] ${out.length} comptes lus, ${found} situés, ${left.length ? "il en reste" : "plus rien à lire"}`);
+    const whys = Object.entries(out.reduce((n, x) => (x.why ? { ...n, [x.why]: (n[x.why] ?? 0) + 1 } : n), {} as Record<string, number>)).map(([k, n]) => `${n} ${k}`).join(", ");
+    console.log(`[pays] ${out.length} comptes lus, ${found} situés${whys ? ` (échecs : ${whys})` : ""}, ${left.length ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, found };
   },
 });

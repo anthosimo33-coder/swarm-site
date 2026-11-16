@@ -63,6 +63,7 @@ export default defineSchema({
     country: v.union(v.string(), v.null()),
     ids: v.array(v.string()), // ses vidéos les plus récentes, essayées tour à tour
     tries: v.number(),
+    quiet: v.optional(v.number()), // silences de TikTok d'affilée (page sans réponse)
     at: v.number(), // dernier essai (0 : jamais)
     foundAt: v.optional(v.number()), // pays trouvé à cette date (regionsNeedSync)
   }).index("by_handle", ["handle"]).index("by_country_at", ["country", "at"]).index("by_country_tries_at", ["country", "tries", "at"]).index("by_found", ["foundAt"]),

@@ -427,13 +427,21 @@ export const regionBatch = internalQuery({
   },
 });
 
-/** Le résultat d'une lecture : le pays trouvé (ou null), un essai de plus. */
+/**
+ * Le résultat d'une lecture : le pays trouvé (ou null), un essai de plus. Sans réponse de TikTok : même vidéo reprise
+ * dans 6 h sans compter d'essai, sauf au 6e silence.
+ */
 export const saveRegions = internalMutation({
-  args: { items: v.array(v.object({ handle: v.string(), country: v.union(v.string(), v.null()) })), now: v.number() },
+  args: { items: v.array(v.object({ handle: v.string(), country: v.union(v.string(), v.null()), retry: v.optional(v.boolean()) })), now: v.number() },
   handler: async (ctx, { items, now }) => {
     for (const it of items) {
       const row = await ctx.db.query("accountRegions").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
-      if (row) await ctx.db.patch(row._id, { country: it.country, tries: row.tries + 1, at: now, ...(it.country ? { foundAt: now } : {}) });
+      if (!row) continue;
+      if (it.retry && !it.country) {
+        const quiet = (row.quiet ?? 0) + 1;
+        await ctx.db.patch(row._id, quiet >= 6 ? { quiet: 0, tries: row.tries + 1, at: now } : { quiet, at: now });
+      }
+      else await ctx.db.patch(row._id, { country: it.country, tries: row.tries + 1, at: now, ...(it.country ? { foundAt: now } : {}) });
     }
   },
 });
