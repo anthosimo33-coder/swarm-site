@@ -483,13 +483,26 @@ export const slideLeft = internalQuery({
   handler: async (ctx, { now }) => (await slideTodo(ctx, now, 1)).length > 0,
 });
 
-/** Le résultat d'une lecture : carrousel ou non (null : page illisible, un essai de plus). */
+/**
+ * Le résultat d'une lecture : carrousel ou non. Échec (null) : sans réponse de TikTok, reprise dans 6 h sans compter
+ * d'essai, sauf au 6e silence ; disparue, abandonnée (3 essais) ; page illisible, un essai de plus.
+ */
 export const saveSlides = internalMutation({
-  args: { items: v.array(v.object({ videoId: v.string(), slideshow: v.union(v.boolean(), v.null()), images: v.number() })), now: v.number() },
+  args: {
+    items: v.array(v.object({ videoId: v.string(), slideshow: v.union(v.boolean(), v.null()), images: v.number(), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()) })),
+    now: v.number(),
+  },
   handler: async (ctx, { items, now }) => {
     for (const it of items) {
       const row = await ctx.db.query("videoSlides").withIndex("by_video", (q) => q.eq("videoId", it.videoId)).first();
-      if (row) await ctx.db.patch(row._id, { slideshow: it.slideshow, ...(it.slideshow ? { images: it.images } : {}), tries: row.tries + 1, at: now });
+      if (!row) continue;
+      if (it.slideshow !== null) await ctx.db.patch(row._id, { slideshow: it.slideshow, ...(it.slideshow ? { images: it.images } : {}), tries: row.tries + 1, at: now });
+      else if (it.retry) {
+        const quiet = (row.quiet ?? 0) + 1;
+        await ctx.db.patch(row._id, quiet >= 6 ? { quiet: 0, tries: row.tries + 1, at: now } : { quiet, at: now });
+      }
+      else if (it.gone) await ctx.db.patch(row._id, { tries: 3, at: now });
+      else await ctx.db.patch(row._id, { tries: row.tries + 1, at: now });
     }
   },
 });
@@ -575,14 +588,16 @@ export const claimGender = internalMutation({
 
 export const saveVideoAi = internalMutation({
   args: {
-    items: v.array(v.object({ videoId: v.string(), ok: v.boolean(), type: v.optional(v.string()), text: v.optional(v.string()), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()) })),
+    items: v.array(v.object({ videoId: v.string(), ok: v.boolean(), type: v.optional(v.string()), text: v.optional(v.string()), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()), unshown: v.optional(v.boolean()) })),
     now: v.number(),
   },
   handler: async (ctx, { items, now }) => {
     for (const it of items) {
       const row = await ctx.db.query("videoAi").withIndex("by_video", (q) => q.eq("videoId", it.videoId)).first();
       if (!row) continue;
-      if (it.ok) await ctx.db.patch(row._id, { done: true, type: it.type, text: it.text, tries: row.tries + 1, at: now });
+      // Plus montrée (plus de page) : retirée de la file ; la synchro la remet si la vidéo revient dans un écran.
+      if (it.unshown) await ctx.db.delete(row._id);
+      else if (it.ok) await ctx.db.patch(row._id, { done: true, type: it.type, text: it.text, tries: row.tries + 1, at: now });
       // Sans réponse de TikTok : reprise dans 6 h, sans compter d'essai — sauf au 6e silence (36 h), qui en compte un ;
       // disparue : abandonnée (3 essais).
       else if (it.retry) {
@@ -597,14 +612,15 @@ export const saveVideoAi = internalMutation({
 
 export const saveGender = internalMutation({
   args: {
-    items: v.array(v.object({ handle: v.string(), ok: v.boolean(), gender: v.optional(v.string()), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()) })),
+    items: v.array(v.object({ handle: v.string(), ok: v.boolean(), gender: v.optional(v.string()), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()), unshown: v.optional(v.boolean()) })),
     now: v.number(),
   },
   handler: async (ctx, { items, now }) => {
     for (const it of items) {
       const row = await ctx.db.query("accountAi").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
       if (!row) continue;
-      if (it.ok) await ctx.db.patch(row._id, { done: true, gender: it.gender, tries: row.tries + 1, at: now });
+      if (it.unshown) await ctx.db.delete(row._id); // plus montré : retiré, comme les vidéos
+      else if (it.ok) await ctx.db.patch(row._id, { done: true, gender: it.gender, tries: row.tries + 1, at: now });
       // Comme les vidéos : sans réponse de TikTok, reprise sans essai (un au 6e silence) ; compte disparu, abandonné.
       else if (it.retry) {
         const quiet = (row.quiet ?? 0) + 1;

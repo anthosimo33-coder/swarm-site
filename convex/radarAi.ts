@@ -103,9 +103,11 @@ type Slot = ReturnType<typeof pacer>;
 /**
  * Une image pour la lecture IA (miniature ou photo de profil) : rangée chez Swarm, sinon lue chez TikTok par le goulot.
  * Sans image, la raison : « disparue » (TikTok le dit : abandon), « sans réponse » (refus passager : reprise sans compter
- * d'essai), « sans miniature » / « sans photo », « inconnue », « image illisible » (un essai).
+ * d'essai), « sans miniature » / « sans photo », « image illisible » (un essai). Sans page chez Swarm (ni miniature
+ * rangée) : la vidéo ou le compte n'est plus montré (sa page est partie au ménage d'une synchro), sa lecture est retirée
+ * de la file — 16/11 : 93 « inconnue » sur un lot de 98, comptées comme des échecs ; la synchro la remet si elle revient.
  */
-type Fetched = { img: Img | null; why?: string; retry?: boolean; gone?: boolean };
+type Fetched = { img: Img | null; why?: string; retry?: boolean; gone?: boolean; unshown?: boolean };
 async function coverFor(ctx: ActionCtx, slot: Slot, videoId: string): Promise<Fetched> {
   const found: { url: string | null; handle: string | null } = await ctx.runQuery(internal.radarStore.coverLookup, { id: videoId });
   let url = found.url;
@@ -115,7 +117,7 @@ async function coverFor(ctx: ActionCtx, slot: Slot, videoId: string): Promise<Fe
     url = r.url;
     if (!url) return r.gone ? { img: null, gone: true, why: "disparue" } : r.blank ? { img: null, why: "sans miniature chez TikTok" } : { img: null, retry: true, why: "sans réponse" };
   }
-  if (!url) return { img: null, why: "inconnue" };
+  if (!url) return { img: null, unshown: true };
   const img = await image(url);
   return img ? { img } : { img: null, why: "image illisible" }; // rangée mais vide ou minuscule : réessayer n'y change rien
 }
@@ -123,7 +125,7 @@ async function avatarFor(ctx: ActionCtx, slot: Slot, handle: string): Promise<Fe
   const found: { known: boolean; url: string | null } = await ctx.runQuery(internal.radarStore.avatarLookup, { handle });
   let url = found.url;
   if (!url) {
-    if (!found.known) return { img: null, why: "compte inconnu" };
+    if (!found.known) return { img: null, unshown: true };
     const r: { url: string | null; gone: boolean; blank?: boolean } = await slot(() => ctx.runAction(internal.covers.ensureAvatar, { handle }));
     url = r.url;
     if (!url) return r.gone ? { img: null, gone: true, why: "compte disparu" } : r.blank ? { img: null, why: "sans photo" } : { img: null, retry: true, why: "sans réponse" };
@@ -131,6 +133,8 @@ async function avatarFor(ctx: ActionCtx, slot: Slot, handle: string): Promise<Fe
   const img = await image(url);
   return img ? { img } : { img: null, why: "image illisible" };
 }
+/** Réponse coupée par la limite de jetons : le JSON structuré ne se lit plus (« Unterminated string in JSON »). */
+const cut = (e: unknown) => e instanceof Error && /structured output/i.test(e.message);
 const tally = (whys: (string | undefined)[]) =>
   Object.entries(whys.reduce((n, w) => (w ? { ...n, [w]: (n[w] ?? 0) + 1 } : n), {} as Record<string, number>)).map(([k, n]) => `${n} ${k}`).join(", ");
 const newToken = () => Math.random().toString(36).slice(2);
@@ -153,13 +157,15 @@ export const fillVideos = internalAction({
     const client = new Anthropic();
     let tin = 0, tout = 0;
     const slot = pacer();
-    type Out = { videoId: string; ok: boolean; type?: string; text?: string; retry?: boolean; gone?: boolean; why?: string };
+    type Out = { videoId: string; ok: boolean; type?: string; text?: string; retry?: boolean; gone?: boolean; unshown?: boolean; why?: string };
     const out: Out[] = await pool(ids, start, async (videoId): Promise<Out> => {
-      const { img, why, retry, gone } = await coverFor(ctx, slot, videoId);
-      if (!img) return { videoId, ok: false, why, retry, gone };
+      const { img, why, retry, gone, unshown } = await coverFor(ctx, slot, videoId);
+      if (!img) return { videoId, ok: false, why, retry, gone, unshown };
       try {
+        // 4 000 jetons : un long texte à l'écran en écriture non latine dépassait 1 500 (16/11, JSON coupé) ;
+        // on ne paie que les jetons écrits.
         const r = await client.messages.parse({
-          model: MODEL, max_tokens: 1500, system: VIDEO_SYSTEM,
+          model: MODEL, max_tokens: 4000, system: VIDEO_SYSTEM,
           output_config: { effort: "low", format: jsonSchemaOutputFormat(videoSchema) },
           messages: [{ role: "user", content: [img, { type: "text", text: "Miniature de la vidéo." }] }],
         });
@@ -169,10 +175,11 @@ export const fillVideos = internalAction({
         return { videoId, ok: true, type: p.type, text: Array.from(p.text.trim()).slice(0, 1500).join("") };
       } catch (e) {
         console.error(`[ia vidéos] ${videoId} : ${e instanceof Error ? e.message : String(e)}`);
-        return { videoId, ok: false, why: "erreur" };
+        return { videoId, ok: false, why: cut(e) ? "réponse coupée" : "erreur" };
       }
     });
     const whys = tally(out.map((x) => x.why));
+    const unshown = out.filter((x) => x.unshown).length;
     for (let i = 0; i < out.length; i += 100) await ctx.runMutation(internal.radarStore.saveVideoAi, { items: out.slice(i, i + 100).map(({ why: _w, ...x }) => x), now: Date.now() });
     const cost = tin * PRICE_IN + tout * PRICE_OUT;
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "videoAi", now: Date.now() });
@@ -182,7 +189,7 @@ export const fillVideos = internalAction({
       await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-videos", token });
       if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
     }
-    console.log(`[ia vidéos] ${out.length} lues, ${out.filter((x) => x.ok).length} réussies${whys ? ` (échecs : ${whys})` : ""}, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
+    console.log(`[ia vidéos] ${out.length} lues, ${out.filter((x) => x.ok).length} réussies${unshown ? `, ${unshown} retirées (plus montrées)` : ""}${whys ? ` (échecs : ${whys})` : ""}, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, cost };
   },
 });
@@ -202,12 +209,13 @@ export const fillGender = internalAction({
     // Photo de profil et 3 miniatures, par le goulot (16/11 : 6 comptes × 4 images à la fois, par /avatar et /cover).
     // Sans aucune image : reprise sans essai si TikTok n'a pas répondu, abandon si le compte a disparu, un essai sinon.
     const slot = pacer();
-    type Out = { handle: string; ok: boolean; gender?: string; retry?: boolean; gone?: boolean; why?: string };
+    type Out = { handle: string; ok: boolean; gender?: string; retry?: boolean; gone?: boolean; unshown?: boolean; why?: string };
     const out: Out[] = await pool(rows, start, async ({ handle, ids }): Promise<Out> => {
       const got = await Promise.all([avatarFor(ctx, slot, handle), ...ids.slice(0, 3).map((id) => coverFor(ctx, slot, id))]);
       const imgs = got.map((g) => g.img).filter((x): x is Img => x !== null);
       if (!imgs.length) {
         if (got[0].gone) return { handle, ok: false, gone: true, why: "compte disparu" };
+        if (got.every((g) => g.unshown)) return { handle, ok: false, unshown: true };
         if (got.some((g) => g.retry)) return { handle, ok: false, retry: true, why: "sans réponse" };
         return { handle, ok: false, why: "aucune image" };
       }
@@ -223,10 +231,11 @@ export const fillGender = internalAction({
         return { handle, ok: true, gender: p.gender };
       } catch (e) {
         console.error(`[ia genre] @${handle} : ${e instanceof Error ? e.message : String(e)}`);
-        return { handle, ok: false, why: "erreur" };
+        return { handle, ok: false, why: cut(e) ? "réponse coupée" : "erreur" };
       }
     });
     const whys = tally(out.map((x) => x.why));
+    const unshown = out.filter((x) => x.unshown).length;
     for (let i = 0; i < out.length; i += 100) await ctx.runMutation(internal.radarStore.saveGender, { items: out.slice(i, i + 100).map(({ why: _w, ...x }) => x), now: Date.now() });
     const cost = tin * PRICE_IN + tout * PRICE_OUT;
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "accountAi", now: Date.now() });
@@ -235,7 +244,7 @@ export const fillGender = internalAction({
       await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-gender", token });
       if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
     }
-    console.log(`[ia genre] ${out.length} comptes lus, ${out.filter((x) => x.ok).length} réussis${whys ? ` (échecs : ${whys})` : ""}, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
+    console.log(`[ia genre] ${out.length} comptes lus, ${out.filter((x) => x.ok).length} réussis${unshown ? `, ${unshown} retirés (plus montrés)` : ""}${whys ? ` (échecs : ${whys})` : ""}, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, cost };
   },
 });

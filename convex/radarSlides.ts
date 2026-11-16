@@ -3,7 +3,7 @@
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
-import { videoFacts } from "./radarRegions";
+import { videoFactsState } from "./radarRegions";
 
 /**
  * Les carrousels (diaporamas de photos) parmi les vidéos que Swarm montre : TikTok le dit sur la page publique de la
@@ -12,7 +12,8 @@ import { videoFacts } from "./radarRegions";
  * des « extraits repris » (diaporamas de photos d'acteurs, format des apps de drague). 3 essais au plus par vidéo.
  */
 const BATCH = 200;
-const PARALLEL = 6;
+// 2 pages TikTok à la fois, comme la lecture IA (16/11 : à 6, des vagues de refus passagers de TikTok).
+const PARALLEL = 2;
 const BUDGET_MS = 240_000;
 
 export const fill = internalAction({
@@ -28,13 +29,15 @@ export const fill = internalAction({
       if (await ctx.runQuery(internal.radarStore.slidesNeedSync, { now: start })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
       return { read: 0, slideshows: 0 };
     }
-    const out: { videoId: string; slideshow: boolean | null; images: number }[] = [];
+    // Sans réponse de TikTok : reprise sans compter d'essai ; disparue : abandonnée ; illisible : un essai.
+    const out: { videoId: string; slideshow: boolean | null; images: number; retry?: boolean; gone?: boolean }[] = [];
     let next = 0;
     const worker = async () => {
       while (next < ids.length && Date.now() - start < BUDGET_MS) {
         const videoId = ids[next++];
-        const f = await videoFacts(videoId);
-        out.push({ videoId, slideshow: f ? f.slideshow : null, images: f?.images ?? 0 });
+        const f = await videoFactsState(videoId);
+        out.push(f.facts ? { videoId, slideshow: f.facts.slideshow, images: f.facts.images }
+          : { videoId, slideshow: null, images: 0, ...(f.gone ? { gone: true } : f.unread ? {} : { retry: true }) });
       }
     };
     await Promise.all(Array.from({ length: PARALLEL }, worker));
@@ -48,7 +51,9 @@ export const fill = internalAction({
     // Il en reste : le lot suivant tout de suite (10 s), sans attendre la tâche planifiée du quart d'heure.
     if (left && out.length === ids.length) await ctx.scheduler.runAfter(10_000, internal.radarSlides.fill, { token });
     else await ctx.runMutation(internal.radarStore.dropLease, { name: "slides", token });
-    console.log(`[carrousels] ${out.length} vidéos lues, ${slideshows} carrousels, ${out.filter((x) => x.slideshow === null).length} illisibles, ${left ? "il en reste" : "plus rien à lire"}`);
+    const failed = out.filter((x) => x.slideshow === null);
+    const quiet = failed.filter((x) => x.retry).length, gone = failed.filter((x) => x.gone).length;
+    console.log(`[carrousels] ${out.length} vidéos lues, ${slideshows} carrousels, ${failed.length} échecs (${quiet} sans réponse, ${gone} disparues, ${failed.length - quiet - gone} illisibles), ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, slideshows };
   },
 });

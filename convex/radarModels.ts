@@ -732,10 +732,12 @@ export function buildBoards(
   };
   // Leur rang parmi les comptes : le tri par médiane le garde à égalité (l'étape globale remet les groupes dans cet ordre).
   const creatorRank = new Map(creatorAccounts.map((t, i) => [t.handle, i]));
+  // Un compte a sa fiche créateur s'il a une médiane de vues (aussi le tri de la file du genre, qui ne sert qu'aux fiches).
+  const shownCreator = (t: RTracked) => (t.medianViews ?? 0) > 0;
   type CreatorRow = ReturnType<typeof creatorRow>;
   const creators: CreatorRow[] = GL
     ? GL.outs.flatMap((o) => o.creators).sort((p, q) => p.i - q.i).map((c) => c.row as CreatorRow)
-    : creatorAccounts.filter((t) => (t.medianViews ?? 0) > 0).map(creatorRow);
+    : creatorAccounts.filter(shownCreator).map(creatorRow);
   creators.sort((p, q) => (q.median ?? 0) - (p.median ?? 0));
   for (const c of creators) wantAvatar(c.handle);
   // Tous les créateurs de chaque marché (plus de plafond à 200, décision du 14/11), par pages de CREATOR_PAGE :
@@ -901,7 +903,7 @@ export function buildBoards(
   // (ses vidéos « ambassadeur » les plus vues, 3 au plus, montrées à l'IA avec sa photo de profil).
   videoAiTodo: [...usedVideos.values()].filter((v) => aiOf(v.videoId) === undefined && trackedHasImage(v))
     .sort((p, q) => q.views - p.views).map((v) => v.videoId) });
-  const genderTodo = creatorAccounts.filter((t) => mainType.get(t.id) && genderOf(t.handle) === undefined).map((t) => ({
+  const genderTodo = creatorAccounts.filter((t) => shownCreator(t) && mainType.get(t.id) && genderOf(t.handle) === undefined).map((t) => ({
     handle: t.handle,
     ids: (videosByAccount.get(t.id) ?? []).filter((v) => typeOf(v) === mainType.get(t.id) && trackedHasImage(v)).sort((p, q) => q.views - p.views).slice(0, 3).map((v) => v.videoId),
   })).filter((x) => x.ids.length);

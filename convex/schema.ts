@@ -104,6 +104,7 @@ export default defineSchema({
     slideshow: v.union(v.boolean(), v.null()),
     images: v.optional(v.number()),
     tries: v.number(),
+    quiet: v.optional(v.number()), // silences de TikTok d'affilée (page sans réponse)
     at: v.number(), // dernier essai (0 : jamais)
   }).index("by_video", ["videoId"]).index("by_slideshow_at", ["slideshow", "at"]).index("by_slideshow_tries_at", ["slideshow", "tries", "at"]),
 

@@ -24,21 +24,33 @@ export async function videoCountry(id: string): Promise<string | null> {
  * de photos, `imagePost`) avec son nombre de photos. null : page illisible (vidéo supprimée, privée, refus).
  */
 export async function videoFacts(id: string): Promise<{ country: string | null; slideshow: boolean; images: number } | null> {
+  return (await videoFactsState(id)).facts ?? null;
+}
+
+type Facts = { country: string | null; slideshow: boolean; images: number };
+/**
+ * La même lecture, avec la raison d'un échec (16/11 : 260 carrousels ratés en une heure, refus passagers de TikTok
+ * comptés comme des essais) : `gone`, TikTok dit que la vidéo n'existe pas ou plus ; `unread`, la page répond mais
+ * sans la vidéo lisible ; rien, pas de réponse (refus, délai, page sans données).
+ */
+export async function videoFactsState(id: string): Promise<{ facts?: Facts; gone?: boolean; unread?: boolean }> {
   try {
     const res = await fetch(`https://www.tiktok.com/@tiktok/video/${id}`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" }, signal: AbortSignal.timeout(15_000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) return {};
     const html = await res.text();
     const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
-    if (!m) return null;
-    const item = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.video-detail"]?.itemInfo?.itemStruct;
-    if (!item?.id) return null;
+    if (!m) return {};
+    const detail = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.video-detail"];
+    if (detail && typeof detail.statusCode === "number" && detail.statusCode !== 0) return { gone: true };
+    const item = detail?.itemInfo?.itemStruct;
+    if (!item?.id) return detail ? { unread: true } : {};
     const c = String(item.locationCreated ?? "").toUpperCase();
     const images = Array.isArray(item.imagePost?.images) ? item.imagePost.images.length : 0;
-    return { country: /^[A-Z]{2}$/.test(c) ? c : null, slideshow: !!item.imagePost, images };
+    return { facts: { country: /^[A-Z]{2}$/.test(c) ? c : null, slideshow: !!item.imagePost, images } };
   } catch {
-    return null;
+    return {};
   }
 }
 
