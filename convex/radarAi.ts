@@ -38,11 +38,12 @@ const VIDEO_SYSTEM = `Tu reçois la miniature (première image) d'une vidéo Tik
 ${TYPE_RULES}
 2. text : le texte incrusté dans l'image (titre, sous-titres, phrases posées sur la vidéo, messages d'une conversation), recopié EXACTEMENT, dans sa langue, sans traduire ni corriger, émojis compris ; une ligne de texte par ligne. Ignore l'interface de TikTok ou d'Instagram (boutons, pseudo, compteurs, durée) et les mots isolés d'un décor. Chaîne vide s'il n'y a pas de texte.`;
 
-const GENDER_SYSTEM = `Ces images viennent d'un compte TikTok qui fait la promotion d'une application : sa photo de profil puis des miniatures de ses vidéos ou de ses carrousels de photos.
-gender : la personne qui incarne ce compte, c'est-à-dire celle qui se montre elle-même (se filme, ou pose sur ses propres photos, selfies compris), souvent la même que sur la photo de profil.
-- femme ou homme : son genre apparent, si on la voit clairement ;
-- sans_visage : personne n'incarne le compte (pas de personne, ou seulement des célébrités, des personnages, des images reprises, des mains) ;
-- incertain : plusieurs personnes différentes, ou impossible à dire.
+// 18/11 : la photo de profil faisait le genre (@user4947097136093 : photo d'une femme, vidéos de football et d'hommes
+// générés → « femme ») ; c'est désormais le contenu qui décide, miniature par miniature.
+const GENDER_SYSTEM = `Ces images viennent d'un compte TikTok qui fait la promotion d'une application : sa photo de profil (si elle existe), puis les miniatures de ses vidéos les plus vues ou de ses carrousels de photos, numérotées.
+On cherche si une personne incarne ce compte, c'est-à-dire se montre elle-même DANS SES VIDÉOS : elle se filme, parle face caméra, réagit, se montre en train d'utiliser l'app, ou pose sur ses propres photos (selfies compris). C'est le contenu qui décide. La photo de profil sert seulement à reconnaître cette personne : elle ne suffit jamais. Un compte avec la photo d'une personne mais qui ne publie que des extraits, des célébrités, des matchs, des personnages, des écrans, des animations ou des images reprises est un compte sans visage.
+- covers : pour chaque miniature, dans l'ordre (la photo de profil n'en fait pas partie), true si la personne qui tient le compte s'y montre elle-même, false sinon (personne, une célébrité, un extrait de film, de série ou de match, un personnage, une personne générée, des mains, une autre personne).
+- gender : le genre apparent de cette personne (femme ou homme) si on la voit clairement se montrer dans au moins une miniature ; sans_visage si elle ne se montre dans aucune ; incertain si plusieurs personnes différentes se montrent tour à tour, ou si c'est impossible à dire.
 Ne te fonde jamais sur un pseudo seul.`;
 
 const videoSchema = {
@@ -50,8 +51,8 @@ const videoSchema = {
   properties: { type: { type: "string", enum: [...TYPES] }, text: { type: "string" } },
 } as const;
 const genderSchema = {
-  type: "object", additionalProperties: false, required: ["gender"],
-  properties: { gender: { type: "string", enum: ["femme", "homme", "sans_visage", "incertain"] } },
+  type: "object", additionalProperties: false, required: ["covers", "gender"],
+  properties: { covers: { type: "array", items: { type: "boolean" } }, gender: { type: "string", enum: ["femme", "homme", "sans_visage", "incertain"] } },
 } as const;
 
 type Img = { type: "image"; source: { type: "base64"; media_type: "image/jpeg" | "image/png" | "image/webp" | "image/gif"; data: string } };
@@ -88,6 +89,8 @@ const LEASE_MS = 6 * 60_000;
  * serveurs de Convex, et TikTok ne répondait plus à la moitié du dernier lot (vidéos pourtant vivantes, lues une à une).
  */
 const TIKTOK_AT_ONCE = 2;
+/** Miniatures montrées à l'IA pour le genre d'un compte : ses vidéos les plus vues, tous types confondus (18/11). */
+const GENDER_COVERS = 5;
 
 /** Un goulot : au plus TIKTOK_AT_ONCE lectures de pages TikTok à la fois, pour une action. */
 function pacer() {
@@ -209,26 +212,37 @@ export const fillGender = internalAction({
     // Photo de profil et 3 miniatures, par le goulot (16/11 : 6 comptes × 4 images à la fois, par /avatar et /cover).
     // Sans aucune image : reprise sans essai si TikTok n'a pas répondu, abandon si le compte a disparu, un essai sinon.
     const slot = pacer();
-    type Out = { handle: string; ok: boolean; gender?: string; retry?: boolean; gone?: boolean; unshown?: boolean; why?: string };
+    type Out = { handle: string; ok: boolean; gender?: string; self?: number; covers?: number; retry?: boolean; gone?: boolean; unshown?: boolean; why?: string };
     const out: Out[] = await pool(rows, start, async ({ handle, ids }): Promise<Out> => {
-      const got = await Promise.all([avatarFor(ctx, slot, handle), ...ids.slice(0, 3).map((id) => coverFor(ctx, slot, id))]);
+      const got = await Promise.all([avatarFor(ctx, slot, handle), ...ids.slice(0, GENDER_COVERS).map((id) => coverFor(ctx, slot, id))]);
       const imgs = got.map((g) => g.img).filter((x): x is Img => x !== null);
-      if (!imgs.length) {
+      const covers = got.slice(1).map((g) => g.img).filter((x): x is Img => x !== null);
+      // Sans miniature lisible, le contenu ne peut pas trancher : la photo de profil seule ne suffit plus (18/11).
+      if (!covers.length) {
         if (got[0].gone) return { handle, ok: false, gone: true, why: "compte disparu" };
         if (got.every((g) => g.unshown)) return { handle, ok: false, unshown: true };
-        if (got.some((g) => g.retry)) return { handle, ok: false, retry: true, why: "sans réponse" };
-        return { handle, ok: false, why: "aucune image" };
+        if (got.slice(1).some((g) => g.retry)) return { handle, ok: false, retry: true, why: "sans réponse" };
+        return { handle, ok: false, why: imgs.length ? "aucune miniature" : "aucune image" };
       }
       try {
+        const avatar = got[0].img;
+        const content = [
+          ...(avatar ? [{ type: "text" as const, text: "Photo de profil :" }, avatar] : [{ type: "text" as const, text: "Pas de photo de profil." }]),
+          ...covers.flatMap((img, i) => [{ type: "text" as const, text: `Miniature ${i + 1} :` }, img]),
+          { type: "text" as const, text: `Compte @${handle}, ${covers.length} miniature${covers.length > 1 ? "s" : ""}.` },
+        ];
         const r = await client.messages.parse({
-          model: MODEL, max_tokens: 800, system: GENDER_SYSTEM,
+          // 2 000 jetons : 800 coupait 1 lecture sur 100 (18/11, avec 5 miniatures) ; on ne paie que ceux écrits.
+          model: MODEL, max_tokens: 2000, system: GENDER_SYSTEM,
           output_config: { effort: "low", format: jsonSchemaOutputFormat(genderSchema) },
-          messages: [{ role: "user", content: [...imgs, { type: "text", text: `Compte @${handle}.` }] }],
+          messages: [{ role: "user", content }],
         });
         tin += r.usage.input_tokens; tout += r.usage.output_tokens;
         const p = r.parsed_output;
         if (r.stop_reason !== "end_turn" || !p) return { handle, ok: false, why: `réponse ${r.stop_reason}` };
-        return { handle, ok: true, gender: p.gender };
+        // La règle (combien de miniatures il faut) s'applique à l'écran (convex/radarSync.ts) : on garde les comptes bruts.
+        const self = p.covers.slice(0, covers.length).filter(Boolean).length;
+        return { handle, ok: true, gender: self === 0 ? "sans_visage" : p.gender, self, covers: covers.length };
       } catch (e) {
         console.error(`[ia genre] @${handle} : ${e instanceof Error ? e.message : String(e)}`);
         return { handle, ok: false, why: cut(e) ? "réponse coupée" : "erreur" };

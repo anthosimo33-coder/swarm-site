@@ -544,7 +544,8 @@ export const genderPage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
     const r = await ctx.db.query("accountAi").paginate({ cursor, numItems: 4000 });
-    return { items: r.page.map((x) => [x.handle, x.gender ?? "", x.done ? 1 : 0] as [string, string, number]), cursor: r.continueCursor, done: r.isDone };
+    // [pseudo, genre, lu, version, miniatures où il se montre, miniatures lues] (version 2 : lecture par le contenu, 18/11).
+    return { items: r.page.map((x) => [x.handle, x.gender ?? "", x.done ? 1 : 0, x.v ?? 1, x.self ?? 0, x.covers ?? 0] as [string, string, number, number, number, number]), cursor: r.continueCursor, done: r.isDone };
   },
 });
 
@@ -564,7 +565,9 @@ export const saveGenderTodo = internalMutation({
   handler: async (ctx, { items }) => {
     for (const it of items) {
       const row = await ctx.db.query("accountAi").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
-      if (!row) await ctx.db.insert("accountAi", { handle: it.handle, done: false, ids: it.ids, tries: 0, at: 0 });
+      if (!row) await ctx.db.insert("accountAi", { handle: it.handle, done: false, ids: it.ids, tries: 0, at: 0, v: 2 });
+      // Ancienne lecture (photo de profil comprise comme preuve) : relue sur le contenu ; son genre reste affiché d'ici là.
+      else if ((row.v ?? 1) < 2) await ctx.db.patch(row._id, { ids: it.ids, done: false, tries: 0, quiet: 0, at: 0, v: 2 });
     }
   },
 });
@@ -620,7 +623,7 @@ export const saveVideoAi = internalMutation({
 
 export const saveGender = internalMutation({
   args: {
-    items: v.array(v.object({ handle: v.string(), ok: v.boolean(), gender: v.optional(v.string()), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()), unshown: v.optional(v.boolean()) })),
+    items: v.array(v.object({ handle: v.string(), ok: v.boolean(), gender: v.optional(v.string()), self: v.optional(v.number()), covers: v.optional(v.number()), retry: v.optional(v.boolean()), gone: v.optional(v.boolean()), unshown: v.optional(v.boolean()) })),
     now: v.number(),
   },
   handler: async (ctx, { items, now }) => {
@@ -628,7 +631,7 @@ export const saveGender = internalMutation({
       const row = await ctx.db.query("accountAi").withIndex("by_handle", (q) => q.eq("handle", it.handle)).first();
       if (!row) continue;
       if (it.unshown) await ctx.db.delete(row._id); // plus montré : retiré, comme les vidéos
-      else if (it.ok) await ctx.db.patch(row._id, { done: true, gender: it.gender, tries: row.tries + 1, at: now });
+      else if (it.ok) await ctx.db.patch(row._id, { done: true, gender: it.gender, self: it.self, covers: it.covers, v: 2, tries: row.tries + 1, at: now });
       // Comme les vidéos : sans réponse de TikTok, reprise sans essai (un au 6e silence) ; compte disparu, abandonné.
       else if (it.retry) {
         const quiet = (row.quiet ?? 0) + 1;

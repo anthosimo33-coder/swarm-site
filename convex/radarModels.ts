@@ -903,9 +903,12 @@ export function buildBoards(
   // (ses vidéos « ambassadeur » les plus vues, 3 au plus, montrées à l'IA avec sa photo de profil).
   videoAiTodo: [...usedVideos.values()].filter((v) => aiOf(v.videoId) === undefined && trackedHasImage(v))
     .sort((p, q) => q.views - p.views).map((v) => v.videoId) });
-  const genderTodo = creatorAccounts.filter((t) => shownCreator(t) && mainType.get(t.id) && genderOf(t.handle) === undefined).map((t) => ({
+  // Genre : tous les créateurs à fiche dont on connaît le type ; la synchro ne garde que ceux qui n'ont pas encore de
+  // lecture par le contenu (genderKnown). Ses 5 vidéos les plus vues, tous types confondus (18/11 : 3 vidéos de son
+  // seul type principal laissaient la photo de profil trancher).
+  const genderTodo = creatorAccounts.filter((t) => shownCreator(t) && mainType.get(t.id)).map((t) => ({
     handle: t.handle,
-    ids: (videosByAccount.get(t.id) ?? []).filter((v) => typeOf(v) === mainType.get(t.id) && trackedHasImage(v)).sort((p, q) => q.views - p.views).slice(0, 3).map((v) => v.videoId),
+    ids: (videosByAccount.get(t.id) ?? []).filter((v) => trackedHasImage(v)).sort((p, q) => q.views - p.views).slice(0, 5).map((v) => v.videoId),
   })).filter((x) => x.ids.length);
   if (groupOut) {
     // Étape « groupe » : seules ses fiches d'app restent dans `boards` (le reste est aux pages communes).

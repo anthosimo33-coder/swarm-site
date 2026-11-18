@@ -40,6 +40,11 @@ const RUN_LIMIT_MS = 9 * 60_000;
 const WRITE_RESERVE_MS = 3 * 60_000;
 /** Nouvelles vidéos (ou comptes) mises en file de vérification à chaque passage, au plus. */
 const TODO_MAX = 15_000;
+/**
+ * Genre d'un compte (18/11, règle user : « tu dois check le contenu, pas que la pdp ») : la personne qui le tient doit se
+ * montrer elle-même sur au moins 2 de ses miniatures lues (sur 1 seule s'il n'y en a qu'une ou deux).
+ */
+const selfMin = (covers: number) => (covers >= 3 ? 2 : 1);
 const WRITERS = 1; // 4 écrivains en parallèle : le 14/11 un lot ne revenait jamais (passage bloqué 3 min puis coupé) ; à 3 Mo/s, un seul suffit
 /** Le déploiement Convex refuse plus de 4 Mio écrits par seconde (TooManyWrites, dev du 14/11) : écriture cadencée sous ce plafond. */
 const WRITE_RATE = 3_000_000;
@@ -283,7 +288,16 @@ async function loadStore(ctx: ActionCtx, f: { video?: (id: string) => boolean; h
   const ai = new Map<string, { type: string; text: string }>(), aiKnown = new Set<string>();
   await readPages<[string, string, string, number]>(ctx, internal.radarStore.videoAiPage, ([id, type, text, ok]) => { if (!fv(id)) return; aiKnown.add(id); if (ok) ai.set(id, { type, text }); });
   const genders = new Map<string, string>(), genderKnown = new Set<string>();
-  await readPages<[string, string, number]>(ctx, internal.radarStore.genderPage, ([h, g, ok]) => { if (!fh(h)) return; genderKnown.add(h); if (ok) genders.set(h, g); });
+  // Genre (18/11) : lu sur le contenu (version 2), femme ou homme seulement si la personne qui tient le compte se montre
+  // elle-même sur SELF_MIN de ses miniatures ; sinon sans visage. Une ancienne lecture (photo de profil comprise comme
+  // preuve) n'est pas « connue » : la synchro la remet en file, et son genre reste affiché jusqu'à la relecture.
+  await readPages<[string, string, number, number?, number?, number?]>(ctx, internal.radarStore.genderPage, ([h, g, ok, ver = 1, self = 0, covers = 0]) => {
+    if (!fh(h)) return;
+    if (ver >= 2) genderKnown.add(h);
+    if (!g) return;
+    if (ver >= 2 && ok) genders.set(h, g === "femme" || g === "homme" ? (self >= selfMin(covers) ? g : "sans_visage") : g);
+    else genders.set(h, g);
+  });
   const misses = new Map<string, number>();
   await readPages<[string, number]>(ctx, internal.radarStore.missPage, ([k, at]) => misses.set(k, at));
   const langs = new Map<string, string | null>();

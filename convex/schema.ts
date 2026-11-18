@@ -92,6 +92,11 @@ export default defineSchema({
     tries: v.number(),
     quiet: v.optional(v.number()), // silences de TikTok d'affilée
     at: v.number(),
+    // Lecture par le contenu (v = 2, 18/11) : sur combien de miniatures lues (covers) la personne qui tient le compte se
+    // montre elle-même (self). La photo de profil seule ne fait plus le genre. Sans v : ancienne lecture, à relire.
+    v: v.optional(v.number()),
+    self: v.optional(v.number()),
+    covers: v.optional(v.number()),
   }).index("by_handle", ["handle"]).index("by_done_at", ["done", "at"]).index("by_done_tries_at", ["done", "tries", "at"]),
 
   // Bail d'une tâche de fond (une seule chaîne de lecture à la fois) : jeton du détenteur, valable jusqu'à `until`.
