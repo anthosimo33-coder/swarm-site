@@ -6,9 +6,18 @@ export default class LPMobile extends DCLogic {
   componentDidMount() {
     this.t0 = Date.now();
     this.timer = setInterval(() => this.setState({ now: Date.now() }), 90);
+    const film = document.querySelector('[data-film] video');
+    if (film) {
+      film.muted = true; film.defaultMuted = true; film.setAttribute('muted', '');
+      const go = () => { if (film.paused) { const p = film.play(); if (p && p.catch) p.catch(() => {}); } };
+      go(); film.addEventListener('loadeddata', go); film.addEventListener('canplay', go);
+      if ('IntersectionObserver' in window) { this.filmObs = new IntersectionObserver((es) => { if (es[0].isIntersecting) go(); }); this.filmObs.observe(film); }
+      ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.addEventListener(ev, go, { once: true, passive: true }));
+    }
   }
   componentWillUnmount() {
     clearInterval(this.timer);
+    if (this.filmObs) this.filmObs.disconnect();
   }
   renderVals() {
     const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
@@ -123,6 +132,18 @@ export default class LPMobile extends DCLogic {
     const mk = (title, links) => ({ title, links: links.map((l) => ({ t: l[0], href: l[1] })) });
 
     return {
+      filmOn: true,
+      filmMuted: !st.sound,
+      soundOn: st.sound ? 'true' : 'false',
+      soundLabel: st.sound ? 'Couper le son' : 'Activer le son',
+      muteIco: st.sound ? 0 : 1,
+      soundIco: st.sound ? 1 : 0,
+      toggleSound: (e) => {
+        const v = e.currentTarget.parentElement.querySelector('video');
+        const on = !this.state.sound;
+        if (v) { v.muted = !on; if (on) { const p = v.play(); if (p && p.catch) p.catch(() => {}); } }
+        this.setState({ sound: on });
+      },
       rs,
       typed: w.slice(0, Math.max(0, n)),
       q: search.q, ph: search.ph, animO: search.animO, onQ: search.onQ, onFocus: search.onFocus, onBlur: search.onBlur, submitSearch: search.submitSearch,
@@ -279,22 +300,15 @@ export default class LPMobile extends DCLogic {
           ),
           $h("section", { "aria-label": "Vidéo de présentation", "style": "position: relative; padding: 32px 16px 0;" },
             $h("div", { "style": "position: relative; padding: 6px; border-radius: 28px; background: linear-gradient(180deg, #1C2230 0%, #0B0E15 100%); box-shadow: 0 2px 4px rgba(16,24,40,0.10), 0 30px 70px rgba(16,24,40,0.26), inset 0 1px 0 rgba(255,255,255,0.12); animation: lpm-blurIn 1s ease-out both; animation-delay: 0.55s;" },
-              $h("div", { "role": "img", "aria-label": "Emplacement de la vidéo motion, à venir", "style": "position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: radial-gradient(70% 70% at 50% 62%, #FFFFFF 0%, #F1F3F6 55%, #E2E5EA 100%); display: flex; align-items: center; justify-content: center;" },
-                $h("span", { "style": "position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border-radius: 999px; background: rgba(14,15,18,0.30); color: #FFFFFF; font-size: 12px; font-weight: 500; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
+              $h("div", { "data-film": "", "style": "position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #05070C;" },
+                $h("video", { "src": "/media/film/swarm-film-720.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "autoplay": $v.filmOn, "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "auto", "aria-label": "Film de présentation de Swarm, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
+                $h("button", { "type": "button", "onClick": $v.toggleSound, "aria-pressed": $v.soundOn, "style": "position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border: 0; border-radius: 999px; background: rgba(14,15,18,0.45); color: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
                   $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M4 9h4l5-4v14l-5-4H4z", "fill": "#FFFFFF" }),
-                    $h("path", { "d": "M17 9.5l4 5M21 9.5l-4 5", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round" })
+                    $h("path", { "d": "M17 9.5l4 5M21 9.5l-4 5", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round", "style": `opacity: ${$t($v.muteIco)};` }),
+                    $h("path", { "d": "M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12", "stroke": "#FFFFFF", "stroke-width": "1.8", "stroke-linecap": "round", "fill": "none", "style": `opacity: ${$t($v.soundIco)};` })
                   ),
-                  "Activer le son"
-                ),
-                $h("div", { "style": "width: 82%; height: 46px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; background: rgba(255,255,255,0.94); box-shadow: 0 0 0 1px #FFFFFF, 0 10px 28px rgba(16,24,40,0.10), 0 8px 26px rgba(11,111,224,0.22); display: flex; align-items: center; font-family: 'Inter Tight', sans-serif; font-size: 17px; letter-spacing: -0.03em; white-space: nowrap;" },
-                  $h("span", { "style": "font-weight: 800;" },
-                    "Vidéo motion :"
-                  ),
-                  $h("span", { "style": "font-weight: 500;" },
-                    " à venir"
-                  ),
-                  $h("span", { "style": "display: inline-block; width: 2px; height: 0.95em; margin-left: 3px; background: #0B6FE0; animation: lpm-caret 1s steps(1) infinite;" })
+                  $t($v.soundLabel)
                 )
               )
             )
