@@ -54,7 +54,7 @@ export default class MAccueil extends DCLogic {
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const has = (d) => d !== null && d !== undefined;
       const appRow = (a) => Object.assign({ name: a.name, sub: nf(a.views7 || 0) + ' vues en 7 jours', v: has(a.weekDelta) ? pct(a.weekDelta) : (a.bestX ? xf(a.bestX) : ''), href: '/app/apps/' + a.slug }, ico(a));
-      const vidRow = (v) => Object.assign({ name: v.app ? v.app.name : '@' + v.handle, sub: 'Vidéo à ' + nf(v.views) + ' vues' + (v.paid ? ' · placement payé' : ''), v: v.x ? xf(v.x) : '', href: '/app/videos/' + v.id }, ico(v.app));
+      const vidRow = (v) => Object.assign({ name: v.app ? v.app.name : '@' + v.handle, sub: 'Vidéo à ' + nf(v.views) + ' vues', paid: !!v.paid, v: v.x ? xf(v.x) : '', href: '/app/videos/' + v.id }, ico(v.app));
       const apps = D.apps.slice().sort((p, q) => (has(q.weekDelta) ? q.weekDelta : -Infinity) - (has(p.weekDelta) ? p.weekDelta : -Infinity));
       const vids = D.videos || [];
       look = apps.slice(0, 2).map(appRow).concat(vids.slice(1, 3).map(vidRow), apps.slice(2).map(appRow)).slice(0, 4);
@@ -165,12 +165,22 @@ export default class MAccueil extends DCLogic {
                   ] : null
                 ),
                 $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;" },
-                  $h("span", { "style": "font-size: 16px; font-weight: 600;" },
+                  $h("span", { "style": "min-width: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                     $t(r?.name)
                   ),
                   $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
                     $t(r?.sub)
-                  )
+                  ),
+                  (r?.paid) ? [
+                    $h("span", { "style": "display: flex; margin-top: 4px;" },
+                      $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                        $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                          "€"
+                        ),
+                        "Placement payé"
+                      )
+                    )
+                  ] : null
                 ),
                 $h("span", { "style": "font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--accent);" },
                   $t(r?.v)

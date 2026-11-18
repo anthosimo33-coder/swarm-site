@@ -318,8 +318,8 @@ return {};
                     ])
                   ),
                   (r?.plc) ? [
-                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
-                      $h("span", { "aria-hidden": "true", "style": "width: 15px; height: 15px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 9px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
+                    $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                      $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
                         "€"
                       ),
                       $t(r?.plc)

@@ -129,7 +129,7 @@ export default class Accueil extends DCLogic {
         sub: nf(a.views7 || 0) + ' vues en 7 jours', v: has(a.weekDelta) ? pct(a.weekDelta) : (a.bestX ? xf(a.bestX) : ''), href: '/app/apps/' + a.slug });
       const vidRow = (v) => { const logo = (v.app && v.app.icon) || v.cover || '';
         return { logo, nologo: !logo, blank: logo ? '' : 'sw-app-blank', name: v.app ? v.app.name : '@' + v.handle,
-          sub: 'Vidéo à ' + nf(v.views) + ' vues' + (v.paid ? ' · placement payé' : ''), v: v.x ? xf(v.x) : '', href: '/app/videos/' + v.id }; };
+          sub: 'Vidéo à ' + nf(v.views) + ' vues', paid: !!v.paid, v: v.x ? xf(v.x) : '', href: '/app/videos/' + v.id }; };
       const apps = D.apps.slice().sort((p, q) => (has(q.weekDelta) ? q.weekDelta : -Infinity) - (has(p.weekDelta) ? p.weekDelta : -Infinity));
       const vids = D.videos || [];
       look = apps.slice(0, 2).map(appRow).concat(vids.slice(1, 3).map(vidRow), apps.slice(2).map(appRow)).slice(0, 4);
@@ -361,8 +361,18 @@ export default class Accueil extends DCLogic {
                           ] : null
                         ),
                         $h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;" },
-                          $h("span", { "class": "sw-app-name" },
-                            $t(r?.name)
+                          $h("span", { "style": "display: flex; align-items: center; gap: 8px; min-width: 0;" },
+                            $h("span", { "class": "sw-app-name", "style": "min-width: 0;" },
+                              $t(r?.name)
+                            ),
+                            (r?.paid) ? [
+                              $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                                $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                                  "€"
+                                ),
+                                "Placement payé"
+                              )
+                            ] : null
                           ),
                           $h("span", { "class": "sw-app-sub" },
                             $t(r?.sub)
@@ -409,6 +419,16 @@ export default class Accueil extends DCLogic {
                         )
                       )
                     ),
+                    ($v.alert?.paid) ? [
+                      $h("span", { "style": "position: absolute; top: 14px; left: 14px; z-index: 2; display: flex;" },
+                        $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                          $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                            "€"
+                          ),
+                          "Placement payé"
+                        )
+                      )
+                    ] : null,
                     $h("div", { "class": "sw-toast", "style": "position: absolute; left: 14px; right: 14px; bottom: 14px; padding: 8px 12px 8px 8px; gap: 10px; animation: sw-float 7s ease-in-out infinite; animation-delay: -2s;" },
                       $h("span", { "class": "sw-toast-ico", "style": "width: 26px; height: 26px;" },
                         $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -417,10 +437,7 @@ export default class Accueil extends DCLogic {
                       ),
                       $h("span", { "style": "min-width: 0;" },
                         $h("span", { "class": "sw-toast-kicker" },
-                          $t($v.alert?.kicker),
-                          ($v.alert?.paid) ? [
-                            " · Placement payé"
-                          ] : null
+                          $t($v.alert?.kicker)
                         ),
                         $h("span", { "class": "sw-toast-text", "style": "font-size: 12px;" },
                           $t($v.alert?.text)

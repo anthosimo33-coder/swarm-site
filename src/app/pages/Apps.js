@@ -164,7 +164,9 @@ return {};
       return {
         rank: String(i + 1).padStart(2, '0'), n: a[0], niche: a[1], nicheIc: NIC[a[1]] || NIC0, mkText: mkText(a),
         mks: market !== 'ALL' ? [{ c: market, p: (a[25] === null || a[25] === undefined ? '' : (a[25] < 1 ? '<\u202f1' : a[25]) + '\u202f% de ses vues'), t: (MKS.filter((m) => m[0] === market)[0] || [0, market])[1] }] : mkList(a),
-        net: Number(a[3]).toLocaleString('fr-FR') + ' comptes · ' + Number(a[4]).toLocaleString('fr-FR') + ' vidéos / sem.' + (a[27] > 0 ? ' · ' + a[27] + (a[27] > 1 ? ' placements payés' : ' placement payé') : ''),
+        net: Number(a[3]).toLocaleString('fr-FR') + ' comptes · ' + Number(a[4]).toLocaleString('fr-FR') + ' vidéos / sem.',
+        // Placements payés : sur leur propre ligne, en pastille dorée comme partout (18/11 : collés au sous-titre, ils débordaient sur la colonne des pays).
+        plc: a[27] > 0 ? a[27] + (a[27] > 1 ? ' placements payés' : ' placement payé') : '',
         count: typeof a[20] === 'number' && a[20] > 0 ? a[20].toLocaleString('fr-FR') : '', v30: vm(views(a)),
         delta: (up ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f% cette semaine', dInk: up ? 'var(--accent)' : 'var(--ink-faint)',
         line, area: line + ' L127 40 L3 40 Z', ex: pts[5][0].toFixed(1), ey: pts[5][1].toFixed(1), gid: 'apl' + i,
@@ -698,7 +700,7 @@ return {};
             $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1120px;" },
               $h("thead", null,
                 $h("tr", null,
-                  $h("th", { "aria-sort": $v.hd?.name?.aria, "style": "width: 270px; padding-top: 9px; padding-bottom: 9px; padding-left: 20px;" },
+                  $h("th", { "aria-sort": $v.hd?.name?.aria, "style": "width: 320px; padding-top: 9px; padding-bottom: 9px; padding-left: 20px;" },
                     $h("button", { "type": "button", "onClick": $v.hd?.name?.pick, "style": `display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; border: 0; background: transparent; color: ${$t($v.hd?.name?.ink)}; font: inherit; font-size: 12px; font-weight: ${$t($v.hd?.name?.fw)}; cursor: pointer;` },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t($v.hd?.name?.ic)};` },
                         $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -719,7 +721,7 @@ return {};
                       "Niche"
                     )
                   ),
-                  $h("th", { "style": "width: 265px; padding-top: 9px; padding-bottom: 9px;" },
+                  $h("th", { "style": "width: 215px; padding-top: 9px; padding-bottom: 9px;" },
                     $h("span", { "class": "sw-th" },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
                         $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -785,9 +787,19 @@ return {};
                                 )
                               ] : null
                             ),
-                            $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
+                            $h("span", { "style": "max-width: 100%; font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                               $t(r?.net)
-                            )
+                            ),
+                            (r?.plc) ? [
+                              $h("span", { "style": "display: flex; margin-top: 3px;" },
+                                $h("span", { "style": "display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;" },
+                                  $h("span", { "aria-hidden": "true", "style": "width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;" },
+                                    "€"
+                                  ),
+                                  $t(r?.plc)
+                                )
+                              )
+                            ] : null
                           )
                         )
                       )
