@@ -37,7 +37,7 @@ export default class MFicheApp extends DCLogic {
       next.apps = l.indexOf(fid) >= 0 ? l.filter((x) => x !== fid) : [fid].concat(l);
       P.save('follows', next);
     };
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'app', id: fid, label: b.app.name, cover: (b.a && b.a.logo) || null } : null }, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'app', id: fid, label: b.app.name, cover: (b.a && b.a.logo) || null } : null }, { followYes: f, followNo: !f, followAria: 'Ne plus suivre ' + b.app.name, followLabel: 'Suivre ' + b.app.name,
       secs: (b.secs || []).map((s, i) => Object.assign({}, s, { href: ['#m-vues', '#m-vid', '#m-fmt', '#m-cr'][i] || '#m-vues', on: (st.sec || 0) === i ? 'true' : 'false', pick: () => this.setState({ sec: i }) })) });
   }
 
@@ -251,14 +251,24 @@ export default class MFicheApp extends DCLogic {
             )
           ] : null,
           $h("div", { "style": "display: flex; justify-content: center; align-items: center; gap: 10px;" },
-            $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": $v.followOn },
-              $t($v.followLabel),
-              $h("span", { "class": "sw-btn-tile" },
-                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ($v.followNo) ? [
+              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": "false" },
+                $t($v.followLabel),
+                $h("span", { "class": "sw-btn-tile" },
+                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                  )
                 )
               )
-            ),
+            ] : null,
+            ($v.followYes) ? [
+              $h("button", { "class": "sw-btn sw-btn-ghost", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": "true", "aria-label": $v.followAria, "style": "height: 56px; padding: 0 24px; font-size: 17px; gap: 10px;" },
+                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--accent);" },
+                  $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
+                "Suivie"
+              )
+            ] : null,
             $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openAj, "aria-label": "Ajouter à un dossier", "style": "flex-shrink: 0; width: 52px; height: 52px; box-shadow: inset 0 0 0 1px var(--line);" },
               $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })

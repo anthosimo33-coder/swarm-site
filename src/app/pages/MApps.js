@@ -116,6 +116,21 @@ return {};
       return { label: nm, n, sel: on ? 'true' : 'false', o: n === 0 ? 0.45 : 1, pick: () => this.setState({ niches: on ? niches.filter((x) => x !== nm) : niches.concat([nm]) }) }; });
     const sheetKeys = (k) => (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ [k]: k === 'pv' ? null : false }); } };
     const pa = A.filter((a) => a[0] === st.pv)[0];
+    // Suivre une app : sur le site, follows.apps (saved) par slug, comme sur ordinateur — 18/11 : ici, seul l'écran
+    // changeait, rien n'était gardé (l'app n'arrivait jamais dans « Apps suivies ») ; sur le canevas, l'état local.
+    const PF = this.props || {};
+    const liveF = typeof PF.saved === 'function' && typeof PF.save === 'function';
+    const fwM = liveF ? PF.saved('follows') : null;
+    const followedM = (a) => (liveF ? !!(fwM && a[11] && (fwM.apps || []).indexOf(a[11]) >= 0) : !!(st.follow || {})[a[0]]);
+    const toggleM = (a) => {
+      if (!liveF) return this.setState({ follow: Object.assign({}, st.follow || {}, { [a[0]]: !followedM(a) }) });
+      const cur = PF.saved('follows');
+      if (cur === undefined || !a[11]) return;
+      const next = Object.assign({ apps: [], creators: [], formats: [] }, cur || {});
+      const l = next.apps || [];
+      next.apps = l.indexOf(a[11]) >= 0 ? l.filter((x) => x !== a[11]) : [a[11]].concat(l);
+      PF.save('follows', next);
+    };
     let pv = { on: false };
     if (pa) { const w = pa[6] || [1, 1, 1, 1, 1, 1], mx = Math.max.apply(null, w) || 1, d = pa[6] ? dlt(pa) : null, md = MKD[pa[0]];
       const pts = w.map((v, j) => [4 + j * (292 / 5), 56 - (v / mx) * 50]);
@@ -150,7 +165,7 @@ return {};
           if (rest.length) { const rp = rest.reduce((n, m) => n + m[2], 0);
             out.push({ c: '', l: '+' + rest.length + '\u00a0pays', full: rest.map((m) => m[1] + ' ' + m[2] + '\u202f%').join(', '), p: rp + '\u202f%', w: rp + '%', flex: rp + ' 1 0%', bg: 'rgba(255,255,255,0.28)', stack: true, fl: rest.slice(0, 2).map((m, j) => ({ c: m[0], ml: j ? '-6px' : '0' })) }); }
           return out; })(),
-        followLabel: (st.follow || {})[pa[0]] ? 'Suivi' : 'Suivre', follow: () => this.setState({ follow: Object.assign({}, st.follow || {}, { [pa[0]]: !(st.follow || {})[pa[0]] }) }) }; }
+        followLabel: followedM(pa) ? 'Suivie' : 'Suivre', followOn: followedM(pa) ? 'true' : 'false', followYes: followedM(pa), followNo: !followedM(pa), follow: () => toggleM(pa) }; }
     const swipe = (k) => ({ s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false, pv: null }); this.y0 = null; } });
     return {
       rows, empty: total === 0, emptyText: A.length === 0 ? 'Aucune app à montrer pour l’instant.' : 'Aucune app pour ces filtres.', canClear: A.length > 0, chips, hasChips: chips.length > 0, nf: chips.length || false, mLabel, nLabel: niches.length === 0 ? 'Toutes' : (niches.length === 1 ? niches[0] : niches.length + ' niches'),
@@ -713,10 +728,17 @@ return {};
               )
             ),
             $h("div", { "style": "display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: clamp(8px, 1.4vh, 12px);" },
-              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "style": "height: 48px; gap: 8px;" },
-                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                ),
+              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "height: 48px; gap: 8px;" },
+                ($v.pv?.followYes) ? [
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                ] : null,
+                ($v.pv?.followNo) ? [
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                  )
+                ] : null,
                 $t($v.pv?.followLabel)
               ),
               $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": $v.pv?.href },

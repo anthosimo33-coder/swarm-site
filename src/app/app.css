@@ -74,3 +74,11 @@ img.is-broken { visibility: hidden; }
 .sw-mk-card { container-type: size; }
 @container (max-height: 90px) { .sw-mk-bar { display: none !important; } }
 @container (max-height: 77px) { .sw-mk-rows { gap: 0 !important; } }
+
+/* Bouton de suivi déjà actif (« ✓ Suivie ») : au survol, il dit ce que fait le clic (18/11 : « Suivi » avec une
+   flèche faisait croire à un lien, alors que le clic arrête le suivi). Sans survol (mobile), il garde son état. */
+.sw-follow-stop { display: none; }
+@media (hover: hover) {
+  .sw-follow:hover .sw-follow-now { display: none; }
+  .sw-follow:hover .sw-follow-stop { display: inline; }
+}

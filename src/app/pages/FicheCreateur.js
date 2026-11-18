@@ -49,7 +49,7 @@ export default class FicheCreateur extends DCLogic {
     const tab = st.tab === 'fmts' || (st.tab === 'apps' && hasApp) ? st.tab : 'vids';
     const tabs = [['vids', 'Vidéos · ' + b.vids.length], ['fmts', 'Formats repris · ' + b.fmts.length]].concat(hasApp ? [['apps', 'Apps poussées · 1']] : [])
       .map((t) => ({ l: t[1], d: ({ 'vids': 'M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4', 'fmts': 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5', 'apps': 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' })[t[0]], on: tab === t[0] ? 'true' : 'false', bg: tab === t[0] ? 'rgba(255,255,255,0.10)' : 'transparent', ink: tab === t[0] ? 'var(--ink)' : 'var(--ink-muted)', fw: tab === t[0] ? '600' : '500', ic: tab === t[0] ? 'var(--accent)' : 'var(--ink-faint)', pick: () => this.setState({ tab: t[0] }) }));
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: { kind: 'creator', id: handle, label: '@' + handle, cover } }, { followAria: f ? 'Ne plus suivre ce compte' : 'Suivre ce compte', followInk: f ? 'var(--accent)' : 'var(--ink-muted)',
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: { kind: 'creator', id: handle, label: '@' + handle, cover } }, { followAria: f ? 'Ne plus suivre ce compte' : 'Suivre ce compte', followInk: f ? 'var(--accent)' : 'var(--ink-muted)', followYes: f, followNo: !f,
       vids: (st.sort === 'vues') ? (b.vids || []).slice().sort((x, y) => y.raw - x.raw) : b.vids,
       sorts: [['recent', 'Récentes'], ['vues', 'Les plus vues']].map((s) => ({ l: s[1], on: (st.sort || 'recent') === s[0] ? 'true' : 'false', pick: () => this.setState({ sort: s[0] }) })),
       cards: ((st.sort === 'vues') ? (b.vids || []).slice().sort((x, y) => y.raw - x.raw) : (b.vids || [])).map((v, i) => {
@@ -297,10 +297,17 @@ export default class FicheCreateur extends DCLogic {
             ),
             $h("div", { "style": "position: relative; display: flex; align-items: center; gap: 12px;" },
               $h("span", { "style": "display: flex; gap: 4px;" },
-                $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": $v.followOn, "aria-label": $v.followAria, "style": `color: ${$t($v.followInk)};` },
-                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  )
+                $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": $v.followOn, "aria-label": $v.followAria, "title": $v.followAria, "style": `color: ${$t($v.followInk)};` },
+                  ($v.followYes) ? [
+                    $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                      $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  ] : null,
+                  ($v.followNo) ? [
+                    $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                      $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                    )
+                  ] : null
                 ),
                 $h("span", { "style": "position: relative; display: inline-flex;" },
                   $h("button", { "data-aj-trigger": "true", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Ajouter à un dossier" },

@@ -275,7 +275,9 @@ return {};
               stack: true, fl: rest.slice(0, 3).map((m, j) => ({ c: m[0], ml: j ? '-6px' : '0' })) }); }
           return out; })(),
         href: ficheOf(pa),
-        followLabel: followed(pa) ? 'Suivi' : 'Suivre', followOn: followed(pa) ? 'true' : 'false', follow: () => toggleFollow(pa) };
+        followLabel: followed(pa) ? 'Suivie' : 'Suivre', followOn: followed(pa) ? 'true' : 'false', followYes: followed(pa), followNo: !followed(pa),
+        followTitle: followed(pa) ? 'Tu suis ' + pa[0] + ' : elle est dans « Apps suivies » sur ton accueil. Clique pour ne plus la suivre.' : 'Suivre ' + pa[0] + ' : elle apparaîtra dans « Apps suivies » sur ton accueil.',
+        follow: () => toggleFollow(pa) };
       ajItem = { kind: 'app', id: pa[11] || pa[0], label: pa[0], cover: pa[10] || null };
     }
     // ── Tri : menu, ordre, en-têtes ──
@@ -1142,11 +1144,25 @@ return {};
               )
             ),
             $h("footer", { "style": "flex-shrink: 0; padding: clamp(10px, 1.7vh, 16px) 24px clamp(12px, 2.6vh, 24px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px;" },
-              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "height: 48px;" },
-                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              $h("button", { "class": "sw-pill sw-follow", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "title": $v.pv?.followTitle, "style": "height: 48px; min-width: 150px; justify-content: center;" },
+                ($v.pv?.followYes) ? [
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                ] : null,
+                ($v.pv?.followNo) ? [
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                  )
+                ] : null,
+                $h("span", { "class": "sw-follow-now" },
+                  $t($v.pv?.followLabel)
                 ),
-                $t($v.pv?.followLabel)
+                ($v.pv?.followYes) ? [
+                  $h("span", { "class": "sw-follow-stop" },
+                    "Ne plus suivre"
+                  )
+                ] : null
               ),
               $h("a", { "class": "sw-btn sw-btn-primary", "href": $v.pv?.href, "style": "flex: 1; justify-content: space-between;" },
                 "Voir la fiche",

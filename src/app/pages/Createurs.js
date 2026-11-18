@@ -225,7 +225,7 @@ export default class Createurs extends DCLogic {
       bars: last.map((v) => ({ d: day(v.publishedAt), t: day(v.publishedAt) + ' : ' + nf(v.views) + ' vues', h: ((v.views / top) * 100).toFixed(1), href: '/app/videos/' + v.id,
         bg: med && v.views >= med ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : hatch })),
       hasTops: tops.length > 0, topsTitle: above.length ? 'Au-dessus de sa normale' : 'Ses meilleures vidéos', tops,
-      follow, followOn: followed ? 'true' : 'false', followLabel: followed ? 'Suivi' : 'Suivre' };
+      follow, followOn: followed ? 'true' : 'false', followYes: followed, followNo: !followed, followLabel: followed ? 'Suivi' : 'Suivre' };
   }
 
   // Les créateurs d'un marché arrivent par pages de 500 (« creators:<marché> », puis « :2 », « :3 »…) : la suite se
@@ -910,11 +910,25 @@ export default class Createurs extends DCLogic {
               ] : null
             ),
             $h("footer", { "style": "flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: clamp(10px, 1.6vh, 14px) 20px clamp(12px, 2.2vh, 20px); border-top: 1px solid var(--line);" },
-              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "height: 46px; gap: 8px;" },
-                $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
-                  $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              $h("button", { "class": "sw-pill sw-follow", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "height: 46px; gap: 8px; min-width: 150px; justify-content: center;" },
+                ($v.pv?.followYes) ? [
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                ] : null,
+                ($v.pv?.followNo) ? [
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                  )
+                ] : null,
+                $h("span", { "class": "sw-follow-now" },
+                  $t($v.pv?.followLabel)
                 ),
-                $t($v.pv?.followLabel)
+                ($v.pv?.followYes) ? [
+                  $h("span", { "class": "sw-follow-stop" },
+                    "Ne plus suivre"
+                  )
+                ] : null
               ),
               $h("a", { "class": "sw-btn sw-btn-primary", "href": $v.pv?.href, "style": "flex: 1; justify-content: space-between;" },
                 "Voir la fiche complète",

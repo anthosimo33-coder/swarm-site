@@ -67,7 +67,9 @@ export default class FicheApp extends DCLogic {
     mkVals.kfTabs = [['all', 'Tous les types', DV.length]].concat(kTypes.map((k) => [k, KN[k], kCount[k]])).map(([k, l, n]) => ({ l, n: String(n),
       on: kfCur === k ? 'true' : 'false', bg: kfCur === k ? 'var(--accent-soft)' : 'var(--track)', ink: kfCur === k ? 'var(--accent)' : 'var(--ink-muted)', fw: kfCur === k ? 600 : 500,
       pick: () => this.setState({ kf: k }) }));
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, mkVals, { followLabel: f ? 'Suivi' : 'Suivre ' + b.app.name,
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow }, mkVals, { followLabel: 'Suivre ' + b.app.name, followYes: f, followNo: !f, followAria: 'Ne plus suivre ' + b.app.name,
+      // Ce que fait le suivi, et rien de plus (aucune alerte ni notification) : l'app entre dans « Apps suivies » à l'accueil.
+      followTitle: f ? 'Tu suis ' + b.app.name + ' : elle est dans « Apps suivies » sur ton accueil. Clique pour ne plus la suivre.' : 'Suivre ' + b.app.name + ' : elle apparaîtra dans « Apps suivies » sur ton accueil.',
       kept, keptNone: kept.length === 0,
       ajItem: { kind: 'app', id: slug, label: b.app.name, cover: b.app.icon || null },
       copyAria: st.copied ? 'Lien copié' : 'Copier le lien de la fiche', copyBg: st.copied ? 'var(--accent-soft)' : 'var(--track)',
@@ -385,14 +387,29 @@ export default class FicheApp extends DCLogic {
                   )
                 ] : null
               ),
-              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": $v.followOn },
-                $t($v.followLabel),
-                $h("span", { "class": "sw-btn-tile" },
-                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ($v.followNo) ? [
+                $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": "false", "title": $v.followTitle },
+                  $t($v.followLabel),
+                  $h("span", { "class": "sw-btn-tile" },
+                    $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                    )
                   )
                 )
-              )
+              ] : null,
+              ($v.followYes) ? [
+                $h("button", { "class": "sw-btn sw-btn-ghost sw-btn-sm sw-follow", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": "true", "aria-label": $v.followAria, "title": $v.followTitle, "style": "min-width: 150px; gap: 8px;" },
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--accent);" },
+                    $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  $h("span", { "class": "sw-follow-now" },
+                    "Suivie"
+                  ),
+                  $h("span", { "class": "sw-follow-stop" },
+                    "Ne plus suivre"
+                  )
+                )
+              ] : null
             )
           ),
           $h("div", { "style": "display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 268px 268px; gap: 16px;" },

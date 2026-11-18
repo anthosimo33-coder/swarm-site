@@ -45,7 +45,7 @@ export default class FicheFormat extends DCLogic {
     // Ce que « Ajouter à un dossier » range : le format, tel que la liste l'affiche, avec la miniature d'une reprise.
     const cover = D ? (((D.members || []).filter((m) => m.cover)[0] || {}).cover || null) : ((b.reps[0] || {}).src || null);
     const label = D ? (D.kind === 'hook' ? '« ' + D.label + ' »' : D.label) : '« ' + b.f.quote + ' »';
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: { kind: 'format', id, label, cover } }, { followAria: f ? 'Ne plus suivre ce format' : 'Suivre ce format', followInk: f ? 'var(--accent)' : 'var(--ink-muted)',
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: { kind: 'format', id, label, cover } }, { followAria: f ? 'Ne plus suivre ce format' : 'Suivre ce format', followInk: f ? 'var(--accent)' : 'var(--ink-muted)', followYes: f, followNo: !f,
       copyLabel: b.f.isSound ? (st.copied ? 'Nom du son copié' : 'Copier le nom du son') : (st.copied ? 'Accroche copiée' : 'Copier l’accroche'),
       copyHook: () => { try { navigator.clipboard.writeText(b.f.quote); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } });
   }
@@ -243,10 +243,17 @@ export default class FicheFormat extends DCLogic {
                 )
               ),
               $h("span", { "style": "display: flex; gap: 4px;" },
-                $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": $v.followOn, "aria-label": $v.followAria, "style": `color: ${$t($v.followInk)};` },
-                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  )
+                $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": $v.followOn, "aria-label": $v.followAria, "title": $v.followAria, "style": `color: ${$t($v.followInk)};` },
+                  ($v.followYes) ? [
+                    $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                      $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  ] : null,
+                  ($v.followNo) ? [
+                    $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                      $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                    )
+                  ] : null
                 ),
                 $h("span", { "style": "position: relative; display: inline-flex;" },
                   $h("button", { "data-aj-trigger": "true", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Ajouter à un dossier" },

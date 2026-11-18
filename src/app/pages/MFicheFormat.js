@@ -38,7 +38,7 @@ export default class MFicheFormat extends DCLogic {
       P.save('follows', next);
     };
     const RP = b.reps || [];
-    return Object.assign({ repsShown: st.allReps ? RP : RP.slice(0, 12), moreReps: !st.allReps && RP.length > 12, moreRepsLabel: 'Voir les ' + (RP.length - 12) + ' autres reprises', showReps: () => this.setState({ allReps: true }), followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'format', id: fid, label: (b.f && b.f.raw) || '', cover: ((b.reps || []).filter((x) => x.src)[0] || {}).src || null } : null }, { followInk: f ? 'var(--accent)' : 'var(--ink-muted)', copyLabel: st.copied ? (b.f.kind === 'Son' ? 'Nom du son copié' : 'Accroche copiée') : (b.f.kind === 'Son' ? 'Copier le nom du son' : 'Copier l’accroche'), copy: () => { try { navigator.clipboard.writeText(b.f.raw); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } });
+    return Object.assign({ repsShown: st.allReps ? RP : RP.slice(0, 12), moreReps: !st.allReps && RP.length > 12, moreRepsLabel: 'Voir les ' + (RP.length - 12) + ' autres reprises', showReps: () => this.setState({ allReps: true }), followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'format', id: fid, label: (b.f && b.f.raw) || '', cover: ((b.reps || []).filter((x) => x.src)[0] || {}).src || null } : null }, { followInk: f ? 'var(--accent)' : 'var(--ink-muted)', followYes: f, followNo: !f, followAria: f ? 'Ne plus suivre ce format' : 'Suivre ce format', copyLabel: st.copied ? (b.f.kind === 'Son' ? 'Nom du son copié' : 'Accroche copiée') : (b.f.kind === 'Son' ? 'Copier le nom du son' : 'Copier l’accroche'), copy: () => { try { navigator.clipboard.writeText(b.f.raw); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } });
   }
 
   baseVals() {
@@ -170,10 +170,17 @@ export default class MFicheFormat extends DCLogic {
             )
           ] : null,
           $h("div", { "style": "display: flex; align-items: center; justify-content: center; gap: 8px;" },
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-label": "Suivre ce format", "aria-pressed": $v.followOn, "style": `width: 44px; height: 44px; flex-shrink: 0; color: ${$t($v.followInk)};` },
-              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
+            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-label": $v.followAria, "title": $v.followAria, "aria-pressed": $v.followOn, "style": `width: 44px; height: 44px; flex-shrink: 0; color: ${$t($v.followInk)};` },
+              ($v.followYes) ? [
+                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                  $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              ] : null,
+              ($v.followNo) ? [
+                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                  $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                )
+              ] : null
             ),
             $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.copy },
               $t($v.copyLabel),
