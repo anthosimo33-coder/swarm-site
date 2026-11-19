@@ -550,6 +550,18 @@ export default class LPMobile extends DCLogic {
               ),
               $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.55; color: #9AA3B2;" },
                 "Rejoins les membres qui savent déjà ce qui explose sur les réseaux, avant tout le monde."
+              ),
+              $h("span", { "role": "img", "aria-label": "Note moyenne des membres : 4,8 sur 5", "style": "align-self: flex-start; display: inline-flex; align-items: center; border-radius: 999px; padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); font-size: 14px; color: #E6E9EF; white-space: nowrap;" },
+                $h("span", { "style": "color: #F5B941;" },
+                  "★★★★★"
+                ),
+                "\u00a0",
+                $h("span", { "style": "font-weight: 700;" },
+                  "4,8 / 5"
+                ),
+                $h("span", { "style": "color: #8A93A3;" },
+                  " de moyenne"
+                )
               )
             ),
             $h("div", { "style": "position: relative; margin-top: 12px; padding: 0 16px;" },
@@ -560,7 +572,6 @@ export default class LPMobile extends DCLogic {
                       $t(r?.q)
                     ),
                     $h("figcaption", { "style": "display: flex; align-items: center; gap: 14px;" },
-                      $h("span", { "aria-hidden": "true", "style": "width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; background: linear-gradient(180deg, #2A3242, #141A26); border: 2px solid rgba(255,255,255,0.14);" }),
                       $h("span", { "style": "display: flex; flex-direction: column;" },
                         $h("span", { "style": "font-weight: 600; font-size: 16px;" },
                           $t(r?.name)
