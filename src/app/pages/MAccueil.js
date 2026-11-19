@@ -73,7 +73,7 @@ export default class MAccueil extends DCLogic {
       $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(96px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("header", { "style": "position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
           $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;" },
-            $h("a", { "class": "sw-logo", "href": "/app", "aria-label": "Swarm, accueil" },
+            $h("a", { "class": "sw-logo", "href": "/app", "aria-label": "Kopycat, accueil" },
               $h("svg", { "class": "sw-logo-mark on-dark", "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "width: 24px; height: 24px;" },
                 $h("circle", { "class": "d-a", "cx": "5", "cy": "8", "r": "2.3" }),
                 $h("circle", { "class": "d-a", "cx": "11", "cy": "5", "r": "2.3" }),
@@ -84,7 +84,7 @@ export default class MAccueil extends DCLogic {
                 $h("circle", { "class": "d-b", "cx": "11", "cy": "20", "r": "2.3" })
               ),
               $h("span", { "class": "sw-wordmark", "style": "font-size: 20px;" },
-                "swarm"
+                "kopycat"
               )
             )
           ),

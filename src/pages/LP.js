@@ -134,12 +134,12 @@ export default class LP extends DCLogic {
 // Avis de membres (donnés par le fondateur le 19/11), mot pour mot ; prénom seul. Une colonne = 3 avis de longueurs différentes.
     const briefs = [
       ['« Je cherchais une idée depuis des mois et je tournais en rond. J’ai choisi les États-Unis, la niche beauté, et je suis tombé sur une app qui faisait beaucoup de vues par vidéo. Personne ne la faisait encore en français, donc j’ai foncé. »', 'Mattheo', ''],
-      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Swarm 30 minutes le matin et je sais ce qui marche. »', 'Luis', ''],
+      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Kopycat 30 minutes le matin et je sais ce qui marche. »', 'Luis', ''],
       ['« C’est juste génial, merci, on voit tout. »', 'David', ''],
       ['« Ce qui m’a surpris, c’est le nombre de comptes derrière une seule app. Astra AI tourne avec 200 comptes actifs alors que j’en imaginais vingt. Ça m’a fait revoir tout mon plan de recrutement. »', 'Lucien', ''],
       ['« Si t’hésites, prends un mois et regarde juste les apps qui explosent dans ton pays. Tu vas voir qu’il y a de la place partout. »', 'Elio', ''],
       ['« Le gain de temps et d’argent est massif, le produit est top. »', 'Dimitri', ''],
-      ['« Je n’aurais jamais testé l’Amérique du Sud. Swarm m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
+      ['« Je n’aurais jamais testé l’Amérique du Sud. Kopycat m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
       ['« J’ai repris un format qui tournait sur l’app d’un concurrent. Ma première vidéo a fait 54k vues et j’ai eu une centaine de téléchargements dans la semaine. »', 'Lucas', ''],
       ['« Ma routine, c’est de filtrer par marché, de regarder les vidéos repérées dans leurs premières heures, puis les hooks. Comme ça, je vois un format avant qu’il soit saturé. »', 'Eric', '']
     ];
@@ -160,7 +160,7 @@ export default class LP extends DCLogic {
     const open = st.open === undefined ? 0 : st.open;
     const faqData = [
       ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.'],
-      ['Je débute, est-ce que c’est pour moi ?', 'Oui. Tu choisis un marché et une niche, Swarm te montre les apps et les formats qui y explosent en ce moment, et les créateurs qui les portent. Pas besoin de savoir coder.'],
+      ['Je débute, est-ce que c’est pour moi ?', 'Oui. Tu choisis un marché et une niche, Kopycat te montre les apps et les formats qui y explosent en ce moment, et les créateurs qui les portent. Pas besoin de savoir coder.'],
       ['C’est légal de copier une app ?', 'Copier une niche, un modèle, une stratégie de contenu : oui, tout le marché le fait. Copier une marque ou du code : non, et on ne t’y aide pas.'],
       ['Les données sont à jour ?', 'Les comptes sont relus en continu, et une vidéo qui explose est repérée dès ses premières heures.'],
       ['Y a-t-il une limite d’utilisation ?', 'Non. Avec Pro, tu as toutes les apps, tous les marchés, toutes les fiches et toutes les vidéos, sans limite.'],
@@ -322,7 +322,7 @@ export default class LP extends DCLogic {
                 $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
               ),
               $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -0.03em; color: #0E0F12;" },
-                "swarm"
+                "kopycat"
               )
             ),
             $h("nav", { "aria-label": "Principal", "style": "display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;" },
@@ -467,7 +467,7 @@ export default class LP extends DCLogic {
           $h("div", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 56%; width: 1200px; height: 600px; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent); pointer-events: none;" }),
           $h("div", { "style": "position: relative; max-width: 1160px; margin: 0 auto; padding: 10px; border-radius: 36px; background: linear-gradient(180deg, #1C2230 0%, #0B0E15 100%); box-shadow: 0 2px 4px rgba(16,24,40,0.10), 0 50px 110px rgba(16,24,40,0.28), inset 0 1px 0 rgba(255,255,255,0.12); animation: lp-blurIn 1s ease-out both; animation-delay: 0.7s;" },
             $h("div", { "data-film": "", "style": "position: relative; aspect-ratio: 16 / 9; border-radius: 27px; overflow: hidden; background: #05070C;" },
-              $h("video", { "src": "/media/film/swarm-film.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "autoplay": $v.filmOn, "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "auto", "aria-label": "Film de présentation de Swarm, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
+              $h("video", { "src": "/media/film/swarm-film.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "autoplay": $v.filmOn, "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "auto", "aria-label": "Film de présentation de Kopycat, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
               $h("button", { "type": "button", "onClick": $v.toggleSound, "aria-pressed": $v.soundOn, "style": "position: absolute; top: 22px; right: 22px; display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 18px 0 14px; border: 0; border-radius: 999px; background: rgba(14,15,18,0.45); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 500; cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
                 $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M4 9h4l5-4v14l-5-4H4z", "fill": "#FFFFFF" }),
@@ -607,7 +607,7 @@ export default class LP extends DCLogic {
                       )
                     ),
                     $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; background: #F4F5F7; border-radius: 8px; padding: 4px 14px; font-size: 12px; color: #5F656E;" },
-                      "swarm.app/apps/astra-ai"
+                      "kopycat.app/apps/astra-ai"
                     ),
                     $h("span", { "style": "width: 26px;" })
                   ),
@@ -991,7 +991,7 @@ export default class LP extends DCLogic {
                     $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
                   ),
                   $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: #FFFFFF;" },
-                    "swarm"
+                    "kopycat"
                   )
                 ),
                 $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.6; color: #9AA3B2;" },
@@ -1015,7 +1015,7 @@ export default class LP extends DCLogic {
             ),
             $h("div", { "style": "margin: 0 72px; border-top: 1px solid rgba(255,255,255,0.08); padding: 22px 0 30px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 14px; color: #8A93A3;" },
               $h("span", null,
-                "© 2026 Swarm"
+                "© 2026 Kopycat"
               ),
               $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #8A93A3;" },
                 "Spot it. Copy it. Launch it."

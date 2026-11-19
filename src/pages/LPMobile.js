@@ -110,11 +110,11 @@ export default class LPMobile extends DCLogic {
     // Avis de membres (donnés par le fondateur le 19/11), mot pour mot ; prénom seul ; les plus parlants d'abord.
     const briefs = [
       ['« J’ai repris un format qui tournait sur l’app d’un concurrent. Ma première vidéo a fait 54k vues et j’ai eu une centaine de téléchargements dans la semaine. »', 'Lucas', ''],
-      ['« Je n’aurais jamais testé l’Amérique du Sud. Swarm m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
+      ['« Je n’aurais jamais testé l’Amérique du Sud. Kopycat m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
       ['« Je cherchais une idée depuis des mois et je tournais en rond. J’ai choisi les États-Unis, la niche beauté, et je suis tombé sur une app qui faisait beaucoup de vues par vidéo. Personne ne la faisait encore en français, donc j’ai foncé. »', 'Mattheo', ''],
       ['« Ce qui m’a surpris, c’est le nombre de comptes derrière une seule app. Astra AI tourne avec 200 comptes actifs alors que j’en imaginais vingt. Ça m’a fait revoir tout mon plan de recrutement. »', 'Lucien', ''],
       ['« Ma routine, c’est de filtrer par marché, de regarder les vidéos repérées dans leurs premières heures, puis les hooks. Comme ça, je vois un format avant qu’il soit saturé. »', 'Eric', ''],
-      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Swarm 30 minutes le matin et je sais ce qui marche. »', 'Luis', ''],
+      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Kopycat 30 minutes le matin et je sais ce qui marche. »', 'Luis', ''],
       ['« Si t’hésites, prends un mois et regarde juste les apps qui explosent dans ton pays. Tu vas voir qu’il y a de la place partout. »', 'Elio', ''],
       ['« Le gain de temps et d’argent est massif, le produit est top. »', 'Dimitri', ''],
       ['« C’est juste génial, merci, on voit tout. »', 'David', '']
@@ -123,7 +123,7 @@ export default class LPMobile extends DCLogic {
     const openQ = st.open === undefined ? 0 : st.open;
     const faqData = [
       ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.'],
-      ['Je débute, est-ce que c’est pour moi ?', 'Oui. Tu choisis un marché et une niche, Swarm te montre les apps et les formats qui y explosent en ce moment, et les créateurs qui les portent. Pas besoin de savoir coder.'],
+      ['Je débute, est-ce que c’est pour moi ?', 'Oui. Tu choisis un marché et une niche, Kopycat te montre les apps et les formats qui y explosent en ce moment, et les créateurs qui les portent. Pas besoin de savoir coder.'],
       ['C’est légal de copier une app ?', 'Copier une niche, un modèle, une stratégie de contenu : oui, tout le marché le fait. Copier une marque ou du code : non, et on ne t’y aide pas.'],
       ['Les données sont à jour ?', 'Les comptes sont relus en continu, et une vidéo qui explose est repérée dès ses premières heures.'],
       ['Y a-t-il une limite d’utilisation ?', 'Non. Avec Pro, tu as toutes les apps, tous les marchés, toutes les fiches et toutes les vidéos, sans limite.'],
@@ -254,7 +254,7 @@ export default class LPMobile extends DCLogic {
               )
             ] : null,
             $h("div", { "style": "display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 6px 0 14px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.64); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.10), inset 0 1px 0 #FFFFFF;" },
-              $h("a", { "href": "#top", "aria-label": "Swarm, haut de page", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
+              $h("a", { "href": "#top", "aria-label": "Kopycat, haut de page", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
                 $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
                   $h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
@@ -265,7 +265,7 @@ export default class LPMobile extends DCLogic {
                   $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
                 ),
                 $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.03em;" },
-                  "swarm"
+                  "kopycat"
                 )
               ),
               $h("a", { "href": "/connexion", "class": "tap", "style": "display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
@@ -347,7 +347,7 @@ export default class LPMobile extends DCLogic {
           $h("section", { "aria-label": "Vidéo de présentation", "style": "position: relative; padding: 32px 16px 0;" },
             $h("div", { "style": "position: relative; padding: 6px; border-radius: 28px; background: linear-gradient(180deg, #1C2230 0%, #0B0E15 100%); box-shadow: 0 2px 4px rgba(16,24,40,0.10), 0 30px 70px rgba(16,24,40,0.26), inset 0 1px 0 rgba(255,255,255,0.12); animation: lpm-blurIn 1s ease-out both; animation-delay: 0.55s;" },
               $h("div", { "data-film": "", "style": "position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #05070C;" },
-                $h("video", { "src": "/media/film/swarm-film-720.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "autoplay": $v.filmOn, "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "auto", "aria-label": "Film de présentation de Swarm, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
+                $h("video", { "src": "/media/film/swarm-film-720.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "autoplay": $v.filmOn, "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "auto", "aria-label": "Film de présentation de Kopycat, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
                 $h("button", { "type": "button", "onClick": $v.toggleSound, "aria-pressed": $v.soundOn, "style": "position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border: 0; border-radius: 999px; background: rgba(14,15,18,0.45); color: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
                   $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M4 9h4l5-4v14l-5-4H4z", "fill": "#FFFFFF" }),
@@ -408,7 +408,7 @@ export default class LPMobile extends DCLogic {
                 "Plus de ", $t($v.rs?.apps), " apps et ", $t($v.rs?.accounts), " comptes suivis en continu sur TikTok et Instagram, sur tous les marchés. Choisis un marché, une niche, et vois ce qui y explose."
               )
             ),
-            $h("div", { "class": "snap", "role": "list", "aria-label": "Ce que tu vois dans Swarm", "style": "margin-top: 12px; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; padding: 0 20px 8px; scrollbar-width: none;" },
+            $h("div", { "class": "snap", "role": "list", "aria-label": "Ce que tu vois dans Kopycat", "style": "margin-top: 12px; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; padding: 0 20px 8px; scrollbar-width: none;" },
               $h("article", { "role": "listitem", "style": "flex: 0 0 84%; scroll-snap-align: start; border-radius: 24px; background: #FFFFFF; border: 1px solid #E6E6EA; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 16px 40px rgba(16,24,40,0.06); overflow: hidden; display: flex; flex-direction: column;" },
                 $h("div", { "aria-hidden": "true", "style": "height: 224px; box-sizing: border-box; padding: 16px; background: linear-gradient(180deg, #F4F7FC, #FFFFFF); display: flex; flex-direction: column; gap: 8px;" },
                   $h("span", { "style": "align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #0E0F12; color: #FFFFFF; font-size: 11px; font-weight: 600;" },
@@ -721,7 +721,7 @@ export default class LPMobile extends DCLogic {
                   $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
                 ),
                 $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: #FFFFFF;" },
-                  "swarm"
+                  "kopycat"
                 )
               ),
               $h("p", { "style": "margin: 0; font-size: 15px; line-height: 1.55; color: #9AA3B2;" },
@@ -758,7 +758,7 @@ export default class LPMobile extends DCLogic {
             ),
             $h("div", { "style": "margin-top: auto; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; color: #8A93A3;" },
               $h("span", null,
-                "© 2026 Swarm"
+                "© 2026 Kopycat"
               ),
               $h("span", { "style": "font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em;" },
                 "Spot it. Copy it. Launch it."
@@ -781,7 +781,7 @@ export default class LPMobile extends DCLogic {
                     $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
                   ),
                   $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.03em; color: #0E0F12;" },
-                    "swarm"
+                    "kopycat"
                   )
                 ),
                 $h("button", { "type": "button", "class": "tap", "onClick": $v.closeMenu, "aria-label": "Fermer le menu", "style": "width: 44px; height: 44px; border: 0; border-radius: 50%; background: #F1F3F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" },

@@ -60,7 +60,7 @@ export default class Connexion extends DCLogic {
           $h("div", { "style": "position: absolute; right: -170px; top: -190px; width: 540px; height: 540px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.40), transparent); animation: sw-drift 16s ease-in-out infinite;" }),
           $h("div", { "style": "position: absolute; left: -220px; bottom: -240px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent);" })
         ),
-        $h("a", { "class": "sw-logo", "href": "/", "aria-label": "Swarm, page d'accueil", "style": "flex-shrink: 0;" },
+        $h("a", { "class": "sw-logo", "href": "/", "aria-label": "Kopycat, page d'accueil", "style": "flex-shrink: 0;" },
           $h("svg", { "class": "sw-logo-mark on-dark", "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "width: 28px; height: 28px;" },
             $h("circle", { "class": "d-a", "cx": "5", "cy": "8", "r": "2.3" }),
             $h("circle", { "class": "d-a", "cx": "11", "cy": "5", "r": "2.3" }),
@@ -71,7 +71,7 @@ export default class Connexion extends DCLogic {
             $h("circle", { "class": "d-b", "cx": "11", "cy": "20", "r": "2.3" })
           ),
           $h("span", { "class": "sw-wordmark", "style": "font-size: 24px;" },
-            "swarm"
+            "kopycat"
           )
         ),
         $h("div", { "class": "auth-card", "style": "flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;" },
@@ -133,7 +133,7 @@ export default class Connexion extends DCLogic {
               )
             )
           ),
-          $h("section", { "class": "auth-side", "aria-label": "Ce que suit Swarm", "style": "position: relative; min-height: 0; overflow: hidden; border-radius: 24px; background: var(--ground); border: 1px solid var(--line); padding: clamp(24px, 5vh, 56px) clamp(28px, 4vw, 56px); display: flex; flex-direction: column; justify-content: center; gap: clamp(16px, 3.4vh, 36px);" },
+          $h("section", { "class": "auth-side", "aria-label": "Ce que suit Kopycat", "style": "position: relative; min-height: 0; overflow: hidden; border-radius: 24px; background: var(--ground); border: 1px solid var(--line); padding: clamp(24px, 5vh, 56px) clamp(28px, 4vw, 56px); display: flex; flex-direction: column; justify-content: center; gap: clamp(16px, 3.4vh, 36px);" },
             $h("div", { "aria-hidden": "true", "class": "sw-dots-bg", "style": "position: absolute; inset: 0; -webkit-mask-image: radial-gradient(80% 70% at 70% 20%, #000, transparent); mask-image: radial-gradient(80% 70% at 70% 20%, #000, transparent);" }),
             $h("div", { "aria-hidden": "true", "style": "position: absolute; right: -180px; top: -200px; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.30), transparent); animation: sw-drift 16s ease-in-out infinite;" }),
             $h("h2", { "class": "sw-enter", "style": "position: relative; margin: 0; max-width: 560px; font-family: var(--font-display); font-size: clamp(34px, 5.4vh, 54px); line-height: 1.04; font-weight: 700; letter-spacing: -0.05em; color: var(--ink);" },

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Inscription · Swarm</title>
+<title>Inscription · Kopycat</title>
 <script src="./support.js"></script>
 <link rel="stylesheet" href="ds/swarm/tokens.css">
 <link rel="stylesheet" href="ds/swarm/components/bundle.css">
@@ -49,7 +49,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </helmet>
 <div class="sw sw-ground auth-root" style="position: relative; isolation: isolate; height: 100vh; height: 100dvh; overflow: hidden; box-sizing: border-box; padding: clamp(16px, 3vh, 32px) 24px; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vh, 24px); color: var(--ink); font-family: var(--font-body);">
 <div aria-hidden="true" class="auth-bg" style="position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: linear-gradient(180deg, #0A1A35 0%, #071329 46%, #05070C 100%);"><div class="sw-dots-bg" style="position: absolute; inset: 0; -webkit-mask-image: radial-gradient(95% 60% at 75% 8%, #000, transparent); mask-image: radial-gradient(95% 60% at 75% 8%, #000, transparent);"></div><div style="position: absolute; right: -170px; top: -190px; width: 540px; height: 540px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.40), transparent); animation: sw-drift 16s ease-in-out infinite;"></div><div style="position: absolute; left: -220px; bottom: -240px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent);"></div></div>
-<a class="sw-logo" href="LP.dc.html" aria-label="Swarm, page d'accueil" style="flex-shrink: 0;"><svg class="sw-logo-mark on-dark" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px;"><circle class="d-a" cx="5" cy="8" r="2.3"></circle><circle class="d-a" cx="11" cy="5" r="2.3"></circle><circle class="d-a" cx="17" cy="8" r="2.3"></circle><circle class="d-b" cx="8" cy="14" r="2.3"></circle><circle class="d-b" cx="14" cy="13" r="2.3"></circle><circle class="d-b" cx="19" cy="17" r="2.3"></circle><circle class="d-b" cx="11" cy="20" r="2.3"></circle></svg><span class="sw-wordmark" style="font-size: 24px;">swarm</span></a>
+<a class="sw-logo" href="LP.dc.html" aria-label="Kopycat, page d'accueil" style="flex-shrink: 0;"><svg class="sw-logo-mark on-dark" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px;"><circle class="d-a" cx="5" cy="8" r="2.3"></circle><circle class="d-a" cx="11" cy="5" r="2.3"></circle><circle class="d-a" cx="17" cy="8" r="2.3"></circle><circle class="d-b" cx="8" cy="14" r="2.3"></circle><circle class="d-b" cx="14" cy="13" r="2.3"></circle><circle class="d-b" cx="19" cy="17" r="2.3"></circle><circle class="d-b" cx="11" cy="20" r="2.3"></circle></svg><span class="sw-wordmark" style="font-size: 24px;">kopycat</span></a>
 <div class="auth-card" style="flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;">
 <section class="auth-form" style="min-height: 0; display: flex; align-items: flex-start; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;">
 <form onSubmit="{{submit}}" aria-labelledby="t-signup" style="width: 100%; max-width: 400px; margin: auto 0; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);">
@@ -94,8 +94,8 @@ class Component extends DCLogic {
     // tout avis qui n'y est pas mot pour mot.
     const avis = [
       ['« J’ai repris un format qui tournait sur l’app d’un concurrent. Ma première vidéo a fait 54k vues et j’ai eu une centaine de téléchargements dans la semaine. »', 'Lucas', ''],
-      ['« Je n’aurais jamais testé l’Amérique du Sud. Swarm m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
-      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Swarm 30 minutes le matin et je sais ce qui marche. »', 'Luis', '']
+      ['« Je n’aurais jamais testé l’Amérique du Sud. Kopycat m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
+      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Kopycat 30 minutes le matin et je sais ce qui marche. »', 'Luis', '']
     ].map((a, i) => ({ q: a[0], name: a[1], role: a[2], cls: (i === 1 ? 'is-featured ' : '') + (i === 2 ? 'auth-x2' : i === 1 ? 'auth-x1' : ''), delay: (0.2 + i * 0.12).toFixed(2) + 's' }));
     const q = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '').trim().slice(0, 80) : '';
     const st = this.state || {};

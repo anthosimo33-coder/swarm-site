@@ -1,4 +1,4 @@
-# Écrit les 3 pages légales statiques de Swarm dans public/ (servies en /cgv, /confidentialite, /mentions-legales).
+# Écrit les 3 pages légales statiques de Kopycat dans public/ (servies en /cgv, /confidentialite, /mentions-legales).
 # Usage : python3 scripts/legal-pages.py public
 # Société d'après le Kbis du 17/11/2026. À ajouter quand ils existent : l'e-mail de contact (mentions légales, CGV,
 # confidentialité) et le médiateur de la consommation (CGV, article 10).
@@ -13,7 +13,7 @@ def page(slug, title, intro, body):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title} · Swarm</title>
+<title>{title} · Kopycat</title>
 <meta name="description" content="{intro}">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,7 +46,7 @@ def page(slug, title, intro, body):
 </head>
 <body>
 <header>
-  <a class="logo" href="/"><img src="/favicon.svg" alt="">swarm</a>
+  <a class="logo" href="/"><img src="/favicon.svg" alt="">kopycat</a>
   <nav>{"".join(f'<a href="/{s}"' + (' aria-current="page"' if s == slug else '') + f'>{t}</a>' for s, t in [("cgv", "CGV"), ("confidentialite", "Confidentialité"), ("mentions-legales", "Mentions légales")])}</nav>
 </header>
 <main>
@@ -56,7 +56,7 @@ def page(slug, title, intro, body):
 {body}
 </main>
 <footer>
-  <span>© 2026 JARVIA STUDIO · Swarm</span>
+  <span>© 2026 JARVIA STUDIO · Kopycat</span>
   <a href="/">Accueil</a><a href="/tarifs">Tarifs</a><a href="/cgv">CGV</a><a href="/confidentialite">Confidentialité</a><a href="/mentions-legales">Mentions légales</a>
 </footer>
 </body>
@@ -64,9 +64,9 @@ def page(slug, title, intro, body):
 """
 
 mentions = page("mentions-legales", "Mentions légales",
-  "Qui édite Swarm, qui l’héberge, et comment nous joindre.", f"""
+  "Qui édite Kopycat, qui l’héberge, et comment nous joindre.", f"""
 <h2>Éditeur</h2>
-<p>Le site et le service Swarm sont édités par {SOC}.</p>
+<p>Le site et le service Kopycat sont édités par {SOC}.</p>
 <p>Numéro de TVA intracommunautaire : FR93132937848.</p>
 <p>Directeur de la publication : Anthony Simonet, président de JARVIA STUDIO.</p>
 
@@ -78,26 +78,26 @@ mentions = page("mentions-legales", "Mentions légales",
 <p>Les données du service sont hébergées par Convex, Inc. (États-Unis), sur des serveurs situés dans l’Union européenne (Irlande).</p>
 
 <h2>Propriété intellectuelle</h2>
-<p>La marque Swarm, le site, son interface, ses textes et ses classements sont la propriété de JARVIA STUDIO. Toute reproduction ou extraction, même partielle, sans autorisation écrite est interdite.</p>
-<p>Les noms, logos et icônes des applications, ainsi que les vidéos, miniatures, pseudos et photos de profil des comptes cités, restent la propriété de leurs titulaires. Swarm les montre pour informer sur les tendances publiques de TikTok et Instagram ; il ne revendique aucun droit sur eux et n’est affilié à aucune de ces applications ni à TikTok ou Instagram.</p>
+<p>La marque Kopycat, le site, son interface, ses textes et ses classements sont la propriété de JARVIA STUDIO. Toute reproduction ou extraction, même partielle, sans autorisation écrite est interdite.</p>
+<p>Les noms, logos et icônes des applications, ainsi que les vidéos, miniatures, pseudos et photos de profil des comptes cités, restent la propriété de leurs titulaires. Kopycat les montre pour informer sur les tendances publiques de TikTok et Instagram ; il ne revendique aucun droit sur eux et n’est affilié à aucune de ces applications ni à TikTok ou Instagram.</p>
 
 <h2>Signaler un contenu</h2>
 <p>Un titulaire de droits ou un créateur qui souhaite qu’un contenu le concernant soit retiré peut l’écrire à l’adresse de contact ci-dessus, en indiquant le lien de la page. La demande est traitée dans les meilleurs délais.</p>
 """)
 
 cgv = page("cgv", "Conditions générales de vente",
-  "Les règles de l’abonnement Swarm Pro : ce qu’il comprend, son prix, sa durée et comment l’arrêter.", f"""
+  "Les règles de l’abonnement Kopycat Pro : ce qu’il comprend, son prix, sa durée et comment l’arrêter.", f"""
 <h2>1. Objet</h2>
-<p>Les présentes conditions générales de vente (CGV) s’appliquent à tout abonnement au service Swarm souscrit sur le site par une personne physique ou morale (le « Membre »), auprès de {SOC} (« JARVIA STUDIO »). Souscrire un abonnement vaut acceptation des CGV en vigueur à ce moment.</p>
+<p>Les présentes conditions générales de vente (CGV) s’appliquent à tout abonnement au service Kopycat souscrit sur le site par une personne physique ou morale (le « Membre »), auprès de {SOC} (« JARVIA STUDIO »). Souscrire un abonnement vaut acceptation des CGV en vigueur à ce moment.</p>
 
 <h2>2. Le service</h2>
-<p>Swarm est un service en ligne qui repère les applications, les formats de vidéos et les créateurs qui font des vues sur TikTok et Instagram, à partir d’informations publiques, et les présente par marché, par niche et dans le temps. L’abonnement Swarm Pro donne accès à l’ensemble des apps, marchés, fiches et vidéos du service, pendant toute la durée de l’abonnement.</p>
-<p>Swarm est un outil d’information. Il ne garantit aucun résultat : vues, téléchargements ou revenus dépendent de ce que chaque Membre en fait. Les chiffres affichés sont des relevés de sources publiques et peuvent comporter des écarts.</p>
+<p>Kopycat est un service en ligne qui repère les applications, les formats de vidéos et les créateurs qui font des vues sur TikTok et Instagram, à partir d’informations publiques, et les présente par marché, par niche et dans le temps. L’abonnement Kopycat Pro donne accès à l’ensemble des apps, marchés, fiches et vidéos du service, pendant toute la durée de l’abonnement.</p>
+<p>Kopycat est un outil d’information. Il ne garantit aucun résultat : vues, téléchargements ou revenus dépendent de ce que chaque Membre en fait. Les chiffres affichés sont des relevés de sources publiques et peuvent comporter des écarts.</p>
 
 <h2>3. Prix</h2>
 <ul>
-<li>Swarm Pro mensuel : 29,99 € TTC par mois.</li>
-<li>Swarm Pro annuel : 179,88 € TTC par an.</li>
+<li>Kopycat Pro mensuel : 29,99 € TTC par mois.</li>
+<li>Kopycat Pro annuel : 179,88 € TTC par an.</li>
 </ul>
 <p>Les prix sont indiqués en euros, toutes taxes comprises (TVA française de 20 % incluse). JARVIA STUDIO peut modifier ses prix ; un nouveau prix ne s’applique qu’à la période d’abonnement suivante, après information du Membre.</p>
 
@@ -110,13 +110,13 @@ cgv = page("cgv", "Conditions générales de vente",
 
 <h2>6. Droit de rétractation</h2>
 <p>Le Membre consommateur dispose d’un délai de 14 jours à compter de la souscription pour se rétracter, sans avoir à se justifier (article L221-18 du Code de la consommation), en l’écrivant à JARVIA STUDIO à l’adresse figurant dans les <a href="/mentions-legales#contact">mentions légales</a>. Il est alors remboursé dans les 14 jours, par le même moyen de paiement.</p>
-<p>Le service étant fourni immédiatement, le Membre qui demande, lors de la souscription, à accéder à Swarm Pro sans attendre la fin de ce délai, et qui renonce expressément à son droit de rétractation, perd ce droit dès que l’accès lui est ouvert (article L221-28 du Code de la consommation).</p>
+<p>Le service étant fourni immédiatement, le Membre qui demande, lors de la souscription, à accéder à Kopycat Pro sans attendre la fin de ce délai, et qui renonce expressément à son droit de rétractation, perd ce droit dès que l’accès lui est ouvert (article L221-28 du Code de la consommation).</p>
 
 <h2>7. Utilisation du service</h2>
-<p>Le compte est personnel. Il est interdit de partager ses accès, de revendre ou de republier tout ou partie du contenu de Swarm, ou d’en extraire les données de manière automatisée. En cas de manquement, JARVIA STUDIO peut suspendre ou fermer le compte après en avoir informé le Membre.</p>
+<p>Le compte est personnel. Il est interdit de partager ses accès, de revendre ou de republier tout ou partie du contenu de Kopycat, ou d’en extraire les données de manière automatisée. En cas de manquement, JARVIA STUDIO peut suspendre ou fermer le compte après en avoir informé le Membre.</p>
 
 <h2>8. Disponibilité et responsabilité</h2>
-<p>JARVIA STUDIO fait ses meilleurs efforts pour que Swarm soit accessible en permanence et que ses données soient à jour, sans pouvoir le garantir : des interruptions de maintenance ou des incidents techniques peuvent survenir. Sa responsabilité ne peut être engagée pour un dommage indirect, ni pour les décisions prises par le Membre à partir des informations du service.</p>
+<p>JARVIA STUDIO fait ses meilleurs efforts pour que Kopycat soit accessible en permanence et que ses données soient à jour, sans pouvoir le garantir : des interruptions de maintenance ou des incidents techniques peuvent survenir. Sa responsabilité ne peut être engagée pour un dommage indirect, ni pour les décisions prises par le Membre à partir des informations du service.</p>
 
 <h2>9. Données personnelles</h2>
 <p>Les données du Membre sont traitées comme décrit dans la <a href="/confidentialite">politique de confidentialité</a>.</p>
@@ -132,22 +132,22 @@ cgv = page("cgv", "Conditions générales de vente",
 """)
 
 conf = page("confidentialite", "Politique de confidentialité",
-  "Les données que Swarm utilise, pourquoi, avec qui, combien de temps, et vos droits.", f"""
+  "Les données que Kopycat utilise, pourquoi, avec qui, combien de temps, et vos droits.", f"""
 <h2>Responsable du traitement</h2>
 <p>Le responsable du traitement est {SOC}. Pour toute question ou demande sur vos données, écrivez à l’adresse figurant dans les <a href="/mentions-legales#contact">mentions légales</a>.</p>
 
 <h2>Les données de votre compte</h2>
 <ul>
-<li><strong>Ce que nous gardons</strong> : votre adresse e-mail ; votre mot de passe, sous une forme chiffrée que nous ne pouvons pas relire ; ce que vous gardez dans Swarm (apps suivies, dossiers, alertes) ; et, quand vous vous abonnez, les informations de votre abonnement et de vos factures. Si vous vous connectez avec Google, nous recevons votre adresse e-mail Google.</li>
+<li><strong>Ce que nous gardons</strong> : votre adresse e-mail ; votre mot de passe, sous une forme chiffrée que nous ne pouvons pas relire ; ce que vous gardez dans Kopycat (apps suivies, dossiers, alertes) ; et, quand vous vous abonnez, les informations de votre abonnement et de vos factures. Si vous vous connectez avec Google, nous recevons votre adresse e-mail Google.</li>
 <li><strong>Pourquoi</strong> : créer et sécuriser votre compte, vous donner accès au service et à votre abonnement (exécution du contrat) ; tenir la comptabilité (obligation légale) ; prévenir les abus (intérêt légitime).</li>
 <li><strong>Combien de temps</strong> : tant que votre compte existe ; il est supprimé, avec ce que vous y gardez, quand vous en faites la demande. Les factures sont conservées 10 ans, comme l’exige la loi.</li>
 <li><strong>Paiement</strong> : vos données de carte sont traitées directement par notre prestataire de paiement ; nous n’y avons jamais accès.</li>
 </ul>
 
 <h2>Les données des créateurs affichés</h2>
-<p>Swarm montre des informations publiques de comptes TikTok et Instagram qui parlent d’applications : pseudo, photo de profil, biographie, vidéos publiques et leurs miniatures, nombres de vues et d’abonnés. Elles sont relevées sur les pages publiques de ces réseaux, pour informer sur les tendances (intérêt légitime de JARVIA STUDIO et de ses Membres).</p>
+<p>Kopycat montre des informations publiques de comptes TikTok et Instagram qui parlent d’applications : pseudo, photo de profil, biographie, vidéos publiques et leurs miniatures, nombres de vues et d’abonnés. Elles sont relevées sur les pages publiques de ces réseaux, pour informer sur les tendances (intérêt légitime de JARVIA STUDIO et de ses Membres).</p>
 <p>Certaines informations sont estimées automatiquement à partir de ces contenus publics, notamment le type de contenu d’une vidéo, le texte affiché à l’écran, la langue et le genre apparent de la personne qui se montre dans les vidéos. Ces estimations peuvent être inexactes.</p>
-<p>Un créateur peut s’opposer à ce traitement et demander le retrait de son compte de Swarm en écrivant à l’adresse de contact. Les informations d’un compte qui n’est plus public ne sont plus mises à jour.</p>
+<p>Un créateur peut s’opposer à ce traitement et demander le retrait de son compte de Kopycat en écrivant à l’adresse de contact. Les informations d’un compte qui n’est plus public ne sont plus mises à jour.</p>
 
 <h2>Prestataires</h2>
 <p>Nous faisons appel à des prestataires qui traitent des données pour notre compte, et pour ce seul usage :</p>
@@ -161,7 +161,7 @@ conf = page("confidentialite", "Politique de confidentialité",
 <p>Quand des données sont transférées hors de l’Union européenne, ce transfert est encadré par les garanties prévues par le RGPD, comme les clauses contractuelles types de la Commission européenne.</p>
 
 <h2>Cookies et stockage</h2>
-<p>Swarm garde votre connexion dans le stockage de votre navigateur, ce qui est indispensable au fonctionnement du service. Swarm ne dépose ni cookie publicitaire ni outil de mesure d’audience.</p>
+<p>Kopycat garde votre connexion dans le stockage de votre navigateur, ce qui est indispensable au fonctionnement du service. Kopycat ne dépose ni cookie publicitaire ni outil de mesure d’audience.</p>
 
 <h2>Vos droits</h2>
 <p>Vous pouvez à tout moment accéder à vos données, les faire rectifier ou supprimer, en limiter le traitement, vous y opposer et en demander la portabilité, en écrivant à l’adresse de contact. Vous pouvez aussi adresser une réclamation à la CNIL (<a href="https://www.cnil.fr">cnil.fr</a>).</p>

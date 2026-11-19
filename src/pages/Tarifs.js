@@ -64,7 +64,7 @@ export default class Tarifs extends DCLogic {
       ['Tous', 'les marchés, toutes les langues']
     ].map((x, i) => ({ v: x[0], l: x[1], line: i === 0 ? '0' : '1px solid #E2E4E9', pl: i === 0 ? '0px' : '28px' }));
     const faq = [
-      ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Swarm, sans palier ni option.'],
+      ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Kopycat, sans palier ni option.'],
       ['Je peux annuler quand je veux ?', 'Oui, en un clic depuis ton compte. Tu gardes l’accès jusqu’à la fin de la période déjà payée.'],
       ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.']
     ];
@@ -185,7 +185,7 @@ export default class Tarifs extends DCLogic {
                 $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
               ),
               $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -0.03em; color: #0E0F12;" },
-                "swarm"
+                "kopycat"
               )
             ),
             $h("nav", { "aria-label": "Principal", "style": "display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;" },
@@ -289,7 +289,7 @@ export default class Tarifs extends DCLogic {
           $h("h1", { "style": "margin: 0; max-width: 1100px; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(44px, 5.6vw, 84px); line-height: 1.02; letter-spacing: -0.05em; animation: tf-blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.12s;" },
             "Un seul plan. ",
             $h("span", { "style": "color: #0B6FE0;" },
-              "Tout Swarm."
+              "Tout Kopycat."
             )
           ),
           $h("p", { "style": "margin: 0; max-width: 620px; font-size: 19px; line-height: 1.55; color: #3A3F47; animation: tf-blurIn 0.9s ease-out both; animation-delay: 0.3s;" },
@@ -308,7 +308,7 @@ export default class Tarifs extends DCLogic {
             )
           )
         ),
-        $h("section", { "id": "bf-prix", "aria-label": "Swarm Pro", "style": "position: relative; padding: 0 24px;" },
+        $h("section", { "id": "bf-prix", "aria-label": "Kopycat Pro", "style": "position: relative; padding: 0 24px;" },
           $h("div", { "style": "position: relative; max-width: 1120px; margin: 0 auto; border-radius: 32px; padding: 1.5px; overflow: hidden; box-shadow: 0 2px 4px rgba(16,24,40,0.06), 0 50px 110px rgba(11,40,90,0.22); animation: tf-riseIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.55s;" },
             $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; width: 140%; aspect-ratio: 1 / 1; background: conic-gradient(from 0deg, rgba(11,111,224,0.18) 0deg, rgba(11,111,224,0.18) 230deg, #4C9AFF 300deg, #FFFFFF 335deg, rgba(11,111,224,0.18) 360deg); animation: tf-spinC 6s linear infinite;" }),
             $h("div", { "style": "position: relative; border-radius: 30.5px; overflow: hidden; background: #FFFFFF; display: flex; flex-wrap: wrap;" },
@@ -327,7 +327,7 @@ export default class Tarifs extends DCLogic {
                       $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
                     ),
                     $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.03em;" },
-                      "Swarm Pro"
+                      "Kopycat Pro"
                     )
                   ),
                   $h("span", { "style": "font-size: 12px; font-weight: 700; color: #FFFFFF; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); border-radius: 999px; padding: 5px 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);" },
@@ -556,7 +556,7 @@ export default class Tarifs extends DCLogic {
                     $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
                   ),
                   $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: #FFFFFF;" },
-                    "swarm"
+                    "kopycat"
                   )
                 ),
                 $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.6; color: #9AA3B2;" },
@@ -580,7 +580,7 @@ export default class Tarifs extends DCLogic {
             ),
             $h("div", { "style": "margin: 0 72px; border-top: 1px solid rgba(255,255,255,0.08); padding: 22px 0 30px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 14px; color: #8A93A3;" },
               $h("span", null,
-                "© 2026 Swarm"
+                "© 2026 Kopycat"
               ),
               $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #8A93A3;" },
                 "Spot it. Copy it. Launch it."

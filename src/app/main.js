@@ -244,7 +244,7 @@ function App() {
   useEffect(() => {
     if (!screen) return;
     const d = screen.key ? board(screen.key).value : null;
-    document.title = `${(d && (d.name || (d.handle && `@${d.handle}`) || d.label)) || screen.route.title} · Swarm`;
+    document.title = `${(d && (d.name || (d.handle && `@${d.handle}`) || d.label)) || screen.route.title} · Kopycat`;
     const id = decodeURIComponent(window.location.hash.slice(1));
     const target = id && document.getElementById(id);
     if (target) target.scrollIntoView();

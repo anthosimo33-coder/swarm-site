@@ -8,8 +8,8 @@ export default class Inscription extends DCLogic {
     // tout avis qui n'y est pas mot pour mot.
     const avis = [
       ['« J’ai repris un format qui tournait sur l’app d’un concurrent. Ma première vidéo a fait 54k vues et j’ai eu une centaine de téléchargements dans la semaine. »', 'Lucas', ''],
-      ['« Je n’aurais jamais testé l’Amérique du Sud. Swarm m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
-      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Swarm 30 minutes le matin et je sais ce qui marche. »', 'Luis', '']
+      ['« Je n’aurais jamais testé l’Amérique du Sud. Kopycat m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
+      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Kopycat 30 minutes le matin et je sais ce qui marche. »', 'Luis', '']
     ].map((a, i) => ({ q: a[0], name: a[1], role: a[2], cls: (i === 1 ? 'is-featured ' : '') + (i === 2 ? 'auth-x2' : i === 1 ? 'auth-x1' : ''), delay: (0.2 + i * 0.12).toFixed(2) + 's' }));
     const q = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '').trim().slice(0, 80) : '';
     const st = this.state || {};
@@ -52,7 +52,7 @@ export default class Inscription extends DCLogic {
           $h("div", { "style": "position: absolute; right: -170px; top: -190px; width: 540px; height: 540px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.40), transparent); animation: sw-drift 16s ease-in-out infinite;" }),
           $h("div", { "style": "position: absolute; left: -220px; bottom: -240px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent);" })
         ),
-        $h("a", { "class": "sw-logo", "href": "/", "aria-label": "Swarm, page d'accueil", "style": "flex-shrink: 0;" },
+        $h("a", { "class": "sw-logo", "href": "/", "aria-label": "Kopycat, page d'accueil", "style": "flex-shrink: 0;" },
           $h("svg", { "class": "sw-logo-mark on-dark", "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "width: 28px; height: 28px;" },
             $h("circle", { "class": "d-a", "cx": "5", "cy": "8", "r": "2.3" }),
             $h("circle", { "class": "d-a", "cx": "11", "cy": "5", "r": "2.3" }),
@@ -63,7 +63,7 @@ export default class Inscription extends DCLogic {
             $h("circle", { "class": "d-b", "cx": "11", "cy": "20", "r": "2.3" })
           ),
           $h("span", { "class": "sw-wordmark", "style": "font-size: 24px;" },
-            "swarm"
+            "kopycat"
           )
         ),
         $h("div", { "class": "auth-card", "style": "flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;" },

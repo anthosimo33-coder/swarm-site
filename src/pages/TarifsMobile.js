@@ -55,7 +55,7 @@ export default class TarifsMobile extends DCLogic {
     const k = 1 - Math.pow(1 - p, 3);
     const fmt = (x) => String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     const faq = [
-      ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Swarm, sans palier ni option.'],
+      ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Kopycat, sans palier ni option.'],
       ['Je peux annuler quand je veux ?', 'Oui, en un clic depuis ton compte. Tu gardes l’accès jusqu’à la fin de la période déjà payée.'],
       ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.']
     ];
@@ -153,7 +153,7 @@ export default class TarifsMobile extends DCLogic {
               )
             ] : null,
             $h("div", { "style": "display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 6px 0 14px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.64); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.10), inset 0 1px 0 #FFFFFF;" },
-              $h("a", { "href": "/", "aria-label": "Swarm, accueil", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
+              $h("a", { "href": "/", "aria-label": "Kopycat, accueil", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
                 $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#0B6FE0" }),
                   $h("circle", { "cx": "11", "cy": "5", "r": "2.3", "fill": "#0B6FE0" }),
@@ -164,7 +164,7 @@ export default class TarifsMobile extends DCLogic {
                   $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
                 ),
                 $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.03em;" },
-                  "swarm"
+                  "kopycat"
                 )
               ),
               $h("a", { "href": "/connexion", "class": "tap", "style": "display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 999px; color: #0E0F12; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
@@ -207,7 +207,7 @@ export default class TarifsMobile extends DCLogic {
             $h("h1", { "style": "margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(36px, 11vw, 46px); line-height: 1.04; letter-spacing: -0.05em; animation: tfm-blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.1s;" },
               "Un seul plan. ",
               $h("span", { "style": "color: #0B6FE0;" },
-                "Tout Swarm."
+                "Tout Kopycat."
               )
             ),
             $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.55; color: #3A3F47; animation: tfm-blurIn 0.9s ease-out both; animation-delay: 0.25s;" },
@@ -226,7 +226,7 @@ export default class TarifsMobile extends DCLogic {
               )
             )
           ),
-          $h("section", { "id": "bf-prix", "aria-label": "Swarm Pro", "style": "padding: 0 16px;" },
+          $h("section", { "id": "bf-prix", "aria-label": "Kopycat Pro", "style": "padding: 0 16px;" },
             $h("div", { "style": "position: relative; border-radius: 28px; padding: 1.5px; overflow: hidden; box-shadow: 0 2px 4px rgba(16,24,40,0.06), 0 40px 90px rgba(11,40,90,0.22); animation: tfm-riseIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.5s;" },
               $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; width: 260%; aspect-ratio: 1 / 1; background: conic-gradient(from 0deg, rgba(11,111,224,0.18) 0deg, rgba(11,111,224,0.18) 230deg, #4C9AFF 300deg, #FFFFFF 335deg, rgba(11,111,224,0.18) 360deg); animation: tfm-spinC 6s linear infinite;" }),
               $h("div", { "style": "position: relative; border-radius: 26.5px; overflow: hidden; background: #FFFFFF;" },
@@ -244,7 +244,7 @@ export default class TarifsMobile extends DCLogic {
                         $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
                       ),
                       $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.03em;" },
-                        "Swarm Pro"
+                        "Kopycat Pro"
                       )
                     ),
                     $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FFFFFF; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); border-radius: 999px; padding: 4px 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);" },
@@ -417,7 +417,7 @@ export default class TarifsMobile extends DCLogic {
                   $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#FFFFFF" })
                 ),
                 $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: #FFFFFF;" },
-                  "swarm"
+                  "kopycat"
                 )
               ),
               $h("p", { "style": "margin: 0; font-size: 15px; line-height: 1.55; color: #9AA3B2;" },
@@ -454,7 +454,7 @@ export default class TarifsMobile extends DCLogic {
             ),
             $h("div", { "style": "margin-top: auto; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; color: #8A93A3;" },
               $h("span", null,
-                "© 2026 Swarm"
+                "© 2026 Kopycat"
               ),
               $h("span", { "style": "font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em;" },
                 "Spot it. Copy it. Launch it."
@@ -477,7 +477,7 @@ export default class TarifsMobile extends DCLogic {
                     $h("circle", { "cx": "11", "cy": "20", "r": "2.3", "fill": "#0E0F12" })
                   ),
                   $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.03em; color: #0E0F12;" },
-                    "swarm"
+                    "kopycat"
                   )
                 ),
                 $h("button", { "type": "button", "class": "tap", "onClick": $v.closeMenu, "aria-label": "Fermer le menu", "style": "width: 44px; height: 44px; border: 0; border-radius: 50%; background: #F1F3F6; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;" },

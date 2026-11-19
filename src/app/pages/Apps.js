@@ -360,7 +360,7 @@ return {};
     return [
       $h("div", { "class": "sw", "style": "display: flex; flex-wrap: wrap; min-height: 1280px; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("nav", { "class": "sw-sidebar", "aria-label": "Navigation principale" },
-          $h("a", { "class": "sw-side-logo", "href": "/app", "aria-label": "Swarm, accueil" },
+          $h("a", { "class": "sw-side-logo", "href": "/app", "aria-label": "Kopycat, accueil" },
             $h("span", { "class": "sw-app-tile" },
               $h("svg", { "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("circle", { "cx": "5", "cy": "8", "r": "2.3", "fill": "#FFFFFF" }),

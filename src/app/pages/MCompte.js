@@ -80,7 +80,7 @@ export default class MCompte extends DCLogic {
                 )
               ),
               $h("span", { "style": "font-size: 13px; line-height: 1.5; color: var(--ink-faint);" },
-                "Ton compte a accès à tout Swarm : apps, formats, créateurs, alertes et dossiers."
+                "Ton compte a accès à tout Kopycat : apps, formats, créateurs, alertes et dossiers."
               )
             )
           )

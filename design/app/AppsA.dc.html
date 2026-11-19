@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Swarm, apps : le tableau</title>
+<title>Kopycat, apps : le tableau</title>
 <script src="./support.js"></script>
 <link rel="stylesheet" href="ds/swarm/tokens.css">
 <link rel="stylesheet" href="ds/swarm/components/bundle.css">
@@ -19,7 +19,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <div class="sw" style="display: flex; flex-wrap: wrap; min-height: 1280px; background: var(--surface); color: var(--ink); font-family: var(--font-body);">
 
 <nav class="sw-sidebar" aria-label="Navigation principale">
-<a class="sw-side-logo" href="Main.dc.html" aria-label="Swarm, accueil"><span class="sw-app-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span></a>
+<a class="sw-side-logo" href="Main.dc.html" aria-label="Kopycat, accueil"><span class="sw-app-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span></a>
 <button class="sw-side-item" type="button" data-cmdk="true" onClick="{{openPal}}" aria-label="Chercher" style="border: 0; background: transparent; font-family: inherit; cursor: pointer;"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Chercher</button>
 <sc-for list="{{sb}}" as="n" hint-placeholder-count="6">
 <a class="sw-side-item" href="{{n.href}}" aria-current="{{n.cur}}"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{n.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>

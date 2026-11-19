@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Swarm, tarifs</title>
+<title>Kopycat, tarifs</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -46,7 +46,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 <div style="position: relative; max-width: 1240px; margin: 0 auto; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
 <a href="LP.dc.html" style="display: flex; align-items: center; gap: 9px; text-decoration: none; height: 52px; padding: 0 20px 0 16px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;">
 <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#0B6FE0"></circle><circle cx="11" cy="5" r="2.3" fill="#0B6FE0"></circle><circle cx="17" cy="8" r="2.3" fill="#0B6FE0"></circle><circle cx="8" cy="14" r="2.3" fill="#0E0F12"></circle><circle cx="14" cy="13" r="2.3" fill="#0E0F12"></circle><circle cx="19" cy="17" r="2.3" fill="#0E0F12"></circle><circle cx="11" cy="20" r="2.3" fill="#0E0F12"></circle></svg>
-<span style="font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -0.03em; color: #0E0F12;">swarm</span>
+<span style="font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 21px; letter-spacing: -0.03em; color: #0E0F12;">kopycat</span>
 </a>
 <nav aria-label="Principal" style="display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;">
 <button type="button" class="nh" onClick="{{toggleMenu}}" aria-expanded="{{menuOpen}}" style="display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 16px; border: 0; border-radius: 999px; background: {{prodBg}}; color: #0E0F12; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer;">Produit<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style="transform: {{chev}}; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);"><path d="M3 4.5l3 3 3-3" fill="none" stroke="#0E0F12" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
@@ -79,7 +79,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 
 <section style="position: relative; padding: 88px 24px 64px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 22px;">
 <sc-if value="{{bfOn}}" hint-placeholder-val="{{true}}"><div role="timer" aria-label="Black Friday : −50 % sur l’abonnement annuel, fin dans {{bfTime}}" style="display: flex; flex-direction: column; align-items: center; animation: blurIn 0.8s ease-out both;"><span aria-hidden="true" style="position: relative; z-index: 1; margin-bottom: -1px; padding: 8px 18px 7px; border-radius: 12px 12px 0 0; background: #0B0E14; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: #FF8A4C;">BLACK FRIDAY</span><div aria-hidden="true" style="padding: 18px 30px 16px; border-radius: 22px; background-color: #07090D; background-image: radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1.5px); background-size: 7px 7px; box-shadow: 0 0 0 6px #0B0E14, 0 24px 60px rgba(11,14,20,0.35), inset 0 0 30px rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; gap: 4px;"><span style="font-family: 'Doto', 'JetBrains Mono', monospace; font-weight: 800; font-size: 56px; line-height: 1; letter-spacing: 0.02em; color: #FF9C57; text-shadow: 0 0 14px rgba(255,122,61,0.6);">-50% ANNUEL</span><span style="font-family: 'Doto', 'JetBrains Mono', monospace; font-weight: 800; font-size: 56px; line-height: 1; letter-spacing: 0.02em; color: #E9ECF2; text-shadow: 0 0 12px rgba(255,255,255,0.28); font-variant-numeric: tabular-nums;">{{bfTime}}</span></div></div></sc-if><sc-if value="{{bfOff}}" hint-placeholder-val="{{false}}"><span style="font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 0.04em; color: #3A3F47; animation: blurIn 0.8s ease-out both;"><span style="color: #0B6FE0;">[</span> TARIFS <span style="color: #0B6FE0;">]</span></span></sc-if>
-<h1 style="margin: 0; max-width: 1100px; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(44px, 5.6vw, 84px); line-height: 1.02; letter-spacing: -0.05em; animation: blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.12s;">Un seul plan. <span style="color: #0B6FE0;">Tout Swarm.</span></h1>
+<h1 style="margin: 0; max-width: 1100px; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(44px, 5.6vw, 84px); line-height: 1.02; letter-spacing: -0.05em; animation: blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.12s;">Un seul plan. <span style="color: #0B6FE0;">Tout Kopycat.</span></h1>
 <p style="margin: 0; max-width: 620px; font-size: 19px; line-height: 1.55; color: #3A3F47; animation: blurIn 0.9s ease-out both; animation-delay: 0.3s;">Les apps et les formats qui explosent en ce moment sur TikTok et Instagram, sur n’importe quel marché, et les créateurs derrière. Pour un seul prix.</p>
 <div role="group" aria-label="Facturation" style="position: relative; margin-top: 10px; display: inline-flex; padding: 5px; border-radius: 999px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 24px rgba(16,24,40,0.08); animation: blurIn 0.9s ease-out both; animation-delay: 0.45s;">
 <span aria-hidden="true" style="position: absolute; top: 5px; bottom: 5px; left: {{thumbL}}; width: 180px; border-radius: 999px; background: #0E0F12; box-shadow: 0 6px 16px rgba(14,15,18,0.25); transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);"></span>
@@ -88,7 +88,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 </div>
 </section>
 
-<section id="bf-prix" aria-label="Swarm Pro" style="position: relative; padding: 0 24px;">
+<section id="bf-prix" aria-label="Kopycat Pro" style="position: relative; padding: 0 24px;">
 <div style="position: relative; max-width: 1120px; margin: 0 auto; border-radius: 32px; padding: 1.5px; overflow: hidden; box-shadow: 0 2px 4px rgba(16,24,40,0.06), 0 50px 110px rgba(11,40,90,0.22); animation: riseIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.55s;">
 <span aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 140%; aspect-ratio: 1 / 1; background: conic-gradient(from 0deg, rgba(11,111,224,0.18) 0deg, rgba(11,111,224,0.18) 230deg, #4C9AFF 300deg, #FFFFFF 335deg, rgba(11,111,224,0.18) 360deg); animation: spinC 6s linear infinite;"></span>
 <div style="position: relative; border-radius: 30.5px; overflow: hidden; background: #FFFFFF; display: flex; flex-wrap: wrap;">
@@ -97,7 +97,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 <div aria-hidden="true" style="position: absolute; left: 100%; top: 100%; width: 820px; height: 820px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, transparent 290deg, rgba(76,154,255,0.05) 300deg, rgba(76,154,255,0.30) 360deg); animation: spinC 9s linear infinite; pointer-events: none;"></div>
 <div aria-hidden="true" style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 40px 40px; -webkit-mask-image: radial-gradient(70% 60% at 100% 100%, #000, transparent); mask-image: radial-gradient(70% 60% at 100% 100%, #000, transparent); pointer-events: none;"></div>
 <div style="position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-<span style="display: inline-flex; align-items: center; gap: 10px;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"></circle><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"></circle></svg><span style="font-family: 'Inter Tight', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.03em;">Swarm Pro</span></span>
+<span style="display: inline-flex; align-items: center; gap: 10px;"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"></circle><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"></circle></svg><span style="font-family: 'Inter Tight', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.03em;">Kopycat Pro</span></span>
 <span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); border-radius: 999px; padding: 5px 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);">Tout inclus</span>
 </div>
 <div style="position: relative; height: 122px;">
@@ -184,7 +184,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 </div>
 <div style="padding: 72px 72px 48px; display: flex; flex-wrap: wrap; gap: 48px 64px; justify-content: space-between;">
 <div style="flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 18px;">
-<a href="LP.dc.html" style="display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;"><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"></circle><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"></circle></svg><span style="font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: #FFFFFF;">swarm</span></a>
+<a href="LP.dc.html" style="display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF;"><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"></circle><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"></circle></svg><span style="font-family: 'Inter Tight', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.03em; color: #FFFFFF;">kopycat</span></a>
 <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #9AA3B2;">Les apps et les formats qui explosent sur TikTok et Instagram, et les créateurs derrière.</p>
 </div>
 <nav aria-label="Pied de page" style="flex: 1 1 600px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 40px;">
@@ -199,7 +199,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 </nav>
 </div>
 <div style="margin: 0 72px; border-top: 1px solid rgba(255,255,255,0.08); padding: 22px 0 30px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 14px; color: #8A93A3;">
-<span>© 2026 Swarm</span>
+<span>© 2026 Kopycat</span>
 <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #8A93A3;">Spot it. Copy it. Launch it.</span>
 </div>
 </div>
@@ -270,7 +270,7 @@ class Component extends DCLogic {
       ['Tous', 'les marchés, toutes les langues']
     ].map((x, i) => ({ v: x[0], l: x[1], line: i === 0 ? '0' : '1px solid #E2E4E9', pl: i === 0 ? '0px' : '28px' }));
     const faq = [
-      ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Swarm, sans palier ni option.'],
+      ['Pourquoi un seul plan ?', 'Pour que tu n’aies rien à arbitrer : Pro, c’est tout Kopycat, sans palier ni option.'],
       ['Je peux annuler quand je veux ?', 'Oui, en un clic depuis ton compte. Tu gardes l’accès jusqu’à la fin de la période déjà payée.'],
       ['Ça marche sur quels marchés ?', 'Sur tous : choisis un pays ou une langue, tu vois les apps, les formats et les créateurs qui y explosent en ce moment.']
     ];
