@@ -160,7 +160,7 @@ export default class TarifsMobile extends DCLogic {
               $h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: color 0.3s ease;` },
                 "Annuel",
                 $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 7px;" },
-                  "−33 %"
+                  "−50 %"
                 )
               )
             )
@@ -194,7 +194,7 @@ export default class TarifsMobile extends DCLogic {
                     $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; opacity: ${$t($v.oM)}; transform: ${$t($v.trM)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                       $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
                         $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
-                          "49 €"
+                          "29,99 €"
                         ),
                         $h("span", { "style": "font-size: 16px; color: #9AA3B2;" },
                           "/ mois"
@@ -207,14 +207,14 @@ export default class TarifsMobile extends DCLogic {
                     $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; opacity: ${$t($v.oY)}; transform: ${$t($v.trY)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                       $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
                         $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
-                          "32,50 €"
+                          "14,99 €"
                         ),
                         $h("span", { "style": "font-size: 16px; color: #9AA3B2;" },
                           "/ mois"
                         )
                       ),
                       $h("span", { "style": "font-size: 14px; color: #9AA3B2;" },
-                        "Facturé 390 € par an au lieu de 588 €."
+                        "Facturé 179,88 € par an au lieu de 359,88 €."
                       )
                     )
                   ),

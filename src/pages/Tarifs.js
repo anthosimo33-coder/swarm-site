@@ -100,7 +100,7 @@ export default class Tarifs extends DCLogic {
       toY: () => this.setState({ bill: 'y' }),
       oM: annual ? 0 : 1, trM: annual ? 'translateY(-12px)' : 'translateY(0)',
       oY: annual ? 1 : 0, trY: annual ? 'translateY(0)' : 'translateY(12px)',
-      lastNote: annual ? '32,50 € par mois · annulable en un clic' : '49 € par mois · annulable en un clic',
+      lastNote: annual ? '14,99 € par mois · annulable en un clic' : '29,99 € par mois · annulable en un clic',
       groups, nums, qs,
       tick: ticks[Math.floor(el / 3200) % ticks.length],
       tickO: (el % 3200) < 2900 ? 1 : 0,
@@ -235,7 +235,7 @@ export default class Tarifs extends DCLogic {
             $h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: color 0.3s ease;` },
               "Annuel",
               $h("span", { "style": "font-size: 12px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 8px;" },
-                "−33 %"
+                "−50 %"
               )
             )
           )
@@ -270,7 +270,7 @@ export default class Tarifs extends DCLogic {
                   $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; opacity: ${$t($v.oM)}; transform: ${$t($v.trM)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                     $h("span", { "style": "display: flex; align-items: baseline; gap: 10px;" },
                       $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 80px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
-                        "49 €"
+                        "29,99 €"
                       ),
                       $h("span", { "style": "font-size: 17px; color: #9AA3B2;" },
                         "/ mois"
@@ -283,14 +283,14 @@ export default class Tarifs extends DCLogic {
                   $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; opacity: ${$t($v.oY)}; transform: ${$t($v.trY)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                     $h("span", { "style": "display: flex; align-items: baseline; gap: 10px;" },
                       $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 80px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
-                        "32,50 €"
+                        "14,99 €"
                       ),
                       $h("span", { "style": "font-size: 17px; color: #9AA3B2;" },
                         "/ mois"
                       )
                     ),
                     $h("span", { "style": "font-size: 15px; color: #9AA3B2;" },
-                      "Facturé 390 € par an au lieu de 588 €."
+                      "Facturé 179,88 € par an au lieu de 359,88 €."
                     )
                   )
                 ),
