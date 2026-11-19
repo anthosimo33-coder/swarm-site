@@ -78,6 +78,15 @@ body{margin:0;background:#05070C}
 .reg-chip{appearance:none;border:0;cursor:pointer;font-family:inherit;height:34px;padding:0 12px;border-radius:999px;font-size:13px;background:rgba(255,255,255,0.04);color:var(--ink-soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1)}
 .reg-chip[aria-pressed="true"]{background:rgba(76,154,255,0.14);color:#FFFFFF;box-shadow:inset 0 0 0 1px var(--accent-edge)}
 .reg-mob .reg-pay{grid-template-columns:90px 1fr 80px}.reg-mob .reg-pay>span:last-child{display:none}
+.reg-form{display:flex;flex-direction:column;gap:12px;padding:2px 0 18px}
+.reg-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.reg-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;color:var(--ink-muted)}
+.reg-field .reg-in{width:100%}
+.reg-meter{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:2px}.reg-meter i{display:block;height:4px;border-radius:2px}
+.reg-meter-l{font-size:12px;font-weight:600;text-align:right;min-height:16px}
+.reg-note{font-size:12px;color:var(--ink-faint)}.reg-err{font-size:12px;color:#FF8A8A}
+.reg-actions{display:flex;justify-content:flex-end;gap:8px}
+.reg-mob .reg-grid2{grid-template-columns:1fr}
 .reg-legal{margin-top:auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 12px 4px;font-size:12px;color:var(--ink-faint)}
 .reg-legal a{color:var(--ink-faint);text-decoration:none}.reg-legal a:hover{color:#FFFFFF;text-decoration:underline}
 .reg-mob .reg-legal{padding:24px 4px 0;font-size:13px}
@@ -120,7 +129,8 @@ body{margin:0;background:#05070C}
 <div class="reg-card">
 <div id="reg-photo" class="reg-row" style=" {{glow.photo}}"><span class="reg-lab"><span class="reg-t">Photo</span><span class="reg-h">Ton initiale, tant que tu n’as pas mis de photo.</span></span><span class="reg-av">{{me.initiale}}</span></div>
 <div id="reg-prenom" class="reg-row" style="border-top: 1px solid var(--line); {{glow.prenom}}"><span class="reg-lab"><span class="reg-t">Prénom</span><span class="reg-h">Affiché dans l’app.</span></span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;"><input class="reg-in" type="text" value="{{nameVal}}" onInput="{{onName}}" onBlur="{{onNameBlur}}" maxlength="40" placeholder="Ton prénom" aria-label="Prénom" autocomplete="given-name"><sc-if value="{{nameSaved}}" hint-placeholder-val="{{false}}"><span class="reg-ok"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Enregistré</span></sc-if><sc-if value="{{nameErr}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: #FF8A8A;">{{nameErr}}</span></sc-if></span></div>
-<div id="reg-email" class="reg-row" style="border-top: 1px solid var(--line); {{glow.email}}"><span class="reg-lab"><span class="reg-t">E-mail</span><span class="reg-h">Pour te connecter et recevoir tes reçus.</span></span><span style="display: flex; align-items: center; gap: 12px; min-width: 0;"><span style="font-size: 14px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{me.email}}</span><sc-if value="{{me.verified}}" hint-placeholder-val="{{true}}"><span class="reg-pill reg-green"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Vérifiée</span></sc-if></span></div>
+<div id="reg-email" class="reg-row" style="border-top: 1px solid var(--line); {{glow.email}}"><span class="reg-lab"><span class="reg-t">E-mail</span><span class="reg-h">Pour te connecter et recevoir tes reçus.</span></span><span style="display: flex; align-items: center; gap: 12px; min-width: 0;"><span style="font-size: 14px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{me.email}}</span><sc-if value="{{me.verified}}" hint-placeholder-val="{{true}}"><span class="reg-pill reg-green"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Vérifiée</span></sc-if><sc-if value="{{emClosed}}" hint-placeholder-val="{{true}}"><button class="reg-btn" type="button" onClick="{{emOpen}}">Changer</button></sc-if></span></div>
+<sc-if value="{{emShown}}" hint-placeholder-val="{{false}}"><div class="reg-form"><span class="reg-grid2"><label class="reg-field"><span>Nouvel e-mail</span><input class="reg-in" type="email" autocomplete="email" value="{{emNew}}" onInput="{{onEmNew}}" placeholder="toi@exemple.fr"></label><label class="reg-field"><span>Ton mot de passe</span><input class="reg-in" type="password" autocomplete="current-password" value="{{emPw}}" onInput="{{onEmPw}}"></label></span><span class="reg-note">Tu te connecteras ensuite avec la nouvelle adresse.</span><sc-if value="{{emErr}}" hint-placeholder-val="{{false}}"><span class="reg-err" role="alert">{{emErr}}</span></sc-if><span class="reg-actions"><button class="reg-btn reg-text" type="button" onClick="{{emCancel}}">Annuler</button><button class="reg-btn reg-blue-btn" type="button" disabled="{{emOff}}" onClick="{{emGo}}">{{emLabel}}</button></span></div></sc-if>
 </div>
 <div class="reg-card reg-danger" style="margin-top: 20px;">
 <div id="reg-fermer" class="reg-row" style="{{glow.fermer}}"><span class="reg-lab"><span class="reg-t">Fermer mon compte</span><span class="reg-h">Supprime ton compte, tes dossiers, tes suivis et tes alertes.</span></span><sc-if value="{{delClosed}}" hint-placeholder-val="{{true}}"><button class="reg-btn reg-redline" type="button" onClick="{{delOpen}}">Fermer mon compte</button></sc-if></div>
@@ -129,8 +139,12 @@ body{margin:0;background:#05070C}
 </sc-if>
 
 <sc-if value="{{sec.securite}}" hint-placeholder-val="{{false}}">
-<header class="reg-head"><h2>Sécurité</h2><span>Où ta session est ouverte.</span></header>
+<header class="reg-head"><h2>Sécurité</h2><span>Comment tu te connectes, et où ta session est ouverte.</span></header>
 <div class="reg-card">
+<div id="reg-motdepasse" class="reg-row" style="{{glow.motdepasse}}"><span class="reg-lab"><span class="reg-t">Mot de passe</span><span class="reg-h">Pour te connecter avec ton e-mail.</span></span><sc-if value="{{pwClosed}}" hint-placeholder-val="{{true}}"><button class="reg-btn" type="button" onClick="{{pwOpen}}">Changer</button></sc-if></div>
+<sc-if value="{{pwShown}}" hint-placeholder-val="{{false}}"><div class="reg-form"><span class="reg-grid2"><label class="reg-field"><span>Mot de passe actuel</span><input class="reg-in" type="password" autocomplete="current-password" value="{{pwCur}}" onInput="{{onPwCur}}"></label><label class="reg-field"><span>Nouveau mot de passe</span><input class="reg-in" type="password" autocomplete="new-password" value="{{pwNew}}" onInput="{{onPwNew}}" placeholder="8 caractères minimum"><span class="reg-meter" aria-hidden="true"><sc-for list="{{meter}}" as="m" hint-placeholder-count="4"><i style="background: {{m}};"></i></sc-for></span><span class="reg-meter-l" style="color: {{meterInk}};">{{meterLabel}}</span></label></span><span class="reg-note">Tes autres appareils seront déconnectés.</span><sc-if value="{{pwErr}}" hint-placeholder-val="{{false}}"><span class="reg-err" role="alert">{{pwErr}}</span></sc-if><span class="reg-actions"><button class="reg-btn reg-text" type="button" onClick="{{pwCancel}}">Annuler</button><button class="reg-btn reg-blue-btn" type="button" disabled="{{pwOff}}" onClick="{{pwGo}}">{{pwLabel}}</button></span></div></sc-if>
+</div>
+<div class="reg-card" style="margin-top: 20px;">
 <div id="reg-appareil" class="reg-row" style=" {{glow.appareil}}"><span class="reg-lab"><span class="reg-t">Cet appareil</span><span class="reg-h">{{sinceTxt}}</span></span><span class="reg-pill reg-blue">Actuel</span></div>
 <div id="reg-autres" class="reg-row" style="border-top: 1px solid var(--line); {{glow.autres}}"><span class="reg-lab"><span class="reg-t">Autres appareils</span><span class="reg-h">{{othersTxt}}</span></span><button class="reg-btn" type="button" disabled="{{othersOff}}" onClick="{{signOutOthers}}">{{othersLabel}}</button></div>
 </div>
@@ -152,7 +166,7 @@ body{margin:0;background:#05070C}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"section":{"editor":null},"sessions":{"editor":null},"total":{"editor":null},"checkout":{"editor":null},"onClose":{"editor":null},"onSaveName":{"editor":null},"onSignOutOthers":{"editor":null},"onDelete":{"editor":null},"abo":{"editor":null},"onCancel":{"editor":null},"mobile":{"editor":null},"$preview":{"width":1280,"height":800}}'>
+<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"section":{"editor":null},"sessions":{"editor":null},"total":{"editor":null},"checkout":{"editor":null},"onClose":{"editor":null},"onSaveName":{"editor":null},"onSignOutOthers":{"editor":null},"onDelete":{"editor":null},"abo":{"editor":null},"onCancel":{"editor":null},"onChangePassword":{"editor":null},"onChangeEmail":{"editor":null},"mobile":{"editor":null},"$preview":{"width":1280,"height":800}}'>
 class Component extends DCLogic {
   componentDidMount() {
     this.timer = setInterval(() => this.setState({ now: Date.now() }), 1000);
@@ -160,6 +174,7 @@ class Component extends DCLogic {
       if (e.key !== 'Escape') return;
       const st = this.state || {};
       if (st.confirm) this.setState({ confirm: false });
+      else if (st.pw || st.em) this.setState({ pw: false, em: false, pwCur: '', pwNew: '', emPw: '', emNew: '' });
       else if (st.del) this.setState({ del: false, delEmail: '', delErr: '' });
       else if (st.q) this.setState({ q: '' });
       else if (this.props && this.props.onClose && !this.props.mobile) this.props.onClose();
@@ -208,8 +223,9 @@ class Component extends DCLogic {
     const INDEX = [
       ['prenom', 'profil', 'Prénom', 'Profil', 'nom affiché prénom identité'],
       ['photo', 'profil', 'Photo', 'Profil', 'avatar image initiale'],
-      ['email', 'profil', 'E-mail', 'Profil', 'adresse mail email connexion identifiant'],
+      ['email', 'profil', 'E-mail', 'Profil', 'adresse mail email connexion identifiant changer'],
       ['fermer', 'profil', 'Fermer mon compte', 'Profil', 'supprimer effacer données compte quitter rgpd'],
+      ['motdepasse', 'securite', 'Mot de passe', 'Sécurité', 'changer mot de passe password sécurité connexion'],
       ['appareil', 'securite', 'Cet appareil', 'Sécurité', 'session connexion sécurité'],
       ['autres', 'securite', 'Déconnecter les autres appareils', 'Sécurité', 'sessions appareils déconnexion sécurité téléphone ordinateur'],
       ['formule', 'abo', pro ? 'Ma formule' : 'Passer Pro', 'Formule et facturation', 'abonnement pro prix mensuel annuel payer black friday offre formule'],
@@ -254,6 +270,18 @@ class Component extends DCLogic {
     // Fermer le compte
     const delMatch = !!u.email && String(st.delEmail || '').trim().toLowerCase() === String(u.email).trim().toLowerCase();
     const toast = st.toast;
+    // Mot de passe et e-mail : messages d’erreur du serveur (convex/users.ts, codes ConvexError).
+    const ERR = {
+      mot_de_passe_faux: 'Mot de passe actuel incorrect.', trop_de_tentatives: 'Trop d’essais : réessaie dans quelques minutes.',
+      mot_de_passe_trop_court: '8 caractères minimum.', mot_de_passe_identique: 'Choisis un mot de passe différent de l’actuel.',
+      email_invalide: 'Cette adresse n’est pas valide.', email_pris: 'Un compte utilise déjà cette adresse.', email_identique: 'C’est déjà ton adresse.',
+      compte_sans_mot_de_passe: 'Ton compte se connecte avec Google : rien à changer ici.'
+    };
+    const errOf = (e) => ERR[(e && e.data && e.data.code) || ''] || 'Pas fait : vérifie ta connexion et réessaie.';
+    const pwNew = st.pwNew || '';
+    const score = !pwNew ? 0 : (pwNew.length >= 8 ? 1 : 0) + (pwNew.length >= 12 ? 1 : 0) + (/[a-z]/.test(pwNew) && /[A-Z]/.test(pwNew) ? 1 : 0) + (/[0-9]/.test(pwNew) && /[^A-Za-z0-9]/.test(pwNew) ? 1 : 0);
+    const meterInk = ['var(--ink-faint)', '#FF8A8A', '#F5B941', '#4C9AFF', '#5CD394'][score];
+    const say = (text, ms) => { this.setState({ toast: { text } }); clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), ms || 5000); };
     // Abonnement Whop (convex/whop.ts, mine) : formule, période en cours, reçus, résiliation.
     const abo = p.abo || null;
     const sub = abo && abo.sub;
@@ -300,6 +328,34 @@ class Component extends DCLogic {
         this.setState({ name: back, toast: null, nameSaved: false });
         this.lastName = undefined;
         if (p.onSaveName) p.onSaveName(back).then((clean) => { this.lastName = clean; this.setState({ toast: { text: 'Prénom remis' } }); clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), 3000); });
+      },
+      // Mot de passe
+      pwShown: !!st.pw, pwClosed: !st.pw, pwCur: st.pwCur || '', pwNew,
+      onPwCur: (e) => this.setState({ pwCur: e.target.value, pwErr: '' }), onPwNew: (e) => this.setState({ pwNew: e.target.value, pwErr: '' }),
+      meter: [0, 1, 2, 3].map((i) => (i < score ? meterInk : 'rgba(255,255,255,0.1)')), meterInk,
+      meterLabel: !pwNew ? '' : pwNew.length < 8 ? 'Trop court' : ['', 'Faible', 'Moyen', 'Bon', 'Solide'][score],
+      pwErr: st.pwErr || '', pwOff: !st.pwCur || pwNew.length < 8 || st.busy === 'pw', pwLabel: st.busy === 'pw' ? 'Mise à jour…' : 'Mettre à jour',
+      pwOpen: () => this.setState({ pw: true, pwCur: '', pwNew: '', pwErr: '' }), pwCancel: () => this.setState({ pw: false, pwCur: '', pwNew: '', pwErr: '' }),
+      pwGo: () => {
+        if (!p.onChangePassword || st.busy) return;
+        this.setState({ busy: 'pw', pwErr: '' });
+        p.onChangePassword(st.pwCur, pwNew).then((n) => {
+          this.setState({ busy: null, pw: false, pwCur: '', pwNew: '' });
+          say('Mot de passe changé' + (n > 0 ? ' · ' + n + (n > 1 ? ' autres appareils déconnectés' : ' autre appareil déconnecté') : ''));
+        }, (e) => this.setState({ busy: null, pwErr: errOf(e) }));
+      },
+      // E-mail
+      emShown: !!st.em, emClosed: !st.em, emNew: st.emNew || '', emPw: st.emPw || '',
+      onEmNew: (e) => this.setState({ emNew: e.target.value, emErr: '' }), onEmPw: (e) => this.setState({ emPw: e.target.value, emErr: '' }),
+      emErr: st.emErr || '', emOff: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((st.emNew || '').trim()) || !st.emPw || st.busy === 'em', emLabel: st.busy === 'em' ? 'Changement…' : 'Changer l’e-mail',
+      emOpen: () => this.setState({ em: true, emNew: '', emPw: '', emErr: '' }), emCancel: () => this.setState({ em: false, emNew: '', emPw: '', emErr: '' }),
+      emGo: () => {
+        if (!p.onChangeEmail || st.busy) return;
+        this.setState({ busy: 'em', emErr: '' });
+        p.onChangeEmail((st.emNew || '').trim(), st.emPw).then((email) => {
+          this.setState({ busy: null, em: false, emNew: '', emPw: '' });
+          say('E-mail changé : tu te connectes maintenant avec ' + email, 7000);
+        }, (e) => this.setState({ busy: null, emErr: errOf(e) }));
       },
       sinceTxt: s && s.since ? 'Session ouverte le ' + dd(s.since) + ' · elle dure 90 jours.' : 'Ta session reste ouverte 90 jours.',
       othersTxt: others === null ? '…' : others === 0 ? 'Aucun autre appareil n’est connecté.' : others + (others > 1 ? ' autres sessions ouvertes sur ton compte.' : ' autre session ouverte sur ton compte.'),

@@ -1,5 +1,5 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
+import { liveUserId } from "./session";
 import { query, type QueryCtx } from "./_generated/server";
 
 /**
@@ -83,7 +83,7 @@ async function preview(ctx: QueryCtx, key: string, hidden: Set<string>): Promise
 export const get = query({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) return null;
     const hidden = new Set((await ctx.db.query("hidden").first())?.ids ?? []);
     if ((await ctx.db.get(userId))?.pro === true) return read(ctx, key, hidden);

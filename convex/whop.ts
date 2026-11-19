@@ -1,5 +1,5 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
+import { liveUserId, liveUserIdInAction } from "./session";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
@@ -97,7 +97,7 @@ export const tarifs = internalAction({
 export const checkout = action({
   args: { formule: v.union(v.literal("mensuel"), v.literal("annuel")), origin: v.string() },
   handler: async (ctx, { formule, origin }): Promise<{ url: string }> => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
     const variant = await variantFor(formule);
     // Retour sur le site d'où l'on vient (prod, préversion Vercel, local) ; sinon l'adresse du site.
@@ -320,7 +320,7 @@ export const webhook = httpAction(async (ctx, req) => {
 export const mine = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) return null;
     const subs = (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect())
       .sort((a, b) => Number(ACCESS.has(b.status)) - Number(ACCESS.has(a.status)) || (b.periodEnd ?? 0) - (a.periodEnd ?? 0));
@@ -338,7 +338,7 @@ export const mine = query({
 export const setCancel = action({
   args: { cancel: v.boolean(), reason: v.optional(v.string()) },
   handler: async (ctx, { cancel, reason }): Promise<string> => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
     const sub = await ctx.runQuery(internal.whop.activeSub, { userId });
     if (!sub) throw new Error("Aucun abonnement en cours");

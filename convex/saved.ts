@@ -1,5 +1,5 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
+import { liveUserId } from "./session";
 import { mutation, query } from "./_generated/server";
 
 /**
@@ -16,7 +16,7 @@ const MAX_BYTES = 256_000;
 export const get = query({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) return null;
     const row = await ctx.db
       .query("saved")
@@ -29,7 +29,7 @@ export const get = query({
 export const set = mutation({
   args: { key: v.string(), value: v.any() },
   handler: async (ctx, { key, value }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) throw new ConvexError("NON_CONNECTE");
     if (!KEYS.has(key)) throw new ConvexError("CLE_INCONNUE");
     if (JSON.stringify(value ?? null).length > MAX_BYTES) throw new ConvexError("TROP_LOURD");

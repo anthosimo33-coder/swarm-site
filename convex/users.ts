@@ -1,7 +1,9 @@
-import { getAuthSessionId, getAuthUserId } from "@convex-dev/auth/server";
-import { v } from "convex/values";
+import { getAuthSessionId, modifyAccountCredentials, retrieveAccount } from "@convex-dev/auth/server";
+import { ConvexError, v } from "convex/values";
+import { liveUserId, liveUserIdInAction } from "./session";
+import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
+import { action, internalMutation, internalQuery, mutation, query, type ActionCtx, type MutationCtx } from "./_generated/server";
 
 /**
  * La personne connectée (pour l'app), ou null. `name` vient de Google ; l'inscription par e-mail n'en demande pas.
@@ -10,7 +12,7 @@ import { internalMutation, mutation, query, type MutationCtx } from "./_generate
 export const viewer = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) return null;
     const user = await ctx.db.get(userId);
     if (user === null) return null;
@@ -39,7 +41,7 @@ export const setPro = internalMutation({
 export const setName = mutation({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) throw new Error("Non connecté");
     const clean = Array.from(name.replace(/\s+/g, " ").trim()).slice(0, 40).join("").trim();
     await ctx.db.patch(userId, { name: clean || undefined });
@@ -51,7 +53,7 @@ export const setName = mutation({
 export const sessions = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) return null;
     const current = await getAuthSessionId(ctx);
     const now = Date.now();
@@ -74,7 +76,7 @@ async function dropSession(ctx: MutationCtx, id: Id<"authSessions">) {
 export const signOutOthers = mutation({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) throw new Error("Non connecté");
     const current = await getAuthSessionId(ctx);
     let closed = 0;
@@ -94,7 +96,7 @@ export const signOutOthers = mutation({
 export const deleteAccount = mutation({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    const userId = await getAuthUserId(ctx);
+    const userId = await liveUserId(ctx);
     if (userId === null) throw new Error("Non connecté");
     const user = await ctx.db.get(userId);
     if (user === null || !user.email || email.trim().toLowerCase() !== user.email.trim().toLowerCase()) return { ok: false };
@@ -112,5 +114,98 @@ export const deleteAccount = mutation({
     }
     await ctx.db.delete(userId);
     return { ok: true };
+  },
+});
+
+// ─── Réglages : mot de passe et e-mail (19/11) ───
+// Erreurs lisibles par le site (ConvexError avec un code), comme à la connexion (convex/auth.ts).
+const PASSWORD = "password";
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const failWith = (code: string) => new ConvexError({ code });
+
+/** L'e-mail du compte et l'existence d'un identifiant « mot de passe » (sinon : compte Google seul). */
+export const credentialsOf = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    const account = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId).eq("provider", PASSWORD)).first();
+    return { email: user?.email ?? null, login: account?.providerAccountId ?? null };
+  },
+});
+
+/** Vérifie le mot de passe actuel (même limite de tentatives que la connexion) ; erreur lisible sinon. */
+async function checkPassword(ctx: ActionCtx, login: string, secret: string) {
+  try {
+    const found = await retrieveAccount(ctx, { provider: PASSWORD, account: { id: login, secret } });
+    if (found === null) throw failWith("mot_de_passe_faux");
+  } catch (e) {
+    if (e instanceof ConvexError) throw e;
+    const m = e instanceof Error ? e.message : String(e);
+    if (m.includes("TooManyFailedAttempts")) throw failWith("trop_de_tentatives");
+    throw failWith("mot_de_passe_faux");
+  }
+}
+
+/** Change le mot de passe (Réglages › Sécurité) ; les autres appareils sont déconnectés. Rend leur nombre. */
+export const changePassword = action({
+  args: { current: v.string(), next: v.string() },
+  handler: async (ctx, { current, next }): Promise<number> => {
+    const userId = await liveUserIdInAction(ctx);
+    if (userId === null) throw failWith("non_connecte");
+    if (next.length < 8 || next.length > 128) throw failWith("mot_de_passe_trop_court");
+    if (next === current) throw failWith("mot_de_passe_identique");
+    const { login } = await ctx.runQuery(internal.users.credentialsOf, { userId });
+    if (!login) throw failWith("compte_sans_mot_de_passe");
+    await checkPassword(ctx, login, current);
+    await modifyAccountCredentials(ctx, { provider: PASSWORD, account: { id: login, secret: next } });
+    return await ctx.runMutation(internal.users.closeOtherSessions, { userId, keep: (await getAuthSessionId(ctx)) ?? null });
+  },
+});
+
+export const closeOtherSessions = internalMutation({
+  args: { userId: v.id("users"), keep: v.union(v.id("authSessions"), v.null()) },
+  handler: async (ctx, { userId, keep }) => {
+    let closed = 0;
+    for (const s of await ctx.db.query("authSessions").withIndex("userId", (q) => q.eq("userId", userId)).collect()) {
+      if (s._id === keep) continue;
+      await dropSession(ctx, s._id);
+      closed++;
+    }
+    return closed;
+  },
+});
+
+/**
+ * Change l'e-mail (Réglages › Profil) : mot de passe exigé, adresse libre ; l'identifiant de connexion suit. L'adresse
+ * n'est pas encore confirmée par un lien (pas d'envoi d'e-mails avant le domaine) : « Vérifiée » disparaît.
+ */
+export const changeEmail = action({
+  args: { email: v.string(), password: v.string() },
+  handler: async (ctx, a): Promise<string> => {
+    const userId = await liveUserIdInAction(ctx);
+    if (userId === null) throw failWith("non_connecte");
+    const email = a.email.trim().toLowerCase();
+    if (!EMAIL_OK.test(email)) throw failWith("email_invalide");
+    const { email: before, login } = await ctx.runQuery(internal.users.credentialsOf, { userId });
+    if (!login) throw failWith("compte_sans_mot_de_passe");
+    if (email === (before ?? "").toLowerCase()) throw failWith("email_identique");
+    await checkPassword(ctx, login, a.password);
+    const r = await ctx.runMutation(internal.users.applyEmail, { userId, email });
+    if (r !== "ok") throw failWith(r);
+    return email;
+  },
+});
+
+export const applyEmail = internalMutation({
+  args: { userId: v.id("users"), email: v.string() },
+  handler: async (ctx, { userId, email }): Promise<string> => {
+    const taken = (await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email)).first())
+      ?? (await ctx.db.query("authAccounts").withIndex("providerAndAccountId", (q) => q.eq("provider", PASSWORD).eq("providerAccountId", email)).first());
+    if (taken && (("userId" in taken ? taken.userId : taken._id) !== userId)) return "email_pris";
+    const account = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId).eq("provider", PASSWORD)).first();
+    if (!account) return "compte_sans_mot_de_passe";
+    await ctx.db.patch(account._id, { providerAccountId: email });
+    await ctx.db.patch(userId, { email, emailVerificationTime: undefined });
+    return "ok";
   },
 });

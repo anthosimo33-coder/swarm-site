@@ -9,6 +9,7 @@ export default class Reglages extends DCLogic {
       if (e.key !== 'Escape') return;
       const st = this.state || {};
       if (st.confirm) this.setState({ confirm: false });
+      else if (st.pw || st.em) this.setState({ pw: false, em: false, pwCur: '', pwNew: '', emPw: '', emNew: '' });
       else if (st.del) this.setState({ del: false, delEmail: '', delErr: '' });
       else if (st.q) this.setState({ q: '' });
       else if (this.props && this.props.onClose && !this.props.mobile) this.props.onClose();
@@ -57,8 +58,9 @@ export default class Reglages extends DCLogic {
     const INDEX = [
       ['prenom', 'profil', 'Prénom', 'Profil', 'nom affiché prénom identité'],
       ['photo', 'profil', 'Photo', 'Profil', 'avatar image initiale'],
-      ['email', 'profil', 'E-mail', 'Profil', 'adresse mail email connexion identifiant'],
+      ['email', 'profil', 'E-mail', 'Profil', 'adresse mail email connexion identifiant changer'],
       ['fermer', 'profil', 'Fermer mon compte', 'Profil', 'supprimer effacer données compte quitter rgpd'],
+      ['motdepasse', 'securite', 'Mot de passe', 'Sécurité', 'changer mot de passe password sécurité connexion'],
       ['appareil', 'securite', 'Cet appareil', 'Sécurité', 'session connexion sécurité'],
       ['autres', 'securite', 'Déconnecter les autres appareils', 'Sécurité', 'sessions appareils déconnexion sécurité téléphone ordinateur'],
       ['formule', 'abo', pro ? 'Ma formule' : 'Passer Pro', 'Formule et facturation', 'abonnement pro prix mensuel annuel payer black friday offre formule'],
@@ -103,6 +105,18 @@ export default class Reglages extends DCLogic {
     // Fermer le compte
     const delMatch = !!u.email && String(st.delEmail || '').trim().toLowerCase() === String(u.email).trim().toLowerCase();
     const toast = st.toast;
+    // Mot de passe et e-mail : messages d’erreur du serveur (convex/users.ts, codes ConvexError).
+    const ERR = {
+      mot_de_passe_faux: 'Mot de passe actuel incorrect.', trop_de_tentatives: 'Trop d’essais : réessaie dans quelques minutes.',
+      mot_de_passe_trop_court: '8 caractères minimum.', mot_de_passe_identique: 'Choisis un mot de passe différent de l’actuel.',
+      email_invalide: 'Cette adresse n’est pas valide.', email_pris: 'Un compte utilise déjà cette adresse.', email_identique: 'C’est déjà ton adresse.',
+      compte_sans_mot_de_passe: 'Ton compte se connecte avec Google : rien à changer ici.'
+    };
+    const errOf = (e) => ERR[(e && e.data && e.data.code) || ''] || 'Pas fait : vérifie ta connexion et réessaie.';
+    const pwNew = st.pwNew || '';
+    const score = !pwNew ? 0 : (pwNew.length >= 8 ? 1 : 0) + (pwNew.length >= 12 ? 1 : 0) + (/[a-z]/.test(pwNew) && /[A-Z]/.test(pwNew) ? 1 : 0) + (/[0-9]/.test(pwNew) && /[^A-Za-z0-9]/.test(pwNew) ? 1 : 0);
+    const meterInk = ['var(--ink-faint)', '#FF8A8A', '#F5B941', '#4C9AFF', '#5CD394'][score];
+    const say = (text, ms) => { this.setState({ toast: { text } }); clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), ms || 5000); };
     // Abonnement Whop (convex/whop.ts, mine) : formule, période en cours, reçus, résiliation.
     const abo = p.abo || null;
     const sub = abo && abo.sub;
@@ -149,6 +163,34 @@ export default class Reglages extends DCLogic {
         this.setState({ name: back, toast: null, nameSaved: false });
         this.lastName = undefined;
         if (p.onSaveName) p.onSaveName(back).then((clean) => { this.lastName = clean; this.setState({ toast: { text: 'Prénom remis' } }); clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), 3000); });
+      },
+      // Mot de passe
+      pwShown: !!st.pw, pwClosed: !st.pw, pwCur: st.pwCur || '', pwNew,
+      onPwCur: (e) => this.setState({ pwCur: e.target.value, pwErr: '' }), onPwNew: (e) => this.setState({ pwNew: e.target.value, pwErr: '' }),
+      meter: [0, 1, 2, 3].map((i) => (i < score ? meterInk : 'rgba(255,255,255,0.1)')), meterInk,
+      meterLabel: !pwNew ? '' : pwNew.length < 8 ? 'Trop court' : ['', 'Faible', 'Moyen', 'Bon', 'Solide'][score],
+      pwErr: st.pwErr || '', pwOff: !st.pwCur || pwNew.length < 8 || st.busy === 'pw', pwLabel: st.busy === 'pw' ? 'Mise à jour…' : 'Mettre à jour',
+      pwOpen: () => this.setState({ pw: true, pwCur: '', pwNew: '', pwErr: '' }), pwCancel: () => this.setState({ pw: false, pwCur: '', pwNew: '', pwErr: '' }),
+      pwGo: () => {
+        if (!p.onChangePassword || st.busy) return;
+        this.setState({ busy: 'pw', pwErr: '' });
+        p.onChangePassword(st.pwCur, pwNew).then((n) => {
+          this.setState({ busy: null, pw: false, pwCur: '', pwNew: '' });
+          say('Mot de passe changé' + (n > 0 ? ' · ' + n + (n > 1 ? ' autres appareils déconnectés' : ' autre appareil déconnecté') : ''));
+        }, (e) => this.setState({ busy: null, pwErr: errOf(e) }));
+      },
+      // E-mail
+      emShown: !!st.em, emClosed: !st.em, emNew: st.emNew || '', emPw: st.emPw || '',
+      onEmNew: (e) => this.setState({ emNew: e.target.value, emErr: '' }), onEmPw: (e) => this.setState({ emPw: e.target.value, emErr: '' }),
+      emErr: st.emErr || '', emOff: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((st.emNew || '').trim()) || !st.emPw || st.busy === 'em', emLabel: st.busy === 'em' ? 'Changement…' : 'Changer l’e-mail',
+      emOpen: () => this.setState({ em: true, emNew: '', emPw: '', emErr: '' }), emCancel: () => this.setState({ em: false, emNew: '', emPw: '', emErr: '' }),
+      emGo: () => {
+        if (!p.onChangeEmail || st.busy) return;
+        this.setState({ busy: 'em', emErr: '' });
+        p.onChangeEmail((st.emNew || '').trim(), st.emPw).then((email) => {
+          this.setState({ busy: null, em: false, emNew: '', emPw: '' });
+          say('E-mail changé : tu te connectes maintenant avec ' + email, 7000);
+        }, (e) => this.setState({ busy: null, emErr: errOf(e) }));
       },
       sinceTxt: s && s.since ? 'Session ouverte le ' + dd(s.since) + ' · elle dure 90 jours.' : 'Ta session reste ouverte 90 jours.',
       othersTxt: others === null ? '…' : others === 0 ? 'Aucun autre appareil n’est connecté.' : others + (others > 1 ? ' autres sessions ouvertes sur ton compte.' : ' autre session ouverte sur ton compte.'),
@@ -419,9 +461,48 @@ export default class Reglages extends DCLogic {
                         ),
                         "Vérifiée"
                       )
+                    ] : null,
+                    ($v.emClosed) ? [
+                      $h("button", { "class": "reg-btn", "type": "button", "onClick": $v.emOpen },
+                        "Changer"
+                      )
                     ] : null
                   )
-                )
+                ),
+                ($v.emShown) ? [
+                  $h("div", { "class": "reg-form" },
+                    $h("span", { "class": "reg-grid2" },
+                      $h("label", { "class": "reg-field" },
+                        $h("span", null,
+                          "Nouvel e-mail"
+                        ),
+                        $h("input", { "class": "reg-in", "type": "email", "autocomplete": "email", "value": $v.emNew, "onInput": $v.onEmNew, "placeholder": "toi@exemple.fr" })
+                      ),
+                      $h("label", { "class": "reg-field" },
+                        $h("span", null,
+                          "Ton mot de passe"
+                        ),
+                        $h("input", { "class": "reg-in", "type": "password", "autocomplete": "current-password", "value": $v.emPw, "onInput": $v.onEmPw })
+                      )
+                    ),
+                    $h("span", { "class": "reg-note" },
+                      "Tu te connecteras ensuite avec la nouvelle adresse."
+                    ),
+                    ($v.emErr) ? [
+                      $h("span", { "class": "reg-err", "role": "alert" },
+                        $t($v.emErr)
+                      )
+                    ] : null,
+                    $h("span", { "class": "reg-actions" },
+                      $h("button", { "class": "reg-btn reg-text", "type": "button", "onClick": $v.emCancel },
+                        "Annuler"
+                      ),
+                      $h("button", { "class": "reg-btn reg-blue-btn", "type": "button", "disabled": $v.emOff, "onClick": $v.emGo },
+                        $t($v.emLabel)
+                      )
+                    )
+                  )
+                ] : null
               ),
               $h("div", { "class": "reg-card reg-danger", "style": "margin-top: 20px;" },
                 $h("div", { "id": "reg-fermer", "class": "reg-row", "style": $v.glow?.fermer },
@@ -471,10 +552,69 @@ export default class Reglages extends DCLogic {
                   "Sécurité"
                 ),
                 $h("span", null,
-                  "Où ta session est ouverte."
+                  "Comment tu te connectes, et où ta session est ouverte."
                 )
               ),
               $h("div", { "class": "reg-card" },
+                $h("div", { "id": "reg-motdepasse", "class": "reg-row", "style": $v.glow?.motdepasse },
+                  $h("span", { "class": "reg-lab" },
+                    $h("span", { "class": "reg-t" },
+                      "Mot de passe"
+                    ),
+                    $h("span", { "class": "reg-h" },
+                      "Pour te connecter avec ton e-mail."
+                    )
+                  ),
+                  ($v.pwClosed) ? [
+                    $h("button", { "class": "reg-btn", "type": "button", "onClick": $v.pwOpen },
+                      "Changer"
+                    )
+                  ] : null
+                ),
+                ($v.pwShown) ? [
+                  $h("div", { "class": "reg-form" },
+                    $h("span", { "class": "reg-grid2" },
+                      $h("label", { "class": "reg-field" },
+                        $h("span", null,
+                          "Mot de passe actuel"
+                        ),
+                        $h("input", { "class": "reg-in", "type": "password", "autocomplete": "current-password", "value": $v.pwCur, "onInput": $v.onPwCur })
+                      ),
+                      $h("label", { "class": "reg-field" },
+                        $h("span", null,
+                          "Nouveau mot de passe"
+                        ),
+                        $h("input", { "class": "reg-in", "type": "password", "autocomplete": "new-password", "value": $v.pwNew, "onInput": $v.onPwNew, "placeholder": "8 caractères minimum" }),
+                        $h("span", { "class": "reg-meter", "aria-hidden": "true" },
+                          ($l($v.meter)).map((m) => [
+                            $h("i", { "style": `background: ${$t(m)};` })
+                          ])
+                        ),
+                        $h("span", { "class": "reg-meter-l", "style": `color: ${$t($v.meterInk)};` },
+                          $t($v.meterLabel)
+                        )
+                      )
+                    ),
+                    $h("span", { "class": "reg-note" },
+                      "Tes autres appareils seront déconnectés."
+                    ),
+                    ($v.pwErr) ? [
+                      $h("span", { "class": "reg-err", "role": "alert" },
+                        $t($v.pwErr)
+                      )
+                    ] : null,
+                    $h("span", { "class": "reg-actions" },
+                      $h("button", { "class": "reg-btn reg-text", "type": "button", "onClick": $v.pwCancel },
+                        "Annuler"
+                      ),
+                      $h("button", { "class": "reg-btn reg-blue-btn", "type": "button", "disabled": $v.pwOff, "onClick": $v.pwGo },
+                        $t($v.pwLabel)
+                      )
+                    )
+                  )
+                ] : null
+              ),
+              $h("div", { "class": "reg-card", "style": "margin-top: 20px;" },
                 $h("div", { "id": "reg-appareil", "class": "reg-row", "style": ` ${$t($v.glow?.appareil)}` },
                   $h("span", { "class": "reg-lab" },
                     $h("span", { "class": "reg-t" },

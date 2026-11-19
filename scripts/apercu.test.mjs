@@ -8,7 +8,7 @@ const src = readFileSync(process.argv[2] || new URL('../convex/boards.ts', impor
   .replace(/^import .*$/gm, '')
   .replace(/export const /g, 'const ').replace(/export async function /g, 'async function ');
 const js = transformSync(src, { loader: 'ts' }).code;
-const mod = new Function('query', 'getAuthUserId', 'v', 'process', js + '\nreturn { get };');
+const mod = new Function('query', 'liveUserId', 'v', 'process', js + '\nreturn { get };');
 const v = new Proxy({}, { get: () => () => ({}) });
 const { get } = mod((def) => def, async (ctx) => ctx.userId, v, { env: {} });
 

@@ -443,6 +443,8 @@ function App() {
     user, sessions, abo, total: (!user.pro && (board('apps').value || {}).total) || undefined, checkout: CHECKOUT,
     onCancel: (cancel, reason) => client.action(api.whop.setCancel, reason ? { cancel, reason } : { cancel }),
     onSaveName: (name) => client.mutation(api.users.setName, { name }),
+    onChangePassword: (current, next) => client.action(api.users.changePassword, { current, next }),
+    onChangeEmail: (email, password) => client.action(api.users.changeEmail, { email, password }),
     onSignOutOthers: () => client.mutation(api.users.signOutOthers, {}),
     onDelete: (email) => client.mutation(api.users.deleteAccount, { email }).then(async (r) => {
       if (r && r.ok) { leaving.current = true; await signOut().catch(() => {}); window.location.replace('/'); }
