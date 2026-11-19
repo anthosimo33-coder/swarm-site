@@ -50,7 +50,7 @@ export default class Apercu extends DCLogic {
     return {
       me, top, ghosts, locked,
       totalTxt: int(total), moreTxt: int(Math.max(0, total - apps.length)),
-      bfOn: bfLeft > 0, bfTime,
+      bfOn: bfLeft > 0, bfTime, rootCls: bfLeft > 0 ? 'apr-bfon' : '',
       monthly: checkout.mensuel || '/tarifs',
       openPlans: (e) => { if (e && e.preventDefault) e.preventDefault(); if (p.onPlans) p.onPlans(); }
     };
@@ -59,7 +59,7 @@ export default class Apercu extends DCLogic {
   render() {
     const $v = this.renderVals();
     return [
-      $h("div", { "class": "sw", "style": "display: flex; flex-direction: column; min-height: 100vh; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
+      $h("div", { "class": `sw ${$t($v.rootCls)}`, "style": "display: flex; flex-direction: column; min-height: 100vh; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         ($v.bfOn) ? [
           $h("button", { "class": "apr-bf", "type": "button", "onClick": $v.openPlans, "aria-label": `Black Friday : jusqu’à −50 % sur l’abonnement annuel, fin dans ${$t($v.bfTime)}`, "style": "display: flex; align-items: center; justify-content: center; gap: 12px; height: 42px; padding: 0 16px; background: #0B0E14; border-bottom: 1px solid rgba(255,255,255,0.07); color: #C9CED8; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden;" },
             $h("svg", { "width": "16", "height": "18", "viewBox": "0 0 20 23", "aria-hidden": "true", "style": "flex-shrink: 0;" },

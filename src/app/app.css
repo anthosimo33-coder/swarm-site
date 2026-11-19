@@ -62,6 +62,12 @@ img.is-broken { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .sw-hoverplay { animation: none; } }
 
 /* Barre latérale : l’icône et son libellé rapprochés (case de 32 px au lieu de 40, 3 px d’écart). */
+/* Elle reste à la hauteur de l’écran (19/11) : le compte (avatar) toujours visible en bas, sans défiler. */
+.sw-sidebar { position: sticky; top: 0; height: 100vh; height: 100dvh; box-sizing: border-box; align-self: flex-start; overflow-y: auto; scrollbar-width: none; }
+.sw-sidebar::-webkit-scrollbar { display: none; }
+/* Aperçu : le bandeau Black Friday reste en haut, la barre latérale commence dessous. */
+.apr-bfon .apr-bf { position: sticky; top: 0; z-index: 20; }
+.apr-bfon .sw-sidebar { top: 42px; height: calc(100vh - 42px); height: calc(100dvh - 42px); }
 .sw-side-item { gap: 3px !important; }
 .sw-side-ico { height: 32px !important; }
 .sw-table th svg { width: 13px; height: 13px; }
