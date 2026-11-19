@@ -16,6 +16,8 @@ export default defineSchema({
     phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
     pro: v.optional(v.boolean()),
+    // Accord donné au paiement (CGV art. 6) : accès immédiat et renonciation au délai de rétractation. Heure de l'accord.
+    consentAt: v.optional(v.number()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
@@ -26,6 +28,34 @@ export default defineSchema({
   // Ce que chaque personne garde dans l'app : apps et comptes suivis, dossiers,
   // règles d'alerte, ce qu'elle a déjà lu. Une ligne par personne et par clé
   // (convex/saved.ts, docs/donnees-app.md « Ce que la personne garde »).
+  // Paiement Whop (19/11, convex/whop.ts). Un abonnement par adhésion Whop (mem_…), relié au compte par la donnée
+  // `kopycat_user` posée sur le lien de paiement. `users.pro` se recalcule à chaque changement.
+  subscriptions: defineTable({
+    userId: v.id("users"),
+    membershipId: v.string(),
+    variantId: v.union(v.string(), v.null()),
+    status: v.string(), // trialing, active, past_due, completed, canceled, expired, unresolved
+    periodDays: v.union(v.number(), v.null()), // 30 = mensuel, 365 = annuel
+    price: v.union(v.string(), v.null()), // prix de renouvellement, ex. « 179.88 »
+    currency: v.union(v.string(), v.null()),
+    periodEnd: v.union(v.number(), v.null()), // fin de la période payée (ms)
+    cancelAtPeriodEnd: v.boolean(),
+    manageUrl: v.union(v.string(), v.null()),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]).index("by_membership", ["membershipId"]),
+  // Les paiements reçus (reçus des Réglages), remboursements compris.
+  whopPayments: defineTable({
+    paymentId: v.string(),
+    userId: v.union(v.id("users"), v.null()),
+    membershipId: v.union(v.string(), v.null()),
+    total: v.union(v.string(), v.null()),
+    currency: v.union(v.string(), v.null()),
+    status: v.string(), // paid, failed, refunded, disputed…
+    createdAt: v.number(),
+  }).index("by_payment", ["paymentId"]).index("by_user", ["userId"]),
+  // Événements déjà traités (Whop peut renvoyer le même) et leur résultat, pour le suivi.
+  whopEvents: defineTable({ eventId: v.string(), type: v.string(), at: v.number(), note: v.optional(v.string()) }).index("by_event", ["eventId"]),
+
   saved: defineTable({
     userId: v.id("users"),
     key: v.string(),

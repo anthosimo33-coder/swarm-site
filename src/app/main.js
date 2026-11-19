@@ -26,6 +26,7 @@ import Formules from './pages/Formules.js';
 import MFormules from './pages/MFormules.js';
 import MenuCompte from './pages/MenuCompte.js';
 import Reglages from './pages/Reglages.js';
+import Paiement from './pages/Paiement.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
@@ -35,15 +36,22 @@ import './styles/a-for.css';
 import './styles/m-for.css';
 import './styles/a-mnu.css';
 import './styles/a-reg.css';
+import './styles/a-pay.css';
 
 const HOME = '/app';
 const SIGN_OUT = '/app/deconnexion';
 // L'aperçu : ce qu'un compte sans abonnement peut ouvrir. Accueil mène à Apps ; le reste ouvre les formules.
 const APERCU = '/app/apps';
 const OPEN = [/^\/app\/apps$/, /^\/app\/apps\/[^/]+$/, /^\/app\/videos\/[^/]+$/, /^\/app\/compte$/];
-const isOpen = (pathname) => pathname === SIGN_OUT || OPEN.some((re) => re.test(pathname));
-// Paiement : les liens d'achat Whop (mensuel, annuel), à brancher ; d'ici là, la page Tarifs.
-const CHECKOUT = { mensuel: '/tarifs', annuel: '/tarifs' };
+const isOpen = (pathname) => pathname === SIGN_OUT || pathname.startsWith('/app/payer/') || OPEN.some((re) => re.test(pathname));
+// Paiement (Whop, convex/whop.ts) : ces adresses ouvrent l'écran d'avant paiement (formule + accord des CGV), qui
+// crée le lien Whop relié au compte. Depuis le site (tarifs) ou un favori, elles mènent ici aussi.
+const PAY = '/app/payer/';
+const CHECKOUT = { mensuel: PAY + 'mensuel', annuel: PAY + 'annuel' };
+const formuleOf = (pathname) => (pathname.slice(PAY.length) === 'mensuel' ? 'mensuel' : 'annuel');
+// Retour de Whop : /app?paiement=ok. L'accès vient du webhook ; l'écran attend qu'il arrive.
+const PAID = new URLSearchParams(window.location.search).get('paiement') === 'ok';
+const SUITE = 'kopycat.suite'; // l'achat commencé avant de se connecter
 // Sous 860 px, l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop.
 const MOBILE = window.matchMedia('(max-width: 860px)');
 const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
@@ -157,7 +165,10 @@ function App() {
   // Garde : pas connecté, ou compte disparu -> connexion.
   useEffect(() => {
     if (leaving.current) return;
-    if (!isLoading && !isAuthenticated) window.location.replace('/connexion');
+    if (!isLoading && !isAuthenticated) {
+      if (window.location.pathname.startsWith(PAY)) { try { sessionStorage.setItem(SUITE, window.location.pathname); } catch { /* stockage refusé */ } }
+      window.location.replace('/connexion');
+    }
     else if (viewer === null) void signOut();
   }, [isLoading, isAuthenticated, viewer]);
 
@@ -175,6 +186,9 @@ function App() {
   const [menu, setMenu] = useState(false);
   // Réglages : la rubrique ouverte (« profil », « securite », « abo ») ou null. Sur téléphone, c'est l'écran /app/compte.
   const [settings, setSettings] = useState(null);
+  // Paiement : la formule de l'écran d'avant Whop ; et, au retour de Whop, l'attente de l'accès.
+  const [pay, setPay] = useState(null);
+  const [paid, setPaid] = useState(PAID ? 'wait' : null);
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
 
@@ -191,6 +205,15 @@ function App() {
       if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
       const url = new URL(link.href, window.location.href);
       if (url.origin !== window.location.origin || !(url.pathname === HOME || url.pathname.startsWith(HOME + '/'))) return;
+      // Payer : l'écran d'avant Whop s'ouvre par-dessus, sans changer d'écran.
+      if (url.pathname.startsWith(PAY)) {
+        event.preventDefault();
+        setPlans(false);
+        setSettings(null);
+        setMenu(false);
+        setPay(formuleOf(url.pathname));
+        return;
+      }
       // Aperçu : un écran fermé ouvre la fenêtre des formules sans quitter l'écran ; Accueil mène à Apps.
       if (lastUser.current && !proRef.current && !isOpen(clean(url.pathname))) {
         event.preventDefault();
@@ -239,11 +262,40 @@ function App() {
     };
   }, []);
 
+  // Achat commencé avant de se connecter (lien des tarifs) : il reprend une fois connecté.
+  useEffect(() => {
+    if (!known) return;
+    let suite = null;
+    try { suite = sessionStorage.getItem(SUITE); sessionStorage.removeItem(SUITE); } catch { /* stockage refusé */ }
+    if (suite && suite.startsWith(PAY) && !(user && user.pro)) setPay(formuleOf(suite));
+  }, [known]);
+
+  // Retour de Whop : on retire ?paiement=ok de l'adresse, puis on attend que le webhook ouvre l'accès.
+  useEffect(() => {
+    if (!PAID) return undefined;
+    const params = new URLSearchParams(window.location.search);
+    params.delete('paiement');
+    const clean = window.location.pathname + (params.toString() ? '?' + params : '');
+    window.history.replaceState(null, '', clean);
+    setPath(here());
+    const slow = setTimeout(() => setPaid((s) => (s === 'wait' ? 'slow' : s)), 90000);
+    return () => clearTimeout(slow);
+  }, []);
+  useEffect(() => {
+    if (!paid || paid === 'ok' || !user || !user.pro) return undefined;
+    setPaid('ok');
+    const t = setTimeout(() => setPaid(null), 7000);
+    return () => clearTimeout(t);
+  }, [paid, user]);
+
   // Changer d'écran referme le panneau du compte et les réglages.
   useEffect(() => { setMenu(false); setSettings(null); }, [path]);
-  // Les sessions ouvertes (Réglages › Sécurité), lues seulement quand les réglages sont affichés.
+  // Les sessions ouvertes (Réglages › Sécurité), lues quand le panneau du compte ou les réglages sont ouverts
+  // (dès le panneau : les réglages s'ouvrent ensuite sans attendre).
   const onSettingsScreen = !!(screen && screen.mobile && screen.route.path === '/app/compte');
-  const sessions = useQuery(api.users.sessions, isAuthenticated && (settings || onSettingsScreen) ? {} : 'skip');
+  const sessions = useQuery(api.users.sessions, isAuthenticated && (settings || menu || onSettingsScreen) ? {} : 'skip');
+  // L'abonnement Whop et ses paiements (Réglages › Formule et facturation).
+  const abo = useQuery(api.whop.mine, isAuthenticated && (settings || menu || onSettingsScreen) ? {} : 'skip');
 
   // Aperçu : une adresse fermée (lien direct, favori, retour arrière) revient à Apps, fenêtre des formules ouverte ;
   // Accueil y revient sans fenêtre.
@@ -264,6 +316,12 @@ function App() {
       return undefined;
     }
     const [pathname, search = ''] = path.split('?');
+    if (pathname.startsWith(PAY)) {
+      setPay(formuleOf(pathname));
+      window.history.replaceState(null, '', HOME);
+      setPath(HOME);
+      return undefined;
+    }
     const match = matchRoute(pathname);
     if (!match) {
       window.history.replaceState(null, '', HOME);
@@ -370,7 +428,8 @@ function App() {
     : null;
   // Réglages : les actions passent par le serveur (convex/users.ts) ; le prénom revient par viewer, qui suit.
   const settingsProps = {
-    user, sessions, total: (!user.pro && (board('apps').value || {}).total) || undefined, checkout: CHECKOUT,
+    user, sessions, abo, total: (!user.pro && (board('apps').value || {}).total) || undefined, checkout: CHECKOUT,
+    onCancel: (cancel, reason) => client.action(api.whop.setCancel, reason ? { cancel, reason } : { cancel }),
     onSaveName: (name) => client.mutation(api.users.setName, { name }),
     onSignOutOthers: () => client.mutation(api.users.signOutOthers, {}),
     onDelete: (email) => client.mutation(api.users.deleteAccount, { email }).then(async (r) => {
@@ -383,7 +442,18 @@ function App() {
     page = h(Reglages, { key: 'm/reglages', ...settingsProps, mobile: true, onClose: toApp });
   }
   const panel = settings && !screen.mobile ? h(Reglages, { key: `reglages-${settings}`, ...settingsProps, section: settings, onClose: () => setSettings(null) }) : null;
-  return h(Fragment, null, page, account, panel, sheet);
+  const payBox = pay
+    ? h(Paiement, { key: 'paiement', formule: pay, total: (board('apps').value || {}).total, onClose: () => setPay(null),
+        onPay: (formule) => client.action(api.whop.checkout, { formule, origin: window.location.origin, renonce: true }).then((r) => { window.location.assign(r.url); }) })
+    : null;
+  // Retour de Whop : l'accès arrive par le webhook (quelques secondes en général).
+  const paidNote = paid
+    ? h('div', { class: `app-paid is-${paid}`, role: 'status' },
+        paid === 'ok' ? 'Bienvenue dans Kopycat Pro : tout est ouvert.'
+          : paid === 'slow' ? 'Ton paiement est en cours de validation chez Whop. L’accès s’ouvrira tout seul, sans rien faire.'
+          : 'Paiement reçu. On ouvre ton accès…')
+    : null;
+  return h(Fragment, null, page, account, panel, sheet, payBox, paidNote);
 }
 
 /** Une fiche qui n'existe pas (ou plus) dans le Radar, ou une liste pas encore calculée. */

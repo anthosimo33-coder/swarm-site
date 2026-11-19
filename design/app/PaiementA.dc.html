@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Kopycat · Paiement</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#05070C}
+@keyframes payIn{from{opacity:0;transform:translateY(10px) scale(0.985)}to{opacity:1;transform:none}}
+@keyframes payFade{from{opacity:0}to{opacity:1}}
+@keyframes paySpin{to{transform:rotate(360deg)}}
+.pay-bg{animation:payFade .18s ease both}.pay-box{animation:payIn .24s cubic-bezier(.2,.8,.2,1) both}
+.pay-seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:12px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)}
+.pay-seg button{appearance:none;border:0;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;border-radius:9px;font-size:14px;color:var(--ink-muted);background:transparent}
+.pay-seg button[aria-checked="true"]{color:#FFFFFF;font-weight:600;background:rgba(255,255,255,0.1)}
+.pay-check{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);cursor:pointer;font-size:14px;line-height:1.5;color:var(--ink-soft);transition:box-shadow .15s ease}
+.pay-check:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18)}
+.pay-check input{appearance:none;flex-shrink:0;width:20px;height:20px;margin:1px 0 0;border-radius:6px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,0.35);background:transparent;cursor:pointer;display:grid;place-content:center}
+.pay-check input:checked{background:var(--accent);box-shadow:none}
+.pay-check input:checked::after{content:"";width:10px;height:6px;border-left:2px solid #FFFFFF;border-bottom:2px solid #FFFFFF;transform:translateY(-1px) rotate(-45deg)}
+.pay-check input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pay-go{appearance:none;border:0;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;height:52px;border-radius:14px;font-size:16px;font-weight:700;color:#FFFFFF;background:linear-gradient(180deg,#4C9AFF,#0B6FE0);box-shadow:0 10px 26px rgba(11,111,224,0.3);transition:transform .15s ease,filter .15s ease,opacity .15s ease}
+.pay-go:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05)}
+.pay-go:disabled{opacity:.45;cursor:default;box-shadow:none}
+.pay-spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);border-top-color:#FFFFFF;animation:paySpin .8s linear infinite}
+.pay-x{appearance:none;border:0;cursor:pointer;position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);background:rgba(255,255,255,0.04)}
+.pay-x:hover{background:rgba(255,255,255,0.09);color:#FFFFFF}
+.pay-link{color:var(--accent);text-decoration:none}.pay-link:hover{text-decoration:underline}
+@media (max-width: 860px){.pay-bg{align-items:flex-end !important;padding:0 !important}.pay-box{width:100% !important;border-radius:28px 28px 0 0 !important;padding:24px 20px max(20px,env(safe-area-inset-bottom)) !important}}
+@media (prefers-reduced-motion: reduce){.pay-bg,.pay-box{animation:none !important}}
+</style>
+</helmet>
+<div class="sw pay-bg" onClick="{{bg}}" style="position: fixed; inset: 0; z-index: 95; background: rgba(3,4,8,0.62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: var(--font-body); color: var(--ink);">
+<div class="pay-box" role="dialog" aria-modal="true" aria-labelledby="pay-titre" style="position: relative; width: min(480px, 100%); box-sizing: border-box; padding: 28px; border-radius: 24px; background: #11151E; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.09), 0 40px 120px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 20px;">
+<button class="pay-x" type="button" onClick="{{close}}" aria-label="Fermer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button>
+<div style="display: flex; flex-direction: column; gap: 6px; padding-right: 40px;"><h2 id="pay-titre" style="margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em;">Passer à Kopycat Pro</h2><span style="font-size: 14px; color: var(--ink-muted);">Tout Kopycat : les {{totalTxt}} apps, les formats, les créateurs, tous les marchés.</span></div>
+<div class="pay-seg" role="radiogroup" aria-label="Formule"><button type="button" role="radio" aria-checked="{{onM}}" onClick="{{pickM}}">Mensuel</button><button type="button" role="radio" aria-checked="{{onY}}" onClick="{{pickY}}">Annuel<span style="font-size: 11px; font-weight: 700; color: #FF9C57;">−50 %</span></button></div>
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 18px 20px; border-radius: 16px; background: rgba(255,255,255,0.03); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);"><span style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 13px; color: var(--ink-faint);">{{label}}</span><span style="display: flex; align-items: baseline; gap: 8px;"><sc-if value="{{strike}}" hint-placeholder-val="{{true}}"><span style="font-size: 15px; color: var(--ink-faint); text-decoration: line-through;">29,99 €</span></sc-if><span style="font-family: var(--font-display); font-size: 36px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums;">{{price}}</span><span style="font-size: 14px; color: var(--ink-muted);">/ mois</span></span></span><span style="font-size: 13px; line-height: 1.45; color: var(--ink-muted); text-align: right; white-space: pre-line;">{{billing}}</span></div>
+<label class="pay-check"><input type="checkbox" checked="{{agreed}}" onChange="{{onAgree}}"><span>Je veux accéder à Kopycat Pro tout de suite et je renonce à mon délai de rétractation de 14 jours (<a class="pay-link" href="/cgv" target="_blank" rel="noopener">article 6 des CGV</a>).</span></label>
+<div style="display: flex; flex-direction: column; gap: 10px;"><button class="pay-go" type="button" disabled="{{goOff}}" onClick="{{go}}"><sc-if value="{{busy}}" hint-placeholder-val="{{false}}"><span class="pay-spin" aria-hidden="true"></span></sc-if>{{goLabel}}</button><sc-if value="{{err}}" hint-placeholder-val="{{false}}"><span role="alert" style="font-size: 13px; color: #FF8A8A; text-align: center;">{{err}}</span></sc-if><span style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--ink-faint);"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Paiement sécurisé par Whop · résiliable en un clic depuis tes réglages</span></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"formule":{"editor":null},"total":{"editor":null},"onPay":{"editor":null},"onClose":{"editor":null},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    this.onKey = (e) => { if (e.key === 'Escape' && !(this.state || {}).busy && this.props && this.props.onClose) this.props.onClose(); };
+    if (typeof document !== 'undefined') document.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() {
+    if (typeof document !== 'undefined') document.removeEventListener('keydown', this.onKey);
+  }
+  renderVals() {
+    // Avant Whop (19/11) : la formule, et l’accord exigé par l’article 6 des CGV (accès immédiat, renonciation au délai
+    // de rétractation de 14 jours). Sans la case, pas de paiement. onPay(formule) crée le lien Whop et y envoie.
+    const p = this.props || {};
+    const st = this.state || {};
+    const formule = st.formule || (p.formule === 'mensuel' ? 'mensuel' : 'annuel');
+    const y = formule === 'annuel';
+    const total = typeof p.total === 'number' && p.total > 0 ? p.total : 516;
+    const busy = !!st.busy;
+    return {
+      onM: y ? 'false' : 'true', onY: y ? 'true' : 'false',
+      pickM: () => { if (!busy) this.setState({ formule: 'mensuel', err: '' }); },
+      pickY: () => { if (!busy) this.setState({ formule: 'annuel', err: '' }); },
+      label: y ? 'Annuel' : 'Mensuel', strike: y, price: y ? '14,99 €' : '29,99 €',
+      billing: y ? '179,88 € aujourd’hui,\npuis chaque année' : '29,99 € aujourd’hui,\npuis chaque mois',
+      totalTxt: String(total).replace(/\B(?=(\d{3})+(?!\d))/g, ' '),
+      agreed: !!st.agreed, onAgree: (e) => this.setState({ agreed: !!(e && e.target && e.target.checked), err: '' }),
+      busy, err: st.err || '',
+      goOff: !st.agreed || busy,
+      goLabel: busy ? 'Ouverture du paiement…' : (y ? 'Payer 179,88 € sur Whop' : 'Payer 29,99 € sur Whop'),
+      go: () => {
+        if (!st.agreed || busy || !p.onPay) return;
+        this.setState({ busy: true, err: '' });
+        p.onPay(formule).catch(() => this.setState({ busy: false, err: 'Le paiement n’a pas pu s’ouvrir. Réessaie dans un instant.' }));
+      },
+      close: () => { if (!busy && p.onClose) p.onClose(); },
+      bg: (e) => { if (!busy && e && e.target === e.currentTarget && p.onClose) p.onClose(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

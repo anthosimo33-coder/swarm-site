@@ -27,6 +27,7 @@ import type * as saved from "../saved.js";
 import type * as stats from "../stats.js";
 import type * as textLang from "../textLang.js";
 import type * as users from "../users.js";
+import type * as whop from "../whop.js";
 
 import type {
   ApiFromModules,
@@ -54,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   stats: typeof stats;
   textLang: typeof textLang;
   users: typeof users;
+  whop: typeof whop;
 }>;
 
 /**

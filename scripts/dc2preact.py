@@ -106,6 +106,8 @@ APP_COMPONENTS = [
     ('MenuCompteA.dc.html', 'MenuCompte', 'a-mnu'),
     # Réglages (19/11) : fenêtre sur ordinateur, plein écran (liste puis détail) sur téléphone à /app/compte.
     ('ReglagesA.dc.html', 'Reglages', 'a-reg'),
+    # Avant Whop (19/11) : la formule et l'accord de l'article 6 des CGV, puis le lien de paiement Whop.
+    ('PaiementA.dc.html', 'Paiement', 'a-pay'),
 ]
 if not APP_MOBILE_PAGES:
     APP_COMPONENTS = [c for c in APP_COMPONENTS if not c[0].startswith('M')]

@@ -8,7 +8,8 @@ export default class Reglages extends DCLogic {
     this.onKey = (e) => {
       if (e.key !== 'Escape') return;
       const st = this.state || {};
-      if (st.del) this.setState({ del: false, delEmail: '', delErr: '' });
+      if (st.confirm) this.setState({ confirm: false });
+      else if (st.del) this.setState({ del: false, delEmail: '', delErr: '' });
       else if (st.q) this.setState({ q: '' });
       else if (this.props && this.props.onClose && !this.props.mobile) this.props.onClose();
     };
@@ -102,6 +103,30 @@ export default class Reglages extends DCLogic {
     // Fermer le compte
     const delMatch = !!u.email && String(st.delEmail || '').trim().toLowerCase() === String(u.email).trim().toLowerCase();
     const toast = st.toast;
+    // Abonnement Whop (convex/whop.ts, mine) : formule, période en cours, reçus, résiliation.
+    const abo = p.abo || null;
+    const sub = abo && abo.sub;
+    const eur = (a, c) => (a == null ? '' : Number(a).toFixed(2).replace('.', ',') + (String(c || 'eur').toLowerCase() === 'eur' ? ' €' : ' ' + String(c).toUpperCase()));
+    const yearly = !!sub && sub.formule === 'annuel';
+    const end = sub && sub.periodEnd;
+    const days = yearly ? 365 : 30;
+    const start = end ? end - days * 864e5 : null;
+    const pct = end ? Math.max(3, Math.min(100, Math.round(((now - start) / (end - start)) * 100))) : 0;
+    const pays = (abo && abo.payments ? abo.payments : []).map((y) => ({ date: dd(y.at), label: 'Kopycat Pro', amount: eur(y.total, y.currency),
+      state: y.status === 'refunded' ? 'Remboursé' : y.status === 'disputed' ? 'Contesté' : 'Payé', ink: y.status === 'paid' ? '#5CD394' : 'var(--ink-faint)' }));
+    const REASONS = ['Trop cher', 'Je n’en ai plus besoin', 'Il me manque quelque chose', 'Autre'];
+    const doCancel = (cancel) => {
+      if (!p.onCancel || st.subBusy) return;
+      this.setState({ subBusy: true, subErr: '' });
+      p.onCancel(cancel, cancel ? (st.reason || undefined) : undefined).then(() => {
+        this.setState({ subBusy: false, confirm: false, reason: null, toast: { text: cancel ? 'Abonnement résilié · tu gardes tout jusqu’au ' + (end ? dd(end) : 'la fin de la période') : 'Abonnement repris' } });
+        clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), 5000);
+      }, () => {
+        const msg = 'Pas fait : réessaie dans un instant. Si ça continue, écris-nous.';
+        this.setState({ subBusy: false, subErr: msg, toast: st.confirm || cancel ? null : { text: msg } });
+        if (!cancel) { clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), 5000); }
+      });
+    };
     return {
       me: { initiale: String(u.initiale || u.nom || u.email || '?').charAt(0).toUpperCase(), nom: u.nom || String(u.email || '').split('@')[0], email: u.email || '', verified: !!u.emailVerified, pro, free: !pro },
       q, onQ: (e) => this.setState({ q: e.target.value }), searching: !!fq, browsing: !fq,
@@ -137,6 +162,26 @@ export default class Reglages extends DCLogic {
         }, () => this.setState({ busy: null, toast: { text: 'Pas fait : vérifie ta connexion.' } }));
       },
       aboSub: pro ? 'Ton abonnement et tes reçus.' : 'Tu es en aperçu : tu vois le top 3 des apps.',
+      proSub: pro && !!sub, proNoSub: pro && p.abo !== undefined && !sub, aboLoading: pro && p.abo === undefined,
+      subName: yearly ? 'annuel' : 'mensuel',
+      subPill: !sub ? '' : sub.cancelAtPeriodEnd ? 'Résilié' : sub.status === 'past_due' ? 'Paiement en retard' : sub.status === 'trialing' ? 'Essai' : 'Actif',
+      subPillCls: !sub ? '' : sub.cancelAtPeriodEnd ? 'reg-grey' : sub.status === 'past_due' ? 'reg-amber' : 'reg-green',
+      subPrice: sub && sub.price ? eur(sub.price, sub.currency) + (yearly ? ' par an' : ' par mois') : '',
+      manageOn: !!(sub && sub.manageUrl), manageUrl: (sub && sub.manageUrl) || '#',
+      periodOn: !!end, periodPct: pct + '%', periodInk: sub && sub.cancelAtPeriodEnd ? 'rgba(255,255,255,0.35)' : 'var(--accent)',
+      periodLeft: start ? 'Payé le ' + dd(start) : '',
+      periodRight: !end ? '' : sub.cancelAtPeriodEnd ? 'Accès jusqu’au ' + dd(end) : 'Prochain paiement le ' + dd(end) + (sub.price ? ' · ' + eur(sub.price, sub.currency) : ''),
+      endTxt: end ? dd(end) : 'la fin de la période',
+      pays, recusCount: pays.length ? '' : 'Aucun pour l’instant', recusHelp: pays.length ? 'Émis par Whop. Les factures sont dans « Gérer mon paiement ».' : 'Tes reçus arriveront ici après chaque paiement.',
+      canCancel: pro && !!sub && sub.active && !sub.cancelAtPeriodEnd, canResume: pro && !!sub && sub.active && sub.cancelAtPeriodEnd,
+      subBusy: !!st.subBusy, subErr: st.subErr || '',
+      cancelLabel: st.subBusy ? 'Résiliation…' : 'Résilier', resumeLabel: st.subBusy ? 'Reprise…' : 'Reprendre l’abonnement',
+      confirmOn: !!st.confirm,
+      cancelOpen: () => this.setState({ confirm: true, subErr: '', reason: null }),
+      confirmClose: () => this.setState({ confirm: false, subErr: '' }),
+      confirmBg: (e) => { if (e && e.target === e.currentTarget && !st.subBusy) this.setState({ confirm: false }); },
+      confirmCancel: () => doCancel(true), resume: () => doCancel(false),
+      reasons: REASONS.map((r) => ({ label: r, on: st.reason === r ? 'true' : 'false', pick: () => this.setState({ reason: st.reason === r ? null : r }) })),
       bfOn: bfLeft > 0, bfTime,
       billM: bill === 'm' ? 'true' : 'false', billY: bill === 'y' ? 'true' : 'false',
       pickM: () => this.setState({ bill: 'm' }), pickY: () => this.setState({ bill: 'y' }),
@@ -516,7 +561,63 @@ export default class Reglages extends DCLogic {
                   )
                 )
               ] : null,
-              ($v.me?.pro) ? [
+              ($v.aboLoading) ? [
+                $h("div", { "class": "reg-card reg-wait", "aria-busy": "true", "style": "padding: 20px 22px; display: flex; align-items: center; gap: 14px;" },
+                  $h("span", { "class": "reg-skel", "style": "width: 44px; height: 44px; border-radius: 12px;" }),
+                  $h("span", { "style": "flex: 1; display: flex; flex-direction: column; gap: 8px;" },
+                    $h("span", { "class": "reg-skel", "style": "width: 46%; height: 14px;" }),
+                    $h("span", { "class": "reg-skel", "style": "width: 30%; height: 12px;" })
+                  )
+                )
+              ] : null,
+              ($v.proSub) ? [
+                $h("div", { "id": "reg-formule", "class": "reg-card", "style": `padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; ${$t($v.glow?.formule)}` },
+                  $h("span", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;" },
+                    $h("span", { "style": "display: flex; align-items: center; gap: 14px;" },
+                      $h("span", { "style": "width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);" },
+                        $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                          $h("path", { "d": "M13 3L5 14h6l-1 7 8-11h-6z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      ),
+                      $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
+                        $h("span", { "style": "display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; flex-wrap: wrap;" },
+                          "Kopycat Pro · ", $t($v.subName),
+                          $h("span", { "class": `reg-pill ${$t($v.subPillCls)}` },
+                            $t($v.subPill)
+                          )
+                        ),
+                        $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
+                          $t($v.subPrice)
+                        )
+                      )
+                    ),
+                    ($v.manageOn) ? [
+                      $h("a", { "class": "reg-btn", "href": $v.manageUrl, "target": "_blank", "rel": "noopener", "style": "text-decoration: none;" },
+                        "Gérer mon paiement",
+                        $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                          $h("path", { "d": "M7 17L17 7M9 7h8v8", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      )
+                    ] : null
+                  ),
+                  ($v.periodOn) ? [
+                    $h("span", { "style": "display: flex; flex-direction: column; gap: 8px;" },
+                      $h("span", { "style": "position: relative; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden;" },
+                        $h("span", { "style": `position: absolute; left: 0; top: 0; bottom: 0; width: ${$t($v.periodPct)}; border-radius: 3px; background: ${$t($v.periodInk)};` })
+                      ),
+                      $h("span", { "style": "display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--ink-faint);" },
+                        $h("span", null,
+                          $t($v.periodLeft)
+                        ),
+                        $h("span", { "style": "text-align: right;" },
+                          $t($v.periodRight)
+                        )
+                      )
+                    )
+                  ] : null
+                )
+              ] : null,
+              ($v.proNoSub) ? [
                 $h("div", { "id": "reg-formule", "class": "reg-card", "style": `padding: 18px 20px; display: flex; align-items: center; gap: 14px; ${$t($v.glow?.formule)}` },
                   $h("span", { "style": "width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);" },
                     $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
@@ -543,14 +644,131 @@ export default class Reglages extends DCLogic {
                       "Reçus"
                     ),
                     $h("span", { "class": "reg-h" },
-                      "Tes reçus arriveront ici après chaque paiement."
+                      $t($v.recusHelp)
                     )
                   ),
                   $h("span", { "style": "font-size: 13px; color: var(--ink-faint); white-space: nowrap;" },
-                    "Aucun pour l’instant"
+                    $t($v.recusCount)
+                  )
+                ),
+                ($l($v.pays)).map((y) => [
+                  $h("div", { "class": "reg-pay" },
+                    $h("span", { "style": "color: var(--ink-muted); font-variant-numeric: tabular-nums;" },
+                      $t(y?.date)
+                    ),
+                    $h("span", null,
+                      $t(y?.label)
+                    ),
+                    $h("span", { "style": "text-align: right; font-variant-numeric: tabular-nums;" },
+                      $t(y?.amount)
+                    ),
+                    $h("span", { "style": `text-align: right; color: ${$t(y?.ink)}; font-size: 13px;` },
+                      $t(y?.state)
+                    )
+                  )
+                ])
+              ),
+              ($v.canCancel) ? [
+                $h("div", { "style": "margin-top: 18px;" },
+                  $h("button", { "class": "reg-btn reg-text", "type": "button", "onClick": $v.cancelOpen, "style": "padding: 0 4px;" },
+                    "Résilier l’abonnement"
                   )
                 )
-              )
+              ] : null,
+              ($v.canResume) ? [
+                $h("div", { "class": "reg-card", "style": "margin-top: 20px;" },
+                  $h("div", { "class": "reg-row" },
+                    $h("span", { "class": "reg-lab" },
+                      $h("span", { "class": "reg-t" },
+                        "Abonnement résilié"
+                      ),
+                      $h("span", { "class": "reg-h" },
+                        "Tu gardes tout Kopycat jusqu’au ", $t($v.endTxt), ", puis ton compte repasse en aperçu."
+                      )
+                    ),
+                    $h("button", { "class": "reg-btn reg-blue-btn", "type": "button", "disabled": $v.subBusy, "onClick": $v.resume },
+                      $t($v.resumeLabel)
+                    )
+                  )
+                )
+              ] : null,
+              ($v.confirmOn) ? [
+                $h("div", { "class": "reg-confirm", "onClick": $v.confirmBg },
+                  $h("div", { "role": "alertdialog", "aria-labelledby": "reg-res-t", "class": "reg-confirm-box" },
+                    $h("span", { "style": "display: flex; flex-direction: column; gap: 6px;" },
+                      $h("span", { "id": "reg-res-t", "style": "font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em;" },
+                        "Résilier Kopycat Pro ?"
+                      ),
+                      $h("span", { "style": "font-size: 14px; color: var(--ink-muted);" },
+                        "Rien n’est coupé tout de suite."
+                      )
+                    ),
+                    $h("span", { "style": "display: flex; flex-direction: column;" },
+                      $h("span", { "class": "reg-step" },
+                        $h("span", { "class": "reg-dot", "style": "background: var(--accent);" }),
+                        $h("span", null,
+                          $h("b", null,
+                            "Jusqu’au ", $t($v.endTxt)
+                          ),
+                          $h("i", null,
+                            "Tu gardes tout Kopycat, déjà payé."
+                          )
+                        )
+                      ),
+                      $h("span", { "class": "reg-step" },
+                        $h("span", { "class": "reg-dot" }),
+                        $h("span", null,
+                          $h("b", null,
+                            "Ensuite"
+                          ),
+                          $h("i", null,
+                            "Ton compte repasse en aperçu : le top 3 des apps."
+                          )
+                        )
+                      ),
+                      $h("span", { "class": "reg-step reg-step-last" },
+                        $h("span", { "class": "reg-dot" }),
+                        $h("span", null,
+                          $h("b", null,
+                            "Tes dossiers et tes suivis restent gardés"
+                          ),
+                          $h("i", null,
+                            "Ils reviennent tels quels si tu reprends Pro."
+                          )
+                        )
+                      )
+                    ),
+                    $h("span", { "style": "display: flex; flex-direction: column; gap: 10px;" },
+                      $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
+                        "Pourquoi tu pars ? ",
+                        $h("span", { "style": "color: var(--ink-faint);" },
+                          "(facultatif)"
+                        )
+                      ),
+                      $h("span", { "style": "display: flex; flex-wrap: wrap; gap: 8px;" },
+                        ($l($v.reasons)).map((r) => [
+                          $h("button", { "class": "reg-chip", "type": "button", "aria-pressed": r?.on, "onClick": r?.pick },
+                            $t(r?.label)
+                          )
+                        ])
+                      )
+                    ),
+                    ($v.subErr) ? [
+                      $h("span", { "role": "alert", "style": "font-size: 13px; color: #FF8A8A;" },
+                        $t($v.subErr)
+                      )
+                    ] : null,
+                    $h("span", { "style": "display: flex; justify-content: flex-end; gap: 10px;" },
+                      $h("button", { "class": "reg-btn reg-redline", "type": "button", "disabled": $v.subBusy, "onClick": $v.confirmCancel },
+                        $t($v.cancelLabel)
+                      ),
+                      $h("button", { "class": "reg-btn reg-blue-btn", "type": "button", "onClick": $v.confirmClose },
+                        "Garder Pro"
+                      )
+                    )
+                  )
+                )
+              ] : null
             ] : null,
             ($v.toastOn) ? [
               $h("div", { "class": "reg-toast", "role": "status" },

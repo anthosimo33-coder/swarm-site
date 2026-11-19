@@ -64,6 +64,20 @@ body{margin:0;background:#05070C}
 .reg-toast button{appearance:none;border:0;cursor:pointer;font-family:inherit;padding:6px 10px;border-radius:8px;background:transparent;color:var(--accent);font-weight:600;font-size:14px}
 .reg-toast button:hover{background:rgba(76,154,255,0.12)}
 @media (prefers-reduced-motion: reduce){.reg-bg,.reg-box,.reg-toast,.reg-ok{animation:none !important}}
+@keyframes regPulse{0%,100%{opacity:.5}50%{opacity:1}}
+.reg-skel{display:block;border-radius:7px;background:rgba(255,255,255,0.07);animation:regPulse 1.2s ease-in-out infinite}
+.reg-pay{display:grid;grid-template-columns:110px 1fr 90px 90px;align-items:center;height:48px;border-top:1px solid var(--line);font-size:14px}
+.reg-blue-btn{background:linear-gradient(180deg,#4C9AFF,#0B6FE0) !important;box-shadow:0 6px 18px rgba(11,111,224,0.3) !important;color:#FFFFFF}
+.reg-amber{background:rgba(245,185,65,0.14);color:#F5B941}.reg-grey{background:rgba(255,255,255,0.06);color:var(--ink-muted)}
+.reg-confirm{position:absolute;inset:0;z-index:5;background:rgba(5,7,12,0.7);display:flex;align-items:center;justify-content:center;padding:20px;animation:regFade .15s ease both}
+.reg-confirm-box{width:min(480px,100%);box-sizing:border-box;padding:28px;border-radius:22px;background:#151A24;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1),0 30px 80px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:20px;animation:regIn .2s ease both}
+.reg-step{display:grid;grid-template-columns:20px 1fr;gap:12px;position:relative;padding-bottom:14px}
+.reg-step::before{content:'';position:absolute;left:9px;top:18px;bottom:2px;width:2px;background:rgba(255,255,255,0.1)}.reg-step-last{padding-bottom:0}.reg-step-last::before{display:none}
+.reg-dot{width:12px;height:12px;margin:4px 0 0 4px;border-radius:50%;background:rgba(255,255,255,0.3)}
+.reg-step b{display:block;font-size:14px;font-weight:600;color:#FFFFFF}.reg-step i{display:block;font-style:normal;font-size:13px;color:var(--ink-faint)}
+.reg-chip{appearance:none;border:0;cursor:pointer;font-family:inherit;height:34px;padding:0 12px;border-radius:999px;font-size:13px;background:rgba(255,255,255,0.04);color:var(--ink-soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1)}
+.reg-chip[aria-pressed="true"]{background:rgba(76,154,255,0.14);color:#FFFFFF;box-shadow:inset 0 0 0 1px var(--accent-edge)}
+.reg-mob .reg-pay{grid-template-columns:90px 1fr 80px}.reg-mob .reg-pay>span:last-child{display:none}
 .reg-out{color:#FF8A8A !important}.reg-out .reg-nav-ic{color:#FF8A8A !important}
 .reg-mbar{position:relative;display:flex;align-items:center;justify-content:center;height:44px;margin:-4px 0 8px}
 .reg-mok,.reg-back{appearance:none;border:0;background:transparent;cursor:pointer;font-family:inherit;color:var(--accent);font-size:16px;font-weight:600;-webkit-tap-highlight-color:transparent}
@@ -125,8 +139,8 @@ body{margin:0;background:#05070C}
 <span style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;"><span style="display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; align-items: baseline; gap: 8px;"><sc-if value="{{billY}}" hint-placeholder-val="{{true}}"><span style="font-size: 16px; color: var(--ink-faint); text-decoration: line-through;">29,99 €</span></sc-if><span style="font-family: var(--font-display); font-size: 44px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums;">{{price}}</span><span style="font-size: 14px; color: var(--ink-muted);">/ mois</span></span><span style="font-size: 13px; color: var(--ink-muted);">{{priceSub}}</span></span><a class="reg-cta" href="{{ctaHref}}" style="{{ctaStyle}}">{{ctaLabel}}</a></span>
 <span class="reg-inc"><sc-for list="{{inc}}" as="i" hint-placeholder-count="6"><span><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--accent);"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{i}}</span></sc-for></span>
 </div></sc-if>
-<sc-if value="{{me.pro}}" hint-placeholder-val="{{false}}"><div id="reg-formule" class="reg-card" style="padding: 18px 20px; display: flex; align-items: center; gap: 14px; {{glow.formule}}"><span style="width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M13 3L5 14h6l-1 7 8-11h-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="display: flex; flex-direction: column; gap: 4px;"><span style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700;">Kopycat Pro<span class="reg-pill reg-green">Actif</span></span><span style="font-size: 13px; color: var(--ink-muted);">Ton compte a accès à tout Kopycat.</span></span></div></sc-if>
-<div class="reg-card" style="margin-top: 20px;"><div id="reg-recus" class="reg-row" style=" {{glow.recus}}"><span class="reg-lab"><span class="reg-t">Reçus</span><span class="reg-h">Tes reçus arriveront ici après chaque paiement.</span></span><span style="font-size: 13px; color: var(--ink-faint); white-space: nowrap;">Aucun pour l’instant</span></div></div>
+<sc-if value="{{aboLoading}}" hint-placeholder-val="{{false}}"><div class="reg-card reg-wait" aria-busy="true" style="padding: 20px 22px; display: flex; align-items: center; gap: 14px;"><span class="reg-skel" style="width: 44px; height: 44px; border-radius: 12px;"></span><span style="flex: 1; display: flex; flex-direction: column; gap: 8px;"><span class="reg-skel" style="width: 46%; height: 14px;"></span><span class="reg-skel" style="width: 30%; height: 12px;"></span></span></div></sc-if><sc-if value="{{proSub}}" hint-placeholder-val="{{false}}"><div id="reg-formule" class="reg-card" style="padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; {{glow.formule}}"><span style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"><span style="display: flex; align-items: center; gap: 14px;"><span style="width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M13 3L5 14h6l-1 7 8-11h-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="display: flex; flex-direction: column; gap: 4px;"><span style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; flex-wrap: wrap;">Kopycat Pro · {{subName}}<span class="reg-pill {{subPillCls}}">{{subPill}}</span></span><span style="font-size: 13px; color: var(--ink-muted);">{{subPrice}}</span></span></span><sc-if value="{{manageOn}}" hint-placeholder-val="{{true}}"><a class="reg-btn" href="{{manageUrl}}" target="_blank" rel="noopener" style="text-decoration: none;">Gérer mon paiement<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></sc-if></span><sc-if value="{{periodOn}}" hint-placeholder-val="{{true}}"><span style="display: flex; flex-direction: column; gap: 8px;"><span style="position: relative; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden;"><span style="position: absolute; left: 0; top: 0; bottom: 0; width: {{periodPct}}; border-radius: 3px; background: {{periodInk}};"></span></span><span style="display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--ink-faint);"><span>{{periodLeft}}</span><span style="text-align: right;">{{periodRight}}</span></span></span></sc-if></div></sc-if><sc-if value="{{proNoSub}}" hint-placeholder-val="{{false}}"><div id="reg-formule" class="reg-card" style="padding: 18px 20px; display: flex; align-items: center; gap: 14px; {{glow.formule}}"><span style="width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M13 3L5 14h6l-1 7 8-11h-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="display: flex; flex-direction: column; gap: 4px;"><span style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700;">Kopycat Pro<span class="reg-pill reg-green">Actif</span></span><span style="font-size: 13px; color: var(--ink-muted);">Ton compte a accès à tout Kopycat.</span></span></div></sc-if>
+<div class="reg-card" style="margin-top: 20px;"><div id="reg-recus" class="reg-row" style=" {{glow.recus}}"><span class="reg-lab"><span class="reg-t">Reçus</span><span class="reg-h">{{recusHelp}}</span></span><span style="font-size: 13px; color: var(--ink-faint); white-space: nowrap;">{{recusCount}}</span></div><sc-for list="{{pays}}" as="y" hint-placeholder-count="2"><div class="reg-pay"><span style="color: var(--ink-muted); font-variant-numeric: tabular-nums;">{{y.date}}</span><span>{{y.label}}</span><span style="text-align: right; font-variant-numeric: tabular-nums;">{{y.amount}}</span><span style="text-align: right; color: {{y.ink}}; font-size: 13px;">{{y.state}}</span></div></sc-for></div><sc-if value="{{canCancel}}" hint-placeholder-val="{{false}}"><div style="margin-top: 18px;"><button class="reg-btn reg-text" type="button" onClick="{{cancelOpen}}" style="padding: 0 4px;">Résilier l’abonnement</button></div></sc-if><sc-if value="{{canResume}}" hint-placeholder-val="{{false}}"><div class="reg-card" style="margin-top: 20px;"><div class="reg-row"><span class="reg-lab"><span class="reg-t">Abonnement résilié</span><span class="reg-h">Tu gardes tout Kopycat jusqu’au {{endTxt}}, puis ton compte repasse en aperçu.</span></span><button class="reg-btn reg-blue-btn" type="button" disabled="{{subBusy}}" onClick="{{resume}}">{{resumeLabel}}</button></div></div></sc-if><sc-if value="{{confirmOn}}" hint-placeholder-val="{{false}}"><div class="reg-confirm" onClick="{{confirmBg}}"><div role="alertdialog" aria-labelledby="reg-res-t" class="reg-confirm-box"><span style="display: flex; flex-direction: column; gap: 6px;"><span id="reg-res-t" style="font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">Résilier Kopycat Pro ?</span><span style="font-size: 14px; color: var(--ink-muted);">Rien n’est coupé tout de suite.</span></span><span style="display: flex; flex-direction: column;"><span class="reg-step"><span class="reg-dot" style="background: var(--accent);"></span><span><b>Jusqu’au {{endTxt}}</b><i>Tu gardes tout Kopycat, déjà payé.</i></span></span><span class="reg-step"><span class="reg-dot"></span><span><b>Ensuite</b><i>Ton compte repasse en aperçu : le top 3 des apps.</i></span></span><span class="reg-step reg-step-last"><span class="reg-dot"></span><span><b>Tes dossiers et tes suivis restent gardés</b><i>Ils reviennent tels quels si tu reprends Pro.</i></span></span></span><span style="display: flex; flex-direction: column; gap: 10px;"><span style="font-size: 13px; color: var(--ink-muted);">Pourquoi tu pars ? <span style="color: var(--ink-faint);">(facultatif)</span></span><span style="display: flex; flex-wrap: wrap; gap: 8px;"><sc-for list="{{reasons}}" as="r" hint-placeholder-count="4"><button class="reg-chip" type="button" aria-pressed="{{r.on}}" onClick="{{r.pick}}">{{r.label}}</button></sc-for></span></span><sc-if value="{{subErr}}" hint-placeholder-val="{{false}}"><span role="alert" style="font-size: 13px; color: #FF8A8A;">{{subErr}}</span></sc-if><span style="display: flex; justify-content: flex-end; gap: 10px;"><button class="reg-btn reg-redline" type="button" disabled="{{subBusy}}" onClick="{{confirmCancel}}">{{cancelLabel}}</button><button class="reg-btn reg-blue-btn" type="button" onClick="{{confirmClose}}">Garder Pro</button></span></div></div></sc-if>
 </sc-if>
 
 <sc-if value="{{toastOn}}" hint-placeholder-val="{{false}}"><div class="reg-toast" role="status"><span style="color: #5CD394; display: flex;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{toastText}}<sc-if value="{{toastUndo}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{undo}}">Annuler</button></sc-if></div></sc-if>
@@ -134,14 +148,15 @@ body{margin:0;background:#05070C}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"section":{"editor":null},"sessions":{"editor":null},"total":{"editor":null},"checkout":{"editor":null},"onClose":{"editor":null},"onSaveName":{"editor":null},"onSignOutOthers":{"editor":null},"onDelete":{"editor":null},"mobile":{"editor":null},"$preview":{"width":1280,"height":800}}'>
+<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"section":{"editor":null},"sessions":{"editor":null},"total":{"editor":null},"checkout":{"editor":null},"onClose":{"editor":null},"onSaveName":{"editor":null},"onSignOutOthers":{"editor":null},"onDelete":{"editor":null},"abo":{"editor":null},"onCancel":{"editor":null},"mobile":{"editor":null},"$preview":{"width":1280,"height":800}}'>
 class Component extends DCLogic {
   componentDidMount() {
     this.timer = setInterval(() => this.setState({ now: Date.now() }), 1000);
     this.onKey = (e) => {
       if (e.key !== 'Escape') return;
       const st = this.state || {};
-      if (st.del) this.setState({ del: false, delEmail: '', delErr: '' });
+      if (st.confirm) this.setState({ confirm: false });
+      else if (st.del) this.setState({ del: false, delEmail: '', delErr: '' });
       else if (st.q) this.setState({ q: '' });
       else if (this.props && this.props.onClose && !this.props.mobile) this.props.onClose();
     };
@@ -235,6 +250,30 @@ class Component extends DCLogic {
     // Fermer le compte
     const delMatch = !!u.email && String(st.delEmail || '').trim().toLowerCase() === String(u.email).trim().toLowerCase();
     const toast = st.toast;
+    // Abonnement Whop (convex/whop.ts, mine) : formule, période en cours, reçus, résiliation.
+    const abo = p.abo || null;
+    const sub = abo && abo.sub;
+    const eur = (a, c) => (a == null ? '' : Number(a).toFixed(2).replace('.', ',') + (String(c || 'eur').toLowerCase() === 'eur' ? ' €' : ' ' + String(c).toUpperCase()));
+    const yearly = !!sub && sub.formule === 'annuel';
+    const end = sub && sub.periodEnd;
+    const days = yearly ? 365 : 30;
+    const start = end ? end - days * 864e5 : null;
+    const pct = end ? Math.max(3, Math.min(100, Math.round(((now - start) / (end - start)) * 100))) : 0;
+    const pays = (abo && abo.payments ? abo.payments : []).map((y) => ({ date: dd(y.at), label: 'Kopycat Pro', amount: eur(y.total, y.currency),
+      state: y.status === 'refunded' ? 'Remboursé' : y.status === 'disputed' ? 'Contesté' : 'Payé', ink: y.status === 'paid' ? '#5CD394' : 'var(--ink-faint)' }));
+    const REASONS = ['Trop cher', 'Je n’en ai plus besoin', 'Il me manque quelque chose', 'Autre'];
+    const doCancel = (cancel) => {
+      if (!p.onCancel || st.subBusy) return;
+      this.setState({ subBusy: true, subErr: '' });
+      p.onCancel(cancel, cancel ? (st.reason || undefined) : undefined).then(() => {
+        this.setState({ subBusy: false, confirm: false, reason: null, toast: { text: cancel ? 'Abonnement résilié · tu gardes tout jusqu’au ' + (end ? dd(end) : 'la fin de la période') : 'Abonnement repris' } });
+        clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), 5000);
+      }, () => {
+        const msg = 'Pas fait : réessaie dans un instant. Si ça continue, écris-nous.';
+        this.setState({ subBusy: false, subErr: msg, toast: st.confirm || cancel ? null : { text: msg } });
+        if (!cancel) { clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), 5000); }
+      });
+    };
     return {
       me: { initiale: String(u.initiale || u.nom || u.email || '?').charAt(0).toUpperCase(), nom: u.nom || String(u.email || '').split('@')[0], email: u.email || '', verified: !!u.emailVerified, pro, free: !pro },
       q, onQ: (e) => this.setState({ q: e.target.value }), searching: !!fq, browsing: !fq,
@@ -270,6 +309,26 @@ class Component extends DCLogic {
         }, () => this.setState({ busy: null, toast: { text: 'Pas fait : vérifie ta connexion.' } }));
       },
       aboSub: pro ? 'Ton abonnement et tes reçus.' : 'Tu es en aperçu : tu vois le top 3 des apps.',
+      proSub: pro && !!sub, proNoSub: pro && p.abo !== undefined && !sub, aboLoading: pro && p.abo === undefined,
+      subName: yearly ? 'annuel' : 'mensuel',
+      subPill: !sub ? '' : sub.cancelAtPeriodEnd ? 'Résilié' : sub.status === 'past_due' ? 'Paiement en retard' : sub.status === 'trialing' ? 'Essai' : 'Actif',
+      subPillCls: !sub ? '' : sub.cancelAtPeriodEnd ? 'reg-grey' : sub.status === 'past_due' ? 'reg-amber' : 'reg-green',
+      subPrice: sub && sub.price ? eur(sub.price, sub.currency) + (yearly ? ' par an' : ' par mois') : '',
+      manageOn: !!(sub && sub.manageUrl), manageUrl: (sub && sub.manageUrl) || '#',
+      periodOn: !!end, periodPct: pct + '%', periodInk: sub && sub.cancelAtPeriodEnd ? 'rgba(255,255,255,0.35)' : 'var(--accent)',
+      periodLeft: start ? 'Payé le ' + dd(start) : '',
+      periodRight: !end ? '' : sub.cancelAtPeriodEnd ? 'Accès jusqu’au ' + dd(end) : 'Prochain paiement le ' + dd(end) + (sub.price ? ' · ' + eur(sub.price, sub.currency) : ''),
+      endTxt: end ? dd(end) : 'la fin de la période',
+      pays, recusCount: pays.length ? '' : 'Aucun pour l’instant', recusHelp: pays.length ? 'Émis par Whop. Les factures sont dans « Gérer mon paiement ».' : 'Tes reçus arriveront ici après chaque paiement.',
+      canCancel: pro && !!sub && sub.active && !sub.cancelAtPeriodEnd, canResume: pro && !!sub && sub.active && sub.cancelAtPeriodEnd,
+      subBusy: !!st.subBusy, subErr: st.subErr || '',
+      cancelLabel: st.subBusy ? 'Résiliation…' : 'Résilier', resumeLabel: st.subBusy ? 'Reprise…' : 'Reprendre l’abonnement',
+      confirmOn: !!st.confirm,
+      cancelOpen: () => this.setState({ confirm: true, subErr: '', reason: null }),
+      confirmClose: () => this.setState({ confirm: false, subErr: '' }),
+      confirmBg: (e) => { if (e && e.target === e.currentTarget && !st.subBusy) this.setState({ confirm: false }); },
+      confirmCancel: () => doCancel(true), resume: () => doCancel(false),
+      reasons: REASONS.map((r) => ({ label: r, on: st.reason === r ? 'true' : 'false', pick: () => this.setState({ reason: st.reason === r ? null : r }) })),
       bfOn: bfLeft > 0, bfTime,
       billM: bill === 'm' ? 'true' : 'false', billY: bill === 'y' ? 'true' : 'false',
       pickM: () => this.setState({ bill: 'm' }), pickY: () => this.setState({ bill: 'y' }),

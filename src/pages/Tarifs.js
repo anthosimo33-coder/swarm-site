@@ -87,6 +87,8 @@ export default class Tarifs extends DCLogic {
     ];
     const mk = (title, links) => ({ title, links: links.map((l) => ({ t: l[0], href: l[1] })) });
     return {
+      // « Passer Pro » (19/11) : l’écran de paiement de l’app, formule choisie ici (connexion demandée d’abord).
+      payHref: annual ? '/app/payer/annuel' : '/app/payer/mensuel',
       bfOn: bfLeft > 0, bfOff: bfLeft === 0, bfTime,
       bfGo: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ bill: 'y' }); const el = typeof document !== 'undefined' && document.getElementById('bf-prix'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
       bfBadge: bfLeft > 0 ? 'linear-gradient(180deg, #FFA266, #FF6A2B)' : '#0B6FE0',
@@ -370,7 +372,7 @@ export default class Tarifs extends DCLogic {
                     )
                   )
                 ),
-                $h("a", { "href": "/inscription", "class": "cta", "style": "position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                $h("a", { "href": $v.payHref, "class": "cta", "style": "position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 5px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                   "Passer Pro",
                   $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                     $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -529,7 +531,7 @@ export default class Tarifs extends DCLogic {
                   )
                 ),
                 $h("div", { "style": "position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 12px;" },
-                  $h("a", { "href": "/inscription", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                  $h("a", { "href": $v.payHref, "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Passer Pro",
                     $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                       $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
