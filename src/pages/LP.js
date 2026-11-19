@@ -779,6 +779,20 @@ export default class LP extends DCLogic {
               ),
               $h("p", { "style": "margin: 0; max-width: 560px; font-size: 19px; line-height: 1.55; color: #9AA3B2;" },
                 "Rejoins les membres qui savent déjà ce qui explose sur les réseaux, avant tout le monde."
+              ),
+              $h("div", { "role": "img", "aria-label": "Note moyenne des membres : 4,8 sur 5", "style": "display: inline-flex; align-items: center; border-radius: 999px; padding: 12px 22px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);" },
+                $h("span", { "style": "font-size: 15px; color: #E6E9EF;" },
+                  $h("span", { "style": "color: #F5B941;" },
+                    "★★★★★"
+                  ),
+                  " ",
+                  $h("span", { "style": "font-weight: 700;" },
+                    "4,8 / 5"
+                  ),
+                  $h("span", { "style": "color: #8A93A3;" },
+                    " · note moyenne des membres"
+                  )
+                )
               )
             ),
             $h("div", { "aria-label": "Avis des membres", "style": "position: relative; height: 640px; overflow: hidden; padding: 0 48px; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 82%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 82%, transparent 100%);" },
@@ -806,22 +820,7 @@ export default class LP extends DCLogic {
                 ])
               )
             ),
-            $h("div", { "style": "padding: 32px 48px 104px; display: flex; justify-content: center;" },
-              $h("div", { "role": "img", "aria-label": "Note moyenne des membres : 4,8 sur 5", "style": "display: inline-flex; align-items: center; gap: 16px; border-radius: 999px; padding: 12px 22px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);" },
-                $h("span", { "style": "font-size: 15px; color: #E6E9EF;" },
-                  $h("span", { "style": "color: #F5B941;" },
-                    "★★★★★"
-                  ),
-                  " ",
-                  $h("span", { "style": "font-weight: 700;" },
-                    "4,8 / 5"
-                  ),
-                  $h("span", { "style": "color: #8A93A3;" },
-                    " · note moyenne des membres"
-                  )
-                )
-              )
-            )
+            $h("div", { "aria-hidden": "true", "style": "height: 104px;" })
           )
         ),
         $h("div", { "class": "dk", "style": "position: relative; overflow: hidden; background-color: #05070C; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px); color: #FFFFFF;" },
