@@ -1,0 +1,12 @@
+/* Généré par scripts/dc2preact.py depuis design/app/MenuCompteA.dc.html */
+body{margin:0;background:#05070C}
+@keyframes a-mnu-mnuIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mnu-row{appearance:none;border:0;margin:0;width:100%;background:transparent;cursor:pointer;font-family:inherit;text-align:left;text-decoration:none;display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:10px;font-size:14px;color:var(--ink-soft);box-sizing:border-box}
+.mnu-row:hover,.mnu-row:focus-visible{background:rgba(255,255,255,0.06);color:#FFFFFF;outline:none}
+.mnu-row .mnu-ic{color:var(--ink-muted);display:flex}
+.mnu-row:hover .mnu-ic{color:var(--ink-soft)}
+.mnu-out,.mnu-out .mnu-ic{color:#FF8A8A !important}
+.mnu-out:hover{background:rgba(255,122,122,0.08) !important}
+.mnu-pro{appearance:none;border:0;cursor:pointer;font-family:inherit}
+.mnu-pro:hover{filter:brightness(1.08)}
+@media (prefers-reduced-motion: reduce){.mnu-box{animation:none !important}}

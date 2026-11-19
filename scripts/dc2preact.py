@@ -102,6 +102,8 @@ APP_COMPONENTS = [
     ('FormulesA.dc.html', 'Formules', 'a-for'),
     ('MApercuApps.dc.html', 'MApercuApps', 'm-apr'),
     ('MFormules.dc.html', 'MFormules', 'm-for'),
+    # Panneau du compte (19/11) : ouvert par l'avatar de la barre latérale, monté par src/app/main.js.
+    ('MenuCompteA.dc.html', 'MenuCompte', 'a-mnu'),
 ]
 if not APP_MOBILE_PAGES:
     APP_COMPONENTS = [c for c in APP_COMPONENTS if not c[0].startswith('M')]

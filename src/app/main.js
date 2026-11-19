@@ -24,6 +24,7 @@ import Apercu from './pages/Apercu.js';
 import MApercuApps from './pages/MApercuApps.js';
 import Formules from './pages/Formules.js';
 import MFormules from './pages/MFormules.js';
+import MenuCompte from './pages/MenuCompte.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
@@ -31,6 +32,7 @@ import './styles/a-apr.css';
 import './styles/m-apr.css';
 import './styles/a-for.css';
 import './styles/m-for.css';
+import './styles/a-mnu.css';
 
 const HOME = '/app';
 const SIGN_OUT = '/app/deconnexion';
@@ -166,6 +168,8 @@ function App() {
   const known = user !== null;
   // Aperçu : la fenêtre des formules, et l'abonnement lu par les gestionnaires montés une seule fois.
   const [plans, setPlans] = useState(false);
+  // Panneau du compte : l'avatar de la barre latérale (ordinateur) l'ouvre au lieu de mener à Compte.
+  const [menu, setMenu] = useState(false);
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
 
@@ -173,6 +177,11 @@ function App() {
   useEffect(() => {
     const onClick = (event) => {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (event.target.closest && event.target.closest('.sw-sidebar .sw-side-foot .sw-avatar')) {
+        event.preventDefault();
+        setMenu((open) => !open);
+        return;
+      }
       const link = event.target.closest && event.target.closest('a[href]');
       if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
       const url = new URL(link.href, window.location.href);
@@ -224,6 +233,9 @@ function App() {
       window.removeEventListener('popstate', onPop);
     };
   }, []);
+
+  // Changer d'écran referme le panneau du compte.
+  useEffect(() => setMenu(false), [path]);
 
   // Aperçu : une adresse fermée (lien direct, favori, retour arrière) revient à Apps, fenêtre des formules ouverte ;
   // Accueil y revient sans fenêtre.
@@ -344,7 +356,10 @@ function App() {
   }
   const total = (!user.pro && (board('apps').value || {}).total) || undefined;
   const sheet = plans ? h(screen.mobile ? MFormules : Formules, { onClose: () => setPlans(false), checkout: CHECKOUT, total }) : null;
-  return h(Fragment, null, page, sheet);
+  const account = menu && !screen.mobile
+    ? h(MenuCompte, { user, total: (board('apps').value || {}).total, onClose: () => setMenu(false), onPlans: () => { setMenu(false); setPlans(true); } })
+    : null;
+  return h(Fragment, null, page, account, sheet);
 }
 
 /** Une fiche qui n'existe pas (ou plus) dans le Radar, ou une liste pas encore calculée. */
