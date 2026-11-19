@@ -5,6 +5,20 @@ import { v } from "convex/values";
 export default defineSchema({
   // Comptes (Convex Auth).
   ...authTables,
+  // La table des comptes de Convex Auth, plus `pro` (19/11) : true = abonné, tout Kopycat. Absent = l'aperçu
+  // (convex/boards.ts) : le top 3 des apps, leurs fiches et leurs vidéos. Mis à true par le paiement (Whop) ou à la main.
+  users: defineTable({
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    pro: v.optional(v.boolean()),
+  })
+    .index("email", ["email"])
+    .index("phone", ["phone"]),
 
   // Les données de chaque écran de l'app, calculées depuis le Radar à chaque
   // synchronisation (convex/radarSync.ts). Une clé par écran ou par fiche :

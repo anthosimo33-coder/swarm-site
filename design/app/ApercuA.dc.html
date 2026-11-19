@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Kopycat · Aperçu des apps</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+.apr-bf{appearance:none;border:0;margin:0;width:100%;cursor:pointer;font-family:inherit}
+.apr-bf:hover .apr-go{color:#FF9C57}
+.apr-top{transition:transform .25s ease}.apr-top:hover{transform:translateY(-2px)}
+.apr-top:hover .apr-cover img{transform:scale(1.03)}
+.apr-cover img{transition:transform .4s ease}
+.apr-lock{opacity:.5}
+.apr-strip{appearance:none;border:0;margin:0;width:100%;cursor:pointer;font-family:inherit;text-align:left}
+.apr-strip:hover .apr-go{color:#FF9C57}
+.apr-cover{height:clamp(128px,20vh,172px) !important}
+@media (max-width: 1180px){.apr-card{grid-template-columns:minmax(0,1fr) auto auto !important;gap:24px !important}.apr-lockic{display:none !important}.apr-price{padding-left:0 !important;border-left:0 !important}.apr-grid{gap:16px !important}}
+</style>
+</helmet>
+<div class="sw" style="display: flex; flex-direction: column; min-height: 100vh; background: var(--surface); color: var(--ink); font-family: var(--font-body);">
+<sc-if value="{{bfOn}}" hint-placeholder-val="{{true}}"><button class="apr-bf" type="button" onClick="{{openPlans}}" aria-label="Black Friday : jusqu’à −50 % sur l’abonnement annuel, fin dans {{bfTime}}" style="display: flex; align-items: center; justify-content: center; gap: 12px; height: 42px; padding: 0 16px; background: #0B0E14; border-bottom: 1px solid rgba(255,255,255,0.07); color: #C9CED8; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden;"><svg width="16" height="18" viewBox="0 0 20 23" aria-hidden="true" style="flex-shrink: 0;"><defs><linearGradient id="aprFlame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD08A"></stop><stop offset="0.5" stop-color="#FF8A4C"></stop><stop offset="1" stop-color="#FF4F1F"></stop></linearGradient></defs><path d="M11.2 0.8c.5 3.2-1.3 5.1-3 6.9C6.3 9.7 4 11.9 4 15.4 4 19.4 6.9 22.2 10.3 22.2s6.3-2.8 6.3-6.7c0-2.5-1.1-4.3-2.4-5.8-.3 1.6-1.1 2.9-2.4 3.4.5-4.5-.7-8.7-3.2-12.3z" fill="url(#aprFlame)"></path><path d="M10.3 22.2c-2 0-3.5-1.5-3.5-3.6 0-2 1.3-3.2 2.6-4.5.3 1.3 1.1 2 2.1 2.3-.1-1.1.3-2.4.9-3.2 1.4 1.4 2.4 3 2.4 5 0 2.4-1.8 4-4.5 4z" fill="#FFE7B3" opacity="0.9"></path></svg><span style="color: #FFFFFF; font-weight: 700;">Black Friday</span><span aria-hidden="true" style="color: #3A4150;">•</span><span>Jusqu’à <span style="color: #FF8A4C; font-weight: 700;">−50 %</span> sur l’abonnement annuel</span><span aria-hidden="true" style="color: #3A4150;">•</span><span style="color: #8A93A3;">Fin dans <span style="color: #E6E9EF; font-variant-numeric: tabular-nums;">{{bfTime}}</span></span><span aria-hidden="true" style="color: #3A4150;">•</span><span class="apr-go" style="color: #FFFFFF; font-weight: 700;">J’en profite →</span></button></sc-if>
+<div style="flex: 1 1 auto; display: flex; flex-wrap: wrap;">
+<nav class="sw-sidebar" aria-label="Navigation principale">
+<a class="sw-side-logo" href="AppsA.dc.html" aria-label="Kopycat, apps"><span class="sw-app-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span></a>
+<a class="sw-side-item" href="AppsA.dc.html" aria-current="page"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Apps</a>
+<sc-for list="{{locked}}" as="n" hint-placeholder-count="4">
+<a class="sw-side-item apr-lock" href="{{n.href}}" aria-current="false" aria-label="{{n.label}}, avec Kopycat Pro"><span class="sw-side-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{n.label}}</a>
+</sc-for>
+<div class="sw-side-foot">
+<a class="sw-avatar" href="CompteA.dc.html" aria-label="Mon compte" style="text-decoration: none;">{{me.initiale}}</a>
+</div>
+</nav>
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 48px 48px; display: flex; flex-direction: column; gap: 32px;">
+<header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+<div style="display: flex; flex-direction: column; gap: 10px;">
+<span class="eyebrow" style="color: var(--ink-muted);"><span style="color: var(--accent);">[</span> APPS <span style="color: var(--accent);">]</span></span>
+<h1 class="headline" style="margin: 0;">Les apps qui explosent</h1>
+</div>
+<span style="font-size: 14px; color: var(--ink-faint);">{{totalTxt}} apps suivies · classées par vues sur 30 jours</span>
+</header>
+<section class="apr-grid" aria-label="Le top 3, ouvert" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;">
+<sc-for list="{{top}}" as="a" hint-placeholder-count="3">
+<a class="apr-top" href="{{a.href}}" aria-label="{{a.aria}}" style="display: flex; flex-direction: column; gap: 16px; min-width: 0; color: inherit; text-decoration: none;">
+<span class="apr-cover" style="position: relative; display: block; height: 172px; border-radius: 20px; overflow: hidden; background: var(--thumb-navy);"><sc-if value="{{a.cover}}" hint-placeholder-val="{{false}}"><img src="{{a.cover}}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;"></sc-if><span style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,7,12,0) 35%, rgba(5,7,12,0.88));"></span><span class="mono-label" style="position: absolute; left: 16px; top: 14px; color: #FFFFFF;">{{a.rank}}</span><span style="position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; align-items: center; gap: 10px; min-width: 0;"><sc-if value="{{a.icon}}" hint-placeholder-val="{{false}}"><img src="{{a.icon}}" alt="" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; object-fit: cover;"></sc-if><span style="display: flex; flex-direction: column; min-width: 0;"><span style="font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{a.name}}</span><span style="font-size: 12px; color: var(--ink-muted);">{{a.niche}}</span></span></span></span>
+<span style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;"><span style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: var(--font-display); font-size: 36px; font-weight: 700; letter-spacing: -0.04em; font-variant-numeric: tabular-nums;">{{a.views}}</span><span style="font-size: 13px; color: var(--ink-faint);">vues · 30 j</span></span><span style="font-size: 13px; font-weight: 600; color: {{a.deltaInk}};">{{a.delta}}</span></span>
+<span style="display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-faint); white-space: nowrap;"><span style="min-width: 0; overflow: hidden; text-overflow: ellipsis;">{{a.meta}}</span><span style="flex-shrink: 0;">{{a.market}}</span></span>
+</a>
+</sc-for>
+</section>
+<section aria-label="Le reste du classement" style="position: relative; min-height: 340px;">
+<div aria-hidden="true" style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
+<sc-for list="{{ghosts}}" as="g" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 40px minmax(0, 1fr) 160px 120px; align-items: center; gap: 16px; height: 68px; border-top: 1px solid var(--line); opacity: {{g.op}}; filter: blur({{g.blur}});"><span class="mono-data" style="color: var(--ink-faint);">{{g.rank}}</span><span style="display: flex; align-items: center; gap: 12px;"><span style="width: 36px; height: 36px; border-radius: 10px; background: {{g.tile}};"></span><span style="width: {{g.w}}; height: 12px; border-radius: 6px; background: rgba(255,255,255,0.12);"></span></span><span style="width: 80px; height: 10px; border-radius: 5px; background: rgba(255,255,255,0.08);"></span><span style="justify-self: end; width: 72px; height: 14px; border-radius: 7px; background: rgba(255,255,255,0.12);"></span></div>
+</sc-for>
+</div>
+<span aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,11,18,0) 0%, rgba(8,11,18,0.35) 50%, rgba(8,11,18,0.8) 100%); pointer-events: none;"></span>
+<div style="position: absolute; left: 0; right: 0; top: 48px; border-radius: 24px; overflow: hidden; background: rgba(13,17,26,0.92); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); box-shadow: inset 0 0 0 1px var(--glass-edge), var(--shadow-float);">
+<div class="apr-card" style="display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 32px; padding: 28px 32px;">
+<span class="apr-lockic" style="width: 52px; height: 52px; border-radius: 16px; background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-edge); color: var(--accent); display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 6px; min-width: 0;"><h2 style="margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15;">{{moreTxt}} autres apps t’attendent</h2><span style="font-size: 14px; line-height: 1.5; color: var(--ink-muted);">Tout le classement, les formats qui marchent, les créateurs derrière chaque app et tous les marchés.</span></span>
+<span class="apr-price" style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding-left: 32px; border-left: 1px solid var(--line);"><span style="display: flex; align-items: baseline; gap: 6px; white-space: nowrap;"><span class="stat-xl" style="font-size: 32px; font-variant-numeric: tabular-nums;">29,99 €</span><span style="font-size: 14px; color: var(--ink-muted);">/ mois</span></span><span style="font-size: 13px; color: var(--ink-faint);">Sans engagement</span></span>
+<a href="{{monthly}}" class="sw-btn sw-btn-primary sw-btn-lg" style="text-decoration: none; white-space: nowrap;">Tout débloquer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a>
+</div>
+<sc-if value="{{bfOn}}" hint-placeholder-val="{{true}}"><button class="apr-strip" type="button" onClick="{{openPlans}}" style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 32px; border-top: 1px solid rgba(255,138,76,0.2); background: linear-gradient(90deg, rgba(255,106,31,0.12), rgba(255,106,31,0.03) 70%); font-size: 14px; color: #C9CED8;"><svg width="14" height="16" viewBox="0 0 20 23" aria-hidden="true"><path d="M11.2 0.8c.5 3.2-1.3 5.1-3 6.9C6.3 9.7 4 11.9 4 15.4 4 19.4 6.9 22.2 10.3 22.2s6.3-2.8 6.3-6.7c0-2.5-1.1-4.3-2.4-5.8-.3 1.6-1.1 2.9-2.4 3.4.5-4.5-.7-8.7-3.2-12.3z" fill="url(#aprFlame)"></path></svg><span><span style="color: #FFFFFF; font-weight: 700;">Black Friday</span> · l’annuel à 14,99 € / mois au lieu de 29,99 €</span><span class="apr-go" style="margin-left: auto; color: #FF8A4C; font-weight: 700;">J’en profite →</span></button></sc-if>
+</div>
+</section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"data":{"editor":null},"onPlans":{"editor":null},"checkout":{"editor":null},"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    this.timer = setInterval(() => this.setState({ now: Date.now() }), 1000);
+  }
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+  renderVals() {
+    // L'aperçu (19/11) : ce que voit un compte sans abonnement sur Apps. Le serveur n'envoie que le top 3
+    // (convex/boards.ts, preview) et le nombre d'apps suivies (`total`) ; les lignes floutées sont des formes vides.
+    const p = this.props || {};
+    const st = this.state || {};
+    const d = p.data || { total: 516, apps: [
+      { slug: 'higgsfield', name: 'Higgsfield', niche: 'Création de contenu', views30: 120100000, weekDelta: 0.1, accounts: 190, videosPerWeek: 1030, markets: [['US', 33]], top: [] },
+      { slug: 'rizzapp', name: 'Rizz App', niche: 'Séduction IA', views30: 51300000, weekDelta: -0.6, accounts: 114, videosPerWeek: 165, markets: [['US', 50]], top: [] },
+      { slug: 'knowunity', name: 'Knowunity', niche: 'Études', views30: 49600000, weekDelta: -0.39, accounts: 41, videosPerWeek: 101, markets: [['ES', 33]], top: [] }
+    ] };
+    const u = p.user;
+    const me = { initiale: String((u && (u.initiale || u.prenom || u.email)) || '?').charAt(0).toUpperCase() };
+    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
+    const int = (n) => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+    const apps = (d.apps || []).slice(0, 3);
+    const top = apps.map((a, i) => {
+      const t = (a.top || []).find((v) => v && v.cover);
+      const m = (a.markets || [])[0];
+      const delta = typeof a.weekDelta === 'number' ? (a.weekDelta >= 0 ? '+' : '−') + Math.round(Math.abs(a.weekDelta) * 100) + ' %' : '';
+      return {
+        rank: String(i + 1).padStart(2, '0'), name: a.name, niche: a.niche || '', icon: a.icon || '', cover: t ? t.cover : '',
+        href: 'FicheA.dc.html?app=' + a.slug, aria: 'N°' + (i + 1) + ' : ' + a.name,
+        views: nf(a.views30 || 0), delta, deltaInk: typeof a.weekDelta === 'number' && a.weekDelta > 0 ? 'var(--accent)' : 'var(--ink-faint)',
+        meta: int(a.accounts) + ' comptes · ' + int(a.videosPerWeek) + ' vidéos / sem.',
+        market: m ? m[0] + ' ' + Math.round(m[1]) + ' %' : ''
+      };
+    });
+    const total = typeof d.total === 'number' ? d.total : apps.length;
+    const ghosts = [0.55, 0.4, 0.28, 0.16, 0.08].map((op, i) => ({
+      rank: String(i + 4).padStart(2, '0'), op: String(op), blur: (3 + i) + 'px', w: [120, 96, 140, 110, 88][i] + 'px',
+      tile: ['var(--thumb-plum)', 'var(--thumb-pine)', 'var(--thumb-violet)', 'var(--thumb-amber)', 'var(--thumb-navy)'][i]
+    }));
+    // Black Friday : jusqu’au 30 novembre minuit, heure de Paris (même fin que la landing et les tarifs).
+    const bfLeft = Math.max(0, Date.parse('2026-12-01T00:00:00+01:00') - (st.now || Date.now()));
+    const bf2 = (n) => String(n).padStart(2, '0');
+    const bfTime = Math.floor(bfLeft / 864e5) + 'j ' + bf2(Math.floor(bfLeft / 36e5) % 24) + ':' + bf2(Math.floor(bfLeft / 6e4) % 60) + ':' + bf2(Math.floor(bfLeft / 1e3) % 60);
+    const locked = [['Formats', 'FormatsB.dc.html'], ['Créateurs', 'CreateursA.dc.html'], ['Alertes', 'AlertesA.dc.html'], ['Dossiers', 'DossiersA.dc.html']].map((x) => ({ label: x[0], href: x[1] }));
+    const checkout = p.checkout || {};
+    return {
+      me, top, ghosts, locked,
+      totalTxt: int(total), moreTxt: int(Math.max(0, total - apps.length)),
+      bfOn: bfLeft > 0, bfTime,
+      monthly: checkout.mensuel || '/tarifs',
+      openPlans: (e) => { if (e && e.preventDefault) e.preventDefault(); if (p.onPlans) p.onPlans(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

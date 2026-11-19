@@ -97,6 +97,11 @@ APP_COMPONENTS = [
     ('MPalette.dc.html', 'MPalette', 'm-pal'),
     ('MAjout.dc.html', 'MAjout', 'm-ajd'),
     ('MNouvelleAlerte.dc.html', 'MNouvelleAlerte', 'm-nal'),
+    # L'aperçu sans abonnement (19/11), montés par src/app/main.js : Apps réduit au top 3, et la fenêtre des formules.
+    ('ApercuA.dc.html', 'Apercu', 'a-apr'),
+    ('FormulesA.dc.html', 'Formules', 'a-for'),
+    ('MApercuApps.dc.html', 'MApercuApps', 'm-apr'),
+    ('MFormules.dc.html', 'MFormules', 'm-for'),
 ]
 if not APP_MOBILE_PAGES:
     APP_COMPONENTS = [c for c in APP_COMPONENTS if not c[0].startswith('M')]

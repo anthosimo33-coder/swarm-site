@@ -1,0 +1,8 @@
+/* Généré par scripts/dc2preact.py depuis design/app/MApercuApps.dc.html */
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}
+.mapr-bf,.mapr-strip{appearance:none;border:0;margin:0;width:100%;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.mapr-strip{text-align:left}
+.mapr-row{scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mapr-row::-webkit-scrollbar{display:none}
+.mapr-row>a{scroll-snap-align:start;scroll-margin-left:20px}

@@ -12,8 +12,8 @@ export default class Compte extends DCLogic {
   shellVals() {
     const st = this.state || {};
     const u = this.props.user;
-    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
-                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase(), pro: !!u.pro, free: !u.pro }
+                 : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A', pro: true, free: false };
     const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
     const sb = [["accueil", "Accueil", "/app"], ["apps", "Apps", "/app/apps"], ["formats", "Formats", "/app/formats"], ["createurs", "Créateurs", "/app/createurs"], ["alertes", "Alertes", "/app/alertes"], ["dossiers", "Dossiers", "/app/dossiers"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'aucun' ? 'page' : 'false' }));
     return {
@@ -28,7 +28,8 @@ export default class Compte extends DCLogic {
     return {
       sub: [['Profil', 'cp-profil'], ['Accès', 'cp-acces']].map((s) => ({ l: s[0], href: '#' + s[1], cur: s[1] === sec ? 'page' : 'false', bg: s[1] === sec ? 'var(--accent-soft)' : 'transparent', ink: s[1] === sec ? 'var(--ink)' : 'var(--ink-muted)',
         pick: () => this.setState({ sec: s[1] }) })),
-      logout: (e) => { if (this.props.signOut) { e.preventDefault(); this.props.signOut(); } }
+      logout: (e) => { if (this.props.signOut) { e.preventDefault(); this.props.signOut(); } },
+      openPlans: () => { if (this.props.onPlans) this.props.onPlans(); }
     };
   }
 
@@ -135,19 +136,46 @@ export default class Compte extends DCLogic {
                     "Accès"
                   )
                 ),
-                $h("div", { "class": "sw-card is-featured", "style": "border-radius: 22px; padding: 22px 24px; display: flex; flex-direction: column; gap: 6px;" },
-                  $h("span", { "style": "display: flex; align-items: center; gap: 10px;" },
-                    $h("span", { "style": "font-size: 20px; font-weight: 700;" },
-                      "Accès complet"
+                ($v.me?.pro) ? [
+                  $h("div", { "class": "sw-card is-featured", "style": "border-radius: 22px; padding: 22px 24px; display: flex; flex-direction: column; gap: 6px;" },
+                    $h("span", { "style": "display: flex; align-items: center; gap: 10px;" },
+                      $h("span", { "style": "font-size: 20px; font-weight: 700;" },
+                        "Accès complet"
+                      ),
+                      $h("span", { "class": "sw-badge sw-badge-accent" },
+                        "Ouvert"
+                      )
                     ),
-                    $h("span", { "class": "sw-badge sw-badge-accent" },
-                      "Ouvert"
+                    $h("span", { "style": "font-size: 14px; line-height: 1.5; color: var(--ink-muted);" },
+                      "Ton compte a accès à tout Kopycat : apps, formats, créateurs, alertes et dossiers."
                     )
-                  ),
-                  $h("span", { "style": "font-size: 14px; line-height: 1.5; color: var(--ink-muted);" },
-                    "Ton compte a accès à tout Kopycat : apps, formats, créateurs, alertes et dossiers."
                   )
-                )
+                ] : null,
+                ($v.me?.free) ? [
+                  $h("div", { "class": "sw-card", "style": "border-radius: 22px; padding: 22px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;" },
+                    $h("span", { "style": "flex: 1 1 320px; display: flex; flex-direction: column; gap: 6px; min-width: 0;" },
+                      $h("span", { "style": "display: flex; align-items: center; gap: 10px;" },
+                        $h("span", { "style": "font-size: 20px; font-weight: 700;" },
+                          "Aperçu"
+                        ),
+                        $h("span", { "class": "sw-badge" },
+                          "Sans abonnement"
+                        )
+                      ),
+                      $h("span", { "style": "font-size: 14px; line-height: 1.5; color: var(--ink-muted);" },
+                        "Tu vois le top 3 des apps, leurs fiches et leurs vidéos. Kopycat Pro ouvre tout le reste : le classement complet, les formats, les créateurs, les alertes et les dossiers."
+                      )
+                    ),
+                    $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.openPlans },
+                      "Voir les formules",
+                      $h("span", { "class": "sw-btn-tile" },
+                        $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      )
+                    )
+                  )
+                ] : null
               )
             )
           )

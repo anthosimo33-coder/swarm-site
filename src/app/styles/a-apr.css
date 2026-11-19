@@ -1,0 +1,13 @@
+/* Généré par scripts/dc2preact.py depuis design/app/ApercuA.dc.html */
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+.apr-bf{appearance:none;border:0;margin:0;width:100%;cursor:pointer;font-family:inherit}
+.apr-bf:hover .apr-go{color:#FF9C57}
+.apr-top{transition:transform .25s ease}.apr-top:hover{transform:translateY(-2px)}
+.apr-top:hover .apr-cover img{transform:scale(1.03)}
+.apr-cover img{transition:transform .4s ease}
+.apr-lock{opacity:.5}
+.apr-strip{appearance:none;border:0;margin:0;width:100%;cursor:pointer;font-family:inherit;text-align:left}
+.apr-strip:hover .apr-go{color:#FF9C57}
+.apr-cover{height:clamp(128px,20vh,172px) !important}
+@media (max-width: 1180px){.apr-card{grid-template-columns:minmax(0,1fr) auto auto !important;gap:24px !important}.apr-lockic{display:none !important}.apr-price{padding-left:0 !important;border-left:0 !important}.apr-grid{gap:16px !important}}

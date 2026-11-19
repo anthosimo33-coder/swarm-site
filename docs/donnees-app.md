@@ -99,6 +99,18 @@ synchronisation. Lisible sans compte par `stats.get` (convex/stats.ts), arrondi 
 ### `search` — recherche ⌘K (Palette)
 `{ apps: [{slug, name, icon, niche, views30}], creators: [{handle, app, fans, median}], formats: [{id, kind, label, accounts}] }`
 
+## L'aperçu (compte sans abonnement)
+Un compte dont `users.pro` n'est pas `true` reçoit de `boards.get` (19/11) :
+- `apps` : le top 3 du classement seulement (mêmes champs), plus `total` (nombre d'apps suivies) et `preview: true` ;
+- `app:<slug>` et `video:<id>` : le document si l'app est dans ce top 3, sinon `{ locked: true }` ;
+- `search` : les apps du top 3, aucun créateur ni format ;
+- `stats` : inchangé ;
+- tout le reste : `{ locked: true }` (verrouillé, distinct de `null` = absent).
+
+À l'écran (`src/app/main.js`) : Apps devient l'aperçu (`ApercuA`, `MApercuApps`) ; Accueil y mène ; tout écran fermé ouvre
+la fenêtre des formules (`FormulesA`, `MFormules`). Passer un compte en Pro : `npx convex run users:setPro
+'{"email":"…","pro":true}'` (plus `--prod` en production). Test du verrou : `npm run test:apercu`.
+
 ## Ce que la personne garde (`saved`)
 
 Propre à chaque compte, enregistré chez Swarm (`convex/saved.ts`) et gardé d'un écran et d'une visite à l'autre.

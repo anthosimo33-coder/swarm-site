@@ -1,8 +1,11 @@
 // L'app Swarm : réservée aux personnes connectées, une seule page à routes internes.
 // La session n'est vérifiée qu'une fois ; passer d'un écran à l'autre ne recharge rien.
 // Les écrans viennent du canevas de l'app (design/app, convertis par scripts/dc2preact.py).
+// Sans abonnement (user.pro faux), l'aperçu (19/11) : Apps montre le top 3 (écran Apercu), les fiches et vidéos de
+// ces 3 apps et le compte restent ouverts ; tout autre écran ouvre la fenêtre des formules (Formules). Le serveur
+// n'envoie de toute façon rien d'autre (convex/boards.ts) : ce routeur ne fait que l'expliquer à l'écran.
 // Chacun reçoit par ses props :
-//   user    { prenom, email, initiale }   signOut()
+//   user    { prenom, email, initiale, pro }   signOut()   onPlans() : ouvre la fenêtre des formules
 //   data    le document de son adresse (convex/boards.ts), déjà calculé depuis le Radar
 //   params  les paramètres de l'adresse (ex. { slug: 'astraai' })
 //   query   les paramètres de la requête (ex. { niche: 'Foi' } pour /app/apps?niche=Foi)
@@ -10,19 +13,33 @@
 //            undefined tant qu'il charge, null s'il n'existe pas.
 //   saved(clé) / save(clé, valeur)  ce que la personne garde (convex/saved.ts) : apps et comptes
 //            suivis, dossiers, règles d'alerte, déjà lu. save() s'affiche tout de suite.
-import { h } from 'preact';
+import { h, Fragment } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
 import { ROUTES } from './routes.js';
+import Apercu from './pages/Apercu.js';
+import MApercuApps from './pages/MApercuApps.js';
+import Formules from './pages/Formules.js';
+import MFormules from './pages/MFormules.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
+import './styles/a-apr.css';
+import './styles/m-apr.css';
+import './styles/a-for.css';
+import './styles/m-for.css';
 
 const HOME = '/app';
 const SIGN_OUT = '/app/deconnexion';
+// L'aperçu : ce qu'un compte sans abonnement peut ouvrir. Accueil mène à Apps ; le reste ouvre les formules.
+const APERCU = '/app/apps';
+const OPEN = [/^\/app\/apps$/, /^\/app\/apps\/[^/]+$/, /^\/app\/videos\/[^/]+$/, /^\/app\/compte$/];
+const isOpen = (pathname) => pathname === SIGN_OUT || OPEN.some((re) => re.test(pathname));
+// Paiement : les liens d'achat Whop (mensuel, annuel), à brancher ; d'ici là, la page Tarifs.
+const CHECKOUT = { mensuel: '/tarifs', annuel: '/tarifs' };
 // Sous 860 px, l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop.
 const MOBILE = window.matchMedia('(max-width: 860px)');
 const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
@@ -108,11 +125,11 @@ function ready(key) {
   });
 }
 
-/** Ce que les écrans savent de la personne : prénom (si Google l'a donné), e-mail, initiale. */
+/** Ce que les écrans savent de la personne : prénom (si Google l'a donné), e-mail, initiale, abonnée ou non. */
 function toUser(viewer) {
   const email = viewer.email ?? '';
   const prenom = viewer.name ? viewer.name.trim().split(/\s+/)[0] : null;
-  return { prenom, email, initiale: (prenom || email || '?').charAt(0).toUpperCase() };
+  return { prenom, email, initiale: (prenom || email || '?').charAt(0).toUpperCase(), pro: viewer.pro === true };
 }
 
 function App() {
@@ -147,6 +164,10 @@ function App() {
     return lastUser.current;
   }, [viewer, isAuthenticated]);
   const known = user !== null;
+  // Aperçu : la fenêtre des formules, et l'abonnement lu par les gestionnaires montés une seule fois.
+  const [plans, setPlans] = useState(false);
+  const proRef = useRef(false);
+  proRef.current = !!(user && user.pro);
 
   // Liens internes, ⌘K, largeur de l'écran.
   useEffect(() => {
@@ -156,6 +177,16 @@ function App() {
       if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
       const url = new URL(link.href, window.location.href);
       if (url.origin !== window.location.origin || !(url.pathname === HOME || url.pathname.startsWith(HOME + '/'))) return;
+      // Aperçu : un écran fermé ouvre la fenêtre des formules sans quitter l'écran ; Accueil mène à Apps.
+      if (lastUser.current && !proRef.current && !isOpen(clean(url.pathname))) {
+        event.preventDefault();
+        if (clean(url.pathname) !== HOME) setPlans(true);
+        else if (here() !== APERCU) {
+          window.history.pushState(null, '', APERCU);
+          setPath(APERCU);
+        }
+        return;
+      }
       const next = clean(url.pathname) + url.search;
       if (next === here()) {
         if (!url.hash) event.preventDefault(); // même adresse : on reste
@@ -193,6 +224,17 @@ function App() {
       window.removeEventListener('popstate', onPop);
     };
   }, []);
+
+  // Aperçu : une adresse fermée (lien direct, favori, retour arrière) revient à Apps, fenêtre des formules ouverte ;
+  // Accueil y revient sans fenêtre.
+  useEffect(() => {
+    if (!user || user.pro) return;
+    const pathname = path.split('?')[0];
+    if (isOpen(pathname)) return;
+    window.history.replaceState(null, '', APERCU);
+    setPath(APERCU);
+    if (pathname !== HOME) setPlans(true);
+  }, [path, user]);
 
   // Écran de l'adresse : son code et ses données arrivent ensemble ; l'écran précédent
   // reste affiché d'ici là (pas d'écran vide, pas de données d'exemple qui clignotent).
@@ -262,22 +304,47 @@ function App() {
   const get = (key) => follow(`board:${key}`, board(key));
   const saved = (key) => follow(`saved:${key}`, savedEntry(key));
 
+  // Aperçu : une fiche hors du top 3 (document verrouillé par le serveur) renvoie à Apps, fenêtre ouverte. Seulement
+  // sur une adresse ouverte : un écran fermé (Accueil chargé avant que le profil arrive) relève de l'effet précédent.
+  const lockedData = !!(screen && screen.key && user && !user.pro && isOpen(screen.path.split('?')[0])
+    && (board(screen.key).value || {}).locked);
+  useEffect(() => {
+    if (!lockedData) return;
+    window.history.replaceState(null, '', APERCU);
+    setPath(APERCU);
+    setPlans(true);
+  }, [lockedData]);
+
   // Rien tant qu'on ne sait pas qui est là : pas d'écran qui clignote.
   if (!user || !screen) return null;
   const data = screen.key ? get(screen.key) : undefined;
   // Document absent : jamais l'exemple du canevas à la place des données.
   if (data === null) return h(Missing, { fiche: Object.keys(screen.params).length > 0 });
-  return h(screen.Page, {
-    key: `${screen.mobile ? 'm' : 'd'}${screen.path}`,
-    user,
-    signOut: leave,
-    params: screen.params,
-    query: screen.query,
-    data,
-    get,
-    saved,
-    save,
-  });
+  const onPlans = () => setPlans(true);
+  let page;
+  if (!user.pro && (screen.route.path === APERCU || (data && data.locked))) {
+    // Apps sans abonnement : le top 3 et la carte « Tout débloquer » (design/app/ApercuA, MApercuApps).
+    const apps = screen.route.path === APERCU ? data : get('apps');
+    page = apps && !apps.locked
+      ? h(screen.mobile ? MApercuApps : Apercu, { key: `${screen.mobile ? 'm' : 'd'}/apercu`, user, data: apps, onPlans, checkout: CHECKOUT })
+      : null;
+  } else {
+    page = h(screen.Page, {
+      key: `${screen.mobile ? 'm' : 'd'}${screen.path}`,
+      user,
+      signOut: leave,
+      onPlans,
+      params: screen.params,
+      query: screen.query,
+      data,
+      get,
+      saved,
+      save,
+    });
+  }
+  const total = (!user.pro && (board('apps').value || {}).total) || undefined;
+  const sheet = plans ? h(screen.mobile ? MFormules : Formules, { onClose: () => setPlans(false), checkout: CHECKOUT, total }) : null;
+  return h(Fragment, null, page, sheet);
 }
 
 /** Une fiche qui n'existe pas (ou plus) dans le Radar, ou une liste pas encore calculée. */

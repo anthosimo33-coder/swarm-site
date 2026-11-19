@@ -1,0 +1,8 @@
+/* Généré par scripts/dc2preact.py depuis design/app/FormulesA.dc.html */
+body{margin:0;background:#05070C}
+@keyframes a-for-forIn{from{opacity:0;transform:translateY(12px) scale(0.98)}to{opacity:1;transform:none}}
+@keyframes a-for-forFade{from{opacity:0}to{opacity:1}}
+.for-x{appearance:none;border:0;cursor:pointer;font-family:inherit}
+.for-x:hover{background:rgba(0,0,0,0.45) !important}
+.for-cta{transition:transform .15s ease, filter .15s ease}.for-cta:hover{transform:translateY(-1px);filter:brightness(1.05)}
+@media (prefers-reduced-motion: reduce){.for-box,.for-bg{animation:none !important}}

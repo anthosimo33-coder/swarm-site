@@ -1,0 +1,6 @@
+/* Généré par scripts/dc2preact.py depuis design/app/MFormules.dc.html */
+body{margin:0;background:#05070C}
+@keyframes m-for-mforUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes m-for-mforFade{from{opacity:0}to{opacity:1}}
+.mfor-x{appearance:none;border:0;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+@media (prefers-reduced-motion: reduce){.mfor-sheet,.mfor-bg{animation:none !important}}
