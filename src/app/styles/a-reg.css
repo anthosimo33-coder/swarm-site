@@ -66,6 +66,9 @@ body{margin:0;background:#05070C}
 .reg-chip{appearance:none;border:0;cursor:pointer;font-family:inherit;height:34px;padding:0 12px;border-radius:999px;font-size:13px;background:rgba(255,255,255,0.04);color:var(--ink-soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1)}
 .reg-chip[aria-pressed="true"]{background:rgba(76,154,255,0.14);color:#FFFFFF;box-shadow:inset 0 0 0 1px var(--accent-edge)}
 .reg-mob .reg-pay{grid-template-columns:90px 1fr 80px}.reg-mob .reg-pay>span:last-child{display:none}
+.reg-legal{margin-top:auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:12px 12px 4px;font-size:12px;color:var(--ink-faint)}
+.reg-legal a{color:var(--ink-faint);text-decoration:none}.reg-legal a:hover{color:#FFFFFF;text-decoration:underline}
+.reg-mob .reg-legal{padding:24px 4px 0;font-size:13px}
 .reg-out{color:#FF8A8A !important}.reg-out .reg-nav-ic{color:#FF8A8A !important}
 .reg-mbar{position:relative;display:flex;align-items:center;justify-content:center;height:44px;margin:-4px 0 8px}
 .reg-mok,.reg-back{appearance:none;border:0;background:transparent;cursor:pointer;font-family:inherit;color:var(--accent);font-size:16px;font-weight:600;-webkit-tap-highlight-color:transparent}

@@ -311,7 +311,18 @@ export default class Reglages extends DCLogic {
                 "Se déconnecter"
               )
             ] : null,
-            $h("div", { "class": "reg-foot", "style": "margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px;" },
+            $h("nav", { "class": "reg-legal", "aria-label": "Documents légaux" },
+              $h("a", { "href": "/cgv", "target": "_blank", "rel": "noopener" },
+                "CGV"
+              ),
+              $h("a", { "href": "/confidentialite", "target": "_blank", "rel": "noopener" },
+                "Confidentialité"
+              ),
+              $h("a", { "href": "/mentions-legales", "target": "_blank", "rel": "noopener" },
+                "Mentions légales"
+              )
+            ),
+            $h("div", { "class": "reg-foot", "style": "display: flex; align-items: center; gap: 10px; padding: 12px;" },
               $h("span", { "style": "width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); color: #FFFFFF; font-weight: 700; font-size: 13px;" },
                 $t($v.me?.initiale)
               ),

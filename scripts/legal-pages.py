@@ -102,7 +102,7 @@ cgv = page("cgv", "Conditions générales de vente",
 <p>Les prix sont indiqués en euros, toutes taxes comprises (TVA française de 20 % incluse). JARVIA STUDIO peut modifier ses prix ; un nouveau prix ne s’applique qu’à la période d’abonnement suivante, après information du Membre.</p>
 
 <h2>4. Commande et paiement</h2>
-<p>L’abonnement se souscrit en ligne depuis la page Tarifs, après création d’un compte. Le paiement se fait par carte bancaire, au moment de la souscription puis à chaque renouvellement, par l’intermédiaire d’un prestataire de paiement sécurisé : JARVIA STUDIO n’a jamais accès aux numéros de carte. Une facture est disponible pour chaque paiement.</p>
+<p>L’abonnement se souscrit en ligne depuis la page Tarifs, après création d’un compte. Le paiement se fait par carte bancaire, au moment de la souscription puis à chaque renouvellement, par l’intermédiaire de Whop (Whop, Inc.), prestataire de paiement sécurisé : JARVIA STUDIO n’a jamais accès aux numéros de carte. Une facture est disponible pour chaque paiement.</p>
 
 <h2>5. Durée, renouvellement et résiliation</h2>
 <p>L’abonnement mensuel se renouvelle automatiquement chaque mois, l’abonnement annuel chaque année, jusqu’à résiliation. Pour l’abonnement annuel, le Membre est informé par e-mail avant chaque renouvellement.</p>
@@ -141,7 +141,7 @@ conf = page("confidentialite", "Politique de confidentialité",
 <li><strong>Ce que nous gardons</strong> : votre adresse e-mail ; votre mot de passe, sous une forme chiffrée que nous ne pouvons pas relire ; ce que vous gardez dans Kopycat (apps suivies, dossiers, alertes) ; et, quand vous vous abonnez, les informations de votre abonnement et de vos factures. Si vous vous connectez avec Google, nous recevons votre adresse e-mail Google.</li>
 <li><strong>Pourquoi</strong> : créer et sécuriser votre compte, vous donner accès au service et à votre abonnement (exécution du contrat) ; tenir la comptabilité (obligation légale) ; prévenir les abus (intérêt légitime).</li>
 <li><strong>Combien de temps</strong> : tant que votre compte existe ; il est supprimé, avec ce que vous y gardez, quand vous en faites la demande. Les factures sont conservées 10 ans, comme l’exige la loi.</li>
-<li><strong>Paiement</strong> : vos données de carte sont traitées directement par notre prestataire de paiement ; nous n’y avons jamais accès.</li>
+<li><strong>Paiement</strong> : vos données de carte sont traitées directement par notre prestataire de paiement, Whop ; nous n’y avons jamais accès. Pour relier votre abonnement à votre compte, nous lui transmettons l’identifiant de votre compte Kopycat.</li>
 </ul>
 
 <h2>Les données des créateurs affichés</h2>
@@ -156,7 +156,7 @@ conf = page("confidentialite", "Politique de confidentialité",
 <li>Convex, Inc. (États-Unis) : base de données du service, sur des serveurs situés dans l’Union européenne (Irlande) ;</li>
 <li>Anthropic PBC (États-Unis) : lecture automatique des miniatures de vidéos publiques ;</li>
 <li>Google (si vous choisissez la connexion avec Google) ;</li>
-<li>notre prestataire de paiement, quand vous vous abonnez.</li>
+<li>Whop, Inc. (États-Unis) : paiement et gestion de l’abonnement, quand vous vous abonnez.</li>
 </ul>
 <p>Quand des données sont transférées hors de l’Union européenne, ce transfert est encadré par les garanties prévues par le RGPD, comme les clauses contractuelles types de la Commission européenne.</p>
 
