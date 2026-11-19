@@ -370,16 +370,16 @@ export default class TarifsMobile extends DCLogic {
               ])
             ),
             $h("div", { "style": "display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 14px;" },
-              $h("a", { "href": "#cgv", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "/cgv", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "CGV"
               ),
-              $h("a", { "href": "#confidentialite", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "/confidentialite", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Confidentialité"
               ),
-              $h("a", { "href": "#mentions", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "/mentions-legales", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Mentions légales"
               ),
-              $h("a", { "href": "#contact", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "/mentions-legales#contact", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Contact"
               )
             ),

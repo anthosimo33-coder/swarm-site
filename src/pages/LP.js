@@ -246,7 +246,7 @@ export default class LP extends DCLogic {
       cols: [
         mkCol('Produit', [['Comment ça marche', '#produit'], ['Exemple', '#exemple'], ['Tarifs', '/tarifs'], ['FAQ', '#faq']]),
         mkCol('Fonctionnalités', [['Apps qui explosent', '#produit'], ['Formats qui explosent', '#exemple'], ['Hooks qui gagnent', '#exemple'], ['Créateurs derrière chaque app', '#produit'], ['Tous les marchés', '#produit']]),
-        mkCol('Légal', [['CGV', '#cgv'], ['Confidentialité', '#confidentialite'], ['Mentions légales', '#mentions'], ['Contact', '#contact']])
+        mkCol('Légal', [['CGV', '/cgv'], ['Confidentialité', '/confidentialite'], ['Mentions légales', '/mentions-legales'], ['Contact', '/mentions-legales#contact']])
       ]
     };
   }
@@ -859,7 +859,7 @@ export default class LP extends DCLogic {
                     "Écris-nous, on te répond par e-mail."
                   ),
                   $h("div", { "style": "display: flex; gap: 10px; flex-wrap: wrap;" },
-                    $h("a", { "href": "#contact", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 4px 0 20px; border-radius: 999px; background: #FFFFFF; border: 1px solid #FFFFFF; color: #05070C; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
+                    $h("a", { "href": "/mentions-legales#contact", "class": "cta", "style": "display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 50px; box-sizing: border-box; padding: 0 4px 0 20px; border-radius: 999px; background: #FFFFFF; border: 1px solid #FFFFFF; color: #05070C; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap;" },
                       "Écrire à l'équipe",
                       $h("span", { "aria-hidden": "true", "style": "width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: #05070C; display: grid; place-items: center;" },
                         $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },

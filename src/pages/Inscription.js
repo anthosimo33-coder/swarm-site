@@ -134,11 +134,11 @@ export default class Inscription extends DCLogic {
               ),
               $h("p", { "style": "margin: 0; text-align: center; font-size: 13px; line-height: 1.6; color: var(--ink-faint);" },
                 "En continuant, tu acceptes nos ",
-                $h("a", { "class": "sw-link-quiet", "href": "#cgv" },
+                $h("a", { "class": "sw-link-quiet", "href": "/cgv" },
                   "CGV"
                 ),
                 " et notre ",
-                $h("a", { "class": "sw-link-quiet", "href": "#confidentialite" },
+                $h("a", { "class": "sw-link-quiet", "href": "/confidentialite" },
                   "politique de confidentialité"
                 ),
                 "."

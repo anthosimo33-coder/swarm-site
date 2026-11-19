@@ -633,7 +633,7 @@ export default class LPMobile extends DCLogic {
             ),
             $h("p", { "style": "margin: 10px 0 0; font-size: 15px; color: #9AA3B2;" },
               "Une autre question ? ",
-              $h("a", { "href": "#contact", "style": "color: #FFFFFF; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: rgba(255,255,255,0.35);" },
+              $h("a", { "href": "/mentions-legales#contact", "style": "color: #FFFFFF; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: rgba(255,255,255,0.35);" },
                 "Écris-nous"
               )
             )
@@ -701,16 +701,16 @@ export default class LPMobile extends DCLogic {
               ])
             ),
             $h("div", { "style": "display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 14px;" },
-              $h("a", { "href": "#cgv", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "/cgv", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "CGV"
               ),
-              $h("a", { "href": "#confidentialite", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "/confidentialite", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Confidentialité"
               ),
-              $h("a", { "href": "#mentions", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "/mentions-legales", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Mentions légales"
               ),
-              $h("a", { "href": "#contact", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
+              $h("a", { "href": "/mentions-legales#contact", "style": "text-decoration: none; min-height: 40px; display: inline-flex; align-items: center;" },
                 "Contact"
               )
             ),

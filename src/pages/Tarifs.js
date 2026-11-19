@@ -107,7 +107,7 @@ export default class Tarifs extends DCLogic {
       cols: [
         mk('Produit', [['Comment ça marche', '/#produit'], ['Exemple', '/#exemple'], ['Tarifs', '/tarifs'], ['FAQ', '/#faq']]),
         mk('Fonctionnalités', [['Apps qui explosent', '/#produit'], ['Formats qui explosent', '/#exemple'], ['Créateurs derrière chaque app', '/#produit'], ['Tous les marchés', '/#produit']]),
-        mk('Légal', [['CGV', '#cgv'], ['Confidentialité', '#confidentialite'], ['Mentions légales', '#mentions'], ['Contact', '#contact']])
+        mk('Légal', [['CGV', '/cgv'], ['Confidentialité', '/confidentialite'], ['Mentions légales', '/mentions-legales'], ['Contact', '/mentions-legales#contact']])
       ]
     };
   }
