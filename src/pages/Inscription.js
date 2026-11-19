@@ -4,10 +4,12 @@ import { DCLogic, $t, $l } from '../runtime.js';
 
 export default class Inscription extends DCLogic {
   renderVals() {
+    // Avis : pris tels quels dans le mur d'avis de la landing (la page LP, liste « briefs ») — scripts/check.mjs refuse
+    // tout avis qui n'y est pas mot pour mot.
     const avis = [
-      ['« [Ce qu’il a trouvé avec Swarm, avec un chiffre : vues, clients ou revenus] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]'],
-      ['« [Le format copié qui a marché du premier coup] »', '[Prénom N.]', '[Niche]'],
-      ['« [Pourquoi Swarm plutôt qu’une formation à 1 000 €] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]']
+      ['« J’ai repris un format qui tournait sur l’app d’un concurrent. Ma première vidéo a fait 54k vues et j’ai eu une centaine de téléchargements dans la semaine. »', 'Lucas', ''],
+      ['« Je n’aurais jamais testé l’Amérique du Sud. Swarm m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
+      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Swarm 30 minutes le matin et je sais ce qui marche. »', 'Luis', '']
     ].map((a, i) => ({ q: a[0], name: a[1], role: a[2], cls: (i === 1 ? 'is-featured ' : '') + (i === 2 ? 'auth-x2' : i === 1 ? 'auth-x1' : ''), delay: (0.2 + i * 0.12).toFixed(2) + 's' }));
     const q = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('q') || '').trim().slice(0, 80) : '';
     const st = this.state || {};
@@ -160,11 +162,16 @@ export default class Inscription extends DCLogic {
                 )
               ),
               $h("span", { "style": "font-size: 15px; color: var(--ink-muted);" },
-                "Rejoins ",
-                $h("span", { "style": "color: var(--ink); font-weight: 600;" },
-                  "[N] membres"
-                ),
-                " qui repèrent les apps avant tout le monde."
+                "Rejoins les membres qui repèrent les apps avant tout le monde. ",
+                $h("span", { "style": "white-space: nowrap;" },
+                  $h("span", { "style": "color: #F5B941;" },
+                    "★★★★★"
+                  ),
+                  " ",
+                  $h("span", { "style": "color: var(--ink); font-weight: 600;" },
+                    "4,8 / 5"
+                  )
+                )
               )
             ),
             $h("div", { "style": "position: relative; display: flex; flex-direction: column; gap: 12px;" },
@@ -174,12 +181,6 @@ export default class Inscription extends DCLogic {
                     $t(r?.q)
                   ),
                   $h("figcaption", { "style": "display: flex; align-items: center; gap: 12px;" },
-                    $h("span", { "aria-hidden": "true", "style": "width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(180deg, #1B2333, #111724); border: 1px solid rgba(255,255,255,0.10); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
-                      $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24" },
-                        $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
-                        $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
-                      )
-                    ),
                     $h("span", { "style": "display: flex; flex-direction: column;" },
                       $h("span", { "style": "font-size: 14px; font-weight: 600;" },
                         $t(r?.name)
