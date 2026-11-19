@@ -90,24 +90,15 @@ export const tarifs = internalAction({
 
 // ─── Payer : le lien de paiement Whop, relié au compte ───
 
-export const recordConsent = internalMutation({
-  args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => {
-    await ctx.db.patch(userId, { consentAt: Date.now() });
-  },
-});
-
 /**
- * Crée le lien de paiement Whop de la formule choisie. `renonce` : la case des CGV (art. 6) est cochée — l'heure de
- * l'accord est gardée sur le compte. Rend l'adresse vers laquelle envoyer la personne.
+ * Crée le lien de paiement Whop de la formule choisie et rend l'adresse vers laquelle envoyer la personne. Pas d'écran
+ * d'accord avant Whop (choix de l'user, 19/11) : la renonciation au délai de rétractation au paiement est dans les CGV.
  */
 export const checkout = action({
-  args: { formule: v.union(v.literal("mensuel"), v.literal("annuel")), origin: v.string(), renonce: v.boolean() },
-  handler: async (ctx, { formule, origin, renonce }): Promise<{ url: string }> => {
+  args: { formule: v.union(v.literal("mensuel"), v.literal("annuel")), origin: v.string() },
+  handler: async (ctx, { formule, origin }): Promise<{ url: string }> => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) throw new Error("Non connecté");
-    if (!renonce) throw new Error("Accord requis");
-    await ctx.runMutation(internal.whop.recordConsent, { userId });
     const variant = await variantFor(formule);
     // Retour sur le site d'où l'on vient (prod, préversion Vercel, local) ; sinon l'adresse du site.
     const site = /^https:\/\/[a-z0-9.-]+$/i.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin) ? origin : (process.env.SITE_URL || "https://swarm-site-one.vercel.app");

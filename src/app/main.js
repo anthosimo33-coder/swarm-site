@@ -26,7 +26,6 @@ import Formules from './pages/Formules.js';
 import MFormules from './pages/MFormules.js';
 import MenuCompte from './pages/MenuCompte.js';
 import Reglages from './pages/Reglages.js';
-import Paiement from './pages/Paiement.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
@@ -36,7 +35,6 @@ import './styles/a-for.css';
 import './styles/m-for.css';
 import './styles/a-mnu.css';
 import './styles/a-reg.css';
-import './styles/a-pay.css';
 
 const HOME = '/app';
 const SIGN_OUT = '/app/deconnexion';
@@ -44,8 +42,8 @@ const SIGN_OUT = '/app/deconnexion';
 const APERCU = '/app/apps';
 const OPEN = [/^\/app\/apps$/, /^\/app\/apps\/[^/]+$/, /^\/app\/videos\/[^/]+$/, /^\/app\/compte$/];
 const isOpen = (pathname) => pathname === SIGN_OUT || pathname.startsWith('/app/payer/') || OPEN.some((re) => re.test(pathname));
-// Paiement (Whop, convex/whop.ts) : ces adresses ouvrent l'écran d'avant paiement (formule + accord des CGV), qui
-// crée le lien Whop relié au compte. Depuis le site (tarifs) ou un favori, elles mènent ici aussi.
+// Paiement (Whop, convex/whop.ts) : ces adresses créent le lien de paiement Whop relié au compte et y envoient, sans
+// écran entre les deux. Depuis le site (tarifs) ou un favori, elles mènent ici aussi (après connexion).
 const PAY = '/app/payer/';
 const CHECKOUT = { mensuel: PAY + 'mensuel', annuel: PAY + 'annuel' };
 const formuleOf = (pathname) => (pathname.slice(PAY.length) === 'mensuel' ? 'mensuel' : 'annuel');
@@ -186,8 +184,10 @@ function App() {
   const [menu, setMenu] = useState(false);
   // Réglages : la rubrique ouverte (« profil », « securite », « abo ») ou null. Sur téléphone, c'est l'écran /app/compte.
   const [settings, setSettings] = useState(null);
-  // Paiement : la formule de l'écran d'avant Whop ; et, au retour de Whop, l'attente de l'accès.
+  // Paiement : la formule demandée (le lien Whop se crée dès qu'on sait qui est là), l'ouverture en cours ou ratée ;
+  // et, au retour de Whop, l'attente de l'accès.
   const [pay, setPay] = useState(null);
+  const [paying, setPaying] = useState(null);
   const [paid, setPaid] = useState(PAID ? 'wait' : null);
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
@@ -205,7 +205,7 @@ function App() {
       if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
       const url = new URL(link.href, window.location.href);
       if (url.origin !== window.location.origin || !(url.pathname === HOME || url.pathname.startsWith(HOME + '/'))) return;
-      // Payer : l'écran d'avant Whop s'ouvre par-dessus, sans changer d'écran.
+      // Payer : direction le paiement Whop, sans changer d'écran d'ici là.
       if (url.pathname.startsWith(PAY)) {
         event.preventDefault();
         setPlans(false);
@@ -287,6 +287,18 @@ function App() {
     const t = setTimeout(() => setPaid(null), 7000);
     return () => clearTimeout(t);
   }, [paid, user]);
+
+  // Payer : le lien Whop se crée côté serveur (relié au compte), puis on y va.
+  useEffect(() => {
+    if (!pay || !known) return;
+    const formule = pay;
+    setPay(null);
+    setPaying('open');
+    client.action(api.whop.checkout, { formule, origin: window.location.origin }).then(
+      (r) => { window.location.assign(r.url); },
+      () => { setPaying('error'); setTimeout(() => setPaying(null), 6000); },
+    );
+  }, [pay, known]);
 
   // Changer d'écran referme le panneau du compte et les réglages.
   useEffect(() => { setMenu(false); setSettings(null); }, [path]);
@@ -442,9 +454,9 @@ function App() {
     page = h(Reglages, { key: 'm/reglages', ...settingsProps, mobile: true, onClose: toApp });
   }
   const panel = settings && !screen.mobile ? h(Reglages, { key: `reglages-${settings}`, ...settingsProps, section: settings, onClose: () => setSettings(null) }) : null;
-  const payBox = pay
-    ? h(Paiement, { key: 'paiement', formule: pay, total: (board('apps').value || {}).total, onClose: () => setPay(null),
-        onPay: (formule) => client.action(api.whop.checkout, { formule, origin: window.location.origin, renonce: true }).then((r) => { window.location.assign(r.url); }) })
+  const payNote = paying
+    ? h('div', { class: `app-paid is-${paying}`, role: paying === 'error' ? 'alert' : 'status' },
+        paying === 'error' ? 'Le paiement n’a pas pu s’ouvrir. Réessaie dans un instant.' : 'Ouverture du paiement sécurisé…')
     : null;
   // Retour de Whop : l'accès arrive par le webhook (quelques secondes en général).
   const paidNote = paid
@@ -453,7 +465,7 @@ function App() {
           : paid === 'slow' ? 'Ton paiement est en cours de validation chez Whop. L’accès s’ouvrira tout seul, sans rien faire.'
           : 'Paiement reçu. On ouvre ton accès…')
     : null;
-  return h(Fragment, null, page, account, panel, sheet, payBox, paidNote);
+  return h(Fragment, null, page, account, panel, sheet, payNote, paidNote);
 }
 
 /** Une fiche qui n'existe pas (ou plus) dans le Radar, ou une liste pas encore calculée. */

@@ -16,7 +16,7 @@ export default defineSchema({
     phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
     pro: v.optional(v.boolean()),
-    // Accord donné au paiement (CGV art. 6) : accès immédiat et renonciation au délai de rétractation. Heure de l'accord.
+    // Plus écrit depuis le 19/11 (l'accord est porté par les CGV, sans écran avant Whop) ; gardé pour les comptes de test.
     consentAt: v.optional(v.number()),
   })
     .index("email", ["email"])
