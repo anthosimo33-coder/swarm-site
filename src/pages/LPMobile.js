@@ -24,6 +24,11 @@ export default class LPMobile extends DCLogic {
     const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
 
     const st = this.state || {};
+    // Black Friday (19/11) : jusqu’au 30 novembre minuit, heure de Paris (même fin que TrendTrack). Bandeau et
+    // décompte disparaissent d’eux-mêmes ensuite.
+    const bfLeft = Math.max(0, Date.parse('2026-12-01T00:00:00+01:00') - (st.now || Date.now()));
+    const bf2 = (n) => String(n).padStart(2, '0');
+    const bfTime = Math.floor(bfLeft / 864e5) + 'j ' + bf2(Math.floor(bfLeft / 36e5) % 24) + ':' + bf2(Math.floor(bfLeft / 6e4) % 60) + ':' + bf2(Math.floor(bfLeft / 1e3) % 60);
     const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
     const blue = '#0B6FE0';
 
@@ -136,6 +141,7 @@ export default class LPMobile extends DCLogic {
     const mk = (title, links) => ({ title, links: links.map((l) => ({ t: l[0], href: l[1] })) });
 
     return {
+      bfOn: bfLeft > 0, bfOff: bfLeft === 0, bfTime,
       filmOn: true,
       filmMuted: !st.sound,
       soundOn: st.sound ? 'true' : 'false',
@@ -211,6 +217,42 @@ export default class LPMobile extends DCLogic {
         ),
         $h("div", { "style": "position: relative; display: flex; flex-direction: column;" },
           $h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 10px 12px 0;" },
+            ($v.bfOn) ? [
+              $h("a", { "href": "/tarifs", "class": "bfb", "aria-label": `Black Friday : jusqu’à −50 % sur l’abonnement annuel, fin dans ${$t($v.bfTime)}`, "style": "display: flex; align-items: center; justify-content: center; gap: 8px; margin: -10px -12px 8px; height: 38px; padding: 0 12px; background: #0B0E14; border-bottom: 1px solid rgba(255,255,255,0.07); color: #C9CED8; font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; overflow: hidden;" },
+                $h("svg", { "width": "14", "height": "16", "viewBox": "0 0 20 23", "aria-hidden": "true", "style": "flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(255,122,61,0.55));" },
+                  $h("defs", null,
+                    $h("linearGradient", { "id": "bfFlame", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                      $h("stop", { "offset": "0", "stop-color": "#FFD08A" }),
+                      $h("stop", { "offset": "0.5", "stop-color": "#FF8A4C" }),
+                      $h("stop", { "offset": "1", "stop-color": "#FF4F1F" })
+                    )
+                  ),
+                  $h("path", { "d": "M11.2 0.8c.5 3.2-1.3 5.1-3 6.9C6.3 9.7 4 11.9 4 15.4 4 19.4 6.9 22.2 10.3 22.2s6.3-2.8 6.3-6.7c0-2.5-1.1-4.3-2.4-5.8-.3 1.6-1.1 2.9-2.4 3.4.5-4.5-.7-8.7-3.2-12.3z", "fill": "url(#bfFlame)" }),
+                  $h("path", { "d": "M10.3 22.2c-2 0-3.5-1.5-3.5-3.6 0-2 1.3-3.2 2.6-4.5.3 1.3 1.1 2 2.1 2.3-.1-1.1.3-2.4.9-3.2 1.4 1.4 2.4 3 2.4 5 0 2.4-1.8 4-4.5 4z", "fill": "#FFE7B3", "opacity": "0.9" })
+                ),
+                $h("span", { "style": "color: #FFFFFF; font-weight: 700;" },
+                  "Black Friday"
+                ),
+                $h("span", { "aria-hidden": "true", "style": "color: #3A4150;" },
+                  "•"
+                ),
+                $h("span", { "style": "color: #C9CED8;" },
+                  $h("span", { "style": "color: #FF8A4C; font-weight: 700;" },
+                    "−50 %"
+                  ),
+                  " sur l’annuel"
+                ),
+                $h("span", { "aria-hidden": "true", "style": "color: #3A4150;" },
+                  "•"
+                ),
+                $h("span", { "style": "color: #E6E9EF; font-variant-numeric: tabular-nums;" },
+                  $t($v.bfTime)
+                ),
+                $h("span", { "class": "bfc", "style": "color: #FFFFFF; font-weight: 700;" },
+                  "→"
+                )
+              )
+            ] : null,
             $h("div", { "style": "display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 6px 0 14px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.64); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.10), inset 0 1px 0 #FFFFFF;" },
               $h("a", { "href": "#top", "aria-label": "Swarm, haut de page", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
                 $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },

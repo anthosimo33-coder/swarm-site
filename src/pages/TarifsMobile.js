@@ -19,8 +19,13 @@ export default class TarifsMobile extends DCLogic {
     const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
 
     const st = this.state || {};
+    // Black Friday (19/11) : jusqu’au 30 novembre minuit, heure de Paris (même fin que TrendTrack). Bandeau et
+    // décompte disparaissent d’eux-mêmes ensuite.
+    const bfLeft = Math.max(0, Date.parse('2026-12-01T00:00:00+01:00') - (st.now || Date.now()));
+    const bf2 = (n) => String(n).padStart(2, '0');
+    const bfTime = Math.floor(bfLeft / 864e5) + 'j ' + bf2(Math.floor(bfLeft / 36e5) % 24) + ':' + bf2(Math.floor(bfLeft / 6e4) % 60) + ':' + bf2(Math.floor(bfLeft / 1e3) % 60);
     const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
-    const annual = st.bill === 'y';
+    const annual = st.bill ? st.bill === 'y' : bfLeft > 0; // Black Friday : l’annuel d’abord
     const openQ = st.q === undefined ? 0 : st.q;
     const menuOpen = !!st.menu;
     const ic = {
@@ -56,6 +61,9 @@ export default class TarifsMobile extends DCLogic {
     ];
     const mk = (title, links) => ({ title, links: links.map((l) => ({ t: l[0], href: l[1] })) });
     return {
+      bfOn: bfLeft > 0, bfOff: bfLeft === 0, bfTime,
+      bfGo: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ bill: 'y' }); const el = typeof document !== 'undefined' && document.getElementById('bf-prix'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
+      bfBadge: bfLeft > 0 ? 'linear-gradient(180deg, #FFA266, #FF6A2B)' : '#0B6FE0',
       thumbL: annual ? '50%' : '5px',
       isM: !annual, isY: annual,
       inkM: annual ? '#3A3F47' : '#FFFFFF',
@@ -108,6 +116,42 @@ export default class TarifsMobile extends DCLogic {
         ),
         $h("div", { "style": "position: relative; display: flex; flex-direction: column;" },
           $h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 10px 12px 0;" },
+            ($v.bfOn) ? [
+              $h("a", { "href": "#bf-prix", "class": "bfb", "onClick": $v.bfGo, "aria-label": `Black Friday : jusqu’à −50 % sur l’abonnement annuel, fin dans ${$t($v.bfTime)}`, "style": "display: flex; align-items: center; justify-content: center; gap: 8px; margin: -10px -12px 8px; height: 38px; padding: 0 12px; background: #0B0E14; border-bottom: 1px solid rgba(255,255,255,0.07); color: #C9CED8; font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; overflow: hidden;" },
+                $h("svg", { "width": "14", "height": "16", "viewBox": "0 0 20 23", "aria-hidden": "true", "style": "flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(255,122,61,0.55));" },
+                  $h("defs", null,
+                    $h("linearGradient", { "id": "bfFlame", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                      $h("stop", { "offset": "0", "stop-color": "#FFD08A" }),
+                      $h("stop", { "offset": "0.5", "stop-color": "#FF8A4C" }),
+                      $h("stop", { "offset": "1", "stop-color": "#FF4F1F" })
+                    )
+                  ),
+                  $h("path", { "d": "M11.2 0.8c.5 3.2-1.3 5.1-3 6.9C6.3 9.7 4 11.9 4 15.4 4 19.4 6.9 22.2 10.3 22.2s6.3-2.8 6.3-6.7c0-2.5-1.1-4.3-2.4-5.8-.3 1.6-1.1 2.9-2.4 3.4.5-4.5-.7-8.7-3.2-12.3z", "fill": "url(#bfFlame)" }),
+                  $h("path", { "d": "M10.3 22.2c-2 0-3.5-1.5-3.5-3.6 0-2 1.3-3.2 2.6-4.5.3 1.3 1.1 2 2.1 2.3-.1-1.1.3-2.4.9-3.2 1.4 1.4 2.4 3 2.4 5 0 2.4-1.8 4-4.5 4z", "fill": "#FFE7B3", "opacity": "0.9" })
+                ),
+                $h("span", { "style": "color: #FFFFFF; font-weight: 700;" },
+                  "Black Friday"
+                ),
+                $h("span", { "aria-hidden": "true", "style": "color: #3A4150;" },
+                  "•"
+                ),
+                $h("span", { "style": "color: #C9CED8;" },
+                  $h("span", { "style": "color: #FF8A4C; font-weight: 700;" },
+                    "−50 %"
+                  ),
+                  " sur l’annuel"
+                ),
+                $h("span", { "aria-hidden": "true", "style": "color: #3A4150;" },
+                  "•"
+                ),
+                $h("span", { "style": "color: #E6E9EF; font-variant-numeric: tabular-nums;" },
+                  $t($v.bfTime)
+                ),
+                $h("span", { "class": "bfc", "style": "color: #FFFFFF; font-weight: 700;" },
+                  "→"
+                )
+              )
+            ] : null,
             $h("div", { "style": "display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 6px 0 14px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.64); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.10), inset 0 1px 0 #FFFFFF;" },
               $h("a", { "href": "/", "aria-label": "Swarm, accueil", "style": "display: inline-flex; align-items: center; gap: 8px; margin-right: auto; text-decoration: none; color: #0E0F12;" },
                 $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -134,15 +178,32 @@ export default class TarifsMobile extends DCLogic {
             )
           ),
           $h("section", { "style": "padding: 32px 20px 28px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px;" },
-            $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #3A3F47; animation: tfm-blurIn 0.8s ease-out both;" },
-              $h("span", { "style": "color: #0B6FE0;" },
-                "["
-              ),
-              " TARIFS ",
-              $h("span", { "style": "color: #0B6FE0;" },
-                "]"
+            ($v.bfOn) ? [
+              $h("div", { "role": "timer", "aria-label": `Black Friday : −50 % sur l’abonnement annuel, fin dans ${$t($v.bfTime)}`, "style": "display: flex; flex-direction: column; align-items: center; animation: tfm-blurIn 0.8s ease-out both;" },
+                $h("span", { "aria-hidden": "true", "style": "position: relative; z-index: 1; margin-bottom: -1px; padding: 8px 18px 7px; border-radius: 12px 12px 0 0; background: #0B0E14; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: #FF8A4C;" },
+                  "BLACK FRIDAY"
+                ),
+                $h("div", { "aria-hidden": "true", "style": "padding: 12px 18px 11px; border-radius: 16px; background-color: #07090D; background-image: radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1.5px); background-size: 7px 7px; box-shadow: 0 0 0 5px #0B0E14, 0 24px 60px rgba(11,14,20,0.35), inset 0 0 30px rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; gap: 4px;" },
+                  $h("span", { "style": "font-family: 'Doto', 'JetBrains Mono', monospace; font-weight: 800; font-size: 34px; line-height: 1; letter-spacing: 0.02em; color: #FF9C57; text-shadow: 0 0 14px rgba(255,122,61,0.6);" },
+                    "-50% ANNUEL"
+                  ),
+                  $h("span", { "style": "font-family: 'Doto', 'JetBrains Mono', monospace; font-weight: 800; font-size: 34px; line-height: 1; letter-spacing: 0.02em; color: #E9ECF2; text-shadow: 0 0 12px rgba(255,255,255,0.28); font-variant-numeric: tabular-nums;" },
+                    $t($v.bfTime)
+                  )
+                )
               )
-            ),
+            ] : null,
+            ($v.bfOff) ? [
+              $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.04em; color: #3A3F47; animation: tfm-blurIn 0.8s ease-out both;" },
+                $h("span", { "style": "color: #0B6FE0;" },
+                  "["
+                ),
+                " TARIFS ",
+                $h("span", { "style": "color: #0B6FE0;" },
+                  "]"
+                )
+              )
+            ] : null,
             $h("h1", { "style": "margin: 0; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(36px, 11vw, 46px); line-height: 1.04; letter-spacing: -0.05em; animation: tfm-blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.1s;" },
               "Un seul plan. ",
               $h("span", { "style": "color: #0B6FE0;" },
@@ -159,13 +220,13 @@ export default class TarifsMobile extends DCLogic {
               ),
               $h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; flex: 1 1 0; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: color 0.3s ease;` },
                 "Annuel",
-                $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 7px;" },
+                $h("span", { "style": `font-size: 11px; font-weight: 700; color: #FFFFFF; background: ${$t($v.bfBadge)}; border-radius: 999px; padding: 2px 7px;` },
                   "−50 %"
                 )
               )
             )
           ),
-          $h("section", { "aria-label": "Swarm Pro", "style": "padding: 0 16px;" },
+          $h("section", { "id": "bf-prix", "aria-label": "Swarm Pro", "style": "padding: 0 16px;" },
             $h("div", { "style": "position: relative; border-radius: 28px; padding: 1.5px; overflow: hidden; box-shadow: 0 2px 4px rgba(16,24,40,0.06), 0 40px 90px rgba(11,40,90,0.22); animation: tfm-riseIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.5s;" },
               $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; width: 260%; aspect-ratio: 1 / 1; background: conic-gradient(from 0deg, rgba(11,111,224,0.18) 0deg, rgba(11,111,224,0.18) 230deg, #4C9AFF 300deg, #FFFFFF 335deg, rgba(11,111,224,0.18) 360deg); animation: tfm-spinC 6s linear infinite;" }),
               $h("div", { "style": "position: relative; border-radius: 26.5px; overflow: hidden; background: #FFFFFF;" },
@@ -190,8 +251,8 @@ export default class TarifsMobile extends DCLogic {
                       "Tout inclus"
                     )
                   ),
-                  $h("div", { "style": "position: relative; height: 96px;" },
-                    $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; opacity: ${$t($v.oM)}; transform: ${$t($v.trM)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
+                  $h("div", { "style": "position: relative; height: 128px;" },
+                    $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; padding-top: 32px; box-sizing: border-box; opacity: ${$t($v.oM)}; transform: ${$t($v.trM)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                       $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
                         $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
                           "29,99 €"
@@ -205,7 +266,15 @@ export default class TarifsMobile extends DCLogic {
                       )
                     ),
                     $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; opacity: ${$t($v.oY)}; transform: ${$t($v.trY)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
-                      $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
+                      $h("span", { "style": "display: flex; align-items: center; gap: 8px;" },
+                        $h("span", { "style": "font-size: 17px; font-weight: 600; color: #6B7385; text-decoration: line-through; text-decoration-color: rgba(255,138,76,0.9); text-decoration-thickness: 2px;" },
+                          "29,99 €"
+                        ),
+                        $h("span", { "style": "font-size: 12px; font-weight: 700; color: #FF9C57; background: rgba(255,122,61,0.14); box-shadow: inset 0 0 0 1px rgba(255,122,61,0.32); border-radius: 8px; padding: 3px 8px;" },
+                          "Économise 50 %"
+                        )
+                      ),
+                      $h("span", { "style": "display: flex; align-items: baseline; gap: 8px; white-space: nowrap;" },
                         $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
                           "14,99 €"
                         ),
@@ -214,7 +283,7 @@ export default class TarifsMobile extends DCLogic {
                         )
                       ),
                       $h("span", { "style": "font-size: 14px; color: #9AA3B2;" },
-                        "Facturé 179,88 € par an au lieu de 359,88 €."
+                        "Facturé 179,88 € par an."
                       )
                     )
                   ),

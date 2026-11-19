@@ -15,8 +15,13 @@ export default class Tarifs extends DCLogic {
     const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
 
     const st = this.state || {};
+    // Black Friday (19/11) : jusqu’au 30 novembre minuit, heure de Paris (même fin que TrendTrack). Bandeau et
+    // décompte disparaissent d’eux-mêmes ensuite.
+    const bfLeft = Math.max(0, Date.parse('2026-12-01T00:00:00+01:00') - (st.now || Date.now()));
+    const bf2 = (n) => String(n).padStart(2, '0');
+    const bfTime = Math.floor(bfLeft / 864e5) + 'j ' + bf2(Math.floor(bfLeft / 36e5) % 24) + ':' + bf2(Math.floor(bfLeft / 6e4) % 60) + ':' + bf2(Math.floor(bfLeft / 1e3) % 60);
     const el = Math.max(0, (st.now || 0) - (this.t0 || 0));
-    const annual = st.bill === 'y';
+    const annual = st.bill ? st.bill === 'y' : bfLeft > 0; // Black Friday : l’annuel d’abord
     const menuOpen = !!st.menu;
     const openQ = st.q === undefined ? 0 : st.q;
     const ic = {
@@ -82,6 +87,9 @@ export default class Tarifs extends DCLogic {
     ];
     const mk = (title, links) => ({ title, links: links.map((l) => ({ t: l[0], href: l[1] })) });
     return {
+      bfOn: bfLeft > 0, bfOff: bfLeft === 0, bfTime,
+      bfGo: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ bill: 'y' }); const el = typeof document !== 'undefined' && document.getElementById('bf-prix'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
+      bfBadge: bfLeft > 0 ? 'linear-gradient(180deg, #FFA266, #FF6A2B)' : '#0B6FE0',
       menuOpen,
       prodBg: menuOpen ? 'rgba(255,255,255,0.90)' : 'transparent',
       chev: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -122,6 +130,49 @@ export default class Tarifs extends DCLogic {
           $h("div", { "style": "position: absolute; inset: 0; background-image: linear-gradient(rgba(11,111,224,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(11,111,224,0.06) 1px, transparent 1px); background-size: 64px 64px; -webkit-mask-image: radial-gradient(46% 34% at 50% 22%, #000, transparent); mask-image: radial-gradient(46% 34% at 50% 22%, #000, transparent);" })
         ),
         $h("header", { "style": "position: sticky; top: 0; z-index: 50; padding: 22px 24px 0;" },
+          ($v.bfOn) ? [
+            $h("a", { "href": "#bf-prix", "class": "bfb", "onClick": $v.bfGo, "aria-label": `Black Friday : jusqu’à −50 % sur l’abonnement annuel, fin dans ${$t($v.bfTime)}`, "style": "display: flex; align-items: center; justify-content: center; gap: 12px; margin: -22px -24px 14px; height: 42px; padding: 0 16px; background: #0B0E14; border-bottom: 1px solid rgba(255,255,255,0.07); color: #C9CED8; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; overflow: hidden;" },
+              $h("svg", { "width": "16", "height": "18", "viewBox": "0 0 20 23", "aria-hidden": "true", "style": "flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(255,122,61,0.55));" },
+                $h("defs", null,
+                  $h("linearGradient", { "id": "bfFlame", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
+                    $h("stop", { "offset": "0", "stop-color": "#FFD08A" }),
+                    $h("stop", { "offset": "0.5", "stop-color": "#FF8A4C" }),
+                    $h("stop", { "offset": "1", "stop-color": "#FF4F1F" })
+                  )
+                ),
+                $h("path", { "d": "M11.2 0.8c.5 3.2-1.3 5.1-3 6.9C6.3 9.7 4 11.9 4 15.4 4 19.4 6.9 22.2 10.3 22.2s6.3-2.8 6.3-6.7c0-2.5-1.1-4.3-2.4-5.8-.3 1.6-1.1 2.9-2.4 3.4.5-4.5-.7-8.7-3.2-12.3z", "fill": "url(#bfFlame)" }),
+                $h("path", { "d": "M10.3 22.2c-2 0-3.5-1.5-3.5-3.6 0-2 1.3-3.2 2.6-4.5.3 1.3 1.1 2 2.1 2.3-.1-1.1.3-2.4.9-3.2 1.4 1.4 2.4 3 2.4 5 0 2.4-1.8 4-4.5 4z", "fill": "#FFE7B3", "opacity": "0.9" })
+              ),
+              $h("span", { "style": "color: #FFFFFF; font-weight: 700;" },
+                "Black Friday"
+              ),
+              $h("span", { "aria-hidden": "true", "style": "color: #3A4150;" },
+                "•"
+              ),
+              $h("span", { "style": "color: #C9CED8;" },
+                "Jusqu’à ",
+                $h("span", { "style": "color: #FF8A4C; font-weight: 700;" },
+                  "−50 %"
+                ),
+                " sur l’abonnement annuel"
+              ),
+              $h("span", { "aria-hidden": "true", "style": "color: #3A4150;" },
+                "•"
+              ),
+              $h("span", { "style": "color: #8A93A3;" },
+                "Fin dans ",
+                $h("span", { "style": "color: #E6E9EF; font-variant-numeric: tabular-nums;" },
+                  $t($v.bfTime)
+                )
+              ),
+              $h("span", { "aria-hidden": "true", "style": "color: #3A4150;" },
+                "•"
+              ),
+              $h("span", { "class": "bfc", "style": "color: #FFFFFF; font-weight: 700; transition: color 0.2s ease;" },
+                "J’en profite →"
+              )
+            )
+          ] : null,
           $h("div", { "style": "position: relative; max-width: 1240px; margin: 0 auto; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;" },
             $h("a", { "href": "/", "style": "display: flex; align-items: center; gap: 9px; text-decoration: none; height: 52px; padding: 0 20px 0 16px; box-sizing: border-box; border-radius: 999px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); box-shadow: 0 8px 24px rgba(16,24,40,0.08), inset 0 1px 0 #FFFFFF;" },
               $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -209,15 +260,32 @@ export default class Tarifs extends DCLogic {
           )
         ),
         $h("section", { "style": "position: relative; padding: 88px 24px 64px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 22px;" },
-          $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 0.04em; color: #3A3F47; animation: tf-blurIn 0.8s ease-out both;" },
-            $h("span", { "style": "color: #0B6FE0;" },
-              "["
-            ),
-            " TARIFS ",
-            $h("span", { "style": "color: #0B6FE0;" },
-              "]"
+          ($v.bfOn) ? [
+            $h("div", { "role": "timer", "aria-label": `Black Friday : −50 % sur l’abonnement annuel, fin dans ${$t($v.bfTime)}`, "style": "display: flex; flex-direction: column; align-items: center; animation: tf-blurIn 0.8s ease-out both;" },
+              $h("span", { "aria-hidden": "true", "style": "position: relative; z-index: 1; margin-bottom: -1px; padding: 8px 18px 7px; border-radius: 12px 12px 0 0; background: #0B0E14; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: #FF8A4C;" },
+                "BLACK FRIDAY"
+              ),
+              $h("div", { "aria-hidden": "true", "style": "padding: 18px 30px 16px; border-radius: 22px; background-color: #07090D; background-image: radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1.5px); background-size: 7px 7px; box-shadow: 0 0 0 6px #0B0E14, 0 24px 60px rgba(11,14,20,0.35), inset 0 0 30px rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; gap: 4px;" },
+                $h("span", { "style": "font-family: 'Doto', 'JetBrains Mono', monospace; font-weight: 800; font-size: 56px; line-height: 1; letter-spacing: 0.02em; color: #FF9C57; text-shadow: 0 0 14px rgba(255,122,61,0.6);" },
+                  "-50% ANNUEL"
+                ),
+                $h("span", { "style": "font-family: 'Doto', 'JetBrains Mono', monospace; font-weight: 800; font-size: 56px; line-height: 1; letter-spacing: 0.02em; color: #E9ECF2; text-shadow: 0 0 12px rgba(255,255,255,0.28); font-variant-numeric: tabular-nums;" },
+                  $t($v.bfTime)
+                )
+              )
             )
-          ),
+          ] : null,
+          ($v.bfOff) ? [
+            $h("span", { "style": "font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 0.04em; color: #3A3F47; animation: tf-blurIn 0.8s ease-out both;" },
+              $h("span", { "style": "color: #0B6FE0;" },
+                "["
+              ),
+              " TARIFS ",
+              $h("span", { "style": "color: #0B6FE0;" },
+                "]"
+              )
+            )
+          ] : null,
           $h("h1", { "style": "margin: 0; max-width: 1100px; font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: clamp(44px, 5.6vw, 84px); line-height: 1.02; letter-spacing: -0.05em; animation: tf-blurIn 1s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.12s;" },
             "Un seul plan. ",
             $h("span", { "style": "color: #0B6FE0;" },
@@ -234,13 +302,13 @@ export default class Tarifs extends DCLogic {
             ),
             $h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: color 0.3s ease;` },
               "Annuel",
-              $h("span", { "style": "font-size: 12px; font-weight: 700; color: #FFFFFF; background: #0B6FE0; border-radius: 999px; padding: 2px 8px;" },
+              $h("span", { "style": `font-size: 12px; font-weight: 700; color: #FFFFFF; background: ${$t($v.bfBadge)}; border-radius: 999px; padding: 2px 8px;` },
                 "−50 %"
               )
             )
           )
         ),
-        $h("section", { "aria-label": "Swarm Pro", "style": "position: relative; padding: 0 24px;" },
+        $h("section", { "id": "bf-prix", "aria-label": "Swarm Pro", "style": "position: relative; padding: 0 24px;" },
           $h("div", { "style": "position: relative; max-width: 1120px; margin: 0 auto; border-radius: 32px; padding: 1.5px; overflow: hidden; box-shadow: 0 2px 4px rgba(16,24,40,0.06), 0 50px 110px rgba(11,40,90,0.22); animation: tf-riseIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: 0.55s;" },
             $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; width: 140%; aspect-ratio: 1 / 1; background: conic-gradient(from 0deg, rgba(11,111,224,0.18) 0deg, rgba(11,111,224,0.18) 230deg, #4C9AFF 300deg, #FFFFFF 335deg, rgba(11,111,224,0.18) 360deg); animation: tf-spinC 6s linear infinite;" }),
             $h("div", { "style": "position: relative; border-radius: 30.5px; overflow: hidden; background: #FFFFFF; display: flex; flex-wrap: wrap;" },
@@ -282,6 +350,9 @@ export default class Tarifs extends DCLogic {
                   ),
                   $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; opacity: ${$t($v.oY)}; transform: ${$t($v.trY)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                     $h("span", { "style": "display: flex; align-items: baseline; gap: 10px;" },
+                      $h("span", { "style": "font-size: 24px; font-weight: 600; color: #6B7385; text-decoration: line-through; text-decoration-color: rgba(255,138,76,0.9); text-decoration-thickness: 2px;" },
+                        "29,99 €"
+                      ),
                       $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 80px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
                         "14,99 €"
                       ),
@@ -289,8 +360,13 @@ export default class Tarifs extends DCLogic {
                         "/ mois"
                       )
                     ),
-                    $h("span", { "style": "font-size: 15px; color: #9AA3B2;" },
-                      "Facturé 179,88 € par an au lieu de 359,88 €."
+                    $h("span", { "style": "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;" },
+                      $h("span", { "style": "font-size: 13px; font-weight: 700; color: #FF9C57; background: rgba(255,122,61,0.14); box-shadow: inset 0 0 0 1px rgba(255,122,61,0.32); border-radius: 8px; padding: 4px 9px;" },
+                        "Économise 50 %"
+                      ),
+                      $h("span", { "style": "font-size: 15px; color: #9AA3B2;" },
+                        "Facturé 179,88 € par an."
+                      )
                     )
                   )
                 ),
