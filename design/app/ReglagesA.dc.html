@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Kopycat · Réglages</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#05070C}
+@keyframes regIn{from{opacity:0;transform:translateY(10px) scale(0.985)}to{opacity:1;transform:none}}
+@keyframes regFade{from{opacity:0}to{opacity:1}}
+@keyframes regToast{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+.reg-bg{animation:regFade .18s ease both}.reg-box{animation:regIn .24s cubic-bezier(.2,.8,.2,1) both}
+.reg-search{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border-radius:12px;background:rgba(255,255,255,0.04);color:var(--ink-faint);flex-shrink:0;cursor:text}
+.reg-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#FFFFFF;font:inherit;font-size:14px}
+.reg-search input::placeholder{color:var(--ink-faint)}
+.reg-search input::-webkit-search-cancel-button{filter:invert(1) opacity(.5)}
+.reg-grp{padding:18px 12px 6px;font-size:12px;font-weight:500;color:var(--ink-faint)}
+.reg-nav{appearance:none;border:0;margin:0;width:100%;background:transparent;font-family:inherit;cursor:pointer;text-decoration:none;box-sizing:border-box;display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:10px;font-size:14px;color:var(--ink-muted);text-align:left}
+.reg-nav:hover{background:rgba(255,255,255,0.04);color:var(--ink-soft)}
+.reg-nav[aria-current="page"]{background:rgba(255,255,255,0.07);color:#FFFFFF;font-weight:600}
+.reg-nav-ic{display:flex;color:var(--ink-faint)}.reg-nav[aria-current="page"] .reg-nav-ic{color:#FFFFFF}
+.reg-res{appearance:none;border:0;margin:0;width:100%;background:transparent;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:10px;text-align:left}
+.reg-res:hover,.reg-res:focus-visible{background:rgba(255,255,255,0.07);outline:none}
+.reg-res mark{background:rgba(76,154,255,0.28);color:#FFFFFF;border-radius:3px;padding:0 1px}
+.reg-x{appearance:none;border:0;cursor:pointer;position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);background:rgba(255,255,255,0.04)}
+.reg-x:hover{background:rgba(255,255,255,0.09);color:#FFFFFF}
+.reg-head{display:flex;flex-direction:column;gap:6px;margin-bottom:24px;padding-right:40px}
+.reg-head h2{margin:0;font-family:var(--font-display);font-size:24px;font-weight:700;letter-spacing:-0.02em}
+.reg-head span{font-size:14px;color:var(--ink-muted)}
+.reg-card{border-radius:16px;background:rgba(255,255,255,0.025);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);padding:0 20px;transition:box-shadow .3s ease,background .3s ease}
+.reg-danger{background:rgba(229,72,77,0.04);box-shadow:inset 0 0 0 1px rgba(229,72,77,0.3)}
+.reg-row{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:72px;padding:14px 0;box-sizing:border-box;transition:box-shadow .3s ease,background .3s ease}
+.reg-lab{display:flex;flex-direction:column;gap:4px;min-width:0}
+.reg-t{font-size:14px;font-weight:600;color:#FFFFFF}.reg-h{font-size:13px;line-height:1.45;color:var(--ink-faint)}
+.reg-h:empty{display:none}
+.reg-av{width:48px;height:48px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#4C9AFF,#0B6FE0);color:#FFFFFF;font-weight:700;font-size:19px}
+.reg-in{width:280px;box-sizing:border-box;height:40px;padding:0 12px;border:0;border-radius:10px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);font:inherit;font-size:14px;color:#FFFFFF;outline:none;transition:box-shadow .15s ease}
+.reg-in:focus{box-shadow:inset 0 0 0 2px var(--accent),0 0 0 4px rgba(76,154,255,0.18)}
+.reg-in::placeholder{color:var(--ink-faint)}
+.reg-ok{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5CD394;animation:regFade .2s ease both}
+.reg-pill{height:22px;padding:0 8px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.reg-green{background:rgba(60,200,120,0.12);color:#5CD394}.reg-blue{background:var(--accent-soft);color:var(--accent)}.reg-orange{background:rgba(255,106,31,0.14);color:#FF9C57;font-variant-numeric:tabular-nums}
+.reg-btn{appearance:none;border:0;margin:0;cursor:pointer;font-family:inherit;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 14px;border-radius:10px;font-size:14px;font-weight:600;white-space:nowrap;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);color:#FFFFFF}
+.reg-btn:hover:not(:disabled){background:rgba(255,255,255,0.09)}
+.reg-btn:disabled{opacity:.45;cursor:default}
+.reg-text{background:transparent;box-shadow:none;color:var(--ink-muted)}.reg-text:hover{color:#FFFFFF}
+.reg-redline{background:transparent;box-shadow:inset 0 0 0 1px rgba(229,72,77,0.55);color:#FF8A8A}.reg-redline:hover{background:rgba(229,72,77,0.08) !important}
+.reg-red{background:#E5484D;box-shadow:none;color:#FFFFFF}.reg-red:hover:not(:disabled){background:#EC5D62 !important}
+.reg-plan{border-radius:18px;padding:22px 24px;background:linear-gradient(180deg,rgba(255,106,31,0.10),rgba(255,106,31,0.02) 70%);box-shadow:inset 0 0 0 1px rgba(255,138,76,0.4);display:flex;flex-direction:column;gap:18px;transition:box-shadow .3s ease}
+.reg-seg{display:inline-flex;padding:3px;border-radius:10px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)}
+.reg-seg button{appearance:none;border:0;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:13px;color:var(--ink-muted);background:transparent}
+.reg-seg button[aria-checked="true"]{color:#FFFFFF;font-weight:600;background:rgba(255,255,255,0.1)}
+.reg-cta{display:inline-flex;align-items:center;justify-content:center;height:46px;padding:0 20px;border-radius:12px;font-size:15px;font-weight:700;color:#FFFFFF !important;text-decoration:none;white-space:nowrap;transition:transform .15s ease,filter .15s ease}
+.reg-cta:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.reg-inc{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08)}
+.reg-inc>span{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft)}
+.reg-toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:14px;height:44px;padding:0 8px 0 16px;border-radius:12px;background:#1B2130;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1),0 16px 40px rgba(0,0,0,0.5);font-size:14px;white-space:nowrap;animation:regToast .2s ease both}
+.reg-toast button{appearance:none;border:0;cursor:pointer;font-family:inherit;padding:6px 10px;border-radius:8px;background:transparent;color:var(--accent);font-weight:600;font-size:14px}
+.reg-toast button:hover{background:rgba(76,154,255,0.12)}
+@media (prefers-reduced-motion: reduce){.reg-bg,.reg-box,.reg-toast,.reg-ok{animation:none !important}}
+.reg-out{color:#FF8A8A !important}.reg-out .reg-nav-ic{color:#FF8A8A !important}
+.reg-mbar{position:relative;display:flex;align-items:center;justify-content:center;height:44px;margin:-4px 0 8px}
+.reg-mok,.reg-back{appearance:none;border:0;background:transparent;cursor:pointer;font-family:inherit;color:var(--accent);font-size:16px;font-weight:600;-webkit-tap-highlight-color:transparent}
+.reg-mok{position:absolute;right:0;top:0;height:44px;padding:0 8px}
+.reg-back{display:inline-flex;align-items:center;gap:2px;height:40px;margin:-12px 0 12px -8px;padding:0 8px 0 0;font-weight:500}
+.reg-mob{animation:none !important;padding:0 !important;background:var(--surface) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;z-index:40 !important}
+.reg-mob .reg-box{width:100% !important;height:100% !important;border-radius:0 !important;box-shadow:none !important;background:var(--surface) !important;animation:none !important}
+.reg-mob .reg-x,.reg-mob .reg-foot{display:none !important}
+.reg-mob.reg-list section{display:none !important}.reg-mob.reg-list .reg-aside{flex:1 1 auto !important;border-right:0 !important;background:var(--surface) !important;padding:max(12px,env(safe-area-inset-top)) 16px 24px !important;overflow-y:auto}
+.reg-mob.reg-list .reg-nav{height:52px;font-size:16px;color:#FFFFFF}
+.reg-mob.reg-detail .reg-aside{display:none !important}
+.reg-mob section{padding:max(16px,env(safe-area-inset-top)) 16px 96px !important}
+.reg-mob .reg-head{padding-right:0}
+.reg-mob .reg-row{flex-wrap:wrap;gap:12px}.reg-mob .reg-row>span:last-child,.reg-mob .reg-row>button{max-width:100%}
+.reg-mob .reg-in{width:100%}.reg-mob .reg-row>span[style*='flex-end']{align-items:stretch !important;width:100%}
+.reg-mob .reg-inc{grid-template-columns:1fr}.reg-mob .reg-plan{padding:18px}
+.reg-mob .reg-toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom))}
+</style>
+</helmet>
+<div class="sw reg-bg {{mobCls}}" onClick="{{bg}}" style="position: fixed; inset: 0; z-index: 85; background: rgba(3,4,8,0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: var(--font-body); color: var(--ink);">
+<div class="reg-box" role="dialog" aria-modal="true" aria-label="Réglages" style="position: relative; width: min(1040px, 100%); height: min(704px, 100%); display: flex; overflow: hidden; border-radius: 24px; background: #11151E; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.09), 0 40px 120px rgba(0,0,0,0.6);">
+<aside class="reg-aside" style="flex: 0 0 264px; box-sizing: border-box; padding: 16px 12px; border-right: 1px solid var(--line); background: #0C1017; display: flex; flex-direction: column; min-height: 0;">
+<sc-if value="{{mobile}}" hint-placeholder-val="{{false}}"><div class="reg-mbar"><span style="font-size: 16px; font-weight: 700;">Réglages</span><button class="reg-mok" type="button" onClick="{{close}}">OK</button></div><div style="display: flex; align-items: center; gap: 14px; padding: 8px 4px 16px;"><span class="reg-av" style="width: 56px; height: 56px; font-size: 22px;">{{me.initiale}}</span><span style="display: flex; flex-direction: column; gap: 4px; min-width: 0;"><span style="font-size: 18px; font-weight: 700;">{{me.nom}}</span><span style="font-size: 13px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{me.email}}</span></span></div></sc-if>
+<label class="reg-search" style="{{searchRing}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="Chercher un réglage" aria-label="Chercher un réglage" autocomplete="off" spellcheck="false"></label>
+<sc-if value="{{searching}}" hint-placeholder-val="{{false}}"><div class="reg-grp">{{resTitle}}</div><sc-for list="{{results}}" as="r" hint-placeholder-count="3"><button class="reg-res" type="button" onClick="{{r.pick}}"><span style="font-size: 14px; color: #FFFFFF; font-weight: 500;">{{r.a}}<mark>{{r.b}}</mark>{{r.c}}</span><span style="font-size: 12px; color: var(--ink-faint);">{{r.where}}</span></button></sc-for></sc-if>
+<sc-if value="{{browsing}}" hint-placeholder-val="{{true}}"><div class="reg-grp">Compte</div><button class="reg-nav" type="button" aria-current="{{cur.profil}}" onClick="{{go.profil}}"><span class="reg-nav-ic"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="flex: 1; white-space: nowrap;">Profil</span></button><button class="reg-nav" type="button" aria-current="{{cur.securite}}" onClick="{{go.securite}}"><span class="reg-nav-ic"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="flex: 1; white-space: nowrap;">Sécurité</span></button><div class="reg-grp">Abonnement</div><button class="reg-nav" type="button" aria-current="{{cur.abo}}" onClick="{{go.abo}}"><span class="reg-nav-ic"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M3 6h18v12H3zM3 10h18M7 15h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="flex: 1; white-space: nowrap;">Formule et facturation</span></button></sc-if>
+<sc-if value="{{mobile}}" hint-placeholder-val="{{false}}"><a class="reg-nav reg-out" href="ConnexionA.dc.html" style="margin-top: 20px;"><span class="reg-nav-ic"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M15 17l5-5-5-5M20 12H9M12 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Se déconnecter</a></sc-if>
+<div class="reg-foot" style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px;"><span style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); color: #FFFFFF; font-weight: 700; font-size: 13px;">{{me.initiale}}</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{me.nom}}</span><span style="font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{me.email}}</span></span></div>
+</aside>
+<section style="flex: 1; min-width: 0; position: relative; padding: 36px 44px 88px; overflow-y: auto;">
+<sc-if value="{{mobile}}" hint-placeholder-val="{{false}}"><button class="reg-back" type="button" onClick="{{back}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Réglages</button></sc-if>
+<button class="reg-x" type="button" onClick="{{close}}" aria-label="Fermer les réglages"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+
+<sc-if value="{{sec.profil}}" hint-placeholder-val="{{true}}">
+<header class="reg-head"><h2>Profil</h2><span>Ce que Kopycat affiche de toi. Chaque changement s’enregistre tout seul.</span></header>
+<div class="reg-card">
+<div id="reg-photo" class="reg-row" style=" {{glow.photo}}"><span class="reg-lab"><span class="reg-t">Photo</span><span class="reg-h">Ton initiale, tant que tu n’as pas mis de photo.</span></span><span class="reg-av">{{me.initiale}}</span></div>
+<div id="reg-prenom" class="reg-row" style="border-top: 1px solid var(--line); {{glow.prenom}}"><span class="reg-lab"><span class="reg-t">Prénom</span><span class="reg-h">Affiché dans l’app.</span></span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;"><input class="reg-in" type="text" value="{{nameVal}}" onInput="{{onName}}" onBlur="{{onNameBlur}}" maxlength="40" placeholder="Ton prénom" aria-label="Prénom" autocomplete="given-name"><sc-if value="{{nameSaved}}" hint-placeholder-val="{{false}}"><span class="reg-ok"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Enregistré</span></sc-if><sc-if value="{{nameErr}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: #FF8A8A;">{{nameErr}}</span></sc-if></span></div>
+<div id="reg-email" class="reg-row" style="border-top: 1px solid var(--line); {{glow.email}}"><span class="reg-lab"><span class="reg-t">E-mail</span><span class="reg-h">Pour te connecter et recevoir tes reçus.</span></span><span style="display: flex; align-items: center; gap: 12px; min-width: 0;"><span style="font-size: 14px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{me.email}}</span><sc-if value="{{me.verified}}" hint-placeholder-val="{{true}}"><span class="reg-pill reg-green"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Vérifiée</span></sc-if></span></div>
+</div>
+<div class="reg-card reg-danger" style="margin-top: 20px;">
+<div id="reg-fermer" class="reg-row" style="{{glow.fermer}}"><span class="reg-lab"><span class="reg-t">Fermer mon compte</span><span class="reg-h">Supprime ton compte, tes dossiers, tes suivis et tes alertes.</span></span><sc-if value="{{delClosed}}" hint-placeholder-val="{{true}}"><button class="reg-btn reg-redline" type="button" onClick="{{delOpen}}">Fermer mon compte</button></sc-if></div>
+<sc-if value="{{delShown}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; gap: 12px; padding: 4px 0 18px;"><span style="font-size: 13px; line-height: 1.5; color: var(--ink-soft);">Tout est effacé, sans retour possible. Pour confirmer, retape ton e-mail : <b style="color: #FFFFFF;">{{me.email}}</b></span><span style="display: flex; align-items: center; gap: 10px;"><input class="reg-in" style="flex: 1; width: auto;" type="email" value="{{delEmail}}" onInput="{{onDelEmail}}" placeholder="Ton e-mail" aria-label="Retape ton e-mail" autocomplete="off"><button class="reg-btn reg-text" type="button" onClick="{{delCancel}}">Annuler</button><button class="reg-btn reg-red" type="button" disabled="{{delOff}}" onClick="{{delGo}}">{{delLabel}}</button></span><sc-if value="{{delErr}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: #FF8A8A;">{{delErr}}</span></sc-if></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{sec.securite}}" hint-placeholder-val="{{false}}">
+<header class="reg-head"><h2>Sécurité</h2><span>Où ta session est ouverte.</span></header>
+<div class="reg-card">
+<div id="reg-appareil" class="reg-row" style=" {{glow.appareil}}"><span class="reg-lab"><span class="reg-t">Cet appareil</span><span class="reg-h">{{sinceTxt}}</span></span><span class="reg-pill reg-blue">Actuel</span></div>
+<div id="reg-autres" class="reg-row" style="border-top: 1px solid var(--line); {{glow.autres}}"><span class="reg-lab"><span class="reg-t">Autres appareils</span><span class="reg-h">{{othersTxt}}</span></span><button class="reg-btn" type="button" disabled="{{othersOff}}" onClick="{{signOutOthers}}">{{othersLabel}}</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{sec.abo}}" hint-placeholder-val="{{false}}">
+<header class="reg-head"><h2>Formule et facturation</h2><span>{{aboSub}}</span></header>
+<sc-if value="{{me.free}}" hint-placeholder-val="{{true}}"><div id="reg-formule" class="reg-plan" style="{{glow.formule}}">
+<span style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;"><span style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 17px; font-weight: 700;">Kopycat Pro</span><sc-if value="{{bfOn}}" hint-placeholder-val="{{true}}"><span class="reg-pill reg-orange">Black Friday · fin dans {{bfTime}}</span></sc-if></span><span class="reg-seg" role="radiogroup" aria-label="Formule"><button type="button" role="radio" aria-checked="{{billM}}" onClick="{{pickM}}">Mensuel</button><button type="button" role="radio" aria-checked="{{billY}}" onClick="{{pickY}}">Annuel<span style="font-size: 11px; font-weight: 700; color: #FF9C57;">−50 %</span></button></span></span>
+<span style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;"><span style="display: flex; flex-direction: column; gap: 6px;"><span style="display: flex; align-items: baseline; gap: 8px;"><sc-if value="{{billY}}" hint-placeholder-val="{{true}}"><span style="font-size: 16px; color: var(--ink-faint); text-decoration: line-through;">29,99 €</span></sc-if><span style="font-family: var(--font-display); font-size: 44px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums;">{{price}}</span><span style="font-size: 14px; color: var(--ink-muted);">/ mois</span></span><span style="font-size: 13px; color: var(--ink-muted);">{{priceSub}}</span></span><a class="reg-cta" href="{{ctaHref}}" style="{{ctaStyle}}">{{ctaLabel}}</a></span>
+<span class="reg-inc"><sc-for list="{{inc}}" as="i" hint-placeholder-count="6"><span><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--accent);"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{i}}</span></sc-for></span>
+</div></sc-if>
+<sc-if value="{{me.pro}}" hint-placeholder-val="{{false}}"><div id="reg-formule" class="reg-card" style="padding: 18px 20px; display: flex; align-items: center; gap: 14px; {{glow.formule}}"><span style="width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M13 3L5 14h6l-1 7 8-11h-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="display: flex; flex-direction: column; gap: 4px;"><span style="display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700;">Kopycat Pro<span class="reg-pill reg-green">Actif</span></span><span style="font-size: 13px; color: var(--ink-muted);">Ton compte a accès à tout Kopycat.</span></span></div></sc-if>
+<div class="reg-card" style="margin-top: 20px;"><div id="reg-recus" class="reg-row" style=" {{glow.recus}}"><span class="reg-lab"><span class="reg-t">Reçus</span><span class="reg-h">Tes reçus arriveront ici après chaque paiement.</span></span><span style="font-size: 13px; color: var(--ink-faint); white-space: nowrap;">Aucun pour l’instant</span></div></div>
+</sc-if>
+
+<sc-if value="{{toastOn}}" hint-placeholder-val="{{false}}"><div class="reg-toast" role="status"><span style="color: #5CD394; display: flex;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{toastText}}<sc-if value="{{toastUndo}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{undo}}">Annuler</button></sc-if></div></sc-if>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"section":{"editor":null},"sessions":{"editor":null},"total":{"editor":null},"checkout":{"editor":null},"onClose":{"editor":null},"onSaveName":{"editor":null},"onSignOutOthers":{"editor":null},"onDelete":{"editor":null},"mobile":{"editor":null},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    this.timer = setInterval(() => this.setState({ now: Date.now() }), 1000);
+    this.onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      const st = this.state || {};
+      if (st.del) this.setState({ del: false, delEmail: '', delErr: '' });
+      else if (st.q) this.setState({ q: '' });
+      else if (this.props && this.props.onClose && !this.props.mobile) this.props.onClose();
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', this.onKey);
+      this.overflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  componentWillUnmount() {
+    clearInterval(this.timer); clearTimeout(this.tName); clearTimeout(this.tToast); clearTimeout(this.tFlash);
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this.onKey);
+      document.body.style.overflow = this.overflow || '';
+    }
+    // Un prénom tapé mais pas encore parti (moins de 0,7 s) est enregistré en fermant.
+    if (this.pendingName !== undefined) this.saveName(this.pendingName, true);
+  }
+  // Enregistre le prénom ; le message propose de revenir à l’ancien (« Annuler »).
+  saveName(value, quiet) {
+    const p = this.props || {};
+    this.pendingName = undefined;
+    const before = this.lastName !== undefined ? this.lastName : ((p.user && p.user.nom) || '');
+    if (value.trim() === before.trim() || !p.onSaveName) return;
+    p.onSaveName(value).then((clean) => {
+      this.lastName = clean;
+      if (quiet) return;
+      this.setState({ nameSaved: true, nameErr: '', toast: { text: 'Prénom enregistré', undo: before } });
+      clearTimeout(this.tToast);
+      this.tToast = setTimeout(() => this.setState({ toast: null, nameSaved: false }), 5000);
+    }, () => { if (!quiet) this.setState({ nameErr: 'Pas enregistré : vérifie ta connexion et réessaie.' }); });
+  }
+  renderVals() {
+    // Réglages (19/11, maquettes R1-R6) : Profil, Sécurité, Formule et facturation, et la recherche. Monté par
+    // src/app/main.js ; chaque action passe par une fonction reçue (onSaveName, onSignOutOthers, onDelete).
+    const p = this.props || {};
+    const st = this.state || {};
+    const u = p.user || { nom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A', pro: false, emailVerified: true };
+    const pro = !!u.pro;
+    const mob = !!p.mobile;
+    const view = mob ? (st.view || 'list') : 'detail';
+    const sec = st.sec || p.section || 'profil';
+    const fold = (s) => Array.from(String(s)).map((c) => c.normalize('NFD').charAt(0).toLowerCase()).join('');
+    // Ce qu’on peut chercher : le réglage, sa rubrique, et les mots qu’on taperait pour le trouver.
+    const INDEX = [
+      ['prenom', 'profil', 'Prénom', 'Profil', 'nom affiché prénom identité'],
+      ['photo', 'profil', 'Photo', 'Profil', 'avatar image initiale'],
+      ['email', 'profil', 'E-mail', 'Profil', 'adresse mail email connexion identifiant'],
+      ['fermer', 'profil', 'Fermer mon compte', 'Profil', 'supprimer effacer données compte quitter rgpd'],
+      ['appareil', 'securite', 'Cet appareil', 'Sécurité', 'session connexion sécurité'],
+      ['autres', 'securite', 'Déconnecter les autres appareils', 'Sécurité', 'sessions appareils déconnexion sécurité téléphone ordinateur'],
+      ['formule', 'abo', pro ? 'Ma formule' : 'Passer Pro', 'Formule et facturation', 'abonnement pro prix mensuel annuel payer black friday offre formule'],
+      ['recus', 'abo', 'Reçus', 'Formule et facturation', 'factures facturation paiements reçus']
+    ];
+    const q = st.q || '';
+    const fq = fold(q.trim());
+    const results = !fq ? [] : INDEX.filter((x) => fold(x[2] + ' ' + x[3] + ' ' + x[4]).includes(fq)).map((x) => {
+      const i = fold(x[2]).indexOf(fq);
+      const lab = x[2];
+      return {
+        a: i < 0 ? lab : lab.slice(0, i), b: i < 0 ? '' : lab.slice(i, i + fq.length), c: i < 0 ? '' : lab.slice(i + fq.length),
+        where: x[3],
+        pick: () => {
+          this.setState({ sec: x[1], q: '', flash: x[0], view: 'detail' });
+          clearTimeout(this.tFlash);
+          this.tFlash = setTimeout(() => this.setState({ flash: null }), 2400);
+          if (typeof document !== 'undefined') setTimeout(() => { const el = document.getElementById('reg-' + x[0]); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 40);
+        }
+      };
+    });
+    const GLOW = 'box-shadow: 0 0 0 2px var(--accent); border-radius: 12px; background: rgba(76,154,255,0.06);';
+    const glow = {};
+    INDEX.forEach((x) => { glow[x[0]] = st.flash === x[0] ? GLOW + (x[0] === 'formule' ? '' : ' margin: 0 -12px; padding-left: 12px; padding-right: 12px;') : ''; });
+    const go = {}; const cur = {}; const secOn = {};
+    ['profil', 'securite', 'abo'].forEach((k) => { go[k] = () => this.setState({ sec: k, q: '', del: false, view: 'detail' }); cur[k] = !mob && k === sec ? 'page' : 'false'; secOn[k] = k === sec; });
+    // Prénom : enregistré 0,7 s après la dernière frappe, ou en quittant le champ.
+    const nameVal = st.name !== undefined ? st.name : (u.nom || '');
+    // Sécurité
+    const s = p.sessions;
+    const dd = (ms) => { const d = new Date(ms); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear(); };
+    const others = s ? s.others : null;
+    // Formule
+    const now = st.now || Date.now();
+    const bfLeft = Math.max(0, Date.parse('2026-12-01T00:00:00+01:00') - now);
+    const bf2 = (n) => String(n).padStart(2, '0');
+    const bfTime = Math.floor(bfLeft / 864e5) + 'j ' + bf2(Math.floor(bfLeft / 36e5) % 24) + ':' + bf2(Math.floor(bfLeft / 6e4) % 60) + ':' + bf2(Math.floor(bfLeft / 1e3) % 60);
+    const bill = st.bill || 'y';
+    const checkout = p.checkout || {};
+    const total = typeof p.total === 'number' && p.total > 0 ? p.total : 516;
+    const orange = bill === 'y' && bfLeft > 0;
+    // Fermer le compte
+    const delMatch = !!u.email && String(st.delEmail || '').trim().toLowerCase() === String(u.email).trim().toLowerCase();
+    const toast = st.toast;
+    return {
+      me: { initiale: String(u.initiale || u.nom || u.email || '?').charAt(0).toUpperCase(), nom: u.nom || String(u.email || '').split('@')[0], email: u.email || '', verified: !!u.emailVerified, pro, free: !pro },
+      q, onQ: (e) => this.setState({ q: e.target.value }), searching: !!fq, browsing: !fq,
+      searchRing: fq ? 'box-shadow: inset 0 0 0 2px var(--accent);' : 'box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);',
+      results, resTitle: results.length ? results.length + (results.length > 1 ? ' résultats' : ' résultat') : 'Aucun réglage ne correspond',
+      go, cur, sec: secOn, glow,
+      nameVal, nameSaved: !!st.nameSaved, nameErr: st.nameErr || '',
+      onName: (e) => {
+        const v = e.target.value;
+        this.pendingName = v;
+        this.setState({ name: v, nameSaved: false, nameErr: '' });
+        clearTimeout(this.tName);
+        this.tName = setTimeout(() => this.saveName(v), 700);
+      },
+      onNameBlur: () => { if (this.pendingName !== undefined) { clearTimeout(this.tName); this.saveName(this.pendingName); } },
+      toastOn: !!toast, toastText: toast ? toast.text : '', toastUndo: !!(toast && toast.undo !== undefined),
+      undo: () => {
+        if (!toast) return;
+        const back = toast.undo;
+        this.setState({ name: back, toast: null, nameSaved: false });
+        this.lastName = undefined;
+        if (p.onSaveName) p.onSaveName(back).then((clean) => { this.lastName = clean; this.setState({ toast: { text: 'Prénom remis' } }); clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), 3000); });
+      },
+      sinceTxt: s && s.since ? 'Session ouverte le ' + dd(s.since) + ' · elle dure 90 jours.' : 'Ta session reste ouverte 90 jours.',
+      othersTxt: others === null ? '…' : others === 0 ? 'Aucun autre appareil n’est connecté.' : others + (others > 1 ? ' autres sessions ouvertes sur ton compte.' : ' autre session ouverte sur ton compte.'),
+      othersOff: !others || !!st.busy, othersLabel: st.busy === 'out' ? 'Déconnexion…' : 'Déconnecter les autres',
+      signOutOthers: () => {
+        if (!p.onSignOutOthers || !others) return;
+        this.setState({ busy: 'out' });
+        p.onSignOutOthers().then((n) => {
+          this.setState({ busy: null, toast: { text: n > 1 ? n + ' appareils déconnectés' : 'Appareil déconnecté' } });
+          clearTimeout(this.tToast); this.tToast = setTimeout(() => this.setState({ toast: null }), 4000);
+        }, () => this.setState({ busy: null, toast: { text: 'Pas fait : vérifie ta connexion.' } }));
+      },
+      aboSub: pro ? 'Ton abonnement et tes reçus.' : 'Tu es en aperçu : tu vois le top 3 des apps.',
+      bfOn: bfLeft > 0, bfTime,
+      billM: bill === 'm' ? 'true' : 'false', billY: bill === 'y' ? 'true' : 'false',
+      pickM: () => this.setState({ bill: 'm' }), pickY: () => this.setState({ bill: 'y' }),
+      price: bill === 'y' ? '14,99 €' : '29,99 €',
+      priceSub: bill === 'y' ? '179,88 € aujourd’hui, puis chaque année. Annulable en un clic.' : '29,99 € aujourd’hui, puis chaque mois. Sans engagement.',
+      ctaLabel: bill === 'y' ? 'Passer Pro · 179,88 €' : 'Passer Pro · 29,99 €',
+      ctaHref: (bill === 'y' ? checkout.annuel : checkout.mensuel) || '/tarifs',
+      ctaStyle: orange ? 'background: linear-gradient(180deg, #FF9A4D, #FF641A); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 22px rgba(255,106,31,0.3);' : 'background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: 0 8px 22px rgba(11,111,224,0.3);',
+      inc: ['Les ' + String(total).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' apps et leur classement', 'Les formats qui explosent', 'Les créateurs derrière chaque app', 'Tous les marchés', 'Les alertes « vidéo qui explose »', 'Tes dossiers, sans limite'],
+      delShown: !!st.del, delClosed: !st.del, delEmail: st.delEmail || '', delErr: st.delErr || '',
+      delOff: !delMatch || st.busy === 'del', delLabel: st.busy === 'del' ? 'Suppression…' : 'Supprimer définitivement',
+      delOpen: () => this.setState({ del: true, delEmail: '', delErr: '' }),
+      delCancel: () => this.setState({ del: false, delEmail: '', delErr: '' }),
+      onDelEmail: (e) => this.setState({ delEmail: e.target.value, delErr: '' }),
+      delGo: () => {
+        if (!delMatch || !p.onDelete) return;
+        this.setState({ busy: 'del' });
+        p.onDelete(st.delEmail).then((r) => { if (!r || !r.ok) this.setState({ busy: null, delErr: 'Cet e-mail n’est pas celui du compte.' }); },
+          () => this.setState({ busy: null, delErr: 'Pas fait : vérifie ta connexion et réessaie.' }));
+      },
+      mobile: mob, mobCls: mob ? 'reg-mob ' + (view === 'list' ? 'reg-list' : 'reg-detail') : '',
+      back: () => this.setState({ view: 'list', del: false }),
+      close: () => { if (p.onClose) p.onClose(); },
+      bg: (e) => { if (!mob && e && e.target === e.currentTarget && p.onClose) p.onClose(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

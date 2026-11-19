@@ -104,6 +104,8 @@ APP_COMPONENTS = [
     ('MFormules.dc.html', 'MFormules', 'm-for'),
     # Panneau du compte (19/11) : ouvert par l'avatar de la barre latérale, monté par src/app/main.js.
     ('MenuCompteA.dc.html', 'MenuCompte', 'a-mnu'),
+    # Réglages (19/11) : fenêtre sur ordinateur, plein écran (liste puis détail) sur téléphone à /app/compte.
+    ('ReglagesA.dc.html', 'Reglages', 'a-reg'),
 ]
 if not APP_MOBILE_PAGES:
     APP_COMPONENTS = [c for c in APP_COMPONENTS if not c[0].startswith('M')]

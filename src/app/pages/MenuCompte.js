@@ -25,7 +25,9 @@ export default class MenuCompte extends DCLogic {
                  : { label: 'Aperçu', bg: 'rgba(255,255,255,0.06)', ink: 'var(--ink-muted)', edge: 'rgba(255,255,255,0.1)' },
       totalTxt: String(total).replace(/\B(?=(\d{3})+(?!\d))/g, ' '),
       bar: Math.max(1, Math.round((3 / total) * 100)) + '%',
-      aboHref: '/app/compte#cp-acces', aideHref: '/#faq',
+      aideHref: '/#faq',
+      toProfil: () => { if (p.onSettings) p.onSettings('profil'); },
+      toAbo: () => { if (p.onSettings) p.onSettings('abo'); },
       plans: () => { if (p.onPlans) p.onPlans(); },
       bg: (e) => { if (e && e.target === e.currentTarget) close(); }
     };
@@ -73,7 +75,7 @@ export default class MenuCompte extends DCLogic {
             )
           ] : null,
           $h("div", { "style": "height: 1px; margin: 0 4px 6px; background: var(--line);" }),
-          $h("a", { "class": "mnu-row", "role": "menuitem", "href": "/app/compte" },
+          $h("button", { "class": "mnu-row", "role": "menuitem", "type": "button", "onClick": $v.toProfil },
             $h("span", { "class": "mnu-ic" },
               $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -86,36 +88,19 @@ export default class MenuCompte extends DCLogic {
               $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
             )
           ),
-          ($v.free) ? [
-            $h("button", { "class": "mnu-row", "role": "menuitem", "type": "button", "onClick": $v.plans },
-              $h("span", { "class": "mnu-ic" },
-                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M3 6h18v12H3zM3 10h18M7 15h3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              ),
-              $h("span", { "style": "flex: 1;" },
-                "Formules et abonnement"
-              ),
-              $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
-                $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+          $h("button", { "class": "mnu-row", "role": "menuitem", "type": "button", "onClick": $v.toAbo },
+            $h("span", { "class": "mnu-ic" },
+              $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M3 6h18v12H3zM3 10h18M7 15h3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
+            ),
+            $h("span", { "style": "flex: 1;" },
+              "Formules et abonnement"
+            ),
+            $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
+              $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
             )
-          ] : null,
-          ($v.pro) ? [
-            $h("a", { "class": "mnu-row", "role": "menuitem", "href": $v.aboHref },
-              $h("span", { "class": "mnu-ic" },
-                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M3 6h18v12H3zM3 10h18M7 15h3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              ),
-              $h("span", { "style": "flex: 1;" },
-                "Formules et abonnement"
-              ),
-              $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
-                $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
-            )
-          ] : null,
+          ),
           $h("a", { "class": "mnu-row", "role": "menuitem", "href": $v.aideHref, "target": "_blank", "rel": "noopener" },
             $h("span", { "class": "mnu-ic" },
               $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },

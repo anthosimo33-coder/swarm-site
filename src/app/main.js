@@ -25,6 +25,7 @@ import MApercuApps from './pages/MApercuApps.js';
 import Formules from './pages/Formules.js';
 import MFormules from './pages/MFormules.js';
 import MenuCompte from './pages/MenuCompte.js';
+import Reglages from './pages/Reglages.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
@@ -33,6 +34,7 @@ import './styles/m-apr.css';
 import './styles/a-for.css';
 import './styles/m-for.css';
 import './styles/a-mnu.css';
+import './styles/a-reg.css';
 
 const HOME = '/app';
 const SIGN_OUT = '/app/deconnexion';
@@ -131,7 +133,8 @@ function ready(key) {
 function toUser(viewer) {
   const email = viewer.email ?? '';
   const prenom = viewer.name ? viewer.name.trim().split(/\s+/)[0] : null;
-  return { prenom, email, initiale: (prenom || email || '?').charAt(0).toUpperCase(), pro: viewer.pro === true };
+  return { prenom, nom: viewer.name ?? '', email, initiale: (prenom || email || '?').charAt(0).toUpperCase(), pro: viewer.pro === true,
+    emailVerified: viewer.emailVerified === true };
 }
 
 function App() {
@@ -170,6 +173,8 @@ function App() {
   const [plans, setPlans] = useState(false);
   // Panneau du compte : l'avatar de la barre latérale (ordinateur) l'ouvre au lieu de mener à Compte.
   const [menu, setMenu] = useState(false);
+  // Réglages : la rubrique ouverte (« profil », « securite », « abo ») ou null. Sur téléphone, c'est l'écran /app/compte.
+  const [settings, setSettings] = useState(null);
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
 
@@ -234,8 +239,11 @@ function App() {
     };
   }, []);
 
-  // Changer d'écran referme le panneau du compte.
-  useEffect(() => setMenu(false), [path]);
+  // Changer d'écran referme le panneau du compte et les réglages.
+  useEffect(() => { setMenu(false); setSettings(null); }, [path]);
+  // Les sessions ouvertes (Réglages › Sécurité), lues seulement quand les réglages sont affichés.
+  const onSettingsScreen = !!(screen && screen.mobile && screen.route.path === '/app/compte');
+  const sessions = useQuery(api.users.sessions, isAuthenticated && (settings || onSettingsScreen) ? {} : 'skip');
 
   // Aperçu : une adresse fermée (lien direct, favori, retour arrière) revient à Apps, fenêtre des formules ouverte ;
   // Accueil y revient sans fenêtre.
@@ -357,9 +365,25 @@ function App() {
   const total = (!user.pro && (board('apps').value || {}).total) || undefined;
   const sheet = plans ? h(screen.mobile ? MFormules : Formules, { onClose: () => setPlans(false), checkout: CHECKOUT, total }) : null;
   const account = menu && !screen.mobile
-    ? h(MenuCompte, { user, total: (board('apps').value || {}).total, onClose: () => setMenu(false), onPlans: () => { setMenu(false); setPlans(true); } })
+    ? h(MenuCompte, { user, total: (board('apps').value || {}).total, onClose: () => setMenu(false), onPlans: () => { setMenu(false); setPlans(true); },
+        onSettings: (section) => { setMenu(false); setSettings(section); } })
     : null;
-  return h(Fragment, null, page, account, sheet);
+  // Réglages : les actions passent par le serveur (convex/users.ts) ; le prénom revient par viewer, qui suit.
+  const settingsProps = {
+    user, sessions, total: (!user.pro && (board('apps').value || {}).total) || undefined, checkout: CHECKOUT,
+    onSaveName: (name) => client.mutation(api.users.setName, { name }),
+    onSignOutOthers: () => client.mutation(api.users.signOutOthers, {}),
+    onDelete: (email) => client.mutation(api.users.deleteAccount, { email }).then(async (r) => {
+      if (r && r.ok) { leaving.current = true; await signOut().catch(() => {}); window.location.replace('/'); }
+      return r;
+    }),
+  };
+  if (onSettingsScreen) {
+    const toApp = () => { window.history.pushState(null, '', HOME); setPath(HOME); };
+    page = h(Reglages, { key: 'm/reglages', ...settingsProps, mobile: true, onClose: toApp });
+  }
+  const panel = settings && !screen.mobile ? h(Reglages, { key: `reglages-${settings}`, ...settingsProps, section: settings, onClose: () => setSettings(null) }) : null;
+  return h(Fragment, null, page, account, panel, sheet);
 }
 
 /** Une fiche qui n'existe pas (ou plus) dans le Radar, ou une liste pas encore calculée. */
