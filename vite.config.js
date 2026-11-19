@@ -8,13 +8,13 @@ const cleanUrls = {
   name: 'clean-urls',
   configureServer(server) {
     server.middlewares.use((req, _res, next) => {
-      req.url = req.url.replace(/^\/(tarifs|connexion|inscription|cgv|confidentialite|mentions-legales)(?=$|\?)/, '/$1.html').replace(APP, '/app.html');
+      req.url = req.url.replace(/^\/(tarifs|connexion|inscription|cgv|confidentialite|mentions-legales|admin)(?=$|\?)/, '/$1.html').replace(APP, '/app.html');
       next();
     });
   },
   configurePreviewServer(server) {
     server.middlewares.use((req, _res, next) => {
-      req.url = req.url.replace(/^\/(tarifs|connexion|inscription|cgv|confidentialite|mentions-legales)(?=$|\?)/, '/$1.html').replace(APP, '/app.html');
+      req.url = req.url.replace(/^\/(tarifs|connexion|inscription|cgv|confidentialite|mentions-legales|admin)(?=$|\?)/, '/$1.html').replace(APP, '/app.html');
       next();
     });
   },
@@ -38,6 +38,7 @@ export default defineConfig({
         connexion: resolve(import.meta.dirname, 'connexion.html'),
         inscription: resolve(import.meta.dirname, 'inscription.html'),
         app: resolve(import.meta.dirname, 'app.html'),
+        admin: resolve(import.meta.dirname, 'admin.html'),
       },
     },
   },

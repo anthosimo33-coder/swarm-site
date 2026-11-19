@@ -55,6 +55,8 @@ export default defineSchema({
   }).index("by_payment", ["paymentId"]).index("by_user", ["userId"]),
   // Événements déjà traités (Whop peut renvoyer le même) et leur résultat, pour le suivi.
   whopEvents: defineTable({ eventId: v.string(), type: v.string(), at: v.number(), note: v.optional(v.string()) }).index("by_event", ["eventId"]),
+  // Visites du site public (admin › Mesure) : un compteur par heure, sans cookie, sans identifiant, sans adresse IP.
+  visits: defineTable({ hour: v.number(), n: v.number() }).index("by_hour", ["hour"]),
 
   saved: defineTable({
     userId: v.id("users"),

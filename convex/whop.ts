@@ -28,7 +28,7 @@ const API = "https://api.whop.com/api/v1";
 const ACCOUNT = "biz_iv3yoN0Wnx23qG";
 const PRODUCT = "prod_WtWqNkTHQMRA9";
 /** Statuts d'adhésion qui donnent accès à Kopycat Pro. past_due : Whop relance la carte 5 jours avant d'annuler. */
-const ACCESS = new Set(["active", "trialing", "past_due"]);
+export const ACCESS = new Set(["active", "trialing", "past_due"]);
 
 type Json = Record<string, any>;
 

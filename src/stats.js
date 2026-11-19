@@ -20,3 +20,17 @@ export async function fetchStats() {
     return FALLBACK;
   }
 }
+
+/**
+ * Compte une visite du site public (admin › Mesure), une seule fois par onglet. Rien n'identifie la personne :
+ * le serveur ajoute 1 au compteur de l'heure (convex/admin.ts, visit). Les navigateurs pilotés (tests) ne comptent pas.
+ */
+export function countVisit() {
+  try {
+    if (navigator.webdriver || sessionStorage.getItem('kc-visite')) return;
+    sessionStorage.setItem('kc-visite', '1');
+  } catch {
+    return;
+  }
+  new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL).mutation(api.admin.visit, {}).catch(() => {});
+}
