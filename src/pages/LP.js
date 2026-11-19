@@ -126,16 +126,17 @@ export default class LP extends DCLogic {
     });
     const c = arcData[best];
 
+// Avis de membres (donnés par le fondateur le 19/11), mot pour mot ; prénom seul. Une colonne = 3 avis de longueurs différentes.
     const briefs = [
-      ['« [L’app qu’il a trouvée avec Swarm, et pourquoi celle-là] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]'],
-      ['« [Son premier résultat, avec un chiffre : vues, clients ou revenus] »', '[Prénom N.]', '[App lancée]'],
-      ['« [Combien de temps il passait à chercher avant, et maintenant] »', '[Prénom N.]', '[Étudiant, salarié…]'],
-      ['« [Le format copié qui a marché du premier coup] »', '[Prénom N.]', '[Niche]'],
-      ['« [Pourquoi Swarm plutôt qu’une formation à 1 000 €] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]'],
-      ['« [Ce qui l’a surpris dans les données d’une app concurrente] »', '[Prénom N.]', '[App lancée]'],
-      ['« [Ce qu’il dirait à un pote qui hésite] »', '[Prénom N.]', '[Niche]'],
-      ['« [Le moment où il a compris que ça allait marcher] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]'],
-      ['« [Le pays ou la niche qu’il n’aurait jamais testés sans Swarm] »', '[Prénom N.]', '[App lancée]']
+      ['« Je cherchais une idée depuis des mois et je tournais en rond. J’ai choisi les États-Unis, la niche beauté, et je suis tombé sur une app qui faisait beaucoup de vues par vidéo. Personne ne la faisait encore en français, donc j’ai foncé. »', 'Mattheo', ''],
+      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Swarm 30 minutes le matin et je sais ce qui marche. »', 'Luis', ''],
+      ['« C’est juste génial, merci, on voit tout. »', 'David', ''],
+      ['« Ce qui m’a surpris, c’est le nombre de comptes derrière une seule app. Astra AI tourne avec 200 comptes actifs alors que j’en imaginais vingt. Ça m’a fait revoir tout mon plan de recrutement. »', 'Lucien', ''],
+      ['« Si t’hésites, prends un mois et regarde juste les apps qui explosent dans ton pays. Tu vas voir qu’il y a de la place partout. »', 'Elio', ''],
+      ['« Le gain de temps et d’argent est massif, le produit est top. »', 'Dimitri', ''],
+      ['« Je n’aurais jamais testé l’Amérique du Sud. Swarm m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
+      ['« J’ai repris un format qui tournait sur l’app d’un concurrent. Ma première vidéo a fait 54k vues et j’ai eu une centaine de téléchargements dans la semaine. »', 'Lucas', ''],
+      ['« Ma routine, c’est de filtrer par marché, de regarder les vidéos repérées dans leurs premières heures, puis les hooks. Comme ça, je vois un format avant qu’il soit saturé. »', 'Eric', '']
     ];
     const avis = [0, 1, 2].map((ci) => {
       const cards = [];
@@ -777,7 +778,7 @@ export default class LP extends DCLogic {
                 )
               ),
               $h("p", { "style": "margin: 0; max-width: 560px; font-size: 19px; line-height: 1.55; color: #9AA3B2;" },
-                "Rejoins les [N] membres qui savent déjà ce qui explose sur les réseaux, avant tout le monde."
+                "Rejoins les membres qui savent déjà ce qui explose sur les réseaux, avant tout le monde."
               )
             ),
             $h("div", { "aria-label": "Avis des membres", "style": "position: relative; height: 640px; overflow: hidden; padding: 0 48px; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 82%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 82%, transparent 100%);" },
@@ -786,23 +787,6 @@ export default class LP extends DCLogic {
                   $h("div", { "style": `display: flex; flex-direction: column; gap: 20px; animation: ${$t(c?.anim)};` },
                     ($l(c?.cards)).map((r) => [
                       $h("figure", { "style": `margin: 0; border-radius: 24px; padding: 28px; background: linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.02)); border: 1px solid ${$t(r?.border)}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), ${$t(r?.glow)}; display: flex; flex-direction: column; gap: 20px;` },
-                        $h("span", { "role": "img", "aria-label": "5 étoiles sur 5", "style": "display: flex; gap: 4px;" },
-                          $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                            $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
-                          ),
-                          $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                            $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
-                          ),
-                          $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                            $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
-                          ),
-                          $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                            $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
-                          ),
-                          $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                            $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#F5B941" })
-                          )
-                        ),
                         $h("blockquote", { "style": "margin: 0; font-size: 19px; line-height: 1.55; color: #E6E9EF;" },
                           $t(r?.q)
                         ),
@@ -828,22 +812,7 @@ export default class LP extends DCLogic {
                 ])
               )
             ),
-            $h("div", { "style": "padding: 32px 48px 104px; display: flex; justify-content: center;" },
-              $h("div", { "style": "display: inline-flex; align-items: center; gap: 16px; border-radius: 999px; padding: 12px 22px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);" },
-                $h("span", { "style": "font-size: 15px; color: #E6E9EF;" },
-                  $h("span", { "style": "color: #F5B941;" },
-                    "★★★★★"
-                  ),
-                  " ",
-                  $h("span", { "style": "font-weight: 700;" },
-                    "[Note moyenne] / 5"
-                  ),
-                  $h("span", { "style": "color: #8A93A3;" },
-                    " · [N] avis de membres"
-                  )
-                )
-              )
-            )
+            $h("div", { "aria-hidden": "true", "style": "height: 104px;" })
           )
         ),
         $h("div", { "class": "dk", "style": "position: relative; overflow: hidden; background-color: #05070C; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 9px); color: #FFFFFF;" },

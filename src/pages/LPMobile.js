@@ -102,13 +102,17 @@ export default class LPMobile extends DCLogic {
     const ci = Math.floor(el / 2600) % arcData.length;
     const c = arcData[ci];
 
-    // Avis : emplacements à remplir avec de vrais avis
+    // Avis de membres (donnés par le fondateur le 19/11), mot pour mot ; prénom seul ; les plus parlants d'abord.
     const briefs = [
-      ['« [L’app qu’il a trouvée avec Swarm, et pourquoi celle-là] »', '[Prénom N.]', '[Ce qu’il a lancé · pays]'],
-      ['« [Son premier résultat, avec un chiffre : vues, clients ou revenus] »', '[Prénom N.]', '[App lancée]'],
-      ['« [Le format copié qui a marché du premier coup] »', '[Prénom N.]', '[Niche]'],
-      ['« [Le marché qu’il n’aurait jamais testé sans Swarm] »', '[Prénom N.]', '[App lancée]'],
-      ['« [Ce qu’il dirait à un pote qui hésite] »', '[Prénom N.]', '[Niche]']
+      ['« J’ai repris un format qui tournait sur l’app d’un concurrent. Ma première vidéo a fait 54k vues et j’ai eu une centaine de téléchargements dans la semaine. »', 'Lucas', ''],
+      ['« Je n’aurais jamais testé l’Amérique du Sud. Swarm m’a montré que les apps d’études y explosaient avec des formats très simples. On a lancé une version locale, résultat on a triplé notre CA. »', 'Julien', ''],
+      ['« Je cherchais une idée depuis des mois et je tournais en rond. J’ai choisi les États-Unis, la niche beauté, et je suis tombé sur une app qui faisait beaucoup de vues par vidéo. Personne ne la faisait encore en français, donc j’ai foncé. »', 'Mattheo', ''],
+      ['« Ce qui m’a surpris, c’est le nombre de comptes derrière une seule app. Astra AI tourne avec 200 comptes actifs alors que j’en imaginais vingt. Ça m’a fait revoir tout mon plan de recrutement. »', 'Lucien', ''],
+      ['« Ma routine, c’est de filtrer par marché, de regarder les vidéos repérées dans leurs premières heures, puis les hooks. Comme ça, je vois un format avant qu’il soit saturé. »', 'Eric', ''],
+      ['« Avant, je passais mes soirées à scroller TikTok sans rien noter. Maintenant, j’ouvre Swarm 30 minutes le matin et je sais ce qui marche. »', 'Luis', ''],
+      ['« Si t’hésites, prends un mois et regarde juste les apps qui explosent dans ton pays. Tu vas voir qu’il y a de la place partout. »', 'Elio', ''],
+      ['« Le gain de temps et d’argent est massif, le produit est top. »', 'Dimitri', ''],
+      ['« C’est juste génial, merci, on voit tout. »', 'David', '']
     ];
 
     const openQ = st.open === undefined ? 0 : st.open;
@@ -163,7 +167,7 @@ export default class LPMobile extends DCLogic {
       curO: (el % 2600) < 2350 ? 1 : 0,
       avis: briefs.map((b) => ({ q: b[0], name: b[1], role: b[2] })),
       avisOpen,
-      avisMax: avisOpen ? '2400px' : '640px',
+      avisMax: avisOpen ? '4000px' : '640px',
       avisMask: avisOpen ? 'none' : 'linear-gradient(to bottom, #000 52%, transparent 100%)',
       avisBtnMt: avisOpen ? '20px' : '-84px',
       avisBtn: avisOpen ? 'Voir moins d’avis' : 'Voir plus d’avis',
@@ -545,30 +549,13 @@ export default class LPMobile extends DCLogic {
                 )
               ),
               $h("p", { "style": "margin: 0; font-size: 16px; line-height: 1.55; color: #9AA3B2;" },
-                "Rejoins les [N] membres qui savent déjà ce qui explose sur les réseaux, avant tout le monde."
+                "Rejoins les membres qui savent déjà ce qui explose sur les réseaux, avant tout le monde."
               )
             ),
             $h("div", { "style": "position: relative; margin-top: 12px; padding: 0 16px;" },
               $h("div", { "style": `display: flex; flex-direction: column; gap: 16px; max-height: ${$t($v.avisMax)}; overflow: hidden; -webkit-mask-image: ${$t($v.avisMask)}; mask-image: ${$t($v.avisMask)}; transition: max-height 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                 ($l($v.avis)).map((r) => [
                   $h("figure", { "style": "margin: 0; box-sizing: border-box; border-radius: 28px; padding: 24px 22px; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.09); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07); display: flex; flex-direction: column; gap: 18px;" },
-                    $h("span", { "role": "img", "aria-label": "5 étoiles sur 5", "style": "display: flex; gap: 4px;" },
-                      $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                        $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
-                      ),
-                      $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                        $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
-                      ),
-                      $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                        $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
-                      ),
-                      $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                        $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
-                      ),
-                      $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 20 20", "aria-hidden": "true" },
-                        $h("path", { "d": "M10 1.8l2.5 5.2 5.7.8-4.1 4 1 5.6L10 14.8l-5.1 2.6 1-5.6-4.1-4 5.7-.8z", "fill": "#E7B54B" })
-                      )
-                    ),
                     $h("blockquote", { "style": "margin: 0; font-size: 18px; line-height: 1.5; color: #E6E9EF;" },
                       $t(r?.q)
                     ),
