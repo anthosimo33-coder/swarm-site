@@ -98,17 +98,18 @@ const LISTS = [
   ], other: { desk: [t(1), p('Foi')], mob: [p('Foi')] } }, // l'autre filtre, changé sur l'autre version
   ...[['Createurs', 'MCreateurs', '/app/createurs'], ['CreateursCartes', 'MCreateursCartes', '/app/createurs/cartes']].map(([desk, mob, route]) => ({
     name: desk, path: route, key: 'creators:FR', desk, mob, filters: [
-      { f: 'marché', deskQuery: { m: 'US' }, mob: [p('États-Unis')] },
-      { f: 'type de compte', desk: [t(3, 'filters'), p('Carrousel')], mob: [p('Carrousel')] },
-      { f: 'genre', desk: [t(4, 'filters'), p('Femmes')], mob: [p('Femmes')] },
-      { f: 'tri', desk: [(v) => v.toggleSort(), p('Abonnés')], mob: [p('Abonnés')] },
-      // L'ordinateur n'a plus « actifs » (maquette E1, 20/11 : les actifs d'abord, les autres repliés) : le filtre du
-      // téléphone y reste dans l'adresse.
-      { f: 'actifs', desk: null, mob: [(v) => v.toggleActive()] },
-      { f: 'niches', desk: [t(0, 'filters'), p('Foi')], mob: null },
-      { f: 'apps', desk: [t(1, 'filters'), p('App 1')], mob: null },
-      { f: 'abonnés', desk: [t(2, 'filters'), p('Moins de 1 000')], mob: null },
-    ], other: { desk: [(v) => v.toggleSort(), p('Abonnés')], mob: [p('Abonnés')] } })),
+      // Téléphone (maquettes T1, T2 du 20/11) : les filtres de l'ordinateur, chacun dans sa feuille (filters[i].toggle,
+      // mkb.toggle pour le marché) ; « actifs » n'est plus un filtre sur aucune des deux versions (les actifs d'abord).
+      { f: 'marché', deskQuery: { m: 'US' }, mob: [(v) => v.mkb.toggle(), p('États-Unis')] },
+      { f: 'type de compte', desk: [t(3, 'filters'), p('Carrousel')], mob: [t(3, 'filters'), p('Carrousel')] },
+      { f: 'genre', desk: [t(4, 'filters'), p('Femmes')], mob: [t(4, 'filters'), p('Femmes')] },
+      { f: 'tri', desk: [(v) => v.toggleSort(), p('Abonnés')], mob: [(v) => v.toggleSort(), p('Abonnés')] },
+      { f: 'niches', desk: [t(0, 'filters'), p('Foi')], mob: [t(0, 'filters'), p('Foi')] },
+      { f: 'apps', desk: [t(1, 'filters'), p('App 1')], mob: [t(1, 'filters'), p('App 1')] },
+      { f: 'abonnés', desk: [t(2, 'filters'), p('Moins de 1 000')], mob: [t(2, 'filters'), p('Moins de 1 000')] },
+      // Liste ou cartes (T3) : basculées sur place sur le téléphone ; l'ordinateur garde « vue » dans l'adresse.
+      { f: 'vue', desk: null, mob: [p(mob === 'MCreateurs' ? 'Cartes' : 'Liste')] },
+    ], other: { desk: [(v) => v.toggleSort(), p('Abonnés')], mob: [(v) => v.toggleSort(), p('Abonnés')] } })),
   { name: 'Formats', path: '/app/formats', key: 'formats', desk: 'Formats', mob: 'MFormats', filters: [
     // Niche et marché : les fenêtres de choix (maquette C1 du 20/11), comme sur Apps ; le tri est propre à l'ordinateur.
     { f: 'niche', desk: [t(1), p('Foi')], mob: [p('Foi')] },
