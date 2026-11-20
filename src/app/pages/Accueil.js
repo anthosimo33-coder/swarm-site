@@ -249,10 +249,10 @@ export default class Accueil extends DCLogic {
               $t($v.lede)
             )
           ),
-          $h("div", { "style": "display: flex; align-items: flex-start; gap: 18px;" },
-            $h("div", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px;" },
+          $h("div", { "class": "acc-cols", "style": "display: flex; align-items: flex-start; gap: 18px;" },
+            $h("div", { "class": "acc-left", "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px;" },
               ($v.hasHero) ? [
-                $h("article", { "aria-labelledby": "acc-hero-t", "style": "position: relative; z-index: 2; display: flex; height: 330px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+                $h("article", { "class": "acc-hero", "aria-labelledby": "acc-hero-t", "style": "position: relative; z-index: 2; display: flex; height: 330px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
                   $h("a", { "class": "acc-vig", "href": $u($v.hero?.href), "aria-label": $v.hero?.aria, "style": "position: relative; display: block; width: 250px; flex-shrink: 0; border-radius: 20px 0 0 20px; overflow: hidden; background: var(--track); color: #FFFFFF; text-decoration: none;" },
                     ($v.hero?.cover) ? [
                       $h("img", { "class": "sw-cover", "src": $u($v.hero?.cover), "alt": "", "loading": "lazy", "decoding": "async" })
@@ -341,7 +341,7 @@ export default class Accueil extends DCLogic {
                 )
               ] : null,
               ($v.fil?.on) ? [
-                $h("section", { "aria-labelledby": "acc-fil-t", "style": "display: flex; flex-direction: column; gap: 14px;" },
+                $h("section", { "class": "acc-fil", "aria-labelledby": "acc-fil-t", "style": "display: flex; flex-direction: column; gap: 14px;" },
                   $h("div", { "style": "display: flex; align-items: center; gap: 12px; min-height: 32px;" },
                     $h("h2", { "id": "acc-fil-t", "style": "margin: 0; font-size: 15px; font-weight: 600; color: var(--ink);" },
                       "Le fil de la semaine"
@@ -431,13 +431,13 @@ export default class Accueil extends DCLogic {
                 )
               ] : null,
               ($v.nothing) ? [
-                $h("div", { "style": "padding: 48px 24px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-align: center; font-size: 15px; color: var(--ink-muted);" },
+                $h("div", { "class": "acc-fil", "style": "padding: 48px 24px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-align: center; font-size: 15px; color: var(--ink-muted);" },
                   "Rien de neuf dans le Radar cette semaine."
                 )
               ] : null
             ),
-            $h("aside", { "aria-label": "Raccourcis", "style": "width: 360px; flex-shrink: 0; position: sticky; top: 30px; min-height: calc(100vh - 140px); box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;" },
-              $h("div", { "role": "search", "class": "sw-search", "style": "height: 46px; padding: 0 16px; gap: 12px; border: 0; border-radius: 14px; background: var(--track); box-shadow: inset 0 0 0 1px var(--glass-edge); backdrop-filter: none; -webkit-backdrop-filter: none;" },
+            $h("aside", { "class": "acc-side", "aria-label": "Raccourcis", "style": "width: 360px; flex-shrink: 0; position: sticky; top: 30px; min-height: calc(100vh - 140px); box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;" },
+              $h("div", { "role": "search", "class": "sw-search acc-side-search", "style": "height: 46px; padding: 0 16px; gap: 12px; border: 0; border-radius: 14px; background: var(--track); box-shadow: inset 0 0 0 1px var(--glass-edge); backdrop-filter: none; -webkit-backdrop-filter: none;" },
                 $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 ),
