@@ -33,6 +33,7 @@ import type * as radar_radarAutoMath from "../radar/radarAutoMath.js";
 import type * as radar_radarAvailability from "../radar/radarAvailability.js";
 import type * as radar_radarAvailabilityMath from "../radar/radarAvailabilityMath.js";
 import type * as radar_radarCreatorsMath from "../radar/radarCreatorsMath.js";
+import type * as radar_radarCursorMath from "../radar/radarCursorMath.js";
 import type * as radar_radarDiscoveryQueries from "../radar/radarDiscoveryQueries.js";
 import type * as radar_radarDisplay from "../radar/radarDisplay.js";
 import type * as radar_radarFamilies from "../radar/radarFamilies.js";
@@ -114,6 +115,7 @@ declare const fullApi: ApiFromModules<{
   "radar/radarAvailability": typeof radar_radarAvailability;
   "radar/radarAvailabilityMath": typeof radar_radarAvailabilityMath;
   "radar/radarCreatorsMath": typeof radar_radarCreatorsMath;
+  "radar/radarCursorMath": typeof radar_radarCursorMath;
   "radar/radarDiscoveryQueries": typeof radar_radarDiscoveryQueries;
   "radar/radarDisplay": typeof radar_radarDisplay;
   "radar/radarFamilies": typeof radar_radarFamilies;
