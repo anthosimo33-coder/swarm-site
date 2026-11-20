@@ -670,6 +670,28 @@ export const webhook = httpAction(async (ctx, req) => {
   }
 });
 
+// ─── Retour de Whop sans webhook (audit Q6) ───
+
+/**
+ * « Vérifier mon paiement » : relit chez Whop les adhésions du produit reliées à la personne connectée (metadata
+ * kopycat_user) et les range, comme le ferait le webhook. Recours quand le webhook n'arrive pas (secret mal réglé, panne).
+ * 6 vérifications par 10 min au plus. Rend si l'accès est ouvert et combien d'adhésions ont été trouvées.
+ * Hypothèse : GET /memberships accepte account_id et product_ids (doc v1, non essayé sur un achat réel).
+ */
+export const verifierPaiement = action({
+  args: {},
+  handler: async (ctx): Promise<{ pro: boolean; trouvees: number }> => {
+    const userId = await liveUserIdInAction(ctx);
+    if (userId === null) throw new Error("Non connecté");
+    if (!(await ctx.runMutation(internal.authLimits.hit, { key: `verif:${userId}`, max: 6, windowMs: 600_000 }))) throw new ConvexError({ code: "TROP_DE_DEMANDES" });
+    const body = await whopApi(`/memberships?account_id=${ACCOUNT}&product_ids=${PRODUCT}&first=100`);
+    const list: Json[] = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+    const mine = list.filter((m) => String(m.metadata?.kopycat_user ?? "") === userId && m.id);
+    for (const m of mine) await syncMembership(ctx, String(m.id), m);
+    return { pro: await ctx.runQuery(internal.whop.alreadyPro, { userId }), trouvees: mine.length };
+  },
+});
+
 // ─── Réglages › Formule et facturation ───
 
 /** L'abonnement de la personne connectée et ses paiements (Réglages). */

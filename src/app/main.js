@@ -50,6 +50,10 @@ const CHECKOUT = { mensuel: PAY + 'mensuel', annuel: PAY + 'annuel' };
 const formuleOf = (pathname) => (pathname.slice(PAY.length) === 'mensuel' ? 'mensuel' : 'annuel');
 // Retour de Whop : /app?paiement=ok. L'accès vient du webhook ; l'écran attend qu'il arrive.
 const PAID = new URLSearchParams(window.location.search).get('paiement') === 'ok';
+// Paiement en attente d'accès (audit Q6) : gardé dans l'onglet, pour qu'un rechargement garde le message et son recours.
+const PENDING = 'kopycat.paiement';
+const pendingPay = () => { try { const t = Number(sessionStorage.getItem(PENDING)); return t > 0 && Date.now() - t < 7 * 864e5; } catch { return false; } };
+const setPendingPay = (on) => { try { if (on) sessionStorage.setItem(PENDING, String(Date.now())); else sessionStorage.removeItem(PENDING); } catch { /* stockage refusé */ } };
 const SUITE = 'kopycat.suite'; // l'achat commencé avant de se connecter
 // Sous 860 px, l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop.
 const MOBILE = window.matchMedia('(max-width: 860px)');
@@ -192,7 +196,12 @@ function App() {
   // Un compte déjà Pro qui suit un lien de paiement : Réglages › Formule à la place (compteur : chaque lien rouvre).
   const [toPlan, setToPlan] = useState(0);
   const [planMobile, setPlanMobile] = useState(false);
-  const [paid, setPaid] = useState(PAID ? 'wait' : null);
+  const [paid, setPaid] = useState(PAID ? 'wait' : pendingPay() ? 'slow' : null);
+  const [checkPay, setCheckPay] = useState(null); // « Vérifier mon paiement » : null, 'busy', 'none' (pas encore trouvé), 'error'
+  const verifyPay = () => {
+    setCheckPay('busy');
+    client.action(api.whop.verifierPaiement, {}).then((r) => setCheckPay(r && r.pro ? null : 'none'), () => setCheckPay('error'));
+  };
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
 
@@ -277,6 +286,7 @@ function App() {
   // Retour de Whop : on retire ?paiement=ok de l'adresse, puis on attend que le webhook ouvre l'accès.
   useEffect(() => {
     if (!PAID) return undefined;
+    setPendingPay(true);
     const params = new URLSearchParams(window.location.search);
     params.delete('paiement');
     const clean = window.location.pathname + (params.toString() ? '?' + params : '');
@@ -287,6 +297,7 @@ function App() {
   }, []);
   useEffect(() => {
     if (!paid || paid === 'ok' || !user || !user.pro) return undefined;
+    setPendingPay(false);
     setPaid('ok');
     const t = setTimeout(() => setPaid(null), 7000);
     return () => clearTimeout(t);
@@ -479,11 +490,21 @@ function App() {
     ? h('div', { class: `app-paid is-${paying}`, role: paying === 'error' ? 'alert' : 'status' },
         paying === 'error' ? 'Le paiement n’a pas pu s’ouvrir. Réessaie dans un instant.' : 'Ouverture du paiement sécurisé…')
     : null;
-  // Retour de Whop : l'accès arrive par le webhook (quelques secondes en général).
+  // Retour de Whop : l'accès arrive par le webhook (quelques secondes en général). Au-delà de 90 s, ou après un
+  // rechargement, un recours (audit Q6) : relire le paiement chez Whop, ou écrire à l'aide.
+  const link = { color: 'inherit', textDecoration: 'underline', background: 'none', border: 0, padding: 0, font: 'inherit', cursor: 'pointer' };
+  const slowNote = () => [
+    checkPay === 'none' ? 'Pas encore trouvé chez Whop. Réessaie dans quelques minutes. '
+      : checkPay === 'error' ? 'La vérification n’a pas marché. Réessaie dans un instant. '
+      : 'Ton paiement est en cours de validation chez Whop. ',
+    h('button', { type: 'button', style: link, disabled: checkPay === 'busy', onClick: verifyPay }, checkPay === 'busy' ? 'Vérification…' : 'Vérifier mon paiement'),
+    ' · ',
+    h('a', { href: '/#faq', target: '_blank', rel: 'noopener', style: link }, 'Aide et contact'),
+  ];
   const paidNote = paid
     ? h('div', { class: `app-paid is-${paid}`, role: 'status' },
         paid === 'ok' ? 'Bienvenue dans Kopycat Pro : tout est ouvert.'
-          : paid === 'slow' ? 'Ton paiement est en cours de validation chez Whop. L’accès s’ouvrira tout seul, sans rien faire.'
+          : paid === 'slow' ? slowNote()
           : 'Paiement reçu. On ouvre ton accès…')
     : null;
   return h(Fragment, null, page, account, panel, sheet, payNote, paidNote);

@@ -64,6 +64,7 @@ globalThis.fetch = async (url, init = {}) => {
     if (m[2] && method === 'POST') { if (body?.cancel_at_period_end) mem.cancel_at_period_end = true; else mem.status = 'canceled'; }
     return json(mem);
   }
+  if (p === '/memberships' && method === 'GET') return json({ data: Object.values(whop.memberships) });
   if ((m = p.match(/^\/payments\/([^/]+)$/))) { const pay = whop.payments[m[1]]; return pay ? json(pay) : json({ error: 'introuvable' }, 404); }
   return json({ error: 'route inconnue ' + p }, 404);
 };
@@ -284,6 +285,21 @@ async function paidWorld(mem, pay) {
   await deliver(w, 'evt_q28', { type: 'membership.went_valid', data: { id: 'mem_q28' } });
   const mine = await mods.whop.mine.handler(w.ctx, {});
   ok(mine?.sub?.formule === 'annuel' && Number(mine?.sub?.price) === 179.88 && mine?.sub?.currency === 'eur', `Q28 : abonnement annuel affiché « annuel », 179,88 € (${JSON.stringify(mine?.sub && { formule: mine.sub.formule, price: mine.sub.price, currency: mine.sub.currency })})`);
+}
+
+// ─── Q6 : « Vérifier mon paiement » relit chez Whop les adhésions de la personne quand le webhook n'arrive pas ───
+{
+  resetWhop();
+  const w = await world();
+  whop.memberships.mem_q6 = { id: 'mem_q6', status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: w.userId }, cancel_at_period_end: false };
+  whop.memberships.mem_autre = { id: 'mem_autre', status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: 'users|999' }, cancel_at_period_end: false };
+  const has = typeof mods.whop.verifierPaiement?.handler === 'function';
+  const r = has ? await attempt(() => mods.whop.verifierPaiement.handler(w.ctx, {})) : null;
+  ok(has && r?.pro === true && (await w.m.db.get(w.userId)).pro === true, `Q6 : webhook perdu, la vérification trouve l'adhésion et ouvre l'accès (${JSON.stringify(r)})`);
+  ok(!(w.m.tables.subscriptions ?? []).some((x) => x.membershipId === 'mem_autre'), 'Q6 : l\'adhésion d\'une autre personne n\'est pas rangée');
+  let refused = 0;
+  if (has) for (let i = 0; i < 10 && !refused; i++) if ((await attempt(() => mods.whop.verifierPaiement.handler(w.ctx, {}))).code === 'TROP_DE_DEMANDES') refused = i + 2;
+  ok(refused > 0, `Q6 : vérification limitée (refus au ${refused || '?'}e appel en 10 min)`);
 }
 
 end();
