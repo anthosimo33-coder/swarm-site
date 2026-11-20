@@ -96,6 +96,9 @@ function inspect(where, html) {
   const text = html.replace(/<(style|script)[\s\S]*?<\/\1>/g, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|\s+/g, ' ');
   for (const w of ['undefined', 'NaN', 'Infinity', '[object Object]']) if (text.includes(w)) note(`« ${w} » dans le texte`, where, (text.match(new RegExp(`.{0,50}${w.replace(/[[\]]/g, '\\$&')}.{0,30}`)) || [''])[0].trim());
   if (/\bnull\b/.test(text)) note('« null » dans le texte', where, (text.match(/.{0,50}\bnull\b.{0,30}/) || [''])[0].trim());
+  // Un demi-caractère (substitut UTF-16 isolé, rendu « � ») : une initiale coupée au milieu d'un émoji (audit Q38).
+  const lone = text.match(/.{0,20}(?:[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]).{0,20}/u);
+  if (lone) note('demi-caractère dans le texte (émoji coupé)', where, JSON.stringify(lone[0]));
   for (const [, attr, val] of html.matchAll(/\s(href|src)="([^"]*)"/g)) {
     if (/undefined|\bnull\b|NaN/.test(val.replace(/x-signature=[^&]*/g, ''))) note(`${attr} undefined/null/NaN`, where, val.slice(0, 80));
     if (attr === 'href' && val.startsWith('/app/')) {
@@ -163,6 +166,24 @@ for (const who of ['pro', 'free']) {
   for (const n of ['Formules', 'MFormules']) await show(n, await page(n), { onClose() {}, checkout: { mensuel: '/app/payer/mensuel', annuel: '/app/payer/annuel' }, total });
   await show('MenuCompte gratuit', await page('MenuCompte'), { user: userOf(false), total, onClose() {}, onPlans() {}, onSettings() {} });
   await show('MenuCompte Pro', await page('MenuCompte'), { user: userOf(true), total, onClose() {}, onPlans() {}, onSettings() {} });
+}
+
+// Un prénom qui commence par un émoji (audit Q38) : l'initiale de l'avatar est l'émoji entier, jamais sa première moitié.
+// Écrans dont le canevas est tenu par une autre branche, corrigés avec elle (phase 2) : Alertes (ordinateur),
+// Formats (ordinateur et téléphone), Aperçu, Réglages.
+{
+  const PENDING = new Set(['Alertes', 'Formats', 'MFormats']);
+  const user = { ...userOf(true), prenom: '😀 Léa', nom: '😀 Léa', initiale: '😀' };
+  const b = board('pro');
+  for (const r of routes) for (const mobile of [false, true]) {
+    const name = mobile ? r.mob : r.desk;
+    if (PENDING.has(name)) continue;
+    const [key, params] = keysOf(r)[0] ?? [null, {}];
+    await b.load(key ? [key, 'apps'] : ['apps']);
+    await show(`émoji ${mobile ? 'mobile' : 'ordi'} ${r.path}`, await page(name), { user, signOut() {}, onPlans() {}, params, query: {}, data: key ? b.cache.get(key) : undefined,
+      get: (k) => b.cache.get(k) ?? null, saved: () => null, save: async () => {} });
+  }
+  await show('émoji MenuCompte', await page('MenuCompte'), { user, total: 3, onClose() {}, onPlans() {}, onSettings() {} });
 }
 
 console.log(`${reel ? 'export réel' : 'export inventé'} : ${docs.size} pages, ${routes.length} routes, ${renders} rendus`);

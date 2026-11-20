@@ -19,7 +19,7 @@ export default class MenuCompte extends DCLogic {
     const total = typeof p.total === 'number' && p.total > 0 ? p.total : 516;
     const close = () => { if (p.onClose) p.onClose(); };
     return {
-      me: { initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase(), nom: u.prenom || String(u.email || '').split('@')[0] || 'Mon compte', email: u.email || '' },
+      me: { initiale: (Array.from(String(u.initiale || u.prenom || u.email || '?'))[0] || '?').toUpperCase(), nom: u.prenom || String(u.email || '').split('@')[0] || 'Mon compte', email: u.email || '' },
       pro, free: !pro,
       badge: pro ? { label: 'Pro', bg: 'var(--accent-soft)', ink: 'var(--accent)', edge: 'var(--accent-edge)' }
                  : { label: 'Aperçu', bg: 'rgba(255,255,255,0.06)', ink: 'var(--ink-muted)', edge: 'rgba(255,255,255,0.1)' },
