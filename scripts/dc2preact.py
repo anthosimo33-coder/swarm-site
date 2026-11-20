@@ -148,6 +148,19 @@ class Node:
         self.children = []
 
 
+class GenError(SystemExit):
+    """Un canevas que la conversion rendrait faux : la génération s'arrête, avec le fichier et la ligne (audit Q43)."""
+
+
+def fail(msg, snippet=None):
+    """Arrête la génération : fichier du canevas en cours, ligne du morceau fautif s'il s'y trouve."""
+    where = CURRENT.get('file') or '?'
+    text = CURRENT.get('text') or ''
+    if snippet and snippet in text:
+        where += f':{text[:text.index(snippet)].count(chr(10)) + 1}'
+    raise GenError(f'{where} : {msg}' + (f' — {snippet.strip()[:120]}' if snippet else ''))
+
+
 class Parser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -161,6 +174,10 @@ class Parser(HTMLParser):
             self.stack.append(node)
 
     def handle_startendtag(self, tag, attrs):
+        # « <div/> » n'est pas fermé en HTML : le navigateur (donc le canevas) y range les frères qui suivent, la conversion
+        # en faisait des frères. Seuls les éléments vides et le SVG (où « /> » ferme) l'acceptent (audit Q43).
+        if tag not in VOID and tag != 'svg' and not any(n.tag == 'svg' for n in self.stack):
+            fail(f'<{tag} … /> n\'est pas fermé en HTML : écrire <{tag} …></{tag}>', self.get_starttag_text())
         self.stack[-1].children.append(Node(tag, attrs))
 
     def handle_endtag(self, tag):
@@ -286,6 +303,11 @@ def gen(node, scope, ind):
         return pad + json.dumps(node, ensure_ascii=False)
 
     attrs = dict(node.attrs)
+    # Une condition, une liste ou un gestionnaire doit être un trou plein : « {{!x}} » ou « {{a[0]}} » devenait une chaîne
+    # constante (condition toujours vraie), « {{go}} » précédé d'une espace un gestionnaire texte (audit Q43).
+    for key in (['list'] if node.tag == 'sc-for' else ['value'] if node.tag == 'sc-if' else []):
+        if not HOLE.fullmatch(attrs.get(key) or ''):
+            fail(f'<{node.tag} {key}="…"> doit être un trou plein {{{{chemin}}}}', f'{key}="{attrs.get(key)}"')
     if node.tag == 'sc-for':
         var = attrs['as']
         lst = value_expr(attrs['list'], scope)
@@ -315,6 +337,8 @@ def gen(node, scope, ind):
             name = 'oninput'
         if name.startswith('hint-'):
             continue
+        if name.lower().startswith('on') and not HOLE.fullmatch(val or ''):
+            fail(f'{name}="…" doit être un trou plein {{{{chemin}}}}', f'{name}="{val}"')
         if val is None:
             props.append(f'{json.dumps(name)}: true')
             continue
@@ -339,16 +363,26 @@ def gen_children(node, scope, ind):
     return ',\n'.join(p for p in parts if p is not None)
 
 
+# Une déclaration d'animation (animation, animation-name, ou une variable CSS qui en porte une) : seul endroit où un nom
+# de keyframes est renommé. Audit Q43 : « pulse 2s » était aussi préfixé dans le texte visible (« Tape pulse 2s »).
+ANIM_DECL = re.compile(r'((?:animation(?:-name)?|--[\w-]+)\s*:\s*)([^;}"]*)')
+
+
 def prefix_keyframes(css, template, script, prefix):
     names = sorted(set(re.findall(r'@keyframes\s+([A-Za-z_][\w-]*)', css)), key=len, reverse=True)
-    for n in names:
-        new = f'{prefix}-{n}'
-        css = re.sub(r'(@keyframes\s+)' + re.escape(n) + r'\b', r'\g<1>' + new, css)
-        dur = r'(?=\s+(?:-?[\d.]+m?s\b|\{\{))'  # « nom 3s … » ou « nom {{durée}} … »
-        css = re.sub(r'(?<![\w-])' + re.escape(n) + r'\b' + dur, new, css)  # « animation: nom 1s » dans la feuille elle-même
-        template = re.sub(r'(?<![\w-])' + re.escape(n) + r'\b' + dur, new, template)
-        script = re.sub(r'(?<![\w-])' + re.escape(n) + r'\b' + dur, new, script)
-        script = re.sub(r"(?<=['\"`])" + re.escape(n) + r"(?=\s)", new, script)
+    if not names:
+        return css, template, script
+    alt = '|'.join(re.escape(n) for n in names)
+    word = re.compile(r'(?<![\w-])(' + alt + r')(?![\w-])')
+    in_decl = lambda m: m.group(1) + word.sub(lambda w: f'{prefix}-{w.group(1)}', m.group(2))
+    css = re.sub(r'(@keyframes\s+)([A-Za-z_][\w-]*)', lambda m: m.group(1) + (f'{prefix}-{m.group(2)}' if m.group(2) in names else m.group(2)), css)
+    css = ANIM_DECL.sub(in_decl, css)
+    # Gabarit : dans les attributs style seulement, jamais dans le texte.
+    template = re.sub(r'(\bstyle=")([^"]*)(")', lambda m: m.group(1) + ANIM_DECL.sub(in_decl, m.group(2)) + m.group(3), template)
+    # Script : une chaîne qui est une valeur d'animation (le nom en tête : « pulse 2s … »), ou une déclaration d'animation
+    # dans une chaîne de style ; jamais un nom au milieu d'une phrase.
+    script = re.sub(r"(?<=['\"`])(" + alt + r")(?=\s|['\"`])", lambda m: f'{prefix}-{m.group(1)}', script)
+    script = re.sub(r'(animation(?:-name)?\s*:\s*)([^;\'"`}]*)', in_decl, script)
     return css, template, script
 
 
@@ -471,6 +505,46 @@ def string_tokens(s):
             prev = c
         i += 1
     return out
+
+
+def block_end(s, i):
+    """s[i] ouvre { : l'index qui suit l'accolade fermante ; chaînes, gabarits, commentaires et regex sautés."""
+    depth, n, prev, word = 0, len(s), '', ''
+    while i < n:
+        c = s[i]
+        if c in '"\'':
+            i, prev, word = _skip_str(s, i), 'x', ''
+            continue
+        if c == '`':
+            i, prev, word = _skip_tpl(s, i), 'x', ''
+            continue
+        if s.startswith('//', i):
+            i = s.index('\n', i)
+            continue
+        if s.startswith('/*', i):
+            i = s.index('*/', i) + 2
+            continue
+        if c == '/' and (prev == '' or prev in REGEX_BEFORE or word in REGEX_WORDS):
+            i, prev, word = _skip_regex(s, i), 'x', ''
+            continue
+        if c == '{':
+            depth += 1
+        elif c == '}':
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        if c.isalnum() or c in '_$':
+            word = word + c if prev and (prev.isalnum() or prev in '_$') else c
+        elif not c.isspace():
+            word = ''
+        if not c.isspace():
+            prev = c
+        i += 1
+    fail('accolade de la classe jamais fermée')
+
+
+def strip_js_comments(s):
+    return re.sub(r'/\*.*?\*/|//[^\n]*', '', s, flags=re.S)
 
 
 # Pour chaque littéral : faux s'il ne se calcule pas seul (il lit une variable de l'écran) ; sinon sa valeur vide, de
@@ -610,6 +684,8 @@ def convert(src, name, prefix, group='site'):
     CURRENT['links'] = g['links']
     CURRENT['imports'] = set()
     text = (g['src'] / src).read_text()
+    CURRENT['file'] = str((g['src'] / src).relative_to(ROOT)) if (g['src'] / src).is_relative_to(ROOT) else src
+    CURRENT['text'] = text
     for blob, local in MEDIA.items():
         text = text.replace(blob, local)
     xdc = text.split('<x-dc>', 1)[1].split('</x-dc>', 1)[0]
@@ -620,7 +696,16 @@ def convert(src, name, prefix, group='site'):
         # data-eager dans le canevas. Avant, les ~30 images de la landing partaient d'un coup (1,08 Mo pour 3 visibles).
         template = re.sub(r'<img\b(?![^>]*\bloading=)(?![^>]*\bdata-eager)', '<img loading="lazy" decoding="async"', template)
         template = re.sub(r'(<img\b[^>]*?)\s+data-eager(?:="[^"]*")?', r'\1', template)
-    css = '\n'.join(re.findall(r'<style>(.*?)</style>', helmet, re.S)).strip()
+    # Feuilles du helmet : <style>, ou <style media="…"> rangée sous @media ; toute autre forme arrête (audit Q43 : une
+    # <style media=…> était jetée sans bruit).
+    sheets = []
+    for m in re.finditer(r'<style\b([^>]*)>(.*?)</style>', helmet, re.S):
+        extra = m.group(1).strip()
+        media = re.fullmatch(r'media="([^"]+)"', extra)
+        if extra and not media:
+            fail('<style> du helmet : seul l\'attribut media est compris', f'<style{m.group(1)}>')
+        sheets.append(f'@media {media.group(1)}{{{m.group(2)}}}' if media else m.group(2))
+    css = '\n'.join(sheets).strip()
     script = re.search(r'<script type="text/x-dc" data-dc-script[^>]*>(.*?)</script>', text, re.S).group(1)
 
     css, template, script = prefix_keyframes(css, template, script, prefix)
@@ -629,12 +714,25 @@ def convert(src, name, prefix, group='site'):
     p = Parser()
     p.feed(template)
     p.close()
+    if len(p.stack) > 1:  # audit Q43 : une balise jamais fermée rangeait la suite du gabarit dedans, sans bruit
+        fail('balise(s) jamais fermée(s) : ' + ', '.join(f'<{n.tag}>' for n in p.stack[1:]))
     roots = [c for c in p.root.children if not (isinstance(c, str) and not c.strip())]
     body = ',\n'.join(gen(c, set(), 3) for c in roots)
+    # Un trou que la conversion ne comprend pas ({{a[0]}}, {{ x + 1 }}) restait écrit tel quel dans la page (audit Q43).
+    left = re.search(r'\{\{[^}]*\}\}', body)
+    if left:
+        fail(f'trou non converti {left.group(0)} : seuls les chemins {{{{a.b.c}}}} sont compris', left.group(0))
 
     m = re.search(r'class\s+Component\s+extends\s+DCLogic\s*\{', script)
+    if not m:
+        fail('pas de « class Component extends DCLogic { … } » dans le script')
     start = m.end()
-    end = script.rindex('}')
+    end = block_end(script, start - 1) - 1  # l'accolade qui ferme la classe
+    # Tout le code doit être dans la classe : une constante ou une fonction écrite avant ou après était jetée (l'écran
+    # plantait au rendu, ReferenceError), ou rangée dans la classe et la rendait illisible (audit Q43).
+    outside = strip_js_comments(script[:m.start()] + '\n' + script[end + 1:]).strip()
+    if outside:
+        fail('du code hors de la classe Component (le mettre dans la classe, ou dans renderVals)', outside.split('\n')[0])
     cls_body = script[start:end].rstrip()
 
     rel = src if group == 'site' else f'app/{src}'
