@@ -149,6 +149,8 @@ export const kindOf = (a: RApp, store: string | null): "app" | "saas" | "jeu_mob
 export const PREVIEW_TOP = 3;
 /** Une app n'est listée qu'avec au moins 2 comptes qui la poussent, prouvés (un compte n'entre que prouvé, cf Jarvia #506). */
 export const MIN_APP_ACCOUNTS = 2;
+/** Un créateur sans publication depuis plus de QUIET_DAYS jours (rien à montrer en 30 j) passe après les autres. */
+export const QUIET_DAYS = 30;
 /** Formats qui ont leur fiche (`format:<id>`, avec la page de leurs 30 premières reprises) : les premiers de la liste. */
 export const FORMAT_PAGES = 150;
 /** Créateurs par document de liste (~1 Ko chacun ; un document Convex : 1 Mio au plus). */
@@ -769,7 +771,11 @@ export function buildBoards(
   const creators: CreatorRow[] = GL
     ? GL.outs.flatMap((o) => o.creators).sort((p, q) => p.i - q.i).map((c) => c.row as CreatorRow)
     : creatorAccounts.filter(shownCreator).map(creatorRow);
-  creators.sort((p, q) => (q.median ?? 0) - (p.median ?? 0));
+  // Les comptes muets depuis plus de QUIET_DAYS jours passent après les autres (audit Q24, 19/11 : en France, le 1er
+  // n'avait rien publié depuis 581 jours, et 24 des 50 premiers n'avaient aucune vidéo de 30 jours à montrer). Tous
+  // restent listés ; dans chaque groupe, l'ordre reste celui de la médiane.
+  const quiet = (c: { lastPostAt: number | null }) => (c.lastPostAt === null || now - c.lastPostAt > QUIET_DAYS * DAY ? 1 : 0);
+  creators.sort((p, q) => quiet(p) - quiet(q) || (q.median ?? 0) - (p.median ?? 0));
   for (const c of creators) wantAvatar(c.handle);
   // Tous les créateurs de chaque marché (plus de plafond à 200, décision du 14/11), par pages de CREATOR_PAGE :
   // « creators:<marché> » porte la 1re page et leur nombre, « creators:<marché>:2 », « :3 »… la suite.
