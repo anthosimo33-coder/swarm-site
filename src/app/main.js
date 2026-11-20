@@ -8,7 +8,8 @@
 //   user    { prenom, nom, email, initiale, pro, emailVerified, hasPassword }   signOut()   onPlans() : ouvre la fenêtre des formules
 //   data    le document de son adresse (convex/boards.ts), déjà calculé depuis le Radar
 //   params  les paramètres de l'adresse (ex. { slug: 'astraai' })
-//   query   les paramètres de la requête (ex. { niche: 'Foi' } pour /app/apps?niche=Foi)
+//   query   les paramètres de la requête (ex. { niche: 'Foi' } pour /app/apps?niche=Foi ; une clé répétée donne un
+//           tableau). Un écran de liste y lit ses filtres et les y réécrit (history.replaceState), sans navigation (F25).
 //   get(clé) un autre document (créateurs d'un autre marché, index de recherche…) :
 //            undefined tant qu'il charge, null s'il n'existe pas.
 //   saved(clé) / save(clé, valeur)  ce que la personne garde (convex/saved.ts) : apps et comptes
@@ -29,7 +30,7 @@ import { client, mount } from '../auth.js';
 import { MOBILE_QUERY } from '../runtime.js';
 import { ROUTES } from './routes.js';
 import { createWatcher } from './watcher.js';
-import { APERCU, HOME, LOAD_TIMEOUT_MS, SIGN_OUT, isOpen, layoutOnly, loadingView, mayLoadBeforeUser, previewView, routeCodeNeeded, routeMatcher, routesToWarm, safeDecode as dec } from './plan.js';
+import { APERCU, HOME, LOAD_TIMEOUT_MS, SIGN_OUT, isOpen, layoutOnly, loadingView, mayLoadBeforeUser, previewView, routeCodeNeeded, routeMatcher, routesToWarm, safeDecode as dec, screenQuery } from './plan.js';
 import { scrollMemory } from './scroll.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
@@ -147,7 +148,12 @@ function App() {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
   const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : 'skip');
-  const [path, setPath] = useState(here); // chemin + requête
+  // La navigation : l'adresse (chemin + requête) et son numéro. Audit F25 : un écran de liste réécrit sa requête sans
+  // naviguer (ses filtres) ; l'adresse affichée peut alors différer de `path`, et un lien vers `path` reste une
+  // navigation : le numéro change, l'écran se remonte avec la requête du lien.
+  const [nav, setNav] = useState(() => ({ path: here(), n: 0 }));
+  const path = nav.path;
+  const setPath = (next) => setNav((cur) => ({ path: next, n: cur.n + 1 }));
   const [screen, setScreen] = useState(null);
   // Audit F26 : l'adresse dont l'écran se charge, et celle qui n'est pas arrivée dans le délai (LOAD_TIMEOUT_MS).
   const [loading, setLoading] = useState(null);
@@ -329,7 +335,7 @@ function App() {
   }, [pay, known]);
 
   // Changer d'écran referme le panneau du compte et les réglages.
-  useEffect(() => { setMenu(false); setSettings(null); if (!path.startsWith(ACCOUNT)) setPlanMobile(false); }, [path]);
+  useEffect(() => { setMenu(false); setSettings(null); if (!path.startsWith(ACCOUNT)) setPlanMobile(false); }, [nav]);
   useEffect(() => {
     if (!settingsNext) return;
     setSettings(settingsNext);
@@ -369,7 +375,7 @@ function App() {
       void leave();
       return undefined;
     }
-    const [pathname, search = ''] = path.split('?');
+    const pathname = path.split('?')[0];
     if (pathname.startsWith(PAY)) {
       setPay(formuleOf(pathname));
       window.history.replaceState(null, '', HOME);
@@ -383,7 +389,7 @@ function App() {
         setSettingsNext('profil');
         return undefined;
       }
-      setScreen({ path, mobile, Page: null, route: { path: ACCOUNT, title: 'Réglages' }, params: {}, query: {}, key: null });
+      setScreen({ path, n: nav.n, mobile, Page: null, route: { path: ACCOUNT, title: 'Réglages' }, params: {}, query: {}, key: null });
       return undefined;
     }
     const match = matchRoute(pathname);
@@ -410,8 +416,9 @@ function App() {
         // L'écran d'avant cesse d'écouter ses documents : le watcher pourra fermer ceux que le nouveau ne lit pas.
         for (const [id, f] of used.current) watcher.entries.get(id)?.listeners.delete(f);
         used.current = new Map();
-        const query = Object.fromEntries(new URLSearchParams(search));
-        setScreen({ path, mobile, Page: module.default, route: match.route, params: match.params, query, key: match.key });
+        // Audit F25 : la requête affichée, que l'écran a pu réécrire (ses filtres) depuis la navigation.
+        const query = screenQuery(path, clean(window.location.pathname), window.location.search);
+        setScreen({ path, n: nav.n, mobile, Page: module.default, route: match.route, params: match.params, query, key: match.key });
       },
       () => {
         // Fichier de l'écran introuvable (un déploiement est passé depuis l'ouverture) : on recharge.
@@ -422,7 +429,7 @@ function App() {
       current = false;
       clearTimeout(late);
     };
-  }, [path, isAuthenticated, mobile, known, !!(user && user.pro)]);
+  }, [nav, isAuthenticated, mobile, known, !!(user && user.pro)]);
 
   // Une fois le premier écran affiché : les autres écrans et les listes se chargent en
   // arrière-plan, la navigation devient instantanée.
@@ -516,7 +523,8 @@ function App() {
     page = null; // l'abonnement vient d'arriver sur l'aperçu : le code d'Apps arrive (l'effet de l'adresse le charge)
   } else {
     page = h(screen.Page, {
-      key: `${screen.mobile ? 'm' : 'd'}${screen.path}`,
+      // Une navigation (n) ou une bascule de mise en page (m/d) remonte l'écran ; un filtre réécrit dans l'adresse, non.
+      key: `${screen.mobile ? 'm' : 'd'}${screen.n}${screen.path}`,
       user,
       signOut: leave,
       onPlans,
