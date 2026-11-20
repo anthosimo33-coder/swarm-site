@@ -433,13 +433,13 @@ export default class Formats extends DCLogic {
                       "Trier par"
                     ),
                     ($l($v.sortMenu?.items)).map((o) => [
-                      $h("button", { "type": "button", "role": "option", "aria-selected": o?.sel, "onClick": o?.pick, "style": `width: 100%; display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 12px; border: 0; border-radius: 12px; background: ${$t(o?.bg)}; color: var(--ink); font: inherit; font-size: 14px; font-weight: ${$t(o?.fw)}; text-align: left; cursor: pointer;` },
+                      $h("button", { "type": "button", "role": "option", "aria-selected": o?.sel, "onClick": o?.pick, "style": `width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 9px 12px; border: 0; border-radius: 12px; background: ${$t(o?.bg)}; color: var(--ink); font: inherit; font-size: 14px; font-weight: ${$t(o?.fw)}; text-align: left; cursor: pointer;` },
                         $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t(o?.ic)};` },
                           $h("path", { "d": o?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         ),
                         $h("span", { "style": "flex: 1; display: flex; flex-direction: column; gap: 2px;" },
                           $t(o?.l),
-                          $h("span", { "style": "font-size: 12px; font-weight: 400; color: var(--ink-faint);" },
+                          $h("span", { "style": "font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-faint);" },
                             $t(o?.sub)
                           )
                         ),
