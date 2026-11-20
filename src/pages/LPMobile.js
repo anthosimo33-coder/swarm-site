@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/LPMobile.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../runtime.js';
+import { DCLogic, $t, $l, $u } from '../runtime.js';
 
 export default class LPMobile extends DCLogic {
   componentDidMount() {
@@ -433,7 +433,7 @@ export default class LPMobile extends DCLogic {
                   ),
                   ($l($v.miniApps)).map((m) => [
                     $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 36px;" },
-                      $h("img", { "loading": "lazy", "decoding": "async", "src": m?.icon, "alt": "", "style": "width: 28px; height: 28px; border-radius: 8px; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": $u(m?.icon), "alt": "", "style": "width: 28px; height: 28px; border-radius: 8px; display: block; flex-shrink: 0;" }),
                       $h("span", { "style": "flex: 1 1 auto; font-size: 13px; font-weight: 600;" },
                         $t(m?.name)
                       ),
@@ -460,7 +460,7 @@ export default class LPMobile extends DCLogic {
                   ),
                   ($l($v.creators)).map((c) => [
                     $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 10px; border-radius: 14px; background: #FFFFFF; border: 1px solid #EEF0F3;" },
-                      $h("img", { "loading": "lazy", "decoding": "async", "src": c?.img, "alt": "", "style": "width: 30px; height: 40px; border-radius: 7px; object-fit: cover; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": $u(c?.img), "alt": "", "style": "width: 30px; height: 40px; border-radius: 7px; object-fit: cover; display: block; flex-shrink: 0;" }),
                       $h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;" },
                         $h("span", { "style": "font-size: 13px; font-weight: 600;" },
                           $t(c?.handle)
@@ -557,10 +557,10 @@ export default class LPMobile extends DCLogic {
               $h("div", { "style": "display: flex; width: max-content; animation: lpm-rowLeft 80s linear infinite;" },
                 ($l($v.reel)).map((v) => [
                   $h("div", { "style": "position: relative; flex: 0 0 auto; width: 168px; height: 298px; margin-right: 12px; border-radius: 20px; overflow: hidden; background: #111216; box-shadow: 0 16px 34px rgba(16,24,40,0.18);" },
-                    $h("img", { "loading": "lazy", "decoding": "async", "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                    $h("img", { "loading": "lazy", "decoding": "async", "src": $u(v?.img), "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                     $h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 28%, transparent 58%, rgba(0,0,0,0.65));" }),
                     $h("span", { "style": "position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); box-sizing: border-box; background: rgba(255,255,255,0.92); color: #111216; border-radius: 999px; padding: 3px 9px 3px 3px; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; gap: 6px;" },
-                      $h("img", { "loading": "lazy", "decoding": "async", "src": v?.icon, "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": $u(v?.icon), "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block; flex-shrink: 0;" }),
                       $t(v?.app)
                     ),
                     $h("div", { "style": "position: absolute; left: 10px; right: 10px; bottom: 12px; display: flex; flex-direction: column; color: #FFFFFF;" },
@@ -749,7 +749,7 @@ export default class LPMobile extends DCLogic {
                     $t(c?.title)
                   ),
                   ($l(c?.links)).map((l) => [
-                    $h("a", { "href": l?.href, "style": "font-size: 15px; text-decoration: none; min-height: 40px; display: flex; align-items: center;" },
+                    $h("a", { "href": $u(l?.href), "style": "font-size: 15px; text-decoration: none; min-height: 40px; display: flex; align-items: center;" },
                       $t(l?.t)
                     )
                   ])
@@ -806,7 +806,7 @@ export default class LPMobile extends DCLogic {
               ),
               $h("nav", { "aria-label": "Menu", "style": "display: flex; flex-direction: column; padding: 4px 10px 0;" },
                 ($l($v.mnav)).map((m) => [
-                  $h("a", { "href": m?.href, "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
+                  $h("a", { "href": $u(m?.href), "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
                     $h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
                       $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         $h("path", { "d": m?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })

@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/FormatsB.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import Palette from './Palette.js';
 
 export default class Formats extends DCLogic {
@@ -186,7 +186,7 @@ export default class Formats extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -371,7 +371,7 @@ export default class Formats extends DCLogic {
                   )
                 ),
                 $h("div", { "style": "display: flex; align-items: center; gap: 18px; flex-wrap: wrap;" },
-                  $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": $v.hero?.href },
+                  $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": $u($v.hero?.href) },
                     "Voir le format",
                     $h("span", { "class": "sw-btn-tile" },
                       $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -382,7 +382,7 @@ export default class Formats extends DCLogic {
                   $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted);" },
                     $h("span", { "class": `sw-app-icon ${$t($v.hero?.app0?.blank)}`, "style": "width: 22px; height: 22px; border-radius: 7px;" },
                       ($v.hero?.app0?.logo) ? [
-                        $h("img", { "class": "sw-logo-img", "src": $v.hero?.app0?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "class": "sw-logo-img", "src": $u($v.hero?.app0?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       ($v.hero?.app0?.nologo) ? [
                         $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -396,8 +396,8 @@ export default class Formats extends DCLogic {
               ),
               $h("div", { "style": "position: relative; height: 400px;", "aria-label": "Les quatre reprises" },
                 ($l($v.fan)).map((c) => [
-                  $h("a", { "class": "sw-video", "href": c?.href, "style": `position: absolute; left: ${$t(c?.l)}px; top: ${$t(c?.t)}px; width: 176px; z-index: ${$t(c?.z)}; transform: rotate(${$t(c?.r)}deg); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08); text-decoration: none;` },
-                    $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                  $h("a", { "class": "sw-video", "href": $u(c?.href), "style": `position: absolute; left: ${$t(c?.l)}px; top: ${$t(c?.t)}px; width: 176px; z-index: ${$t(c?.z)}; transform: rotate(${$t(c?.r)}deg); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08); text-decoration: none;` },
+                    $h("img", { "class": "sw-cover", "src": $u(c?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "class": "sw-video-foot" },
                       $h("span", { "style": "display: flex; flex-direction: column; gap: 4px; min-width: 0;" },
@@ -432,8 +432,8 @@ export default class Formats extends DCLogic {
               $h("div", { "class": "sw-card", "style": "display: flex; flex-direction: column; overflow: hidden; text-decoration: none; color: inherit; border-radius: 24px;" },
                 $h("span", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; height: 230px; overflow: hidden; background: var(--ground);" },
                   ($l(f?.cov)).map((v) => [
-                    $h("a", { "href": v?.href, "style": "position: relative; overflow: hidden; display: block; text-decoration: none;" },
-                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                    $h("a", { "href": $u(v?.href), "style": "position: relative; overflow: hidden; display: block; text-decoration: none;" },
+                      $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                       $h("span", { "class": "sw-video-shade" }),
                       $h("span", { "style": "position: absolute; left: 10px; bottom: 10px; font-family: var(--font-display); font-size: 16px; font-weight: 700; color: #FFFFFF;" },
                         $t(v?.v)
@@ -441,7 +441,7 @@ export default class Formats extends DCLogic {
                     )
                   ])
                 ),
-                $h("a", { "href": f?.href, "style": "padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 14px; flex: 1; text-decoration: none; color: inherit;" },
+                $h("a", { "href": $u(f?.href), "style": "padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 14px; flex: 1; text-decoration: none; color: inherit;" },
                   $h("span", { "style": "display: flex; align-items: center; gap: 8px;" },
                     $h("span", { "class": "sw-badge", "style": "height: 24px; gap: 6px; padding: 0 9px 0 7px;" },
                       $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -494,7 +494,7 @@ export default class Formats extends DCLogic {
                           (a?.tile) ? [
                             $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 18px; height: 18px; border-radius: 6px;" },
                               (a?.logo) ? [
-                                $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                                $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                               ] : null,
                               (a?.nologo) ? [
                                 $h("svg", { "width": "9", "height": "9", "viewBox": "0 0 24 24", "aria-hidden": "true" },

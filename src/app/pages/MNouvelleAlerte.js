@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MNouvelleAlerte.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class MNouvelleAlerte extends DCLogic {
   // Clavier ouvert (audit Q72) : sur iPhone, il recouvre le bas de la page sans la réduire ; la feuille remonte de ce qu'il
@@ -235,8 +235,8 @@ export default class MNouvelleAlerte extends DCLogic {
               ),
               $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
                 ($l($v.hits)).map((h) => [
-                  $h("a", { "href": h?.href, "aria-label": "Ouvrir la vidéo", "class": "sw-video", "style": "display: block; border-radius: 12px;" },
-                    $h("img", { "class": "sw-cover", "src": h?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                  $h("a", { "href": $u(h?.href), "aria-label": "Ouvrir la vidéo", "class": "sw-video", "style": "display: block; border-radius: 12px;" },
+                    $h("img", { "class": "sw-cover", "src": $u(h?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "style": "position: absolute; left: 6px; right: 6px; bottom: 6px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #FFFFFF; text-align: center; white-space: nowrap;" },
                       $t(h?.x)

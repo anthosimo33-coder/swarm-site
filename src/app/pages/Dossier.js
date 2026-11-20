@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/DossiersB.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import Palette from './Palette.js';
 
 export default class Dossier extends DCLogic {
@@ -195,7 +195,7 @@ export default class Dossier extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -217,10 +217,10 @@ export default class Dossier extends DCLogic {
                 "Mes dossiers"
               ),
               ($l($v.side)).map((d) => [
-                $h("a", { "href": d?.href, "aria-current": d?.cur, "style": `display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; border-radius: 14px; background: ${$t(d?.bg)}; box-shadow: inset 0 0 0 1px ${$t(d?.edge)}; text-decoration: none; color: ${$t(d?.ink)};` },
+                $h("a", { "href": $u(d?.href), "aria-current": d?.cur, "style": `display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; border-radius: 14px; background: ${$t(d?.bg)}; box-shadow: inset 0 0 0 1px ${$t(d?.edge)}; text-decoration: none; color: ${$t(d?.ink)};` },
                   $h("span", { "style": "width: 36px; height: 36px; border-radius: 10px; overflow: hidden; flex-shrink: 0; position: relative; display: inline-flex; align-items: center; justify-content: center; background: var(--track); color: var(--ink-faint);" },
                     (d?.src) ? [
-                      $h("img", { "class": "sw-cover", "src": d?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "class": "sw-cover", "src": $u(d?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     (d?.nosrc) ? [
                       $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -377,11 +377,11 @@ export default class Dossier extends DCLogic {
                   $h("div", { "class": "sw-card", "style": "border-radius: 22px; padding: 4px 0;" },
                     ($l($v.apps)).map((a) => [
                       $h("div", { "style": "display: flex; align-items: center; gap: 8px; padding-right: 12px; border-bottom: 1px solid var(--line);" },
-                        $h("a", { "href": a?.href, "style": "flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1.6fr) 1fr 150px; align-items: center; gap: 16px; padding: 14px 4px 14px 20px; text-decoration: none; color: inherit;" },
+                        $h("a", { "href": $u(a?.href), "style": "flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1.6fr) 1fr 150px; align-items: center; gap: 16px; padding: 14px 4px 14px 20px; text-decoration: none; color: inherit;" },
                           $h("span", { "style": "display: flex; align-items: center; gap: 14px; min-width: 0;" },
                             $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 44px; height: 44px; border-radius: 12px;" },
                               (a?.logo) ? [
-                                $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                                $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                               ] : null,
                               (a?.nologo) ? [
                                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -409,7 +409,7 @@ export default class Dossier extends DCLogic {
                           $h("span", { "style": "display: flex; gap: 4px; justify-content: flex-end;" },
                             ($l(a?.covs)).map((c) => [
                               $h("span", { "class": "sw-video", "style": "display: block; width: 34px; border-radius: 7px;" },
-                                $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                                $h("img", { "class": "sw-cover", "src": $u(c?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                               )
                             ])
                           )
@@ -438,12 +438,12 @@ export default class Dossier extends DCLogic {
                   $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;" },
                     ($l($v.fmts)).map((f) => [
                       $h("div", { "class": "sw-card", "style": "border-radius: 22px; padding: 16px 12px 16px 16px; display: flex; gap: 8px; align-items: center;" },
-                        $h("a", { "href": f?.href, "style": "flex: 1; min-width: 0; display: flex; gap: 16px; align-items: center; text-decoration: none; color: inherit;" },
+                        $h("a", { "href": $u(f?.href), "style": "flex: 1; min-width: 0; display: flex; gap: 16px; align-items: center; text-decoration: none; color: inherit;" },
                           (f?.hasCov) ? [
                             $h("span", { "style": "display: flex; gap: 4px;" },
                               ($l(f?.cov)).map((v) => [
                                 $h("span", { "class": "sw-video", "style": "display: block; width: 52px; border-radius: 10px;" },
-                                  $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                                  $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                                 )
                               ])
                             )
@@ -489,10 +489,10 @@ export default class Dossier extends DCLogic {
                         ),
                         ($l($v.crs)).map((c) => [
                           $h("div", { "class": "sw-card", "style": "border-radius: 22px; padding: 18px 12px 18px 20px; display: flex; align-items: center; gap: 8px;" },
-                            $h("a", { "href": c?.href, "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;" },
+                            $h("a", { "href": $u(c?.href), "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;" },
                               $h("span", { "style": "width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                                 (c?.av) ? [
-                                  $h("img", { "src": c?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                                  $h("img", { "src": $u(c?.av), "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                                 ] : null,
                                 (c?.noav) ? [
                                   $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -544,10 +544,10 @@ export default class Dossier extends DCLogic {
                         ),
                         ($l($v.vids)).map((v) => [
                           $h("div", { "class": "sw-card", "style": "border-radius: 22px; padding: 14px 12px 14px 14px; display: flex; align-items: center; gap: 8px;" },
-                            $h("a", { "href": v?.href, "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit;" },
+                            $h("a", { "href": $u(v?.href), "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit;" },
                               $h("span", { "class": "sw-video", "style": "display: block; width: 56px; flex-shrink: 0; border-radius: 10px;" },
                                 (v?.src) ? [
-                                  $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                                  $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                                 ] : null
                               ),
                               $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px;" },

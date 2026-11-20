@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/NouvelleAlerte.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class NouvelleAlerte extends DCLogic {
   componentDidMount() { if (this.first) this.first.focus(); }
@@ -224,7 +224,7 @@ export default class NouvelleAlerte extends DCLogic {
                 ),
                 ($l($v.hits)).map((h) => [
                   $h("span", { "class": "sw-video", "style": "display: block; width: 58px; border-radius: 10px;" },
-                    $h("img", { "class": "sw-cover", "src": h?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                    $h("img", { "class": "sw-cover", "src": $u(h?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "style": "position: absolute; left: 5px; right: 5px; bottom: 5px; font-size: 10px; font-weight: 800; color: #FFFFFF; text-align: center;" },
                       $t(h?.x)

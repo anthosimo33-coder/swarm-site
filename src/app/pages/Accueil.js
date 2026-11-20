@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/Main.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import Palette from './Palette.js';
 
 export default class Accueil extends DCLogic {
@@ -173,7 +173,7 @@ export default class Accueil extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -223,7 +223,7 @@ export default class Accueil extends DCLogic {
                   "Ça explose cette semaine :"
                 ),
                 ($l($v.niches)).map((t) => [
-                  $h("a", { "class": "sw-pill", "href": t?.href, "style": "gap: 7px;" },
+                  $h("a", { "class": "sw-pill", "href": $u(t?.href), "style": "gap: 7px;" },
                     $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                       $h("path", { "d": t?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
@@ -239,10 +239,10 @@ export default class Accueil extends DCLogic {
                 ($v.fol?.list) ? [
                   $h("div", { "style": "flex: 1 1 auto; border-radius: 16px; background: var(--track); padding: 8px 14px; display: flex; flex-direction: column;" },
                     ($l($v.fol?.rows)).map((r) => [
-                      $h("a", { "href": r?.href, "style": `height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid ${$t(r?.sep)};` },
+                      $h("a", { "href": $u(r?.href), "style": `height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid ${$t(r?.sep)};` },
                         $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 30px; height: 30px; border-radius: 9px;" },
                           (r?.logo) ? [
-                            $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (r?.nologo) ? [
                             $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -343,10 +343,10 @@ export default class Accueil extends DCLogic {
                 $h("article", { "class": "sw-card", "style": "flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;" },
                   $h("div", { "style": "flex: 1 1 auto; border-radius: 16px; background: var(--track); padding: 8px 14px; display: flex; flex-direction: column;" },
                     ($l($v.look)).map((r) => [
-                      $h("a", { "href": r?.href, "style": `height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid ${$t(r?.sep)};` },
+                      $h("a", { "href": $u(r?.href), "style": `height: 60px; display: flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid ${$t(r?.sep)};` },
                         $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 30px; height: 30px; border-radius: 9px;" },
                           (r?.logo) ? [
-                            $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (r?.nologo) ? [
                             $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -394,15 +394,15 @@ export default class Accueil extends DCLogic {
               ($v.showAlert) ? [
                 $h("article", { "class": "sw-card", "style": "flex: 0 0 300px; height: 340px; box-sizing: border-box; padding: 10px; display: flex; flex-direction: column;" },
                   $h("div", { "style": "position: relative; flex: 1 1 auto; border-radius: 16px; overflow: hidden; background: radial-gradient(60% 40% at 25% 80%, rgba(255,255,255,0.55), transparent 70%), radial-gradient(50% 35% at 85% 30%, rgba(255,255,255,0.45), transparent 70%), linear-gradient(180deg, #4C9AFF 0%, #8DC0FF 55%, #DCEDFF 100%); display: flex; align-items: center; justify-content: center;" },
-                    $h("a", { "class": "sw-video", "href": $v.alert?.href, "aria-label": $v.alert?.aria, "style": "display: block; text-decoration: none; width: 118px; border-radius: 16px; box-shadow: 0 20px 40px rgba(5,7,12,0.35); animation: sw-float 6s ease-in-out infinite;" },
+                    $h("a", { "class": "sw-video", "href": $u($v.alert?.href), "aria-label": $v.alert?.aria, "style": "display: block; text-decoration: none; width: 118px; border-radius: 16px; box-shadow: 0 20px 40px rgba(5,7,12,0.35); animation: sw-float 6s ease-in-out infinite;" },
                       ($v.alert?.cover) ? [
-                        $h("img", { "class": "sw-cover", "src": $v.alert?.cover, "alt": "", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "class": "sw-cover", "src": $u($v.alert?.cover), "alt": "", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       $h("span", { "class": "sw-video-shade" }),
                       $h("span", { "class": "sw-video-app", "style": "font-size: 10px;" },
                         ($v.alert?.logo) ? [
                           $h("i", { "style": "overflow: hidden;" },
-                            $h("img", { "class": "sw-logo-img", "src": $v.alert?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "class": "sw-logo-img", "src": $u($v.alert?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                           )
                         ] : null,
                         $t($v.alert?.app)

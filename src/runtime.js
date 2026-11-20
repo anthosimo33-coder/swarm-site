@@ -29,6 +29,22 @@ export const $t = (x) => (x === undefined || x === null ? '' : x);
 // Liste d'un <sc-for> : tableau vide si la valeur manque.
 export const $l = (x) => (Array.isArray(x) ? x : []);
 
+// Adresse d'un attribut href, src, action… venue des données (audit S34, 19/11) : chemin relatif, http(s), mailto, tel,
+// ou image en data:, sinon « # ». Le lien « voir sur la plateforme » posait telle quelle l'URL du Radar ; une valeur
+// « javascript:… » aurait tourné au clic, sur l'origine de Kopycat. Les caractères de contrôle et les espaces, que les
+// navigateurs ignorent dans un schéma (« java\tscript: »), sont retirés avant de le lire. Absente : reste absente.
+const SAFE_SCHEMES = new Set(['http', 'https', 'mailto', 'tel']);
+export const $u = (x) => {
+  if (x === undefined || x === null || x === '') return x;
+  const s = String(x);
+  const scheme = s.replace(/[\u0000-\u0020\u007f-\u009f]/g, '').match(/^([a-z][a-z0-9+.-]*):/i);
+  if (!scheme) return s;
+  const k = scheme[1].toLowerCase();
+  if (SAFE_SCHEMES.has(k)) return s;
+  if (k === 'data' && /^\s*data:image\/(png|jpe?g|gif|webp|avif)[;,]/i.test(s)) return s;
+  return '#';
+};
+
 // Monte la version mobile sous 860 px, la version desktop au-dessus,
 // et bascule si la fenêtre change de taille.
 const QUERY = '(max-width: 860px)';

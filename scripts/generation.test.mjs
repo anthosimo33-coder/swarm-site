@@ -171,4 +171,19 @@ const topSelectors = (css) => {
   ok(!bare.length, `Q45 : aucun « a:hover » global hors @media (hover: hover) dans les CSS de l'app (${bare.join(', ') || 'aucun'})`);
 }
 
+// ─── S34 : une adresse venue des données (href, src, action…) passe par $u : jamais « javascript: » dans une page ───
+{
+  const raw = [...pages('src/app/pages').map(([f, t]) => [`app/${f}`, t]), ...pages('src/pages')]
+    .flatMap(([f, t]) => [...t.matchAll(/"(href|src|action|formaction|poster|xlink:href)": (?!\$u\()(?!")(?!`[^`$]*`)([^,}]+)/g)].map((m) => `${f} ${m[1]}: ${m[2].slice(0, 40)}`));
+  ok(!raw.length, `S34 : chaque trou d'adresse des écrans générés passe par $u (${raw.slice(0, 4).join(' ; ') || 'aucun brut'})`);
+  const runtime = await import(path.join(root, 'src/runtime.js'));
+  const $u = runtime.$u;
+  const CASES = [['javascript:alert(1)', '#'], ['JaVaScRiPt:alert(1)', '#'], ['java\tscript:alert(1)', '#'], [' javascript:x', '#'], ['vbscript:x', '#'],
+    ['data:text/html,<script>alert(1)</script>', '#'], ['https://www.tiktok.com/@a/video/1', 'https://www.tiktok.com/@a/video/1'], ['http://x.test/', 'http://x.test/'],
+    ['/app/apps/x', '/app/apps/x'], ['#ancre', '#ancre'], ['?q=1', '?q=1'], ['mailto:a@b.c', 'mailto:a@b.c'], ['data:image/png;base64,AAAA', 'data:image/png;base64,AAAA'],
+    [undefined, undefined], [null, null], ['', '']];
+  const wrong = typeof $u === 'function' ? CASES.filter(([i, want]) => $u(i) !== want).map(([i, want]) => `${JSON.stringify(i)} → ${JSON.stringify($u(i))} au lieu de ${JSON.stringify(want)}`) : ['$u absent de src/runtime.js'];
+  ok(!wrong.length, `S34 : $u laisse passer chemins, http(s), mailto, images data: ; rend « # » pour tout autre schéma (${wrong.join(' ; ') || CASES.length + ' cas'})`);
+}
+
 end();

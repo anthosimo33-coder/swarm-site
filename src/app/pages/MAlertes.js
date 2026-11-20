@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MAlertes.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MNouvelleAlerte from './MNouvelleAlerte.js';
 import MPalette from './MPalette.js';
@@ -242,10 +242,10 @@ export default class MAlertes extends DCLogic {
               $t(g?.g)
             ),
             ($l(g?.items)).map((a) => [
-              $h("a", { "href": a?.href, "style": `display: flex; align-items: flex-start; gap: 12px; padding: 14px 20px; background: ${$t(a?.bg)}; text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);` },
+              $h("a", { "href": $u(a?.href), "style": `display: flex; align-items: flex-start; gap: 12px; padding: 14px 20px; background: ${$t(a?.bg)}; text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);` },
                 $h("span", { "style": "position: relative; flex-shrink: 0;" },
                   $h("span", { "class": "sw-video", "style": "display: block; width: 46px; border-radius: 10px;" },
-                    $h("img", { "class": "sw-cover", "src": a?.cov0, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-cover", "src": $u(a?.cov0), "alt": "", "loading": "lazy", "decoding": "async" })
                   ),
                   $h("span", { "style": `position: absolute; left: -6px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: ${$t(a?.dot)}; box-shadow: 0 0 0 2px var(--surface);` })
                 ),

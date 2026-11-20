@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/AppsA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import AjoutDossier from './AjoutDossier.js';
 import Palette from './Palette.js';
 
@@ -382,7 +382,7 @@ return {};
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -770,7 +770,7 @@ return {};
                         $h("button", { "type": "button", "class": "sw-app", "onClick": r?.open, "aria-label": `Aperçu de ${$t(r?.n)}`, "style": "min-width: 0; gap: 14px; border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;" },
                           $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 40px; height: 40px; border-radius: 11px;" },
                             (r?.logo) ? [
-                              $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                              $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                             ] : null,
                             (r?.nologo) ? [
                               $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -828,8 +828,8 @@ return {};
                       $h("span", { "style": "display: flex; flex-direction: column; gap: 5px;" },
                         $h("span", { "style": "display: flex; gap: 8px;" },
                           ($l(r?.thumbs)).map((t) => [
-                            $h("a", { "href": t?.href, "class": `sw-video ${$t(t?.t)}`, "style": "display: block; width: 58px; height: 78px; aspect-ratio: auto; border-radius: 10px;" },
-                              $h("img", { "class": "sw-cover", "src": t?.src, "alt": "", "loading": "lazy" }),
+                            $h("a", { "href": $u(t?.href), "class": `sw-video ${$t(t?.t)}`, "style": "display: block; width: 58px; height: 78px; aspect-ratio: auto; border-radius: 10px;" },
+                              $h("img", { "class": "sw-cover", "src": $u(t?.src), "alt": "", "loading": "lazy" }),
                               $h("span", { "class": "sw-video-shade" }),
                               (t?.car) ? [
                                 $h("span", { "title": `Carrousel de ${$t(t?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 4px; right: 4px; z-index: 2; height: 18px; padding: 0 5px; border-radius: 999px; background: rgba(5,7,12,0.66); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" },
@@ -925,7 +925,7 @@ return {};
                 $h("div", { "class": "sw-app", "style": "gap: 14px;" },
                   $h("span", { "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: 52px; height: 52px; border-radius: 15px;" },
                     ($v.pv?.logo) ? [
-                      $h("img", { "class": "sw-logo-img", "src": $v.pv?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "class": "sw-logo-img", "src": $u($v.pv?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     ($v.pv?.nologo) ? [
                       $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -1051,9 +1051,9 @@ return {};
                 ] : null
               ),
               ($v.pv?.hasTop) ? [
-                $h("a", { "href": $v.pv?.top?.href, "aria-label": $v.pv?.top?.aria, "style": "grid-column: 1 / span 2; min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; gap: 14px; padding: clamp(8px, 1.3vh, 12px); border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-decoration: none; color: var(--ink);" },
+                $h("a", { "href": $u($v.pv?.top?.href), "aria-label": $v.pv?.top?.aria, "style": "grid-column: 1 / span 2; min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; gap: 14px; padding: clamp(8px, 1.3vh, 12px); border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-decoration: none; color: var(--ink);" },
                   $h("span", { "class": "sw-video", "style": "position: relative; flex: 0 0 auto; height: 100%; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden; background: #0A0C12;" },
-                    $h("img", { "class": "sw-cover", "src": $v.pv?.top?.cover, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
+                    $h("img", { "class": "sw-cover", "src": $u($v.pv?.top?.cover), "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; background: rgba(5,7,12,0.55); display: flex; align-items: center; justify-content: center;" },
                       $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 12 12", "aria-hidden": "true" },
                         $h("path", { "d": "M4 2.5v7l5.5-3.5z", "fill": "#FFFFFF" })
@@ -1164,7 +1164,7 @@ return {};
                   )
                 ] : null
               ),
-              $h("a", { "class": "sw-btn sw-btn-primary", "href": $v.pv?.href, "style": "flex: 1; justify-content: space-between;" },
+              $h("a", { "class": "sw-btn sw-btn-primary", "href": $u($v.pv?.href), "style": "flex: 1; justify-content: space-between;" },
                 "Voir la fiche",
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },

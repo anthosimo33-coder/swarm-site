@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/DossiersA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import Palette from './Palette.js';
 
 export default class Dossiers extends DCLogic {
@@ -176,7 +176,7 @@ export default class Dossiers extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -310,12 +310,12 @@ export default class Dossiers extends DCLogic {
                 ] : null,
                 (f?.normal) ? [
                   $h("div", { "class": "sw-card", "style": "display: flex; flex-direction: column; overflow: hidden; border-radius: 26px;" },
-                    $h("a", { "href": f?.href, "style": "flex: 1; display: flex; flex-direction: column; text-decoration: none; color: inherit;" },
+                    $h("a", { "href": $u(f?.href), "style": "flex: 1; display: flex; flex-direction: column; text-decoration: none; color: inherit;" },
                       (f?.full) ? [
                         $h("span", { "style": `display: grid; grid-template-columns: repeat(${$t(f?.cols)}, minmax(0, 1fr)); gap: 2px; height: 210px; overflow: hidden; background: var(--ground);` },
                           ($l(f?.mos)).map((m) => [
                             $h("span", { "style": "position: relative; overflow: hidden; display: block;" },
-                              $h("img", { "class": "sw-cover", "src": m?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                              $h("img", { "class": "sw-cover", "src": $u(m?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                             )
                           ])
                         )
@@ -327,7 +327,7 @@ export default class Dossiers extends DCLogic {
                               ($l(f?.icons)).map((a) => [
                                 $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 56px; height: 56px; border-radius: 16px;" },
                                   (a?.logo) ? [
-                                    $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                                    $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                                   ] : null,
                                   (a?.nologo) ? [
                                     $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -356,7 +356,7 @@ export default class Dossiers extends DCLogic {
                               $h("span", { "style": "margin-left: -6px; border-radius: 9px; box-shadow: 0 0 0 2px var(--surface-raised); display: inline-flex;" },
                                 $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 28px; height: 28px; border-radius: 9px;" },
                                   (a?.logo) ? [
-                                    $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                                    $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                                   ] : null,
                                   (a?.nologo) ? [
                                     $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -418,16 +418,16 @@ export default class Dossiers extends DCLogic {
             ),
             $h("div", { "style": "padding: 0 32px 48px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px;" },
               ($l($v.recent)).map((r) => [
-                $h("a", { "href": r?.href, "style": "display: flex; flex-direction: column; gap: 8px; min-width: 0; text-decoration: none; color: inherit;" },
+                $h("a", { "href": $u(r?.href), "style": "display: flex; flex-direction: column; gap: 8px; min-width: 0; text-decoration: none; color: inherit;" },
                   $h("span", { "class": "sw-video", "style": "display: block; border-radius: 16px;" },
                     (r?.full) ? [
-                      $h("img", { "class": "sw-cover", "src": r?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "class": "sw-cover", "src": $u(r?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     (r?.isApp) ? [
                       $h("span", { "style": "position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;" },
                         $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 64px; height: 64px; border-radius: 18px;" },
                           (r?.logo) ? [
-                            $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (r?.nologo) ? [
                             $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },

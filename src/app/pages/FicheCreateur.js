@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/CreateurFicheA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import AjoutDossier from './AjoutDossier.js';
 import Palette from './Palette.js';
 
@@ -192,7 +192,7 @@ export default class FicheCreateur extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -215,7 +215,7 @@ export default class FicheCreateur extends DCLogic {
             $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
-            $h("a", { "class": "sw-link-quiet", "href": $v.z?.mkHref, "style": "display: inline-flex; align-items: center; gap: 6px;" },
+            $h("a", { "class": "sw-link-quiet", "href": $u($v.z?.mkHref), "style": "display: inline-flex; align-items: center; gap: 6px;" },
               ($v.z?.flag) ? [
                 $h("span", { "class": "sw-flag", "data-c": $v.z?.flag, "aria-hidden": "true" })
               ] : null,
@@ -233,7 +233,7 @@ export default class FicheCreateur extends DCLogic {
             $h("span", { "style": "position: relative; padding: 4px; border-radius: 50%; background: conic-gradient(from 200deg, var(--blue-400), var(--blue-700), var(--blue-400));" },
               $h("span", { "style": "position: relative; width: 112px; height: 112px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised);" },
                 ($v.z?.av) ? [
-                  $h("img", { "src": $v.z?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                  $h("img", { "src": $u($v.z?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                 ] : null,
                 ($v.z?.noav) ? [
                   $h("svg", { "width": "56", "height": "56", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -254,10 +254,10 @@ export default class FicheCreateur extends DCLogic {
               ] : null,
               $h("span", { "style": "display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px;" },
                 ($v.z?.app?.name) ? [
-                  $h("a", { "href": $v.z?.app?.href, "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); text-decoration: none;" },
+                  $h("a", { "href": $u($v.z?.app?.href), "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); text-decoration: none;" },
                     $h("span", { "class": `sw-app-icon ${$t($v.z?.app?.blank)}`, "style": "width: 22px; height: 22px; border-radius: 7px;" },
                       ($v.z?.app?.logo) ? [
-                        $h("img", { "class": "sw-logo-img", "src": $v.z?.app?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "class": "sw-logo-img", "src": $u($v.z?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       ($v.z?.app?.nologo) ? [
                         $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -320,7 +320,7 @@ export default class FicheCreateur extends DCLogic {
                     )
                   ] : null
                 ),
-                $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.z?.tt, "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir le profil" },
+                $h("a", { "class": "sw-btn sw-btn-icon", "href": $u($v.z?.tt), "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir le profil" },
                   $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
@@ -390,7 +390,7 @@ export default class FicheCreateur extends DCLogic {
                     $h("span", { "style": "position: relative; flex-shrink: 0; width: 34px; height: 34px;" },
                       $h("span", { "style": "display: flex; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724);" },
                         (v?.av) ? [
-                          $h("img", { "src": v?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" })
+                          $h("img", { "src": $u(v?.av), "alt": "", "style": "width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" })
                         ] : null,
                         (v?.noav) ? [
                           $h("span", { "style": "font-size: 13px; font-weight: 700; color: var(--ink-faint);" },
@@ -410,7 +410,7 @@ export default class FicheCreateur extends DCLogic {
                         $h("span", { "style": "display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-size: 11px; color: var(--ink-faint); white-space: nowrap; overflow: hidden;" },
                           $h("span", { "class": `sw-app-icon ${$t(v?.appBlank)}`, "style": "width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;" },
                             (v?.appIcon) ? [
-                              $h("img", { "class": "sw-logo-img", "src": v?.appIcon, "alt": "", "loading": "lazy", "decoding": "async" })
+                              $h("img", { "class": "sw-logo-img", "src": $u(v?.appIcon), "alt": "", "loading": "lazy", "decoding": "async" })
                             ] : null
                           ),
                           $h("span", { "style": "overflow: hidden; text-overflow: ellipsis;" },
@@ -432,9 +432,9 @@ export default class FicheCreateur extends DCLogic {
                       ] : null
                     )
                   ),
-                  $h("a", { "href": v?.href, "class": "sw-video", "aria-label": `Voir la vidéo, ${$t(v?.v)} vues`, "style": "display: block; margin: 0 12px; aspect-ratio: 4 / 5; border-radius: 14px;" },
+                  $h("a", { "href": $u(v?.href), "class": "sw-video", "aria-label": `Voir la vidéo, ${$t(v?.v)} vues`, "style": "display: block; margin: 0 12px; aspect-ratio: 4 / 5; border-radius: 14px;" },
                     (v?.src) ? [
-                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy" })
+                      $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy" })
                     ] : null,
                     $h("span", { "class": "sw-video-shade" }),
                     (v?.carN) ? [
@@ -499,7 +499,7 @@ export default class FicheCreateur extends DCLogic {
                           $t(v?.copyLabel)
                         )
                       ] : null,
-                      $h("a", { "href": v?.url, "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 5px; height: 32px; min-width: 0; margin-left: auto; padding: 0 8px; font-size: 12px; color: var(--ink-faint); text-decoration: none; white-space: nowrap;" },
+                      $h("a", { "href": $u(v?.url), "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 5px; height: 32px; min-width: 0; margin-left: auto; padding: 0 8px; font-size: 12px; color: var(--ink-faint); text-decoration: none; white-space: nowrap;" },
                         $t(v?.urlLabel),
                         $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                           $h("path", { "d": "M7 17L17 7M9 7h8v8", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -520,7 +520,7 @@ export default class FicheCreateur extends DCLogic {
             $h("div", { "style": "padding: 16px 32px 48px;" },
               $h("section", { "class": "sw-card", "style": "padding: 8px 24px; display: flex; flex-direction: column;" },
                 ($l($v.fmts)).map((f) => [
-                  $h("a", { "href": f?.href, "style": `text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: ${$t(f?.bt)};` },
+                  $h("a", { "href": $u(f?.href), "style": `text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: ${$t(f?.bt)};` },
                     $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; background: var(--track); color: var(--ink-muted); display: inline-flex; align-items: center; justify-content: center;" },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         $h("path", { "d": f?.icon, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -553,10 +553,10 @@ export default class FicheCreateur extends DCLogic {
           ($v.tabA) ? [
             $h("div", { "style": "padding: 16px 32px 48px;" },
               $h("section", { "class": "sw-card", "style": "padding: 8px 24px; display: flex; flex-direction: column;" },
-                $h("a", { "href": $v.z?.app?.href, "style": "text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0;" },
+                $h("a", { "href": $u($v.z?.app?.href), "style": "text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0;" },
                   $h("span", { "class": `sw-app-icon ${$t($v.z?.app?.blank)}`, "style": "width: 32px; height: 32px; border-radius: 10px;" },
                     ($v.z?.app?.logo) ? [
-                      $h("img", { "class": "sw-logo-img", "src": $v.z?.app?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "class": "sw-logo-img", "src": $u($v.z?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     ($v.z?.app?.nologo) ? [
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },

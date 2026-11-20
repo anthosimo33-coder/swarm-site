@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MFormats.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -154,8 +154,8 @@ export default class MFormats extends DCLogic {
             ] : null,
             $h("div", { "style": "position: relative; height: 196px; display: flex; flex-wrap: nowrap; align-items: flex-start; justify-content: center; padding-right: 6px;" },
               ($l($v.fan)).map((c) => [
-                $h("a", { "href": c?.href, "aria-label": "Ouvrir la vidéo", "class": "sw-video", "style": `display: block; flex: 0 1 84px; min-width: 0; margin-right: -6px; transform: translateY(${$t(c?.t)}px) rotate(${$t(c?.r)}deg); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);` },
-                  $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                $h("a", { "href": $u(c?.href), "aria-label": "Ouvrir la vidéo", "class": "sw-video", "style": `display: block; flex: 0 1 84px; min-width: 0; margin-right: -6px; transform: translateY(${$t(c?.t)}px) rotate(${$t(c?.r)}deg); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);` },
+                  $h("img", { "class": "sw-cover", "src": $u(c?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                   $h("span", { "class": "sw-video-shade" }),
                   $h("span", { "style": "position: absolute; left: 7px; bottom: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #FFFFFF;" },
                     $t(c?.v)
@@ -192,7 +192,7 @@ export default class MFormats extends DCLogic {
             $h("span", { "style": "position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--ink-muted);" },
               $h("span", { "class": `sw-app-icon ${$t($v.h?.app0?.blank)}`, "style": "width: 20px; height: 20px; border-radius: 6px;" },
                 ($v.h?.app0?.logo) ? [
-                  $h("img", { "class": "sw-logo-img", "src": $v.h?.app0?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                  $h("img", { "class": "sw-logo-img", "src": $u($v.h?.app0?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                 ] : null,
                 ($v.h?.app0?.nologo) ? [
                   $h("svg", { "width": "10", "height": "10", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -204,7 +204,7 @@ export default class MFormats extends DCLogic {
             ),
             $h("div", { "style": "position: relative;" },
               $h("div", { "style": "display: flex; justify-content: center;" },
-                $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": $v.h?.href },
+                $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": $u($v.h?.href) },
                   "Voir le format",
                   $h("span", { "class": "sw-btn-tile" },
                     $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -231,11 +231,11 @@ export default class MFormats extends DCLogic {
             )
           ] : null,
           ($l($v.cards)).map((f) => [
-            $h("a", { "href": f?.href, "class": "sw-card", "style": "display: flex; flex-direction: column; overflow: hidden; border-radius: 22px; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u(f?.href), "class": "sw-card", "style": "display: flex; flex-direction: column; overflow: hidden; border-radius: 22px; text-decoration: none; color: inherit;" },
               $h("span", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; height: 128px; overflow: hidden; background: var(--ground);" },
                 ($l(f?.cov)).map((v) => [
                   $h("span", { "style": "position: relative; overflow: hidden; display: block;" },
-                    $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                    $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "style": "position: absolute; left: 8px; bottom: 7px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #FFFFFF;" },
                       $t(v?.v)
@@ -287,7 +287,7 @@ export default class MFormats extends DCLogic {
                       $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px;" },
                         $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 18px; height: 18px; border-radius: 6px;" },
                           (a?.logo) ? [
-                            $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (a?.nologo) ? [
                             $h("svg", { "width": "9", "height": "9", "viewBox": "0 0 24 24", "aria-hidden": "true" },

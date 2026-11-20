@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MenuCompteA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class MenuCompte extends DCLogic {
   componentDidMount() {
@@ -101,7 +101,7 @@ export default class MenuCompte extends DCLogic {
               $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
             )
           ),
-          $h("a", { "class": "mnu-row", "role": "menuitem", "href": $v.aideHref, "target": "_blank", "rel": "noopener" },
+          $h("a", { "class": "mnu-row", "role": "menuitem", "href": $u($v.aideHref), "target": "_blank", "rel": "noopener" },
             $h("span", { "class": "mnu-ic" },
               $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.2a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.5v.4M12 16.8h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })

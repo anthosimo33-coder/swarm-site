@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MVideo.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -155,7 +155,7 @@ export default class MVideo extends DCLogic {
       $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(32px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("header", { "style": "position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
           $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;" },
-            $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.back, "onClick": $v.closeV, "aria-label": "Fermer la vidéo", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;" },
+            $h("a", { "class": "sw-btn sw-btn-icon", "href": $u($v.vid?.back), "onClick": $v.closeV, "aria-label": "Fermer la vidéo", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
@@ -167,7 +167,7 @@ export default class MVideo extends DCLogic {
         ),
         $h("div", { "style": "position: relative; margin: 0 auto; width: 100%; aspect-ratio: 9 / 13; overflow: hidden; background: #000;" },
           ($v.playing) ? [
-            $h("iframe", { "src": $v.vid?.embed, "title": $v.vid?.hook, "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;" })
+            $h("iframe", { "src": $u($v.vid?.embed), "title": $v.vid?.hook, "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;" })
           ] : null,
           ($v.notPlaying) ? [
             $h("span", { "aria-hidden": "true", "style": "position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 76px 28px 0; box-sizing: border-box; text-align: center; background: radial-gradient(60% 40% at 50% 42%, rgba(76,154,255,0.18), transparent 70%), linear-gradient(160deg, #142036, #0A0F19);" },
@@ -175,7 +175,7 @@ export default class MVideo extends DCLogic {
                 $t($v.vid?.hook)
               )
             ),
-            $h("img", { "src": $v.v?.src, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
+            $h("img", { "src": $u($v.v?.src), "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
             $h("span", { "class": "sw-video-shade" }),
             $h("button", { "type": "button", "onClick": $v.play, "aria-label": "Lire la vidéo", "style": "position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; color: #FFFFFF;" },
               $h("span", { "style": "position: absolute; left: 50%; top: 50%; width: 68px; height: 68px; margin: -34px 0 0 -34px; border-radius: 50%; background: rgba(5,7,12,0.5); backdrop-filter: blur(8px); display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF;" },
@@ -231,7 +231,7 @@ export default class MVideo extends DCLogic {
                 $h("span", { "style": "display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: #E4E7EC;" },
                   $h("span", { "style": "width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                     ($v.au?.av) ? [
-                      $h("img", { "src": $v.au?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "src": $u($v.au?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     ($v.au?.noav) ? [
                       $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -259,7 +259,7 @@ export default class MVideo extends DCLogic {
                 )
               ] : null
             ),
-            $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.url, "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir la vidéo sur sa plateforme", "style": "position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; background: rgba(5,7,12,0.55); color: #FFFFFF; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" },
+            $h("a", { "class": "sw-btn sw-btn-icon", "href": $u($v.vid?.url), "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir la vidéo sur sa plateforme", "style": "position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; background: rgba(5,7,12,0.55); color: #FFFFFF; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" },
               $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
@@ -369,9 +369,9 @@ export default class MVideo extends DCLogic {
             ),
             $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
               ($l($v.nxt)).map((n) => [
-                $h("a", { "href": n?.href, "style": "flex-shrink: 0; width: 150px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
+                $h("a", { "href": $u(n?.href), "style": "flex-shrink: 0; width: 150px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
                   $h("span", { "class": "sw-video", "style": "display: block; border-radius: 16px;" },
-                    $h("img", { "class": "sw-cover", "src": n?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                    $h("img", { "class": "sw-cover", "src": $u(n?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "class": "sw-badge", "style": "position: absolute; top: 8px; left: 8px; height: 22px; font-size: 11px; background: var(--blue-600); color: #FFFFFF;" },
                       $t(n?.x)
@@ -393,7 +393,7 @@ export default class MVideo extends DCLogic {
         $h("div", { "style": "padding: 22px 20px 0;" },
           $h("div", { "style": "display: flex; justify-content: center;" },
             ($v.vid?.hasApp) ? [
-              $h("a", { "class": "sw-link", "href": $v.vid?.appHref, "style": "min-height: 44px; display: inline-flex; align-items: center;" },
+              $h("a", { "class": "sw-link", "href": $u($v.vid?.appHref), "style": "min-height: 44px; display: inline-flex; align-items: center;" },
                 $t($v.vid?.appLink)
               )
             ] : null

@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MFormatFiche.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -137,7 +137,7 @@ export default class MFicheFormat extends DCLogic {
             $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-muted);" },
               $h("span", { "class": `sw-app-icon ${$t($v.f?.app0?.blank)}`, "style": "width: 20px; height: 20px; border-radius: 6px;" },
                 ($v.f?.app0?.logo) ? [
-                  $h("img", { "class": "sw-logo-img", "src": $v.f?.app0?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                  $h("img", { "class": "sw-logo-img", "src": $u($v.f?.app0?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                 ] : null,
                 ($v.f?.app0?.nologo) ? [
                   $h("svg", { "width": "10", "height": "10", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -265,9 +265,9 @@ export default class MFicheFormat extends DCLogic {
         ),
         $h("div", { "style": "padding: 0 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;" },
           ($l($v.repsShown)).map((v) => [
-            $h("a", { "href": v?.href, "style": "display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u(v?.href), "style": "display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
               $h("span", { "class": "sw-video", "style": "display: block; border-radius: 18px;" },
-                $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                 $h("span", { "class": "sw-video-shade" }),
                 $h("span", { "class": "sw-badge", "style": "position: absolute; top: 8px; left: 8px; height: 22px; font-size: 10px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
                   $t(v?.when)

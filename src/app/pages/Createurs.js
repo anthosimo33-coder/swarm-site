@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/CreateursA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import Palette from './Palette.js';
 
 export default class Createurs extends DCLogic {
@@ -334,7 +334,7 @@ export default class Createurs extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -400,7 +400,7 @@ export default class Createurs extends DCLogic {
                   ),
                   $h("div", { "style": "max-height: min(520px, 62vh); overflow-y: auto; display: flex; flex-direction: column; gap: 2px;" },
                     ($v.mkm?.showAll) ? [
-                      $h("a", { "role": "option", "aria-selected": $v.mkm?.all?.sel, "href": $v.mkm?.all?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t($v.mkm?.all?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t($v.mkm?.all?.fw)};` },
+                      $h("a", { "role": "option", "aria-selected": $v.mkm?.all?.sel, "href": $u($v.mkm?.all?.href), "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t($v.mkm?.all?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t($v.mkm?.all?.fw)};` },
                         $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
                           $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         ),
@@ -420,7 +420,7 @@ export default class Createurs extends DCLogic {
                         "LES PLUS SUIVIS"
                       ),
                       ($l($v.mkm?.top)).map((m) => [
-                        $h("a", { "role": "option", "aria-selected": m?.sel, "href": m?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t(m?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t(m?.fw)};` },
+                        $h("a", { "role": "option", "aria-selected": m?.sel, "href": $u(m?.href), "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t(m?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t(m?.fw)};` },
                           $h("span", { "class": "sw-flag sw-flag-22", "data-c": m?.c, "aria-hidden": "true" }),
                           $h("span", { "style": "flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                             $t(m?.l)
@@ -443,7 +443,7 @@ export default class Createurs extends DCLogic {
                       ),
                       $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 8px;" },
                         ($l($v.mkm?.rest)).map((m) => [
-                          $h("a", { "role": "option", "aria-selected": m?.sel, "href": m?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 10px; border-radius: 10px; background: ${$t(m?.bg)}; color: var(--ink-soft); text-decoration: none; font-size: 13px; font-weight: ${$t(m?.fw)}; min-width: 0;` },
+                          $h("a", { "role": "option", "aria-selected": m?.sel, "href": $u(m?.href), "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 10px; border-radius: 10px; background: ${$t(m?.bg)}; color: var(--ink-soft); text-decoration: none; font-size: 13px; font-weight: ${$t(m?.fw)}; min-width: 0;` },
                             $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
                             $h("span", { "style": "flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                               $t(m?.l)
@@ -573,13 +573,13 @@ export default class Createurs extends DCLogic {
                   )
                 ] : null,
                 $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Affichage" },
-                  $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "true", "href": $v.tableHref, "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
+                  $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "true", "href": $u($v.tableHref), "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
                     $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       $h("path", { "d": "M4 5h16v14H4zM4 10h16M4 15h16M10 10v9", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
                     "Tableau"
                   ),
-                  $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": $v.cardsHref, "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
+                  $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": $u($v.cardsHref), "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
                     $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
@@ -656,7 +656,7 @@ export default class Createurs extends DCLogic {
                           $h("span", { "style": "position: relative; flex-shrink: 0; display: inline-flex;" },
                             $h("span", { "style": "position: relative; width: 42px; height: 42px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                               (c?.av) ? [
-                                $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                                $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                               ] : null,
                               (c?.noav) ? [
                                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -679,10 +679,10 @@ export default class Createurs extends DCLogic {
                       ),
                       $h("td", null,
                         (c?.hasApp) ? [
-                          $h("a", { "href": c?.appHref, "style": "display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;" },
+                          $h("a", { "href": $u(c?.appHref), "style": "display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;" },
                             $h("span", { "class": `sw-app-icon ${$t(c?.app?.blank)}`, "style": "width: 28px; height: 28px; border-radius: 8px;" },
                               (c?.app?.logo) ? [
-                                $h("img", { "class": "sw-logo-img", "src": c?.app?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                                $h("img", { "class": "sw-logo-img", "src": $u(c?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                               ] : null,
                               (c?.app?.nologo) ? [
                                 $h("svg", { "width": "10", "height": "10", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -725,9 +725,9 @@ export default class Createurs extends DCLogic {
                       $h("td", { "style": "padding-right: 20px;" },
                         $h("span", { "style": "display: flex; gap: 8px;" },
                           ($l(c?.cov)).map((v) => [
-                            $h("a", { "href": v?.href, "class": "sw-video", "aria-label": `Vidéo à ${$t(v?.v)} vues`, "style": "display: block; width: 64px; border-radius: 10px; flex-shrink: 0;" },
+                            $h("a", { "href": $u(v?.href), "class": "sw-video", "aria-label": `Vidéo à ${$t(v?.v)} vues`, "style": "display: block; width: 64px; border-radius: 10px; flex-shrink: 0;" },
                               (v?.src) ? [
-                                $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                                $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                               ] : null,
                               $h("span", { "class": "sw-video-shade" }),
                               $h("span", { "style": "position: absolute; left: 6px; bottom: 5px; font-size: 11px; font-weight: 700;" },
@@ -779,7 +779,7 @@ export default class Createurs extends DCLogic {
                 $h("span", { "style": "position: relative; flex-shrink: 0; width: 58px; height: 58px;" },
                   $h("span", { "style": "display: flex; width: 58px; height: 58px; border-radius: 50%; overflow: hidden; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724);" },
                     ($v.pv?.av) ? [
-                      $h("img", { "src": $v.pv?.av, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "src": $u($v.pv?.av), "alt": "", "style": "width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     ($v.pv?.noav) ? [
                       $h("span", { "style": "font-size: 20px; font-weight: 700; color: var(--ink-faint);" },
@@ -798,7 +798,7 @@ export default class Createurs extends DCLogic {
                   )
                 ),
                 $h("span", { "style": "display: flex; gap: 6px; flex-shrink: 0;" },
-                  $h("a", { "href": $v.pv?.tt, "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir sur TikTok", "title": "Ouvrir sur TikTok", "style": "width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--track); color: var(--ink-muted);" },
+                  $h("a", { "href": $u($v.pv?.tt), "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir sur TikTok", "title": "Ouvrir sur TikTok", "style": "width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--track); color: var(--ink-muted);" },
                     $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
                       $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
@@ -812,10 +812,10 @@ export default class Createurs extends DCLogic {
               ),
               $h("div", { "style": "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" },
                 ($v.pv?.hasApp) ? [
-                  $h("a", { "href": $v.pv?.appHref, "style": "display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px 0 4px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; color: var(--ink); text-decoration: none;" },
+                  $h("a", { "href": $u($v.pv?.appHref), "style": "display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px 0 4px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; color: var(--ink); text-decoration: none;" },
                     $h("span", { "class": `sw-app-icon ${$t($v.pv?.appBlank)}`, "style": "width: 20px; height: 20px; border-radius: 6px;" },
                       ($v.pv?.appIcon) ? [
-                        $h("img", { "class": "sw-logo-img", "src": $v.pv?.appIcon, "alt": "", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "class": "sw-logo-img", "src": $u($v.pv?.appIcon), "alt": "", "loading": "lazy", "decoding": "async" })
                       ] : null
                     ),
                     "Pousse ",
@@ -873,7 +873,7 @@ export default class Createurs extends DCLogic {
                   $h("div", { "style": "position: relative; flex: 1; min-height: 40px; display: flex; align-items: flex-end; gap: 8px;" },
                     $h("span", { "aria-hidden": "true", "style": `position: absolute; left: 0; right: 0; bottom: ${$t($v.pv?.medPct)}%; border-top: 1.5px dashed rgba(255,255,255,0.28);` }),
                     ($l($v.pv?.bars)).map((b) => [
-                      $h("a", { "href": b?.href, "title": b?.t, "style": `flex: 1; height: ${$t(b?.h)}%; min-height: 3px; border-radius: 6px 6px 2px 2px; background: ${$t(b?.bg)};` })
+                      $h("a", { "href": $u(b?.href), "title": b?.t, "style": `flex: 1; height: ${$t(b?.h)}%; min-height: 3px; border-radius: 6px 6px 2px 2px; background: ${$t(b?.bg)};` })
                     ])
                   ),
                   $h("div", { "style": "display: flex; gap: 8px;" },
@@ -892,8 +892,8 @@ export default class Createurs extends DCLogic {
                   ),
                   $h("div", { "style": "flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
                     ($l($v.pv?.tops)).map((v) => [
-                      $h("a", { "href": v?.href, "class": "sw-video", "style": "position: relative; display: block; height: 100%; aspect-ratio: auto; border-radius: 12px; overflow: hidden; background: #0A0C12;" },
-                        $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy" }),
+                      $h("a", { "href": $u(v?.href), "class": "sw-video", "style": "position: relative; display: block; height: 100%; aspect-ratio: auto; border-radius: 12px; overflow: hidden; background: #0A0C12;" },
+                        $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy" }),
                         $h("span", { "class": "sw-video-shade" }),
                         (v?.x) ? [
                           $h("span", { "style": `position: absolute; top: 7px; left: 7px; z-index: 2; display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 999px; background: ${$t(v?.xBg)}; font-size: 11px; font-weight: 700; color: #FFFFFF;` },
@@ -930,7 +930,7 @@ export default class Createurs extends DCLogic {
                   )
                 ] : null
               ),
-              $h("a", { "class": "sw-btn sw-btn-primary", "href": $v.pv?.href, "style": "flex: 1; justify-content: space-between;" },
+              $h("a", { "class": "sw-btn sw-btn-primary", "href": $u($v.pv?.href), "style": "flex: 1; justify-content: space-between;" },
                 "Voir la fiche complète",
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },

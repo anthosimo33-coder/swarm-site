@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MCreateurFiche.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -128,7 +128,7 @@ export default class MFicheCreateur extends DCLogic {
           $h("span", { "style": "padding: 4px; border-radius: 50%; background: conic-gradient(from 200deg, var(--blue-400), var(--blue-700), var(--blue-400));" },
             $h("span", { "style": "width: 96px; height: 96px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface); position: relative;" },
               ($v.z?.av) ? [
-                $h("img", { "src": $v.z?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                $h("img", { "src": $u($v.z?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
               ] : null,
               ($v.z?.noav) ? [
                 $h("svg", { "width": "48", "height": "48", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -149,7 +149,7 @@ export default class MFicheCreateur extends DCLogic {
               $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft);" },
                 $h("span", { "class": `sw-app-icon ${$t($v.z?.app?.blank)}`, "style": "width: 20px; height: 20px; border-radius: 6px;" },
                   ($v.z?.app?.logo) ? [
-                    $h("img", { "class": "sw-logo-img", "src": $v.z?.app?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-logo-img", "src": $u($v.z?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   ($v.z?.app?.nologo) ? [
                     $h("svg", { "width": "10", "height": "10", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -198,7 +198,7 @@ export default class MFicheCreateur extends DCLogic {
                 $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
             ),
-            $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.z?.tt, "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir le profil", "style": "width: 44px; height: 44px; flex-shrink: 0;" },
+            $h("a", { "class": "sw-btn sw-btn-icon", "href": $u($v.z?.tt), "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir le profil", "style": "width: 44px; height: 44px; flex-shrink: 0;" },
               $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
@@ -285,8 +285,8 @@ export default class MFicheCreateur extends DCLogic {
         ),
         $h("div", { "style": "padding: 12px 20px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;" },
           ($l($v.vids)).map((v) => [
-            $h("a", { "href": v?.href, "class": "sw-video", "style": "display: block; border-radius: 12px;" },
-              $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+            $h("a", { "href": $u(v?.href), "class": "sw-video", "style": "display: block; border-radius: 12px;" },
+              $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
               $h("span", { "class": "sw-video-shade" }),
               (v?.car) ? [
                 $h("span", { "aria-hidden": "true", "style": "position: absolute; top: 5px; left: 6px; right: 6px; z-index: 3; display: flex; gap: 2px;" },

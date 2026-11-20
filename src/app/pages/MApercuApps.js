@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MApercuApps.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class MApercuApps extends DCLogic {
   componentDidMount() {
@@ -114,10 +114,10 @@ export default class MApercuApps extends DCLogic {
         ),
         $h("div", { "class": "mapr-row", "style": "display: flex; gap: 12px; padding: 0 20px; overflow-x: auto;" },
           ($l($v.top)).map((a) => [
-            $h("a", { "href": a?.href, "aria-label": a?.aria, "style": "flex: 0 0 min(300px, calc(100% - 52px)); display: flex; flex-direction: column; gap: 10px; color: inherit; text-decoration: none;" },
+            $h("a", { "href": $u(a?.href), "aria-label": a?.aria, "style": "flex: 0 0 min(300px, calc(100% - 52px)); display: flex; flex-direction: column; gap: 10px; color: inherit; text-decoration: none;" },
               $h("span", { "style": "position: relative; display: block; height: 132px; border-radius: 18px; overflow: hidden; background: var(--thumb-navy);" },
                 (a?.cover) ? [
-                  $h("img", { "src": a?.cover, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                  $h("img", { "src": $u(a?.cover), "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                 ] : null,
                 $h("span", { "style": "position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,7,12,0) 35%, rgba(5,7,12,0.88));" }),
                 $h("span", { "class": "mono-label", "style": "position: absolute; left: 14px; top: 12px; color: #FFFFFF;" },
@@ -125,7 +125,7 @@ export default class MApercuApps extends DCLogic {
                 ),
                 $h("span", { "style": "position: absolute; left: 14px; right: 14px; bottom: 12px; display: flex; align-items: center; gap: 10px; min-width: 0;" },
                   (a?.icon) ? [
-                    $h("img", { "src": a?.icon, "alt": "", "style": "flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px; object-fit: cover;", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "src": $u(a?.icon), "alt": "", "style": "flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px; object-fit: cover;", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   $h("span", { "style": "display: flex; flex-direction: column; min-width: 0;" },
                     $h("span", { "style": "font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
@@ -199,7 +199,7 @@ export default class MApercuApps extends DCLogic {
                   "Sans engagement"
                 )
               ),
-              $h("a", { "href": $v.monthly, "class": "sw-btn sw-btn-primary sw-btn-lg sw-btn-block", "style": "text-decoration: none; box-sizing: border-box; width: 100%; max-width: 100%;" },
+              $h("a", { "href": $u($v.monthly), "class": "sw-btn sw-btn-primary sw-btn-lg sw-btn-block", "style": "text-decoration: none; box-sizing: border-box; width: 100%; max-width: 100%;" },
                 "Tout débloquer",
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -234,7 +234,7 @@ export default class MApercuApps extends DCLogic {
             "Apps"
           ),
           ($l($v.locked)).map((n) => [
-            $h("a", { "href": n?.href, "aria-current": "false", "aria-label": `${$t(n?.label)}, avec Kopycat Pro`, "style": "min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500; opacity: 0.55;" },
+            $h("a", { "href": $u(n?.href), "aria-current": "false", "aria-label": `${$t(n?.label)}, avec Kopycat Pro`, "style": "min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500; opacity: 0.55;" },
               $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),

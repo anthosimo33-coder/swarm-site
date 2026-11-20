@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MFormules.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l, $fonts } from '../../runtime.js';
+import { DCLogic, $t, $l, $u, $fonts } from '../../runtime.js';
 $fonts(["https://fonts.googleapis.com/css2?family=Doto:wght@800&display=swap"]); // polices du canevas absentes de la page HTML (audit Q12)
 
 export default class MFormules extends DCLogic {
@@ -121,7 +121,7 @@ export default class MFormules extends DCLogic {
                   "/ mois"
                 )
               ),
-              $h("a", { "href": $v.annual, "style": "display: flex; align-items: center; justify-content: center; gap: 8px; height: 52px; border-radius: 14px; background: linear-gradient(180deg, #FF9A4D, #FF641A); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 10px 28px rgba(255,106,31,0.3); color: #FFFFFF; font-size: 16px; font-weight: 700; text-decoration: none; -webkit-tap-highlight-color: transparent;" },
+              $h("a", { "href": $u($v.annual), "style": "display: flex; align-items: center; justify-content: center; gap: 8px; height: 52px; border-radius: 14px; background: linear-gradient(180deg, #FF9A4D, #FF641A); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 10px 28px rgba(255,106,31,0.3); color: #FFFFFF; font-size: 16px; font-weight: 700; text-decoration: none; -webkit-tap-highlight-color: transparent;" },
                 $t($v.annualCta),
                 $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M7 17L17 7M9 7h8v8", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -143,7 +143,7 @@ export default class MFormules extends DCLogic {
                   "Sans engagement"
                 )
               ),
-              $h("a", { "href": $v.monthly, "style": "flex-shrink: 0; display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border-radius: 12px; background: #F4F5F7; color: #0B0E14; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; -webkit-tap-highlight-color: transparent;" },
+              $h("a", { "href": $u($v.monthly), "style": "flex-shrink: 0; display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border-radius: 12px; background: #F4F5F7; color: #0B0E14; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; -webkit-tap-highlight-color: transparent;" },
                 "Tout débloquer",
                 $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M7 17L17 7M9 7h8v8", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })

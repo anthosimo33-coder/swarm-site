@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/VideoA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import AjoutDossier from './AjoutDossier.js';
 import Palette from './Palette.js';
 
@@ -197,12 +197,12 @@ export default class Video extends DCLogic {
                 )
               ),
               $h("span", { "aria-hidden": "true", "style": "width: 1px; height: 24px; margin: 8px 4px; background: var(--line);" }),
-              $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.prevHref, "aria-label": "Vidéo précédente", "style": `width: 40px; height: 40px; background: var(--track); opacity: ${$t($v.vid?.prevO)};` },
+              $h("a", { "class": "sw-btn sw-btn-icon", "href": $u($v.vid?.prevHref), "aria-label": "Vidéo précédente", "style": `width: 40px; height: 40px; background: var(--track); opacity: ${$t($v.vid?.prevO)};` },
                 $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M19 12H5M11 18l-6-6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               ),
-              $h("a", { "class": "sw-btn sw-btn-icon", "href": $v.vid?.nextHref, "aria-label": "Vidéo suivante", "style": `width: 40px; height: 40px; background: var(--tab-on); color: var(--ink); opacity: ${$t($v.vid?.nextO)};` },
+              $h("a", { "class": "sw-btn sw-btn-icon", "href": $u($v.vid?.nextHref), "aria-label": "Vidéo suivante", "style": `width: 40px; height: 40px; background: var(--tab-on); color: var(--ink); opacity: ${$t($v.vid?.nextO)};` },
                 $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
@@ -218,10 +218,10 @@ export default class Video extends DCLogic {
             $h("div", { "style": "min-height: 0; display: flex; align-items: flex-start;" },
               $h("div", { "class": "sw-video t-umber va-frame", "style": "border-radius: 22px; box-shadow: 0 30px 60px rgba(0,0,0,0.5);" },
                 ($v.playing) ? [
-                  $h("iframe", { "src": $v.vid?.embed, "title": $v.vid?.hook, "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;" })
+                  $h("iframe", { "src": $u($v.vid?.embed), "title": $v.vid?.hook, "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000;" })
                 ] : null,
                 ($v.notPlaying) ? [
-                  $h("img", { "class": "sw-cover", "src": $v.vid?.cover, "alt": $v.vid?.hook, "loading": "lazy", "decoding": "async" }),
+                  $h("img", { "class": "sw-cover", "src": $u($v.vid?.cover), "alt": $v.vid?.hook, "loading": "lazy", "decoding": "async" }),
                   $h("span", { "class": "sw-video-shade" }),
                   $h("button", { "type": "button", "onClick": $v.play, "aria-label": "Lire la vidéo", "style": "position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer;" },
                     $h("span", { "style": "position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4); display: inline-flex; align-items: center; justify-content: center;" },
@@ -241,7 +241,7 @@ export default class Video extends DCLogic {
             $h("div", { "class": "va-mid", "style": "min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;" },
               $h("div", { "style": "display: flex; gap: 6px; flex-wrap: wrap;" },
                 ($v.vid?.appName) ? [
-                  $h("a", { "class": "sw-badge", "href": $v.vid?.appHref, "style": "display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--ink);" },
+                  $h("a", { "class": "sw-badge", "href": $u($v.vid?.appHref), "style": "display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--ink);" },
                     $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
                       $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
@@ -394,9 +394,9 @@ export default class Video extends DCLogic {
                 "Ensuite"
               ),
               ($l($v.next)).map((n) => [
-                $h("a", { "class": "va-next", "href": n?.href, "style": "display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--row-hover); text-decoration: none; color: var(--ink);" },
+                $h("a", { "class": "va-next", "href": $u(n?.href), "style": "display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--row-hover); text-decoration: none; color: var(--ink);" },
                   $h("span", { "class": `sw-video ${$t(n?.t)}`, "style": "display: block; width: 58px; border-radius: 10px;" },
-                    $h("img", { "class": "sw-cover", "src": n?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-cover", "src": $u(n?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                   ),
                   $h("span", { "style": "display: flex; flex-direction: column; gap: 6px; min-width: 0;" },
                     $h("span", { "class": "sw-badge sw-badge-solid", "style": "align-self: flex-start; height: 22px; font-size: 11px;" },
@@ -430,14 +430,14 @@ export default class Video extends DCLogic {
               ] : null
             ),
             $h("span", { "style": "margin-left: auto;" }),
-            $h("a", { "class": "sw-link", "href": $v.vid?.url, "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin-right: 18px;" },
+            $h("a", { "class": "sw-link", "href": $u($v.vid?.url), "target": "_blank", "rel": "noopener", "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin-right: 18px;" },
               $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                 $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               ),
               "Ouvrir la vidéo"
             ),
             ($v.vid?.appName) ? [
-              $h("a", { "class": "sw-more", "href": $v.vid?.appHref, "style": "font-size: 14px;" },
+              $h("a", { "class": "sw-more", "href": $u($v.vid?.appHref), "style": "font-size: 14px;" },
                 "Voir l'app ", $t($v.vid?.appName),
                 $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
