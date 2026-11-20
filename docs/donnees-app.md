@@ -183,7 +183,8 @@ Sur le canevas, ces props n'existent pas : l'écran garde un état local, comme 
 | `alertRules` | `[{ id, createdAt, quoi: 'compte'\|'video'\|'format', niche: nom\|null, seuil: nombre, marche: code pays\|null }]` — « montre-moi quand un compte / une vidéo / un format de <niche> fait <seuil>× sa normale (<pays>) » ; aucune alerte n'est envoyée, elles filtrent l'écran Alertes |
 | `seen` | `{ alerts: date en ms }` — « Tout marquer comme lu » |
 
-Une valeur pèse au plus 256 Ko, comptés comme Convex les compte. Sa forme est vérifiée : champs connus du bon type,
+Une valeur pèse au plus 256 Ko, comptés comme Convex les compte ; un compte écrit au plus 300 fois par 10 minutes
+(`TROP_DE_REQUETES` au-delà). Sa forme est vérifiée : champs connus du bon type,
 quelques champs simples de plus permis (texte court, nombre, oui/non, null), jamais une arborescence (`FORME_INVALIDE`).
 Les identifiants (`id` d'un dossier, d'une règle) sont créés par l'écran (par ex. `Date.now().toString(36)`). Une app
 gardée sous l'ancien slug d'une app fusionnée revient sous le nouveau (`apps:merged`).
