@@ -21,7 +21,8 @@ export function scrollMemory(win) {
       const state = win.history.state;
       const y = fromPop && state && typeof state.y === 'number' ? state.y : null;
       fromPop = false;
-      if (y !== null) win.requestAnimationFrame(() => win.scrollTo(0, y));
+      // Directement : appelé une fois l'écran rendu (effet). Pas de requestAnimationFrame, suspendu dans un onglet caché.
+      if (y !== null) win.scrollTo(0, y);
       else if (anchor) anchor.scrollIntoView();
       else win.scrollTo(0, 0);
     },
