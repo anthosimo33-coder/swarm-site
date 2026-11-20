@@ -2,7 +2,8 @@
  * BANC — le tri des hashtags avant la recherche payante (brique 3, 20/11/2026).
  *
  * Ce qu'il mesure, sur des hashtags réels des apps actives (instantané de prod), avec le VRAI code livré
- * (radarNetworkMath.checkHashtag, radarStoreMath.parseTagList, radarFreeMath.parseFreeVideo) :
+ * (radarNetworkMath.checkHashtag, radarStoreMath.parseTagList, radarFreeMath.parseFreeVideo) — la règle « complete »
+ * jugée ACTIVE (TagSkip.complete), pour voir ce qu'elle ferait ; elle part en mesure (TAG_COMPLETE_SKIP) :
  *  - la décision de chaque hashtag (absent, complet, trop grand, page refusée, page vidéo qui manque) ;
  *  - absent : aucune vidéo connue en prod ne porte le hashtag, et une relecture le redit absent ;
  *  - complet : toute vidéo connue en prod qui porte le hashtag est dans la page — sinon sa page vidéo est lue
@@ -15,8 +16,9 @@
  * Budget de pages (une à la fois, pause storePauseMs avant chacune, arrêt à STORE_BREAKER refus d'affilée) :
  *   --tags 500 pages de hashtag · --videos 300 pages vidéo · --reread 100 relectures des absents.
  *
- * Résultat du 20/11/2026 (586 pages, aucun refus) : 28 absents, 20 complets, 452 trop grands ; cf l'en-tête de
- * radarNetworkMath.TAG_ROUTINE_SKIP.
+ * Résultat du 20/11/2026 (586 pages, aucun refus) : 28 absents, 20 complets, 452 trop grands — et un complet qui
+ * ne l'était pas (#facelessclone : une 6e vidéo en ligne porte le hashtag), d'où « complete » en mesure ; cf l'en-tête
+ * de radarNetworkMath.TAG_ROUTINE_SKIP.
  *
  * Relancer :
  *   npx esbuild scripts/radar-bancs/hashtags.ts --bundle --platform=node --format=esm --outfile=<scratch>/hashtags.mjs
@@ -24,7 +26,7 @@
  */
 import { createReadStream, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline";
-import { checkHashtag, citesApp, needsDeepSearch, normalize, searchKind, type AppRule, type TagCheck } from "../../convex/radar/radarNetworkMath";
+import { checkHashtag, citesApp, needsDeepSearch, normalize, searchKind, type AppRule, type TagCheck, type TagSkip } from "../../convex/radar/radarNetworkMath";
 import { freeVideoUrl, parseFreeVideo } from "../../convex/radar/radarFreeMath";
 import { STORE_BREAKER, fetchEmbedPage, parseTagList, storePauseMs, tagEmbedUrl, type PageFetch, type TagList } from "../../convex/radar/radarStoreMath";
 
@@ -107,6 +109,8 @@ async function page(url: string, kind: keyof typeof used): Promise<PageFetch> {
   return r;
 }
 
+// La règle « complete » jugée active : le banc dit ce qu'elle sauterait, et ce qu'elle perdrait.
+const ACTIVE: TagSkip = { routine: false, complete: true };
 type Row = {
   app: string;
   tag: string;
@@ -125,16 +129,19 @@ for (const c of sample) {
   let list: TagList | null = null;
   let status: Row["status"] = "budget";
   let budgetHit = false;
-  const check = await checkHashtag(c.tag, c.rule, { deep: needsDeepSearch(c.app) }, async (url) => {
-    const isTag = url === tagEmbedUrl(c.tag);
-    const r = await page(url, isTag ? "tag" : "video");
-    if (r.kind === "suspect" && r.reason === "budget") budgetHit = true;
-    if (isTag) {
-      status = r.kind === "suspect" && r.reason === "budget" ? "budget" : r.kind;
-      if (r.kind === "ok") list = parseTagList(r.text);
-    }
-    return r;
-  });
+  const io = {
+    page: async (url: string) => {
+      const isTag = url === tagEmbedUrl(c.tag);
+      const r = await page(url, isTag ? "tag" : "video");
+      if (r.kind === "suspect" && r.reason === "budget") budgetHit = true;
+      if (isTag) {
+        status = r.kind === "suspect" && r.reason === "budget" ? "budget" : r.kind;
+        if (r.kind === "ok") list = parseTagList(r.text);
+      }
+      return r;
+    },
+  };
+  const check = await checkHashtag(c.tag, c.rule, { deep: needsDeepSearch(c.app) }, io, ACTIVE);
   if (status === "budget") break;
   const l = list as TagList | null;
   rows.push({
@@ -150,6 +157,7 @@ for (const c of sample) {
       same: check.same,
       pages: check.pages,
       refused: check.refused,
+      nothing: check.nothing,
       ...(check.count !== undefined ? { count: check.count } : {}),
       videos: check.videos.map((v) => ({ videoId: v.videoId, handle: v.authorHandle, lang: v.lang, views: v.views, fans: v.authorFans, caption: v.caption })),
     },

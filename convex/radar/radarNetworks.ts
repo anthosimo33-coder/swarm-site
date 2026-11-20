@@ -74,11 +74,18 @@ import {
   networkPasses,
   shouldPromote,
   checkHashtag,
+  notePaidPage,
+  notePaidPass,
   noteTagCounts,
   paidTags,
   passSkip,
+  tagGuardNote,
+  tagGuardRead,
+  tagGuardStart,
+  tagRunStart,
   type AppRule,
   type TagCount,
+  type TagIo,
   type TagRun,
 } from "./radarNetworkMath";
 import { LANG_BY_HAND, OFF_TOPIC_BY_HAND } from "./radarSeedAccounts";
@@ -108,7 +115,7 @@ import {
   type PaidPage,
   type PaidReason,
 } from "./radarFreeMath";
-import { STORE_BREAKER, fetchEmbedPage, storePauseMs, storeUrl, type PageFetch } from "./radarStoreMath";
+import { fetchEmbedPage, storePauseMs, storeUrl } from "./radarStoreMath";
 import { linkCandidate } from "./radarFiche";
 import { REJECTED_KEEP_MS, accountProof } from "./radarVetMath";
 import { MARKET_CURRENCY } from "./radarMarketMath";
@@ -436,19 +443,22 @@ export const seedApps = internalMutation({
  * rattache son auteur au réseau, et entre dans Signaux si elle sort du lot.
  */
 export const attachFromSearch = internalMutation({
-  args: { appId: v.id("radarApps"), videos: v.array(signalInput), foundBy: v.string(), now: v.number(), step: v.optional(v.number()) },
-  handler: (ctx, args): Promise<{ attached: number; signals: number }> => attachFromSearchCore(ctx, args),
+  // `keepText` : vidéos lues sur leur page publique (tri des hashtags) — un signal déjà rangé garde son texte à l'écran et son son.
+  args: { appId: v.id("radarApps"), videos: v.array(signalInput), foundBy: v.string(), now: v.number(), step: v.optional(v.number()), keepText: v.optional(v.boolean()) },
+  handler: (ctx, args): Promise<{ attached: number; signals: number; updated: number }> => attachFromSearchCore(ctx, args),
 });
 
+/** `signals` : signaux neufs ; `updated` : signaux déjà rangés mis à jour (la mesure des règles du tri des hashtags). */
 async function attachFromSearchCore(
   ctx: MutationCtx,
-  { appId, videos, foundBy, now, step }: { appId: Id<"radarApps">; videos: Infer<typeof signalInput>[]; foundBy: string; now: number; step?: number },
-): Promise<{ attached: number; signals: number }> {
+  { appId, videos, foundBy, now, step, keepText }: { appId: Id<"radarApps">; videos: Infer<typeof signalInput>[]; foundBy: string; now: number; step?: number; keepText?: boolean },
+): Promise<{ attached: number; signals: number; updated: number }> {
   const app = await ctx.db.get(appId);
-  if (!app) return { attached: 0, signals: 0 };
+  if (!app) return { attached: 0, signals: 0, updated: 0 };
   const counter: TrackedCounter = {};
   let attached = 0;
   let signals = 0;
+  let updated = 0;
   let refused = 0;
   for (const s of videos) {
     if (!citesApp(s.caption, s.authorHandle, app)) continue;
@@ -460,8 +470,10 @@ async function attachFromSearchCore(
       insert: keepSignal(s) && s.publishedAt >= now - RETENTION_DAYS * DAY,
       foundBy,
       app: appRef(app),
+      ...(keepText ? { keepText } : {}),
     });
     if (r === "inserted") signals++;
+    else if (r === "updated") updated++;
   }
   if (attached) await refreshAppNet(ctx, appId, now);
   // La progression que l'écran affiche pendant la recherche.
@@ -471,7 +483,7 @@ async function attachFromSearchCore(
       networkSearch: { ...ns, step: step ?? ns.step, attached: ns.attached + attached, signals: ns.signals + signals, ...(refused ? { full: (ns.full ?? 0) + refused } : {}) },
     });
   }
-  return { attached, signals };
+  return { attached, signals, updated };
 }
 
 /** E2E — ce que la recherche du réseau d'une app semée rattache, pour des vidéos données (légende, langue). */
@@ -479,7 +491,7 @@ export const e2eAttachFromSearch = e2eMutation({
   args: { appSlug: v.string(), videos: v.array(v.object({ handle: v.string(), fans: v.number(), caption: v.string(), lang: v.string() })) },
   handler: async (ctx, { appSlug, videos }) => {
     const app = await ctx.db.query("radarApps").withIndex("by_slug", (q) => q.eq("slug", appSlug)).first();
-    if (!app) return { attached: 0, signals: 0 };
+    if (!app) return { attached: 0, signals: 0, updated: 0 };
     const now = Date.now();
     return attachFromSearchCore(ctx, {
       appId: app._id,
@@ -531,7 +543,9 @@ export const finishNetworkSearch = internalMutation({
     searched: v.boolean(),
     deep: v.optional(v.boolean()),
     // Ses hashtags payés avec succès, et leur compteur lu juste avant (radarNetworkMath.paidTags).
-    tags: v.optional(v.array(v.object({ tag: v.string(), videos: v.number(), same: v.boolean(), found: v.boolean() }))),
+    tags: v.optional(
+      v.array(v.object({ tag: v.string(), videos: v.number(), same: v.boolean(), found: v.boolean(), updated: v.boolean(), complete: v.boolean(), out: v.boolean() })),
+    ),
   },
   handler: async (ctx, { appId, now, outcome, error, searched, deep, tags }): Promise<void> => {
     const app = await ctx.db.get(appId);
@@ -1056,19 +1070,24 @@ export const runNetworkSearch = internalAction({
     let left = due[0]?.never ? Math.max(left0, catchUp0) : left0;
     let spentAtLeft = 0;
     let timedOut = false;
-    // Le tri des hashtags (radarNetworkMath.checkHashtag) : une page publique à la fois, une pause avant chacune ;
-    // STORE_BREAKER hashtags refusés d'affilée, ou le temps du passage écoulé, et les suivants paient comme avant.
-    let tagRefused = 0;
-    const tagPage = async (url: string): Promise<PageFetch> => {
-      await new Promise<void>((done) => setTimeout(done, storePauseMs(Math.random())));
-      return fetchEmbedPage(url);
+    // Le tri des hashtags (radarNetworkMath.checkHashtag) : une page publique à la fois, une pause avant chacune. Sa
+    // garde l'arrête au temps du passage, au plafond de pages, après des refus ou des « rien » d'affilée : les hashtags
+    // suivants paient comme avant.
+    let tagGuard = tagGuardStart();
+    const tagIo: TagIo = {
+      page: async (url) => {
+        await new Promise<void>((done) => setTimeout(done, storePauseMs(Math.random())));
+        return fetchEmbedPage(url);
+      },
+      late: () => Date.now() - now > NETWORK_MAX_MS,
     };
     const tagRun = async (tag: string, app: DueApp, passes: number): Promise<TagRun> => {
-      const run: TagRun = { check: null, passes, paid: 0, found: false };
-      if (tagRefused >= STORE_BREAKER || Date.now() - now > NETWORK_MAX_MS) return run;
+      const run = tagRunStart(passes);
+      if (!tagGuardRead(tagGuard, Date.now() - now, NETWORK_MAX_MS)) return run;
       try {
-        run.check = await checkHashtag(tag, app.rule, { deep: app.deep, last: app.tagCounts.find((t) => t.tag === tag)?.videos }, tagPage);
-        tagRefused = run.check.refused ? tagRefused + 1 : 0;
+        const noted = tagGuardNote(tagGuard, await checkHashtag(tag, app.rule, { deep: app.deep, last: app.tagCounts.find((t) => t.tag === tag)?.videos }, tagIo));
+        tagGuard = noted.guard;
+        run.check = noted.check;
       } catch (e) {
         console.error(`[radar] page du hashtag #${tag} : ${String(e)}`);
       }
@@ -1103,7 +1122,8 @@ export const runNetworkSearch = internalAction({
             const skip = passSkip(pass, tags);
             if (skip) {
               usage.spare("hashtag", 1);
-              if (skip.length) appAttached += (await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, { appId: app.id, videos: skip, foundBy: networkFoundBy(app.name, region), now, step: i + 1 })).attached;
+              // Lues sur leur page : un signal déjà rangé garde son texte à l'écran (son ordre diffère du payant, radarFreeMath).
+              if (skip.length) appAttached += (await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, { appId: app.id, videos: skip, foundBy: networkFoundBy(app.name, region), now, step: i + 1, keepText: true })).attached;
               continue;
             }
             const failuresBefore = appFailures;
@@ -1134,7 +1154,7 @@ export const runNetworkSearch = internalAction({
                 }
                 break;
               }
-              const found: { attached: number; signals: number } = await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, {
+              const found: { attached: number; signals: number; updated: number } = await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, {
                 appId: app.id,
                 videos: r.value.videos,
                 foundBy: networkFoundBy(app.name, region),
@@ -1142,13 +1162,13 @@ export const runNetworkSearch = internalAction({
                 step: i + 1,
               });
               appAttached += found.attached;
-              if (tag && found.attached + found.signals > 0) tag.found = true;
+              if (tag) notePaidPage(tag, found, r.value.videos, app.rule);
               read.page++;
               read.dry = found.attached > 0 ? 0 : read.dry + 1;
               cursor = r.value.cursor;
               if (cursor === undefined || r.value.videos.length === 0) break;
             }
-            if (tag && !stop && appFailures === failuresBefore) tag.paid++;
+            if (tag) notePaidPass(tag, { stopped: stop, failed: appFailures > failuresBefore });
             if (stop) break;
           }
         } catch (e) {
@@ -1176,6 +1196,8 @@ export const runNetworkSearch = internalAction({
         if (stop) break;
       }
     } finally {
+      // Les pages TikTok du tri, une ligne par passage (les passes évitées sont dans radarUsage.saved.hashtag).
+      if (tagGuard.tags) console.log(`[radar] tri des hashtags : ${tagGuard.tags} hashtags, ${tagGuard.pages} pages TikTok${tagGuard.stopped ? ` ; arrêté : ${tagGuard.stopped}` : ""}`);
       // Même si le passage tombe (une écriture refusée), ce qu'il a payé est compté.
       await usage.flush(lastError);
     }

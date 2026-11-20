@@ -476,6 +476,8 @@ export async function writeSignal(
     multiplier?: number;
     curve?: { nextCheckAt?: number; curveStartedAt?: number };
     forceSnapshot?: boolean;
+    /** Lue sur sa page publique : une vidéo déjà rangée garde son texte à l'écran et son son (leur ordre diffère du payant, radarFreeMath). */
+    keepText?: boolean;
   },
 ): Promise<"inserted" | "updated" | "skipped"> {
   const platform = s.platform ?? "tiktok";
@@ -499,8 +501,8 @@ export async function writeSignal(
       ratio: ratioOf(views, s.authorFans),
       snapshots: addSnapshot(existing.snapshots, now, s.views, opts.forceSnapshot),
       ...(s.coverUrl ? { coverUrl: s.coverUrl } : {}),
-      ...(s.hook ? { hook: s.hook } : {}),
-      ...(s.musicTitle ? { musicTitle: s.musicTitle } : {}),
+      ...(s.hook && !opts.keepText ? { hook: s.hook } : {}),
+      ...(s.musicTitle && !opts.keepText ? { musicTitle: s.musicTitle } : {}),
       ...(opts.foundBy && !existing.foundBy.includes(opts.foundBy) ? { foundBy: [...existing.foundBy, opts.foundBy].slice(-10) } : {}),
       ...app,
       ...tracked,
