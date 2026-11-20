@@ -62,15 +62,28 @@ export default class Accueil extends DCLogic {
         v: has ? pct(a.weekDelta) : '', ink: up ? '#5CD394' : '#FF9A9A', bg: up ? 'rgba(92,211,148,0.12)' : 'rgba(255,122,122,0.10)', sep: i === 0 ? 'transparent' : 'var(--line)' }; };
     if (!site) {
       const ex = (globalThis.__dcSample?.["Accueil"]?.["ex"] ?? []);
-      return { rows: ex.map(row), list: true, empty: false, wait: false };
+      return { rows: ex.map(row), list: true, pick: false, picks: [], empty: false, wait: false };
     }
     const fv = P.saved('follows');
     const slugs = fv && Array.isArray(fv.apps) ? fv.apps : [];
-    const A = slugs.length && P.get ? P.get('apps') : null;
-    const wait = fv === undefined || (slugs.length > 0 && A === undefined);
+    const A = fv !== undefined && P.get ? P.get('apps') : null;
+    const wait = fv === undefined || A === undefined;
     const by = A && A.apps ? Object.fromEntries(A.apps.map((a) => [a.slug, a])) : {};
     const apps = wait ? [] : slugs.map((s) => by[s]).filter(Boolean).sort((p, q) => (q.views7 || 0) - (p.views7 || 0));
-    return { rows: apps.slice(0, 4).map(row), list: apps.length > 0, empty: !wait && apps.length === 0, wait };
+    // Rien de suivi (maquette V3 du 20/11) : les trois apps les plus vues sur 30 jours, chacune avec « Suivre », la même
+    // écriture que la fiche (saved('follows').apps). Sans liste d'apps lisible : la phrase d'avant et le lien vers Apps.
+    const none = !wait && apps.length === 0;
+    const top = none && A && Array.isArray(A.apps) ? A.apps.filter((a) => a && a.slug && a.name).slice().sort((p, q) => (q.views30 || 0) - (p.views30 || 0)).slice(0, 3) : [];
+    const follow = (slug) => () => {
+      const cur = P.saved('follows');
+      if (cur === undefined) return;
+      const next = Object.assign({ apps: [], creators: [], formats: [] }, cur || {});
+      const l = next.apps || [];
+      if (l.indexOf(slug) < 0) { next.apps = [slug].concat(l); P.save('follows', next); }
+    };
+    const picks = top.map((a) => ({ slug: a.slug, name: a.name, sub: nf(a.views30 || 0) + ' vues · 30 j', href: '/app/apps/' + a.slug,
+      logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', follow: follow(a.slug) }));
+    return { rows: apps.slice(0, 4).map(row), list: apps.length > 0, pick: picks.length > 0, picks, empty: none && picks.length === 0, wait };
   }
   // « Tes dossiers » : ceux de la personne (saved('folders')), les plus récents d'abord ; chacun mène à son dossier.
   folderVals() {
@@ -480,6 +493,48 @@ export default class Accueil extends DCLogic {
                         ] : null
                       )
                     ])
+                  )
+                ] : null,
+                ($v.fol?.pick) ? [
+                  $h("div", { "class": "sw-void sw-void-flat", "style": "margin-top: 10px; gap: 10px;" },
+                    $h("p", { "class": "sw-void-title", "style": "font-size: 16px;" },
+                      "Suis une app : ses vues de la semaine s’affichent ici"
+                    ),
+                    $h("div", { "class": "sw-void-list" },
+                      ($l($v.fol?.picks)).map((a) => [
+                        $h("div", { "class": "sw-void-li", "key": a?.slug },
+                          $h("a", { "class": "sw-void-who", "href": $u(a?.href) },
+                            $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 32px; height: 32px; border-radius: 9px;" },
+                              (a?.logo) ? [
+                                $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
+                              ] : null,
+                              (a?.nologo) ? [
+                                $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                  $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                                )
+                              ] : null
+                            ),
+                            $h("span", { "class": "sw-void-txt" },
+                              $h("span", { "class": "sw-app-name" },
+                                $t(a?.name)
+                              ),
+                              $h("span", { "class": "sw-app-sub" },
+                                $t(a?.sub)
+                              )
+                            )
+                          ),
+                          $h("button", { "class": "sw-void-follow", "type": "button", "onClick": a?.follow, "aria-label": `Suivre ${$t(a?.name)}` },
+                            $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                              $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                            ),
+                            "Suivre"
+                          )
+                        )
+                      ])
+                    ),
+                    $h("p", { "class": "sw-void-note", "style": "padding-bottom: 6px;" },
+                      "Les trois plus vues sur 30 jours."
+                    )
                   )
                 ] : null,
                 ($v.fol?.empty) ? [

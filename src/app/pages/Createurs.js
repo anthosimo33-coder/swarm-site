@@ -171,7 +171,9 @@ export default class Createurs extends DCLogic {
     const okK = (c) => kinds.length === 0 || kinds.indexOf(c.kind) >= 0;
     const okG = (c, g) => g === 'ALL' || c.gender === g;
     const all = b.all || [];
-    const list = all.filter((c) => okN(c) && okA(c) && okF(c) && okK(c) && okG(c, gender));
+    // Un compte passe tous les filtres posés, sauf `skip` (« un filtre de moins » de l'écran vide) : les règles de la liste.
+    const pass = (c, skip) => (skip === 'niche' || okN(c)) && (skip === 'app' || okA(c)) && (skip === 'fans' || okF(c)) && (skip === 'kind' || okK(c)) && (skip === 'gender' || okG(c, gender));
+    const list = all.filter((c) => pass(c));
     // Le tri choisi dans la barre de résultats (15/11) ; vues médianes par défaut.
     const SORTKEY = { med: (c) => c.nMed, fans: (c) => c.nFans, pace: (c) => c.n7 || 0, recent: (c) => c.lastAt || 0 };
     if (sort0 && sort0 !== 'med' && Object.prototype.hasOwnProperty.call(SORTKEY, sort0)) list.sort((x, y) => SORTKEY[sort0](y) - SORTKEY[sort0](x));
@@ -202,6 +204,16 @@ export default class Createurs extends DCLogic {
     if (FR.on) chips.push({ label: fansLabel + ' abonnés', clear: () => this.setFans(0, Infinity) });
     kinds.forEach((k) => chips.push({ label: kl(k), clear: () => set({ kinds: kinds.filter((x) => x !== k) }) }));
     if (gender !== 'ALL') chips.push({ label: gl[2], clear: () => set({ gender: 'ALL' }) });
+    // Filtres sans résultat (maquette V3) : chaque filtre posé, ce qu'il dit, ce qu'on aurait sans lui, et son retrait.
+    const fkn = (n) => fk(n).replace(' ', '\u00a0'); // « 100 k » ne se coupe pas en fin de ligne
+    const fansLong = lo > 0 && hi < Infinity ? fkn(lo) + ' à ' + fkn(hi) + ' abonnés' : lo > 0 ? fkn(lo) + ' abonnés et plus' : 'moins de ' + fkn(hi) + ' abonnés';
+    const posed = [];
+    const chipsOf = (xs, ic) => xs.map((label) => ({ label, ic, flag: false }));
+    if (niches.length) posed.push({ key: 'niche', name: niches.join(', '), frag: niches.join(' ou '), all: 'toutes niches', chips: chipsOf(niches, BIC.niche), drop: () => set({ niches: [] }) });
+    if (apps.length) posed.push({ key: 'app', name: apps.join(', '), frag: apps.join(' ou '), all: 'toutes apps', chips: chipsOf(apps, BIC.app), drop: () => set({ apps: [] }) });
+    if (FR.on) posed.push({ key: 'fans', name: fansLabel, frag: fansLong, all: 'tous abonnés', chips: chipsOf([fansLabel], BIC.fans), drop: () => this.setFans(0, Infinity) });
+    if (kinds.length) posed.push({ key: 'kind', name: kinds.map(kl).join(', '), frag: kinds.map(kl).join(' ou '), all: 'tous contenus', chips: chipsOf(kinds.map(kl), BIC.kind), drop: () => set({ kinds: [] }) });
+    if (gender !== 'ALL') posed.push({ key: 'gender', name: gl[2], frag: gl[2], all: 'tous genres', chips: chipsOf([gl[2]], BIC.gender), drop: () => set({ gender: 'ALL' }) });
 
     // Les fenêtres : recherche sans accents, ce qui est trouvé surligné, les nombres tiennent compte des autres filtres.
     const fold = (t) => Array.from(String(t)).map((c) => c.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().charAt(0) || c).join('');
@@ -321,6 +333,7 @@ export default class Createurs extends DCLogic {
     const view = { rows, qrows, quiet, mkb, filters, chips, menu, rg, views };
     return Object.assign(view, {
       none: b.none, noneLabel: 'Aucun compte suivi pour ce marché.', empty: !b.none && !b.wait && list.length === 0,
+      vz: !b.none && !b.wait && list.length === 0 ? this.voidVals('Aucun compte', posed.map((g) => Object.assign(g, { n: all.filter((x) => pass(x, g.key)).length })), ['compte', 'comptes']) : this.voidVals('', [], []),
       hasMore: !actDone ? restAct > 0 : qOpen && restCalm > 0,
       moreLabel: 'Voir ' + comptes(Math.min(LIM, !actDone ? restAct : restCalm)) + ' de plus',
       showMore: () => (!actDone ? set({ lim: lim + LIM }) : this.setState({ qlim: qlim + LIM })),
@@ -338,6 +351,21 @@ export default class Createurs extends DCLogic {
       clearAll: () => set({ niches: [], apps: [], fans: 'ALL', fmin: null, fmax: null, kinds: [], gender: 'ALL', open: '' }),
       pv, ajItem, closePv: () => this.setState({ pv: null, aj: false }), setPvClose: (el) => { this.pvClose = el; },
       pvKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ pv: null, aj: false }); } } });
+  }
+
+  // Filtres sans résultat (maquette V3 « le même geste partout », 20/11) : la phrase, les filtres posés en pastilles, puis
+  // un filtre de moins par ligne, avec ce que la liste donnerait sans lui (ses règles, sur la liste déjà chargée) ; les
+  // plus fructueux d'abord, 3 au plus, un retrait qui donne encore 0 omis. Le même dessin sur Apps et Formats.
+  // groups : [{ key, name (son libellé), frag (dans la phrase), where (à la fin de la phrase), desc (dans le détail d'un
+  // autre retrait, sinon frag ou name), all (le détail sans lui), chips, n (ce qu'on aurait sans lui), drop }].
+  voidVals(noun, groups, unit) {
+    const grp = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+    const and = (xs) => (xs.length > 1 ? xs.slice(0, -1).join(', ') + ' et ' + xs[xs.length - 1] : xs[0] || '');
+    const frags = groups.filter((g) => g.frag).map((g) => g.frag), wheres = groups.filter((g) => g.where).map((g) => g.where);
+    const rows = groups.filter((g) => g.n > 0).sort((p, q) => q.n - p.n).slice(0, 3).map((g) => ({ key: g.key, label: 'Retirer « ' + g.name + ' »',
+      sub: groups.filter((x) => x !== g).map((x) => x.desc || x.frag || x.name).concat([g.all]).join(', '), n: grp(g.n), unit: g.n > 1 ? unit[1] : unit[0], drop: g.drop }));
+    return { title: noun + (frags.length ? ' pour ' + and(frags) : '') + (wheres.length ? ' ' + wheres.join(' ') : ''),
+      chips: groups.reduce((a, g) => a.concat(g.chips), []), rows, hasRows: rows.length > 0 };
   }
 
   // « en France », « au Mexique », « aux États-Unis » : le marché affiché, d'après son nom.
@@ -1175,11 +1203,63 @@ export default class Createurs extends DCLogic {
                     )
                   ] : null,
                   ($v.empty) ? [
-                    $h("tr", null,
-                      $h("td", { "colspan": "9", "style": "padding: 48px 20px; text-align: center; color: var(--ink-muted);" },
-                        "Aucun compte pour ces filtres. ",
-                        $h("button", { "class": "sw-link", "type": "button", "onClick": $v.clearAll, "style": "border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: 600;" },
-                          "Effacer les filtres"
+                    $h("tr", { "style": "background: transparent;" },
+                      $h("td", { "colspan": "9", "style": "padding: 36px 20px 40px;" },
+                        $h("div", { "style": "position: sticky; left: 20px; width: min(100%, calc(100vw - 192px));" },
+                          $h("section", { "class": "sw-void", "aria-labelledby": "crv-t" },
+                            $h("span", { "class": "sw-void-kick", "data-tone": "amber" },
+                              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("path", { "d": "M4 6h16M7 12h10M10 18h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                              ),
+                              "Filtres sans résultat"
+                            ),
+                            $h("h2", { "id": "crv-t", "class": "sw-void-title" },
+                              $t($v.vz?.title)
+                            ),
+                            $h("div", { "class": "sw-void-chips" },
+                              ($l($v.vz?.chips)).map((c) => [
+                                $h("span", { "class": "sw-void-chip" },
+                                  (c?.flag) ? [
+                                    $h("span", { "class": "sw-flag", "data-c": c?.flag, "aria-hidden": "true" })
+                                  ] : null,
+                                  (c?.ic) ? [
+                                    $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                      $h("path", { "d": c?.ic, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                                    )
+                                  ] : null,
+                                  $t(c?.label)
+                                )
+                              ])
+                            ),
+                            ($v.vz?.hasRows) ? [
+                              $h("span", { "class": "sw-void-label" },
+                                "Un filtre de moins :"
+                              ),
+                              $h("div", { "class": "sw-void-rows" },
+                                ($l($v.vz?.rows)).map((r) => [
+                                  $h("button", { "type": "button", "class": "sw-void-row", "key": r?.key, "onClick": r?.drop },
+                                    $h("span", { "class": "sw-void-txt" },
+                                      $h("span", { "class": "sw-void-name" },
+                                        $t(r?.label)
+                                      ),
+                                      $h("span", { "class": "sw-void-sub" },
+                                        $t(r?.sub)
+                                      )
+                                    ),
+                                    $h("span", { "class": "sw-void-n" },
+                                      $t(r?.n)
+                                    ),
+                                    $h("span", { "class": "sw-void-unit" },
+                                      $t(r?.unit)
+                                    )
+                                  )
+                                ])
+                              )
+                            ] : null,
+                            $h("button", { "class": "sw-void-clear", "type": "button", "onClick": $v.clearAll },
+                              "Effacer les filtres"
+                            )
+                          )
                         )
                       )
                     )
