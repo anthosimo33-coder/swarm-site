@@ -25,9 +25,9 @@ const docs = reel ? (() => { const { raw, store } = realRaw(reel); return boards
 const PER = Number(process.env.PAR || (reel ? 12 : 1e9));
 
 const STUBS = {
-  'convex/values': 'export const v = new Proxy({}, { get: () => () => ({}) });',
+  'convex/values': 'export const v = new Proxy({}, { get: () => () => ({}) }); export class ConvexError extends Error { constructor(data) { super("ConvexError"); this.data = data; } }',
   './session': 'export const liveUserId = async (ctx) => ctx.userId;',
-  './_generated/server': 'const id = (d) => d; export const query = id;',
+  './_generated/server': 'const id = (d) => d; export const query = id, mutation = id;',
 };
 const dir = mkdtempSync(path.join(tmpdir(), 'check-data-'));
 await require('esbuild').build({ entryPoints: [path.join(root, 'convex/boards.ts')], bundle: true, format: 'esm', platform: 'node', outfile: path.join(dir, 'boards.mjs'), logLevel: 'error',
@@ -38,6 +38,9 @@ await require('esbuild').build({ entryPoints: [path.join(root, 'convex/boards.ts
 process.env.CONVEX_SITE_URL ??= 'https://banc.convex.site';
 process.env.COVER_SECRET ??= 'secret-de-banc';
 const { get } = await import(pathToFileURL(path.join(dir, 'boards.mjs')).href);
+// Les laissez-passer des abonnés (audit S22, convex/boardQuota.ts) : ce banc lit chaque page avec le sien.
+await require('esbuild').build({ entryPoints: [path.join(root, 'convex/boardQuota.ts')], bundle: true, format: 'esm', platform: 'node', outfile: path.join(dir, 'boardQuota.mjs'), logLevel: 'error' });
+const { passFor } = await import(pathToFileURL(path.join(dir, 'boardQuota.mjs')).href);
 rmSync(dir, { recursive: true, force: true });
 const USERS = { pro: { pro: true }, free: {} };
 const db = { get: async (id) => USERS[id] ?? null, query: (table) => ({ withIndex: (_n, f) => {
@@ -46,7 +49,7 @@ const db = { get: async (id) => USERS[id] ?? null, query: (table) => ({ withInde
   return { first: async () => row, collect: async () => [] };
 } }) };
 /** Ce que l'écran lit par get(clé) : demandé une première fois, puis servi au rendu suivant (get est synchrone). */
-const board = (who) => { const cache = new Map(); return { cache, async load(keys) { for (const k of keys) if (!cache.has(k)) cache.set(k, await get.handler({ userId: who, db }, { key: k })); } }; };
+const board = (who) => { const cache = new Map(); return { cache, async load(keys) { for (const k of keys) if (!cache.has(k)) cache.set(k, await get.handler({ userId: who, db }, { key: k, pass: passFor(who, k, Date.now() + 3_600_000) })); } }; };
 
 // ─── Les écrans : les routes, et ce que le routeur monte ────────────────────────────────────────────────────────
 const routes = [...readFileSync(path.join(root, 'src/app/routes.js'), 'utf8').matchAll(/path: '([^']+)', title: "[^"]*", data: (null|"[^"]*"), load: [^\n]*?import\('\.\/pages\/(\w+)\.js'\)[^\n]*?loadMobile: [^\n]*?import\('\.\/pages\/(\w+)\.js'\)/g)]

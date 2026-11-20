@@ -71,6 +71,11 @@ export default defineSchema({
   checkoutLinks: defineTable({ userId: v.id("users"), key: v.string(), url: v.string(), at: v.number() }).index("by_user_key", ["userId", "key"]),
   // Limites de l'authentification (convex/authLimits.ts) : passages comptés par fenêtre fixe, une ligne par clé.
   authLimits: defineTable({ key: v.string(), n: v.number(), since: v.number() }).index("by_key", ["key"]),
+  // Quota de pages des abonnés (convex/boardQuota.ts, audit S22) : pages comptées sur l'heure et sur 24 h, une ligne par
+  // compte ; `warned` : l'échéance du refus déjà tracé dans les journaux.
+  pageQuota: defineTable({
+    userId: v.id("users"), hour: v.number(), hourN: v.number(), day: v.number(), dayN: v.number(), warned: v.optional(v.number()),
+  }).index("by_user", ["userId"]),
   // Visites du site public (admin › Mesure) : un compteur par heure, sans cookie, sans identifiant, sans adresse IP.
   visits: defineTable({ hour: v.number(), n: v.number() }).index("by_hour", ["hour"]),
 

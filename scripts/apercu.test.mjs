@@ -43,6 +43,11 @@ const { get } = await import(pathToFileURL(out).href);
 const signOut = path.join(dir, 'coverSign.mjs');
 await build({ entryPoints: [path.join(root, 'convex/coverSign.ts')], bundle: true, format: 'esm', platform: 'node', outfile: signOut, logLevel: 'error' });
 const sign = await import(pathToFileURL(signOut).href);
+// Les laissez-passer des abonnés (audit S22, convex/boardQuota.ts) : chaque appel en porte un valable, pour que ce banc
+// éprouve le verrou de l'aperçu, pas le quota (scripts/quota-pages.test.mjs).
+const passOut = path.join(dir, 'boardQuota.mjs');
+await build({ entryPoints: [path.join(root, 'convex/boardQuota.ts')], bundle: true, format: 'esm', platform: 'node', outfile: passOut, logLevel: 'error' });
+const { passFor } = await import(pathToFileURL(passOut).href);
 rmSync(dir, { recursive: true, force: true });
 
 // ─── Les données ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -117,7 +122,8 @@ function db({ parts = new Set(), missing = new Set(), without = new Set() } = {}
 let fail = 0;
 const ok = (cond, msg) => { console.log((cond ? 'OK   ' : 'ÉCHEC') + ' ' + msg); if (!cond) fail++; };
 const call = async (base, u, key) => {
-  try { return await get.handler({ userId: u, db: base }, { key }); } catch (e) { return { __error: String(e).slice(0, 120) }; }
+  const pass = u ? passFor(u, key, Date.now() + 3_600_000) : null;
+  try { return await get.handler({ userId: u, db: base }, pass ? { key, pass } : { key }); } catch (e) { return { __error: String(e).slice(0, 120) }; }
 };
 /** Ce que l'appel a lu en base (tables et clés), hors profil de la personne. */
 const readsOf = async (base, u, key) => { base.reads.length = 0; await call(base, u, key); return base.reads.filter((r) => r !== 'users'); };
