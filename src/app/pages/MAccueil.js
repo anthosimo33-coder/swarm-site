@@ -35,7 +35,7 @@ export default class MAccueil extends DCLogic {
     let alert = (globalThis.__dcSample?.["MAccueil"]?.["alert"] ?? {"src":""});
     alert = Object.assign({}, alert, { href: '/app/videos/' + vkey(alert.src) });
     alert = Object.assign({ on: true, views: '2,0 M', kicker: 'Alerte · Astra AI', text: 'Une vidéo à 2 333× sa normale' }, alert);
-    look = look.map((r) => Object.assign({ href: '/app/apps/astraai' }, r));
+    look = look.map((r) => Object.assign({ href: '/app/apps' }, r));
     // Sur le site : l'accueil du Radar (document « home »), lu comme Main : « Ça explose » = les 2 apps qui progressent
     // le plus cette semaine, puis 2 vidéos qui décollent (la 1re est dans la carte d'alerte), chaque ligne vers sa fiche ou sa vidéo.
     const D = this.props && this.props.data;

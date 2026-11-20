@@ -121,12 +121,12 @@ export default class MCreateursCartes extends DCLogic {
     const nFs = kinds.length + (gender !== 'ALL' ? 1 : 0) + (sortK !== 'med' ? 1 : 0);
     const filtered = active || kinds.length > 0 || gender !== 'ALL';
     const swipe = { s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false }); this.y0 = null; } };
-    const rowsAll = pool(src.rows).map((c, i) => Object.assign({ href: '/app/createurs/zinedine.gsbb' }, c, { rank: String(i + 1).padStart(2, '0') }));
-    const cardsAll = pool(src.cards).map((c) => Object.assign({ href: '/app/createurs/zinedine.gsbb' }, c));
+    const rowsAll = pool(src.rows).map((c, i) => Object.assign({ href: '/app/createurs' }, c, { rank: String(i + 1).padStart(2, '0') }));
+    const cardsAll = pool(src.cards).map((c) => Object.assign({ href: '/app/createurs' }, c));
     const shownAll = b.rows ? rowsAll : cardsAll;
     const more = shownAll.length - lim;
     return { mkt: MK.map((m) => Object.assign({}, m, { flag: m.c, on: m.c === market ? 'true' : 'false', pick: () => this.setState({ market: m.c, lim: LIM }) })),
-      rows: rowsAll.slice(0, lim), cards: cardsAll.slice(0, lim), live: pool(src.live).map((c) => Object.assign({ href: '/app/createurs/zinedine.gsbb' }, c)), none, tip,
+      rows: rowsAll.slice(0, lim), cards: cardsAll.slice(0, lim), live: pool(src.live).map((c) => Object.assign({ href: '/app/createurs' }, c)), none, tip,
       hasMore: more > 0 || !!this._partial, moreLabel: 'Voir ' + Math.min(LIM, Math.max(more, (total || 0) - lim)) + ' comptes de plus', showMore: () => this.setState({ lim: lim + LIM }),
       activeOn: active ? 'true' : 'false', toggleActive: () => this.setState({ active: !active, lim: LIM }),
       fs: !!st.fs, fsOn: nFs > 0 ? 'true' : 'false', fsLabel: nFs > 0 ? 'Trier et filtrer · ' + nFs : 'Trier et filtrer', openFs: () => this.setState({ fs: true }), closeFs: () => this.setState({ fs: false }),

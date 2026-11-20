@@ -70,9 +70,10 @@ APP_PAGES = [
     ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte', None),
 ]
 # Lien sans paramètre vers une fiche (maquette pas encore branchée) : l'exemple de la maquette.
-# Une vidéo d'exemple serait une vraie vidéo du Radar dans un fichier public (audit S4) : pas d'exemple pour /app/videos.
-APP_SAMPLE = {'/app/apps/:slug': 'astraai', '/app/videos/:id': None,
-              '/app/formats/:id': None, '/app/createurs/:handle': 'zinedine.gsbb'}
+# Un lien de canevas sans paramètre vers une fiche ne mène à aucune fiche d'exemple (audit Q11 ; S4 pour les vidéos) :
+# l'app est branchée sur les vraies données, et l'exemple était une vraie app ou un vrai créateur du Radar. Il mène à la
+# liste parente (/app/apps, /app/createurs, /app/formats) ; une vidéo, à /app/videos, que le routeur renvoie à l'accueil.
+APP_SAMPLE = {'/app/apps/:slug': None, '/app/videos/:id': None, '/app/formats/:id': None, '/app/createurs/:handle': None}
 
 # Version mobile (sous 860 px) des mêmes adresses : artboard M* -> (composant, préfixe CSS, adresse).
 # Une adresse sans version mobile garde l'écran desktop.
@@ -132,7 +133,7 @@ APP_LINKS.update({src: _plain(route) for src, _, _, route in APP_MOBILE_PAGES})
 APP_PARAM_LINKS.update({src: route.split('/:')[0] + '/' for src, _, _, route in APP_MOBILE_PAGES if ':' in route})
 APP_LINKS.update({
     # Écrans d'interaction mobiles : s'il en reste un lien, il mène à l'écran hôte.
-    'MFiltres.dc.html': '/app/apps', 'MApercu.dc.html': '/app/apps/astraai', 'MCreerAlerte.dc.html': '/app/alertes',
+    'MFiltres.dc.html': '/app/apps', 'MApercu.dc.html': '/app/apps', 'MCreerAlerte.dc.html': '/app/alertes',
     'MRecherche.dc.html': '/app', 'MAbonnement.dc.html': '/app/compte', 'MConnexion.dc.html': '/app/deconnexion',
 
     'FormatsA.dc.html': '/app/formats',        # ancien écran Formats (restes de données), remplacé par FormatsB

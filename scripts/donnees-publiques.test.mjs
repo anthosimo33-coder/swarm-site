@@ -88,8 +88,9 @@ if (refOk) {
   const diff = [];
   for (const n of names) {
     globalThis.__dcSample = undefined;
-    // Seul écart voulu : un lien de vidéo sans id ne mène plus à une vraie vidéo du Radar (APP_SAMPLE de dc2preact.py).
-    const same = (html) => html.replaceAll('/app/videos/7705929733220994337', '/app/videos');
+    // Seuls écarts voulus : un lien de canevas sans paramètre ne mène plus à une fiche d'exemple (APP_SAMPLE de
+    // dc2preact.py : vidéo pour S4, app et créateur pour Q11), mais à la liste.
+    const same = (html) => html.replaceAll('/app/videos/7705929733220994337', '/app/videos').replaceAll('/app/apps/astraai', '/app/apps').replaceAll('/app/createurs/zinedine.gsbb', '/app/createurs');
     const a = same(render(mods[n][0], null));
     globalThis.__dcSample = samples;
     const b = same(render(mods[n][1], null));

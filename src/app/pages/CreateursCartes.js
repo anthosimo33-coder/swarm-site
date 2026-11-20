@@ -194,7 +194,7 @@ export default class CreateursCartes extends DCLogic {
     const cards = (globalThis.__dcSample?.["CreateursCartes"]?.["cards"] ?? []);
     const num = (s) => Number(String(s).replace(/\D/g, '')) || 0;
     // L'exemple (France seulement) mis au format des lignes.
-    const norm = (c) => Object.assign({}, c, { href: '/app/createurs/' + c.h.slice(1), hasApp: true, appHref: '/app/apps/astraai', nFans: num(c.fans), nMed: num(c.medN),
+    const norm = (c) => Object.assign({}, c, { href: '/app/createurs/' + c.h.slice(1), hasApp: true, appHref: '/app/apps', nFans: num(c.fans), nMed: num(c.medN),
       cov: c.cov.map((v) => Object.assign({ href: '/app/videos' }, v)) });
     let all = cards.map(norm);
     // Sur le site : les vraies données du Radar (document « creators:<marché> », convex/radarModels.ts) ;

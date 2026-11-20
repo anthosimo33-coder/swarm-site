@@ -56,7 +56,7 @@ export default class MFicheApp extends DCLogic {
       hasSite: true, site: 'https://astra-ai.fr', v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', week: '18,4 M', wd: '+6 % face à la semaine d’avant',
       acc: '269', ppw: '1 360 vidéos par semaine' };
     ff = ff.map((f) => Object.assign({ href: '/app/formats' }, f));
-    fc = fc.map((c) => Object.assign({ page: true, nopage: false, href: '/app/createurs/zinedine.gsbb' }, c));
+    fc = fc.map((c) => Object.assign({ page: true, nopage: false, href: '/app/createurs' }, c));
     // Le tableau de bord du haut de la fiche (FicheA, b424501) : mêmes entrées pour l'exemple et pour le Radar.
     let WK = [10.6e6, 9.8e6, 8.9e6, 8.5e6, 17.3e6, 18.4e6];
     let LB = ['01/10', '08/10', '15/10', '22/10', '29/10', '05/11'];

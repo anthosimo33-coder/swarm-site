@@ -59,11 +59,11 @@ export default class MDossier extends DCLogic {
     const drop = (it) => change((fs) => fs.map((f) => (f.id !== folder.id ? f : Object.assign({}, f, { items: (f.items || []).filter((x) => !(x.kind === it.kind && x.id === it.id)) }))));
     const row = (x) => {
       let t = x.label || x.id, s = x.s || '', src = x.cover || '', ico = ICO[x.kind] || ICO.video, href = '/app/videos/' + x.id;
-      if (x.kind === 'app') { const a = A[x.id]; t = a ? a.name : t; s = a ? a.niche + ' · ' + nf(a.views30) + ' vues en 30 j' : s || 'App'; src = (a && a.icon) || src; href = live ? '/app/apps/' + x.id : '/app/apps/astraai'; }
+      if (x.kind === 'app') { const a = A[x.id]; t = a ? a.name : t; s = a ? a.niche + ' · ' + nf(a.views30) + ' vues en 30 j' : s || 'App'; src = (a && a.icon) || src; href = live ? '/app/apps/' + x.id : '/app/apps'; }
       else if (x.kind === 'format') { const f = F[x.id]; if (f) { t = f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »'; ico = f.kind === 'sound' ? ICO.sound : ICO.format;
           s = f.accounts + ' comptes' + (f.medX ? ' · ' + xf(f.medX) + ' la normale' : ''); src = src || ((f.members || []).filter((m) => m.cover)[0] || {}).cover || ''; }
         s = s || 'Format'; href = live ? '/app/formats/' + x.id : '/app/formats'; }
-      else if (x.kind === 'creator') { s = s || 'Ajouté ' + dayTxt(x.at); href = live ? '/app/createurs/' + x.id : '/app/createurs/zinedine.gsbb'; }
+      else if (x.kind === 'creator') { s = s || 'Ajouté ' + dayTxt(x.at); href = live ? '/app/createurs/' + x.id : '/app/createurs'; }
       else { s = s || 'Ajoutée ' + dayTxt(x.at); }
       return { t, s, src, ico, href, rad: x.kind === 'creator' ? '50%' : '12px', remove: () => drop(x), rmLabel: 'Retirer ' + t + ' du dossier' };
     };

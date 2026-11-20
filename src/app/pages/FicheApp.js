@@ -211,7 +211,7 @@ export default class FicheApp extends DCLogic {
 
     vids = vids.map((v) => Object.assign({ href: '/app/videos' }, v));
     formats = formats.map((f) => Object.assign({ href: '/app/formats' }, f));
-    creators = creators.map((c) => Object.assign({ page: true, href: '/app/createurs/zinedine.gsbb' }, c));
+    creators = creators.map((c) => Object.assign({ page: true, href: '/app/createurs' }, c));
 
     const P = W.map((v, j) => [70 + j * 110, 200 - v / top * 180]);
     const vm = (m) => { const n = (m || 0) * 1e6; return n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)); };

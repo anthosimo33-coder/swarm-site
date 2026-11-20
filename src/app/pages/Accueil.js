@@ -106,7 +106,7 @@ export default class Accueil extends DCLogic {
     };
     const nav = [['accueil', 'Accueil'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs'], ['alertes', 'Alertes'], ['dossiers', 'Dossiers']]
       .map((x, i) => ({ d: ic[x[0]], label: x[1], cur: i === 0 ? 'page' : 'false' }));
-    let look = (globalThis.__dcSample?.["Accueil"]?.["look"] ?? []).map((r) => Object.assign(r, { href: '/app/apps/astraai', blank: '', nologo: false }));
+    let look = (globalThis.__dcSample?.["Accueil"]?.["look"] ?? []).map((r) => Object.assign(r, { href: '/app/apps', blank: '', nologo: false }));
     let niches = ['Études', 'Couple', 'Séduction IA', 'Foi', 'Side hustle'];
     let alert = (globalThis.__dcSample?.["Accueil"]?.["alert"] ?? {"on":true,"cover":"","logo":"","app":"","views":"","kicker":"","text":"","aria":"","href":""});
 
