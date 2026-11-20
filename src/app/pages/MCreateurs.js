@@ -303,7 +303,7 @@ export default class MCreateurs extends DCLogic {
     const nCalm = !filtered && typeof b.active7 === 'number' && b.total ? Math.max(0, b.total - b.active7) : calm.length;
     const mkRow = (c) => { const h = String(c.h || '').replace(/^@/, '');
       return Object.assign({}, c, { key: h, ini: h.charAt(0).toUpperCase(), mkOn: allOn && !!c.market, mk: c.market || 'XX', hasCov: !!(c.cov && c.cov.length),
-        badge: c.n7 > 0 ? c.n7 + (c.n7 > 1 ? ' vidéos' : ' vidéo') + ' / 7 j' : 'Rien en 7 j',
+        badge: c.n7 > 0 ? (c.n7 >= 30 ? 'au moins 30 vidéos' : c.n7 + (c.n7 > 1 ? ' vidéos' : ' vidéo')) + ' / 7 j' : 'Rien en 7 j',
         open: () => this.setState({ pv: h, open: '', aj: false }) }); };
     const actDone = lim >= act.length && !(partial && !filtered && act.length < nAct);
     const shown = act.slice(0, lim).map(mkRow);
@@ -351,7 +351,9 @@ export default class MCreateurs extends DCLogic {
     const keep = open && open !== 'market' && this._L ? this._L : L;
     if (!open || open === 'market') this._L = L;
     return Object.assign({
-      mkb, filters, filtered, menu, rg, kbPx: kb + 'px', setSheetEl: this.setSheetEl, setListEl: this.setListEl, setPvClose: this.setPvCloseEl, setMenuInput: this.setMenuInputEl,
+      mkb, filters, filtered, menu, rg, kbPx: kb + 'px',
+      menuShut: menu.cta ? '0 0 auto' : '1 1 auto', // « Fermer » : à côté de « Voir N comptes », ou seul (Marché, Trier : le choix ferme)
+      setSheetEl: this.setSheetEl, setListEl: this.setListEl, setPvClose: this.setPvCloseEl, setMenuInput: this.setMenuInputEl,
       toggleSort: () => set({ open: open === 'sort' ? '' : 'sort', mq: '' }),
       isListe: listeOn, isCartes: !listeOn, rows: listeOn ? shown : [], qrows: listeOn ? qshown : [], cards: listeOn ? [] : shown, qcards: listeOn ? [] : qshown,
       vtabs: VIEWS.map(([k, l, d]) => ({ k, l, d, on: view === k ? 'true' : 'false', pick: () => this.pickView(k) })),
@@ -432,7 +434,8 @@ export default class MCreateurs extends DCLogic {
     return { on: true, h: '@' + h, bio: D.bio || row.bio || '', av: D.avatar || row.av || '', ini: h.charAt(0).toUpperCase(), mk: D.market || row.market || '',
       href: '/app/createurs/' + h,
       stats: [{ l: 'Abonnés', v: fans ? grp(fans) : '—' }, { l: 'Vues médianes', v: med ? (med >= 999500 ? nf(med) : med >= 999.5 ? Math.round(med / 1e3) + '\u202fk' : String(Math.round(med))) : '—' }], // comme sa ligne (« 520 k »)
-      rythme: n7 === null || n7 === undefined ? '' : n7 > 0 ? n7 + (n7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j',
+      rythme: n7 === null || n7 === undefined ? '' : n7 > 0 ? (n7 >= 30 ? 'au moins 30 vidéos' : n7 + (n7 > 1 ? ' vidéos' : ' vidéo')) + ' en 7 j' : 'Rien en 7 j',
+      capped: typeof n7 === 'number' && n7 >= 30, // l'explication du plafond, sous le rythme
       hasDays: days.length === 7 && d7.some((n) => n > 0), days, wait: (F === undefined || (!asked && typeof P.get === 'function')) && !d7,
       hasTops: (tops.length || rowTops.length) > 0, tops: tops.length ? tops : rowTops,
       hasApp: !!appName, appName, appIcon: app ? app.icon || '' : (row.app && row.app.logo) || '', appBlank: (app ? app.icon : row.app && row.app.logo) ? '' : 'sw-app-blank', appNoIcon: !(app ? app.icon : row.app && row.app.logo),
@@ -510,7 +513,8 @@ export default class MCreateurs extends DCLogic {
         const on = c.posts7d > 0;
         const d7 = Array.isArray(c.days7) && c.days7.length === 7 ? c.days7 : null;
         const hasDays = !!(d7 && d7.some((n) => n > 0));
-        const ry = isN(c.posts7d) ? (on ? c.posts7d + (c.posts7d > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j') : '';
+        // posts7d plafonne à 30 (le Radar lit les 30 dernières vidéos) : à 30, « au moins 30 » (règle de MAccueil, 7C).
+        const ry = isN(c.posts7d) ? (on ? (c.posts7d >= 30 ? 'au moins 30 vidéos' : c.posts7d + (c.posts7d > 1 ? ' vidéos' : ' vidéo')) + ' en 7 j' : 'Rien en 7 j') : '';
         const appHref = a && a.slug && a.page !== false ? '/app/apps/' + a.slug : '';
         return {
           h: '@' + c.handle, market: c.market || '', kind: c.kind || '', gender: c.gender || '', href: '/app/createurs/' + c.handle, bio: line(c.bio), av: c.avatar || '',
@@ -1183,18 +1187,23 @@ export default class MCreateurs extends DCLogic {
                   $t($v.menu?.note)
                 )
               ] : null,
-              ($v.menu?.cta) ? [
-                $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg mc-cta", "type": "button", "onClick": $v.closeMenu },
-                  $h("span", null,
-                    $t($v.menu?.see)
-                  ),
-                  $h("span", { "class": "sw-btn-tile" },
-                    $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                      $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              $h("div", { "style": "display: flex; align-items: center; gap: 8px;" },
+                $h("button", { "class": "sw-btn sw-btn-ghost", "type": "button", "onClick": $v.closeMenu, "style": `flex: ${$t($v.menuShut)}; height: 50px; padding: 0 22px; background: #191D25; font-size: 15px;` },
+                  "Fermer"
+                ),
+                ($v.menu?.cta) ? [
+                  $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.closeMenu, "style": "flex: 1 1 0; min-width: 0; height: 50px; justify-content: space-between; padding: 0 5px 0 20px; font-size: 15px; text-decoration: none;" },
+                    $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                      $t($v.menu?.see)
+                    ),
+                    $h("span", { "class": "sw-btn-tile" },
+                      $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      )
                     )
                   )
-                )
-              ] : null
+                ] : null
+              )
             )
           )
         ] : null,
@@ -1226,15 +1235,18 @@ export default class MCreateurs extends DCLogic {
                   )
                 ] : null
               ),
-              $h("button", { "type": "button", "class": "mc-ibtn", "onClick": $v.openAj, "aria-haspopup": "dialog", "aria-label": "Garder dans un dossier" },
-                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              ),
-              $h("button", { "ref": $v.setPvClose, "type": "button", "class": "mc-ibtn", "onClick": $v.closePv, "aria-label": "Fermer le profil", "style": "margin-right: -4px; background: transparent; box-shadow: none;" },
-                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
+              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "flex-shrink: 0; height: 40px; gap: 7px; margin-right: -4px;" },
+                ($v.pv?.followYes) ? [
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                ] : null,
+                ($v.pv?.followNo) ? [
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                  )
+                ] : null,
+                $t($v.pv?.followLabel)
               )
             ),
             $h("div", { "class": "mc-pv-body" },
@@ -1269,6 +1281,11 @@ export default class MCreateurs extends DCLogic {
                 ($v.pv?.wait) ? [
                   $h("p", { "style": "margin: 10px 0 0; font-size: 13px; color: var(--ink-faint);" },
                     "Chargement de ses vidéos…"
+                  )
+                ] : null,
+                ($v.pv?.capped) ? [
+                  $h("p", { "style": "margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-faint);" },
+                    "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus."
                   )
                 ] : null
               ),
@@ -1361,20 +1378,15 @@ export default class MCreateurs extends DCLogic {
               ] : null
             ),
             $h("div", { "data-sheet-in": "", "class": "mc-pv-foot" },
-              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn },
-                ($v.pv?.followYes) ? [
-                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
-                    $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  )
-                ] : null,
-                ($v.pv?.followNo) ? [
-                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
-                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
-                  )
-                ] : null,
-                $t($v.pv?.followLabel)
+              $h("button", { "class": "sw-btn sw-btn-ghost", "type": "button", "ref": $v.setPvClose, "onClick": $v.closePv, "style": "flex: 0 0 auto; height: 50px; padding: 0 22px; background: #191D25; font-size: 15px;" },
+                "Fermer"
               ),
-              $h("a", { "class": "sw-btn sw-btn-primary", "href": $u($v.pv?.href) },
+              $h("button", { "type": "button", "class": "mc-ibtn", "onClick": $v.openAj, "aria-haspopup": "dialog", "aria-label": "Garder dans un dossier", "style": "width: 50px; height: 50px; border-radius: 50%;" },
+                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              ),
+              $h("a", { "class": "sw-btn sw-btn-primary", "href": $u($v.pv?.href), "style": "flex: 1 1 0; min-width: 0; padding: 0 5px 0 20px;" },
                 "Voir la fiche",
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },

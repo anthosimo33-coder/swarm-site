@@ -37,7 +37,9 @@ export default class MFicheCreateur extends DCLogic {
       next.creators = l.indexOf(fid) >= 0 ? l.filter((x) => x !== fid) : [fid].concat(l);
       P.save('follows', next);
     };
-    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'creator', id: fid, label: '@' + fid, cover: null } : null }, { followInk: f ? 'var(--accent)' : 'var(--ink-muted)', followYes: f, followNo: !f, followAria: f ? 'Ne plus suivre ce compte' : 'Suivre ce compte' });
+    return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'creator', id: fid, label: '@' + fid, cover: null } : null }, { followInk: f ? 'var(--accent)' : 'var(--ink-muted)', followYes: f, followNo: !f, followAria: f ? 'Ne plus suivre ce compte' : 'Suivre ce compte',
+      // La capsule retour (6C) : l'écran d'où l'on vient (history.state.from, posé par tabbar.js), sinon la liste des créateurs.
+      backName: (typeof history !== 'undefined' && history.state && history.state.from && history.state.from.name) || '' || 'Créateurs' });
   }
 
   baseVals() {
@@ -80,7 +82,8 @@ export default class MFicheCreateur extends DCLogic {
       // Pas de moyen de contacter un créateur : les e-mails et numéros de sa bio ne sont pas repris.
       const noContact = (s) => String(s || '').replace(/(?:📧|✉️?|📩|📬|e-?mail|mail|contact|business|pro)?\s*[:：]?\s*[\w.+-]+@[\w-]+(?:\.[\w-]+)+/gi, ' ').replace(/\+?\d[\d .-]{7,}\d/g, ' ').replace(/\s+/g, ' ').trim();
       z = Object.assign({}, z, { av: D.avatar || '', noav: true, h: '@' + D.handle, bio: noContact(D.bio),
-        fans: typeof D.fans === 'number' ? big(D.fans) : '—', med: D.median ? big(D.median) : '—', p7: n7 ? n7 + (n7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j',
+        fans: typeof D.fans === 'number' ? big(D.fans) : '—', med: D.median ? big(D.median) : '—', p7: n7 ? ((D.posts7d || 0) >= 30 ? 'au moins ' + n7 + ' vidéos' : n7 + (n7 > 1 ? ' vidéos' : ' vidéo')) + ' en 7 j' : 'Rien en 7 j',
+        capped: (D.posts7d || 0) >= 30, // posts7d plafonne à 30 (le Radar lit les 30 dernières vidéos) : « au moins », règle de MAccueil (7C)
         best: top ? nf(top.views) : '—', bestX: top && top.x ? xf(top.x) + ' sa normale' : (top ? day(top.publishedAt) : ''),
         app: a ? ico(a) : { logo: '', nologo: true, blank: 'sw-app-blank' }, hasApp: !!a, appLine: a ? 'Pousse ' + a.name : '', niche: (a && a.niche) || '',
         flag: D.market || '', lang: LANGN(D.otherLang), kindL: ((KINDL) => KINDL(D.kind, D.gender))((k, g) => ({ ambassadeur: g === 'femme' ? 'Ambassadrice' : 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte' })[k] || ''), tt: 'https://www.tiktok.com/@' + D.handle,
@@ -99,11 +102,6 @@ export default class MFicheCreateur extends DCLogic {
       $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(96px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("header", { "style": "position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
           $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;" },
-            $h("a", { "class": "sw-btn sw-btn-icon", "href": "/app/createurs", "aria-label": "Retour", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;" },
-              $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
-            ),
             $h("span", { "style": "flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
               $t($v.z?.h)
             )
@@ -181,25 +179,9 @@ export default class MFicheCreateur extends DCLogic {
             ] : null
           ),
           $h("span", { "style": "display: flex; gap: 6px;" },
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-label": $v.followAria, "title": $v.followAria, "aria-pressed": $v.followOn, "style": `width: 44px; height: 44px; flex-shrink: 0; color: ${$t($v.followInk)};` },
-              ($v.followYes) ? [
-                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
-                  $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              ] : null,
-              ($v.followNo) ? [
-                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
-                  $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
-                )
-              ] : null
-            ),
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openAj, "aria-label": "Ajouter à un dossier", "style": "width: 44px; height: 44px; flex-shrink: 0;" },
-              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
-            ),
-            $h("a", { "class": "sw-btn sw-btn-icon", "href": $u($v.z?.tt), "target": "_blank", "rel": "noopener", "aria-label": "Ouvrir le profil", "style": "width: 44px; height: 44px; flex-shrink: 0;" },
-              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+            $h("a", { "class": "sw-pill", "href": $u($v.z?.tt), "target": "_blank", "rel": "noopener", "style": "height: 40px; gap: 7px;" },
+              "Ouvrir le profil",
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                 $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
               )
             )
@@ -257,6 +239,11 @@ export default class MFicheCreateur extends DCLogic {
             )
           )
         ),
+        ($v.z?.capped) ? [
+          $h("p", { "style": "margin: 10px 20px 0; font-size: 12px; line-height: 1.45; color: var(--ink-faint);" },
+            "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus."
+          )
+        ] : null,
         ($v.z?.hasTip) ? [
           $h("div", { "style": "margin: 14px 20px 0; padding: 12px 14px; border-radius: 16px; display: flex; gap: 12px; align-items: flex-start; background: linear-gradient(90deg, var(--accent-soft), transparent); border: 1px solid var(--accent-edge);" },
             $h("span", { "style": "width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--blue-600); color: #FFFFFF;" },
@@ -317,36 +304,44 @@ export default class MFicheCreateur extends DCLogic {
             )
           ])
         ),
-        $h("nav", { "data-tabbar": "", "aria-label": "Navigation principale", "style": "position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; height: 64px; padding: 0 6px; box-sizing: border-box; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 32px; background: rgba(22,27,38,0.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 20px 50px rgba(0,0,0,0.55);" },
-          $h("a", { "href": "/app", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
+        $h("div", { "data-thumb": "", "style": "position: fixed; left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 8px; pointer-events: none;" },
+          $h("a", { "data-thumb-back": "", "href": "/app/createurs", "aria-label": `Revenir à ${$t($v.backName)}`, "style": "pointer-events: auto; flex: 0 3 auto; min-width: 50px; height: 50px; box-sizing: border-box; padding: 0 18px 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 25px; background: rgba(22,27,38,0.9); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 36px rgba(0,0,0,0.5); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+            $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+              $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
-            "Accueil"
+            $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+              $t($v.backName)
+            )
           ),
-          $h("a", { "href": "/app/apps", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
+          $h("span", { "aria-hidden": "true", "style": "flex: 1 1 0;" }),
+          $h("span", { "data-thumb-act": "", "style": "pointer-events: auto; flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px;" },
+            $h("button", { "type": "button", "onClick": $v.openAj, "aria-label": "Ajouter à un dossier", "style": "flex-shrink: 0; width: 50px; height: 50px; padding: 0; border: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(22,27,38,0.9); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 36px rgba(0,0,0,0.5); color: #FFFFFF; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
             ),
-            "Apps"
-          ),
-          $h("a", { "href": "/app/formats", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            ),
-            "Formats"
-          ),
-          $h("a", { "href": "/app/createurs", "data-tab": "", "aria-current": "page", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: #FFFFFF; font-size: 10.5px; font-weight: 700;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.1", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            ),
-            "Créateurs"
-          ),
-          $h("a", { "href": "/app/dossiers", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            ),
-            "Dossiers"
+            ($v.followNo) ? [
+              $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.toggleFollow, "aria-pressed": "false", "aria-label": $v.followAria, "style": "flex: 0 1 auto; min-width: 0; height: 50px; padding: 0 5px 0 18px; gap: 10px; font-size: 15px; text-decoration: none;" },
+                $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                  "Suivre"
+                ),
+                $h("span", { "class": "sw-btn-tile", "style": "width: 36px; height: 36px;" },
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                  )
+                )
+              )
+            ] : null,
+            ($v.followYes) ? [
+              $h("button", { "type": "button", "onClick": $v.toggleFollow, "aria-pressed": "true", "aria-label": $v.followAria, "style": "flex: 0 1 auto; min-width: 0; height: 50px; box-sizing: border-box; padding: 0 20px 0 16px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 25px; background: rgba(22,27,38,0.9); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 36px rgba(0,0,0,0.5); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--accent);" },
+                  $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
+                $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                  "Suivi"
+                )
+              )
+            ] : null
           )
         ),
         ($v.pal) ? [

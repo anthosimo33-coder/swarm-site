@@ -598,19 +598,12 @@ export default class MAlertes extends DCLogic {
         ),
         ($v.d?.on) ? [
           $h("section", { "ref": $v.setDetail, "data-swipe-pager": "", "data-swipe-at": $v.d?.at, "role": "dialog", "aria-modal": "true", "aria-label": $v.d?.aria, "onKeyDown": $v.dKeys, "style": "position: fixed; inset: 0; z-index: 45; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; background: var(--surface); color: var(--ink); font-family: var(--font-body); box-shadow: -24px 0 60px rgba(0,0,0,0.5);" },
-            $h("div", { "style": "position: sticky; top: 0; z-index: 2; height: 56px; padding: 0 8px 0 6px; display: flex; align-items: center; gap: 2px; background: rgba(8,11,18,0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
-              $h("button", { "ref": $v.setBack, "type": "button", "onClick": $v.closeD, "style": "height: 44px; padding: 0 10px 0 2px; display: inline-flex; align-items: center; gap: 2px; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 16px; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
-                $h("svg", { "width": "24", "height": "24", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                ),
-                "Alertes"
+            $h("div", { "style": "position: sticky; top: 0; z-index: 2; height: 56px; padding: 0 8px 0 20px; display: flex; align-items: center; gap: 2px; background: rgba(8,11,18,0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
+              $h("span", { "style": "flex: 1; min-width: 0; font-size: 13px; color: var(--ink-faint); font-variant-numeric: tabular-nums; white-space: nowrap;" },
+                $t($v.d?.pos)
               ),
-              $h("span", { "style": "flex: 1;" }),
               $h("button", { "data-swipe-prev": "", "type": "button", "onClick": $v.d?.prev, "disabled": $v.d?.noPrev, "aria-label": "Alerte précédente", "style": "position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); border: 0; white-space: nowrap;" },
                 "Alerte précédente"
-              ),
-              $h("span", { "style": "font-size: 13px; color: var(--ink-faint); font-variant-numeric: tabular-nums; white-space: nowrap;" },
-                $t($v.d?.pos)
               ),
               $h("button", { "data-swipe-next": "", "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.d?.next, "disabled": $v.d?.noNext, "aria-label": "Alerte suivante", "style": `flex-shrink: 0; width: 44px; height: 44px; opacity: ${$t($v.d?.nextO)};` },
                 $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -821,23 +814,35 @@ export default class MAlertes extends DCLogic {
                 )
               ] : null
             ),
-            $h("div", { "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; padding: 14px 16px max(14px, env(safe-area-inset-bottom)); display: flex; gap: 8px; background: linear-gradient(180deg, rgba(8,11,18,0) 0%, rgba(8,11,18,0.94) 30%, #080B12 100%);" },
-              $h("button", { "type": "button", "class": "sw-btn sw-btn-ghost", "onClick": $v.openAj, "aria-pressed": $v.d?.kept, "style": "flex: 1 1 0; min-width: 0; height: 50px; justify-content: center; gap: 9px; padding: 0 14px; border-color: rgba(255,255,255,0.12); background: rgba(22,27,38,0.9); font-size: 15px;" },
-                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
-                  $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": $v.d?.keepFill, "stroke": "currentColor", "stroke-width": "2", "stroke-linejoin": "round" })
+            $h("div", { "data-thumb": "", "style": "position: fixed; left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 8px; pointer-events: none;" },
+              $h("button", { "data-thumb-back": "", "type": "button", "ref": $v.setBack, "onClick": $v.closeD, "aria-label": "Revenir à Alertes", "style": "pointer-events: auto; flex: 0 3 auto; min-width: 50px; height: 50px; box-sizing: border-box; padding: 0 18px 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 25px; background: rgba(22,27,38,0.9); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 36px rgba(0,0,0,0.5); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                  $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 ),
-                $t($v.d?.keepLabel)
+                $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                  "Alertes"
+                )
               ),
-              ($v.d?.href) ? [
-                $h("a", { "class": "sw-btn sw-btn-primary", "href": $u($v.d?.href), "style": "flex: 1.4 1 0; min-width: 0; height: 50px; justify-content: space-between; padding: 0 6px 0 18px; font-size: 15px; text-decoration: none;" },
-                  $t($v.d?.cta),
-                  $h("span", { "class": "sw-btn-tile" },
-                    $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                      $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              $h("span", { "aria-hidden": "true", "style": "flex: 1 1 0;" }),
+              $h("span", { "data-thumb-act": "", "style": "pointer-events: auto; flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px;" },
+                $h("button", { "type": "button", "onClick": $v.openAj, "aria-pressed": $v.d?.kept, "aria-label": $v.d?.keepLabel, "style": "flex-shrink: 0; width: 50px; height: 50px; padding: 0; border: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(22,27,38,0.9); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 36px rgba(0,0,0,0.5); color: #FFFFFF; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": $v.d?.keepFill, "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                ),
+                ($v.d?.href) ? [
+                  $h("a", { "class": "sw-btn sw-btn-primary", "href": $u($v.d?.href), "style": "flex: 0 1 auto; min-width: 0; height: 50px; padding: 0 5px 0 18px; gap: 10px; font-size: 15px; text-decoration: none;" },
+                    $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                      $t($v.d?.cta)
+                    ),
+                    $h("span", { "class": "sw-btn-tile", "style": "width: 36px; height: 36px;" },
+                      $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      )
                     )
                   )
-                )
-              ] : null
+                ] : null
+              )
             )
           )
         ] : null,
@@ -854,11 +859,6 @@ export default class MAlertes extends DCLogic {
                 ),
                 $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
                   $t($v.rwCount)
-                )
-              ),
-              $h("button", { "ref": $v.setRwClose, "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.closeRw, "aria-label": "Fermer", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-right: -8px;" },
-                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               )
             ),
@@ -895,9 +895,14 @@ export default class MAlertes extends DCLogic {
                 )
               ])
             ),
-            $h("div", { "style": "position: sticky; bottom: 0; z-index: 2; margin: 0 -20px; padding: 14px 20px max(16px, env(safe-area-inset-bottom)); display: flex; justify-content: center; background: linear-gradient(180deg, rgba(13,17,26,0) 0%, rgba(13,17,26,0.96) 34%, #0D111A 100%);" },
-              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.openNa },
-                "Créer une alerte",
+            $h("div", { "style": "position: sticky; bottom: 0; z-index: 2; margin: 0 -20px; padding: 14px 20px max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(13,17,26,0) 0%, rgba(13,17,26,0.96) 34%, #0D111A 100%);" },
+              $h("button", { "class": "sw-btn sw-btn-ghost", "type": "button", "ref": $v.setRwClose, "onClick": $v.closeRw, "style": "flex: 0 0 auto; height: 50px; padding: 0 22px; background: #191D25; font-size: 15px;" },
+                "Fermer"
+              ),
+              $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.openNa, "style": "flex: 1 1 0; min-width: 0; height: 50px; justify-content: space-between; padding: 0 5px 0 20px; font-size: 15px; text-decoration: none;" },
+                $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                  "Créer une alerte"
+                ),
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })

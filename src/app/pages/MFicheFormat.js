@@ -38,7 +38,9 @@ export default class MFicheFormat extends DCLogic {
       P.save('follows', next);
     };
     const RP = b.reps || [];
-    return Object.assign({ repsShown: st.allReps ? RP : RP.slice(0, 12), moreReps: !st.allReps && RP.length > 12, moreRepsLabel: 'Voir les ' + (RP.length - 12) + ' autres reprises', showReps: () => this.setState({ allReps: true }), followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'format', id: fid, label: (b.f && b.f.raw) || '', cover: ((b.reps || []).filter((x) => x.src)[0] || {}).src || null } : null }, { followInk: f ? 'var(--accent)' : 'var(--ink-muted)', followYes: f, followNo: !f, followAria: f ? 'Ne plus suivre ce format' : 'Suivre ce format', copyLabel: st.copied ? (b.f.kind === 'Son' ? 'Nom du son copié' : 'Accroche copiée') : (b.f.kind === 'Son' ? 'Copier le nom du son' : 'Copier l’accroche'), copy: () => { try { navigator.clipboard.writeText(b.f.raw); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } });
+    return Object.assign({ repsShown: st.allReps ? RP : RP.slice(0, 12), moreReps: !st.allReps && RP.length > 12, moreRepsLabel: 'Voir les ' + (RP.length - 12) + ' autres reprises', showReps: () => this.setState({ allReps: true }), followOn: f ? 'true' : 'false', toggleFollow, ajItem: fid ? { kind: 'format', id: fid, label: (b.f && b.f.raw) || '', cover: ((b.reps || []).filter((x) => x.src)[0] || {}).src || null } : null }, { followInk: f ? 'var(--accent)' : 'var(--ink-muted)', followYes: f, followNo: !f, followAria: f ? 'Ne plus suivre ce format' : 'Suivre ce format', followText: f ? 'Suivi' : 'Suivre',
+      // La capsule retour (6C) : l'écran d'où l'on vient (history.state.from, posé par tabbar.js), sinon la liste des formats.
+      backName: (typeof history !== 'undefined' && history.state && history.state.from && history.state.from.name) || '' || 'Formats', copyLabel: st.copied ? (b.f.kind === 'Son' ? 'Nom du son copié' : 'Accroche copiée') : (b.f.kind === 'Son' ? 'Copier le nom du son' : 'Copier l’accroche'), copy: () => { try { navigator.clipboard.writeText(b.f.raw); } catch (e) {} this.setState({ copied: true }); clearTimeout(this.tm); this.tm = setTimeout(() => this.setState({ copied: false }), 2400); } });
   }
 
   baseVals() {
@@ -94,11 +96,6 @@ export default class MFicheFormat extends DCLogic {
       $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(96px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("header", { "style": "position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
           $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;" },
-            $h("a", { "class": "sw-btn sw-btn-icon", "href": "/app/formats", "aria-label": "Retour", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;" },
-              $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
-            ),
             $h("span", { "style": "flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
               $t($v.f?.kind)
             )
@@ -169,31 +166,25 @@ export default class MFicheFormat extends DCLogic {
               )
             )
           ] : null,
-          $h("div", { "style": "display: flex; align-items: center; justify-content: center; gap: 8px;" },
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.toggleFollow, "aria-label": $v.followAria, "title": $v.followAria, "aria-pressed": $v.followOn, "style": `width: 44px; height: 44px; flex-shrink: 0; color: ${$t($v.followInk)};` },
+          $h("div", { "style": "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;" },
+            $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.toggleFollow, "aria-label": $v.followAria, "aria-pressed": $v.followOn, "style": "height: 40px; gap: 7px;" },
               ($v.followYes) ? [
-                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                   $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               ] : null,
               ($v.followNo) ? [
-                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                   $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
                 )
-              ] : null
+              ] : null,
+              $t($v.followText)
             ),
-            $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.copy },
-              $t($v.copyLabel),
-              $h("span", { "class": "sw-btn-tile" },
-                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              )
-            ),
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openAj, "aria-label": "Ajouter à un dossier", "style": "width: 44px; height: 44px; flex-shrink: 0;" },
-              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+            $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.openAj, "style": "height: 40px; gap: 7px;" },
+              $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                 $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
+              ),
+              "Ajouter à un dossier"
             )
           )
         ),
@@ -319,36 +310,27 @@ export default class MFicheFormat extends DCLogic {
             )
           ])
         ),
-        $h("nav", { "data-tabbar": "", "aria-label": "Navigation principale", "style": "position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; height: 64px; padding: 0 6px; box-sizing: border-box; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 32px; background: rgba(22,27,38,0.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 20px 50px rgba(0,0,0,0.55);" },
-          $h("a", { "href": "/app", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
+        $h("div", { "data-thumb": "", "style": "position: fixed; left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 8px; pointer-events: none;" },
+          $h("a", { "data-thumb-back": "", "href": "/app/formats", "aria-label": `Revenir à ${$t($v.backName)}`, "style": "pointer-events: auto; flex: 0 3 auto; min-width: 50px; height: 50px; box-sizing: border-box; padding: 0 18px 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 25px; background: rgba(22,27,38,0.9); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 36px rgba(0,0,0,0.5); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+            $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+              $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
-            "Accueil"
+            $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+              $t($v.backName)
+            )
           ),
-          $h("a", { "href": "/app/apps", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            ),
-            "Apps"
-          ),
-          $h("a", { "href": "/app/formats", "data-tab": "", "aria-current": "page", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: #FFFFFF; font-size: 10.5px; font-weight: 700;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "2.1", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            ),
-            "Formats"
-          ),
-          $h("a", { "href": "/app/createurs", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            ),
-            "Créateurs"
-          ),
-          $h("a", { "href": "/app/dossiers", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
-            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-              $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
-            ),
-            "Dossiers"
+          $h("span", { "aria-hidden": "true", "style": "flex: 1 1 0;" }),
+          $h("span", { "data-thumb-act": "", "style": "pointer-events: auto; flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px;" },
+            $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.copy, "style": "flex: 0 1 auto; min-width: 0; height: 50px; padding: 0 5px 0 18px; gap: 10px; font-size: 15px; text-decoration: none;" },
+              $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                $t($v.copyLabel)
+              ),
+              $h("span", { "class": "sw-btn-tile", "style": "width: 36px; height: 36px;" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              )
+            )
           )
         ),
         ($v.pal) ? [

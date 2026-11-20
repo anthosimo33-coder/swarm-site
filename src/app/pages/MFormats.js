@@ -559,12 +559,7 @@ export default class MFormats extends DCLogic {
                   $h("button", { "type": "button", "onClick": $v.sh?.reset, "style": "min-height: 44px; padding: 0 8px; border: 0; background: transparent; color: var(--ink-muted); font-family: inherit; font-size: 15px; cursor: pointer;" },
                     $t($v.sh?.resetLabel)
                   )
-                ] : null,
-                $h("button", { "ref": $v.setShClose, "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.closeSh, "aria-label": "Fermer", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-right: -8px;" },
-                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  )
-                )
+                ] : null
               )
             ),
             $h("label", { "style": "display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; border-radius: 14px; background: rgba(255,255,255,0.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); color: var(--ink-faint);" },
@@ -609,11 +604,16 @@ export default class MFormats extends DCLogic {
                 )
               ] : null
             ),
-            $h("div", { "style": "position: sticky; bottom: 0; z-index: 2; margin: 0 -20px; padding: 14px 20px max(16px, env(safe-area-inset-bottom)); display: flex; justify-content: center; background: linear-gradient(180deg, rgba(13,17,26,0) 0%, rgba(13,17,26,0.96) 34%, #0D111A 100%);" },
-              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.closeSh },
-                $t($v.seeLabel),
+            $h("div", { "style": "position: sticky; bottom: 0; z-index: 2; margin: 0 -20px; padding: 14px 20px max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(13,17,26,0) 0%, rgba(13,17,26,0.96) 34%, #0D111A 100%);" },
+              $h("button", { "class": "sw-btn sw-btn-ghost", "type": "button", "ref": $v.setShClose, "onClick": $v.closeSh, "style": "flex: 0 0 auto; height: 50px; padding: 0 22px; background: #191D25; font-size: 15px;" },
+                "Fermer"
+              ),
+              $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.closeSh, "style": "flex: 1 1 0; min-width: 0; height: 50px; justify-content: space-between; padding: 0 5px 0 20px; font-size: 15px; text-decoration: none;" },
+                $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                  $t($v.seeLabel)
+                ),
                 $h("span", { "class": "sw-btn-tile" },
-                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )

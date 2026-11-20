@@ -66,18 +66,13 @@ export default class MAjout extends DCLogic {
     return [
       $h("div", { "class": "sw", "style": "position: fixed; inset: 0; z-index: 70; color: var(--ink); font-family: var(--font-body);" },
         $h("button", { "data-sheet-veil": "", "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.sheet?.close, "style": "position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
-        $h("section", { "data-sheet": "", "role": "dialog", "aria-modal": "true", "aria-label": "Ajouter à un dossier", "onKeyDown": $v.sheet?.keys, "style": `position: absolute; left: 0; right: 0; bottom: ${$t($v.kb)}; max-height: 88vh; max-height: calc(88dvh - ${$t($v.kb)}); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom));` },
+        $h("section", { "data-sheet": "", "role": "dialog", "aria-modal": "true", "aria-label": "Ajouter à un dossier", "onKeyDown": $v.sheet?.keys, "style": `position: absolute; left: 0; right: 0; bottom: ${$t($v.kb)}; max-height: 88vh; max-height: calc(88dvh - ${$t($v.kb)}); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px;` },
           $h("div", { "data-sheet-handle": "", "style": "display: flex; justify-content: center; padding: 10px 0 6px;" },
             $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);" })
           ),
           $h("div", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 12px;" },
             $h("span", { "style": "font-size: 20px; font-weight: 700; letter-spacing: -0.02em;" },
               "Ajouter à un dossier"
-            ),
-            $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.sheet?.close, "aria-label": "Fermer", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-right: -8px;" },
-              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
             )
           ),
           $h("div", { "class": "sw-search", "style": "height: 48px; padding: 0 14px; box-shadow: none; border-radius: 14px;" },
@@ -138,11 +133,16 @@ export default class MAjout extends DCLogic {
               $t($v.savedLabel)
             )
           ] : null,
-          $h("div", { "style": "display: flex; justify-content: center; padding-top: 16px;" },
-            $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.save },
-              "Terminé",
+          $h("div", { "style": "position: sticky; bottom: 0; z-index: 2; margin: 0 -20px; padding: 14px 20px max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(13,17,26,0) 0%, rgba(13,17,26,0.96) 34%, #0D111A 100%);" },
+            $h("button", { "class": "sw-btn sw-btn-ghost", "type": "button", "onClick": $v.sheet?.close, "style": "flex: 0 0 auto; height: 50px; padding: 0 22px; background: #191D25; font-size: 15px;" },
+              "Fermer"
+            ),
+            $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.save, "style": "flex: 1 1 0; min-width: 0; height: 50px; justify-content: space-between; padding: 0 5px 0 20px; font-size: 15px; text-decoration: none;" },
+              $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                "Terminé"
+              ),
               $h("span", { "class": "sw-btn-tile" },
-                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                 )
               )
