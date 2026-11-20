@@ -306,6 +306,10 @@ export const radarTables = {
     // La vidéo la plus récente qu'on avait de lui, qu'un relevé payant « trou » n'a pas retrouvée (supprimée) : elle
     // ne déclenche plus de relevé payant (radarFreeMath.listGap).
     gapChecked: v.optional(v.string()),
+    // Le passage où son relevé gratuit a échoué (profil refusé, page de vidéo illisible) : il attend le suivant au lieu
+    // du relevé payant, qui ne part qu'au second échec d'affilée (radarFreeMath.holdMisses). Effacé par tout relevé
+    // réussi, gratuit ou payant, et par une erreur de relevé.
+    freeMissAt: v.optional(v.number()),
     // Créateur généraliste payé une ou deux fois pour l'app (jugement de l'IA, radarJudgeMath.verdictAction) : pas un
     // créateur de l'app, mais sa vidéo compte dans ses vues, étiquetée « placement payé ». Il reste relevé.
     placement: v.optional(v.boolean()),
@@ -545,8 +549,9 @@ export const radarTables = {
     // Appels payants ÉVITÉS par une page publique de TikTok, par brique (radarSignalsMath.SavedKey) : au moins un
     // crédit chacun. C'est ce qui prouve, sur les serveurs, ce que le banc n'a mesuré que du poste.
     saved: v.optional(v.record(v.string(), v.number())),
-    // Une brique en « mesure » : la page publique ET le payant lus côte à côte, en VIDÉOS par verdict (courbe :
-    // egal, proche, ecart, repli, panne ; cf radarFreeMath.CurveMeasure), facturé ou non. La preuve avant une bascule.
+    // Une brique en « mesure » : la page publique ET le payant lus côte à côte, par verdict, facturé ou non. Courbe :
+    // egal, proche, ecart, repli, panne, en VIDÉOS (radarFreeMath.CurveMeasure) ; trou : trou-egal, trou-ecart,
+    // trou-manque:<page>, trou-paye:<page>, trou-panne, en comptes (radarFreeMath.GapMeasure). La preuve avant une bascule.
     measured: v.optional(v.record(v.string(), v.number())),
   })
     .index("by_month", ["month"])

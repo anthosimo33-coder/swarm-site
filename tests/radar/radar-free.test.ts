@@ -4,6 +4,7 @@ import {
   FREE_FRESH_MS,
   FREE_LANE_MAX_MS,
   FREE_REGION_PAGES,
+  GAP_FREE_CHECK,
   GAP_PAGES,
   LANE_FRESH_POST_MS,
   LANE_WAIT_FRESH_MS,
@@ -15,12 +16,26 @@ import {
   freeRead,
   freeStart,
   freeVideoUrl,
+  gapGone,
+  gapMeasure,
+  gapPageKind,
   gapReached,
   FIRST_FREE_PER_PASS,
+  FREE_MISS_KEEP_MS,
+  MISS_HOLD,
+  PASS_EVERY_MS,
   firstReadMisses,
+  freeReadSaved,
+  heldFirstNotReached,
+  heldSpared,
+  holdMisses,
+  missCost,
+  missPlan,
+  missReason,
   laneOrder,
   laneQueue,
   listGap,
+  listReaches,
   missCounts,
   overflowToPay,
   paced,
@@ -37,11 +52,28 @@ import {
   TRIAL_TOTAL,
   trialPick,
   trialPlan,
+  RESERVE_MISS_WAIT_MS,
+  reserveMisses,
   type FreePage,
+  type FreeWhy,
+  type GapPage,
+  type GapSeen,
   type KnownVideo,
+  type LaneMiss,
   type PaidPage,
 } from "../../convex/radar/radarFreeMath";
-import type { SignalInput } from "../../convex/radar/radarSignalsMath";
+import {
+  BALANCE_PROBE_MS,
+  CREDIT_RESERVE,
+  allowance,
+  budgetState,
+  needsBalanceProbe,
+  normalizeBudget,
+  tierDefers,
+  type BudgetSettings,
+  type BudgetState,
+  type SignalInput,
+} from "../../convex/radar/radarSignalsMath";
 import { profileNextCursor } from "../../convex/radar/scrapeCreatorsApi";
 
 /**
@@ -228,6 +260,226 @@ describe("Radar — relevé gratuit : la liste trouée (14/11/2026)", () => {
     expect(gapReached(liste, cible)).toEqual({ done: true, found: true });
     // Une vidéo plus ancienne que la cible est arrivée, sans la cible : elle n'est plus en ligne.
     expect(gapReached([liste[0], { videoId: V_VIEILLE, publishedAt: videoIdTime(V_VIEILLE) }], cible)).toEqual({ done: true, found: false });
+  });
+});
+
+describe("Radar — relevé gratuit : le trou vérifié sur la page de la vidéo (20/11/2026)", () => {
+  // La dernière vidéo qu'on a du compte, publiée il y a 3 jours, absente de sa liste.
+  const V_PARTIE = idAt(NOW - 3 * 24 * HOUR, 5);
+  const newest = { videoId: V_PARTIE, publishedAt: videoIdTime(V_PARTIE) };
+  const refus = (statusCode: number, statusMsg: string) =>
+    `<html><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({ __DEFAULT_SCOPE__: { "webapp.video-detail": { statusCode, statusMsg } } })}</script></html>`;
+  const listed = (ids: string[]) => ids.map((videoId) => ({ videoId, caption: "", views: 1, publishedAt: videoIdTime(videoId) }));
+  const rangee = (videoId: string, publishedAt = videoIdTime(videoId)): KnownVideo => ({ videoId, publishedAt });
+
+  it("sa page dit qu'elle n'est plus publique : supprimée, n'existe pas, visible par son autrice seule (10204)", () => {
+    expect(gapGone(supprimee, V_PARTIE)).toBe(true);
+    expect(gapGone(refus(10204, "video has been deleted"), V_PARTIE)).toBe(true);
+    expect(gapGone(refus(10204, "item_privacy_authorization&status_self_see"), V_PARTIE)).toBe(true);
+    expect(gapGone(refus(10204, ""), V_PARTIE)).toBe(true);
+    // Bloquée hors de sa région : elle existe ailleurs (le relevé payant peut la voir).
+    expect(gapGone(refus(10231, "cross_border_violation"), V_PARTIE)).toBe(false);
+    expect(gapGone(refus(10204, "author_secret,cross_border_violation"), V_PARTIE)).toBe(false);
+    // Un code inconnu, une vidéo servie (en ligne, une vidéo « photo » comprise), une page illisible : rien ne conclut.
+    expect(gapGone(refus(10101, "item doesn't exist"), V_PARTIE)).toBe(false);
+    expect(gapGone(video(V_PARTIE), V_PARTIE)).toBe(false);
+    expect(gapGone("<html>ratelimit triggered</html>", V_PARTIE)).toBe(false);
+  });
+
+  it("ce que sa page a rendu, en un mot (la mesure) : partie, servie, hors région, autre code, illisible, refusée, absente", () => {
+    // Revue du 20/11 : la mesure ne gardait qu'un booléen ; un 404 servi aux serveurs pour une vidéo partie n'aurait
+    // laissé que des « trou-manque », sans dire pourquoi.
+    const ok = (text: string): FreePage => ({ ok: true, text });
+    const kinds: [FreePage, GapPage][] = [
+      [ok(supprimee), "partie"],
+      [ok(refus(10204, "item_privacy_authorization&status_self_see")), "partie"],
+      [ok(refus(10204, "")), "partie"],
+      [ok(video(V_PARTIE)), "servie"],
+      [ok(refus(10231, "cross_border_violation")), "hors-region"],
+      [ok(refus(10204, "author_secret,cross_border_violation")), "hors-region"],
+      [ok(refus(10101, "item doesn't exist")), "autre-code"],
+      [ok("<html>ratelimit triggered</html>"), "illisible"],
+      [{ ok: false, kind: "suspect", reason: "HTTP 429" }, "refusee"],
+      [{ ok: false, kind: "absent" }, "absente"],
+    ];
+    for (const [page, kind] of kinds) expect(gapPageKind(page, V_PARTIE)).toBe(kind);
+    // « partie » si, et seulement si, gapGone : la décision et la mesure lisent la même règle.
+    for (const [page, kind] of kinds) expect(kind === "partie").toBe(page.ok && gapGone(page.text, V_PARTIE));
+  });
+
+  it("la liste remonte au-delà d'elle : une vidéo DÉJÀ RANGÉE, publiée avant elle (sa vraie date), y est", () => {
+    const liste = listed([V_NEUVE, V_HIER, V_SEMAINE]);
+    expect(listReaches(liste, [rangee(V_SEMAINE)], newest)).toBe(true);
+    // Que des vidéos sorties depuis : le compte a pu publier plus que la liste, vrai trou possible.
+    expect(listReaches(listed([V_NEUVE, V_HIER]), [rangee(V_HIER)], newest)).toBe(false);
+    // Une vidéo qu'on n'a pas : sa date est celle de son téléversement, elle ne prouve rien.
+    expect(listReaches(liste, [], newest)).toBe(false);
+    // Téléversée avant elle mais programmée, publiée après : la vraie date fait foi.
+    expect(listReaches(liste, [rangee(V_SEMAINE, NOW - 2 * HOUR)], newest)).toBe(false);
+    // Rangée mais plus dans la liste : elle ne dit rien de la liste.
+    expect(listReaches(listed([V_NEUVE, V_HIER]), [rangee(V_SEMAINE)], newest)).toBe(false);
+  });
+
+  const P = freeProfileUrl("lea.revise");
+  const U = (id: string) => freeVideoUrl("lea.revise", id);
+  /** `o.bascule` : GAP_FREE_CHECK vrai (la règle en vrai) ; `o.payant` : un relevé payant peut partir au passage. */
+  const read = async (
+    ids: string[],
+    partie: FreePage | string | undefined,
+    known: KnownVideo[],
+    o: { bascule?: boolean; payant?: boolean; neuve?: FreePage | string } = {},
+  ) => {
+    const asked: string[] = [];
+    const pages: Record<string, FreePage | string | undefined> = { [P]: profil(ids.map((id) => ({ id, playCount: 500 }))), [U(V_PARTIE)]: partie, [U(V_NEUVE)]: o.neuve ?? video(V_NEUVE), [U(V_HIER)]: video(V_HIER) };
+    const r = await freeRead(
+      "lea.revise",
+      {
+        page: async (url: string): Promise<FreePage> => {
+          asked.push(url);
+          const p = pages[url];
+          return p === undefined ? { ok: false, kind: "absent" } : typeof p === "string" ? { ok: true, text: p } : p;
+        },
+        known: async (ids2: string[]) => known.filter((k) => ids2.includes(k.videoId)),
+        newest: async () => newest,
+        ...(o.payant === undefined ? {} : { gapPage: () => o.payant! }),
+      },
+      NOW,
+      undefined,
+      false,
+      o.bascule ?? GAP_FREE_CHECK,
+    );
+    return { r, asked };
+  };
+  const seen = (ids: string[], page: GapPage): GapSeen => ({ page, listed: ids, at: NOW });
+
+  it("en mesure (GAP_FREE_CHECK faux, revue du 20/11) : la règle n'a jamais été mesurée de nos serveurs", () => {
+    expect(GAP_FREE_CHECK).toBe(false);
+  });
+
+  it("en mesure : supprimée et la liste remonte — sa page est lue, la décision part avec le trou, payant comme avant", async () => {
+    const ids = [V_NEUVE, V_HIER, V_SEMAINE];
+    const { r, asked } = await read(ids, supprimee, [rangee(V_SEMAINE)]);
+    expect(asked).toEqual([P, U(V_PARTIE)]);
+    expect(r).toEqual({ ok: false, why: "gap", pages: 2, newest, seen: seen(ids, "partie") });
+  });
+
+  it("bascule : supprimée et la liste remonte — le relevé gratuit continue, la vidéo est vérifiée, sa page comptée", async () => {
+    const { r, asked } = await read([V_NEUVE, V_HIER, V_SEMAINE], supprimee, [rangee(V_SEMAINE)], { bascule: true });
+    expect(asked).toEqual([P, U(V_PARTIE), U(V_NEUVE), U(V_HIER)]);
+    expect(r).toMatchObject({ ok: true, gapChecked: V_PARTIE, pages: 4 });
+    if (!r.ok) throw new Error("relevé gratuit attendu");
+    expect(r.videos.map((v) => v.videoId)).toEqual([V_NEUVE, V_HIER]);
+    expect(r.light.map((v) => v.videoId)).toEqual([V_SEMAINE]);
+  });
+
+  it("bascule : trou vérifié puis page d'une vidéo inconnue illisible — le payant reprend le trou (newest), page après page", async () => {
+    // Revue du 20/11 : sans `newest`, le repli ne lisait qu'UNE page (10 vidéos), plus faible que le « trou » d'avant.
+    for (const neuve of ["<html>ratelimit triggered</html>", { ok: false, kind: "suspect", reason: "HTTP 429" } as FreePage]) {
+      const { r, asked } = await read([V_NEUVE, V_HIER, V_SEMAINE], supprimee, [rangee(V_SEMAINE)], { bascule: true, neuve });
+      expect(r).toEqual({ ok: false, why: "detail", pages: 3, newest });
+      expect(asked).toEqual([P, U(V_PARTIE), U(V_NEUVE)]);
+    }
+    // En mesure, la même liste s'arrête au trou, avant toute page de vidéo.
+    expect((await read([V_NEUVE, V_HIER, V_SEMAINE], supprimee, [rangee(V_SEMAINE)], { neuve: "<html>x</html>" })).r).toMatchObject({ ok: false, why: "gap", pages: 2, newest });
+    // Sans trou, une page illisible ne porte pas de vidéo à retrouver (le payant d'une page, comme avant).
+    expect((await read([V_NEUVE, V_PARTIE, V_SEMAINE], supprimee, [rangee(V_PARTIE)], { bascule: true, neuve: "<html>x</html>" })).r).toEqual({ ok: false, why: "detail", pages: 2 });
+  });
+
+  it("aucun relevé payant possible au passage (part nulle : réserve, poste coupé, jour épuisé) : trou sans lire sa page", async () => {
+    // Revue du 20/11 : le compte reste dû, et sa page serait relue à chaque passage pour rien.
+    for (const bascule of [false, true]) {
+      const { r, asked } = await read([V_NEUVE, V_HIER, V_SEMAINE], supprimee, [rangee(V_SEMAINE)], { bascule, payant: false });
+      expect(r).toEqual({ ok: false, why: "gap", pages: 1, newest });
+      expect(asked).toEqual([P]);
+    }
+    expect((await read([V_NEUVE, V_HIER, V_SEMAINE], supprimee, [rangee(V_SEMAINE)], { payant: true })).asked).toEqual([P, U(V_PARTIE)]);
+  });
+
+  it("supprimée mais la liste ne remonte pas : trou, sans lire sa page", async () => {
+    const { r, asked } = await read([V_NEUVE, V_HIER], supprimee, [rangee(V_HIER)]);
+    expect(r).toEqual({ ok: false, why: "gap", pages: 1, newest });
+    expect(asked).toEqual([P]);
+    // Une vieille vidéo qu'on n'a pas (date de téléversement seule) ne suffit pas.
+    expect((await read([V_NEUVE, V_HIER, V_VIEILLE], supprimee, [])).r).toEqual({ ok: false, why: "gap", pages: 1, newest });
+  });
+
+  it("en ligne, bloquée hors de sa région, code inconnu, page illisible, refusée ou absente : trou, payant comme avant", async () => {
+    const liste = [V_NEUVE, V_HIER, V_SEMAINE];
+    const cases: [FreePage | string | undefined, GapPage][] = [
+      [video(V_PARTIE), "servie"],
+      [refus(10231, "cross_border_violation"), "hors-region"],
+      [refus(10101, "item doesn't exist"), "autre-code"],
+      ["<html>ratelimit triggered</html>", "illisible"],
+      [{ ok: false, kind: "suspect", reason: "HTTP 429" }, "refusee"],
+      [undefined, "absente"],
+    ];
+    for (const [partie, kind] of cases) {
+      for (const bascule of [false, true]) {
+        const { r, asked } = await read(liste, partie, [rangee(V_SEMAINE)], { bascule });
+        // La décision part avec le genre de page : la mesure le ventile (trou-manque:servie, trou-manque:absente…).
+        expect(r).toEqual({ ok: false, why: "gap", pages: 2, newest, seen: seen(liste, kind) });
+        expect(asked).toEqual([P, U(V_PARTIE)]);
+      }
+    }
+  });
+
+  it("pas de trou : sa page n'est pas lue, rien n'est marqué", async () => {
+    const { r, asked } = await read([V_NEUVE, V_PARTIE, V_SEMAINE], supprimee, [rangee(V_PARTIE), rangee(V_SEMAINE)]);
+    expect(asked).toEqual([P, U(V_NEUVE)]);
+    expect(r).toMatchObject({ ok: true, pages: 2 });
+    expect(r).not.toHaveProperty("gapChecked");
+  });
+});
+
+describe("Radar — le trou en mesure : la page contre le payant, côte à côte (gapMeasure, revue du 20/11/2026)", () => {
+  const V_PARTIE = idAt(NOW - 3 * 24 * HOUR, 5);
+  const newest = { videoId: V_PARTIE, publishedAt: videoIdTime(V_PARTIE) };
+  const v = (videoId: string, publishedAt = videoIdTime(videoId)) => ({ videoId, publishedAt });
+  const V_PHOTO = idAt(NOW - 2 * 24 * HOUR, 6);
+  // La liste du profil lue par la voie : deux vidéos sorties depuis, une plus ancienne qu'elle (la liste remonte).
+  const listed = [V_NEUVE, V_HIER, V_SEMAINE];
+  const page = (kind: boolean | GapPage): GapSeen => ({ page: kind === true ? "partie" : kind === false ? "servie" : kind, listed, at: NOW });
+  const lu = (videos: { videoId: string; publishedAt: number }[], reached = { done: true, found: false }) => ({ outcome: "read" as const, videos, reached });
+
+  it("accord : la page la dit partie, le payant passe sa date sans la voir ni rien rapporter que la liste n'avait — la page aurait suffi", () => {
+    expect(gapMeasure(page(true), lu([v(V_NEUVE), v(V_HIER), v(V_SEMAINE)]), newest)).toBe("trou-egal");
+    // Une épinglée plus ancienne rapportée par le payant ne compte pas : elle n'est pas « plus récente qu'elle ».
+    expect(gapMeasure(page(true), lu([v(V_NEUVE), v(V_VIEILLE)]), newest)).toBe("trou-egal");
+  });
+
+  it("désaccord : la page la dit partie, mais le payant la retrouve, ou rapporte une publication que la liste n'a pas (photo)", () => {
+    expect(gapMeasure(page(true), lu([v(V_NEUVE), v(V_PARTIE)], { done: true, found: true }), newest)).toBe("trou-ecart");
+    expect(gapMeasure(page(true), lu([v(V_NEUVE), v(V_PHOTO), v(V_SEMAINE)]), newest)).toBe("trou-ecart");
+  });
+
+  it("une publication sortie après le début du passage ne compte pas : la liste ne pouvait pas l'avoir", () => {
+    const apres = v(idAt(NOW + 2 * 60_000, 7));
+    expect(gapMeasure(page(true), lu([apres, v(V_NEUVE), v(V_SEMAINE)]), newest)).toBe("trou-egal");
+  });
+
+  it("la page ne concluait pas : économie manquée si le payant n'a rien de plus, payant utile sinon — par genre de page", () => {
+    expect(gapMeasure(page(false), lu([v(V_NEUVE), v(V_SEMAINE)]), newest)).toBe("trou-manque:servie");
+    expect(gapMeasure(page(false), lu([v(V_NEUVE), v(V_PARTIE)], { done: true, found: true }), newest)).toBe("trou-paye:servie");
+    expect(gapMeasure(page(false), lu([v(V_PHOTO), v(V_SEMAINE)]), newest)).toBe("trou-paye:servie");
+    // Revue du 20/11 : ce que les serveurs reçoivent pour une vidéo partie n'a jamais été vu ; un 404 (absente), une
+    // page sans données (illisible) ou un autre code se lisent dans radarUsage.measured, compteur par compteur.
+    for (const k of ["hors-region", "autre-code", "illisible", "refusee", "absente"] as const) {
+      expect(gapMeasure(page(k), lu([v(V_NEUVE), v(V_SEMAINE)]), newest)).toBe(`trou-manque:${k}`);
+      expect(gapMeasure(page(k), lu([v(V_NEUVE), v(V_PARTIE)], { done: true, found: true }), newest)).toBe(`trou-paye:${k}`);
+    }
+  });
+
+  it("le payant n'a pas conclu (première page refusée, plus de crédits, trois pages sans passer sa date) : panne, rien de décidé", () => {
+    expect(gapMeasure(page(true), { outcome: "error", videos: [], reached: { done: false, found: false } }, newest)).toBe("trou-panne");
+    expect(gapMeasure(page(true), { outcome: "stop", videos: [v(V_NEUVE)], reached: { done: false, found: false } }, newest)).toBe("trou-panne");
+    expect(gapMeasure(page(false), lu([v(V_NEUVE), v(V_HIER)], { done: false, found: false }), newest)).toBe("trou-panne");
+  });
+
+  it("appels évités d'un relevé gratuit réussi : l'échec retenu (« repli »), sinon le trou vérifié (« trou »), un seul pour les deux", () => {
+    expect(freeReadSaved({}, {})).toEqual({});
+    expect(freeReadSaved({ gapChecked: V_PARTIE }, {})).toEqual({ trou: 1 });
+    expect(freeReadSaved({}, { freeMissAt: NOW - 10 * 60_000 })).toEqual({ repli: 1 });
+    expect(freeReadSaved({ gapChecked: V_PARTIE }, { freeMissAt: NOW - 10 * 60_000 })).toEqual({ repli: 1 });
   });
 });
 
@@ -493,6 +745,312 @@ describe("Radar — relevé gratuit : la voie gratuite d'un passage (13/11/2026)
     expect(await freeRead("lea.revise", { page, known: async () => [], newest: async () => ({ videoId: V_HIER, publishedAt: videoIdTime(V_HIER) }) }, NOW)).toMatchObject({ ok: true, pages: 3 });
     // Une liste trouée n'est pas un refus de TikTok : le coupe-circuit ne compte pas.
     expect(freeNote(freeStart(), "gap")).toMatchObject({ on: true, fallback: 1, streak: 0 });
+  });
+});
+
+describe("Radar — relevé gratuit : le repli reporté d'un passage (brique 7, 20/11/2026)", () => {
+  // Le 13/11, 80 profils refusés par rafales de 5 à 20 secondes, 78 relus ensuite : un compte raté attend le passage
+  // suivant (10 minutes) au lieu du relevé payant, qui ne part qu'au second échec d'affilée.
+  const MIN = 60_000;
+  type Acc = { name: string; dueAt: number; lastPostAt?: number; first: boolean; freeMissAt?: number };
+  // Un compte suivi qui a publié il y a 18 heures (son second regard), dû depuis 3 minutes : la voie l'a pris aussitôt.
+  const acc = (name: string, o: Partial<Acc> = {}): Acc => ({ name, dueAt: NOW - 3 * MIN, lastPostAt: NOW - 18 * HOUR, first: false, ...o });
+  const miss = (account: Acc, why: FreeWhy = "suspect") => ({ account, why });
+  const open = { laneOpen: true, capacity: Infinity, waitFirst: false };
+  const names = (r: { hold: Acc[] }) => r.hold.map((a) => a.name);
+  const paid = (r: { pay: { account: Acc; why: FreeWhy }[] }) => r.pay.map((m) => [m.account.name, missReason(m)]);
+
+  it("un passage toutes les 10 minutes ; un échec retenu compte deux passages et demi ; seuls un refus et une page de vidéo illisible attendent", () => {
+    expect([PASS_EVERY_MS, FREE_MISS_KEEP_MS]).toEqual([10 * MIN, 25 * MIN]);
+    expect(MISS_HOLD).toEqual(["suspect", "detail"]);
+  });
+
+  it("premier échec (profil refusé, page de vidéo illisible) : pas payé, retenu ; la liste trouée part au payant comme avant", () => {
+    const troue = { ...miss(acc("troue"), "gap"), newest: { videoId: V_HIER, publishedAt: videoIdTime(V_HIER) } };
+    const r = holdMisses([miss(acc("refuse")), miss(acc("illisible"), "detail"), troue], open, NOW);
+    expect(names(r)).toEqual(["refuse", "illisible"]);
+    expect(paid(r)).toEqual([["troue", "trou"]]);
+    expect(r.pay[0]).toBe(troue);
+  });
+
+  it("second échec d'affilée — retenu au passage d'avant, ou à celui d'avant encore (l'heure glisse de quelques secondes) : payé « repli »", () => {
+    const r = holdMisses(
+      [
+        miss(acc("p-1", { dueAt: NOW - 13 * MIN, freeMissAt: NOW - 10 * MIN })),
+        miss(acc("p-2", { dueAt: NOW - 45 * MIN, lastPostAt: NOW - 72 * HOUR, freeMissAt: NOW - 20 * MIN - 4_000 }), "detail"),
+        miss(acc("bord", { dueAt: NOW - 30 * MIN, lastPostAt: undefined, freeMissAt: NOW - FREE_MISS_KEEP_MS })),
+      ],
+      open,
+      NOW,
+    );
+    expect(r.hold).toEqual([]);
+    expect(paid(r)).toEqual([["p-1", "repli"], ["p-2", "repli"], ["bord", "repli"]]);
+  });
+
+  it("échec retenu périmé (trois passages, ou hier avant une mise en pause) : le nouvel échec compte comme premier, retenu à son tour", () => {
+    const r = holdMisses(
+      [miss(acc("p-3", { dueAt: NOW - 35 * MIN, lastPostAt: NOW - 72 * HOUR, freeMissAt: NOW - 30 * MIN })), miss(acc("hier", { freeMissAt: NOW - 24 * HOUR }), "detail")],
+      open,
+      NOW,
+    );
+    expect(names(r)).toEqual(["p-3", "hier"]);
+    expect(r.pay).toEqual([]);
+  });
+
+  it("deux passages de bout en bout : retenu, puis payé « repli » au second refus — ou compté évité s'il se lit", () => {
+    const a = acc("refuse");
+    expect(names(holdMisses([miss(a)], open, NOW))).toEqual(["refuse"]);
+    // holdFreeMisses pose l'heure du passage ; 10 minutes plus tard, le compte est encore dû, en tête de la voie.
+    const next = { ...a, freeMissAt: NOW };
+    expect(paid(holdMisses([miss(next)], open, NOW + PASS_EVERY_MS))).toEqual([["refuse", "repli"]]);
+    expect([heldSpared(next), heldSpared(a)]).toEqual([1, 0]);
+  });
+
+  it("jamais hors de la fenêtre de overflowToPay : ce qui attend reste dans la sienne au passage suivant, le reste est payé tout de suite", () => {
+    const comptes = [
+      acc("frais-9", { dueAt: NOW - 9 * MIN }),
+      acc("frais-10", { dueAt: NOW - 10 * MIN }),
+      acc("frais-45", { dueAt: NOW - 45 * MIN }),
+      acc("calme-49", { dueAt: NOW - 49 * MIN, lastPostAt: NOW - 72 * HOUR }),
+      acc("calme-50", { dueAt: NOW - 50 * MIN, lastPostAt: NOW - 72 * HOUR }),
+      acc("jamais-publie-49", { dueAt: NOW - 49 * MIN, lastPostAt: undefined }),
+      acc("en-retard-3h", { dueAt: NOW - 3 * HOUR, lastPostAt: NOW - 72 * HOUR }),
+    ];
+    const r = holdMisses(comptes.map((a) => miss(a)), open, NOW);
+    expect(names(r)).toEqual(["frais-9", "calme-49", "jamais-publie-49"]);
+    expect(paid(r).map(([n]) => n)).toEqual(["frais-10", "frais-45", "calme-50", "en-retard-3h"]);
+    // Au début du passage suivant, tous sont encore dans leur fenêtre : la voie les prend parmi les premiers (le frais en
+    // tête, les calmes avant tout compte dû depuis moins longtemps).
+    expect(overflowToPay(r.hold, true, NOW + PASS_EVERY_MS).pay).toEqual([]);
+    const neuf = acc("du-depuis-1-min", { dueAt: NOW + PASS_EVERY_MS - MIN, lastPostAt: NOW - 72 * HOUR });
+    expect(laneOrder([neuf, ...r.hold], NOW + PASS_EVERY_MS).map((a) => a.name)).toEqual(["frais-9", "calme-49", "jamais-publie-49", "du-depuis-1-min"]);
+    // Pas atteints (voie coupée par le temps, revue du 20/11 : overflowToPay juge à la fin de la voie, ~7 min plus
+    // tard) : sortis de leur fenêtre, ils sont payés « retard » à la fin de ce passage — le repli d'avant, un passage plus
+    // tard. Jamais au-delà : FREE_MISS_KEEP_MS couvre ce passage et le suivant.
+    expect(overflowToPay(r.hold, true, NOW + PASS_EVERY_MS + FREE_LANE_MAX_MS)).toEqual({ pay: r.hold, reason: "retard" });
+    // Le second regard d'un compte qui a publié il y a 18 heures (dû à H+18) : relu avant H+18 h 20, ou payé vers
+    // H+18 h 28 au plus tard, loin de H+24.
+    expect(r.hold[0].dueAt + PASS_EVERY_MS + FREE_LANE_MAX_MS - (r.hold[0].lastPostAt ?? 0)).toBeLessThan(LANE_FRESH_POST_MS);
+  });
+
+  it("coupe-circuit (voie fermée) : tout part au payant tout de suite, comme ce qu'elle n'a pas pris (« coupure »)", () => {
+    const r = holdMisses([miss(acc("a")), miss(acc("b"), "detail")], { ...open, laneOpen: false }, NOW);
+    expect(r.hold).toEqual([]);
+    expect(paid(r)).toEqual([["a", "repli"], ["b", "repli"]]);
+  });
+
+  it("pas de budget payant au passage : rien n'est retenu (rien ne serait parti : pas d'appel évité à compter)", () => {
+    const r = holdMisses([miss(acc("a"))], { ...open, capacity: 0 }, NOW);
+    expect([r.hold, r.pay.length]).toEqual([[], 1]);
+  });
+
+  it("part payante saturée : seuls les ratés que le passage aurait payés sont retenus, leur part gardée (aucun payé ne la perd)", () => {
+    // Revue du 20/11 : 2 crédits pour 5 refus — sans la brique, 2 payés, 3 restés dus et relus gratuitement sans rien
+    // éviter. Avec elle, 2 retenus (2 appels évités), les 3 autres comme avant.
+    const cinq = ["a", "b", "c", "d", "e"].map((x) => miss(acc(x)));
+    const r = holdMisses(cinq, { ...open, capacity: 2 }, NOW);
+    expect([names(r), paid(r).map(([x]) => x)]).toEqual([["a", "b"], ["c", "d", "e"]]);
+    // La part se prend dans l'ordre où le passage paie : premiers relevés, puis comptes suivis, au coût le plus haut de
+    // chacun (un trou : GAP_PAGES pages).
+    expect([missCost({}), missCost({ newest: { videoId: V_HIER, publishedAt: 0 } })]).toEqual([1, GAP_PAGES]);
+    const troue = { ...miss(acc("troue"), "gap"), newest: { videoId: V_HIER, publishedAt: videoIdTime(V_HIER) } };
+    const neuf = miss(acc("neuf", { first: true, lastPostAt: undefined }));
+    expect(names(holdMisses([troue, miss(acc("x")), neuf], { ...open, capacity: 4 }, NOW))).toEqual(["neuf"]);
+    expect(names(holdMisses([troue, miss(acc("x")), neuf], { ...open, capacity: 5 }, NOW))).toEqual(["x", "neuf"]);
+    // Au palier survie, un premier relevé ne paie rien (il attend) : il ne prend pas de part.
+    expect(names(holdMisses([neuf, miss(acc("x"))], { ...open, capacity: 1, waitFirst: true }, NOW))).toEqual(["x"]);
+  });
+
+  it("premier relevé : même règle, sa fenêtre court depuis son entrée ; au palier survie, il attend l'heure habituelle sans rien payer", () => {
+    const neuf = (name: string, o: Partial<Acc> = {}) => acc(name, { first: true, lastPostAt: undefined, dueAt: NOW - 5 * MIN, ...o });
+    const r = holdMisses([miss(neuf("entre")), miss(neuf("deja-rate", { freeMissAt: NOW - 10 * MIN })), miss(neuf("file-2h", { dueAt: NOW - 2 * HOUR }), "detail")], open, NOW);
+    expect(names(r)).toEqual(["entre"]);
+    // Second échec, ou entré il y a deux heures (en dehors de sa fenêtre) : relevé payant « premier », comme avant.
+    expect(firstReadMisses(r.pay.map((m) => m.account.name), [], true, false)).toEqual({ pay: ["deja-rate", "file-2h"], defer: [] });
+    // Palier survie : rien n'est retenu, il attend une heure sans rien payer (firstReadMisses) — un compte suivi, lui, attend.
+    const s = holdMisses([miss(neuf("entre")), miss(acc("suivi"))], { ...open, waitFirst: true }, NOW);
+    expect(names(s)).toEqual(["suivi"]);
+    expect(firstReadMisses(s.pay.map((m) => m.account.name), [], true, true)).toEqual({ pay: [], defer: ["entre"] });
+  });
+});
+
+describe("Radar — le passage et ses ratés, dans l'ordre où il paie (missPlan, revue du 20/11/2026)", () => {
+  const MIN = 60_000;
+  type Acc = { name: string; dueAt: number; lastPostAt?: number; first: boolean; freeMissAt?: number };
+  const acc = (name: string, o: Partial<Acc> = {}): Acc => ({ name, dueAt: NOW - 3 * MIN, lastPostAt: NOW - 18 * HOUR, first: false, ...o });
+  const neuf = (name: string, o: Partial<Acc> = {}) => acc(name, { first: true, lastPostAt: undefined, dueAt: NOW - 5 * MIN, ...o });
+  const miss = (account: Acc, why: FreeWhy = "suspect"): LaneMiss<Acc> => ({ account, why });
+  const pass = (o: Partial<{ laneOpen: boolean; n: number; waitFirst: boolean; reserveReached: boolean }> = {}) => ({ laneOpen: true, n: 20, waitFirst: false, reserveReached: false, ...o });
+  const names = (l: readonly (Acc | LaneMiss<Acc>)[]) => l.map((x) => ("account" in x ? x.account.name : x.name));
+
+  it("un premier relevé retenu puis pas atteint au passage suivant y est payé « premier », en tête — plus d'attente sans borne", () => {
+    // Revue du 20/11 : retenu à P0, la voie de P1 passe ses 7 minutes sur des comptes suivis ; firstReadMisses (voie
+    // ouverte) ne le payait jamais, il attendait que la voie revienne aux nouveaux comptes (jusqu'à 12 h le 16/11).
+    const x = neuf("x");
+    const p0 = missPlan([miss(x)], [], pass(), NOW);
+    expect([names(p0.hold), p0.firstPay]).toEqual([["x"], []]);
+    const p1 = missPlan([], [{ ...x, freeMissAt: NOW }, neuf("pas-retenu"), neuf("retenu-il-y-a-30-min", { freeMissAt: NOW - 20 * MIN })], pass(), NOW + PASS_EVERY_MS);
+    expect(names(p1.firstPay)).toEqual(["x"]);
+    expect([p1.firstDefer, p1.hold, p1.missPay]).toEqual([[], [], []]);
+    expect(heldFirstNotReached([{ ...x, freeMissAt: NOW }, acc("suivi", { freeMissAt: NOW })], NOW + PASS_EVERY_MS).map((a) => a.name)).toEqual(["x"]);
+    // Il passe avant les premiers relevés ratés de ce passage.
+    expect(names(missPlan([miss(neuf("rate-2", { freeMissAt: NOW }))], [{ ...x, freeMissAt: NOW }], pass(), NOW + PASS_EVERY_MS).firstPay)).toEqual(["x", "rate-2"]);
+    // Au palier survie, il attend l'heure habituelle ; voie fermée, il est payé comme tout ce qu'elle n'a pas pris.
+    expect(names(missPlan([], [{ ...x, freeMissAt: NOW }], pass({ waitFirst: true }), NOW + PASS_EVERY_MS).firstDefer)).toEqual(["x"]);
+    expect(names(missPlan([], [{ ...x, freeMissAt: NOW }, neuf("y")], pass({ laneOpen: false }), NOW + PASS_EVERY_MS).firstPay)).toEqual(["x", "y"]);
+  });
+
+  it("part saturée : 2 crédits, 5 refus — 2 retenus, leur part gardée (rien de plus pour le « retard »), 3 dus comme avant", () => {
+    const p = missPlan(["a", "b", "c", "d", "e"].map((x) => miss(acc(x))), [], pass({ n: 2 }), NOW);
+    expect([names(p.hold), names(p.missPay), p.limit]).toEqual([["a", "b"], ["c", "d", "e"], 0]);
+    // Part large : tout refus frais est retenu, la part du reste est entière moins les retenus.
+    const q = missPlan(["a", "b"].map((x) => miss(acc(x))), [], pass({ n: 20 }), NOW);
+    expect([names(q.hold), q.missPay, q.limit]).toEqual([["a", "b"], [], 18]);
+  });
+
+  it("voie saturée (un compte dû pas pris, suivi ou premier relevé) : rien n'est retenu, tout part au payant comme avant", () => {
+    // Revue du 20/11 au soir (banc repli.ts, file saturée) : un retenu repris en tête de la voie suivante y prenait la
+    // place d'un autre compte, payé « retard » (x40 : jusqu'à +85 crédits par jour), et saved.repli n'était plus un
+    // plancher. Voie libre seulement.
+    const ratés = () => [miss(acc("t")), miss(acc("u"), "detail")];
+    const libre = missPlan(ratés(), [], pass(), NOW);
+    expect([names(libre.hold), libre.missPay, libre.limit]).toEqual([["t", "u"], [], 18]);
+    for (const left of [[acc("suivi-pas-pris", { dueAt: NOW - 2 * MIN })], [neuf("neuf-pas-pris")]]) {
+      const p = missPlan(ratés(), left, pass(), NOW);
+      expect([p.hold, names(p.missPay), p.limit]).toEqual([[], ["t", "u"], 20]);
+    }
+    // Un premier relevé retenu au passage d'avant et pas atteint : payé en tête ; aucune retenue ne prend sa part.
+    const late = neuf("late", { freeMissAt: NOW - PASS_EVERY_MS });
+    const p = missPlan([miss(acc("t"))], [late], pass({ n: 1 }), NOW);
+    expect([names(p.firstPay), p.hold, names(p.missPay), p.limit]).toEqual([["late"], [], ["t"], 1]);
+    // Palier survie : il attend sans rien payer ; la voie reste saturée, rien n'est retenu non plus.
+    const r = missPlan([miss(acc("t"))], [late], pass({ n: 1, waitFirst: true }), NOW);
+    expect([names(r.firstDefer), r.hold, names(r.missPay), r.limit]).toEqual([["late"], [], ["t"], 1]);
+  });
+
+  it("sous la réserve (part nulle) : rien de retenu, la brique 8 repousse ; un premier relevé dû reste dû (rien ne part)", () => {
+    const troue: LaneMiss<Acc> = { ...miss(acc("troue"), "gap"), newest: { videoId: V_HIER, publishedAt: videoIdTime(V_HIER) } };
+    const p = missPlan([troue, miss(acc("frais"))], [neuf("late", { freeMissAt: NOW - PASS_EVERY_MS })], pass({ n: 0, reserveReached: true }), NOW);
+    expect([p.hold, names(p.reserveDefer), names(p.missPay), names(p.firstPay), p.limit]).toEqual([[], ["troue"], ["frais"], ["late"], 0]);
+  });
+
+  it("un trou (et, en bascule, un trou vérifié puis une page de vidéo illisible) part avec sa vidéo à retrouver et ce que sa page a dit", () => {
+    const newest = { videoId: V_HIER, publishedAt: videoIdTime(V_HIER) };
+    const seen: GapSeen = { page: "partie", listed: [V_NEUVE], at: NOW };
+    const troue: LaneMiss<Acc> = { account: acc("troue"), why: "gap", newest, seen };
+    // Second échec d'une page illisible après un trou vérifié : payé « repli », page après page jusqu'à `newest`.
+    const detail: LaneMiss<Acc> = { account: acc("detail", { freeMissAt: NOW - PASS_EVERY_MS }), why: "detail", newest };
+    const p = missPlan([troue, detail], [], pass(), NOW);
+    expect(p.missPay).toEqual([troue, detail]);
+    expect(p.missPay.map((m) => [missReason(m), m.newest, m.seen])).toEqual([["trou", newest, seen], ["repli", newest, undefined]]);
+  });
+});
+
+describe("Radar — relevé gratuit : sous la réserve, le raté attend la sonde (brique 8, 20/11/2026)", () => {
+  // Sous la réserve, la part payante du passage est nulle : un compte raté que le payant devait relever restait dû,
+  // relu gratuitement en tête de file toutes les 10 minutes, pour rien. Il attend la sonde du solde (50 minutes).
+  const MIN = 60_000;
+  type Acc = { name: string; dueAt: number; lastPostAt?: number; first: boolean; freeMissAt?: number };
+  // Un compte suivi qui a publié il y a 18 heures (son second regard), dû depuis 3 minutes.
+  const acc = (name: string, o: Partial<Acc> = {}): Acc => ({ name, dueAt: NOW - 3 * MIN, lastPostAt: NOW - 18 * HOUR, first: false, ...o });
+  const miss = (account: Acc, why: FreeWhy = "suspect"): LaneMiss<Acc> => ({ account, why });
+  const d = normalizeBudget(null);
+  /** Le solde lu il y a `age` (50 minutes par défaut : la sonde partirait). */
+  const solde = (remaining: number, age = BALANCE_PROBE_MS, s: BudgetSettings = d) => budgetState(s, [], { remaining, seenAt: NOW - age, now: NOW });
+  /** Le passage tel que radarNetworks.accountReadsPass l'enchaîne : part payante, brique 7 (holdMisses), brique 8. */
+  const passage = (b: BudgetState, misses: readonly LaneMiss<Acc>[], o: { laneOpen?: boolean; now?: number; s?: BudgetSettings } = {}) => {
+    const { laneOpen = true, now = NOW, s = d } = o;
+    const n = allowance(s, b, "tiktok", 0, 24);
+    const held = holdMisses(misses, { laneOpen, capacity: n, waitFirst: tierDefers(b.tier).firstReads }, now);
+    return { n, held, ...reserveMisses(held.pay, { reserveReached: b.reserveReached, laneOpen }, now) };
+  };
+  const names = (l: readonly (Acc | LaneMiss<Acc>)[]) => l.map((x) => ("account" in x ? x.account.name : x.name));
+  const troue = (): LaneMiss<Acc> => ({ ...miss(acc("troue"), "gap"), newest: { videoId: V_HIER, publishedAt: videoIdTime(V_HIER) } });
+  const ratés = () => [
+    troue(),
+    // Second échec d'affilée : retenu au passage d'avant (brique 7), raté de nouveau.
+    miss(acc("second", { dueAt: NOW - 13 * MIN, freeMissAt: NOW - 10 * MIN })),
+    miss(acc("en-retard-3h", { dueAt: NOW - 3 * HOUR, lastPostAt: NOW - 72 * HOUR }), "detail"),
+    miss(acc("premier-2h", { first: true, lastPostAt: undefined, dueAt: NOW - 2 * HOUR })),
+    // Premier échec, dans sa fenêtre : ce que la brique 7 retiendrait si le payant pouvait partir.
+    miss(acc("refus-frais")),
+  ];
+
+  it("l'attente est celle de la sonde du solde : plus qu'un passage, une heure au plus (un pack acheté les fait repartir dans l'heure)", () => {
+    expect(RESERVE_MISS_WAIT_MS).toBe(BALANCE_PROBE_MS);
+    expect(RESERVE_MISS_WAIT_MS).toBe(50 * MIN);
+    expect(RESERVE_MISS_WAIT_MS).toBeGreaterThan(PASS_EVERY_MS);
+    expect(RESERVE_MISS_WAIT_MS).toBeLessThanOrEqual(60 * MIN);
+  });
+
+  it("sous la réserve : liste trouée, second échec, hors de sa fenêtre et premier relevé raté sont repoussés — rien ne part au payant", () => {
+    const b = solde(CREDIT_RESERVE - 1);
+    const r = passage(b, ratés());
+    // Part payante nulle, palier « reserve » : la brique 7 ne retient rien (rien ne serait parti), un premier relevé non plus.
+    expect([b.reserveReached, b.tier, r.n, r.held.hold, tierDefers(b.tier).firstReads]).toEqual([true, "reserve", 0, [], false]);
+    expect(names(r.defer)).toEqual(["troue", "second", "en-retard-3h", "premier-2h"]);
+    // Le refus tout frais garde son essai du passage suivant : il reste dû, sans échec retenu (aucun appel évité à compter).
+    expect(names(r.pay)).toEqual(["refus-frais"]);
+    expect(heldSpared(r.pay[0].account)).toBe(0);
+  });
+
+  it("repoussés, ils ne sont pas relus au passage suivant ni aux trois d'après : ils reviennent avec la sonde", () => {
+    const misses = ratés();
+    const r = passage(solde(CREDIT_RESERVE - 1), misses);
+    // radarNetworks.deferAccounts : nextReadAt = now + RESERVE_MISS_WAIT_MS ; dueAccounts ne rend que nextReadAt ≤ now.
+    const after = misses.map((m) => (r.defer.includes(m.account) ? { ...m.account, dueAt: NOW + RESERVE_MISS_WAIT_MS } : m.account));
+    const dueAt = (t: number) => names(laneQueue(after.filter((a) => a.dueAt <= t), t)).sort();
+    for (const k of [1, 2, 3, 4]) expect(dueAt(NOW + k * PASS_EVERY_MS)).toEqual(["refus-frais"]);
+    expect(dueAt(NOW + RESERVE_MISS_WAIT_MS)).toEqual(["en-retard-3h", "premier-2h", "refus-frais", "second", "troue"]);
+  });
+
+  it("le refus tout frais : relu au passage suivant, et tant qu'il reste dans sa fenêtre ; raté encore au-delà, il attend la sonde", () => {
+    const b = solde(CREDIT_RESERVE - 1);
+    // Second regard (publié il y a 18 h, fenêtre de 20 min) : relu à +10 min ; raté, hors de sa fenêtre, repoussé.
+    const frais = acc("refus-frais");
+    expect(names(passage(b, [miss(frais)]).pay)).toEqual(["refus-frais"]);
+    expect(names(passage(b, [miss(frais)], { now: NOW + PASS_EVERY_MS }).defer)).toEqual(["refus-frais"]);
+    // Compte calme (fenêtre d'une heure), dû depuis 5 min : relu cinq passages de suite au plus, repoussé au sixième.
+    const calme = acc("calme", { dueAt: NOW - 5 * MIN, lastPostAt: NOW - 72 * HOUR });
+    const relus = [0, 1, 2, 3, 4, 5].map((k) => passage(b, [miss(calme)], { now: NOW + k * PASS_EVERY_MS }).defer.length);
+    expect(relus).toEqual([0, 0, 0, 0, 0, 1]);
+  });
+
+  it("voie fermée sous la réserve (TikTok ne sert plus les profils) : tout raté attend la sonde, même tout frais", () => {
+    const r = passage(solde(CREDIT_RESERVE - 1), [miss(acc("a")), miss(acc("b"), "detail")], { laneOpen: false });
+    expect([names(r.defer), r.pay]).toEqual([["a", "b"], []]);
+  });
+
+  it("hors de la réserve : comportement d'avant — rien n'est repoussé, le payant reçoit la même liste, dans le même ordre", () => {
+    const misses = ratés();
+    // Solde confortable, juste au-dessus de la réserve, jamais lu (dev, e2e), ou part payante nulle pour une autre raison
+    // (poste des relevés éteint) : seule la réserve repousse.
+    const off = { ...d, postes: d.postes.map((p) => (p.key === "tiktok" ? { ...p, on: false } : p)) };
+    const cas = [
+      { b: solde(CREDIT_RESERVE + 5_000) },
+      { b: solde(CREDIT_RESERVE + 1) },
+      { b: budgetState(d, [], null) },
+      { b: solde(CREDIT_RESERVE + 5_000, 0, off), s: off },
+    ];
+    for (const { b, s } of cas) {
+      const r = passage(b, misses, { s });
+      expect(b.reserveReached).toBe(false);
+      expect(r.defer).toEqual([]);
+      expect(r.pay).toHaveLength(r.held.pay.length);
+      r.pay.forEach((m, i) => expect(m).toBe(r.held.pay[i]));
+    }
+    // Avec budget, la brique 7 retient le refus tout frais et paie le reste, comme avant.
+    const plein = passage(solde(CREDIT_RESERVE + 5_000), misses);
+    expect([names(plein.held.hold), names(plein.pay)]).toEqual([["refus-frais"], ["troue", "second", "en-retard-3h", "premier-2h"]]);
+  });
+
+  it("la sonde part toujours : le report ne dépend pas d'elle et ne la change pas", () => {
+    // Solde lu il y a 50 minutes : la sonde part (radarNetworks, en fin de passage), les ratés sont repoussés.
+    const vieux = solde(CREDIT_RESERVE - 1);
+    expect([needsBalanceProbe(vieux), names(passage(vieux, [troue()]).defer)]).toEqual([true, ["troue"]]);
+    // Lu il y a moins de 50 minutes : pas de sonde, les ratés attendent quand même.
+    const recent = solde(CREDIT_RESERVE - 1, BALANCE_PROBE_MS - 1);
+    expect([needsBalanceProbe(recent), names(passage(recent, [troue()]).defer)]).toEqual([false, ["troue"]]);
   });
 });
 

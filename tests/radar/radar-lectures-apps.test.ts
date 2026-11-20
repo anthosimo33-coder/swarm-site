@@ -2,7 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Id } from "../../convex/_generated/dataModel";
-import { applyAccountRead, dueAccounts } from "../../convex/radar/radarNetworks";
+import { RESERVE_MISS_WAIT_MS } from "../../convex/radar/radarFreeMath";
+import { applyAccountRead, deferAccounts, dueAccounts, holdFreeMisses, markReadError } from "../../convex/radar/radarNetworks";
+import { recordRun } from "../../convex/radar/radarSignals";
 import { dueStoreApps } from "../../convex/radar/radarStore";
 import { exportPage } from "../../convex/radar/swarmExportPage";
 import { memoryDb, type MemoryDoc } from "./convex-memory-db";
@@ -156,6 +158,157 @@ describe("relevé d'un compte (applyAccountRead) : les motifs des apps arrivent 
     const calls = [...pass.matchAll(/runMutation\(internal\.radar\.radarNetworks\.applyAccountRead, \{([^}]*)\}/g)].map((m) => m[1]);
     expect(calls.length).toBe(2);
     for (const c of calls) expect(c).toMatch(/\bapps\b/);
+  });
+});
+
+describe("l'échec gratuit retenu (radarFreeMath.holdMisses, brique 7, 20/11/2026)", () => {
+  const MIN = 60_000;
+  const passage = () => {
+    const src = fs.readFileSync(path.join(__dirname, "../../convex/radar/radarNetworks.ts"), "utf8");
+    const start = src.indexOf("async function accountReadsPass");
+    return src.slice(start, src.indexOf("\n}\n", start));
+  };
+
+  it("posé par holdFreeMisses, rendu avec le compte dû (dueAccounts) : la voie sait que c'est son second essai", async () => {
+    const w = monde();
+    const { patches, ctx } = mutationCtx(w.tables);
+    await handler(holdFreeMisses)(ctx, { ids: [w.creatrice._id], at: NOW - 10 * MIN });
+    expect(patches).toEqual([{ id: w.creatrice._id, value: { freeMissAt: NOW - 10 * MIN } }]);
+    w.creatrice.freeMissAt = NOW - 10 * MIN;
+    const r = (await handler(dueAccounts)(mutationCtx(w.tables).ctx, { now: NOW, limit: 600 })) as { due: { handle: string; freeMissAt?: number }[] };
+    expect(r.due.find((d) => d.handle === "creatrice1")?.freeMissAt).toBe(NOW - 10 * MIN);
+    expect(r.due.find((d) => d.handle === "testeuse")).not.toHaveProperty("freeMissAt");
+  });
+
+  it("effacé par tout relevé réussi (applyAccountRead, gratuit ou payant) et par une erreur de relevé", async () => {
+    const w = monde();
+    w.creatrice.freeMissAt = NOW - 10 * MIN;
+    const lu = mutationCtx(w.tables);
+    await handler(applyAccountRead)(lu.ctx, { accountId: w.creatrice._id, videos: [], light: [], now: NOW, apps: rules(w.apps) });
+    const final = lu.patches.filter((p) => p.id === w.creatrice._id && "readAt" in p.value).at(-1)?.value;
+    expect(final && "freeMissAt" in final && final.freeMissAt === undefined).toBe(true);
+    const err = mutationCtx(w.tables);
+    await handler(markReadError)(err.ctx, { accountId: w.creatrice._id, now: NOW });
+    const v = err.patches[0].value;
+    expect([v.readErrors, v.nextReadAt, "freeMissAt" in v, v.freeMissAt]).toEqual([1, NOW + DAY, true, undefined]);
+  });
+
+  it("le passage retient avant de payer, et compte l'appel évité quand le compte retenu se lit gratuitement", () => {
+    const pass = passage();
+    // Le plan des ratés (radarFreeMath.missPlan, testé à part) reçoit la VRAIE part payante du passage — `n`, pas une
+    // part supposée — et les comptes pas atteints (premiers relevés retenus au passage d'avant).
+    const plan = pass.indexOf("const plan = missPlan(misses.paid, lane.notReached, { laneOpen: free.on, n, waitFirst, reserveReached: b.reserveReached }, now);");
+    expect(plan).toBeGreaterThan(0);
+    const hold = pass.indexOf("if (plan.hold.length) await ctx.runMutation(internal.radar.radarNetworks.holdFreeMisses, { ids: plan.hold.map((a) => a.id), at: now });");
+    expect(hold).toBeGreaterThan(plan);
+    // La part des retenus n'est dépensée nulle part : `limit` borne tout payant qui suit (premiers, ratés, débordement).
+    const limit = pass.indexOf("limit = plan.limit;");
+    expect(limit).toBeGreaterThan(plan);
+    expect(pass).toMatch(/const paid = \(list: readonly DueAccount\[\], reason: PaidReason\): Promise<number> =>\s*pooled\(list, ACCOUNT_READ_POOL, \(acc\) => readPaid\(acc, limit, reason\)/);
+    const premier = pass.indexOf('await paid(plan.firstPay, "premier");');
+    expect(premier).toBeGreaterThan(limit);
+    // Les comptes suivis ratés : leur vidéo à retrouver quel que soit le motif (un trou vérifié puis une page illisible
+    // reprend le trou, revue du 20/11) et ce que sa page a dit (la mesure).
+    expect(pass).toMatch(/pooled\(\s*plan\.missPay,\s*ACCOUNT_READ_POOL,\s*\(m\) => readPaid\(m\.account, limit, missReason\(m\), m\.newest, m\.seen\)/);
+    expect(pass).toMatch(/const over = overflowToPay\(\s*lane\.notReached\.filter\(\(a\) => !a\.first\),\s*free\.on,\s*Date\.now\(\),\s*\);\s*await paid\(over\.pay, over\.reason\);/);
+    expect(pass).not.toMatch(/holdMisses\(|reserveMisses\(|firstReadMisses\(/);
+    // Relu gratuitement et rangé : les appels payants évités (l'échec retenu, ou le trou vérifié en bascule), après
+    // l'écriture du relevé, et la vidéo du trou marquée vérifiée comme le payant l'aurait fait.
+    const rangé = pass.indexOf("runMutation(internal.radar.radarNetworks.applyAccountRead, { accountId: acc.id, videos: f.videos");
+    expect(rangé).toBeGreaterThan(0);
+    const marque = pass.indexOf("if (f.gapChecked) await ctx.runMutation(internal.radar.radarNetworks.markGapChecked, { accountId: acc.id, videoId: f.gapChecked });");
+    expect(marque).toBeGreaterThan(rangé);
+    expect(pass.indexOf("for (const [key, calls] of Object.entries(freeReadSaved(f, acc)) as [SavedKey, number][]) usage.spare(key, calls);")).toBeGreaterThan(marque);
+  });
+
+  it("brique 4 en mesure : la page du trou n'est lue que si un payant peut partir, et l'accord est compté après le payant", () => {
+    const pass = passage();
+    // Une page de trou par appel de la part, au plus : sous la réserve ou poste coupé (n = 0), aucune.
+    expect(pass).toMatch(/let gapPages = n;/);
+    expect(pass).toMatch(/const gapPage = \(\) => gapPages-- > 0;\s*const f = await freeRead\(acc\.handle, \{ page: freePage, known, newest, gapPage \}, now, undefined, !acc\.located\);/);
+    // La mesure : après le relevé payant d'un trou dont la page a été lue, avant toute écriture.
+    const read = pass.indexOf("const { outcome, videos: all, reached } = read;");
+    const measure = pass.indexOf("if (gap && seen) usage.measure(gapMeasure(seen, read, gap));");
+    expect(read).toBeGreaterThan(0);
+    expect(measure).toBeGreaterThan(read);
+    expect(pass.indexOf('if (outcome === "error") await ctx.runMutation(internal.radar.radarNetworks.markReadError')).toBeGreaterThan(measure);
+    // Le payant qui passe sa date sans la voir la marque vérifiée, comme avant.
+    expect(pass).toMatch(/if \(gap && reached\.done && !reached\.found\) await ctx\.runMutation\(internal\.radar\.radarNetworks\.markGapChecked, \{ accountId: acc\.id, videoId: gap\.videoId \}\);/);
+  });
+
+  it("la mesure est rangée dans radarUsage.measured, même seule (ses crédits déjà écrits par une tranche d'avant)", async () => {
+    const settings: MemoryDoc = { _id: id("radarSettings"), _creationTime: ++seq, key: "global" };
+    const usageCtx = (rows: MemoryDoc[]) => {
+      const mem = memoryDb({ radarSettings: [settings], radarUsage: rows }, { limit: null });
+      const db = mem.db as { get: (id: string) => Promise<MemoryDoc | null>; query: (t: string) => unknown };
+      const inserted: Record<string, unknown>[] = [];
+      const patched: { id: string; value: Record<string, unknown> }[] = [];
+      const ctx = {
+        db: {
+          get: db.get,
+          query: db.query,
+          insert: async (table: string, value: Record<string, unknown>) => (table === "radarUsage" && inserted.push(value), id(table)),
+          patch: async (pid: string, value: Record<string, unknown>) => void patched.push({ id: pid, value }),
+        },
+      };
+      return { ctx, inserted, patched };
+    };
+    const first = usageCtx([]);
+    await handler(recordRun)(first.ctx, { poste: "tiktok", credits: 0, calls: 0, errors: 0, now: NOW, measured: { "trou-egal": 1 } });
+    expect(first.inserted).toEqual([expect.objectContaining({ poste: "tiktok", credits: 0, calls: 0, measured: { "trou-egal": 1 } })]);
+    const row: MemoryDoc = { _id: id("radarUsage"), _creationTime: ++seq, day: "2026-11-20", month: "2026-11", poste: "tiktok", credits: 7, calls: 5, errors: 0, saved: { repli: 1 }, measured: { "trou-egal": 2 } };
+    const next = usageCtx([row]);
+    await handler(recordRun)(next.ctx, { poste: "tiktok", credits: 3, calls: 1, errors: 0, now: NOW, measured: { "trou-egal": 1, "trou-ecart": 1 } });
+    expect(next.patched.find((p) => p.id === row._id)?.value).toMatchObject({ credits: 10, calls: 6, saved: { repli: 1 }, measured: { "trou-egal": 3, "trou-ecart": 1 } });
+  });
+});
+
+describe("sous la réserve, le raté attend la sonde (radarFreeMath.reserveMisses, brique 8, 20/11/2026)", () => {
+  const MIN = 60_000;
+  const passage = () => {
+    const src = fs.readFileSync(path.join(__dirname, "../../convex/radar/radarNetworks.ts"), "utf8");
+    const start = src.indexOf("async function accountReadsPass");
+    return src.slice(start, src.indexOf("\n}\n", start));
+  };
+  const dus = async (tables: Record<string, MemoryDoc[]>, now: number) =>
+    ((await handler(dueAccounts)(mutationCtx(tables).ctx, { now, limit: 600 })) as { due: { handle: string }[] }).due.map((d) => d.handle).sort();
+
+  it("deferAccounts ne touche que l'heure du compte ; il n'est plus dû au passage suivant, il revient avec la sonde", async () => {
+    const w = monde();
+    expect(await dus(w.tables, NOW)).toEqual(["creatrice1", "testeuse"]);
+    const { patches, ctx } = mutationCtx(w.tables);
+    await handler(deferAccounts)(ctx, { ids: [w.creatrice._id], until: NOW + RESERVE_MISS_WAIT_MS });
+    // Rien dans radarSettings : un seul champ, sur le compte (son échec retenu, s'il en a un, reste : cf heldSpared).
+    expect(patches).toEqual([{ id: w.creatrice._id, value: { nextReadAt: NOW + RESERVE_MISS_WAIT_MS } }]);
+    w.creatrice.nextReadAt = NOW + RESERVE_MISS_WAIT_MS;
+    for (const k of [1, 2, 3, 4]) expect(await dus(w.tables, NOW + k * 10 * MIN)).toEqual(["testeuse"]);
+    expect(await dus(w.tables, NOW + RESERVE_MISS_WAIT_MS)).toEqual(["creatrice1", "testeuse"]);
+  });
+
+  it("le passage repousse sous la réserve seulement, avant le payant, sans toucher ce que la voie n'a pas atteint ni la sonde", () => {
+    const pass = passage();
+    const hold = pass.indexOf("runMutation(internal.radar.radarNetworks.holdFreeMisses");
+    // La réserve vient de l'état du budget du passage (missPlan → reserveMisses, testé à part).
+    const reserve = pass.indexOf("reserveReached: b.reserveReached }, now);");
+    const defer = pass.indexOf(
+      "\n    if (plan.reserveDefer.length) await ctx.runMutation(internal.radar.radarNetworks.deferAccounts, { ids: plan.reserveDefer.map((a) => a.id), until: now + RESERVE_MISS_WAIT_MS });\n",
+    );
+    expect(hold).toBeGreaterThan(0);
+    expect(reserve).toBeGreaterThan(0);
+    expect(reserve).toBeLessThan(hold);
+    expect(defer).toBeGreaterThan(hold);
+    // Repoussés avant tout relevé payant (premiers relevés, comptes suivis, débordement).
+    expect(pass.indexOf('await paid(plan.firstPay, "premier")')).toBeGreaterThan(defer);
+    // Pas atteints : toujours la voie suivante ou le payant d'avant (firstReadMisses dans missPlan, overflowToPay),
+    // jamais repoussés ici.
+    expect(pass).toMatch(/missPlan\(misses\.paid, lane\.notReached,/);
+    expect(pass).toMatch(/overflowToPay\(\s*lane\.notReached\.filter\(\(a\) => !a\.first\)/);
+    // La sonde part toujours, après, telle quelle : le premier compte dû du passage (repoussé ou non) ou le plus ancien.
+    const probe = pass.indexOf("if (needsBalanceProbe(b) && paidCalls === 0) {");
+    expect(probe).toBeGreaterThan(defer);
+    expect(pass).toMatch(/const probe: DueAccount \| null = due\[0\] \?\? \(await ctx\.runQuery\(internal\.radar\.radarNetworks\.probeAccount, \{\}\)\);\s*if \(probe\) await readPaid\(probe, 1, "sonde"\);/);
+    // Rien de nouveau dans radarSettings : noteFreeRun garde ses champs.
+    expect(pass).toMatch(/noteFreeRun, \{\s*ok: free\.ok,\s*fallback: free\.fallback,\s*why: missCounts\(lane\.failed\),\s*(?:\/\/[^\n]*\s*)?stopped: free\.stopped \?\? curve\.stopped,\s*waiting: lane\.notReached\.length - over\.pay\.length,\s*now: Date\.now\(\),\s*\}/);
   });
 });
 
