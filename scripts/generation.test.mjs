@@ -33,4 +33,15 @@ const appPages = pages('src/app/pages');
   } else ok(false, 'Q12 : $fonts présent dans src/runtime.js');
 }
 
+// ─── Q13 : l'ancienne page Compte (sans résiliation) n'est plus routée ; /app/compte ouvre les Réglages ───
+{
+  const routes = fs.readFileSync(path.join(root, 'src/app/routes.js'), 'utf8');
+  const main = fs.readFileSync(path.join(root, 'src/app/main.js'), 'utf8');
+  ok(!/pages\/(M?Compte)\.js/.test(routes) && !fs.existsSync(path.join(root, 'src/app/pages/Compte.js')) && !fs.existsSync(path.join(root, 'src/app/pages/MCompte.js')),
+    'Q13 : plus de route ni d\'écran généré pour l\'ancienne page Compte');
+  ok(/ACCOUNT\b/.test(main) && /setSettingsNext\('profil'\)/.test(main), 'Q13 : src/app/main.js ouvre les Réglages pour /app/compte (panneau sur ordinateur, plein écran sur téléphone)');
+  const cgv = fs.readFileSync(path.join(root, 'public/cgv.html'), 'utf8');
+  ok(!/espace Compte/.test(cgv) && /Réglages/.test(cgv), 'Q13 : les CGV nomment le vrai chemin de la résiliation (Réglages), plus « l\'espace Compte »');
+}
+
 end();

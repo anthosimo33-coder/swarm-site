@@ -106,7 +106,7 @@ cgv = page("cgv", "Conditions générales de vente",
 
 <h2>5. Durée, renouvellement et résiliation</h2>
 <p>L’abonnement mensuel se renouvelle automatiquement chaque mois, l’abonnement annuel chaque année, jusqu’à résiliation. Pour l’abonnement annuel, le Membre est informé par e-mail avant chaque renouvellement.</p>
-<p>Le Membre peut résilier à tout moment depuis son espace Compte. La résiliation prend effet à la fin de la période déjà payée : l’accès reste ouvert jusque-là, et aucune somme n’est due pour la suite. Une période commencée n’est pas remboursée, sauf exercice du droit de rétractation ci-dessous.</p>
+<p>Le Membre peut résilier à tout moment depuis les Réglages de son compte (Réglages › Formule et facturation). La résiliation prend effet à la fin de la période déjà payée : l’accès reste ouvert jusque-là, et aucune somme n’est due pour la suite. Une période commencée n’est pas remboursée, sauf exercice du droit de rétractation ci-dessous.</p>
 
 <h2>6. Droit de rétractation</h2>
 <p>Le Membre consommateur dispose d’un délai de 14 jours à compter de la souscription pour se rétracter, sans avoir à se justifier (article L221-18 du Code de la consommation), en l’écrivant à JARVIA STUDIO à l’adresse figurant dans les <a href="/mentions-legales#contact">mentions légales</a>. Il est alors remboursé dans les 14 jours, par le même moyen de paiement.</p>

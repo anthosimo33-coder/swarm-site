@@ -65,6 +65,9 @@ const PENDING = 'kopycat.paiement';
 const pendingPay = () => { try { const t = Number(sessionStorage.getItem(PENDING)); return t > 0 && Date.now() - t < 7 * 864e5; } catch { return false; } };
 const setPendingPay = (on) => { try { if (on) sessionStorage.setItem(PENDING, String(Date.now())); else sessionStorage.removeItem(PENDING); } catch { /* stockage refusé */ } };
 const SUITE = 'kopycat.suite'; // l'achat commencé avant de se connecter
+// Les Réglages à une adresse (audit Q13 : l'ancienne page Compte, sans résiliation, y était encore routée sur
+// ordinateur). Sur téléphone, Réglages en plein écran ; sur ordinateur, le panneau des Réglages par-dessus l'accueil.
+const ACCOUNT = '/app/compte';
 // Sous 860 px, l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop.
 const MOBILE = window.matchMedia('(max-width: 860px)');
 const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
@@ -193,6 +196,8 @@ function App() {
   // Un compte déjà Pro qui suit un lien de paiement : Réglages › Formule à la place (compteur : chaque lien rouvre).
   const [toPlan, setToPlan] = useState(0);
   const [planMobile, setPlanMobile] = useState(false);
+  // Une rubrique des Réglages à ouvrir après un changement d'adresse (qui referme les panneaux) : /app/compte sur ordinateur.
+  const [settingsNext, setSettingsNext] = useState(null);
   const [paid, setPaid] = useState(PAID ? 'wait' : pendingPay() ? 'slow' : null);
   const [checkPay, setCheckPay] = useState(null); // « Vérifier mon paiement » : null, 'busy', 'none' (pas encore trouvé), 'error'
   const verifyPay = () => {
@@ -325,18 +330,23 @@ function App() {
   }, [pay, known]);
 
   // Changer d'écran referme le panneau du compte et les réglages.
-  useEffect(() => { setMenu(false); setSettings(null); if (!path.startsWith('/app/compte')) setPlanMobile(false); }, [path]);
+  useEffect(() => { setMenu(false); setSettings(null); if (!path.startsWith(ACCOUNT)) setPlanMobile(false); }, [path]);
+  useEffect(() => {
+    if (!settingsNext) return;
+    setSettings(settingsNext);
+    setSettingsNext(null);
+  }, [settingsNext]);
   // Réglages › Formule, pour un compte Pro venu d'un lien de paiement. Après l'effet du dessus : un même rendu qui change
   // d'adresse (arrivée par /app/payer/…) ne la referme pas aussitôt. Sur téléphone, c'est l'écran /app/compte.
   useEffect(() => {
     if (!toPlan) return;
     if (!MOBILE.matches) { setSettings('abo'); return; }
     setPlanMobile(true);
-    if (window.location.pathname !== '/app/compte') { scroll.remember(); window.history.pushState(null, '', '/app/compte'); setPath('/app/compte'); }
+    if (window.location.pathname !== ACCOUNT) { scroll.remember(); window.history.pushState(null, '', ACCOUNT); setPath(ACCOUNT); }
   }, [toPlan]);
   // Les sessions ouvertes (Réglages › Sécurité), lues quand le panneau du compte ou les réglages sont ouverts
   // (dès le panneau : les réglages s'ouvrent ensuite sans attendre).
-  const onSettingsScreen = !!(screen && screen.mobile && screen.route.path === '/app/compte');
+  const onSettingsScreen = !!(screen && screen.mobile && screen.route.path === ACCOUNT);
   const sessions = useQuery(api.users.sessions, isAuthenticated && (settings || menu || onSettingsScreen) ? {} : 'skip');
   // L'abonnement Whop et ses paiements (Réglages › Formule et facturation).
   const abo = useQuery(api.whop.mine, isAuthenticated && (settings || menu || onSettingsScreen) ? {} : 'skip');
@@ -364,6 +374,16 @@ function App() {
       setPay(formuleOf(pathname));
       window.history.replaceState(null, '', HOME);
       setPath(HOME);
+      return undefined;
+    }
+    if (pathname === ACCOUNT) {
+      if (!mobile) {
+        window.history.replaceState(null, '', HOME);
+        setPath(HOME);
+        setSettingsNext('profil');
+        return undefined;
+      }
+      setScreen({ path, mobile, Page: null, route: { path: ACCOUNT, title: 'Réglages' }, params: {}, query: {}, key: null });
       return undefined;
     }
     const match = matchRoute(pathname);

@@ -67,9 +67,8 @@ APP_PAGES = [
     ('DossiersA.dc.html', 'Dossiers', 'a-dos', '/app/dossiers', 'Dossiers', None),
     ('DossiersB.dc.html', 'Dossier', 'a-dosb', '/app/dossiers/:id', 'Dossier', None),
     ('AlertesA.dc.html', 'Alertes', 'a-ale', '/app/alertes', 'Alertes', 'alerts'),
-    ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte', None),
 ]
-# Lien sans paramètre vers une fiche (maquette pas encore branchée) : l'exemple de la maquette.
+# Lien sans paramètre vers une fiche (maquette pas encore branchée) : la liste, plus d'exemple (audit Q11, plus bas).
 # Un lien de canevas sans paramètre vers une fiche ne mène à aucune fiche d'exemple (audit Q11 ; S4 pour les vidéos) :
 # l'app est branchée sur les vraies données, et l'exemple était une vraie app ou un vrai créateur du Radar. Il mène à la
 # liste parente (/app/apps, /app/createurs, /app/formats) ; une vidéo, à /app/videos, que le routeur renvoie à l'accueil.
@@ -90,7 +89,6 @@ APP_MOBILE_PAGES = [
     ('MDossiers.dc.html', 'MDossiers', 'm-dos', '/app/dossiers'),
     ('MDossier.dc.html', 'MDossier', 'm-dosb', '/app/dossiers/:id'),
     ('MAlertes.dc.html', 'MAlertes', 'm-ale', '/app/alertes'),
-    ('MCompte.dc.html', 'MCompte', 'm-cpt', '/app/compte'),
 ]
 
 # SWARM_SANS_MOBILE=1 : génère sans les écrans mobiles (téléphones servis par le desktop), le temps
@@ -137,6 +135,9 @@ APP_LINKS.update({
     'MRecherche.dc.html': '/app', 'MAbonnement.dc.html': '/app/compte', 'MConnexion.dc.html': '/app/deconnexion',
 
     'FormatsA.dc.html': '/app/formats',        # ancien écran Formats (restes de données), remplacé par FormatsB
+    # Ancienne page Compte (sans résiliation ni facturation), retirée (audit Q13) : /app/compte ouvre les Réglages
+    # (src/app/main.js : panneau sur ordinateur, plein écran sur téléphone).
+    'CompteA.dc.html': '/app/compte', 'MCompte.dc.html': '/app/compte',
     'ConnexionA.dc.html': '/app/deconnexion',  # « Se déconnecter » du compte : le routeur déconnecte puis renvoie à l'accueil du site
 })
 
