@@ -150,8 +150,22 @@ Le `Creator`, plus `videos: [VideoCard ×15]` (les plus récentes) et `formats: 
 (40 vidéos de la semaine, triées par multiplicateur), formats: [Format, 3 membres] (devenus des formats cette semaine, 20 au plus) }`
 
 ### `home` — accueil (Main, MAccueil)
-`{ updatedAt, niches: [nom] ×6, apps: [{slug, name, icon, views7, weekDelta, bestX}] ×4, videos: [carte d'alerte] ×4 }`.
-Les formats de l'accueil viennent du document `formats`.
+`{ updatedAt, niches: [nom] ×6, apps: [HomeApp] ×4, videos: [carte d'alerte] ×4, formats: [HomeFormat] ×3, creators: [HomeCreator] ×3 }`,
+moins de 20 000 caractères (l'accueil ne lit ni `formats`, ni `creators:<pays>`, ni `apps` pour son fil ; banc
+`npm run test:radar`, « Accueil, le fil »).
+- `apps` : les 4 premières de `apps` (vues 30 j). `HomeApp = { slug, name, icon, views7, weekDelta, bestX, accounts, videoCount, weeks }`,
+  les mêmes chiffres que leur ligne dans `apps` (`weeks` : la courbe des 6 semaines) ;
+- `videos` : les 4 premières vidéos d'`alerts` ; leur `app` porte aussi sa `niche` ;
+- `formats` : les `HOME_FORMATS` (3) premiers de `formats` repris dans les 7 derniers jours (`lastPostAt`), donc avec leur
+  fiche. `HomeFormat = { id, kind, label, accounts, market, wins, n, lastPostAt, members: [1 reprise, la vignette] }` ;
+- `creators` : les `HOME_CREATORS` (3) comptes qui publient le plus, parmi les créateurs listés dont la dernière vidéo a
+  7 jours au plus (`lastPostAt`), par `posts7d` (vidéos sur 7 jours, tous sujets confondus, au plus 30 : le Radar lit les
+  30 dernières vidéos d'un compte, l'écran dit « au moins 30 ») puis vues médianes.
+  `HomeCreator = { handle, fans, median, posts7d, lastPostAt, app: {slug, name, icon, niche, page?}, best: [VideoCard ×3] }`
+  (`best` : ses vidéos les plus vues sur 30 j, comme sa ligne dans `creators:<pays>`).
+
+Données d'avant la synchro du 20/11 (sans `formats`, `creators`, ni `accounts`/`videoCount`/`weeks`) : l'accueil n'en
+montre pas les lignes du fil (une app qui accélère garde sa ligne, avec ses vues sur 7 jours).
 
 ### `stats` — ce que le Radar suit (pages publiques, « Relevé le … »)
 `{ updatedAt, at: ms du passage, apps: apps listées, accounts: créateurs (comptes prouvés, hors placements), markets: pays }`

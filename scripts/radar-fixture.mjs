@@ -46,13 +46,16 @@ export function fixtureRaw() {
     for (let j = 0; j < 5; j++) {
       const handle = `${a.slug.replace(/-/g, '')}.compte${j}`;
       // Le 1er compte de chaque app est muet depuis 200 jours, avec la plus forte médiane de son app (audit Q24).
+      // Les autres publient de 1 à 9 vidéos par semaine, pas tous autant : l'accueil montre ceux qui publient le plus.
       const quiet = j === 0;
-      const lastPostAt = quiet ? NOW - 200 * DAY : NOW - Math.floor(r() * 5) * DAY;
+      // Un compte relu il y a 10 jours : ses 9 vidéos « en 7 jours » datent de ce relevé, il n'est plus de la semaine.
+      const stale = a.slug === 'app-8' && j === 4;
+      const lastPostAt = quiet ? NOW - 200 * DAY : stale ? (r(), NOW - 10 * DAY) : NOW - Math.floor(r() * 5) * DAY;
       const id = `acc-${a.slug}-${j}`;
       // Le 5e compte de chaque app n'a pas de pays relevé : il vient de ses vidéos, que seule l'étape « groupe » voit
       // (l'étape globale le reçoit du groupe ; audit Q63).
       tracked.push({ id, handle, appId: a.id, status: 'active', fans: Math.floor(r() * 90_000) + 1000, bio: `Bio de ${handle}`, lang: 'fr', country: j === 4 ? null : countries[j],
-        medianViews: quiet ? 900_000 : Math.floor(r() * 50_000) + 1000, videosSeen: 30, lastPostAt, posts7d: quiet ? 0 : 3, igHandle: j === 1 ? `${handle}.insta` : null, igFans: null,
+        medianViews: quiet ? 900_000 : Math.floor(r() * 50_000) + 1000, videosSeen: 30, lastPostAt, posts7d: quiet ? 0 : 1 + ((j * 5 + a.slug.length * 3) % 9), igHandle: j === 1 ? `${handle}.insta` : null, igFans: null,
         igMedianViews: null, addedAt: NOW - 50 * DAY, proof: { by: 'handle', cites: 3, of: 30 } });
       for (let k = 0; k < 6; k++) {
         vid += 1n;
