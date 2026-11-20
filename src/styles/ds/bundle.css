@@ -374,3 +374,24 @@ body { margin: 0; background: var(--surface); color: var(--ink); font-family: va
 @media (max-width: 1279px) { .fm-hero-th:nth-child(4) { display: none !important; } }
 @media (max-width: 1139px) { .fm-hero-th:nth-child(3) { display: none !important; } }
 @media (prefers-reduced-motion: reduce) { .fm-th img { transition: none; } }
+
+/* Alertes, la boîte de réception (maquette B2 du 20/11) : onglets en pastilles, lignes de la liste, puces d'app ; le cadre
+   qui glisse d'une ligne à l'autre et les barres qui changent de hauteur sont animés par src/app/inbox.js. */
+.ib-chip { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px; border: 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); color: var(--ink-soft); font: inherit; font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.ib-chip svg { flex-shrink: 0; color: var(--ink-faint); }
+.ib-chip:hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22); color: var(--ink); }
+.ib-chip[aria-selected="true"], .ib-chip[aria-pressed="true"] { background: rgba(76,154,255,0.14); box-shadow: inset 0 0 0 1px rgba(76,154,255,0.45); color: #FFFFFF; }
+.ib-chip[aria-selected="true"] svg, .ib-chip[aria-pressed="true"] svg { color: var(--accent); }
+.ib-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ib-row { position: relative; z-index: 1; width: 100%; box-sizing: border-box; display: flex; gap: 12px; padding: 14px; border: 0; border-radius: 14px; background: transparent; color: var(--ink); font: inherit; line-height: 1.25; text-align: left; cursor: pointer; }
+.ib-row:hover { background: rgba(255,255,255,0.03); }
+.ib-row[aria-selected="true"] { background: rgba(76,154,255,0.10); box-shadow: inset 0 0 0 1px rgba(76,154,255,0.35); }
+.ib-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ib-run .ib-row[aria-selected="true"] { background: transparent; box-shadow: none; }
+.ib-ghost { position: absolute; z-index: 0; display: block; box-sizing: border-box; pointer-events: none; border-radius: 14px; background: rgba(76,154,255,0.10); box-shadow: inset 0 0 0 1px rgba(76,154,255,0.35); transform-origin: 50% 0; will-change: transform; }
+.ib-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; flex-shrink: 0; background: var(--accent); transition: opacity 0.3s ease, transform 0.3s ease; }
+.ib-dot[data-on="false"] { opacity: 0; transform: scale(0.4); }
+.ib-pill { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; box-sizing: border-box; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); color: var(--ink-soft); font-size: 13px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+a.ib-pill:hover { color: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.24); }
+[data-ib-bar] { transform-origin: 50% 100%; }
+[data-fl="regles"] .fl-hl { height: 60px; }
