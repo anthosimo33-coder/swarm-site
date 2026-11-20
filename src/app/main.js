@@ -21,6 +21,8 @@ import './morph.js';
 import './liquid.js';
 // Fenêtres de choix (Marché, Niche, Plateforme) : dépli, survol liquide, options qui glissent (voir le fichier).
 import './choice.js';
+// Alertes, boîte de réception : cadre de la ligne choisie, détail en cascade, barres (voir le fichier).
+import './inbox.js';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';

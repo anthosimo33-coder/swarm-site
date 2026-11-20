@@ -8,7 +8,7 @@ import { mutation, query, type QueryCtx } from "./_generated/server";
  *   follows     { apps: [slug], creators: [handle], formats: [id] }
  *   folders     [{ id, name, createdAt, items: [{ kind, id, label, cover, at }] }]
  *   alertRules  [{ id, … , createdAt }]
- *   seen        { alerts: date en ms de « Tout marquer comme lu » }
+ *   seen        { alerts: date en ms de « Tout marquer comme lu », alertsRead: empreintes des alertes ouvertes (texte) }
  *   views       [{ id, screen, name, q, at }] : les vues enregistrées d'une liste (maquette D2, 20/11) — `q` est la requête
  *               de l'adresse qui porte ses filtres (« niche=Études&m=FR »), `screen` l'écran (« createurs »)
  * Le routeur (src/app/main.js) les passe aux écrans par `saved(clé)` et `save(clé, valeur)`.

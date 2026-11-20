@@ -210,6 +210,34 @@ for (const L of LISTS) {
   ok(views(live) === views(fresh14), `Apps : passer d'une plage de 7 à 14 jours redessine les vues des lignes (${views(live).slice(0, 40)} / ${views(fresh14).slice(0, 40)})`);
 }
 
+// ─── Alertes : l'alerte ouverte (boîte de réception B2, 20/11) vit dans l'adresse, propre à l'ordinateur ───
+{
+  const Desk = await page('Alertes'), Mob = await page('MAlertes');
+  at('/app/alertes', '');
+  const d = mount(Desk, propsOf('alerts', {}));
+  const v0 = d.renderVals();
+  const rows = v0.groups.flatMap((g) => g.items);
+  ok(rows.length > 2 && !!v0.d.key && loc.search === '', `Alertes : une alerte est ouverte à l'arrivée sans rien écrire dans l'adresse (${v0.d.key || 'aucune'}, « ${loc.search} »)`);
+  const other = rows.find((a) => a.key !== v0.d.key);
+  other.pick();
+  const v1 = d.renderVals();
+  const q = new URLSearchParams(loc.search).get('alerte');
+  ok(v1.d.key === other.key && q === other.key && v1.groups.flatMap((g) => g.items).filter((a) => a.on === 'true').map((a) => a.key).join() === other.key,
+    `Alertes : choisir une alerte l'ouvre, la ligne choisie est seule marquée, et l'adresse la porte (alerte=${q})`);
+  const back = mount(Desk, propsOf('alerts', queryOf(loc.search)));
+  ok(back.renderVals().d.key === other.key, 'Alertes : remonté avec l\'adresse (bascule de mise en page), l\'ordinateur rouvre la même alerte');
+  run(mount(Mob, propsOf('alerts', queryOf(loc.search))), [p('Comptes')]);
+  ok(new URLSearchParams(loc.search).get('alerte') === other.key, `Alertes : le téléphone garde l'alerte ouverte dans l'adresse en changeant d'onglet (${loc.search})`);
+  at('/app/alertes', '?alerte=' + encodeURIComponent(other.key));
+  const t = mount(Desk, propsOf('alerts', queryOf(loc.search)));
+  const tabOf = { Son: 'Formats', Format: 'Formats', 'Vidéo': 'Vidéos', Compte: 'Comptes' };
+  const want = (t.renderVals().tabs.find((x) => x.l !== 'Toutes' && x.l !== tabOf[other.typ] && x.n > 0) || {}).l;
+  run(t, [p(want)]);
+  const vt = t.renderVals();
+  ok(!new URLSearchParams(loc.search).has('alerte') && vt.groups.flatMap((g) => g.items).some((a) => a.key === vt.d.key),
+    `Alertes : un onglet qui n'a pas l'alerte ouverte l'efface de l'adresse et ouvre une des siennes (${loc.search}, ${vt.d.key})`);
+}
+
 // ─── Le routeur ───
 {
   const q = queryOf('?m=FR&niche=Foi&niche=Couple&__proto__=x');
