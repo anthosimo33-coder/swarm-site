@@ -237,6 +237,18 @@ function memDb() {
   ok(!readers.length, `F2 : aucun module ne lit ni n'écrit hidden (${readers.join(", ") || "aucun"})`);
 }
 
+// ─── Q16 (audit du 19/11) : « pas encore de miniature » chez TikTok n'est pas un échec : la vidéo n'est pas cachée ───
+{
+  const t = actionCtx({});
+  globalThis.__copyImage = async (_ctx, _key, _src, report) => { report.blank = true; return null; };
+  await quiet(() => sync.copyMedia.handler(t.ctx, { items: [{ key: "v:7000000000000000009", src: "ttpage:x/7000000000000000009" }] }));
+  ok(!t.calls.includes("markMisses"), `Q16 : une vidéo TikTok sans miniature encore n'est pas notée introuvable (${t.calls.join(", ") || "aucun appel"})`);
+  globalThis.__copyImage = async (_ctx, _key, _src, report) => { report.gone = true; return null; };
+  const g = actionCtx({});
+  await quiet(() => sync.copyMedia.handler(g.ctx, { items: [{ key: "v:7000000000000000010", src: "ttpage:x/7000000000000000010" }] }));
+  ok(g.calls.includes("markMisses"), "Q16 : une vidéo que TikTok dit disparue l'est toujours");
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);
