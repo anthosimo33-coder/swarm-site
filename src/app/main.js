@@ -22,21 +22,33 @@ import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
 import { ROUTES } from './routes.js';
 import { createWatcher } from './watcher.js';
-import Apercu from './pages/Apercu.js';
-import MApercuApps from './pages/MApercuApps.js';
-import Formules from './pages/Formules.js';
-import MFormules from './pages/MFormules.js';
-import MenuCompte from './pages/MenuCompte.js';
-import Reglages from './pages/Reglages.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
-import './styles/a-apr.css';
-import './styles/m-apr.css';
-import './styles/a-for.css';
-import './styles/m-for.css';
-import './styles/a-mnu.css';
-import './styles/a-reg.css';
+
+/**
+ * Un écran secondaire chargé à la demande, code et CSS ensemble (audit F4 : Réglages, Aperçu, Formules et le menu du
+ * compte faisaient 80 % de l'entrée de l'app, chargés au démarrage par tout le monde). Rend le composant, ou null tant
+ * qu'il charge (onReady redessine) ; preload() le charge d'avance.
+ */
+function lazyScreen(load) {
+  let Comp = null;
+  let pending = null;
+  const get = (onReady) => {
+    if (Comp) return Comp;
+    if (!pending) pending = load().then((m) => { Comp = m.default; }, () => { pending = null; });
+    if (onReady) pending.then(() => Comp && onReady());
+    return null;
+  };
+  get.preload = () => { get(); };
+  return get;
+}
+const Apercu = lazyScreen(() => Promise.all([import('./pages/Apercu.js'), import('./styles/a-apr.css')]).then(([m]) => m));
+const MApercuApps = lazyScreen(() => Promise.all([import('./pages/MApercuApps.js'), import('./styles/m-apr.css')]).then(([m]) => m));
+const Formules = lazyScreen(() => Promise.all([import('./pages/Formules.js'), import('./styles/a-for.css')]).then(([m]) => m));
+const MFormules = lazyScreen(() => Promise.all([import('./pages/MFormules.js'), import('./styles/m-for.css')]).then(([m]) => m));
+const MenuCompte = lazyScreen(() => Promise.all([import('./pages/MenuCompte.js'), import('./styles/a-mnu.css')]).then(([m]) => m));
+const Reglages = lazyScreen(() => Promise.all([import('./pages/Reglages.js'), import('./styles/a-reg.css')]).then(([m]) => m));
 
 const HOME = '/app';
 const SIGN_OUT = '/app/deconnexion';
@@ -189,6 +201,9 @@ function App() {
   };
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
+  // Sans abonnement, l'aperçu remplace Apps : son code part dès qu'on sait qui est là (audit F4).
+  const free = !!user && !user.pro;
+  useEffect(() => { if (free) (MOBILE.matches ? MApercuApps : Apercu).preload(); }, [free]);
 
   // Liens internes, ⌘K, largeur de l'écran.
   useEffect(() => {
@@ -386,6 +401,8 @@ function App() {
       WARM.forEach((key) => board(key));
       SAVED.forEach((key) => savedEntry(key));
       ROUTES.forEach((route) => loaderOf(route, MOBILE.matches)().catch(() => {}));
+      // Les écrans secondaires, d'avance mais hors du démarrage (audit F4).
+      [Reglages, MenuCompte, MOBILE.matches ? MFormules : Formules].forEach((l) => l.preload());
     }, 800);
     return () => clearTimeout(timer);
   }, [screen]);
@@ -437,12 +454,14 @@ function App() {
   // Document absent : jamais l'exemple du canevas à la place des données.
   if (data === null) return h(Missing, { fiche: Object.keys(screen.params).length > 0 });
   const onPlans = () => setPlans(true);
+  const loaded = () => redraw((n) => n + 1); // un écran secondaire vient d'arriver (audit F4)
   let page;
   if (!user.pro && (screen.route.path === APERCU || (data && data.locked))) {
     // Apps sans abonnement : le top 3 et la carte « Tout débloquer » (design/app/ApercuA, MApercuApps).
     const apps = screen.route.path === APERCU ? data : get('apps');
-    page = apps && !apps.locked
-      ? h(screen.mobile ? MApercuApps : Apercu, { key: `${screen.mobile ? 'm' : 'd'}/apercu`, user, data: apps, onPlans, checkout: CHECKOUT })
+    const ApercuPage = (screen.mobile ? MApercuApps : Apercu)(loaded);
+    page = apps && !apps.locked && ApercuPage
+      ? h(ApercuPage, { key: `${screen.mobile ? 'm' : 'd'}/apercu`, user, data: apps, onPlans, checkout: CHECKOUT })
       : null;
   } else {
     page = h(screen.Page, {
@@ -459,9 +478,11 @@ function App() {
     });
   }
   const total = (!user.pro && (board('apps').value || {}).total) || undefined;
-  const sheet = plans ? h(screen.mobile ? MFormules : Formules, { onClose: () => setPlans(false), checkout: CHECKOUT, total }) : null;
-  const account = menu && !screen.mobile
-    ? h(MenuCompte, { user, total: (board('apps').value || {}).total, onClose: () => setMenu(false), onPlans: () => { setMenu(false); setPlans(true); },
+  const Sheet = plans ? (screen.mobile ? MFormules : Formules)(loaded) : null;
+  const sheet = Sheet ? h(Sheet, { onClose: () => setPlans(false), checkout: CHECKOUT, total }) : null;
+  const Menu = menu && !screen.mobile ? MenuCompte(loaded) : null;
+  const account = Menu
+    ? h(Menu, { user, total: (board('apps').value || {}).total, onClose: () => setMenu(false), onPlans: () => { setMenu(false); setPlans(true); },
         onSettings: (section) => { setMenu(false); setSettings(section); } })
     : null;
   // Réglages : les actions passent par le serveur (convex/users.ts) ; le prénom revient par viewer, qui suit.
@@ -479,9 +500,11 @@ function App() {
   };
   if (onSettingsScreen) {
     const toApp = () => { window.history.pushState(null, '', HOME); setPath(HOME); };
-    page = h(Reglages, { key: planMobile ? 'm/reglages/abo' : 'm/reglages', ...settingsProps, mobile: true, onClose: toApp, ...(planMobile ? { section: 'abo', view: 'detail' } : {}) });
+    const Settings = Reglages(loaded);
+    page = Settings ? h(Settings, { key: planMobile ? 'm/reglages/abo' : 'm/reglages', ...settingsProps, mobile: true, onClose: toApp, ...(planMobile ? { section: 'abo', view: 'detail' } : {}) }) : null;
   }
-  const panel = settings && !screen.mobile ? h(Reglages, { key: `reglages-${settings}`, ...settingsProps, section: settings, onClose: () => setSettings(null) }) : null;
+  const Panel = settings && !screen.mobile ? Reglages(loaded) : null;
+  const panel = Panel ? h(Panel, { key: `reglages-${settings}`, ...settingsProps, section: settings, onClose: () => setSettings(null) }) : null;
   const payNote = paying
     ? h('div', { class: `app-paid is-${paying}`, role: paying === 'error' ? 'alert' : 'status' },
         paying === 'error' ? 'Le paiement n’a pas pu s’ouvrir. Réessaie dans un instant.' : 'Ouverture du paiement sécurisé…')

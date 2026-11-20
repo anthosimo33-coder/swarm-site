@@ -2,8 +2,11 @@
 // Les modules de l'app sans DOM (watcher.js, plan.js, scroll.js) avec de faux client, fenêtre et historique ; le build
 // pour ce que l'entrée embarque. Le comportement dans le navigateur est vérifié à part (rapport).
 // Usage : node scripts/app.test.mjs
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { checker, root } from './test-kit.mjs';
 
 const { ok, end } = checker();
@@ -38,6 +41,39 @@ const has = (f) => fs.existsSync(app(f));
 {
   const warm = (main.match(/const WARM = \[([^\]]*)\]/) || [, ''])[1].replace(/['\s]/g, '').split(',').filter(Boolean);
   ok(warm.sort().join() === 'apps,search,stats', `F15 : listes gardées ouvertes = apps, search (⌘K), stats (${warm.join(', ')}) ; home, formats, creators:FR et alerts s'ouvrent avec leur écran`);
+}
+
+// ─── F4 : Réglages, Aperçu, Formules et le menu du compte ne sont plus dans l'entrée de l'app ───
+{
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'kopycat-app-'));
+  execFileSync('npx', ['vite', 'build', '--outDir', out, '--emptyOutDir', 'true', '--manifest', '--logLevel', 'error'], { cwd: root, stdio: 'ignore' });
+  const manifest = JSON.parse(fs.readFileSync(path.join(out, '.vite/manifest.json'), 'utf8'));
+  const entry = manifest['app.html'];
+  const closure = (key, seen = new Set()) => { if (!seen.has(key)) { seen.add(key); for (const k of manifest[key]?.imports ?? []) closure(k, seen); } return seen; };
+  const startup = closure('app.html');
+  const lazy = ['Reglages', 'Apercu', 'MApercuApps', 'Formules', 'MFormules', 'MenuCompte'].map((n) => `src/app/pages/${n}.js`);
+  const split = lazy.filter((k) => manifest[k] && !startup.has(k) && (entry.dynamicImports ?? []).includes(k));
+  ok(split.length === lazy.length, `F4 : écrans secondaires chargés à la demande (${split.length}/${lazy.length} : ${lazy.filter((k) => !split.includes(k)).map((k) => path.basename(k)).join(', ') || 'tous'})`);
+  const gz = [...startup].reduce((n, k) => n + zlib.gzipSync(fs.readFileSync(path.join(out, manifest[k].file))).length, 0);
+  console.log(`      (entrée de l'app au démarrage : ${(gz / 1024).toFixed(1)} Ko gz)`);
+  fs.rmSync(out, { recursive: true, force: true });
+}
+
+// ─── F8 : l'aperçu n'attend plus le code d'Apps ; un compte sans abonnement ne précharge que ce qu'il peut ouvrir ───
+{
+  ok(has('plan.js'), 'F8 : module src/app/plan.js présent');
+  if (has('plan.js')) {
+    const plan = await import(app('plan.js'));
+    const { ROUTES } = await import(app('routes.js')).catch(() => ({ ROUTES: null }));
+    ok(plan.routeCodeNeeded('/app/apps', { known: true, pro: false }) === false && plan.routeCodeNeeded('/app/apps', { known: true, pro: true }) && plan.routeCodeNeeded('/app/apps', { known: false, pro: false }),
+      'F8 : sans abonnement, Apps (aperçu) n\'attend pas le code d\'Apps ; avec, ou tant qu\'on ne sait pas, si');
+    ok(!plan.mayLoadBeforeUser('/app') && !plan.mayLoadBeforeUser('/app/formats') && plan.mayLoadBeforeUser('/app/apps/astraai') && plan.mayLoadBeforeUser('/app/videos/1'),
+      'F8 : une adresse fermée sans abonnement attend de savoir qui est là ; une fiche ouverte se charge tout de suite');
+    const fake = [{ path: '/app' }, { path: '/app/apps' }, { path: '/app/formats' }, { path: '/app/apps/:slug' }, { path: '/app/videos/:id' }, { path: '/app/compte' }, { path: '/app/alertes' }];
+    ok(plan.routesToWarm(fake, false).map((r) => r.path).join() === '/app/apps/:slug,/app/videos/:id,/app/compte' && plan.routesToWarm(fake, true).length === fake.length,
+      'F8 : préchargement sans abonnement = fiches, vidéos, compte ; avec = tout');
+  }
+  ok(/routeCodeNeeded\(/.test(main) && /routesToWarm\(/.test(main) && /mayLoadBeforeUser\(/.test(main), 'F8 : src/app/main.js applique ces règles');
 }
 
 end();
