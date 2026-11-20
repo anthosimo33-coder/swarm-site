@@ -5,8 +5,8 @@
 "{ ...top, all: appsOf(await read(ctx, \"apps\", hidden)), preview: true }"
 ],
 [
-"M2 vidéo masquée servie (garde hidden de read retirée)",
-"if (key.startsWith(\"video:\") && hidden.has(key.slice(\"video:\".length))) return null;",
+"M2 fiche d'une vidéo introuvable servie (garde mediaMiss retirée)",
+"if (miss) return null;",
 ""
 ],
 [
@@ -20,9 +20,9 @@
 "return data;"
 ],
 [
-"M5 vidéos masquées gardées dans les listes",
-"x.filter((y) => !gone(y))",
-"x"
+"M5 liste globale hidden relue à chaque appel (audit F14)",
+"if (userId === null) return null;\n    if ((await",
+"if (userId === null) return null;\n    await ctx.db.query(\"hidden\").first();\n    if ((await"
 ],
 [
 "M6 apps:FR / apps@instagram ouverts sans abonnement",
@@ -56,8 +56,8 @@
 ],
 [
 "M12 garde de connexion retirée",
-"if (userId === null) return null;\n    const hidden",
-"const hidden"
+"if (userId === null) return null;\n    if ((await ctx.db.get(userId))",
+"if ((await ctx.db.get(userId))"
 ],
 [
 "M13 top 4 au lieu de 3",

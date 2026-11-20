@@ -1,5 +1,5 @@
 // Contre-épreuve du verrou de convex/boards.ts : la vraie fonction get, empaquetée par esbuild (Convex remplacé par des
-// doublures), sur une base simulée (boards, boardParts, hidden, users).
+// doublures), sur une base simulée (boards, boardParts, mediaMiss, hidden, users).
 // Usage : npm run test:apercu   (ou node scripts/apercu.test.mjs <autre boards.ts>, pour la contre-épreuve)
 // Audit Q4 (19/11) : l'ancienne version laissait passer 9 modifications cassées sur 14. Chaque réponse faite à un compte
 // gratuit est maintenant fouillée en entier (aucune app hors du top 3, nulle part), chaque clé des écrans et du
@@ -44,6 +44,8 @@ rmSync(dir, { recursive: true, force: true });
 // 10 apps « zz-app-0 » à « zz-app-9 », classées par vues : seules les 3 premières sont ouvertes sans abonnement. Les
 // autres (slug et nom) ne doivent apparaître dans AUCUNE réponse faite à un compte gratuit.
 const slug = (i) => `zz-app-${i}`, name = (i) => `Nom secret ${i}`;
+// Vidéo notée introuvable (mediaMiss, et dans la liste globale hidden). Audit F14 : boards.get ne lit plus hidden ;
+// seule la fiche de la vidéo est absente, les listes sont filtrées par la synchro.
 const HIDDEN_VIDEO = '2229999999';
 const card = (id, i) => ({ id, platform: 'tiktok', handle: `auteur${i}`, app: slug(i), views: 10, cover: 'https://tiktok.example/signee.jpg' });
 const appRow = (i) => ({ slug: slug(i), name: name(i), niche: i % 2 ? 'Foi' : 'Études', icon: null, views30: 1000 - i, accounts: 3,
@@ -79,7 +81,7 @@ const USERS = { pro: { pro: true }, free: {}, nul: { pro: false } };
  * : clés en morceaux dont un morceau manque (page en cours de réécriture).
  */
 function db({ parts = new Set(), missing = new Set(), without = new Set() } = {}) {
-  const tables = { boards: [], boardParts: [], hidden: [{ ids: [HIDDEN_VIDEO], at: 1 }], users: [] };
+  const tables = { boards: [], boardParts: [], hidden: [{ ids: [HIDDEN_VIDEO], at: 1 }], mediaMiss: [{ key: `v:${HIDDEN_VIDEO}`, at: 1 }], users: [] };
   const reads = [];
   for (const [key, data] of Object.entries(DOCS)) {
     if (without.has(key)) continue;
@@ -136,10 +138,18 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
   ok((await g('pro', 'app:zz-app-7'))?.slug === slug(7), 'Pro : fiche hors top 3 ouverte');
   ok((await g('pro', 'formats'))?.formats?.length === 1, 'Pro : Formats ouvert');
   ok((await g('pro', 'creators:FR'))?.creators?.length === 1, 'Pro : Créateurs ouvert');
-  // Vidéo introuvable (hidden) : retirée des listes, fiche absente, pour tout le monde.
-  ok(!JSON.stringify(pa).includes(HIDDEN_VIDEO), 'Pro : vidéo masquée retirée de la liste des apps');
-  ok(!JSON.stringify(await g('pro', 'app:zz-app-1')).includes(HIDDEN_VIDEO), 'Pro : vidéo masquée retirée de la fiche');
-  ok((await g('pro', `video:${HIDDEN_VIDEO}`)) === null, 'Pro : fiche de la vidéo masquée absente');
+  // Vidéo introuvable (mediaMiss) : sa fiche est absente, pour tout le monde. La liste globale hidden n'est jamais lue
+  // (audit F14 : une seule vidéo notée relançait toutes les requêtes ouvertes).
+  ok((await g('pro', `video:${HIDDEN_VIDEO}`)) === null, 'Pro : fiche de la vidéo introuvable absente');
+  ok((await g('pro', 'video:2220000020'))?.id === '2220000020', 'Pro : fiche d\'une vidéo vivante servie');
+  {
+    const hiddenReads = [];
+    for (const k of ['apps', 'app:zz-app-1', 'app:zz-app-7', `video:${HIDDEN_VIDEO}`, 'video:2220000020', 'creators:FR', 'stats', 'home'])
+      for (const u of ['pro', 'free']) if ((await readsOf(base, u, k)).some((x) => x.startsWith('hidden'))) hiddenReads.push(`${u} ${k}`);
+    ok(!hiddenReads.length, `aucune lecture de la liste globale hidden${hiddenReads.length ? ` (${hiddenReads.slice(0, 4).join(', ')})` : ''}`);
+    const r = await readsOf(base, 'pro', 'video:2220000020');
+    ok(r.includes('mediaMiss[v:2220000020]') && !r.some((x) => x === 'mediaMiss'), `fiche vidéo : une lecture ponctuelle de mediaMiss (${r.join(' ')})`);
+  }
   // Miniatures et photos de profil : toujours servies par Kopycat (/cover, /avatar), jamais le lien TikTok signé.
   const v2 = await g('pro', 'video:2220000020');
   ok(typeof v2?.cover === 'string' && v2.cover.startsWith(`${SITE}/cover/2220000020?`), `Pro : miniature réécrite (${v2?.cover})`);
@@ -154,12 +164,10 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
     ok(a?.apps?.length === 3 && a.apps.map((x) => x.slug).join() === [0, 1, 2].map(slug).join(), `${u} : apps = top 3 (${a?.apps?.length})`);
     ok(a?.total === 10 && a?.preview === true, `${u} : total = 10 apps suivies, marqué aperçu`);
     ok(a && Object.keys(a).every((k) => FREE_FIELDS.includes(k)), `${u} : document apps limité à ${FREE_FIELDS.join(', ')} (${a && Object.keys(a).join(', ')})`);
-    ok(!JSON.stringify(a).includes(HIDDEN_VIDEO), `${u} : vidéo masquée retirée de l'aperçu`);
     ok(a?.apps?.[0]?.top?.[0]?.cover?.startsWith(`${SITE}/cover/`), `${u} : miniatures de l'aperçu réécrites`);
     ok((await gf('app:zz-app-1'))?.slug === slug(1), `${u} : fiche du top 3 ouverte`);
-    ok(!JSON.stringify(await gf('app:zz-app-1')).includes(HIDDEN_VIDEO), `${u} : vidéo masquée retirée de la fiche ouverte`);
     ok((await gf('video:2220000020'))?.id === '2220000020', `${u} : vidéo d'une app du top 3 ouverte`);
-    ok((await gf(`video:${HIDDEN_VIDEO}`)) === null || (await gf(`video:${HIDDEN_VIDEO}`))?.locked === true, `${u} : fiche de la vidéo masquée jamais servie`);
+    ok((await gf(`video:${HIDDEN_VIDEO}`)) === null || (await gf(`video:${HIDDEN_VIDEO}`))?.locked === true, `${u} : fiche de la vidéo introuvable jamais servie`);
     for (const k of LOCKED_KEYS) { const r = await gf(k); ok(r?.locked === true && Object.keys(r).length === 1, `${u} : ${k} verrouillé (${JSON.stringify(r)?.slice(0, 60)})`); }
     const s = await gf('search');
     ok(s?.apps?.length === 3 && s.creators.length === 0 && s.formats.length === 0, `${u} : recherche réduite au top 3`);

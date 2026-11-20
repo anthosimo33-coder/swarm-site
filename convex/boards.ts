@@ -13,15 +13,11 @@ import { query, type QueryCtx } from "./_generated/server";
  * il faut que les navigateurs oublient leurs anciennes réponses.
  */
 const COVER_VERSION = 2;
-function withCovers(data: unknown, hidden: Set<string>): unknown {
+function withCovers(data: unknown): unknown {
   const site = process.env.CONVEX_SITE_URL;
   if (!site) return data;
-  // Une vidéo introuvable (supprimée, compte privé) n'apparaît nulle part : retirée des listes.
-  const gone = (x: unknown) =>
-    (typeof x === "string" && hidden.has(x)) ||
-    (!!x && typeof x === "object" && !Array.isArray(x) && "cover" in x && hidden.has(String((x as Record<string, unknown>).videoId ?? (x as Record<string, unknown>).id)));
   const fix = (x: unknown): unknown => {
-    if (Array.isArray(x)) return x.filter((y) => !gone(y)).map(fix);
+    if (Array.isArray(x)) return x.map(fix);
     if (!x || typeof x !== "object") return x;
     const o: Record<string, unknown> = {};
     for (const [k, val] of Object.entries(x)) o[k] = typeof val === "object" ? fix(val) : val;
@@ -36,18 +32,28 @@ function withCovers(data: unknown, hidden: Set<string>): unknown {
   return fix(data);
 }
 
-/** Le document d'une clé, prêt pour l'écran ; null s'il n'existe pas (ou est en cours de réécriture). */
-async function read(ctx: QueryCtx, key: string, hidden: Set<string>): Promise<unknown> {
+/**
+ * Le document d'une clé, prêt pour l'écran ; null s'il n'existe pas (ou est en cours de réécriture).
+ * Une vidéo notée introuvable (mediaMiss, vidéo supprimée ou compte privé) n'a pas de fiche. Audit F14 (19/11) : ce test
+ * lisait la liste globale `hidden` à CHAQUE appel, si bien que chaque vidéo notée introuvable relançait toutes les
+ * requêtes ouvertes, de tous les comptes. Il ne lit plus que la ligne de cette vidéo ; les listes, elles, sont déjà
+ * filtrées par la synchro (radarModels.ts, `missing`), et une miniature cassée entre deux passages est masquée par
+ * l'écran (src/app/main.js, `is-broken`).
+ */
+async function read(ctx: QueryCtx, key: string): Promise<unknown> {
   const row = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", key)).first();
   if (!row) return null;
-  if (key.startsWith("video:") && hidden.has(key.slice("video:".length))) return null; // fiche « introuvable »
+  if (key.startsWith("video:")) {
+    const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", `v:${key.slice("video:".length)}`)).first();
+    if (miss) return null; // fiche « introuvable »
+  }
   // Grosse page rangée en morceaux de texte (convex/radarStore.ts, saveBoards) : recollée ici.
   if (row.parts) {
     const parts = await ctx.db.query("boardParts").withIndex("by_key_i", (q) => q.eq("key", key)).collect();
     if (parts.length !== row.parts) return null; // en cours de réécriture : jamais une page tronquée
-    return withCovers(JSON.parse(parts.map((p) => p.text).join("")), hidden);
+    return withCovers(JSON.parse(parts.map((p) => p.text).join("")));
   }
-  return withCovers(row.data, hidden);
+  return withCovers(row.data);
 }
 
 /**
@@ -69,25 +75,25 @@ type Top = { updatedAt?: unknown; markets?: unknown; niches?: unknown; marketApp
  * « apps » (848 Ko en 4 morceaux) à chaque appel coûtait 80 fois ce qui était rendu. Tant que la synchro ne l'a pas
  * écrit (juste après un déploiement), il est tiré de « apps », comme avant.
  */
-async function topOf(ctx: QueryCtx, hidden: Set<string>): Promise<Top | null> {
-  const d = ((await read(ctx, "apps:top", hidden)) ?? (await read(ctx, "apps", hidden))) as Partial<Top> | null;
+async function topOf(ctx: QueryCtx): Promise<Top | null> {
+  const d = ((await read(ctx, "apps:top")) ?? (await read(ctx, "apps"))) as Partial<Top> | null;
   if (d === null) return null;
   // Champ par champ : rien d'autre du document n'arrive au navigateur gratuit.
   return { updatedAt: d.updatedAt, markets: d.markets, niches: d.niches, marketApps: d.marketApps,
     apps: appsOf(d).slice(0, PREVIEW_TOP), total: typeof d.total === "number" ? d.total : appsOf(d).length };
 }
 
-async function preview(ctx: QueryCtx, key: string, hidden: Set<string>): Promise<unknown> {
-  if (key === "stats") return read(ctx, key, hidden);
+async function preview(ctx: QueryCtx, key: string): Promise<unknown> {
+  if (key === "stats") return read(ctx, key);
   if (!previewable(key)) return LOCKED;
-  const top = await topOf(ctx, hidden);
+  const top = await topOf(ctx);
   if (key === "apps") return top === null ? null : { ...top, preview: true };
   const open = new Set((top?.apps ?? []).map((a) => a.slug));
   // Recherche : les apps ouvertes seulement, sans relire l'index « search » (389 Ko).
   if (key === "search") return top === null ? null : { apps: top.apps.map(({ slug, name, icon, niche, views30 }) => ({ slug, name, icon, niche, views30 })), creators: [], formats: [] };
-  if (key.startsWith("app:")) return open.has(key.slice("app:".length)) ? read(ctx, key, hidden) : LOCKED;
+  if (key.startsWith("app:")) return open.has(key.slice("app:".length)) ? read(ctx, key) : LOCKED;
   if (key.startsWith("video:")) {
-    const d = (await read(ctx, key, hidden)) as { app?: { slug?: string } | null } | null;
+    const d = (await read(ctx, key)) as { app?: { slug?: string } | null } | null;
     if (d === null) return null;
     return d.app?.slug && open.has(d.app.slug) ? d : LOCKED;
   }
@@ -99,8 +105,7 @@ export const get = query({
   handler: async (ctx, { key }) => {
     const userId = await liveUserId(ctx);
     if (userId === null) return null;
-    const hidden = new Set((await ctx.db.query("hidden").first())?.ids ?? []);
-    if ((await ctx.db.get(userId))?.pro === true) return read(ctx, key, hidden);
-    return preview(ctx, key, hidden);
+    if ((await ctx.db.get(userId))?.pro === true) return read(ctx, key);
+    return preview(ctx, key);
   },
 });
