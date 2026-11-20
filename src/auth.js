@@ -23,6 +23,8 @@ export const APP_HOME = '/app';
 const MESSAGES = {
   [AUTH_ERRORS.EMAIL_INVALIDE]: 'Cette adresse e-mail n’est pas valide.',
   [AUTH_ERRORS.MOT_DE_PASSE_TROP_COURT]: 'Ton mot de passe doit faire au moins 8 caractères.',
+  [AUTH_ERRORS.MOT_DE_PASSE_TROP_LONG]: 'Ton mot de passe doit faire 128 caractères au plus.',
+  [AUTH_ERRORS.MOT_DE_PASSE_TROP_COURANT]: 'Ce mot de passe est trop courant : choisis-en un moins facile à deviner.',
   [AUTH_ERRORS.IDENTIFIANTS_INCORRECTS]: 'E-mail ou mot de passe incorrect.',
   [AUTH_ERRORS.COMPTE_EXISTANT]: 'Un compte existe déjà avec cet e-mail.',
   [AUTH_ERRORS.TROP_DE_TENTATIVES]: 'Trop de tentatives. Réessaie dans quelques minutes.',

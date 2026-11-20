@@ -15,7 +15,9 @@ fs.writeFileSync(entry, ["users", "whop", "session"].map((m) => `export * as ${m
 const mods = await load(entry, [[/^@convex-dev\/auth\/server$/, `
 export const getAuthUserId = async (ctx) => ctx.__userId ?? null;
 export const getAuthSessionId = async (ctx) => ctx.__sessionId ?? null;
-export const modifyAccountCredentials = async () => {}, retrieveAccount = async () => null;
+export const modifyAccountCredentials = async () => {};
+// Le bon mot de passe de l'abonnée de banc : « Bon-mdp-42 » (audit S27 : la fermeture le demande).
+export const retrieveAccount = async (_ctx, { account }) => (account.secret === "Bon-mdp-42" ? { user: {}, account: {} } : null);
 `]]);
 process.env.WHOP_API_KEY = "test";
 
@@ -34,11 +36,14 @@ globalThis.fetch = async (url, init = {}) => {
 };
 
 /** Un compte abonné (adhésion `status`), avec ce qu'il garde, une session et son identifiant. */
-async function world({ status = "active", sub = true } = {}) {
+async function world({ status = "active", sub = true, google = false, sessionAge = 0 } = {}) {
   const m = memDb();
   const userId = await m.db.insert("users", { email: "abonnee@exemple.fr", pro: sub ? true : undefined });
   const sessionId = await m.db.insert("authSessions", { userId, expirationTime: Date.now() + 864e5 });
-  await m.db.insert("authAccounts", { userId, provider: "password", providerAccountId: "abonnee@exemple.fr" });
+  if (sessionAge) m.rows("authSessions").find((x) => x._id === sessionId)._creationTime = Date.now() - sessionAge;
+  const accountId = await m.db.insert("authAccounts", { userId, provider: google ? "google" : "password", providerAccountId: "abonnee@exemple.fr" });
+  await m.db.insert("authRateLimits", { identifier: accountId, lastAttemptTime: 1, attemptsLeft: 3 });
+  await m.db.insert("authLimits", { key: `checkout:${userId}`, n: 1, since: 1 });
   await m.db.insert("saved", { userId, key: "follows", value: {}, updatedAt: 1 });
   if (sub) await m.db.insert("subscriptions", { userId, membershipId: "mem_1", variantId: "plan_m", status, periodDays: 30, price: "29.99", currency: "eur", periodEnd: Date.now() + 20 * 864e5, cancelAtPeriodEnd: false, manageUrl: null, updatedAt: 1 });
   whop = { calls: [], down: false, ignoreCancel: false, memberships: { mem_1: { id: "mem_1", status, cancel_at_period_end: false, metadata: { kopycat_user: userId }, billing_period_days: 30, renewal_price: { amount: 29.99, currency: "eur" } } } };
@@ -50,7 +55,7 @@ async function world({ status = "active", sub = true } = {}) {
   };
   // Un contexte qui sert d'action (runQuery, runMutation) comme de mutation (db) : l'ancienne fermeture était une mutation.
   const ctx = { db: m.db, __userId: userId, __sessionId: sessionId, runQuery: call, runMutation: call, runAction: call, scheduler: { runAfter: async () => null } };
-  return { m, ctx, userId, close: (email) => quiet(() => mods.users.deleteAccount.handler(ctx, { email })) };
+  return { m, ctx, userId, close: (email, password = "Bon-mdp-42") => quiet(() => mods.users.deleteAccount.handler(ctx, password === null ? { email } : { email, password })) };
 }
 const cancels = () => whop.calls.filter((c) => c.method === "POST" && /\/cancel$/.test(c.url));
 
@@ -90,6 +95,24 @@ const { ok, end } = checker();
   const w = await world({ status: "canceled" });
   const r = await w.close("abonnee@exemple.fr");
   ok(r?.ok === true && cancels().length === 0, "adhésion déjà terminée : rien à résilier, compte effacé");
+}
+// Audit S27 : l'e-mail ne suffit plus ; mot de passe, ou connexion récente pour un compte Google seul.
+{
+  const w = await world();
+  const none = await w.close("abonnee@exemple.fr", null);
+  const bad = await w.close("abonnee@exemple.fr", "mauvais-mdp-9");
+  ok(none?.reason === "motdepasse" && bad?.reason === "motdepasse" && w.m.rows("users").length === 1 && cancels().length === 0,
+    `S27 : sans mot de passe ou avec un faux, rien n'est résilié ni effacé (${none?.reason}, ${bad?.reason})`);
+  const good = await w.close("abonnee@exemple.fr");
+  ok(good?.ok === true && !w.m.rows("authRateLimits").length && !w.m.rows("authLimits").length, `S27 : avec le bon, effacé, compteurs d'échecs compris (${w.m.rows("authRateLimits").length + w.m.rows("authLimits").length} restants)`);
+}
+{
+  const old = await world({ google: true, sub: false, sessionAge: 30 * 60_000 });
+  const r1 = await old.close("abonnee@exemple.fr", null);
+  const fresh = await world({ google: true, sub: false, sessionAge: 2 * 60_000 });
+  const r2 = await fresh.close("abonnee@exemple.fr", null);
+  ok(r1?.reason === "reconnexion" && old.m.rows("users").length === 1 && r2?.ok === true && !fresh.m.rows("users").length,
+    `S27 : compte Google seul, connexion de 30 min : se reconnecter d'abord (${r1?.reason}) ; de 2 min : effacé (${r2?.ok})`);
 }
 const pub = Object.entries(mods.users).filter(([, f]) => f?.__kind === "mutation").map(([n]) => n);
 ok(!pub.some((n) => /delete|erase/i.test(n)), `aucune mutation publique n'efface le compte sans passer par Whop (${pub.join(", ")})`);

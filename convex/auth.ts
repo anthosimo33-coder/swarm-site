@@ -6,6 +6,9 @@ import { Scrypt } from "lucia";
 import { AUTH_ERRORS, type AuthErrorCode } from "./authErrors";
 import { signInKey } from "./authLimits";
 import { internal } from "./_generated/api";
+import { passwordVerdict } from "./passwordPolicy";
+
+const VERDICT_CODE = { trop_court: AUTH_ERRORS.MOT_DE_PASSE_TROP_COURT, trop_long: AUTH_ERRORS.MOT_DE_PASSE_TROP_LONG, trop_courant: AUTH_ERRORS.MOT_DE_PASSE_TROP_COURANT } as const;
 import type { MutationCtx } from "./_generated/server";
 
 /**
@@ -25,8 +28,6 @@ import type { MutationCtx } from "./_generated/server";
 const PROVIDER = "password";
 // Assez permissif pour ne refuser aucune adresse réelle.
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN = 8;
-const PASSWORD_MAX = 128;
 /**
  * Inscriptions par mot de passe, tous e-mails confondus : 300 essais par tranche de 10 min au plus (audit du 19/11, S1
  * et S8). Bien au-delà d'un afflux réel à ce jour (18 comptes en tout le 19/11) : seule une création de comptes en
@@ -89,9 +90,9 @@ const password = ConvexCredentials({
     if (!EMAIL.test(email)) throw fail(AUTH_ERRORS.EMAIL_INVALIDE);
     try {
       if (params.flow === "signUp") {
-        if (secret.length < PASSWORD_MIN || secret.length > PASSWORD_MAX) {
-          throw fail(AUTH_ERRORS.MOT_DE_PASSE_TROP_COURT);
-        }
+        // Audit S28 : 8 à 128 caractères, et pas un mot de passe courant (convex/passwordPolicy.ts).
+        const verdict = passwordVerdict(secret, email);
+        if (verdict !== "ok") throw fail(VERDICT_CODE[verdict]);
         if (!(await ctx.runMutation(internal.authLimits.hit, { key: "signUp", max: SIGNUP_MAX, windowMs: SIGNUP_WINDOW_MS }))) {
           throw fail(AUTH_ERRORS.TROP_DE_TENTATIVES);
         }

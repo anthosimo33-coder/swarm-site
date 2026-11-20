@@ -55,7 +55,7 @@ const attempt = async (flow, email, password) => {
 };
 
 const { ok, end } = checker();
-const victim = "victime@exemple.fr", secret = "motdepasse1";
+const victim = "victime@exemple.fr", secret = "Vrai-mdp-7q2";
 const created = await attempt("signUp", victim, secret);
 ok(!!created.ok?.userId, "inscription d'une nouvelle adresse : compte créé et connecté");
 const victimId = created.ok?.userId;
@@ -86,12 +86,30 @@ ok(!broken.ok && broken.code !== "COMPTE_EXISTANT" && verifies === 0, `panne pen
 
 // 4. Limite des inscriptions (création de comptes en masse) : refus au-delà, de nouveau ouvert après la fenêtre.
 let refusedAt = 0;
-for (let i = 1; i <= 400 && !refusedAt; i++) if ((await attempt("signUp", victim, "x".repeat(8))).code === "TROP_DE_TENTATIVES") refusedAt = i;
+for (let i = 1; i <= 400 && !refusedAt; i++) if ((await attempt("signUp", victim, "Essai-mdp-" + i)).code === "TROP_DE_TENTATIVES") refusedAt = i;
 ok(refusedAt > 0, `inscriptions limitées : refus au ${refusedAt || "?"}e essai de la fenêtre`);
 const realNow = Date.now;
 Date.now = () => realNow() + 11 * 60_000;
-const later = await attempt("signUp", "nouvelle@exemple.fr", "motdepasse2");
+const later = await attempt("signUp", "nouvelle@exemple.fr", "Autre-mdp-8w");
 Date.now = realNow;
 ok(!!later.ok?.userId && later.ok.userId !== victimId, "11 min plus tard : une nouvelle inscription passe");
+
+// 5. Audit S28 : 8 à 128 caractères, et pas un mot de passe courant ; chaque refus a son propre code.
+{
+  const realNow2 = Date.now;
+  Date.now = () => realNow2() + 30 * 60_000; // hors de la fenêtre des inscriptions remplie plus haut
+  const try_ = async (email, pw) => (await attempt("signUp", email, pw)).code ?? "ok";
+  const cases = [
+    ["court@exemple.fr", "Ab1-xyz", "MOT_DE_PASSE_TROP_COURT"], ["long@exemple.fr", "Ab1-" + "z".repeat(125), "MOT_DE_PASSE_TROP_LONG"],
+    ["c1@exemple.fr", "12345678", "MOT_DE_PASSE_TROP_COURANT"], ["c2@exemple.fr", "password", "MOT_DE_PASSE_TROP_COURANT"],
+    ["c3@exemple.fr", "azerty12", "MOT_DE_PASSE_TROP_COURANT"], ["c4@exemple.fr", "qsdfghjk", "MOT_DE_PASSE_TROP_COURANT"],
+    ["c5@exemple.fr", "aaaaaaaaaa", "MOT_DE_PASSE_TROP_COURANT"], ["jean.dupont@exemple.fr", "jean.dupont2024", "MOT_DE_PASSE_TROP_COURANT"],
+    ["bon@exemple.fr", "Velo-rouge-du-12", "ok"], ["long-ok@exemple.fr", "Ab1-" + "z".repeat(124), "ok"],
+  ];
+  const got = [];
+  for (const [email, pw, want] of cases) { const c = await try_(email, pw); if (c !== want) got.push(`${pw.slice(0, 20)} → ${c} au lieu de ${want}`); }
+  Date.now = realNow2;
+  ok(!got.length, `S28 : longueur et mots de passe courants refusés avec leur code (${got.length ? got.join(" ; ") : `${cases.length} cas`})`);
+}
 
 end();
