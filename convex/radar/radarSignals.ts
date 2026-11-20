@@ -59,6 +59,7 @@ import {
   CURVE_LANE_WAIT_MS,
   curveCountsOf,
   curveLaneTake,
+  curveNetCutoff,
   recentPerDay,
   type Balance,
   type BudgetState,
@@ -66,7 +67,7 @@ import {
   type BudgetSettings,
   type SignalInput,
 } from "./radarSignalsMath";
-import { CURVE_FREE, curveTally, readCurvePages, settleCurve, type CurveReason, type FreePage } from "./radarFreeMath";
+import { CURVE_FREE, curveSaved, curveTally, readCurvePages, scRefused, settleCurve, type CurveReason, type FreePage } from "./radarFreeMath";
 import { keptFirst } from "./radarCreatorsMath";
 import { scKeyPresent, scSearchKeyword, scVideoInfo } from "./scrapeCreatorsApi";
 
@@ -604,14 +605,24 @@ export const jobState = internalQuery({
 export const todayCredits = (st: JobState, poste: string) =>
   st.usage.filter((u) => u.day === st.day && u.poste === poste).reduce((s, u) => s + u.credits, 0);
 
-/** Les relevés de courbe dus à `now` ; `since` : dus depuis cet instant seulement (la voie gratuite, cf curveInLane). */
+/**
+ * Les relevés de courbe dus à `now`. `since` : dus depuis cet instant seulement (la voie gratuite, cf curveInLane :
+ * ]now − CURVE_LANE_WAIT_MS, now]). `net` : le filet (runCurve) — jusqu'à radarSignalsMath.curveNetCutoff, qui lit le
+ * verrou et la dernière fin de passage de la voie dans les réglages : jamais ce qu'un passage tient, tout si elle est
+ * arrêtée.
+ */
 export const dueCurve = internalQuery({
-  args: { now: v.number(), limit: v.number(), since: v.optional(v.number()) },
-  handler: async (ctx, { now, limit, since }): Promise<DueCheck[]> => {
+  args: { now: v.number(), limit: v.number(), since: v.optional(v.number()), net: v.optional(v.boolean()) },
+  handler: async (ctx, { now, limit, since, net }): Promise<DueCheck[]> => {
     if (limit <= 0) return [];
+    let upTo = now;
+    if (net) {
+      const s = await readSettings(ctx);
+      upTo = curveNetCutoff(now, { ...(s?.accountsLeaseUntil !== undefined ? { leaseUntil: s.accountsLeaseUntil } : {}), ...(s?.lastFreeAt !== undefined ? { lastFreeAt: s.lastFreeAt } : {}) });
+    }
     const rows = await ctx.db
       .query("radarSignals")
-      .withIndex("by_next_check", (q) => q.gt("nextCheckAt", Math.max(0, since ?? 0)).lte("nextCheckAt", now))
+      .withIndex("by_next_check", (q) => q.gt("nextCheckAt", Math.max(0, since ?? 0)).lte("nextCheckAt", upTo))
       .take(limit);
     return rows.map((r) => ({ id: r._id, url: r.url, videoId: r.videoId, handle: r.authorHandle }));
   },
@@ -679,7 +690,7 @@ async function upsertDiscoveredCore(
         app !== undefined &&
         !isTextOnShot(s) &&
         curveCandidate(s, now) &&
-        curveAdmissionsLeft(budget, admittedToday) > 0;
+        curveAdmissionsLeft(budget, admittedToday, CURVE_FREE) > 0;
       const next = admit ? nextCheckpointAt(s.publishedAt, now) : undefined;
       const curve: { nextCheckAt?: number; curveStartedAt?: number } =
         admit && next !== undefined ? { nextCheckAt: next, curveStartedAt: now } : {};
@@ -771,6 +782,8 @@ export const recordRun = internalMutation({
     reasons: v.optional(v.record(v.string(), v.number())),
     // Appels payants évités par une page publique, par brique (radarSignalsMath.SavedKey) : pas comptés dans `credits`.
     saved: v.optional(v.record(v.string(), v.number())),
+    // Une mesure côte à côte (page publique contre payant), EN VIDÉOS, par verdict (radarFreeMath.CurveMeasure).
+    measured: v.optional(v.record(v.string(), v.number())),
   },
   handler: async (ctx, a): Promise<void> => {
     const settings = await ensureSettings(ctx);
@@ -786,10 +799,12 @@ export const recordRun = internalMutation({
       const why = Object.keys(reasons).length ? { reasons } : {};
       const saved = addCounts(row?.saved, a.saved);
       const avoided = Object.keys(saved).length ? { saved } : {};
+      const measured = addCounts(row?.measured, a.measured);
+      const side = Object.keys(measured).length ? { measured } : {};
       if (row) {
-        await ctx.db.patch(row._id, { credits: row.credits + a.credits, calls: row.calls + a.calls, errors: row.errors + a.errors, ...usd, ...why, ...avoided });
+        await ctx.db.patch(row._id, { credits: row.credits + a.credits, calls: row.calls + a.calls, errors: row.errors + a.errors, ...usd, ...why, ...avoided, ...side });
       } else {
-        await ctx.db.insert("radarUsage", { day, month: monthKeyParis(a.now), poste: a.poste, credits: a.credits, calls: a.calls, errors: a.errors, ...usd, ...why, ...avoided });
+        await ctx.db.insert("radarUsage", { day, month: monthKeyParis(a.now), poste: a.poste, credits: a.credits, calls: a.calls, errors: a.errors, ...usd, ...why, ...avoided, ...side });
       }
     }
     const field = LAST_RUN_FIELD[a.poste];
@@ -876,7 +891,8 @@ const CURVE_RUNS_PER_DAY = 24;
 /**
  * Courbe : les relevés dus (H+6, H+24, H+48), dans la limite du budget. Depuis le 20/11/2026, la voie gratuite les
  * prend à chaque passage (curveInLane) ; ici partent au payant, comme avant, ceux qu'elle n'a pas pris en
- * CURVE_LANE_WAIT_MS (passage tombé, plafond de pages, part payante du passage épuisée) — motif « retard ».
+ * CURVE_LANE_WAIT_MS (passage tombé, plafond de pages, part payante du passage épuisée), et tout ce qui est dû quand
+ * elle ne tourne plus (radarSignalsMath.curveNetCutoff) — motif « retard ».
  */
 export const runCurve = internalAction({
   args: {},
@@ -886,7 +902,7 @@ export const runCurve = internalAction({
     const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
     const b = budgetState(st.budget, st.usage, st.balance);
     const n = allowance(st.budget, b, "curve", todayCredits(st, "curve"), CURVE_RUNS_PER_DAY);
-    const due: DueCheck[] = await ctx.runQuery(internal.radar.radarSignals.dueCurve, { now: now - CURVE_LANE_WAIT_MS, limit: n });
+    const due: DueCheck[] = await ctx.runQuery(internal.radar.radarSignals.dueCurve, { now, limit: n, net: true });
     let credits = 0;
     let errors = 0;
     let creditsRemaining: number | undefined;
@@ -925,9 +941,11 @@ export const runCurve = internalAction({
  * l'appelle AVANT ses comptes, avec SA page (une à la fois, pause storePauseMs, second essai d'une page refusée) et
  * dans SON temps : les pages de la courbe ne forment jamais une seconde file à côté de la voie (la règle et ses
  * chiffres : radarSignalsMath.CURVE_PAGES_PER_PASS). Lit la page des vidéos dues depuis moins de CURVE_LANE_WAIT_MS,
- * puis rend la suite — relevés payants, écritures, dépense — que le passage mène PENDANT la voie : le fournisseur ne
- * passe pas par TikTok, il ne retarde pas la file. En mesure tant que radarFreeMath.CURVE_FREE est faux (pourquoi :
- * là) : la page est lue, le payant part quand même et l'accord des deux est compté.
+ * puis rend la suite (`rest`) — relevés payants, écritures, dépense — que le passage mène PENDANT la voie et attend à
+ * sa fin : le fournisseur ne passe pas par TikTok, il ne retarde ni la file ni les relevés payants des comptes. Rend
+ * aussi la série de pages refusées à la fin (`streak`, `stopped`) : la voie la reprend (radarFreeMath.laneAfterCurve).
+ * En mesure tant que radarFreeMath.CURVE_FREE est faux (pourquoi : là) : la page est lue, le payant part quand même et
+ * l'accord des deux est compté, en vidéos (radarUsage.measured). `free` : pour les tests de la bascule.
  */
 export async function curveInLane(
   ctx: ActionCtx,
@@ -936,16 +954,17 @@ export async function curveInLane(
   b: BudgetState,
   now: number,
   alive: () => boolean,
-): Promise<() => Promise<void>> {
-  const nothing = async (): Promise<void> => undefined;
+  free: boolean = CURVE_FREE,
+): Promise<{ rest: () => Promise<void>; streak: number; stopped: string | null }> {
+  const nothing = { rest: async (): Promise<void> => undefined, streak: 0, stopped: null };
   const paidLeft = allowance(st.budget, b, "curve", todayCredits(st, "curve"), CURVE_RUNS_PER_DAY);
-  const take = curveLaneTake(st.budget, CURVE_FREE, paidLeft);
+  const take = curveLaneTake(st.budget, free, paidLeft);
   if (take <= 0) return nothing;
   const due: DueCheck[] = await ctx.runQuery(internal.radar.radarSignals.dueCurve, { now, since: now - CURVE_LANE_WAIT_MS, limit: take });
   if (due.length === 0) return nothing;
   const read = await readCurvePages(due, page, alive, take);
   if (read.stopped) console.warn(`[radar] courbe dans la voie : ${read.stopped}`);
-  return async () => {
+  const rest = async (): Promise<void> => {
     const tally = curveTally<DueCheck>();
     let creditsRemaining: number | undefined;
     let lastError: string | undefined;
@@ -958,7 +977,7 @@ export async function curveInLane(
             if (r.creditsRemaining !== undefined) creditsRemaining = r.creditsRemaining;
             if (!r.ok) {
               lastError = r.error;
-              return { ok: false, credits: r.credits, noCredits: r.noCredits };
+              return { ok: false, credits: r.credits, noCredits: r.noCredits, refused: scRefused(r.error) };
             }
             return { ok: true, credits: r.credits, counts: r.value ? curveCountsOf(r.value) : null };
           },
@@ -966,7 +985,7 @@ export async function curveInLane(
             await ctx.runMutation(internal.radar.radarSignals.applyCurve, { id: d.id, video: counts, now: Date.now() });
           },
         },
-        { free: CURVE_FREE, paidLeft },
+        { free, paidLeft },
         tally,
       );
     } catch (e) {
@@ -976,18 +995,21 @@ export async function curveInLane(
       const m = tally.measured;
       if (m.egal || m.proche || m.ecart) console.log(`[radar] courbe, mesure de la page : ${m.egal ?? 0} égales, ${m.proche ?? 0} proches, ${m.ecart ?? 0} écarts`);
       for (const g of tally.gaps) console.warn(`[radar] courbe, écart page/payant sur ${g.due.videoId} : ${JSON.stringify({ page: g.page, payant: g.paid })}`);
-      const spared = tally.free + tally.gone;
+      // Les appels évités : les relevés gratuits qui tiennent dans la part payante du passage (radarFreeMath.curveSaved).
+      const spared = curveSaved(tally, paidLeft);
+      const calls = tally.free + tally.paid;
       // Même si une écriture tombe, ce qui est payé est compté ; un passage qui n'a rien relevé n'écrit rien.
-      if (spared + tally.paid > 0 || lastError) {
+      if (calls > 0 || lastError) {
         await ctx
           .runMutation(internal.radar.radarSignals.recordRun, {
             poste: "curve",
             credits: tally.credits,
-            calls: spared + tally.paid,
+            calls,
             errors: tally.errors,
             now,
             ...(Object.keys(tally.reasons).length ? { reasons: tally.reasons } : {}),
             ...(spared > 0 ? { saved: { curve: spared } } : {}),
+            ...(Object.keys(m).length ? { measured: m } : {}),
             ...(creditsRemaining !== undefined ? { creditsRemaining } : {}),
             ...(lastError ? { lastError } : {}),
           })
@@ -995,6 +1017,7 @@ export async function curveInLane(
       }
     }
   };
+  return { rest, streak: read.streak, stopped: read.stopped };
 }
 
 // ─── Écran et outil MCP ──────────────────────────────────────────────────────

@@ -7,8 +7,10 @@
  * `curveVerdict` (radarFreeMath). Il compte les verdicts (lue, partie, payant), et pour chaque compteur lu : s'il porte
  * l'arrondi de la page (multiple de `pageStep` au-delà de 10 000) et s'il est sous la valeur que le relevé PAYANT avait
  * rangée en prod, plus tôt (un compteur ne baisse pas ; sous elle, c'est l'arrondi ou une page en retard). Avec
- * `--navigateur k`, les k premières vidéos sont relues avec les en-têtes d'un navigateur (fetchTikTokPublicStats) : les
- * nombres changent-ils ?
+ * `--navigateur k`, chacune des k premières vidéos lues est relue AUSSITÔT (la pause d'une page, moins d'une seconde)
+ * avec les en-têtes d'un navigateur (fetchTikTokPublicStats), ses nombres gardés à côté : changent-ils ? (Jusqu'au
+ * 20/11/2026 18 h, la relecture venait après toutes les pages, des minutes plus tard : 3 sur 4 identiques, la 4e — la
+ * plus vue, 12,8 millions — différente sans que la sortie dise de combien.)
  * Ce qu'il ne mesure pas : le payant du même instant (pas de clé du fournisseur sur le poste) — c'est le rôle de la
  * mesure en prod (CURVE_FREE faux). Et une mesure du poste ne dit pas ce que TikTok sert aux serveurs Convex.
  *
@@ -70,7 +72,7 @@ const wanted = Math.max(1, budget - Math.min(browserFirst, budget));
 const step = Math.max(1, Math.floor(rows.length / wanted));
 const picked = rows.filter((_, i) => i % step === 0).slice(0, wanted);
 
-type Out = { videoId: string; handle: string; prod: CurveCounts; verdict: CurveVerdict; browserSame?: boolean | null };
+type Out = { videoId: string; handle: string; prod: CurveCounts; verdict: CurveVerdict; browser?: CurveCounts | string; browserSame?: boolean | null };
 const out: Out[] = [];
 let stopped: string | null = null;
 for (const r of picked) {
@@ -79,20 +81,26 @@ for (const r of picked) {
   const verdict = curveVerdict(await lanePage(freeVideoUrl(r.authorHandle, r.videoId)), r.videoId);
   streak = verdict.kind === "paid" && verdict.refused ? streak + 1 : 0;
   const prod: CurveCounts = { authorFans: r.authorFans, views: r.views, likes: r.likes, comments: r.comments, shares: r.shares, saves: r.saves };
-  out.push({ videoId: r.videoId, handle: r.authorHandle, prod, verdict });
+  const o: Out = { videoId: r.videoId, handle: r.authorHandle, prod, verdict };
+  out.push(o);
   if (streak >= BREAKER) {
     stopped = `${BREAKER} pages refusées d'affilée`;
     break;
   }
-}
-// Les mêmes pages, avec les en-têtes d'un navigateur : les nombres changent-ils ?
-for (const o of out.slice(0, browserFirst)) {
-  if (stopped || pages + 1 > budget || o.verdict.kind !== "read") continue;
-  await sleep(storePauseMs(Math.random()));
-  pages++;
-  const b = await fetchTikTokPublicStats(freeVideoUrl(o.handle, o.videoId), o.videoId);
-  const c = o.verdict.counts;
-  o.browserSame = b.kind === "stats" ? b.stats.views === c.views && b.stats.likes === c.likes && b.stats.comments === c.comments && b.stats.shares === c.shares && b.stats.saves === c.saves && (b.stats.author?.followers ?? null) === c.authorFans : null;
+  // La même page, aussitôt, avec les en-têtes d'un navigateur : les nombres changent-ils ?
+  if (out.filter((x) => x.browserSame !== undefined).length < browserFirst && verdict.kind === "read" && pages + 1 <= budget) {
+    await sleep(storePauseMs(Math.random()));
+    pages++;
+    const b = await fetchTikTokPublicStats(freeVideoUrl(o.handle, o.videoId), o.videoId);
+    if (b.kind === "stats") {
+      const s = b.stats;
+      o.browser = { authorFans: s.author?.followers ?? -1, views: s.views, likes: s.likes ?? -1, comments: s.comments ?? -1, shares: s.shares ?? -1, saves: s.saves ?? -1 };
+      o.browserSame = CURVE_COUNTS.every((k) => o.browser !== undefined && typeof o.browser !== "string" && o.browser[k] === verdict.counts[k]);
+    } else {
+      o.browser = b.kind;
+      o.browserSame = null;
+    }
+  }
 }
 
 const read = out.filter((o) => o.verdict.kind === "read");

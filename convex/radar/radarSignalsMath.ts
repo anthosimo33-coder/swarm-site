@@ -728,6 +728,28 @@ export const CURVE_PAGES_PER_DAY = CURVE_PAGES_PER_PASS * LANE_PASSES_PER_DAY;
 export const CURVE_ADMISSIONS_MAX = Math.floor(CURVE_PAGES_PER_DAY / CURVE_PAGES_PER_VIDEO);
 /** Trois passages de la voie : au-delà, une vidéo due part au relevé payant de l'heure. */
 export const CURVE_LANE_WAIT_MS = 30 * 60_000;
+/** Durée du verrou d'un passage de relevé de comptes (radarNetworks.runAccountReads) : une tâche est coupée à 10 minutes, le verrou tombe peu après. */
+export const ACCOUNT_LEASE_MS = 10 * 60_000 + 30_000;
+/** Deux passages de la voie (toutes les 10 minutes) sans fin de passage notée (radarSettings.lastFreeAt) : elle ne tourne plus. */
+export const LANE_STALE_MS = 20 * 60_000;
+
+/**
+ * Jusqu'où le relevé payant de l'heure (radarSignals.runCurve, le filet) prend les relevés de courbe dus, sans jamais
+ * prendre ce qu'un passage de la voie tient ni attendre une voie arrêtée (revue du 20/11/2026) :
+ *  - un passage tourne (son verrou court jusqu'à `leaseUntil`, il est parti à `leaseUntil − ACCOUNT_LEASE_MS`) : il a pu
+ *    prendre tout ce qui était dû depuis moins de CURVE_LANE_WAIT_MS à son départ, et ne l'a rangé qu'après ses pages et
+ *    ses relevés payants (jusqu'à 6 minutes, le fournisseur lent) — le filet s'arrête avant, jamais deux relevés payés ;
+ *  - la voie ne tourne plus (aucune fin de passage depuis LANE_STALE_MS, ou jamais) : tout ce qui est dû, comme avant la
+ *    voie — un H+6 dû à 10:11 part à 10:40, pas à 11:40 ;
+ *  - sinon, ce que la voie n'a pas pris en CURVE_LANE_WAIT_MS.
+ * Reste un cas : la voie reprend après LANE_STALE_MS d'arrêt dans les secondes où le filet paie — au pire un relevé en
+ * double, une fois.
+ */
+export function curveNetCutoff(now: number, lane: { leaseUntil?: number; lastFreeAt?: number }): number {
+  if (lane.leaseUntil !== undefined && lane.leaseUntil > now) return Math.min(now, lane.leaseUntil - ACCOUNT_LEASE_MS) - CURVE_LANE_WAIT_MS;
+  if (lane.lastFreeAt === undefined || now - lane.lastFreeAt > LANE_STALE_MS) return now;
+  return now - CURVE_LANE_WAIT_MS;
+}
 
 /**
  * Vidéos de la courbe que la voie prend à ce passage : CURVE_PAGES_PER_PASS au plus ; tant que le relevé payant part
@@ -740,10 +762,12 @@ export function curveLaneTake(s: BudgetSettings, free: boolean, paidLeft: number
 }
 
 /**
- * Admissions dans la courbe encore possibles aujourd'hui : le poste se règle en vidéos/jour, borné par les pages que la
- * voie gratuite peut lui donner (CURVE_ADMISSIONS_MAX : 3 pages par vidéo).
+ * Admissions dans la courbe encore possibles aujourd'hui : le poste se règle en vidéos/jour. Relevée sur la page
+ * (`free`, radarFreeMath.CURVE_FREE), la courbe est bornée par les pages que la voie gratuite peut lui donner
+ * (CURVE_ADMISSIONS_MAX : 3 pages par vidéo). En mesure, chaque relevé part au payant et le filet paie ce que la voie
+ * n'a pas pris : le plafond de pages ne ferait que retirer des vidéos réglées et payées (le curseur va jusqu'à 400).
  */
-export function curveAdmissionsLeft(s: BudgetSettings, admittedToday: number): number {
+export function curveAdmissionsLeft(s: BudgetSettings, admittedToday: number, free: boolean): number {
   const p = posteOf(s, "curve");
-  return p.on ? Math.max(0, Math.min(p.qty, CURVE_ADMISSIONS_MAX) - admittedToday) : 0;
+  return p.on ? Math.max(0, (free ? Math.min(p.qty, CURVE_ADMISSIONS_MAX) : p.qty) - admittedToday) : 0;
 }
