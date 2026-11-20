@@ -749,12 +749,131 @@ export const dropLease = internalMutation({
 
 // ─── Langue des comptes (convex/radarLang.ts) ──────────────────────────────────────────────────
 
-/** Les comptes calculés : [id, langue] ("" : on ne sait pas). */
+/** Les comptes calculés : [id, langue ("" : on ne sait pas), date du calcul]. */
 export const langPage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
     const r = await ctx.db.query("accountLangs").paginate({ cursor, numItems: 5000 });
-    return { items: r.page.map((x) => [x.accountId, x.lang ?? ""] as [string, string]), cursor: r.continueCursor, done: r.isDone };
+    return { items: r.page.map((x) => [x.accountId, x.lang ?? "", x.at] as [string, string, number]), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+/** Efface les langues de comptes que l'export ne connaît plus (audit Q56). */
+export const dropLangs = internalMutation({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) => {
+    for (const accountId of ids) {
+      const row = await ctx.db.query("accountLangs").withIndex("by_account", (q) => q.eq("accountId", accountId)).first();
+      if (row) await ctx.db.delete(row._id);
+    }
+  },
+});
+
+// ─── Ménage des tables de suivi (audit Q56, F30) ─────────────────────────────────────────────────────────────────
+
+/**
+ * Audit Q56 (19/11) : videoSlides, videoAi et mediaMiss gardaient une ligne par vidéo jamais montrée (+430 lignes/h
+ * chacune), syncRuns une ligne par passage, et la synchro relit ces tables en entier. Après chaque passage, une ligne dont
+ * la page n'existe plus (video:<id>, creator:<pseudo>, app:<slug>, d'après boardMeta) est effacée, une fois passé
+ * son délai : 7 jours après son dernier essai pour les lectures (une vidéo qui revient est relue), 30 jours pour un
+ * échec de copie. Les passages de plus de 30 jours partent aussi.
+ */
+export const PURGE_TABLES = ["videoAi", "videoSlides", "mediaMiss", "syncRuns"] as const;
+const READ_KEEP_MS = 7 * 86_400_000, MISS_KEEP_MS = 30 * 86_400_000, RUNS_KEEP_MS = 30 * 86_400_000;
+const pageOf = (table: string, row: { videoId?: string; key?: string }) => {
+  if (table !== "mediaMiss") return `video:${row.videoId}`;
+  const k = row.key ?? "";
+  return k.startsWith("v:") ? `video:${k.slice(2)}` : k.startsWith("a:") ? `creator:${k.slice(2)}` : k.startsWith("icon:") ? `app:${k.slice(5)}` : null;
+};
+export const purgePage = internalMutation({
+  args: { table: v.union(v.literal("videoAi"), v.literal("videoSlides"), v.literal("mediaMiss"), v.literal("syncRuns")), cursor: v.union(v.string(), v.null()), now: v.number() },
+  handler: async (ctx, { table, cursor, now }) => {
+    const r = await ctx.db.query(table).paginate({ cursor, numItems: 500 });
+    let dropped = 0;
+    for (const row of r.page as ({ _id: Id<"videoAi"> | Id<"videoSlides"> | Id<"mediaMiss"> | Id<"syncRuns">; at?: number; startedAt?: number; finishedAt?: number; videoId?: string; key?: string })[]) {
+      if (table === "syncRuns") {
+        if (row.finishedAt && (row.startedAt ?? now) < now - RUNS_KEEP_MS) { await ctx.db.delete(row._id); dropped++; }
+        continue;
+      }
+      if ((row.at ?? 0) >= now - (table === "mediaMiss" ? MISS_KEEP_MS : READ_KEEP_MS)) continue;
+      const page = pageOf(table, row);
+      if (page && (await ctx.db.query("boardMeta").withIndex("by_key", (q) => q.eq("key", page)).first())) continue;
+      await ctx.db.delete(row._id);
+      dropped++;
+    }
+    return { n: r.page.length, dropped, cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+/**
+ * Le stockage, page par page (audit F30) : fichiers et octets, images (et parmi elles celles qu'aucune ligne media ne
+ * cite : rangées puis perdues), fichiers d'étape (JSON). Lecture seule.
+ */
+export const storagePage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.system.query("_storage").paginate({ cursor, numItems: 2000 });
+    return { files: r.page.map((f) => [f._id, f.size, (f.contentType ?? "").split(";")[0].trim(), f._creationTime] as [string, number, string, number]), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+/** Les fichiers cités par une ligne media, page par page. */
+export const mediaFilesPage = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("media").paginate({ cursor, numItems: 4000 });
+    return { ids: r.page.map((m) => m.storageId as string), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+/** Ajoute au compte rendu d'un passage (syncRuns.counts) une rubrique calculée après sa fin. */
+export const noteCounts = internalMutation({
+  args: { id: v.id("syncRuns"), extra: v.any() },
+  handler: async (ctx, { id, extra }) => {
+    const r = await ctx.db.get(id);
+    if (r) await ctx.db.patch(id, { counts: { ...(r.counts ?? {}), ...extra } });
+  },
+});
+
+/**
+ * Le ménage de fin de passage (lancé par radarSync.runGlobal), table par table, par tranches de 2 min qui se relancent ;
+ * puis le relevé du stockage, noté dans le compte rendu du passage (counts.purged, counts.storage).
+ */
+export const purgeTracking = internalAction({
+  args: { runId: v.id("syncRuns"), t: v.optional(v.number()), cursor: v.optional(v.union(v.string(), v.null())), dropped: v.optional(v.any()) },
+  handler: async (ctx, args): Promise<void> => {
+    const start = Date.now();
+    const dropped: Record<string, number> = { ...(args.dropped ?? {}) };
+    let t = args.t ?? 0, cursor: string | null = args.cursor ?? null;
+    while (t < PURGE_TABLES.length) {
+      if (Date.now() - start > 120_000) { await ctx.scheduler.runAfter(0, internal.radarStore.purgeTracking, { runId: args.runId, t, cursor, dropped }); return; }
+      const table = PURGE_TABLES[t];
+      const r: { n: number; dropped: number; cursor: string; done: boolean } = await ctx.runMutation(internal.radarStore.purgePage, { table, cursor, now: start });
+      dropped[table] = (dropped[table] ?? 0) + r.dropped;
+      if (r.done) { t++; cursor = null; } else cursor = r.cursor;
+    }
+    // Relevé du stockage (audit F30 : la pente n'était suivie nulle part).
+    const cited = new Set<string>();
+    for (let c: string | null = null, done = false; !done; ) {
+      const p: { ids: string[]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.mediaFilesPage, { cursor: c });
+      for (const id of p.ids) cited.add(id);
+      c = p.cursor; done = p.done;
+    }
+    const storage = { files: 0, mo: 0, images: 0, imagesMo: 0, orphanImages: 0, orphanImagesMo: 0, stageFiles: 0, stageMo: 0 };
+    let bytes = 0, imageBytes = 0, orphanBytes = 0, stageBytes = 0;
+    const dayAgo = start - 86_400_000;
+    for (let c: string | null = null, done = false; !done; ) {
+      const p: { files: [string, number, string, number][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.storagePage, { cursor: c });
+      for (const [id, size, type, created] of p.files) {
+        storage.files++; bytes += size;
+        if (type === "application/json") { storage.stageFiles++; stageBytes += size; continue; }
+        storage.images++; imageBytes += size;
+        // Image de plus d'un jour qu'aucune ligne media ne cite : rangée puis perdue (Q61, Q62), jamais effacée.
+        if (!cited.has(id) && created < dayAgo) { storage.orphanImages++; orphanBytes += size; }
+      }
+      c = p.cursor; done = p.done;
+    }
+    Object.assign(storage, { mo: Math.round(bytes / 1e6), imagesMo: Math.round(imageBytes / 1e6), orphanImagesMo: Math.round(orphanBytes / 1e6), stageMo: Math.round(stageBytes / 1e6), mediaRows: cited.size });
+    await ctx.runMutation(internal.radarStore.noteCounts, { id: args.runId, extra: { purged: dropped, storage } });
+    console.log(`[ménage] effacées : ${JSON.stringify(dropped)} ; stockage : ${JSON.stringify(storage)}`);
   },
 });
 

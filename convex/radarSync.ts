@@ -364,6 +364,14 @@ async function readPages<T>(ctx: ActionCtx, query: FunctionReference<"query", "i
   }
 }
 
+/**
+ * La langue d'un compte est-elle connue ? Audit Q60 (19/11) : une langue « inconnue » (moins de 2 textes sûrs, souvent
+ * un compte à 1 ou 2 vidéos à son arrivée) était figée pour toujours, même après 30 vidéos (18,6 % des comptes en prod).
+ * Inconnue depuis plus de LANG_RETRY_MS : à recalculer (radarModels la remet dans langTodo).
+ */
+export const LANG_RETRY_MS = 7 * 86_400_000;
+export const langKnown = ([, lang, at]: [string, string, number?], now: number) => !!lang || (at ?? now) > now - LANG_RETRY_MS;
+
 /** Ce que Swarm sait déjà des vidéos et des comptes (tables Swarm), filtré à ce qui sert à l'étape. */
 async function loadStore(ctx: ActionCtx, f: { video?: (id: string) => boolean; handle?: (h: string) => boolean; account?: (id: string) => boolean; media?: (k: string) => boolean }) {
   const all = () => true;
@@ -390,7 +398,8 @@ async function loadStore(ctx: ActionCtx, f: { video?: (id: string) => boolean; h
   const misses = new Map<string, number>();
   await readPages<[string, number]>(ctx, internal.radarStore.missPage, ([k, at]) => misses.set(k, at));
   const langs = new Map<string, string | null>();
-  await readPages<[string, string]>(ctx, internal.radarStore.langPage, ([id, l]) => { if (fa(id)) langs.set(id, l || null); });
+  const now = Date.now();
+  await readPages<[string, string, number?]>(ctx, internal.radarStore.langPage, (row) => { if (fa(row[0]) && langKnown(row, now)) langs.set(row[0], row[1] || null); });
   return { media, regions, slides, slideKnown, ai, aiKnown, genders, genderKnown, misses, langs };
 }
 type Store = Awaited<ReturnType<typeof loadStore>>;
@@ -865,6 +874,11 @@ export const runGlobal = internalAction({
         pagesInParts: w.inParts + files.reduce((n, f) => n + (f.inParts ?? 0), 0),
         minutes: Math.round((Date.now() - (st.now)) / 6_000) / 10,
       };
+      // Langues des comptes que l'export ne connaît plus (audit Q56) : effacées.
+      const knownAccounts = new Set(g.tracked.map((t) => t.id)), oldLangs: string[] = [];
+      await readPages<[string, string, number?]>(ctx, internal.radarStore.langPage, ([accountId]) => { if (!knownAccounts.has(accountId)) oldLangs.push(accountId); });
+      if (oldLangs.length <= knownAccounts.size / 3) for (let j = 0; j < oldLangs.length; j += 500) await ctx.runMutation(internal.radarStore.dropLangs, { ids: oldLangs.slice(j, j + 500) });
+      (counts as Record<string, unknown>).langsDropped = oldLangs.length <= knownAccounts.size / 3 ? oldLangs.length : 0;
       await ctx.runMutation(internal.radarStore.endRun, { id, ok: true, counts });
       await stageDrop(ctx, stageFiles(st));
       await ctx.runMutation(internal.radarStore.stageCleaned, { id });
@@ -881,6 +895,8 @@ export const runGlobal = internalAction({
       await ctx.scheduler.runAfter(5 * 60_000, internal.radarSlides.fill, {});
       await ctx.scheduler.runAfter(10 * 60_000, internal.radarAi.fillVideos, {});
       await ctx.scheduler.runAfter(10 * 60_000, internal.radarAi.fillGender, {});
+      // Ménage des tables de suivi et relevé du stockage (audit Q56, F30), une fois le passage fini.
+      await ctx.scheduler.runAfter(15 * 60_000, internal.radarStore.purgeTracking, { runId: id });
     } catch (e) {
       await failRun(ctx, id, e, st);
       throw e;
