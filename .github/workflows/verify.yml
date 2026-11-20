@@ -1,7 +1,7 @@
 # Vérifications de chaque push et de chaque pull request (audit Q8, 19/11 : aucune CI ; check, test:apercu et la
 # régénération ne bloquaient aucun déploiement). Pour qu'un échec bloque la fusion dans main, rendre ce job
 # obligatoire dans les règles de protection de la branche (GitHub › Settings › Branches).
-# En local : npm run verify (mêmes étapes, sans l'écart de génération).
+# En local : npm run verify (les mêmes vérifications ; la CI vérifie en plus l'écart de génération).
 name: Vérifications
 
 on:
@@ -43,33 +43,8 @@ jobs:
             exit 1
           fi
 
-      - name: Typage du backend (tsc -p convex)
-        run: npx tsc --noEmit -p convex
-      - name: Pages sans trou (npm run check)
-        run: npm run check
-      - name: Verrou de l'aperçu (npm run test:apercu)
-        run: npm run test:apercu
-      - name: Mutants du verrou (npm run test:apercu:mutants)
-        run: npm run test:apercu:mutants
-      - name: Coût de la synchro (npm run test:sync)
-        run: npm run test:sync
-      - name: Routes /cover et /avatar (npm run test:cover)
-        run: npm run test:cover
-      - name: Documents de la synchro (npm run test:radar)
-        run: npm run test:radar
-      - name: Suivis et dossiers (npm run test:saved)
-        run: npm run test:saved
-      - name: Props des imports de canevas (npm run test:imports)
-        run: npm run test:imports
-      - name: En-têtes de cache (npm run test:cache)
-        run: npm run test:cache
-      - name: Appels du front et formes d'id (npm run test:sources)
-        run: npm run test:sources
-      - name: Copie des images (npm run test:image)
-        run: npm run test:image
-      - name: En-têtes de sécurité et routage local (npm run test:vercel)
-        run: npm run test:vercel
-      - name: Écrans sur données de banc (npm run check:data)
-        run: npm run check:data
-      - name: Filtres des listes dans l'adresse (npm run test:filtres)
-        run: npm run test:filtres
+      # Toutes les vérifications, celles de `npm run verify` et elles seules : la liste vit dans package.json. Jusqu'au
+      # 20/11, ce fichier les recopiait une par une, et 10 n'y étaient jamais entrées (auth, compte, paiement,
+      # public, écrans, Black Friday, Whop, comptes, app, génération) alors que le README les disait lancées en CI.
+      - name: Toutes les vérifications (npm run verify)
+        run: npm run verify

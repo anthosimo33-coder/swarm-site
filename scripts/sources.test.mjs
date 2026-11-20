@@ -60,6 +60,18 @@ for (const c of calls) {
 }
 ok(!bad.length, `chaque api.<module>.<nom> du front existe et est appelé comme ce qu'il est${bad.length ? ' :\n      ' + bad.join('\n      ') : ''}`);
 
+// ─── La CI lance npm run verify, et lui seul porte la liste des vérifications (20/11 : la CI en recopiait 15, dont il
+// manquait 10, auth, paiement et Whop compris, quand le README les disait lancées) ─────────────────────────────────
+{
+  const ci = fs.readFileSync(path.join(root, '.github/workflows/verify.yml'), 'utf8');
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const copied = [...ci.matchAll(/run:\s*npm run (test:[\w:-]+|check(?::data)?)\b/g)].map((m) => m[1]);
+  ok(/run:\s*npm run verify\b/.test(ci) && copied.length === 0, `la CI lance npm run verify, sans recopier ses vérifications (${copied.join(', ') || 'aucune recopiée'})`);
+  const tests = Object.keys(pkg.scripts).filter((k) => /^test:|^check/.test(k) && !/^check:i18n/.test(k));
+  const missing = tests.filter((k) => !new RegExp(`npm run ${k.replace(/[:]/g, '\\:')}( |$)`).test(pkg.scripts.verify));
+  ok(missing.length === 0, `npm run verify lance chaque banc de package.json (${missing.join(', ') || 'tous'})`);
+}
+
 // ─── F27 : le jeton gardé est réutilisé au chargement ───────────────────────────────────────────────────────────
 {
   const src = fs.readFileSync(path.join(root, 'src/auth.js'), 'utf8');
