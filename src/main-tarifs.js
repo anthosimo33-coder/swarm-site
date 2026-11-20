@@ -1,16 +1,16 @@
-import { h, render } from 'preact';
-import { Responsive } from './runtime.js';
-import Tarifs from './pages/Tarifs.js';
-import TarifsMobile from './pages/TarifsMobile.js';
+import { mountResponsive } from './runtime.js';
+// Les deux feuilles restent chargées d'office : le pré-rendu (scripts/prerender.mjs) montre l'une ou l'autre avant le JS.
 import './styles/tf.css';
 import './styles/tfm.css';
 
 import { countVisit, fetchStats } from './stats.js';
 
-// La page s'affiche tout de suite (chiffres du dernier relevé connu), puis avec ceux du Radar. Le pré-rendu du build
-// (scripts/prerender.mjs, audit F9) est retiré dans la même tâche que le premier rendu : pas d'écran vide entre les deux.
-document.getElementById('app').replaceChildren();
-const show = (stats) => render(h(Responsive, { desktop: Tarifs, mobile: TarifsMobile, props: { stats } }), document.getElementById('app'));
-show(null);
-fetchStats().then(show);
+// Une seule version chargée (audit F23), l'autre si l'écran bascule. La page s'affiche avec les chiffres du dernier
+// relevé connu, puis avec ceux du Radar ; le pré-rendu du build (audit F9) reste jusqu'au premier rendu.
+let stats = null;
+const redraw = mountResponsive(document.getElementById('app'), {
+  desktop: () => import('./pages/Tarifs.js'),
+  mobile: () => import('./pages/TarifsMobile.js'),
+}, () => ({ stats }));
+fetchStats().then((s) => { stats = s; redraw(); });
 countVisit();
