@@ -4,10 +4,11 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { MEDIA_RETRY_MS as RETRY_MS } from "./coverSign";
 import { copyImage, shrink } from "./imageCopy";
 
-/** Après un échec (vidéo supprimée, page refusée), on ne réessaie pas avant 6 h. */
-const RETRY_MS = 6 * 3_600_000;
+// Après un échec (vidéo supprimée, page refusée), on ne réessaie pas avant 6 h (MEDIA_RETRY_MS, convex/coverSign.ts) :
+// /cover et /avatar (convex/coverHttp.ts) ne lancent même pas cette action pendant la pause.
 
 /**
  * La miniature d'une vidéo TikTok ou Instagram, copiée chez Swarm à la première demande (/cover/<id>,

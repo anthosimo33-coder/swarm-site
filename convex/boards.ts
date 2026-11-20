@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { liveUserId } from "./session";
 import { query, type QueryCtx } from "./_generated/server";
+import { avatarUrl, COVER_ID, coverUrl, HANDLE } from "./coverSign";
 
 /**
  * Les données d'un écran de l'app (« apps », « app:astraai », « video:<id> »…),
@@ -9,10 +10,9 @@ import { query, type QueryCtx } from "./_generated/server";
 /**
  * Une miniature de vidéo passe toujours par /cover/<id> (convex/coverHttp.ts) : la copie rangée
  * (redirection), sinon copiée à la première vue, et recopiée si la copie est inutilisable (HEIC).
- * Jamais un lien TikTok signé qui expire, ni un vide quand la vidéo en a une. `v` change quand
- * il faut que les navigateurs oublient leurs anciennes réponses.
+ * Jamais un lien TikTok signé qui expire, ni un vide quand la vidéo en a une. Chaque adresse est signée
+ * (convex/coverSign.ts, audit S5 et S15) : seules celles que boards.get rend ouvrent une image.
  */
-const COVER_VERSION = 2;
 function withCovers(data: unknown): unknown {
   const site = process.env.CONVEX_SITE_URL;
   if (!site) return data;
@@ -22,10 +22,11 @@ function withCovers(data: unknown): unknown {
     const o: Record<string, unknown> = {};
     for (const [k, val] of Object.entries(x)) o[k] = typeof val === "object" ? fix(val) : val;
     // Un compte (créateur, auteur d'une vidéo) : sa photo de profil, servie par /avatar/<handle>.
-    if (typeof o.handle === "string" && "fans" in o && /^[A-Za-z0-9._]{2,30}$/.test(o.handle)) o.avatar = `${site}/avatar/${o.handle}?v=1`;
+    if (typeof o.handle === "string" && "fans" in o && HANDLE.test(o.handle)) { const a = avatarUrl(site, o.handle); if (a) o.avatar = a; }
     if ("cover" in o) {
       const id = (o.videoId ?? o.id) as unknown;
-      if (typeof id === "string" && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id)) o.cover = `${site}/cover/${id}?v=${COVER_VERSION}`;
+      // Sans secret de signature, aucune adresse plutôt qu'une adresse que /cover refuserait.
+      if (typeof id === "string" && COVER_ID.test(id)) o.cover = coverUrl(site, id);
     }
     return o;
   };
@@ -94,7 +95,8 @@ async function preview(ctx: QueryCtx, key: string): Promise<unknown> {
   if (key.startsWith("app:")) return open.has(key.slice("app:".length)) ? read(ctx, key) : LOCKED;
   if (key.startsWith("video:")) {
     const d = (await read(ctx, key)) as { app?: { slug?: string } | null } | null;
-    if (d === null) return null;
+    // Inconnue ou introuvable : la même réponse qu'une vidéo fermée (audit S15 : null disait qu'elle n'existe pas).
+    if (d === null) return LOCKED;
     return d.app?.slug && open.has(d.app.slug) ? d : LOCKED;
   }
   return LOCKED;

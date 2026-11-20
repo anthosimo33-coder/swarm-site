@@ -37,6 +37,7 @@ await build({
 });
 const SITE = 'https://x.convex.site';
 process.env.CONVEX_SITE_URL = SITE;
+process.env.COVER_SECRET = 'secret-de-banc'; // adresses /cover et /avatar signées (convex/coverSign.ts)
 const { get } = await import(pathToFileURL(out).href);
 rmSync(dir, { recursive: true, force: true });
 
@@ -152,8 +153,8 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
   }
   // Miniatures et photos de profil : toujours servies par Kopycat (/cover, /avatar), jamais le lien TikTok signé.
   const v2 = await g('pro', 'video:2220000020');
-  ok(typeof v2?.cover === 'string' && v2.cover.startsWith(`${SITE}/cover/2220000020?`), `Pro : miniature réécrite (${v2?.cover})`);
-  ok(typeof v2?.avatar === 'string' && v2.avatar.startsWith(`${SITE}/avatar/auteur2?`), `Pro : photo de profil ajoutée (${v2?.avatar})`);
+  ok(typeof v2?.cover === 'string' && /^https:\/\/x\.convex\.site\/cover\/2220000020\?v=\d+&s=[0-9a-f]{24}$/.test(v2.cover), `Pro : miniature réécrite, adresse signée (${v2?.cover})`);
+  ok(typeof v2?.avatar === 'string' && /^https:\/\/x\.convex\.site\/avatar\/auteur2\?v=\d+&s=[0-9a-f]{24}$/.test(v2.avatar), `Pro : photo de profil ajoutée, adresse signée (${v2?.avatar})`);
   ok(pa?.apps?.[0]?.top?.[0]?.cover?.startsWith(`${SITE}/cover/`), 'Pro : miniatures des listes réécrites');
   ok(!JSON.stringify(pa).includes('tiktok.example'), 'Pro : aucun lien TikTok signé dans la liste');
 
@@ -167,7 +168,8 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
     ok(a?.apps?.[0]?.top?.[0]?.cover?.startsWith(`${SITE}/cover/`), `${u} : miniatures de l'aperçu réécrites`);
     ok((await gf('app:zz-app-1'))?.slug === slug(1), `${u} : fiche du top 3 ouverte`);
     ok((await gf('video:2220000020'))?.id === '2220000020', `${u} : vidéo d'une app du top 3 ouverte`);
-    ok((await gf(`video:${HIDDEN_VIDEO}`)) === null || (await gf(`video:${HIDDEN_VIDEO}`))?.locked === true, `${u} : fiche de la vidéo introuvable jamais servie`);
+    // Audit S15 : une vidéo inconnue ou introuvable répond comme une vidéo fermée (null disait qu'elle n'existe pas).
+    for (const k of [`video:${HIDDEN_VIDEO}`, 'video:1234567890123', 'app:zz-inconnue']) { const r = await gf(k); ok(r?.locked === true && Object.keys(r).length === 1, `${u} : ${k} répond comme une fiche fermée (${JSON.stringify(r)})`); }
     for (const k of LOCKED_KEYS) { const r = await gf(k); ok(r?.locked === true && Object.keys(r).length === 1, `${u} : ${k} verrouillé (${JSON.stringify(r)?.slice(0, 60)})`); }
     const s = await gf('search');
     ok(s?.apps?.length === 3 && s.creators.length === 0 && s.formats.length === 0, `${u} : recherche réduite au top 3`);
