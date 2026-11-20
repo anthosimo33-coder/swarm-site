@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check": "node scripts/check.mjs",
     "test:apercu": "node scripts/apercu.test.mjs",
-    "test:sync": "node scripts/sync-cout.test.mjs"
+    "test:sync": "node scripts/sync-cout.test.mjs",
+    "test:cache": "node scripts/cache.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",
