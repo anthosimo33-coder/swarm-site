@@ -26,12 +26,16 @@ export const mediaPage = internalQuery({
  */
 const RASTER = /^image\/(jpeg|png|gif|webp|avif|x-icon|vnd\.microsoft\.icon)$/i;
 const HEIC = /hei[cf]/i;
-/** L'état du fichier d'une image rangée : servable, HEIC (Chrome ne l'affiche pas : converti), ou inutilisable. */
-async function fileState(ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null): Promise<"ok" | "heic" | "bad" | null> {
+/**
+ * L'état du fichier d'une image rangée : servable, ou inutilisable (absent, non matriciel, HEIC). Audit Q67 : il n'y a
+ * plus aucune copie HEIC en prod (radarSync:repairMedia, 20/11 : 0 sur 158 373) ; la conversion sur place à la première
+ * vue est retirée. Un HEIC qui reviendrait serait recopié comme les autres (convex/imageCopy.ts convertit à la copie).
+ */
+async function fileState(ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null): Promise<"ok" | "bad" | null> {
   if (!row) return null;
   const file = await ctx.db.system.get(row.storageId);
   const type = (file?.contentType ?? "").split(";")[0].trim();
-  return !file ? "bad" : RASTER.test(type) ? "ok" : HEIC.test(type) ? "heic" : "bad";
+  return file && RASTER.test(type) ? "ok" : "bad";
 }
 const usable = async (ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null) => (await fileState(ctx, row)) === "ok";
 
@@ -41,11 +45,10 @@ export const mediaGet = internalQuery({
   handler: async (ctx, { key }) => {
     const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", key)).first();
     const state = await fileState(ctx, row);
-    if (row && state === "ok") return { url: row.url, missAt: null, heic: null };
-    if (row && state === "heic") return { url: null, missAt: null, heic: row.storageId }; // HEIC rangé : converti sur place
-    // Rien de servable rangé (absent, ou fichier non matriciel : recopié par-dessus, audit S30).
+    if (row && state === "ok") return { url: row.url, missAt: null };
+    // Rien de servable rangé (absent, ou fichier non matriciel ou HEIC : recopié par-dessus, audit S30, Q67).
     const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
-    return { url: null, missAt: miss?.at ?? null, heic: null };
+    return { url: null, missAt: miss?.at ?? null };
   },
 });
 

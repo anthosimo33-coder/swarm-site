@@ -39,7 +39,7 @@ rmSync(dir, { recursive: true, force: true });
 const NOW = Date.now();
 const WORLD = {
   covers: { '1110000001': { url: 'https://stockage/1.jpg', handle: null }, '1110000002': { url: null, handle: 'auteur' }, '1110000003': { url: null, handle: 'auteur' } },
-  coverMedia: { 'v:1110000002': { url: null, missAt: null, heic: null }, 'v:1110000003': { url: null, missAt: NOW - 3_600_000, heic: null } },
+  coverMedia: { 'v:1110000002': { url: null, missAt: null }, 'v:1110000003': { url: null, missAt: NOW - 3_600_000 } },
   avatars: { 'connu.copie': { known: true, url: 'https://stockage/a.jpg' }, 'connu.neuf': { known: true, url: null }, 'connu.pause': { known: true, url: null } },
   avatarMedia: { 'a:connu.neuf': { url: null, missAt: null }, 'a:connu.pause': { url: null, missAt: NOW - 600_000 } },
 };
@@ -51,7 +51,7 @@ function ctx() {
       const f = String(fn); calls.push(f);
       if (f === 'radarStore.coverLookup') return WORLD.covers[args.id] ?? { url: null, handle: null };
       if (f === 'radarStore.avatarLookup') return WORLD.avatars[args.handle] ?? { known: false, url: null };
-      if (f === 'radarStore.mediaGet') return WORLD.coverMedia[args.key] ?? WORLD.avatarMedia[args.key] ?? { url: null, missAt: null, heic: null };
+      if (f === 'radarStore.mediaGet') return WORLD.coverMedia[args.key] ?? WORLD.avatarMedia[args.key] ?? { url: null, missAt: null };
       throw new Error('requête inattendue ' + f);
     },
     runAction: async (fn) => { const f = String(fn); calls.push(f); return { url: 'https://stockage/neuf.jpg', gone: false }; },
