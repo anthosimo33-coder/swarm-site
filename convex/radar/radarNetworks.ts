@@ -1496,8 +1496,9 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     if (misses.unreadable.length) await ctx.runMutation(internal.radar.radarNetworks.markReadErrors, { ids: misses.unreadable.map((a) => a.id), now });
     // Ce que deviennent les ratés et les premiers relevés pas atteints (radarFreeMath.missPlan) :
     // - un profil refusé ou une page de vidéo illisible attend le passage suivant, sans crédit (brique 7, holdMisses) :
-    //   le payant ne part qu'au second échec d'affilée (voie fermée, hors de sa fenêtre ou au-delà de la part payante du
-    //   passage : tout de suite) ; la part d'un raté retenu n'est dépensée nulle part ailleurs (`limit`) ;
+    //   le payant ne part qu'au second échec d'affilée (voie fermée ou qui n'a pas pris tous les comptes dus, hors de sa
+    //   fenêtre ou au-delà de la part payante du passage : tout de suite) ; la part d'un raté retenu n'est dépensée nulle
+    //   part ailleurs (`limit`) ;
     // - sous la réserve, rien ne part au payant (sauf la sonde, plus bas) : ce qu'il devait relever attend la sonde au
     //   lieu d'être relu gratuitement en tête de file à chaque passage, pour rien (brique 8, reserveMisses) ;
     // - un premier relevé que la page gratuite n'a pas pu lire : en payant (ou il attend, palier « survie ») ; pas

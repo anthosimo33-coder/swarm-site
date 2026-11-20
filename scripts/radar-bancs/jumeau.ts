@@ -12,9 +12,8 @@
  * readAt, nextReadAt, freeMissAt effacé ; readError ; holdFreeMisses ; deferAccounts ; markGapChecked).
  * `avant7` rejoue l'enchaînement d'avant la brique 7 (25fbb0b^ : premiers relevés par firstReadMisses, tout raté au
  * payant dans le passage), la gestion du trou restant celle d'aujourd'hui (mesure, gapPage) : seule la brique 7 change.
- * `brique7` : missPlan sans la brique 8 (reserveReached forcé à faux). `livre` : missPlan tel qu'il part.
- * `retenue-voie-libre` : une PROPOSITION, pas le code livré — la brique 7 seulement quand la voie a atteint tous les
- * comptes suivis dus du passage (aucun débordement), sinon l'enchaînement d'avant (cf repli.ts, file saturée).
+ * `brique7` : missPlan sans la brique 8 (reserveReached forcé à faux). `livre` : missPlan tel qu'il part (depuis la revue
+ * du 20/11 au soir, la brique 7 ne retient que voie libre : `notReached` vide).
  *
  * Le monde (tout vient de l'instantané Jarvia du 20/11/2026 17:14 UTC ; aucun passage après celui de 14:09:55) :
  *  - comptes actifs de radarTracked (nextReadAt, readAt, lastPostAt, pays, gapChecked) ; vidéos de radarTrackedVideos
@@ -194,7 +193,7 @@ export async function loadBase(dir: string, replayHours: number): Promise<Base> 
 
 // ─── Le monde d'un rejeu ───────────────────────────────────────────────────────
 
-export type Variant = "avant7" | "brique7" | "livre" | "retenue-voie-libre";
+export type Variant = "avant7" | "brique7" | "livre";
 export type Params = {
   variant: Variant;
   hours: number;
@@ -247,7 +246,7 @@ type Acc = {
 type Due = { acc: Acc; id: string; handle: string; located: boolean; first: boolean; dueAt: number; lastPostAt?: number; freeMissAt?: number };
 
 /** Un raté gratuit (profil refusé, page illisible) et ce qu'il est devenu. */
-export type MissEvent = { key: string; account: string; at: number; why: FreeWhy; first: boolean; resolvedAt?: number; how?: string; held: boolean };
+export type MissEvent = { key: string; account: string; pass: number; at: number; why: FreeWhy; first: boolean; resolvedAt?: number; how?: string; held: boolean };
 
 export type Report = {
   variant: Variant;
@@ -274,9 +273,11 @@ export type Report = {
   waits: number[];
   /** L'attente des comptes déjà suivis seulement (hors premiers relevés). */
   waitsTracked: number[];
+  /** Le retard reporté : l'attente des comptes suivis relevés sans raté en cours (ni retenu, ni trou), les AUTRES. */
+  waitsOthers: number[];
   waitingAtEnd: { count: number; maxMs: number; over1h: number; over3h: number };
   secondLook: { due: number; onTime: number; late: number; lateMs: number[]; stillWaiting: number };
-  first: { injected: number; readFree: number; readPaid: number; waitMs: number[]; unread: number };
+  first: { injected: number; readFree: number; readPaid: number; waitMs: number[]; waitOthersMs: number[]; unread: number };
   events: MissEvent[];
   readsByPass: number[];
   /** Par passage : comptes dus, pages lues, pages des relevés ratés (rien de rangé), comptes repoussés (brique 8). */
@@ -415,9 +416,10 @@ export async function simulate(base: Base, p: Params): Promise<Report> {
     notReached: 0,
     waits: [],
     waitsTracked: [],
+    waitsOthers: [],
     waitingAtEnd: { count: 0, maxMs: 0, over1h: 0, over3h: 0 },
     secondLook: { due: 0, onTime: 0, late: 0, lateMs: [], stillWaiting: 0 },
-    first: { injected: 0, readFree: 0, readPaid: 0, waitMs: [], unread: 0 },
+    first: { injected: 0, readFree: 0, readPaid: 0, waitMs: [], waitOthersMs: [], unread: 0 },
     events: [],
     readsByPass: [],
     dueByPass: [],
@@ -442,6 +444,9 @@ export async function simulate(base: Base, p: Params): Promise<Report> {
     const lastPostAt = Math.max(a.lastPostAt ?? 0, recent[0]?.at ?? 0) || undefined;
     if (dueAt !== null) r.waits.push(at - dueAt);
     if (dueAt !== null && !a.first) r.waitsTracked.push(at - dueAt);
+    // Sans raté en cours : son attente est celle que les retenus (repris en tête de voie) ont pu lui reporter.
+    const other = !(open.get(a.id) ?? []).length;
+    if (dueAt !== null && !a.first && other) r.waitsOthers.push(at - dueAt);
     if (a.deadline !== undefined && dueAt !== null) {
       r.secondLook.due++;
       if (at <= a.deadline) r.secondLook.onTime++;
@@ -452,6 +457,7 @@ export async function simulate(base: Base, p: Params): Promise<Report> {
     }
     if (a.enteredAt !== undefined && a.first) {
       r.first.waitMs.push(at - a.enteredAt);
+      if (other) r.first.waitOthersMs.push(at - a.enteredAt);
       if (how === "gratuit") r.first.readFree++;
       else r.first.readPaid++;
     }
@@ -590,7 +596,7 @@ export async function simulate(base: Base, p: Params): Promise<Report> {
           if (f.why === "gap") r.gapReads++;
           if (f.why === "suspect" || f.why === "detail") a.lastFail = { at: t, kind: f.why, ...(cur.failVideo ? { video: cur.failVideo } : {}) };
           if (f.why === "suspect" || f.why === "detail" || f.why === "gap") {
-            const e: MissEvent = { key: `${a.id}@${t}`, account: a.id, at: clock, why: f.why, first: d.first, held: false };
+            const e: MissEvent = { key: `${a.id}@${t}`, account: a.id, pass: t, at: clock, why: f.why, first: d.first, held: false };
             r.events.push(e);
             open.set(a.id, [...(open.get(a.id) ?? []), e]);
           }
@@ -641,8 +647,7 @@ export async function simulate(base: Base, p: Params): Promise<Report> {
     for (const d of misses.unreadable) readError(d.acc, t);
     const waitFirst = tierDefers(b.tier).firstReads;
     let missPay: LaneMiss<Due>[];
-    const saturated = lane.notReached.some((d) => !d.first);
-    if (p.variant === "avant7" || (p.variant === "retenue-voie-libre" && saturated)) {
+    if (p.variant === "avant7") {
       const fm = firstReadMisses(
         misses.paid.filter((m) => m.account.first).map((m) => m.account),
         lane.notReached.filter((a) => a.first),

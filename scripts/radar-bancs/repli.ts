@@ -7,12 +7,17 @@
  * compte au même passage. Il rend, par scénario :
  *  - les crédits payés par motif (repli, premier, retard, coupure, trou) et les appels évités comptés (saved.repli) ;
  *  - le retard ajouté à un raté (son relevé réussi suivant, avec la brique moins sans : médiane, p90, max) ;
+ *  - le retard REPORTÉ sur les autres : l'attente (heure du relevé − nextReadAt) des comptes suivis relevés sans raté en
+ *    cours, et celle des premiers relevés jusqu'à leur premier relevé, avec contre sans (un retenu repris en tête de la
+ *    voie suivante, second essai de 2,5 s compris, passe avant eux) ;
+ *  - le plancher de saved.repli : les retenus dont le payant d'avant ne serait PAS parti au même passage (part ou temps
+ *    du passage épuisés) — chacun serait un appel « évité » qui n'aurait jamais coûté ; doit valoir 0 ;
  *  - l'attente de tous les relevés (heure du relevé − nextReadAt), les comptes encore dus à la fin (affamés : > 3 h) ;
  *  - le second regard (relevé calé sur publication + 18 h) : relevé avant H+24 ou non ;
  *  - les premiers relevés (60 comptes neufs injectés à T0 + 30 min) : attente jusqu'à leur premier relevé ;
- *  - les seconds échecs retenus encore (doit valoir 0) ;
- *  - une PROPOSITION chiffrée à côté (`retenue-voie-libre`, pas le code livré) : ne retenir que si la voie a atteint
- *    tous les comptes suivis dus du passage — en file saturée, la place qu'un retenu reprend pousse un autre au « retard ».
+ *  - les seconds échecs retenus encore (doit valoir 0).
+ * Depuis la revue du 20/11 au soir, la brique ne retient que voie libre (missPlan : `notReached` vide) : en file saturée,
+ * la place qu'un retenu reprenait au passage suivant poussait un autre compte au « retard » (le banc d'avant le montrait).
  * Taux injectés (cf jumeau.ts) : profil refusé au premier essai 80/2 210 (13/11), après retrying 2/2 210 (13/11), page de
  * vidéo illisible 1 sur 5 000 (0 sur 4 095 le 13/11, 0 sur ~900 en C4), soit ~0,1 % des relevés ratés : la prod en a payé
  * 23 en « repli » pour 22 671 relevés gratuits du 17 au 20/11 (radarUsage : calls − credits). Multipliés par 1, 10, 40
@@ -29,6 +34,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { PASS_EVERY_MS } from "../../convex/radar/radarFreeMath";
 import { loadBase, simulate, stats, type Base, type Params, type Report } from "./jumeau";
 
 const MIN = 60_000;
@@ -100,23 +106,25 @@ const brief = (r: Report) => ({
   passagesCoupeCircuit: r.breakerPasses,
   attenteRelevésMin: statsMin(r.waits),
   attenteSuivisMin: statsMin(r.waitsTracked),
+  attenteAutresMin: statsMin(r.waitsOthers),
   dusÀLaFin: { ...r.waitingAtEnd, maxMin: min(r.waitingAtEnd.maxMs) },
   secondRegard: { relevés: r.secondLook.due, avantH24: r.secondLook.onTime, après: r.secondLook.late, retardMin: statsMin(r.secondLook.lateMs), toujoursDus: r.secondLook.stillWaiting },
-  premiers: { injectés: r.first.injected, gratuits: r.first.readFree, payants: r.first.readPaid, attenteMin: statsMin(r.first.waitMs), jamaisLus: r.first.unread },
+  premiers: { injectés: r.first.injected, gratuits: r.first.readFree, payants: r.first.readPaid, attenteMin: statsMin(r.first.waitMs), attenteAutresMin: statsMin(r.first.waitOthersMs), jamaisLus: r.first.unread },
 });
 
 const table: Record<string, unknown>[] = [];
 for (const s of scenarios) {
   const sans = await simulate(base, { ...s.params, variant: "avant7" });
   const avec = await simulate(base, { ...s.params, variant: "livre" });
-  // La proposition (pas le code livré) : retenir seulement quand la voie n'a laissé aucun compte suivi au débordement.
-  const libre = await simulate(base, { ...s.params, variant: "retenue-voie-libre" });
   // Le même raté (compte, passage) des deux côtés : quand il a été relevé ensuite.
   const before = new Map(sans.events.map((e) => [e.key, e]));
   const added: number[] = [];
   const heldDelay: number[] = [];
   let onlyAvec = 0;
   let unresolved = 0;
+  // Plancher de saved.repli : un retenu dont le même raté, sans la brique, n'a PAS été payé au même passage.
+  let heldNotPaidBefore = 0;
+  let heldCompared = 0;
   // Les ratés que la brique retient (profil refusé, page illisible) ; un trou part au payant des deux côtés.
   const held7 = (e: { why: string }) => e.why === "suspect" || e.why === "detail";
   for (const e of avec.events.filter(held7)) {
@@ -127,6 +135,10 @@ for (const s of scenarios) {
       onlyAvec++;
       continue;
     }
+    if (e.held) {
+      heldCompared++;
+      if (!(b.resolvedAt !== undefined && b.how?.startsWith("payant") && b.resolvedAt < b.pass + PASS_EVERY_MS)) heldNotPaidBefore++;
+    }
     if (e.resolvedAt !== undefined && b.resolvedAt !== undefined) added.push(e.resolvedAt - b.resolvedAt);
   }
   const how: Record<string, number> = {};
@@ -136,13 +148,19 @@ for (const s of scenarios) {
     taux: { q: s.params.q, r1: s.params.r1, qDetail: s.params.qDetail, p2: s.params.p2, rafales: s.params.rafale ?? [] },
     sans: brief(sans),
     avec: brief(avec),
-    propositionRetenueVoieLibre: { crédits: { ...libre.credits, total: sum(libre.credits) }, évités: libre.saved, retenus: libre.held, premiersAttenteMaxMin: min(Math.max(0, ...libre.first.waitMs)) },
     ratés: { sans: sans.events.filter(held7).length, avec: avec.events.filter(held7).length, seulementAvec: onlyAvec, avecNonRelevés: unresolved },
     retenus: {
       n: heldDelay.length,
       relevéEnsuite: how,
       délaiMin: statsMin(heldDelay.filter(Number.isFinite)),
       premiersRelevésDélaiMin: statsMin(avec.events.filter((e) => e.held && e.first).map((e) => (e.resolvedAt ?? Infinity) - e.at).filter(Number.isFinite)),
+      comparésAuMêmePassage: heldCompared,
+      sansAppelÉvité: heldNotPaidBefore,
+    },
+    retardReporté: {
+      suivisAutresMin: { sans: statsMin(sans.waitsOthers), avec: statsMin(avec.waitsOthers) },
+      premiersRelevésMin: { sans: statsMin(sans.first.waitMs), avec: statsMin(avec.first.waitMs) },
+      premiersRelevésAutresMin: { sans: statsMin(sans.first.waitOthersMs), avec: statsMin(avec.first.waitOthersMs) },
     },
     retardAjoutéMin: statsMin(added),
     créditsÉvités: { repliPremier: (sans.credits.repli ?? 0) + (sans.credits.premier ?? 0) - (avec.credits.repli ?? 0) - (avec.credits.premier ?? 0), total: sum(sans.credits) - sum(avec.credits), comptésSaved: avec.saved.repli ?? 0 },
@@ -162,8 +180,6 @@ for (const s of scenarios) {
     totalSans: sum(sans.credits),
     totalAvec: sum(avec.credits),
     savedRepli: avec.saved.repli ?? 0,
-    totalVoieLibre: sum(libre.credits),
-    savedVoieLibre: libre.saved.repli ?? 0,
     retenus: avec.held,
     secondsRetenus: avec.heldTwice,
     retardAjoutéP50: out.retardAjoutéMin.p50,
@@ -172,10 +188,18 @@ for (const s of scenarios) {
     attenteSuivisP99Avec: out.avec.attenteSuivisMin.p99,
     attenteSuivisMaxSans: out.sans.attenteSuivisMin.max,
     attenteSuivisMaxAvec: out.avec.attenteSuivisMin.max,
+    autresP99Sans: out.sans.attenteAutresMin.p99,
+    autresP99Avec: out.avec.attenteAutresMin.p99,
+    autresMaxSans: out.sans.attenteAutresMin.max,
+    autresMaxAvec: out.avec.attenteAutresMin.max,
+    retenusSansAppelÉvité: heldNotPaidBefore,
+    retenusComparés: heldCompared,
     affamésSans: sans.waitingAtEnd.over3h,
     affamésAvec: avec.waitingAtEnd.over3h,
     h24Sans: sans.secondLook.late + sans.secondLook.stillWaiting,
     h24Avec: avec.secondLook.late + avec.secondLook.stillWaiting,
+    premierP50Sans: out.sans.premiers.attenteMin.p50,
+    premierP50Avec: out.avec.premiers.attenteMin.p50,
     premierMaxSans: out.sans.premiers.attenteMin.max,
     premierMaxAvec: out.avec.premiers.attenteMin.max,
     secondsRegards: avec.secondLook.due,
