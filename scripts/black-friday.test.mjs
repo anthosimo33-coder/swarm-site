@@ -83,7 +83,8 @@ if (have) {
   Date.now = () => DEC02;
   await quiet(() => mods.whop.finBlackFriday.handler({}, {}));
   Date.now = realNow;
-  ok(variants.find((x) => x.id === 'plan_ZxcFeAaIiBMk1').visibility === 'hidden' && variants.find((x) => x.id === 'plan_e3kvvjsKXFANv').visibility === 'visible', 'à minuit : Black Friday masqué sur Whop, annuel normal visible');
+  // Décision du 20/11 (audit Q29) : tous les tarifs se vendent par l'app seulement, l'annuel normal reste masqué.
+  ok(variants.find((x) => x.id === 'plan_ZxcFeAaIiBMk1').visibility === 'hidden' && variants.find((x) => x.id === 'plan_e3kvvjsKXFANv').visibility === 'hidden', 'à minuit : Black Friday masqué sur Whop, annuel normal toujours masqué (vendu par l\'app)');
 }
 
 // ─── 2. Écrans ───

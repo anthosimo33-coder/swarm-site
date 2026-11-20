@@ -31,7 +31,8 @@ export default defineSchema({
   // Paiement Whop (19/11, convex/whop.ts). Un abonnement par adhésion Whop (mem_…), relié au compte par la donnée
   // `kopycat_user` posée sur le lien de paiement. `users.pro` se recalcule à chaque changement.
   subscriptions: defineTable({
-    userId: v.id("users"),
+    // null : achat fait hors de l'app, sans compte relié (audit Q29) ; rattaché à la main par whop:rattacher.
+    userId: v.union(v.id("users"), v.null()),
     membershipId: v.string(),
     variantId: v.union(v.string(), v.null()),
     status: v.string(), // trialing, active, past_due, completed, canceled, expired, unresolved

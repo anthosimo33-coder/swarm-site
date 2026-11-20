@@ -45,7 +45,8 @@ export const data = query({
     }
 
     const subs = (await ctx.db.query("subscriptions").collect()).map((s) => {
-      const email = emailOf.get(s.userId) ?? "";
+      // Achat sans compte relié (audit Q29) : signalé ici, rattaché par whop:rattacher.
+      const email = s.userId === null ? "sans compte (à rattacher)" : emailOf.get(s.userId) ?? "";
       return {
         t: s._creationTime, updatedAt: s.updatedAt, email, test: isTest(email), membershipId: s.membershipId,
         status: s.status, active: ACCESS.has(s.status), annual: (s.periodDays ?? 0) >= 360, periodDays: s.periodDays,

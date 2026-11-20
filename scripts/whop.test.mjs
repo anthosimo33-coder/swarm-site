@@ -105,4 +105,27 @@ const planOf = (r) => r.url?.split('/').pop() ?? r.code;
   ok(!(await w.m.db.get(w.userId)).pro, 'Q26 : une adhésion à un autre produit ne donne pas Pro');
 }
 
+// ─── Q29 : tarifs vendus seulement par l'app ; un achat sans compte est noté, puis rattaché à la main ───
+{
+  resetWhop();
+  const w = await world();
+  await withNow(DEC02, () => quiet(() => attempt(() => mods.whop.finBlackFriday.handler(w.ctx, {}))));
+  ok(whop.variants.plan_ZxcFeAaIiBMk1.visibility === 'hidden' && whop.variants.plan_e3kvvjsKXFANv.visibility === 'hidden', `Q29 : à minuit le 1/12, l'annuel Black Friday est masqué et l'annuel normal le reste (${whop.variants.plan_e3kvvjsKXFANv.visibility})`);
+  resetWhop();
+  const has = typeof mods.whop.masquerTarifs?.handler === 'function';
+  ok(has, 'Q29 : action whop.masquerTarifs présente');
+  if (has) {
+    await quiet(() => mods.whop.masquerTarifs.handler(w.ctx, {}));
+    ok(['plan_ilOWoZwgoZGwK', 'plan_ZxcFeAaIiBMk1', 'plan_e3kvvjsKXFANv'].every((id) => whop.variants[id].visibility === 'hidden') && whop.variants.plan_hebdo.visibility === 'visible', 'Q29 : les trois tarifs de Kopycat Pro masqués sur Whop, rien d\'autre touché');
+    ok(planOf(await checkout(await world(), 'mensuel', NOV25)) === 'plan_ilOWoZwgoZGwK', 'Q29 : un tarif masqué se vend toujours par l\'app');
+  }
+  // Achat fait sur Whop sans passer par l'app : aucune metadata.
+  const v = await world();
+  await quiet(() => attempt(() => v.call({ __path: 'whop.saveMembership' }, { membershipId: 'mem_seul', userKey: null, variantId: 'plan_ilOWoZwgoZGwK', productId: PRODUCT, status: 'active', periodDays: 30, price: '29.99', currency: 'eur', periodEnd: Date.now() + 864e5, cancelAtPeriodEnd: false, manageUrl: null })));
+  const orphans = mods.whop.sansCompte ? await v.call({ __path: 'whop.sansCompte' }, {}) : null;
+  ok(Array.isArray(orphans) && orphans.length === 1 && orphans[0].membershipId === 'mem_seul', `Q29 : l'achat sans compte est gardé et listé (${orphans ? orphans.length : 'pas de whop.sansCompte'})`);
+  const linked = mods.whop.rattacher ? await attempt(() => v.call({ __path: 'whop.rattacher' }, { membershipId: 'mem_seul', email: 'A@exemple.fr ' })) : null;
+  ok(!!linked && (await v.m.db.get(v.userId)).pro === true && (await v.call({ __path: 'whop.sansCompte' }, {})).length === 0, `Q29 : rattaché à la main par e-mail, le compte passe Pro (${JSON.stringify(linked)})`);
+}
+
 end();

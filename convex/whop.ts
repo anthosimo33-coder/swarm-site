@@ -150,20 +150,55 @@ export const creerAnnuelNormal = internalAction({
   },
 });
 
-/** Minuit le 1/12 (Paris) : le tarif annuel Black Friday est masqué sur Whop, l'annuel au prix normal devient visible. */
+/** Masque un tarif sur Whop s'il ne l'est pas encore ; rend ce qui a changé. */
+async function hide(plan: Plan): Promise<string | null> {
+  const x: Variant = await whopApi(`/variants/${plan.id}`);
+  if (x.visibility === "hidden" || x.visibility === "archived") return null;
+  await whopApi(`/variants/${plan.id}`, { method: "PATCH", body: { visibility: "hidden" } });
+  return `${plan.id} (${plan.price} €) masqué`;
+}
+
+/**
+ * Minuit le 1/12 (Paris) : l'annuel Black Friday est masqué sur Whop. L'annuel au prix normal reste masqué : tous les
+ * tarifs ne se vendent que par l'app (décision du 20/11, audit Q29), qui les choisit par leur id.
+ */
 export const finBlackFriday = internalAction({
   args: {},
   handler: async (): Promise<string[]> => {
     if (Date.now() < BF_END) return ["Black Friday pas fini : rien à faire"];
-    const done: string[] = [];
-    for (const [plan, to] of [[PLANS.annuelBlackFriday, "hidden"], [PLANS.annuel, "visible"]] as const) {
-      const x = await checkedVariant(plan);
-      if (!x || (x.visibility ?? "visible") === to) continue;
-      await whopApi(`/variants/${plan.id}`, { method: "PATCH", body: { visibility: to } });
-      done.push(`${plan.id} (${plan.price} €) → ${to}`);
-    }
+    const done = [await hide(PLANS.annuelBlackFriday)].filter((x): x is string => !!x);
     console.log(`[whop] fin du Black Friday : ${done.join(", ") || "rien à changer"}`);
     return done;
+  },
+});
+
+/**
+ * Audit Q29 (décision du 20/11) : les tarifs de Kopycat Pro ne se vendent que par l'app. Visibles, ils s'achetaient
+ * aussi sur la page Whop du produit, sans compte Kopycat relié. Masqués, ils restent vendables par le lien de paiement de
+ * l'app. Lancer une fois : `npx convex run --prod whop:masquerTarifs`.
+ */
+export const masquerTarifs = internalAction({
+  args: {},
+  handler: async (): Promise<string[]> => {
+    const done: string[] = [];
+    for (const plan of Object.values(PLANS)) { const r = await hide(plan); if (r) done.push(r); }
+    console.log(`[whop] tarifs masqués : ${done.join(", ") || "rien à changer"}`);
+    return done;
+  },
+});
+
+/**
+ * Diagnostic avant masquerTarifs : un lien de paiement pour un tarif masqué (l'annuel à 359,88 €). Rend seulement s'il
+ * a été créé et si sa page répond, jamais l'adresse. metadata « essai » : un achat par ce lien serait listé sans compte.
+ */
+export const essaiTarifMasque = internalAction({
+  args: {},
+  handler: async (): Promise<Json> => {
+    const x = await checkedVariant(PLANS.annuel);
+    const conf = await whopApi("/checkout_configurations", { method: "POST", body: { account_id: ACCOUNT, variant_id: PLANS.annuel.id, metadata: { kopycat_user: "essai" } } });
+    const url = typeof conf?.purchase_url === "string" ? conf.purchase_url : null;
+    const page = url ? await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(15_000) }).then((r) => r.status, (e) => String(e)) : null;
+    return { tarif: PLANS.annuel.id, visibilite: x?.visibility ?? null, lienCree: !!url, pageDuLien: page };
   },
 });
 
@@ -284,7 +319,6 @@ export const saveMembership = internalMutation({
     const old = await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", a.membershipId)).first();
     const fromKey = a.userKey ? ctx.db.normalizeId("users", a.userKey) : null;
     const userId = (fromKey && (await ctx.db.get(fromKey)) ? fromKey : null) ?? old?.userId ?? null;
-    if (userId === null) return `adhésion ${a.membershipId} sans compte Kopycat (pas de kopycat_user)`;
     const row = {
       userId, membershipId: a.membershipId, variantId: a.variantId ?? old?.variantId ?? null, status: a.status,
       periodDays: a.periodDays ?? old?.periodDays ?? null, price: a.price ?? old?.price ?? null, currency: a.currency ?? old?.currency ?? null,
@@ -293,8 +327,41 @@ export const saveMembership = internalMutation({
     };
     if (old) await ctx.db.patch(old._id, row);
     else await ctx.db.insert("subscriptions", row);
+    // Achat sans compte relié (fait hors de l'app, audit Q29) : gardé, listé par whop:sansCompte, rattaché à la main.
+    if (userId === null) {
+      console.error(`[whop] adhésion ${a.membershipId} sans compte Kopycat : à rattacher (npx convex run whop:rattacher)`);
+      return `adhésion ${a.membershipId} ${a.status} sans compte Kopycat (pas de kopycat_user) : gardée, à rattacher`;
+    }
     const pro = await recomputePro(ctx, userId);
     return `adhésion ${a.membershipId} ${a.status}${a.cancelAtPeriodEnd ? " (résiliée en fin de période)" : ""} → pro ${pro}`;
+  },
+});
+
+/** Les adhésions sans compte Kopycat relié (audit Q29). `npx convex run --prod whop:sansCompte`. */
+export const sansCompte = internalQuery({
+  args: {},
+  handler: async (ctx) =>
+    (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", null)).collect())
+      .map((s) => ({ membershipId: s.membershipId, status: s.status, variantId: s.variantId, price: s.price, updatedAt: s.updatedAt })),
+});
+
+/**
+ * Rattache une adhésion (et ses paiements) au compte de cet e-mail, puis recalcule son accès.
+ * `npx convex run --prod whop:rattacher '{"membershipId":"mem_…","email":"…"}'`. Refuse si l'e-mail désigne 0 ou 2 comptes.
+ */
+export const rattacher = internalMutation({
+  args: { membershipId: v.string(), email: v.string() },
+  handler: async (ctx, { membershipId, email }) => {
+    const users = await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email.trim().toLowerCase())).take(2);
+    if (users.length !== 1) return { ok: false, raison: users.length ? "plusieurs comptes avec cet e-mail" : "aucun compte avec cet e-mail" };
+    const sub = await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", membershipId)).first();
+    if (!sub) return { ok: false, raison: "adhésion inconnue" };
+    if (sub.userId && sub.userId !== users[0]._id) return { ok: false, raison: "adhésion déjà reliée à un autre compte" };
+    await ctx.db.patch(sub._id, { userId: users[0]._id, updatedAt: Date.now() });
+    for (const p of await ctx.db.query("whopPayments").withIndex("by_user", (q) => q.eq("userId", null)).collect()) {
+      if (p.membershipId === membershipId) await ctx.db.patch(p._id, { userId: users[0]._id });
+    }
+    return { ok: true, pro: await recomputePro(ctx, users[0]._id) };
   },
 });
 
