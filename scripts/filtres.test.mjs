@@ -48,13 +48,15 @@ function mount(Page, props) {
   c.setState = (p) => { c.state = Object.assign({}, c.state, typeof p === 'function' ? p(c.state, c.props) : p); };
   return c;
 }
-/** Le premier choix du libellé `label` (champ label ou l) qui a une action pick, n'importe où dans les valeurs. */
+/** Le libellé d'un choix : label, l, ou pre + hit + post (fenêtres de choix d'Apps, texte cherché surligné). */
+const labelOf = (o) => o.label ?? o.l ?? (typeof o.pre === 'string' ? o.pre + (o.hit || '') + (o.post || '') : undefined);
+/** Le premier choix du libellé `label` qui a une action pick, n'importe où dans les valeurs. */
 function pick(v, label) {
   const seen = new Set();
   const walk = (o) => {
     if (!o || typeof o !== 'object' || seen.has(o)) return null;
     seen.add(o);
-    if ((o.label === label || o.l === label) && typeof o.pick === 'function') return o;
+    if (labelOf(o) === label && typeof o.pick === 'function') return o;
     for (const x of Array.isArray(o) ? o : Object.values(o)) { const r = walk(x); if (r) return r; }
     return null;
   };
@@ -192,6 +194,17 @@ for (const L of LISTS) {
   at('/app/apps', '?colonne=name&ordre=asc&m=FR');
   run(mount(Mob, propsOf('apps', queryOf(loc.search))), [p('Qui accélèrent')]);
   ok(loc.search === '?m=FR&tri=accel', `Apps : un tri choisi sur le téléphone efface la colonne de tri de l'ordinateur et garde le reste (${loc.search})`);
+}
+
+// ─── Apps : une autre plage personnalisée redessine les lignes (mémoire des lignes, rowsKey) ───
+{
+  const Desk = await page('Apps');
+  const range = (c, label) => run(c, [(v) => v.cust.toggle(), p(label), (v) => v.cal.apply()]);
+  const views = (c) => JSON.stringify(c.renderVals().rows.map((r) => r.v30));
+  at('/app/apps', '');
+  const live = range(range(mount(Desk, propsOf('apps', {})), '7 derniers jours'), '14 derniers jours');
+  const fresh14 = range(mount(Desk, propsOf('apps', {})), '14 derniers jours');
+  ok(views(live) === views(fresh14), `Apps : passer d'une plage de 7 à 14 jours redessine les vues des lignes (${views(live).slice(0, 40)} / ${views(fresh14).slice(0, 40)})`);
 }
 
 // ─── Le routeur ───
