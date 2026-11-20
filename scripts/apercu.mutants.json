@@ -15,8 +15,8 @@
 ""
 ],
 [
-"M4 withCovers neutralisée",
-"if (!site) return data;",
+"M4 pages pas encore signées par la synchro servies sans leurs adresses (réécriture à la lecture neutralisée)",
+"return site ? signMedia(data, site).data : data;",
 "return data;"
 ],
 [
@@ -108,5 +108,10 @@
 "M22 aperçu : marchés de la base payante rendus (audit S29)",
 "return { updatedAt: d.updatedAt, apps:",
 "return { updatedAt: d.updatedAt, markets: (d as { markets?: unknown }).markets, apps:"
+],
+[
+"M23 page signée avec une autre clé servie telle quelle (audit F28)",
+"    if (mark === signMark()) return rest;",
+"    return rest;"
 ]
 ]

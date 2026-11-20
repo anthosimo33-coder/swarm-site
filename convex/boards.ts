@@ -1,32 +1,22 @@
 import { v } from "convex/values";
 import { liveUserId } from "./session";
 import { query, type QueryCtx } from "./_generated/server";
-import { avatarUrl, COVER_ID, coverUrl, HANDLE } from "./coverSign";
+import { SIGNED, signMark, signMedia } from "./coverSign";
 
 /**
- * Une miniature de vidéo passe toujours par /cover/<id> (convex/coverHttp.ts) : la copie rangée
- * (redirection), sinon copiée à la première vue, et recopiée si la copie est inutilisable (HEIC).
- * Jamais un lien TikTok signé qui expire, ni un vide quand la vidéo en a une. Chaque adresse est signée
- * (convex/coverSign.ts, audit S5 et S15) : seules celles que boards.get rend ouvrent une image.
+ * Une page prête pour l'écran. Audit F28 (19/11) : chaque lecture recopiait tout l'arbre de la page pour y réécrire les
+ * adresses des miniatures et des photos (signées, convex/coverSign.ts). La synchro les écrit désormais elle-même, et
+ * marque la page (SIGNED) : une page marquée avec la clé et les versions en cours est rendue telle quelle, sans copie.
+ * Une page pas encore réécrite (juste après un déploiement) ou signée avec une autre clé est réécrite ici, comme avant.
  */
-function withCovers(data: unknown): unknown {
+function ready(data: unknown): unknown {
+  if (data && typeof data === "object" && !Array.isArray(data) && SIGNED in data) {
+    const { [SIGNED]: mark, ...rest } = data as Record<string, unknown>;
+    if (mark === signMark()) return rest;
+    data = rest;
+  }
   const site = process.env.CONVEX_SITE_URL;
-  if (!site) return data;
-  const fix = (x: unknown): unknown => {
-    if (Array.isArray(x)) return x.map(fix);
-    if (!x || typeof x !== "object") return x;
-    const o: Record<string, unknown> = {};
-    for (const [k, val] of Object.entries(x)) o[k] = typeof val === "object" ? fix(val) : val;
-    // Un compte (créateur, auteur d'une vidéo) : sa photo de profil, servie par /avatar/<handle>.
-    if (typeof o.handle === "string" && "fans" in o && HANDLE.test(o.handle)) { const a = avatarUrl(site, o.handle); if (a) o.avatar = a; }
-    if ("cover" in o) {
-      const id = (o.videoId ?? o.id) as unknown;
-      // Sans secret de signature, aucune adresse plutôt qu'une adresse que /cover refuserait.
-      if (typeof id === "string" && COVER_ID.test(id)) o.cover = coverUrl(site, id);
-    }
-    return o;
-  };
-  return fix(data);
+  return site ? signMedia(data, site).data : data;
 }
 
 /**
@@ -52,9 +42,9 @@ async function read(ctx: QueryCtx, key: string, followed = false): Promise<unkno
   if (row.parts) {
     const parts = await ctx.db.query("boardParts").withIndex("by_key_i", (q) => q.eq("key", key)).collect();
     if (parts.length !== row.parts) return null; // en cours de réécriture : jamais une page tronquée
-    return withCovers(JSON.parse(parts.map((p) => p.text).join("")));
+    return ready(JSON.parse(parts.map((p) => p.text).join("")));
   }
-  return withCovers(row.data);
+  return ready(row.data);
 }
 
 /**
