@@ -99,7 +99,7 @@ const RULES = [
     for (const [from, to] of Object.entries(map)) if (!docs.has(`app:${to}`)) out.push(`${from} → ${to}, sans fiche`);
     return out;
   }],
-  ['Aucun champ qu\'aucun écran ne lit : igHandle, released, firstSeenAt, home.formats (audit S31, Q66)', (docs) => {
+  ['Aucun champ qu\'aucun écran ne lit : igHandle, released, firstSeenAt (audit S31, Q66)', (docs) => {
     const out = [];
     const walk = (k, x) => {
       if (Array.isArray(x)) return x.forEach((y) => walk(k, y));
@@ -108,8 +108,50 @@ const RULES = [
       for (const y of Object.values(x)) walk(k, y);
     };
     for (const [k, d] of docs) walk(k, d);
-    if (docs.get('home') && 'formats' in docs.get('home')) out.push('home.formats');
+    // home.formats est lu par l'accueil (Main, le fil) depuis la maquette A3 du 20/11 ; avant, par aucun écran (Q66).
+    const main = readFileSync(new URL('../design/app/Main.dc.html', import.meta.url), 'utf8');
+    for (const f of ['formats', 'creators']) if (docs.get('home') && f in docs.get('home') && !new RegExp(`D\\.${f}\\b`).test(main)) out.push(`home.${f} : Main ne le lit pas`);
     return [...new Set(out)];
+  }],
+  ['Accueil, le fil (maquette A3) : un document petit, des lignes qui mènent à une fiche, le critère tenu', (docs) => {
+    const out = [], home = docs.get('home'), NOW = 1794780000000;
+    if (!home) return ['home absent'];
+    const size = JSON.stringify(home).length;
+    if (size > 20_000) out.push(`home pèse ${size} car.`);
+    // Apps : la ligne « Une app accélère » reprend les chiffres de la liste des apps.
+    const list = new Map((docs.get('apps')?.apps ?? []).map((a) => [a.slug, a]));
+    for (const a of home.apps ?? []) {
+      const r = list.get(a.slug);
+      if (!r) { out.push(`home.apps : ${a.slug} absent de « apps »`); continue; }
+      for (const f of ['views7', 'weekDelta', 'accounts', 'videoCount']) if (a[f] !== r[f]) out.push(`home.apps ${a.slug}.${f} = ${a[f]}, « apps » : ${r[f]}`);
+      if (JSON.stringify(a.weeks) !== JSON.stringify(r.weeks) || (a.weeks ?? []).length !== 6) out.push(`home.apps ${a.slug}.weeks ≠ « apps »`);
+    }
+    // Formats : les premiers de « formats » repris dans les 7 derniers jours, une seule reprise, chacun avec sa fiche.
+    const n = models.HOME_FORMATS ?? 3;
+    const want = (docs.get('formats')?.formats ?? []).filter((f) => NOW - f.lastPostAt <= 7 * DAY).slice(0, n).map((f) => f.id);
+    if (JSON.stringify((home.formats ?? []).map((f) => f.id)) !== JSON.stringify(want)) out.push(`home.formats ${(home.formats ?? []).map((f) => f.id)} ≠ ${want}`);
+    if (!(home.formats ?? []).length) out.push('home.formats vide sur le banc');
+    for (const f of home.formats ?? []) {
+      if (!docs.has(`format:${f.id}`)) out.push(`home.formats → format:${f.id} sans fiche`);
+      if ((f.members ?? []).length !== 1) out.push(`home.formats ${f.id} : ${(f.members ?? []).length} reprises`);
+      for (const m of f.members ?? []) if (!docs.has(`video:${m.videoId}`)) out.push(`home.formats ${f.id} → video:${m.videoId} sans page`);
+      if ('apps' in f) out.push(`home.formats ${f.id} porte ses apps`);
+    }
+    // Créateurs : ceux qui publient le plus sur 7 jours (dernière vidéo dans les 7 jours), avec fiche, app et vignettes.
+    const nc = models.HOME_CREATORS ?? 3;
+    const all = (docs.get('creators:ALL')?.creators ?? []).filter((c) => c.posts7d > 0 && c.app && c.lastPostAt !== null && NOW - c.lastPostAt <= 7 * DAY)
+      .sort((p, q) => q.posts7d - p.posts7d || (q.median ?? 0) - (p.median ?? 0)).slice(0, nc).map((c) => c.handle);
+    if (JSON.stringify((home.creators ?? []).map((c) => c.handle)) !== JSON.stringify(all)) out.push(`home.creators ${(home.creators ?? []).map((c) => c.handle)} ≠ ${all}`);
+    if (!(home.creators ?? []).length) out.push('home.creators vide sur le banc');
+    for (const c of home.creators ?? []) {
+      if (!docs.has(`creator:${c.handle}`)) out.push(`home.creators → creator:${c.handle} sans fiche`);
+      if (!c.app || (c.app.page !== false && !docs.has(`app:${c.app.slug}`))) out.push(`home.creators ${c.handle} : app sans fiche`);
+      if ((c.best ?? []).length > 3) out.push(`home.creators ${c.handle} : ${c.best.length} vignettes`);
+      for (const v of c.best ?? []) if (!docs.has(`video:${v.id}`)) out.push(`home.creators ${c.handle} → video:${v.id} sans page`);
+    }
+    // La vidéo du jour : la niche de son app.
+    for (const v of home.videos ?? []) if (v.app && typeof v.app.niche !== 'string') out.push(`home.videos ${v.id} : app sans niche`);
+    return out;
   }],
   ['Bios sans moyen de contact ni pseudo d\'un autre réseau (audit S31)', (docs) => {
     const out = [];

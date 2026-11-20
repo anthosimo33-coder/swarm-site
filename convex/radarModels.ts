@@ -162,6 +162,13 @@ export const FORMAT_PAGES = 150;
  * (pseudo, abonnés, médiane, pays), dont 4 qu'aucun écran ne montre, y compris aux comptes gratuits pour le top 3.
  */
 export const APP_CREATORS = 6;
+/**
+ * Le fil de l'accueil (Main, « Le fil de la semaine », maquette A3 du 20/11), dans le petit document `home` : l'accueil
+ * ne lit ni `formats` (≈ 420 Ko), ni `creators:<pays>`, ni `apps` pour son fil. HOME_FORMATS formats qui se répandent
+ * (les premiers de `formats`, repris dans les 7 derniers jours), HOME_CREATORS comptes qui publient le plus sur 7 jours.
+ */
+export const HOME_FORMATS = 3;
+export const HOME_CREATORS = 3;
 /** Créateurs par document de liste (~1 Ko chacun ; un document Convex : 1 Mio au plus). */
 export const CREATOR_PAGE = 500;
 /** Créateurs par document de l'index de recherche (« search », « search:creators:2 »…). */
@@ -923,12 +930,27 @@ export function buildBoards(
   const newFormats = formatRows.filter((f) => f.accounts >= 3 && now - f.firstSeenAt <= 7 * DAY).slice(0, 20);
   if (!G) boards.set("alerts", { updatedAt: now, videos: hotCards, formats: newFormats.map((f) => formatDoc(f, 3)) });
   const nicheViews = [...groupBy(appsBoard, (a) => a.niche).entries()].map(([n, as]) => [n, as.reduce((s, a) => s + a.views7, 0)] as [string, number]).sort((p, q) => q[1] - p[1]);
+  // Le fil de l'accueil (maquette A3, 20/11). Les comptes qui publient le plus : parmi les créateurs listés (fiche,
+  // app, hors placements), ceux dont la dernière vidéo a 7 jours au plus, par vidéos sur 7 jours puis vues médianes.
+  // Lus sur leurs lignes de liste : l'étape globale de la synchro par groupes les a telles quelles.
+  const homeCreators = G ? [] : creators
+    .filter((c) => c.posts7d > 0 && c.app && c.lastPostAt !== null && now - c.lastPostAt <= 7 * DAY)
+    .sort((p, q) => q.posts7d - p.posts7d || (q.median ?? 0) - (p.median ?? 0))
+    .slice(0, HOME_CREATORS)
+    .map((c) => { const p = plainOf.get(c.handle)!; return { handle: p.handle, fans: p.fans, median: p.median, posts7d: p.posts7d, lastPostAt: p.lastPostAt, app: p.app, best: p.best }; });
   if (!G) boards.set("home", {
     updatedAt: now,
     niches: nicheViews.filter(([n]) => n !== "Autres").slice(0, 6).map(([n]) => n),
-    apps: appsBoard.slice(0, 4).map((a) => ({ slug: a.slug, name: a.name, icon: a.icon, views7: a.views7, weekDelta: a.weekDelta, bestX: a.bestX })),
-    // Pas de formats : l'Accueil lit le document « formats » (audit Q66 : home.formats n'était lu nulle part).
-    videos: hotCards.slice(0, 4),
+    // accounts, videoCount, weeks : la ligne « Une app accélère » (comptes, vidéos sur 30 jours, la courbe des 6 semaines).
+    apps: appsBoard.slice(0, 4).map((a) => ({ slug: a.slug, name: a.name, icon: a.icon, views7: a.views7, weekDelta: a.weekDelta, bestX: a.bestX,
+      accounts: a.accounts, videoCount: a.videoCount, weeks: a.weeks })),
+    // La vidéo « À voir aujourd'hui » dit la niche de son app.
+    videos: hot.slice(0, 4).map((s, i) => { const a = canonical(s.appId); return a && hotCards[i].app ? { ...hotCards[i], app: appRef(a, true) } : hotCards[i]; }),
+    // Les formats qui se répandent : les premiers de « formats » (fiche assurée), repris dans les 7 derniers jours, avec
+    // une seule reprise (la vignette) et sans la liste de leurs apps.
+    formats: shown.filter((f) => now - f.lastPostAt <= 7 * DAY).slice(0, HOME_FORMATS)
+      .map((f) => { const { apps: _apps, niche: _niche, maxViews: _max, medX: _medX, ...rest } = formatDoc(f, 1); return rest; }),
+    creators: homeCreators,
   });
 
   // ── Ce que le Radar suit, pour la page d'accueil publique et la date du relevé (« Relevé du … ») ──

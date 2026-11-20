@@ -1,3 +1,13 @@
 /* Généré par scripts/dc2preact.py depuis design/app/Main.dc.html */
 body{margin:0;background:#05070C}
 a{color:#4C9AFF}@media (hover: hover){a:hover{color:#FFFFFF}}
+.acc-row{position:relative}
+.acc-row::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--row-hover);opacity:0;transition:opacity .2s ease;pointer-events:none}
+.acc-row:hover::after{opacity:1}
+.acc-li{position:relative}
+.acc-li::after{content:"";position:absolute;inset:0 -10px;border-radius:12px;background:var(--row-hover);opacity:0;transition:opacity .2s ease;pointer-events:none}
+.acc-li:hover::after{opacity:1}
+.acc-vig .acc-play{transition:transform .25s ease}
+.acc-vig:hover .acc-play{transform:scale(1.08)}
+.acc-clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.acc-ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
