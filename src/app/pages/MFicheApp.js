@@ -108,16 +108,19 @@ export default class MFicheApp extends DCLogic {
       LB = WK.map((_, j) => day((D.updatedAt || Date.now()) - (WK.length - j) * 7 * 86400000));
       const all = (this.props.get && this.props.get('apps')) || null;
       const list = all && all.apps ? all.apps : [];
+      // Aperçu sans abonnement : « apps » ne porte que le top 3 ; son rang réel vient du serveur (standing, audit Q15).
+      const own = list.find((x) => x.slug === D.slug);
+      const st = own && own.standing ? own.standing : null;
       let pool = list.filter((x) => x.niche === D.niche);
       const inNiche = D.niche && D.niche !== 'Autres' && pool.length >= 2;
       if (!inNiche) pool = list;
       pool = pool.slice().sort((x, y) => (y.views30 || 0) - (x.views30 || 0));
       const sum = pool.reduce((s, x) => s + (x.views30 || 0), 0);
       const t0 = (D.videos || [])[0];
-      const rk = pool.findIndex((x) => x.slug === D.slug) + 1;
+      const rk = st ? st.rank : pool.findIndex((x) => x.slug === D.slug) + 1;
       src = { views30: D.views30 || 0, ig: D.views30Ig || 0, weekDelta: hasD ? D.weekDelta : null, accounts: D.accounts || 0, ppw: D.videosPerWeek || 0, bestX: D.bestX || 0,
         top10: D.top10Share === undefined ? null : D.top10Share, videoCount: D.videoCount || (D.videos || []).length,
-        rank: rk, rankOf: rk ? pool.length : 0, share: sum ? (D.views30 || 0) / sum : 0, scope: inNiche ? D.niche : '',
+        rank: rk, rankOf: rk ? (st ? st.of : pool.length) : 0, share: st ? st.share : sum ? (D.views30 || 0) / sum : 0, scope: st ? st.niche : inNiche ? D.niche : '',
         top: t0 ? { cover: t0.cover || '', views: t0.views, handle: t0.handle, x: t0.x, at: t0.publishedAt, href: '/app/videos/' + t0.id } : null };
     }
     // ── Tableau de bord (FicheA) ──

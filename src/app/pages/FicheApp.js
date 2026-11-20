@@ -171,6 +171,9 @@ export default class FicheApp extends DCLogic {
       // Rang : dans sa niche (document « apps », toujours chargé), sinon parmi toutes les apps du Radar.
       const all = (this.props.get && this.props.get('apps')) || null;
       const list = all && all.apps ? all.apps : [];
+      // Aperçu sans abonnement : « apps » ne porte que le top 3 ; son rang réel vient du serveur (standing, audit Q15).
+      const own = list.find((a) => a.slug === D.slug);
+      const st = own && own.standing ? own.standing : null;
       let pool = list.filter((a) => a.niche === D.niche);
       const inNiche = D.niche && D.niche !== 'Autres' && pool.length >= 2;
       if (!inNiche) pool = list;
@@ -179,8 +182,8 @@ export default class FicheApp extends DCLogic {
       const t0 = D.videos[0];
       src = { views30: D.views30, ig: D.views30Ig || 0, weekDelta: D.weekDelta, accounts: D.accounts, ppw: D.videosPerWeek, bestX: D.bestX,
         top10: D.top10Share, videoCount: D.videoCount || D.videos.length,
-        rank: pool.length ? pool.findIndex((a) => a.slug === D.slug) + 1 : 0, rankOf: pool.length, share: sum ? D.views30 / sum : 0,
-        scope: inNiche ? D.niche : '', top: t0 ? { cover: t0.cover || '', views: t0.views, handle: t0.handle, x: t0.x, at: t0.publishedAt, href: '/app/videos/' + t0.id } : null };
+        rank: st ? st.rank : pool.length ? pool.findIndex((a) => a.slug === D.slug) + 1 : 0, rankOf: st ? st.of : pool.length, share: st ? st.share : sum ? D.views30 / sum : 0,
+        scope: st ? st.niche : inNiche ? D.niche : '', top: t0 ? { cover: t0.cover || '', views: t0.views, handle: t0.handle, x: t0.x, at: t0.publishedAt, href: '/app/videos/' + t0.id } : null };
     }
     // ── Tableau de bord ──
     const nfD = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + '\u202fM' : n >= 1e3 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));

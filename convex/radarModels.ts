@@ -668,8 +668,17 @@ export function buildBoards(
   // L'aperçu sans abonnement (convex/boards.ts) : le top PREVIEW_TOP et ce que son écran montre, dans un petit document.
   // Audit F1 (19/11) : l'aperçu relisait les 848 Ko de « apps » à chaque appel, pour en rendre 10 Ko.
   const appsDoc = boards.get("apps") as { markets: unknown; niches: unknown; marketApps: unknown };
+  // Son rang réel (audit Q15) : la fiche d'app le calculait sur get('apps'), réduit au top 3 dans l'aperçu (« N°2 sur 3
+  // apps du Radar, 24 % » pour une app N°1 de sa niche de 13 avec 42 %). Même règle que la fiche (FicheA, MFiche) : dans
+  // sa niche s'il y en a une (hors « Autres ») et qu'elle compte au moins 2 apps listées, sinon parmi toutes.
+  const standingOf = (r: (typeof appsBoard)[number]) => {
+    const niche = r.niche && r.niche !== "Autres" ? appsBoard.filter((x) => x.niche === r.niche) : [];
+    const pool = niche.length >= 2 ? niche : appsBoard; // appsBoard est déjà trié par vues sur 30 jours
+    const sum = pool.reduce((n, x) => n + (x.views30 || 0), 0);
+    return { rank: pool.indexOf(r) + 1, of: pool.length, share: sum ? round((r.views30 || 0) / sum, 4) : 0, niche: pool === niche ? r.niche : "" };
+  };
   boards.set("apps:top", { updatedAt: now, markets: appsDoc.markets, niches: appsDoc.niches, marketApps: appsDoc.marketApps,
-    apps: appsBoard.slice(0, PREVIEW_TOP), total: appsBoard.length });
+    apps: appsBoard.slice(0, PREVIEW_TOP).map((r) => ({ ...r, standing: standingOf(r) })), total: appsBoard.length });
 
   // ── Formats ──
   const accountX = (m: RFormatMember) => {
