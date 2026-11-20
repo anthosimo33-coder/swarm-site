@@ -22,11 +22,14 @@ Une miniature (`cover`) ou une icône (`icon`) peut être `null` ou ne pas se ch
 Ce contrat suit `convex/radarModels.ts` (la source qui fait foi) et `convex/boards.ts` (ce qui est ajouté ou retiré à la
 lecture). Les bancs `npm run test:radar` et `npm run check:data` vérifient les documents et leur rendu.
 
-## Ce que boards.get ajoute à la lecture
+## Adresses des images, et ce que boards.get fait à la lecture
 
 - `cover` d'une vidéo : l'adresse `/cover/<id>?v=…&s=…` du backend, signée (`convex/coverSign.ts`), qui sert la copie
   rangée par Kopycat ; jamais le lien signé de TikTok, qui expire ;
 - `avatar` sur tout objet qui a un `handle` et des `fans` (créateur, auteur d'une vidéo) : `/avatar/<handle>?v=…&s=…` ;
+- ces adresses sont écrites par la synchro (`radarSync.writePages`, audit F28) ; la page porte alors une marque `_signed`
+  que `boards.get` retire avant de la rendre telle quelle. Une page pas encore réécrite, ou signée avec une autre clé,
+  est signée à la lecture ;
 - compte sans abonnement : voir « L'aperçu » plus bas.
 
 ## Liens

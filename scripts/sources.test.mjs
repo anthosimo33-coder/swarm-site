@@ -129,8 +129,7 @@ ok(!bad.length, `chaque api.<module>.<nom> du front existe et est appelé comme 
 
 // ─── Q50 : formes d'id et de pseudo écrites une fois ────────────────────────────────────────────────────────────
 const HOME = 'convex/coverSign.ts';
-// Reste à faire avec la branche des constats hauts (fichier qu'elle modifie) : radarSync.ts (coverUrl de boardOpts).
-const PENDING = new Set(['convex/radarSync.ts']);
+const PENDING = new Set();
 const copies = [];
 for (const f of walk(root, (x) => /\.(ts|js|mjs)$/.test(x) && !/(^|\/)(dist|\.bench-data|\.claude)\//.test(rel(x)))) {
   const r = rel(f);
