@@ -16,6 +16,9 @@ export default defineSchema({
     phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
     pro: v.optional(v.boolean()),
+    // La main de l'exploitant (users:setPro, audit Q5) : true = Pro sans paiement, false = Pro refusé même payé ;
+    // absent = l'accès suit les adhésions Whop. `pro` est recalculé depuis ce champ et les adhésions (whop.recomputePro).
+    proManual: v.optional(v.boolean()),
     // Plus écrit depuis le 19/11 (l'accord est porté par les CGV, sans écran avant Whop) ; gardé pour les comptes de test.
     consentAt: v.optional(v.number()),
   })

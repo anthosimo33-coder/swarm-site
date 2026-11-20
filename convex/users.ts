@@ -1,7 +1,7 @@
 import { getAuthSessionId, modifyAccountCredentials, retrieveAccount } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { liveUserId, liveUserIdInAction } from "./session";
-import { cancelAllNow, hasAccess } from "./whop";
+import { cancelAllNow, hasAccess, recomputePro } from "./whop";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query, type ActionCtx, type MutationCtx } from "./_generated/server";
@@ -22,17 +22,40 @@ export const viewer = query({
 });
 
 /**
- * Passe un compte en Pro (ou le repasse à l'aperçu), par son e-mail. Interne : depuis le terminal seulement,
- * `npx convex run users:setPro '{"email":"…","pro":true}'` (ajouter --prod pour la production). En attendant le
- * paiement Whop, c'est la seule façon d'ouvrir tout Kopycat à un compte.
+ * La main de l'exploitant sur l'accès Pro d'un compte, par son e-mail (audit Q5). Interne : depuis le terminal seulement,
+ * `npx convex run users:setPro '{"email":"…","pro":true}'` (ajouter --prod pour la production).
+ *   pro: true  → Pro sans paiement (compte de test, geste commercial) ;
+ *   pro: false → Pro refusé, même avec un abonnement payé (fraude, litige) ;
+ *   pro: null  → la main rendue : l'accès suit les adhésions Whop.
+ * Un événement Whop ne défait plus ce choix (whop.recomputePro le lit d'abord).
  */
 export const setPro = internalMutation({
-  args: { email: v.string(), pro: v.boolean() },
+  args: { email: v.string(), pro: v.union(v.boolean(), v.null()) },
   handler: async (ctx, { email, pro }) => {
     const user = await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email.trim().toLowerCase())).first();
     if (user === null) return { found: false };
-    await ctx.db.patch(user._id, { pro: pro || undefined });
-    return { found: true, pro };
+    await ctx.db.patch(user._id, { proManual: pro ?? undefined });
+    return { found: true, pro: await recomputePro(ctx, user._id) };
+  },
+});
+
+/**
+ * Migration du 20/11 (audit Q5) : un compte Pro sans adhésion qui donne accès l'est devenu à la main (setPro d'avant) ;
+ * son choix est rangé dans proManual, pour que le premier événement Whop ne l'efface pas. Lancer une fois :
+ * `npx convex run --prod users:migrerProManuel`.
+ */
+export const migrerProManuel = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const done: string[] = [];
+    for (const u of await ctx.db.query("users").collect()) {
+      if (u.pro !== true || u.proManual !== undefined) continue;
+      const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", u._id)).collect();
+      if (subs.some(hasAccess)) continue;
+      await ctx.db.patch(u._id, { proManual: true });
+      done.push(u._id);
+    }
+    return { proManuel: done.length };
   },
 });
 

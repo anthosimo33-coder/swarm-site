@@ -334,11 +334,17 @@ export async function cancelAllNow(ctx: ActionCtx, userId: Id<"users">): Promise
   return subs.length;
 }
 
-async function recomputePro(ctx: MutationCtx, userId: Id<"users">) {
-  const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-  const pro = subs.some(hasAccess);
+/**
+ * Recalcule `users.pro` : la main de l'exploitant d'abord (proManual, users:setPro), sinon les adhésions. Avant (audit Q5),
+ * seules les adhésions comptaient : un Pro posé à la main disparaissait au premier événement Whop, et une révocation à
+ * la main était rouverte par le suivant.
+ */
+export async function recomputePro(ctx: MutationCtx, userId: Id<"users">) {
   const user = await ctx.db.get(userId);
-  if (user && (user.pro === true) !== pro) await ctx.db.patch(userId, { pro: pro || undefined });
+  if (!user) return false;
+  const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
+  const pro = user.proManual ?? subs.some(hasAccess);
+  if ((user.pro === true) !== pro) await ctx.db.patch(userId, { pro: pro || undefined });
   return pro;
 }
 

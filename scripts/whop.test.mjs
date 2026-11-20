@@ -258,4 +258,21 @@ async function paidWorld(mem, pay) {
   ok((await w.m.db.get(w.userId)).pro !== true, 'S10 : un went_valid ultérieur ne rouvre pas l\'accès coupé');
 }
 
+// ─── Q5 : un Pro posé à la main et une révocation à la main tiennent face aux événements Whop ───
+{
+  resetWhop();
+  let w = await world();
+  await w.call({ __path: 'users.setPro' }, { email: 'a@exemple.fr', pro: true });
+  await w.call({ __path: 'whop.saveMembership' }, { membershipId: 'mem_q5', userKey: w.userId, variantId: 'plan_ilOWoZwgoZGwK', productId: PRODUCT, status: 'active', periodDays: 30, price: '29.99', currency: 'eur', periodEnd: null, cancelAtPeriodEnd: false, manageUrl: null });
+  await w.call({ __path: 'whop.saveMembership' }, { membershipId: 'mem_q5', userKey: w.userId, variantId: 'plan_ilOWoZwgoZGwK', productId: PRODUCT, status: 'expired', periodDays: 30, price: '29.99', currency: 'eur', periodEnd: null, cancelAtPeriodEnd: false, manageUrl: null });
+  ok((await w.m.db.get(w.userId)).pro === true, 'Q5 : l\'adhésion expire, le Pro posé à la main reste');
+  w = await world();
+  await w.call({ __path: 'whop.saveMembership' }, { membershipId: 'mem_q5b', userKey: w.userId, variantId: 'plan_ilOWoZwgoZGwK', productId: PRODUCT, status: 'active', periodDays: 30, price: '29.99', currency: 'eur', periodEnd: null, cancelAtPeriodEnd: false, manageUrl: null });
+  await w.call({ __path: 'users.setPro' }, { email: 'a@exemple.fr', pro: false });
+  await w.call({ __path: 'whop.saveMembership' }, { membershipId: 'mem_q5b', userKey: w.userId, variantId: 'plan_ilOWoZwgoZGwK', productId: PRODUCT, status: 'active', periodDays: 30, price: '29.99', currency: 'eur', periodEnd: null, cancelAtPeriodEnd: false, manageUrl: null });
+  ok((await w.m.db.get(w.userId)).pro !== true, 'Q5 : une révocation à la main n\'est pas rouverte par l\'événement suivant');
+  const back = await attempt(() => w.call({ __path: 'users.setPro' }, { email: 'a@exemple.fr', pro: null }));
+  ok(!back.code && (await w.m.db.get(w.userId)).pro === true, `Q5 : setPro null rend la main à Whop (adhésion active : Pro) (${back.code ?? 'ok'})`);
+}
+
 end();
