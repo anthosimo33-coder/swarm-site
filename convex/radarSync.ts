@@ -8,6 +8,7 @@ import type { Id } from "./_generated/dataModel";
 import type { FunctionReference } from "convex/server";
 import { internalAction, type ActionCtx } from "./_generated/server";
 import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
+import { COVER_ID } from "./coverSign";
 import { backgroundOff } from "./background";
 import { APP_STORE_ID, buildBoards, iconKey, siteOf, type GroupOut, type Part, type RApp, type Raw, type RFormat, type RSignal, type RTracked, type RVideo } from "./radarModels";
 
@@ -335,7 +336,8 @@ function boardOpts(now: number, st: Store, stores: Stores, part?: Part) {
   const site = process.env.CONVEX_SITE_URL ?? null;
   return {
     missing: (k: string) => (st.misses.get(k) ?? 0) > now - MISS_HIDE_MS,
-    coverUrl: (id: string) => (site && /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) ? `${site}/cover/${id}` : null),
+    // La forme d'un id de vidéo : celle de convex/coverSign.ts, la seule (audit Q50).
+    coverUrl: (id: string) => (site && COVER_ID.test(id) ? `${site}/cover/${id}` : null),
     artOf: (slug: string) => stores[slug]?.art ?? null,
     regionOf: (h: string) => st.regions.get(h) ?? null,
     slidesOf: (id: string) => st.slides.get(id),
