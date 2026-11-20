@@ -36,6 +36,13 @@ for (const f of walk(path.join(root, 'src'), (x) => /\.(js|jsx|ts|tsx|mjs)$/.tes
       calls.push({ where: `${rel(f)}:${i + 1}`, via: m[1] ?? null, mod: m[2], fn: m[3] });
   });
 }
+// Appels par l'API HTTP, sans client Convex (src/stats.js, audit Q46) : convexHttp('query', 'stats:get').
+for (const f of walk(path.join(root, 'src'), (x) => /\.(js|mjs)$/.test(x) && !/src\/(app\/)?pages\//.test(x))) {
+  fs.readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
+    for (const m of line.matchAll(/convexHttp\(\s*'(query|mutation|action)'\s*,\s*'([A-Za-z_$][\w$]*):([A-Za-z_$][\w$]*)'/g))
+      calls.push({ where: `${rel(f)}:${i + 1}`, via: m[1], mod: m[2], fn: m[3] });
+  });
+}
 ok(calls.length >= 10, `${calls.length} appels du front au backend relevés`);
 const bad = [];
 for (const c of calls) {
@@ -46,6 +53,41 @@ for (const c of calls) {
   else if (c.via && KIND[c.via] && KIND[c.via] !== kind) bad.push(`${c.where} : api.${c.mod}.${c.fn} est une ${kind}, appelée par ${c.via}()`);
 }
 ok(!bad.length, `chaque api.<module>.<nom> du front existe et est appelé comme ce qu'il est${bad.length ? ' :\n      ' + bad.join('\n      ') : ''}`);
+
+// ─── F27 : le jeton gardé est réutilisé au chargement ───────────────────────────────────────────────────────────
+{
+  const src = fs.readFileSync(path.join(root, 'src/auth.js'), 'utf8');
+  const made = [...src.matchAll(/new ConvexReactClient\(([^)]*)\)/g)].map((m) => m[1]);
+  ok(made.length === 1 && /initialAuthTokenReuse:\s*true/.test(made[0]), `un seul client Convex, qui réutilise le jeton gardé au chargement (audit F27 ; ${made.join(' | ') || 'aucun'})`);
+}
+// ─── Q46 : le client HTTP de Convex ne part pas avec les pages publiques ────────────────────────────────────────
+{
+  const heavy = walk(path.join(root, 'src'), (x) => /\.(js|mjs)$/.test(x)).filter((f) => /from ['"]convex\/browser['"]|ConvexHttpClient/.test(fs.readFileSync(f, 'utf8'))).map(rel);
+  ok(!heavy.length, `aucune page n'importe convex/browser (audit Q46)${heavy.length ? ` : ${heavy.join(', ')}` : ''}`);
+}
+
+// ─── Q46 : src/stats.js parle à l'API HTTP de Convex comme le faisait le client ────────────────────────────────
+{
+  const { build } = (await import('node:module')).createRequire(import.meta.url)('esbuild');
+  const out = (await build({ entryPoints: [path.join(root, 'src/stats.js')], bundle: true, format: 'esm', platform: 'neutral', write: false, logLevel: 'error',
+    define: { 'import.meta.env': JSON.stringify({ VITE_CONVEX_URL: 'https://banc.convex.cloud' }) } })).outputFiles[0].text;
+  const stats = await import('data:text/javascript;base64,' + Buffer.from(out).toString('base64'));
+  const sent = [];
+  let reply = () => ({ status: 'success', value: { apps: 519, accounts: 12_305 } });
+  globalThis.fetch = async (url, init) => { sent.push([url, JSON.parse(init.body)]); const b = reply(); return { ok: b.status === 'success', status: 200, json: async () => b }; };
+  globalThis.sessionStorage = { getItem: () => null, setItem: () => {} };
+  globalThis.navigator ??= {};
+  const s1 = await stats.fetchStats();
+  ok(JSON.stringify(s1) === '{"apps":510,"accounts":12000}' && sent[0]?.[0] === 'https://banc.convex.cloud/api/query' && sent[0][1].path === 'stats:get',
+    `fetchStats : POST /api/query stats:get, arrondi (${JSON.stringify(s1)} ; ${JSON.stringify(sent[0])})`);
+  reply = () => ({ status: 'error', errorMessage: 'panne' });
+  const s2 = await stats.fetchStats();
+  ok(JSON.stringify(s2) === JSON.stringify(stats.FALLBACK), `fetchStats : panne → chiffres de repli (${JSON.stringify(s2)})`);
+  sent.length = 0; reply = () => ({ status: 'success', value: null });
+  stats.countVisit();
+  await new Promise((r) => setTimeout(r, 10));
+  ok(sent[0]?.[0] === 'https://banc.convex.cloud/api/mutation' && sent[0][1].path === 'admin:visit', `countVisit : POST /api/mutation admin:visit (${JSON.stringify(sent[0])})`);
+}
 
 // ─── Q50 : formes d'id et de pseudo écrites une fois ────────────────────────────────────────────────────────────
 const HOME = 'convex/coverSign.ts';
