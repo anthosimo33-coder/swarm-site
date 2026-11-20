@@ -21,6 +21,7 @@ import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
 import { ROUTES } from './routes.js';
+import { createWatcher } from './watcher.js';
 import Apercu from './pages/Apercu.js';
 import MApercuApps from './pages/MApercuApps.js';
 import Formules from './pages/Formules.js';
@@ -94,32 +95,13 @@ function matchRoute(path) {
   }
 }
 
-// ─── Les documents du Radar et ce que la personne garde : un abonnement par clé, gardé toute la session ───
-const watched = new Map(); // « board:clé » ou « saved:clé » -> { value, listeners: Set }
-const board = (key) => watch(api.boards.get, `board:${key}`, key);
-const savedEntry = (key) => watch(api.saved.get, `saved:${key}`, key);
-function watch(fn, id, key) {
-  let entry = watched.get(id);
-  if (!entry) {
-    const query = client.watchQuery(fn, { key });
-    entry = { value: undefined, listeners: new Set() };
-    const read = () => {
-      try {
-        // Pendant un renouvellement de session, le serveur renvoie tout : on garde la valeur reçue
-        // (sinon l'écran retomberait un instant sur l'exemple du canevas).
-        const value = query.localQueryResult();
-        if (value !== undefined) entry.value = value;
-      } catch {
-        entry.value = null; // erreur de la requête : l'écran montre son état vide
-      }
-      entry.listeners.forEach((f) => f());
-    };
-    query.onUpdate(read);
-    read();
-    watched.set(id, entry);
-  }
-  return entry;
-}
+// ─── Les documents du Radar et ce que la personne garde : un abonnement par clé (src/app/watcher.js) ───
+// Les listes chaudes et ce que la personne garde restent ouverts toute la session ; un autre document (fiche, vidéo,
+// filtre) est fermé quand plus aucun écran ne le lit, au-delà de 20 ou après 60 s (audit F3).
+const KEPT = new Set([...WARM.map((k) => `board:${k}`), ...SAVED.map((k) => `saved:${k}`)]);
+const watcher = createWatcher(client, { keep: (id) => KEPT.has(id) });
+const board = (key) => watcher.watch(api.boards.get, `board:${key}`, { key });
+const savedEntry = (key) => watcher.watch(api.saved.get, `saved:${key}`, { key });
 /** Enregistre ce que la personne garde ; l'écran le voit aussitôt (mise à jour optimiste). */
 function save(key, value) {
   return client
@@ -157,7 +139,8 @@ function App() {
   const [mobile, setMobile] = useState(MOBILE.matches);
   const [, redraw] = useState(0);
   const leaving = useRef(false);
-  const used = useRef(new Set()); // documents lus par l'écran affiché : leur mise à jour le redessine
+  // Documents lus par l'écran affiché (id -> écouteur) : leur mise à jour le redessine ; libérés au changement d'écran.
+  const used = useRef(new Map());
 
   const leave = async () => {
     leaving.current = true;
@@ -375,6 +358,9 @@ function App() {
     Promise.all([loaderOf(match.route, mobile)(), match.key ? ready(match.key) : null]).then(
       ([module]) => {
         if (!current) return;
+        // L'écran d'avant cesse d'écouter ses documents : le watcher pourra fermer ceux que le nouveau ne lit pas.
+        for (const [id, f] of used.current) watcher.entries.get(id)?.listeners.delete(f);
+        used.current = new Map();
         const query = Object.fromEntries(new URLSearchParams(search));
         setScreen({ path, mobile, Page: module.default, route: match.route, params: match.params, query, key: match.key });
       },
@@ -416,11 +402,19 @@ function App() {
   // Les documents lus par l'écran : on le redessine quand ils changent.
   const follow = (id, entry) => {
     if (!used.current.has(id)) {
-      used.current.add(id);
-      entry.listeners.add(() => redraw((n) => n + 1));
+      const f = () => redraw((n) => n + 1);
+      used.current.set(id, f);
+      entry.listeners.add(f);
     }
     return entry.value;
   };
+  // Après chaque changement d'écran, une fois le nouvel écran rendu (ses documents écoutés) : les abonnements libres
+  // anciens sont fermés (audit F3).
+  useEffect(() => {
+    if (!screen) return undefined;
+    const t = setTimeout(() => watcher.sweep(), 0);
+    return () => clearTimeout(t);
+  }, [screen]);
   const get = (key) => follow(`board:${key}`, board(key));
   const saved = (key) => follow(`saved:${key}`, savedEntry(key));
 
