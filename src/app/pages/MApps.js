@@ -62,8 +62,8 @@ return {};
 
   componentDidUpdate(pp, ps) {
     const st = this.state || {}; ps = ps || {};
-    if (st.fs && !ps.fs && this.fsClose) this.fsClose.focus();
-    if (st.pv && st.pv !== ps.pv && this.pvClose) this.pvClose.focus();
+    if (st.fs && !ps.fs && this.fsClose) this.fsClose.focus({ preventScroll: true });
+    if (st.pv && st.pv !== ps.pv && this.pvClose) this.pvClose.focus({ preventScroll: true });
   }
   baseVals() {
     const st = this.state || {};
@@ -217,14 +217,14 @@ return {};
   render() {
     const $v = this.renderVals();
     return [
-      $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(96px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
+      $h("div", { "data-pull": "", "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(150px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("header", { "style": "position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
           $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;" },
             $h("span", { "style": "flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
               "Apps"
             )
           ),
-          $h("button", { "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openPal, "aria-label": "Chercher", "style": "flex-shrink: 0; width: 44px; height: 44px;" },
+          $h("button", { "data-pull-search": "", "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.openPal, "aria-label": "Chercher", "style": "flex-shrink: 0; width: 44px; height: 44px;" },
             $h("svg", { "width": "21", "height": "21", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
             )
@@ -241,15 +241,6 @@ return {};
           )
         ),
         $h("section", { "aria-label": "Classement et filtres", "class": "m-fc" },
-          $h("div", { "class": "m-tc is-flat is-stack", "role": "tablist", "aria-label": "Classement" },
-            ($l($v.sorts)).map((s) => [
-              $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick },
-                $h("span", { "class": "m-ic", "data-i": s?.l, "aria-hidden": "true", "style": "width: 16px; height: 16px;" }),
-                $t(s?.l)
-              )
-            ])
-          ),
-          $h("span", { "aria-hidden": "true", "class": "m-fc-line" }),
           $h("div", { "class": "m-fc-row" },
             $h("button", { "class": "m-fb is-on", "type": "button", "aria-pressed": $v.fsOpen, "onClick": $v.openFs },
               $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -315,7 +306,7 @@ return {};
             ])
           )
         ] : null,
-        $h("div", { "style": "padding: 16px 20px 0; display: flex; flex-direction: column; gap: 10px;" },
+        $h("div", { "data-swipe": "", "style": "padding: 16px 20px 0; display: flex; flex-direction: column; gap: 10px;" },
           ($v.empty) ? [
             $h("div", { "style": "padding: 32px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;" },
               $h("span", { "style": "font-size: 15px; color: var(--ink-muted);" },
@@ -330,11 +321,11 @@ return {};
           ] : null,
           ($l($v.rows)).map((r) => [
             $h("div", { "style": "border-radius: 20px; overflow: hidden; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-              $h("button", { "type": "button", "onClick": r?.open, "aria-label": `Aperçu de ${$t(r?.n)}`, "style": "width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 10px; border: 0; background: transparent; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+              $h("button", { "data-sheet-src": "", "type": "button", "onClick": r?.open, "aria-label": `Aperçu de ${$t(r?.n)}`, "style": "width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 10px; border: 0; background: transparent; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
                 $h("span", { "style": "width: 18px; flex-shrink: 0; padding-top: 3px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
                   $t(r?.rank)
                 ),
-                $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;" },
+                $h("span", { "data-sheet-ico": "", "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;" },
                   (r?.logo) ? [
                     $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                   ] : null,
@@ -346,7 +337,7 @@ return {};
                 ),
                 $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;" },
                   $h("span", { "style": "max-width: 100%; min-width: 0; display: inline-flex; align-items: center; gap: 8px;" },
-                    $h("span", { "style": "min-width: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                    $h("span", { "data-sheet-name": "", "style": "min-width: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                       $t(r?.n)
                     ),
                     (r?.kindL) ? [
@@ -445,9 +436,9 @@ return {};
           "Vues des vidéos publiées par les comptes de chaque app."
         ),
         ($v.fs) ? [
-          $h("button", { "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.closeFs, "style": "position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
-          $h("section", { "role": "dialog", "aria-modal": "true", "aria-label": "Filtrer les apps", "onKeyDown": $v.fsKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 88vh; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom)); animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
-            $h("div", { "ontouchstart": $v.tStart, "ontouchend": $v.tEnd, "style": "display: flex; justify-content: center; padding: 10px 0 6px; touch-action: none;" },
+          $h("button", { "data-sheet-veil": "", "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.closeFs, "style": "position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
+          $h("section", { "data-sheet": "", "role": "dialog", "aria-modal": "true", "aria-label": "Filtrer les apps", "onKeyDown": $v.fsKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 88vh; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom));" },
+            $h("div", { "data-sheet-handle": "", "style": "display: flex; justify-content: center; padding: 10px 0 6px; " },
               $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);" })
             ),
             $h("div", { "style": "display: flex; align-items: center; justify-content: space-between; padding: 2px 0 10px;" },
@@ -471,9 +462,9 @@ return {};
               ),
               "Marché"
             ),
-            $h("div", { "role": "radiogroup", "aria-label": "Marché", "style": "display: flex; flex-direction: column; padding: 6px 0 14px;" },
+            $h("div", { "data-sheet-opts": "", "role": "radiogroup", "aria-label": "Marché", "style": "display: flex; flex-direction: column; padding: 6px 0 14px;" },
               ($l($v.mItems)).map((it) => [
-                $h("button", { "type": "button", "role": "radio", "aria-checked": it?.sel, "onClick": it?.pick, "style": `display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 12px; border: 0; border-radius: 14px; background: ${$t(it?.bg)}; color: var(--ink); font-family: inherit; font-size: 16px; text-align: left; cursor: pointer; opacity: ${$t(it?.o)}; -webkit-tap-highlight-color: transparent;` },
+                $h("button", { "data-sheet-opt": "", "type": "button", "role": "radio", "aria-checked": it?.sel, "onClick": it?.pick, "style": `display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 12px; border: 0; border-radius: 14px; background: ${$t(it?.bg)}; color: var(--ink); font-family: inherit; font-size: 16px; text-align: left; cursor: pointer; opacity: ${$t(it?.o)}; -webkit-tap-highlight-color: transparent;` },
                   $h("span", { "aria-hidden": "true", "style": `width: 20px; height: 20px; border-radius: 50%; border: 2px solid ${$t(it?.box)}; background: ${$t(it?.fill)}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;` },
                     $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": it?.tick, "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -520,13 +511,13 @@ return {};
           )
         ] : null,
         ($v.pv?.on) ? [
-          $h("button", { "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.closePv, "style": "position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
-          $h("section", { "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 96vh; max-height: 96dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom)); animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
-            $h("div", { "ontouchstart": $v.tStart, "ontouchend": $v.tEnd, "style": "display: flex; justify-content: center; padding: clamp(6px, 1.2vh, 10px) 0 clamp(4px, 0.8vh, 6px); touch-action: none;" },
+          $h("button", { "data-sheet-veil": "", "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.closePv, "style": "position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
+          $h("section", { "data-sheet": "", "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 96vh; max-height: 96dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom));" },
+            $h("div", { "data-sheet-handle": "", "style": "display: flex; justify-content: center; padding: clamp(6px, 1.2vh, 10px) 0 clamp(4px, 0.8vh, 6px); " },
               $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);" })
             ),
             $h("div", { "style": "display: flex; align-items: center; gap: 14px; padding: 2px 0 clamp(8px, 1.4vh, 12px);" },
-              $h("span", { "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: clamp(44px, 7.5vh, 56px); height: clamp(44px, 7.5vh, 56px); border-radius: 16px;" },
+              $h("span", { "data-sheet-ico": "", "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: clamp(44px, 7.5vh, 56px); height: clamp(44px, 7.5vh, 56px); border-radius: 16px;" },
                 ($v.pv?.logo) ? [
                   $h("img", { "class": "sw-logo-img", "src": $u($v.pv?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                 ] : null,
@@ -537,7 +528,7 @@ return {};
                 ] : null
               ),
               $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;" },
-                $h("span", { "style": "font-family: var(--font-display); font-size: clamp(20px, 3.4vh, 24px); font-weight: 700; letter-spacing: -0.03em;" },
+                $h("span", { "data-sheet-name": "", "style": "font-family: var(--font-display); font-size: clamp(20px, 3.4vh, 24px); font-weight: 700; letter-spacing: -0.03em; white-space: nowrap;" },
                   $t($v.pv?.n)
                 ),
                 $h("span", { "style": "display: flex;" },
@@ -787,33 +778,42 @@ return {};
             )
           )
         ] : null,
-        $h("nav", { "aria-label": "Navigation principale", "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 6px 6px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: rgba(8,11,18,0.9); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid var(--line);" },
-          $h("a", { "href": "/app", "aria-current": "false", "style": "min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;" },
-            $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+        $h("div", { "data-swipe-skip": "", "style": "position: fixed; left: 12px; right: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 72px); z-index: 29; padding: 4px; border-radius: 16px; background: rgba(22,27,38,0.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 14px 36px rgba(0,0,0,0.45);" },
+          $h("div", { "class": "m-tc is-flat", "role": "tablist", "aria-label": "Classement", "data-swipe-tabs": "" },
+            ($l($v.sorts)).map((s) => [
+              $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick, "style": "min-height: 40px; font-size: 13px; font-weight: 600;" },
+                $t(s?.l)
+              )
+            ])
+          )
+        ),
+        $h("nav", { "data-tabbar": "", "aria-label": "Navigation principale", "style": "position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; height: 64px; padding: 0 6px; box-sizing: border-box; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 32px; background: rgba(22,27,38,0.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 20px 50px rgba(0,0,0,0.55);" },
+          $h("a", { "href": "/app", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
+            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
             "Accueil"
           ),
-          $h("a", { "href": "/app/apps", "aria-current": "page", "style": "min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--accent); font-size: 11px; font-weight: 700;" },
-            $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+          $h("a", { "href": "/app/apps", "data-tab": "", "aria-current": "page", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: #FFFFFF; font-size: 10.5px; font-weight: 700;" },
+            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "2.1", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
             "Apps"
           ),
-          $h("a", { "href": "/app/formats", "aria-current": "false", "style": "min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;" },
-            $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+          $h("a", { "href": "/app/formats", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
+            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M4 5h16v14H4zM10 9l5 3-5 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
             "Formats"
           ),
-          $h("a", { "href": "/app/createurs", "aria-current": "false", "style": "min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;" },
-            $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+          $h("a", { "href": "/app/createurs", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
+            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
             "Créateurs"
           ),
-          $h("a", { "href": "/app/dossiers", "aria-current": "false", "style": "min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;" },
-            $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+          $h("a", { "href": "/app/dossiers", "data-tab": "", "aria-current": "false", "style": "height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;" },
+            $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
               $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
             ),
             "Dossiers"
