@@ -308,7 +308,7 @@ describe("sous la réserve, le raté attend la sonde (radarFreeMath.reserveMisse
     expect(probe).toBeGreaterThan(defer);
     expect(pass).toMatch(/const probe: DueAccount \| null = due\[0\] \?\? \(await ctx\.runQuery\(internal\.radar\.radarNetworks\.probeAccount, \{\}\)\);\s*if \(probe\) await readPaid\(probe, 1, "sonde"\);/);
     // Rien de nouveau dans radarSettings : noteFreeRun garde ses champs.
-    expect(pass).toMatch(/noteFreeRun, \{\s*ok: free\.ok,\s*fallback: free\.fallback,\s*why: missCounts\(lane\.failed\),\s*stopped: free\.stopped,\s*waiting: lane\.notReached\.length - over\.pay\.length,\s*now: Date\.now\(\),\s*\}/);
+    expect(pass).toMatch(/noteFreeRun, \{\s*ok: free\.ok,\s*fallback: free\.fallback,\s*why: missCounts\(lane\.failed\),\s*(?:\/\/[^\n]*\s*)?stopped: free\.stopped \?\? curve\.stopped,\s*waiting: lane\.notReached\.length - over\.pay\.length,\s*now: Date\.now\(\),\s*\}/);
   });
 });
 
