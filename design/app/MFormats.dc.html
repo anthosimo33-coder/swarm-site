@@ -73,6 +73,40 @@ a{color:#4C9AFF}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":390,"height":2620}}'>
 class Component extends DCLogic {
+  // ── Filtres dans l'adresse (audit F25, 19/11) ──
+  // Les filtres de la liste vivent dans la requête de l'adresse, avec les mêmes noms sur ordinateur et sur téléphone :
+  // quand la mise en page bascule (rotation d'un iPad, fenêtre redimensionnée), l'autre version de l'écran se monte et
+  // les relit dans this.props.query. Un choix va dans l'état et dans l'adresse (history.replaceState : pas d'entrée
+  // d'historique, pas de remontage, la position reste). Sur le canevas (pas de props.query) : l'état local, et
+  // location.search en lecture seule. filters() : clé de l'état -> [paramètre, 'l' liste (clé répétée) | 'b' oui/non |
+  // 's' valeur, valeur par défaut (jamais écrite)]. L'écran écarte une valeur qu'il ne connaît pas (son défaut).
+  filters() { return { niche: ['niche', 's', 'Toutes'], type: ['type', 's', 'Tout'] }; }
+  fv(k) {
+    const st = this.state || {};
+    if (st[k] !== undefined) return st[k];
+    const d = this.filters()[k];
+    if (!d) return undefined;
+    let q = (this.props || {}).query;
+    if (!q) { try { q = Object.fromEntries(new URLSearchParams(location.search)); } catch (e) { q = {}; } }
+    const l = [].concat(q[d[0]] === undefined || q[d[0]] === null ? [] : q[d[0]]).map(String).filter(Boolean);
+    if (d[1] === 'l') return l.length ? l : undefined;
+    if (!l.length) return undefined;
+    return d[1] === 'b' ? l[l.length - 1] === '1' : l[l.length - 1];
+  }
+  setF(patch) {
+    this.setState(patch);
+    const F = this.filters();
+    if (!(this.props || {}).query || typeof history === 'undefined' || typeof location === 'undefined') return;
+    const sp = new URLSearchParams(location.search);
+    Object.keys(patch).forEach((k) => {
+      if (!F[k]) return;
+      const v = patch[k];
+      sp.delete(F[k][0]);
+      [].concat(v === true ? '1' : v === false || v === null || v === undefined ? [] : v).map(String).filter((s) => s && s !== F[k][2]).forEach((s) => sp.append(F[k][0], s));
+    });
+    const qs = sp.toString();
+    try { history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) { /* adresse refusée : l'état suffit */ }
+  }
 
   renderVals() {
     const b = this.baseVals();
@@ -124,7 +158,9 @@ class Component extends DCLogic {
       D.formats.slice(1).forEach((f) => { cnt[f.niche] = (cnt[f.niche] || 0) + 1; });
       NI = [{ l: 'Toutes', n: D.formats.length - 1 }].concat(Object.keys(cnt).sort((p, q) => (p === 'Autres') - (q === 'Autres') || cnt[q] - cnt[p]).map((k) => ({ l: k, n: cnt[k] })));
     }
-    const niche = st.niche || 'Toutes', type = st.type || 'Tout';
+    // Les filtres : l'état, sinon l'adresse (F25, plus haut). Une niche ou un type inconnus sont ignorés.
+    const niche0 = this.fv('niche'), type0 = this.fv('type');
+    const niche = (NI || b.niches || []).some((c) => c.l === niche0) ? niche0 : 'Toutes', type = ['Accroches', 'Sons'].indexOf(type0) >= 0 ? type0 : 'Tout';
     let cards = ALL.filter((c) => (niche === 'Toutes' || c.niche === niche) && (type === 'Tout' || (type === 'Accroches' ? c.kind === 'Accroche' : c.kind === 'Son')));
     const lim = st.lim || 30;
     const hidden = Math.max(0, cards.length - lim);
@@ -132,8 +168,8 @@ class Component extends DCLogic {
     return {
       cards, noCards: cards.length === 0, moreOn: hidden > 0, moreLabel: 'Voir ' + Math.min(30, hidden) + ' formats de plus', showMore: () => this.setState({ lim: lim + 30 }),
       h: H || b.h, fan: FAN || b.fan, hasHero: H !== false, noCardsText: ALL.length ? 'Aucun autre format pour ce filtre cette semaine.' : 'Aucun format à montrer pour l’instant.',
-      niches: (NI || b.niches || []).map((c) => Object.assign({}, c, { on: c.l === niche ? 'true' : 'false', pick: () => this.setState({ niche: c.l }) })),
-      types: ['Tout', 'Accroches', 'Sons'].map((l) => ({ l, on: l === type ? 'true' : 'false', pick: () => this.setState({ type: l }) }))
+      niches: (NI || b.niches || []).map((c) => Object.assign({}, c, { on: c.l === niche ? 'true' : 'false', pick: () => this.setF({ niche: c.l }) })),
+      types: ['Tout', 'Accroches', 'Sons'].map((l) => ({ l, on: l === type ? 'true' : 'false', pick: () => this.setF({ type: l }) }))
     };
   }
 
