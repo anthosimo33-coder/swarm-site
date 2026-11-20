@@ -34,4 +34,10 @@ const has = (f) => fs.existsSync(app(f));
   ok(/createWatcher\(/.test(main) && /\.sweep\(\)/.test(main), 'F3 : src/app/main.js passe par le watcher et le balaie au changement d\'écran');
 }
 
+// ─── F15 : seules les listes servies partout restent ouvertes toute la session ───
+{
+  const warm = (main.match(/const WARM = \[([^\]]*)\]/) || [, ''])[1].replace(/['\s]/g, '').split(',').filter(Boolean);
+  ok(warm.sort().join() === 'apps,search,stats', `F15 : listes gardées ouvertes = apps, search (⌘K), stats (${warm.join(', ')}) ; home, formats, creators:FR et alerts s'ouvrent avec leur écran`);
+}
+
 end();

@@ -62,8 +62,10 @@ const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
 const clean = (path) => (path.length > 1 ? path.replace(/\/+$/, '') : path);
 /** L'adresse affichée : chemin + requête (« /app/apps?niche=Foi »), sans l'ancre. */
 const here = () => clean(window.location.pathname) + window.location.search;
-// Les listes que l'on garde chaudes toute la session : la navigation n'attend rien.
-const WARM = ['home', 'apps', 'formats', 'creators:FR', 'alerts', 'search', 'stats'];
+// Les listes gardées ouvertes toute la session : celles que plusieurs écrans lisent (apps), la recherche ⌘K, les
+// chiffres. Audit F15 : home, formats, creators:FR et alerts l'étaient aussi, jamais visités pour certains, et chaque
+// réécriture renvoyait ~2,25 Mo par onglet ; ils s'ouvrent maintenant avec leur écran (et se ferment après, F3).
+const WARM = ['apps', 'search', 'stats'];
 const SAVED = ['follows', 'folders', 'alertRules', 'seen'];
 
 /** L'adresse -> sa route, ses paramètres et la clé de ses données. */
