@@ -373,7 +373,7 @@ export default class MAlertes extends DCLogic {
         ] : null,
         ($v.na) ? [
           $h("div", { "style": "position: fixed; inset: 0; z-index: 70;" },
-            $h(MNouvelleAlerte, { "onClose": $v.closeNa, "onCreate": $v.addRule, "rule": $v.naRule, "niches": $v.naNiches, "preview": $v.naPreview })
+            $h(MNouvelleAlerte, { "onClose": $v.closeNa, "onCreate": $v.addRule, "rule": $v.naRule, "niches": $v.naNiches, "preview": $v.naPreview, "get": $v.getFn })
           )
         ] : null
       )

@@ -14,7 +14,8 @@
     "test:apercu:mutants": "node scripts/apercu.mutants.mjs",
     "test:radar": "node scripts/radar.test.mjs",
     "test:cover": "node scripts/cover.test.mjs",
-    "test:saved": "node scripts/saved.test.mjs"
+    "test:saved": "node scripts/saved.test.mjs",
+    "test:imports": "node scripts/imports.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",
