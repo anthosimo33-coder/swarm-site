@@ -4,3 +4,6 @@ dist
 .DS_Store
 .env.local
 .bench-data
+
+# Captures d'écran de travail : jamais à la racine du dépôt (audit S32 : 24 captures de listes Pro y étaient commitées).
+/*.png
