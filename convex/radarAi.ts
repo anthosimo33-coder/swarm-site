@@ -74,15 +74,42 @@ async function image(url: string): Promise<Img | null> {
 
 const limit = () => { const n = Number(process.env.SWARM_KINDS_LIMIT); return Number.isFinite(n) && n > 0 ? n : null; };
 
-/** Lance `work` sur chaque élément, PARALLEL à la fois, sans dépasser le budget de temps. */
-async function pool<T, R>(items: T[], start: number, work: (x: T) => Promise<R>): Promise<R[]> {
+/**
+ * Lance `work` sur chaque élément, PARALLEL à la fois, sans dépasser le budget de temps ; `save` range les résultats par
+ * paquets de SAVE_EVERY au fil de l'eau (audit Q69, 19/11 : rangés seulement en fin de lot, une action coupée perdait
+ * jusqu'à 149 lectures déjà payées, payées une seconde fois 6 h plus tard).
+ */
+const SAVE_EVERY = 25;
+async function pool<T, R>(items: T[], start: number, work: (x: T) => Promise<R>, save: (rs: R[]) => Promise<void>): Promise<R[]> {
   const out: R[] = [];
-  let next = 0;
+  let next = 0, saved = 0, saving: Promise<void> = Promise.resolve();
+  const flush = (all: boolean) => {
+    while (out.length - saved >= SAVE_EVERY || (all && out.length > saved)) {
+      const batch = out.slice(saved, saved + SAVE_EVERY);
+      saved += batch.length;
+      saving = saving.then(() => save(batch));
+      saving.catch(() => {}); // l'erreur remonte au dernier await, pas comme rejet non traité
+    }
+    return saving;
+  };
   await Promise.all(Array.from({ length: PARALLEL }, async () => {
-    while (next < items.length && Date.now() - start < BUDGET_MS) out.push(await work(items[next++]));
+    while (next < items.length && Date.now() - start < BUDGET_MS) { out.push(await work(items[next++])); void flush(false); }
   }));
+  await flush(true);
   return out;
 }
+
+/**
+ * Le client de l'API : 60 s par appel et une seule reprise (audit Q69 : les valeurs par défaut du SDK, 10 min et 2
+ * reprises, laissaient un appel qui pend dépasser la coupure de 10 min de l'action).
+ */
+const newClient = () => new Anthropic({ timeout: 60_000, maxRetries: 1 });
+/**
+ * Une erreur passagère de l'API (trop d'appels, surcharge, panne, délai, réseau) : la lecture est reprise sans compter
+ * d'essai, comme un silence de TikTok (audit Q69 : 3 erreurs passagères abandonnaient la vidéo ou le compte pour toujours).
+ */
+const transient = (e: unknown) => e instanceof Anthropic.RateLimitError || e instanceof Anthropic.APIConnectionError
+  || (e instanceof Anthropic.APIError && ((e.status ?? 0) >= 500 || e.status === 429));
 
 const LEASE_MS = 6 * 60_000;
 /**
@@ -159,10 +186,11 @@ export const fillVideos = internalAction({
       await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-videos", token });
       return { read: 0, cost: 0 };
     }
-    const client = new Anthropic();
+    const client = newClient();
     let tin = 0, tout = 0;
     const slot = pacer();
     type Out = { videoId: string; ok: boolean; type?: string; text?: string; retry?: boolean; gone?: boolean; unshown?: boolean; why?: string };
+    const saveVideos = async (rs: Out[]) => { await ctx.runMutation(internal.radarStore.saveVideoAi, { items: rs.map(({ why: _w, ...x }) => x), now: Date.now() }); };
     const out: Out[] = await pool(ids, start, async (videoId): Promise<Out> => {
       const { img, why, retry, gone, unshown } = await coverFor(ctx, slot, videoId);
       if (!img) return { videoId, ok: false, why, retry, gone, unshown };
@@ -180,12 +208,12 @@ export const fillVideos = internalAction({
         return { videoId, ok: true, type: p.type, text: Array.from(p.text.trim()).slice(0, 1500).join("") };
       } catch (e) {
         console.error(`[ia vidéos] ${videoId} : ${e instanceof Error ? e.message : String(e)}`);
+        if (transient(e)) return { videoId, ok: false, retry: true, why: "API indisponible" };
         return { videoId, ok: false, why: cut(e) ? "réponse coupée" : "erreur" };
       }
-    });
+    }, saveVideos);
     const whys = tally(out.map((x) => x.why));
     const unshown = out.filter((x) => x.unshown).length;
-    for (let i = 0; i < out.length; i += 100) await ctx.runMutation(internal.radarStore.saveVideoAi, { items: out.slice(i, i + 100).map(({ why: _w, ...x }) => x), now: Date.now() });
     const cost = tin * PRICE_IN + tout * PRICE_OUT;
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "videoAi", now: Date.now() });
     const capped = limit() !== null && out.length < ids.length;
@@ -206,12 +234,13 @@ export const fillGender = internalAction({
     if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: "ai-gender", token, ms: LEASE_MS, now: start }))) return { read: 0, cost: 0 };
     const rows = await ctx.runMutation(internal.radarStore.claimGender, { limit: 100, now: start, max: limit() });
     if (!rows.length) { await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-gender", token }); return { read: 0, cost: 0 }; }
-    const client = new Anthropic();
+    const client = newClient();
     let tin = 0, tout = 0;
     // Photo de profil et 3 miniatures, par le goulot (16/11 : 6 comptes × 4 images à la fois, par /avatar et /cover).
     // Sans aucune image : reprise sans essai si TikTok n'a pas répondu, abandon si le compte a disparu, un essai sinon.
     const slot = pacer();
     type Out = { handle: string; ok: boolean; gender?: string; self?: number; covers?: number; retry?: boolean; gone?: boolean; unshown?: boolean; why?: string };
+    const saveGenders = async (rs: Out[]) => { await ctx.runMutation(internal.radarStore.saveGender, { items: rs.map(({ why: _w, ...x }) => x), now: Date.now() }); };
     const out: Out[] = await pool(rows, start, async ({ handle, ids }): Promise<Out> => {
       const got = await Promise.all([avatarFor(ctx, slot, handle), ...ids.slice(0, GENDER_COVERS).map((id) => coverFor(ctx, slot, id))]);
       const imgs = got.map((g) => g.img).filter((x): x is Img => x !== null);
@@ -244,12 +273,12 @@ export const fillGender = internalAction({
         return { handle, ok: true, gender: self === 0 ? "sans_visage" : p.gender, self, covers: covers.length };
       } catch (e) {
         console.error(`[ia genre] @${handle} : ${e instanceof Error ? e.message : String(e)}`);
+        if (transient(e)) return { handle, ok: false, retry: true, why: "API indisponible" };
         return { handle, ok: false, why: cut(e) ? "réponse coupée" : "erreur" };
       }
-    });
+    }, saveGenders);
     const whys = tally(out.map((x) => x.why));
     const unshown = out.filter((x) => x.unshown).length;
-    for (let i = 0; i < out.length; i += 100) await ctx.runMutation(internal.radarStore.saveGender, { items: out.slice(i, i + 100).map(({ why: _w, ...x }) => x), now: Date.now() });
     const cost = tin * PRICE_IN + tout * PRICE_OUT;
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "accountAi", now: Date.now() });
     if (left && out.length === rows.length) await ctx.scheduler.runAfter(5_000, internal.radarAi.fillGender, { token });
