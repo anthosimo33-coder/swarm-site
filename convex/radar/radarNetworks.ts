@@ -1387,6 +1387,8 @@ export async function listNetworksCore(ctx: ProjectQueryCtx) {
       status: a.status,
       // En pause d'office : ni une app, ni un SaaS, ni un jeu mobile (radarJudge). La remettre en route le garde.
       outOfScope: a.status === "paused" && a.pausedReason === "perimetre",
+      // À l'essai (radarAuto.settleTrials) : pas encore prouvée, Kopycat ne la montre pas (page Radar de /admin, 20/11/2026).
+      trial: a.trialSince !== undefined,
       source: a.source,
       searches: a.searches,
       accounts: net.accounts,

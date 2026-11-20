@@ -5,6 +5,7 @@ import { h } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api.js';
+import Radar from './Radar.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -251,6 +252,9 @@ export default function Admin() {
   const data = useQuery(api.admin.data, isAuthenticated ? { since: 0 } : 'skip');
   const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : 'skip');
   const [period, setPeriod] = useState('30');
+  // Onglet Mesure ou Radar (20/11/2026, le Radar déménagé de Jarvia) ; #radar dans l'adresse ouvre le Radar.
+  const [tab, setTabState] = useState(typeof location !== 'undefined' && location.hash === '#radar' ? 'radar' : 'mesure');
+  const setTab = (t) => { setTabState(t); history.replaceState(null, '', t === 'radar' ? '#radar' : location.pathname); };
   const [hideTests, setHideTests] = useState(true);
   const [all, setAll] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -274,12 +278,14 @@ export default function Admin() {
     h('header', { class: 'ad-top' },
       h('a', { class: 'ad-brand', href: '/app', 'aria-label': 'Retour à Kopycat' }, logo(narrow ? 28 : 32), narrow ? h('span', { class: 'ad-brand-t' }, 'Mesure') : h('span', { class: 'ad-brand-t' }, 'kopycat')),
       h('span', { class: 'ad-tag' }, 'ADMIN'),
+      h('div', { class: 'ad-seg', role: 'tablist', 'aria-label': 'Section' }, [['mesure', 'Mesure'], ['radar', 'Radar']].map(([k, label]) =>
+        h('button', { type: 'button', role: 'tab', class: tab === k ? 'on' : '', 'aria-selected': tab === k, onClick: () => setTab(k) }, label))),
       h('span', { class: 'ad-grow' }),
-      h('button', { type: 'button', class: 'ad-tests', 'aria-pressed': hideTests, onClick: () => setHideTests(!hideTests) },
+      tab === 'radar' ? null : h('button', { type: 'button', class: 'ad-tests', 'aria-pressed': hideTests, onClick: () => setHideTests(!hideTests) },
         h('span', { class: 'ad-box' + (hideTests ? ' on' : '') }, hideTests ? icon(ICONS.check, 11) : null),
         narrow ? `Sans tests (${k.tests})` : `Sans les ${k.tests} comptes de test`),
       narrow ? null : h('a', { class: 'ad-avatar', href: '/app', title: 'Retour à Kopycat' }, initial)),
-    h('main', { class: 'ad-main' },
+    tab === 'radar' ? h('main', { class: 'ad-main' }, h(Radar)) : h('main', { class: 'ad-main' },
       h('div', { class: 'ad-head' },
         narrow ? null : h('div', null, h('h1', null, 'Mesure'), h('p', null, r.text)),
         h(Segmented, { value: period, onChange: setPeriod, short: narrow })),
