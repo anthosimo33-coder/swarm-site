@@ -151,4 +151,24 @@ print(json.dumps(out))`, {}, JSON.stringify(CASES.map((c) => c[1])));
   ok(got.length === CASES.length && !bad.length, `Q43 : ${CASES.filter((c) => c[2] === 'err').length} canevas piégés arrêtent la génération avec leur fichier, ${CASES.filter((c) => c[2] === 'ok').length} canevas valides passent${bad.length ? ' ; faux : ' + bad.join(' ; ') : ''}`);
 }
 
+/** Sélecteurs des règles de premier niveau d'une feuille (hors @media et autres règles @). */
+const topSelectors = (css) => {
+  const out = [];
+  let depth = 0, start = 0;
+  const s = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '{') { if (depth === 0) out.push(s.slice(start, i).trim()); depth++; }
+    else if (s[i] === '}') { depth--; if (depth === 0) start = i + 1; }
+    else if (s[i] === ';' && depth === 0) start = i + 1;
+  }
+  return out.filter((x) => !x.startsWith('@'));
+};
+
+// ─── Q45 : le survol global des liens est réservé aux souris (pas de lien blanc collant au toucher) ───
+{
+  const dir = path.join(root, 'src/app/styles');
+  const bare = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).filter((f) => topSelectors(fs.readFileSync(path.join(dir, f), 'utf8')).some((sel) => sel.split(',').some((x) => x.trim() === 'a:hover')));
+  ok(!bare.length, `Q45 : aucun « a:hover » global hors @media (hover: hover) dans les CSS de l'app (${bare.join(', ') || 'aucun'})`);
+}
+
 end();
