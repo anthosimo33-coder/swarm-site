@@ -8,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url)), root = path.resolve(h
 const { build } = await import(path.join(root, "node_modules/esbuild/lib/main.js"));
 const out = path.join(D, "models.bundle.mjs");
 await build({ entryPoints: [path.join(root, "convex/radarModels.ts")], bundle: true, platform: "node", format: "esm", target: "node20", outfile: out, logLevel: "warning" });
-const { buildBoards } = await import(out + "?" + Date.now());
+const { buildBoards, COVER_ID } = await import(out + "?" + Date.now());
 
 const PER_GROUP = Number(process.argv[2] || 3000);
 const now = 1794780000000;
@@ -28,7 +28,7 @@ const langs = new Map(store("langPage").map(([id, l]) => [id, l || null]));
 const site = "https://blessed-hedgehog-69.convex.site";
 const opts = (part) => ({
   missing: (k) => (misses.get(k) ?? 0) > now - 3 * 86_400_000,
-  coverUrl: (id) => (/^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) ? `${site}/cover/${id}` : null),
+  coverUrl: (id) => (COVER_ID.test(id) ? `${site}/cover/${id}` : null),
   artOf: (slug) => stores[slug]?.art ?? null, regionOf: (h) => regions.get(h) ?? null, slidesOf: (id) => slides.get(id),
   aiOf: (id) => ai.get(id), genderOf: (h) => genders.get(h), langOf: (id) => (langs.has(id) ? langs.get(id) ?? null : undefined), part,
 });

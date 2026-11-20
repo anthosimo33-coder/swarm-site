@@ -1,8 +1,4 @@
-import { internal } from "./_generated/api";
-import { httpAction } from "./_generated/server";
-import { avatarSigned, coverSigned, COVER_ID, HANDLE, MEDIA_RETRY_MS } from "./coverSign";
-
-/**
+/*
  * GET /cover/<id de vidéo TikTok ou ig:<code>>?v=…&s=… — la miniature d'une vidéo du Radar, toujours servie par Kopycat :
  * la copie rangée (redirection immédiate), sinon copiée à la première vue (1 à 2 s), puis rangée.
  * GET /avatar/<handle>?v=…&s=… — la photo de profil d'un compte suivi, de la même façon.
@@ -13,6 +9,10 @@ import { avatarSigned, coverSigned, COVER_ID, HANDLE, MEDIA_RETRY_MS } from "./c
  * est la même réponse : 404, même Cache-Control. Pendant la pause qui suit un échec noté (mediaMiss), aucune action
  * Node n'est lancée.
  */
+import { internal } from "./_generated/api";
+import { httpAction } from "./_generated/server";
+import { avatarSigned, coverSigned, COVER_ID, HANDLE, MEDIA_RETRY_MS } from "./coverSign";
+
 const refused = () => new Response(null, { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
 const redirect = (url: string) => new Response(null, { status: 302, headers: { Location: url, "Cache-Control": "public, max-age=86400" } });
 

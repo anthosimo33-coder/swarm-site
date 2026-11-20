@@ -12,8 +12,16 @@
  * Module pur (ni base, ni réseau, ni Node) : lu par les requêtes, les actions HTTP et les actions Node.
  */
 
+/**
+ * Formes des ids et des pseudos, écrites ici seulement (audit Q50, 19/11 : la regex d'id vidéo était recopiée 4 fois,
+ * celle du pseudo 2 fois ; une nouvelle forme ajoutée d'un seul côté faisait des adresses /cover que la route refuse).
+ * Lues par boards.ts, coverHttp.ts, radarModels.ts (et par lui, les bancs), radarSync.ts.
+ */
+const TIKTOK = "\\d{6,25}", INSTAGRAM = "ig:[A-Za-z0-9_-]{5,40}";
+/** Id d'une vidéo TikTok (chiffres seuls). */
+export const TIKTOK_ID = new RegExp(`^${TIKTOK}$`);
 /** Id d'une vidéo TikTok (chiffres) ou Instagram (« ig: » + code du reel). */
-export const COVER_ID = /^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/;
+export const COVER_ID = new RegExp(`^(${TIKTOK}|${INSTAGRAM})$`);
 /** Pseudo d'un compte TikTok. */
 export const HANDLE = /^[A-Za-z0-9._]{2,30}$/;
 /** Changent quand les navigateurs doivent oublier leurs anciennes réponses (et toutes les signatures avec). */
