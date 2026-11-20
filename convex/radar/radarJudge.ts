@@ -10,6 +10,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { v } from "convex/values";
+import { fromStoredCursor } from "./radarCursorMath";
 import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import { internalAction, internalMutation, internalQuery, type ActionCtx, type MutationCtx, type QueryCtx } from "../_generated/server";
@@ -202,8 +203,10 @@ async function judgeItemFor(ctx: QueryCtx, t: Doc<"radarTracked">, apps: Map<Id<
   };
 }
 
-async function judgeWorkCore(ctx: QueryCtx, cursor: string | null, limit: number): Promise<{ items: JudgeItem[]; cursor: string | null; done: boolean }> {
-  const r = await ctx.db.query("radarTracked").paginate({ cursor, numItems: JUDGE_SCAN });
+async function judgeWorkCore(ctx: QueryCtx, stored: string | null, limit: number): Promise<{ items: JudgeItem[]; cursor: string | null; done: boolean }> {
+  // Un curseur illisible (recopié d'un autre déploiement) : le parcours repart du début (cf radarCursorMath).
+  const { result: r, restarted } = await fromStoredCursor(stored, (c) => ctx.db.query("radarTracked").paginate({ cursor: c, numItems: JUDGE_SCAN }));
+  const cursor = restarted ? null : stored;
   const apps = new Map((await ctx.db.query("radarApps").collect()).map((a) => [a._id, a]));
   const items: JudgeItem[] = [];
   for (const t of r.page) {

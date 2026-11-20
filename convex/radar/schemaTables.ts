@@ -140,6 +140,8 @@ export const radarTables = {
     storeTwinRequeueDoneAt: v.optional(v.number()),
     // Le rattrapage du 20/11/2026 (radarAuto.repair2011) : tournures écartées des motifs, doublons fondus.
     repair2011DoneAt: v.optional(v.number()),
+    // Les curseurs recopiés de Jarvia remis à zéro (radarAuto.resetCopiedCursors, 20/11/2026).
+    cursorsReset2011At: v.optional(v.number()),
     lastDiscoveryAt: v.optional(v.number()),
     lastCurveAt: v.optional(v.number()),
     lastAccountsAt: v.optional(v.number()),
