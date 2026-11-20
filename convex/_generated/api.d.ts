@@ -14,6 +14,7 @@ import type * as authErrors from "../authErrors.js";
 import type * as background from "../background.js";
 import type * as boards from "../boards.js";
 import type * as coverHttp from "../coverHttp.js";
+import type * as coverSign from "../coverSign.js";
 import type * as covers from "../covers.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   background: typeof background;
   boards: typeof boards;
   coverHttp: typeof coverHttp;
+  coverSign: typeof coverSign;
   covers: typeof covers;
   crons: typeof crons;
   http: typeof http;
