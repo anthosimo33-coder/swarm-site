@@ -376,6 +376,7 @@ function App() {
     // Audit F8 : une adresse fermée sans abonnement attend de savoir qui est là (pas de code d'Accueil chargé pour un
     // compte gratuit renvoyé vers l'aperçu) ; et l'aperçu n'attend pas le code d'Apps, qu'il n'affiche pas.
     if (!known && !mayLoadBeforeUser(pathname)) return undefined;
+    if (known && !proRef.current && !isOpen(pathname)) return undefined; // l'aperçu la renvoie vers Apps (effet ci-dessus)
     const code = routeCodeNeeded(match.route.path, { known, pro: proRef.current }) ? loaderOf(match.route, mobile)() : Promise.resolve({ default: null });
     let current = true;
     Promise.all([code, match.key ? ready(match.key) : null]).then(
