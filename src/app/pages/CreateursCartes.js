@@ -994,7 +994,7 @@ export default class CreateursCartes extends DCLogic {
                     $h("span", { "style": `width: 7px; height: 7px; border-radius: 50%; background: ${$t(c?.dot)};` }),
                     $t(c?.badge),
                     (c?.cap) ? [
-                      $h("span", { "class": "sw-hint", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
+                      $h("span", { "class": "sw-info", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
                         "i"
                       )
                     ] : null
@@ -1098,7 +1098,7 @@ export default class CreateursCartes extends DCLogic {
                     $h("span", { "style": `width: 7px; height: 7px; border-radius: 50%; background: ${$t(c?.dot)};` }),
                     $t(c?.badge),
                     (c?.cap) ? [
-                      $h("span", { "class": "sw-hint", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
+                      $h("span", { "class": "sw-info", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
                         "i"
                       )
                     ] : null
@@ -1229,7 +1229,7 @@ export default class CreateursCartes extends DCLogic {
                   $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; white-space: nowrap;" },
                     $t($v.pv?.rythme),
                     ($v.pv?.cap) ? [
-                      $h("span", { "class": "sw-hint", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
+                      $h("span", { "class": "sw-info", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
                         "i"
                       )
                     ] : null

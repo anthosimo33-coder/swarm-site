@@ -344,7 +344,7 @@ export default class FicheCreateur extends DCLogic {
                   $t(t?.v),
                   (t?.tip) ? [
                     " ",
-                    $h("span", { "class": "fi-tip", "tabindex": "0", "role": "note", "aria-label": t?.tip, "data-tip": t?.tip },
+                    $h("span", { "class": "sw-info", "tabindex": "0", "role": "note", "aria-label": t?.tip, "data-tip": t?.tip },
                       "i"
                     )
                   ] : null

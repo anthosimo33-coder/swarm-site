@@ -877,7 +877,7 @@ export default class FicheApp extends DCLogic {
                       $t(c?.v),
                       (c?.cap) ? [
                         " ",
-                        $h("span", { "class": "fi-tip", "tabindex": "0", "role": "note", "aria-label": c?.vTitle, "data-tip": c?.vTitle },
+                        $h("span", { "class": "sw-info", "tabindex": "0", "role": "note", "aria-label": c?.vTitle, "data-tip": c?.vTitle },
                           "i"
                         )
                       ] : null
