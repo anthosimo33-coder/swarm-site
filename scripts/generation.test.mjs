@@ -44,4 +44,14 @@ const appPages = pages('src/app/pages');
   ok(!/espace Compte/.test(cgv) && /Réglages/.test(cgv), 'Q13 : les CGV nomment le vrai chemin de la résiliation (Réglages), plus « l\'espace Compte »');
 }
 
+// ─── F10 : les images de la landing sous le haut de page se chargent au défilement ───
+{
+  const lp = fs.readFileSync(path.join(root, 'src/pages/LP.js'), 'utf8'), lpm = fs.readFileSync(path.join(root, 'src/pages/LPMobile.js'), 'utf8');
+  const imgs = (src) => [...src.matchAll(/\$h\("img", \{([^}]*)\}/g)].map((m) => m[1]);
+  const lazy = (src) => imgs(src).filter((a) => /"loading": "lazy"/.test(a)).length;
+  ok(lazy(lp) >= 5 && lazy(lpm) >= 4, `F10 : images en loading=lazy (LP ${lazy(lp)}/${imgs(lp).length}, LPMobile ${lazy(lpm)}/${imgs(lpm).length})`);
+  ok(imgs(lp).length - lazy(lp) >= 2 && imgs(lp).length - lazy(lp) <= 5, `F10 : les images du haut de page restent chargées tout de suite (LP : ${imgs(lp).length - lazy(lp)})`);
+  ok(!/data-eager/.test(lp + lpm), 'F10 : le marqueur data-eager du canevas ne part pas dans la page');
+}
+
 end();

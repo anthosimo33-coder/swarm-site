@@ -619,6 +619,11 @@ def convert(src, name, prefix, group='site'):
     xdc = text.split('<x-dc>', 1)[1].split('</x-dc>', 1)[0]
     helmet = re.search(r'<helmet>(.*?)</helmet>', xdc, re.S).group(1)
     template = re.sub(r'<helmet>.*?</helmet>', '', xdc, flags=re.S)
+    if group == 'site':
+        # Audit F10 : les images du site se chargent au défilement (loading=lazy), sauf celles du haut de page, marquées
+        # data-eager dans le canevas. Avant, les ~30 images de la landing partaient d'un coup (1,08 Mo pour 3 visibles).
+        template = re.sub(r'<img\b(?![^>]*\bloading=)(?![^>]*\bdata-eager)', '<img loading="lazy" decoding="async"', template)
+        template = re.sub(r'(<img\b[^>]*?)\s+data-eager(?:="[^"]*")?', r'\1', template)
     css = '\n'.join(re.findall(r'<style>(.*?)</style>', helmet, re.S)).strip()
     script = re.search(r'<script type="text/x-dc" data-dc-script[^>]*>(.*?)</script>', text, re.S).group(1)
 

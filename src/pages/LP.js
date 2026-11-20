@@ -550,7 +550,7 @@ export default class LP extends DCLogic {
                       ($l($v.o1)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 46s linear infinite;" },
-                            $h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -559,7 +559,7 @@ export default class LP extends DCLogic {
                       ($l($v.o2)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spin 70s linear infinite;" },
-                            $h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -568,7 +568,7 @@ export default class LP extends DCLogic {
                       ($l($v.o3)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 96s linear infinite;" },
-                            $h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -693,7 +693,7 @@ export default class LP extends DCLogic {
                         $h("div", { "style": "display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;" },
                           ($l($v.thumbs)).map((t) => [
                             $h("span", { "style": "position: relative; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; background: #111216; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; box-sizing: border-box; color: #FFFFFF; font-size: 9px; font-weight: 700;" },
-                              $h("img", { "src": t?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                              $h("img", { "loading": "lazy", "decoding": "async", "src": t?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                               $h("span", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 45%, rgba(0,0,0,0.7));" }),
                               $h("span", { "style": "position: relative;" },
                                 $t(t?.v)
@@ -782,10 +782,10 @@ export default class LP extends DCLogic {
                 ($l($v.arc)).map((v) => [
                   $h("div", { "style": `position: absolute; left: 50%; top: 50%; width: 236px; height: 420px; margin-left: -118px; margin-top: -210px; animation: lp-arcMove 106s linear infinite; animation-delay: ${$t(v?.delay)};` },
                     $h("div", { "style": `position: relative; width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: #111216; outline: 2px solid rgba(11,111,224,0); outline-offset: 4px; animation: lp-arcRing 106s linear infinite; animation-delay: ${$t(v?.delay)};` },
-                      $h("img", { "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                       $h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 28%, transparent 58%, rgba(0,0,0,0.65));" }),
                       $h("span", { "style": "position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.9); color: #111216; border-radius: 999px; padding: 4px 10px 4px 4px; font-size: 12px; font-weight: 600;" },
-                        $h("img", { "src": v?.icon, "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
+                        $h("img", { "loading": "lazy", "decoding": "async", "src": v?.icon, "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
                         $t(v?.app)
                       ),
                       $h("div", { "style": "position: absolute; left: 14px; right: 14px; bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #FFFFFF;" },

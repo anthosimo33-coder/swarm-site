@@ -419,7 +419,7 @@ export default class LPMobile extends DCLogic {
                   ),
                   ($l($v.miniApps)).map((m) => [
                     $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 36px;" },
-                      $h("img", { "src": m?.icon, "alt": "", "style": "width: 28px; height: 28px; border-radius: 8px; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": m?.icon, "alt": "", "style": "width: 28px; height: 28px; border-radius: 8px; display: block; flex-shrink: 0;" }),
                       $h("span", { "style": "flex: 1 1 auto; font-size: 13px; font-weight: 600;" },
                         $t(m?.name)
                       ),
@@ -441,12 +441,12 @@ export default class LPMobile extends DCLogic {
               $h("article", { "role": "listitem", "style": "flex: 0 0 84%; scroll-snap-align: start; border-radius: 24px; background: #FFFFFF; border: 1px solid #E6E6EA; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 16px 40px rgba(16,24,40,0.06); overflow: hidden; display: flex; flex-direction: column;" },
                 $h("div", { "aria-hidden": "true", "style": "height: 224px; box-sizing: border-box; padding: 16px; background: linear-gradient(180deg, #F4F7FC, #FFFFFF); display: flex; flex-direction: column; gap: 6px;" },
                   $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5F656E;" },
-                    $h("img", { "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
+                    $h("img", { "loading": "lazy", "decoding": "async", "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
                     "Les créateurs d'Astra AI"
                   ),
                   ($l($v.creators)).map((c) => [
                     $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 10px; border-radius: 14px; background: #FFFFFF; border: 1px solid #EEF0F3;" },
-                      $h("img", { "src": c?.img, "alt": "", "style": "width: 30px; height: 40px; border-radius: 7px; object-fit: cover; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": c?.img, "alt": "", "style": "width: 30px; height: 40px; border-radius: 7px; object-fit: cover; display: block; flex-shrink: 0;" }),
                       $h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;" },
                         $h("span", { "style": "font-size: 13px; font-weight: 600;" },
                           $t(c?.handle)
@@ -474,7 +474,7 @@ export default class LPMobile extends DCLogic {
                 $h("div", { "aria-hidden": "true", "style": "height: 224px; box-sizing: border-box; padding: 16px; background: linear-gradient(180deg, #F4F7FC, #FFFFFF); display: flex; flex-direction: column; gap: 8px;" },
                   $h("span", { "style": "display: flex; justify-content: space-between; align-items: center;" },
                     $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;" },
-                      $h("img", { "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 22px; height: 22px; border-radius: 6px; display: block;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 22px; height: 22px; border-radius: 6px; display: block;" }),
                       "Astra AI"
                     ),
                     $h("span", { "style": "font-size: 11px; font-weight: 700; color: #0B6FE0; background: #EEF4FF; border-radius: 999px; padding: 2px 8px;" },
@@ -543,10 +543,10 @@ export default class LPMobile extends DCLogic {
               $h("div", { "style": "display: flex; width: max-content; animation: lpm-rowLeft 80s linear infinite;" },
                 ($l($v.reel)).map((v) => [
                   $h("div", { "style": "position: relative; flex: 0 0 auto; width: 168px; height: 298px; margin-right: 12px; border-radius: 20px; overflow: hidden; background: #111216; box-shadow: 0 16px 34px rgba(16,24,40,0.18);" },
-                    $h("img", { "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                    $h("img", { "loading": "lazy", "decoding": "async", "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                     $h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 28%, transparent 58%, rgba(0,0,0,0.65));" }),
                     $h("span", { "style": "position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); box-sizing: border-box; background: rgba(255,255,255,0.92); color: #111216; border-radius: 999px; padding: 3px 9px 3px 3px; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; gap: 6px;" },
-                      $h("img", { "src": v?.icon, "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": v?.icon, "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block; flex-shrink: 0;" }),
                       $t(v?.app)
                     ),
                     $h("div", { "style": "position: absolute; left: 10px; right: 10px; bottom: 12px; display: flex; flex-direction: column; color: #FFFFFF;" },
