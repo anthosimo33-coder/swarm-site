@@ -11,7 +11,9 @@ const { build } = require('esbuild');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const entry = path.resolve(process.argv[2] || path.join(root, 'convex/saved.ts'));
 const STUBS = {
-  'convex/values': 'export const v = new Proxy({}, { get: () => () => ({}) }); export class ConvexError extends Error {}',
+  // getConvexSize : le vrai, celui que Convex applique (audit Q39).
+  'convex/values': `export const v = new Proxy({}, { get: () => () => ({}) }); export class ConvexError extends Error {}
+    export { getConvexSize } from ${JSON.stringify(path.join(root, 'node_modules/convex/dist/esm/values/size.js'))};`,
   './session': 'export const liveUserId = async (ctx) => ctx.userId;',
   './_generated/server': 'const id = (d) => d; export const query = id, mutation = id;',
 };
@@ -20,9 +22,9 @@ const out = path.join(dir, 'saved.mjs');
 await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node', outfile: out, logLevel: 'error',
   plugins: [{ name: 'stubs', setup(b) {
     b.onResolve({ filter: /.*/ }, (a) => (STUBS[a.path] !== undefined ? { path: a.path, namespace: 'stub' } : undefined));
-    b.onLoad({ filter: /.*/, namespace: 'stub' }, (a) => ({ contents: STUBS[a.path], loader: 'js' }));
+    b.onLoad({ filter: /.*/, namespace: 'stub' }, (a) => ({ contents: STUBS[a.path], loader: 'js', resolveDir: root }));
   } }] });
-const { get } = await import(pathToFileURL(out).href);
+const { get, set } = await import(pathToFileURL(out).href);
 rmSync(dir, { recursive: true, force: true });
 
 const VALUES = {
@@ -58,5 +60,36 @@ ok(JSON.stringify(ar) === JSON.stringify(VALUES.alertRules) && !arReads.some((r)
 const [plain] = await g('follows', false);
 ok(JSON.stringify(plain) === JSON.stringify(VALUES.follows), 'sans correspondance : la valeur rangée telle quelle');
 ok((await get.handler({ userId: null, db: db(true) }, { key: 'follows' })) === null, 'pas connecté : rien');
+// ─── saved.set (audit Q39, S27) ───────────────────────────────────────────────────────────────────────────────
+const writeDb = (users = { u: { email: 'a@b.c' } }) => {
+  const rows = [];
+  return { rows, get: async (id) => users[id] ?? null,
+    query: () => ({ withIndex: (_n, f) => { const c = {}; const q = { eq: (k, val) => ((c[k] = val), q) }; f(q); return { first: async () => rows.find((r) => r.userId === c.userId && r.key === c.key) ?? null }; } }),
+    insert: async (_t, doc) => { rows.push(doc); }, patch: async (id, p) => Object.assign(rows.find((r) => r === id || r._id === id) ?? {}, p) };
+};
+const put = async (key, value, { userId = 'u', users } = {}) => {
+  const base = writeDb(users);
+  try { await set.handler({ userId, db: base }, { key, value }); return { ok: true, rows: base.rows }; } catch (e) { return { ok: false, err: String(e.message ?? e), rows: base.rows }; }
+};
+for (const [k, val] of Object.entries({ ...VALUES, seen: { alerts: 1794780000000 }, follows: { apps: ['a'] } })) {
+  const r = await put(k, val);
+  ok(r.ok && r.rows.length === 1, `écriture acceptée : ${k} réaliste${r.ok ? '' : ` (${r.err})`}`);
+}
+// 85 000 caractères chinois dans un libellé : 85 Ko de JSON, mais 255 Ko pour Convex → plus de 256 000 octets avec le reste.
+const cjk = [{ id: 'd', name: 'x', createdAt: 1, items: Array.from({ length: 10 }, (_, i) => ({ kind: 'video', id: String(i), label: '漢'.repeat(9_000), cover: null, at: 1 })) }];
+ok(JSON.stringify(cjk).length < 256_000, `contre-épreuve : JSON de ${JSON.stringify(cjk).length} caractères, sous l'ancienne borne`);
+{ const r = await put('folders', cjk); ok(!r.ok && /TROP_LOURD/.test(r.err) && !r.rows.length, `taille comptée comme Convex : ${r.ok ? 'acceptée' : r.err}`); }
+for (const [k, val, why] of [
+  ['follows', { apps: [{ deep: [1, 2, 3] }] }, 'un suivi qui n\'est pas un texte'],
+  ['follows', { autre: 'x' }, 'un champ inconnu dans les suivis'],
+  ['folders', [{ id: 'd', name: 'x', createdAt: 1, items: [{ kind: 'app', id: 'a', label: 'A', cover: null, at: 1, extra: { a: { b: 1 } } }] }], 'une arborescence dans un élément de dossier'],
+  ['folders', { id: 'd' }, 'des dossiers qui ne sont pas une liste'],
+  ['alertRules', [{ id: 'r', quoi: 'video', filtre: { pays: ['FR'] } }], 'une arborescence dans une alerte'],
+  ['seen', { alerts: [1, 2] }, 'un « lu » qui n\'est pas une date'],
+  ['seen', null, 'null'],
+]) { const r = await put(k, val); ok(!r.ok && /FORME_INVALIDE/.test(r.err) && !r.rows.length, `forme refusée : ${why} (${r.ok ? 'acceptée' : r.err})`); }
+{ const r = await put('alertRules', [{ id: 'r', createdAt: 1, quoi: 'video', niche: null, seuil: 1e6, marche: 'FR', langue: 'es' }]); ok(r.ok, `alerte avec un champ simple de plus : acceptée${r.ok ? '' : ` (${r.err})`}`); }
+{ const r = await put('follows', VALUES.follows, { users: {} }); ok(!r.ok && /NON_CONNECTE/.test(r.err) && !r.rows.length, `compte supprimé, session encore ouverte : rien n'est réinséré (audit S27 ; ${r.ok ? 'écrit' : r.err})`); }
+
 console.log(fail ? `${fail} échec(s)` : 'tout passe');
 process.exit(fail ? 1 : 0);
