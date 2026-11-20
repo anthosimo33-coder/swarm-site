@@ -70,6 +70,41 @@ a{color:#4C9AFF}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":390,"height":1840}}'>
 class Component extends DCLogic {
+  // ── Filtres dans l'adresse (audit F25, 19/11) ──
+  // Les filtres de la liste vivent dans la requête de l'adresse, avec les mêmes noms sur ordinateur et sur téléphone :
+  // quand la mise en page bascule (rotation d'un iPad, fenêtre redimensionnée), l'autre version de l'écran se monte et
+  // les relit dans this.props.query. Un choix va dans l'état et dans l'adresse (history.replaceState : pas d'entrée
+  // d'historique, pas de remontage, la position reste). Sur le canevas (pas de props.query) : l'état local, et
+  // location.search en lecture seule. filters() : clé de l'état -> [paramètre, 'l' liste (clé répétée) | 'b' oui/non |
+  // 's' valeur, valeur par défaut (jamais écrite)]. L'écran écarte une valeur qu'il ne connaît pas (son défaut).
+  // colonne et ordre : le tri par colonne de l'ordinateur, que le choix d'un tri efface ici comme là-bas.
+  filters() { return { market: ['m', 's', 'ALL'], niches: ['niche', 'l'], sort: ['tri', 's', 'vues'], period: ['periode', 's', '30'], sortBy: ['colonne', 's'], dir: ['ordre', 's'] }; }
+  fv(k) {
+    const st = this.state || {};
+    if (st[k] !== undefined) return st[k];
+    const d = this.filters()[k];
+    if (!d) return undefined;
+    let q = (this.props || {}).query;
+    if (!q) { try { q = Object.fromEntries(new URLSearchParams(location.search)); } catch (e) { q = {}; } }
+    const l = [].concat(q[d[0]] === undefined || q[d[0]] === null ? [] : q[d[0]]).map(String).filter(Boolean);
+    if (d[1] === 'l') return l.length ? l : undefined;
+    if (!l.length) return undefined;
+    return d[1] === 'b' ? l[l.length - 1] === '1' : l[l.length - 1];
+  }
+  setF(patch) {
+    this.setState(patch);
+    const F = this.filters();
+    if (!(this.props || {}).query || typeof history === 'undefined' || typeof location === 'undefined') return;
+    const sp = new URLSearchParams(location.search);
+    Object.keys(patch).forEach((k) => {
+      if (!F[k]) return;
+      const v = patch[k];
+      sp.delete(F[k][0]);
+      [].concat(v === true ? '1' : v === false || v === null || v === undefined ? [] : v).map(String).filter((s) => s && s !== F[k][2]).forEach((s) => sp.append(F[k][0], s));
+    });
+    const qs = sp.toString();
+    try { history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) { /* adresse refusée : l'état suffit */ }
+  }
 
   renderVals() {
     const b = this.baseVals();
@@ -90,9 +125,6 @@ class Component extends DCLogic {
 return {};
   }
 
-  componentDidMount() {
-    try { const P = this.props || {}; const q = (P.query && P.query.niche) || new URLSearchParams(window.location.search).get('niche'); if (q) this.setState({ niches: [q] }); } catch (e) {}
-  }
   componentDidUpdate(pp, ps) {
     const st = this.state || {}; ps = ps || {};
     if (st.fs && !ps.fs && this.fsClose) this.fsClose.focus();
@@ -112,10 +144,12 @@ return {};
     const nfm = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
     const xfm = (x) => (x >= 100 ? Math.round(x).toLocaleString('en-US').replace(/,/g, '\u202f') : x >= 10 ? String(Math.round(x)) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     // Un pays choisi : sa propre liste (« apps:FR »), où vues, courbe et vidéos ne comptent que ce pays.
-    const mk0 = (this.state || {}).market || 'ALL';
+    // Le marché : l'état, sinon l'adresse (F25, plus haut) ; un marché inconnu vaut « tous ».
+    const mk0 = this.fv('market');
+    const market = mk0 === 'ALL' || (mk0 && (D && D.markets ? D.markets : MKS).some((m) => m[0] === mk0)) ? mk0 : 'ALL';
     let SRC = D;
-    if (D && D.apps && mk0 !== 'ALL' && this.props && typeof this.props.get === 'function') {
-      const g = this.props.get('apps:' + mk0);
+    if (D && D.apps && market !== 'ALL' && this.props && typeof this.props.get === 'function') {
+      const g = this.props.get('apps:' + market);
       // Liste absente (pas encore produite par la synchro) : la liste de tous les pays, filtrée comme avant.
       if (g === undefined) SRC = this.lastSrc || D; else if (g === null) SRC = D; else { SRC = g && g.apps ? g : { apps: [] }; this.lastSrc = SRC; }
     }
@@ -137,9 +171,10 @@ return {};
     const ficheOf = (a) => (a[11] ? 'MFiche.dc.html?app=' + a[11] : 'MFiche.dc.html');
     const videoOf = (a, j) => 'MVideo.dc.html?v=' + ((a[12] && a[12][j]) || vkey(a[8][j]));
     const isNew = (a) => (a[13] !== undefined ? a[13] : !!a[6] && a[6][0] + a[6][1] < 0.2);
-    // La niche de l'adresse (/app/apps?niche=…) : this.props.query sur le site, dès le premier rendu.
-    const qn = this.props && this.props.query && this.props.query.niche;
-    const market = st.market || 'ALL', niches = st.niches || (qn ? [qn] : []), sort = st.sort || 'vues', period = st.period || '30';
+    // Les niches de l'adresse (/app/apps?niche=…, pastilles de l'accueil ou filtres choisis sur l'autre version), le tri et
+    // la période : l'état, sinon l'adresse. Une valeur inconnue (la période personnalisée de l'ordinateur) est ignorée.
+    const niches = (this.fv('niches') || []).filter((n) => NIS.indexOf(n) >= 0), sort0 = this.fv('sort'), period0 = this.fv('period');
+    const sort = ['vues', 'accel', 'nouvelles'].indexOf(sort0) >= 0 ? sort0 : 'vues', period = period0 === '7' ? '7' : '30';
     const fr = (x, d) => x.toFixed(d).replace('.', ',');
     const okM = (a, m) => m === 'ALL' || scoped || a[2].indexOf(m) >= 0;
     const okN = (a, ns) => ns.length === 0 || ns.indexOf(a[1]) >= 0;
@@ -172,13 +207,13 @@ return {};
         kindL: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[a[19]] || '', plc: a[18] > 0 ? a[18] + (a[18] > 1 ? ' placements payés' : ' placement payé') : '', logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank', open: () => this.setState({ pv: a[0] }) }; });
     const mLabel = market === 'ALL' ? 'Tous' : MKS.filter((m) => m[0] === market)[0][1];
     const chips = [];
-    if (market !== 'ALL') chips.push({ label: mLabel, clear: () => this.setState({ market: 'ALL' }) });
-    niches.forEach((n) => chips.push({ label: n, clear: () => this.setState({ niches: niches.filter((x) => x !== n) }) }));
+    if (market !== 'ALL') chips.push({ label: mLabel, clear: () => this.setF({ market: 'ALL' }) });
+    niches.forEach((n) => chips.push({ label: n, clear: () => this.setF({ niches: niches.filter((x) => x !== n) }) }));
     const radio = (on) => ({ box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const mItems = MKS.map((m) => { const n = m[0] === 'ALL' ? (D && D.apps ? D.apps.length : A.length) : (MAPPS && MAPPS[m[0]] !== undefined ? MAPPS[m[0]] : A.filter((r) => r[2].indexOf(m[0]) >= 0).length); const on = market === m[0];
-      return Object.assign({ label: m[1], flag: m[2] || false, n: n + ' apps', sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1, pick: () => this.setState({ market: m[0] }) }, radio(on)); });
+      return Object.assign({ label: m[1], flag: m[2] || false, n: n + ' apps', sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1, pick: () => this.setF({ market: m[0] }) }, radio(on)); });
     const nItems = NIS.map((nm) => { const n = A.filter((r) => okM(r, market) && r[1] === nm && avail(r)).length; const on = niches.indexOf(nm) >= 0;
-      return { label: nm, n, sel: on ? 'true' : 'false', o: n === 0 ? 0.45 : 1, pick: () => this.setState({ niches: on ? niches.filter((x) => x !== nm) : niches.concat([nm]) }) }; });
+      return { label: nm, n, sel: on ? 'true' : 'false', o: n === 0 ? 0.45 : 1, pick: () => this.setF({ niches: on ? niches.filter((x) => x !== nm) : niches.concat([nm]) }) }; });
     const sheetKeys = (k) => (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ [k]: k === 'pv' ? null : false }); } };
     const pa = A.filter((a) => a[0] === st.pv)[0];
     // Suivre une app : sur le site, follows.apps (saved) par slug, comme sur ordinateur — 18/11 : ici, seul l'écran
@@ -234,11 +269,11 @@ return {};
     const swipe = (k) => ({ s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false, pv: null }); this.y0 = null; } });
     return {
       rows, empty: total === 0, emptyText: A.length === 0 ? 'Aucune app à montrer pour l’instant.' : 'Aucune app pour ces filtres.', canClear: A.length > 0, chips, hasChips: chips.length > 0, nf: chips.length || false, mLabel, nLabel: niches.length === 0 ? 'Toutes' : (niches.length === 1 ? niches[0] : niches.length + ' niches'),
-      pLabel: period === '7' ? '7 j' : '30 j', togglePeriod: () => this.setState({ period: period === '7' ? '30' : '7' }),
-      sorts: [['vues', 'Les plus vues'], ['accel', 'Qui accélèrent'], ['nouvelles', 'Nouvelles']].map((s) => ({ l: s[1], on: s[0] === sort ? 'true' : 'false', pick: () => this.setState({ sort: s[0] }) })),
+      pLabel: period === '7' ? '7 j' : '30 j', togglePeriod: () => this.setF({ period: period === '7' ? '30' : '7' }),
+      sorts: [['vues', 'Les plus vues'], ['accel', 'Qui accélèrent'], ['nouvelles', 'Nouvelles']].map((s) => ({ l: s[1], on: s[0] === sort ? 'true' : 'false', pick: () => this.setF({ sort: s[0], sortBy: null, dir: null }) })),
       fs: !!st.fs, fsOpen: st.fs ? 'true' : 'false', openFs: () => this.setState({ fs: true }), closeFs: () => this.setState({ fs: false }), fsKeys: sheetKeys('fs'), setFsClose: (el) => { this.fsClose = el; },
       hasMore: total > limit, moreLabel: 'Voir ' + Math.min(30, total - limit) + ' apps de plus', showMore: () => this.setState({ limit: limit + 30 }),
-      mItems, nItems, seeLabel: total === 0 ? 'Aucune app, élargis les filtres' : (total === 1 ? 'Voir l’app' : 'Voir les ' + total + ' apps'), clearAll: () => this.setState({ market: 'ALL', niches: [], sort: 'vues' }),
+      mItems, nItems, seeLabel: total === 0 ? 'Aucune app, élargis les filtres' : (total === 1 ? 'Voir l’app' : 'Voir les ' + total + ' apps'), clearAll: () => this.setF({ market: 'ALL', niches: [], sort: 'vues' }),
       pv, closePv: () => this.setState({ pv: null }), pvKeys: sheetKeys('pv'), setPvClose: (el) => { this.pvClose = el; },
       tStart: swipe().s, tEnd: swipe().e
     };
