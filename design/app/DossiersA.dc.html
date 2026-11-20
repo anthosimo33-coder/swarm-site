@@ -72,7 +72,7 @@ class Component extends DCLogic {
   shellVals() {
     const st = this.state || {};
     const u = this.props.user;
-    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: String(u.initiale || u.prenom || u.email || '?').charAt(0).toUpperCase() }
+    const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: (Array.from(String(u.initiale || u.prenom || u.email || '?'))[0] || '?').toUpperCase() }
                  : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
     const I = {"accueil": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "apps": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "formats": "M4 5h16v14H4zM10 9l5 3-5 3z", "createurs": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "alertes": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "dossiers": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"};
     const sb = [["accueil", "Accueil", "Main.dc.html"], ["apps", "Apps", "AppsA.dc.html"], ["formats", "Formats", "FormatsB.dc.html"], ["createurs", "Créateurs", "CreateursA.dc.html"], ["alertes", "Alertes", "AlertesA.dc.html"], ["dossiers", "Dossiers", "DossiersA.dc.html"]].map((x) => ({ d: I[x[0]], label: x[1], href: x[2], cur: x[0] === 'dossiers' ? 'page' : 'false' }));
