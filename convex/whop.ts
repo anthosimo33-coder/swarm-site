@@ -253,10 +253,13 @@ export function returnSite(origin: string): string {
  * Déjà Pro ? `users.pro` (paiement reçu, ou posé à la main) ou une adhésion qui donne accès (audit du 19/11, S3 : un
  * compte Pro pouvait repayer, deux adhésions prélevées dont une seule visible et résiliable dans Réglages).
  */
+/** Le compte est-il déjà Pro (ou payé) ? null : il n'existe plus (fermé pendant qu'une session tournait, audit S27). */
 export const alreadyPro = internalQuery({
   args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => {
-    if ((await ctx.db.get(userId))?.pro === true) return true;
+  handler: async (ctx, { userId }): Promise<boolean | null> => {
+    const user = await ctx.db.get(userId);
+    if (user === null) return null;
+    if (user.pro === true) return true;
     return (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).some(hasAccess);
   },
 });
@@ -272,7 +275,10 @@ export const checkout = action({
   handler: async (ctx, { formule, origin }): Promise<{ url: string }> => {
     const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
-    if (await ctx.runQuery(internal.whop.alreadyPro, { userId })) throw new ConvexError({ code: "DEJA_ABONNE" });
+    const pro: boolean | null = await ctx.runQuery(internal.whop.alreadyPro, { userId });
+    // Audit S27 : un compte effacé ne crée plus de lien de paiement (payé, il aurait donné accès à personne).
+    if (pro === null) throw new Error("Non connecté");
+    if (pro) throw new ConvexError({ code: "DEJA_ABONNE" });
     // Audit F6 : chaque appel créait un objet chez Whop, sans limite. Le même lien est resservi pendant 1 h (même
     // compte, même tarif, donc jamais un lien Black Friday après la fin, même site de retour) ; au-delà de 10 liens
     // neufs par heure, TROP_DE_DEMANDES.
@@ -384,8 +390,15 @@ export const saveMembership = internalMutation({
       periodEnd: a.periodEnd ?? old?.periodEnd ?? null, cancelAtPeriodEnd: a.cancelAtPeriodEnd, manageUrl: a.manageUrl ?? old?.manageUrl ?? null,
       updatedAt: Date.now(), ...(a.whopUpdatedAt ? { whopUpdatedAt: a.whopUpdatedAt } : {}),
     };
+    const before = old?.userId ?? null; // lu avant l'écriture
     if (old) await ctx.db.patch(old._id, row);
     else await ctx.db.insert("subscriptions", row);
+    // Audit Q34 (19/11) : l'adhésion passée à un autre compte (metadata.kopycat_user changé chez Whop) ; l'ancien
+    // titulaire gardait Pro sans adhésion. Son accès est recalculé.
+    if (before && before !== userId) await recomputePro(ctx, before);
+    // Audit Q73 : un paiement arrivé avant son adhésion, sans metadata, était rangé sans compte et n'apparaissait jamais
+    // dans Réglages. Les paiements de cette adhésion encore sans compte lui sont rattachés.
+    if (userId) await attachPayments(ctx, a.membershipId, userId);
     // Achat sans compte relié (fait hors de l'app, audit Q29) : gardé, listé par whop:sansCompte, rattaché à la main.
     if (userId === null) {
       console.error(`[whop] adhésion ${a.membershipId} sans compte Kopycat : à rattacher (npx convex run whop:rattacher)`);
@@ -417,12 +430,26 @@ export const rattacher = internalMutation({
     if (!sub) return { ok: false, raison: "adhésion inconnue" };
     if (sub.userId && sub.userId !== users[0]._id) return { ok: false, raison: "adhésion déjà reliée à un autre compte" };
     await ctx.db.patch(sub._id, { userId: users[0]._id, updatedAt: Date.now() });
-    for (const p of await ctx.db.query("whopPayments").withIndex("by_user", (q) => q.eq("userId", null)).collect()) {
-      if (p.membershipId === membershipId) await ctx.db.patch(p._id, { userId: users[0]._id });
-    }
+    await attachPayments(ctx, membershipId, users[0]._id);
     return { ok: true, pro: await recomputePro(ctx, users[0]._id) };
   },
 });
+
+/** Rattache au compte les paiements d'une adhésion encore sans compte (Q29, Q73). */
+async function attachPayments(ctx: MutationCtx, membershipId: string, userId: Id<"users">) {
+  for (const p of await ctx.db.query("whopPayments").withIndex("by_user", (q) => q.eq("userId", null)).collect()) {
+    if (p.membershipId === membershipId) await ctx.db.patch(p._id, { userId });
+  }
+}
+
+/**
+ * Un statut de paiement ne recule pas (audit Q35, 19/11) : un payment.succeeded rejoué après un remboursement remettait
+ * « paid », et le reçu affichait « Payé » au lieu de « Remboursé ». refunded et disputed ne cèdent qu'entre eux ; paid ne
+ * redevient pas pending ni failed.
+ */
+const PAYMENT_RANK: Record<string, number> = { pending: 0, failed: 1, paid: 2, refunded: 3, disputed: 3 };
+export const nextPaymentStatus = (before: string | null | undefined, incoming: string) =>
+  before && (PAYMENT_RANK[before] ?? -1) > (PAYMENT_RANK[incoming] ?? -1) ? before : incoming;
 
 export const savePayment = internalMutation({
   args: { paymentId: v.string(), userKey: v.union(v.string(), v.null()), membershipId: v.union(v.string(), v.null()), total: v.union(v.string(), v.null()), currency: v.union(v.string(), v.null()), status: v.string(), createdAt: v.number() },
@@ -431,7 +458,7 @@ export const savePayment = internalMutation({
     let userId: Id<"users"> | null = a.userKey ? ctx.db.normalizeId("users", a.userKey) : null;
     if (userId && !(await ctx.db.get(userId))) userId = null;
     if (!userId && a.membershipId) userId = (await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", a.membershipId!)).first())?.userId ?? null;
-    const row = { paymentId: a.paymentId, userId: userId ?? old?.userId ?? null, membershipId: a.membershipId ?? old?.membershipId ?? null, total: a.total ?? old?.total ?? null, currency: a.currency ?? old?.currency ?? null, status: a.status, createdAt: old?.createdAt ?? a.createdAt };
+    const row = { paymentId: a.paymentId, userId: userId ?? old?.userId ?? null, membershipId: a.membershipId ?? old?.membershipId ?? null, total: a.total ?? old?.total ?? null, currency: a.currency ?? old?.currency ?? null, status: nextPaymentStatus(old?.status, a.status), createdAt: old?.createdAt ?? a.createdAt };
     if (old) await ctx.db.patch(old._id, row);
     else await ctx.db.insert("whopPayments", row);
   },
@@ -581,7 +608,8 @@ function sameText(a: string, b: string) {
   return d === 0;
 }
 export async function verifySignature(secret: string, id: string, ts: string, body: string, header: string): Promise<boolean> {
-  const sent = header.split(" ").map((p) => p.split(",")[1]).filter(Boolean);
+  // « v1,<signature> », séparées par des espaces ; une autre version n'est pas comprise, donc refusée (audit Q41).
+  const sent = header.split(" ").map((p) => p.split(",")).filter(([version, sig]) => version === "v1" && !!sig).map(([, sig]) => sig);
   const msg = enc.encode(`${id}.${ts}.${body}`);
   for (const k of keyCandidates(secret)) {
     const key = await crypto.subtle.importKey("raw", k as unknown as ArrayBuffer, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -688,7 +716,7 @@ export const verifierPaiement = action({
     const list: Json[] = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
     const mine = list.filter((m) => String(m.metadata?.kopycat_user ?? "") === userId && m.id);
     for (const m of mine) await syncMembership(ctx, String(m.id), m);
-    return { pro: await ctx.runQuery(internal.whop.alreadyPro, { userId }), trouvees: mine.length };
+    return { pro: (await ctx.runQuery(internal.whop.alreadyPro, { userId })) === true, trouvees: mine.length };
   },
 });
 

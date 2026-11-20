@@ -304,4 +304,81 @@ async function paidWorld(mem, pay) {
   ok(refused > 0, `Q6 : vérification limitée (refus au ${refused || '?'}e appel en 10 min)`);
 }
 
+// ─── Constats « basse » (phase 2) ───
+// Q41 : la vérification de signature sur le vecteur publié de Standard Webhooks, et les refus du webhook.
+{
+  const vs = mods.whop.verifySignature;
+  const sec = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw', id = 'msg_p5jXN8AQM9LWM0D4loKWxJek', ts = '1614265330', body = '{"test": 2432232314}';
+  const good = 'v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=';
+  ok(await vs(sec, id, ts, body, good), 'Q41 : vecteur publié de Standard Webhooks accepté');
+  ok(await vs(sec, id, ts, body, 'v1,faux v1,autrefaux ' + good), 'Q41 : plusieurs signatures dans l\'en-tête, la bonne suffit');
+  ok(!(await vs(sec, id, ts, body + ' ', good)), 'Q41 : corps modifié refusé');
+  ok(!(await vs(sec, id, '1614265331', body, good)), 'Q41 : horodatage modifié refusé');
+  ok(!(await vs(sec, 'msg_autre', ts, body, good)), 'Q41 : identifiant modifié refusé');
+  ok(!(await vs(sec, id, ts, body, good.replace('v1,', 'v2,'))), 'Q41 : version de signature inconnue refusée');
+  resetWhop();
+  const w = await world();
+  const post = async (headers, b = '{"type":"membership.went_valid","data":{"id":"mem_x"}}') => {
+    const res = await quiet(() => mods.whop.webhook(w.ctx, new Request('https://x.convex.site/whop/webhook', { method: 'POST', body: b, headers })));
+    return res.status;
+  };
+  const sign = (wid, wts, b) => 'v1,' + createHmac('sha256', Buffer.from('dGVzdA==', 'base64')).update(`${wid}.${wts}.${b}`).digest('base64');
+  const old = String(Math.floor(Date.now() / 1000) - 600), b0 = '{"type":"membership.went_valid","data":{"id":"mem_x"}}';
+  ok((await post({ 'webhook-id': 'e1', 'webhook-timestamp': old, 'webhook-signature': sign('e1', old, b0) })) === 400, 'Q41 : horodatage de plus de 5 min refusé (400), même bien signé');
+  ok((await post({ 'webhook-id': 'e2' })) === 400, 'Q41 : en-têtes de signature absents (400)');
+  const now = String(Math.floor(Date.now() / 1000));
+  ok((await post({ 'webhook-id': 'e3', 'webhook-timestamp': now, 'webhook-signature': sign('e3', now, b0 + 'x') })) === 401, 'Q41 : signature d\'un autre corps refusée (401)');
+}
+
+// Q34 : une adhésion déplacée vers un autre compte retire Pro à l'ancien titulaire.
+{
+  resetWhop();
+  const w = await world();
+  const u2 = await w.m.db.insert('users', { email: 'b@exemple.fr' });
+  whop.memberships.mem_q34 = { id: 'mem_q34', status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: w.userId }, cancel_at_period_end: false };
+  await deliver(w, 'evt_q34a', { type: 'membership.went_valid', data: { id: 'mem_q34' } });
+  const before = (await w.m.db.get(w.userId)).pro === true;
+  whop.memberships.mem_q34.metadata = { kopycat_user: u2 };
+  await deliver(w, 'evt_q34b', { type: 'membership.updated', data: { id: 'mem_q34' } });
+  ok(before && (await w.m.db.get(u2)).pro === true && (await w.m.db.get(w.userId)).pro !== true,
+    `Q34 : adhésion passée à un autre compte, le nouveau est Pro et l'ancien ne l'est plus (${(await w.m.db.get(w.userId)).pro})`);
+}
+
+// Q35 : un statut de paiement ne recule pas.
+{
+  resetWhop();
+  const w = await world();
+  whop.memberships.mem_q35 = { id: 'mem_q35', status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: w.userId }, cancel_at_period_end: false };
+  const pay = { id: 'pay_q35', membership_id: 'mem_q35', metadata: { kopycat_user: w.userId }, total: 29.99, currency: 'eur' };
+  whop.payments.pay_q35 = { ...pay };
+  await deliver(w, 'evt_q35a', { type: 'payment.pending', data: { ...pay, status: 'pending' } });
+  await deliver(w, 'evt_q35b', { type: 'payment.succeeded', data: pay });
+  const paid = w.m.rows('whopPayments').find((p) => p.paymentId === 'pay_q35')?.status;
+  await deliver(w, 'evt_q35c', { type: 'refund.created', data: { id: 're_1', payment_id: 'pay_q35', status: 'succeeded', amount: 29.99 } });
+  await deliver(w, 'evt_q35d', { type: 'payment.succeeded', data: pay }); // renvoi tardif, autre événement
+  const st = w.m.rows('whopPayments').find((p) => p.paymentId === 'pay_q35')?.status;
+  ok(paid === 'paid' && st === 'refunded', `Q35 : en attente puis payé (${paid}) ; remboursé puis payment.succeeded rejoué : reste remboursé (${st})`);
+}
+
+// Q73 : un paiement arrivé avant son adhésion, sans metadata, est rattaché au compte et apparaît dans Réglages.
+{
+  resetWhop();
+  const w = await world();
+  whop.memberships.mem_q73 = { id: 'mem_q73', status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: w.userId }, cancel_at_period_end: false };
+  const r = await deliver(w, 'evt_q73', { type: 'payment.succeeded', data: { id: 'pay_q73', membership_id: 'mem_q73', total: 29.99, currency: 'eur' } });
+  const row = w.m.rows('whopPayments').find((p) => p.paymentId === 'pay_q73');
+  const mine = await mods.whop.mine.handler(w.ctx, {});
+  ok(r.status === 200 && row?.userId === w.userId && (mine?.payments ?? []).some((p) => p.id === 'pay_q73' || p.paymentId === 'pay_q73'),
+    `Q73 : paiement d'abord, adhésion ensuite : le reçu est rattaché au compte (${row?.userId === w.userId ? 'rattaché' : 'sans compte'})`);
+}
+
+// S27 : un compte effacé dont une session tourne encore ne crée pas de lien de paiement.
+{
+  resetWhop();
+  const w = await world();
+  await w.m.db.delete(w.userId);
+  const r = await checkout(w, 'mensuel', NOV25);
+  ok(!r.url && !whop.calls.some((c) => c.path === '/checkout_configurations'), `S27 : compte effacé, aucun lien de paiement (${r.code ?? r.url})`);
+}
+
 end();
