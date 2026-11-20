@@ -28,7 +28,7 @@
 import { CURVE_COUNTS, CURVE_PAGES_PER_PASS, cleanText, langBucket, mentionLabel, type CurveCounts, type SignalInput } from "./radarSignalsMath";
 import { cutJson } from "./radarStoreMath";
 import { isTikTokVideoId, reasonOf, type UnavailableReason } from "./radarAvailabilityMath";
-import { parseTikTokPublicPage } from "./tiktokPublicPage";
+import { SELF_SEE_STATUS_CODE, parseTikTokPublicPage, refusalLabel } from "./tiktokPublicPage";
 
 const HOUR = 3_600_000;
 
@@ -235,19 +235,25 @@ export type NewestKnown = { videoId: string; publishedAt: number };
  * Pourquoi le relevé gratuit n'a pas abouti — le compte passe alors au relevé payant :
  *  absent : le profil n'existe plus à cette adresse · suspect : TikTok n'a pas servi le profil ·
  *  private / empty : rien à lire sur le profil · detail : la page d'une vidéo inconnue ne s'est pas lue ·
- *  gap : la liste ne va pas jusqu'à la dernière vidéo qu'on a de lui (cf `listGap`).
+ *  gap : la liste ne va pas jusqu'à la dernière vidéo qu'on a de lui (cf `listGap`), et rien ne prouve qu'elle est
+ *  seulement supprimée (cf `gapGone`).
  */
 export type FreeWhy = "absent" | "suspect" | "private" | "empty" | "detail" | "gap";
 
+/**
+ * `gapChecked` : la dernière vidéo connue manquait à la liste, et sa page dit qu'elle n'est plus en ligne (`gapGone`) :
+ * le relevé a continué ; l'appelant la marque vérifiée (radarNetworks.markGapChecked), comme le relevé payant l'aurait fait.
+ */
 export type FreeRead =
-  | { ok: true; videos: SignalInput[]; light: LightVideo[]; profile: { fans: number; bio: string }; pages: number }
+  | { ok: true; videos: SignalInput[]; light: LightVideo[]; profile: { fans: number; bio: string }; pages: number; gapChecked?: string }
   | { ok: false; why: FreeWhy; pages: number; reason?: string; newest?: NewestKnown };
 
 /**
  * La liste d'un profil ne donne que ses 10 à 13 dernières vidéos (le relevé payant, 9). Un compte qui en publie plus
  * entre deux relevés en perd : celles d'avant la liste ne seraient jamais vues. On le sait quand la vidéo la plus
- * récente qu'on avait de lui n'y est plus — elle a été poussée hors de la liste (ou supprimée : le relevé payant le
- * dira, cf `gapChecked`). Le compte est alors relevé en payant, page après page, jusqu'à la retrouver.
+ * récente qu'on avait de lui n'y est plus — elle a été poussée hors de la liste, ou supprimée (sa page le dit, cf
+ * `gapGone` ; sinon le relevé payant, cf `gapChecked`). Le compte est alors relevé en payant, page après page,
+ * jusqu'à la retrouver.
  */
 export const listGap = (listed: readonly FreeListed[], newest: NewestKnown | null): boolean =>
   newest !== null && listed.length > 0 && !listed.some((v) => v.videoId === newest.videoId);
@@ -262,6 +268,50 @@ export const GAP_PAGES = 3;
 export function gapReached(videos: readonly { videoId: string; publishedAt: number }[], newest: NewestKnown): { done: boolean; found: boolean } {
   const found = videos.some((v) => v.videoId === newest.videoId);
   return { found, done: found || videos.some((v) => v.publishedAt < newest.publishedAt) };
+}
+
+/*
+ * LE TROU VÉRIFIÉ SUR LA PAGE DE LA VIDÉO (20/11/2026). Le relevé payant d'un trou (1 à 3 crédits ; 12, 50, 72, 132,
+ * 168, 178 et 101 crédits « trou » du 14 au 20/11) sert souvent à constater que la dernière vidéo connue a été
+ * SUPPRIMÉE : au moins 290 des 718 crédits « trou » du 06 au 20/11 (étude du 20/11). Sa page publique le dit sans
+ * crédit. Le trou n'en est pas un si, et seulement si, `gapGone` ET `listReaches` : le relevé gratuit continue, la
+ * vidéo est marquée vérifiée (`gapChecked`), comme le relevé payant l'aurait fait. Sinon, payant comme avant.
+ */
+
+/**
+ * La liste du profil remonte-t-elle au-delà de la dernière vidéo connue ? C'est la règle d'arrêt même du relevé payant
+ * (`gapReached`) : une vidéo publiée AVANT elle y est, donc tout ce qui est sorti depuis y est aussi, et le payant
+ * n'aurait rien lu de plus (sa première page, 9 vidéos, s'arrête dessus ; la liste en porte 10 à 13). Sinon, le compte
+ * a pu publier plus que la liste depuis : vrai trou possible.
+ * Les dates sont les VRAIES dates de publication, celles des vidéos déjà rangées (`known`) : la date d'une vidéo de la
+ * liste, lue dans son identifiant, est celle du téléversement, qu'une vidéo programmée porte des heures ou des jours
+ * avant de sortir (instantané du 20/11/2026 : 5 426 vidéos rangées sur 196 334 publiées plus d'une heure après, 2 537
+ * plus d'un jour) ; elle ferait croire la liste plus longue qu'elle n'est. Une vidéo qu'on n'a pas ne compte donc pas.
+ * Faiblesse partagée avec le relevé payant : une vidéo ÉPINGLÉE reste en tête de liste quelle que soit sa date, et,
+ * plus ancienne que la dernière connue, fait « remonter » la liste sans couvrir ce qui est sorti entre les deux. Le
+ * payant s'arrête sur elle de même (sa première page porte les épinglées) : la liste, plus longue, n'y perd rien de plus.
+ */
+export function listReaches(listed: readonly FreeListed[], known: readonly KnownVideo[], newest: NewestKnown): boolean {
+  const ids = new Set(listed.map((v) => v.videoId));
+  const dated: NewestKnown[] = [];
+  for (const k of known) if (ids.has(k.videoId) && k.publishedAt !== undefined) dated.push({ videoId: k.videoId, publishedAt: k.publishedAt });
+  return gapReached(dated, newest).done;
+}
+
+/** Ce que TikTok dit, sous le code 10204, d'une vidéo qui n'est plus publique pour de bon (tiktokPublicPage.refusalLabel). */
+const GONE_LABELS: readonly string[] = ["supprimé", "visible par son autrice uniquement"];
+
+/**
+ * La page de la vidéo dit-elle qu'elle n'est plus publique ? Supprimée, « n'existe pas », visible par son autrice
+ * seule : 10204 (les autres motifs servis sous ce code, réservée aux amis ou en vérification, prennent le libellé du
+ * code : pas publiques non plus). Le relevé payant ne lit que ce qui est public : il ne l'aurait pas retrouvée.
+ * Rien d'autre ne conclut : une page servie (la vidéo est en ligne — une vidéo « photo », que la liste d'intégration
+ * ne porte pas, en est une), bloquée hors de sa région (10231, ou « cross_border » dans le message : elle existe
+ * ailleurs), un code inconnu, une page illisible.
+ */
+export function gapGone(html: string, videoId: string): boolean {
+  const r = parseTikTokPublicPage(html, videoId);
+  return r.kind === "refused" && r.statusCode === SELF_SEE_STATUS_CODE && GONE_LABELS.includes(refusalLabel(r.statusCode, r.statusMsg));
 }
 
 /**
@@ -298,8 +348,16 @@ export async function freeRead(
   if (profile.videos.length === 0) return { ok: false, why: "empty", pages };
   // Avant toute page de vidéo : un trou dans la liste se comble en payant, ces pages-là seraient perdues.
   const newest = io.newest ? await io.newest() : null;
-  if (newest && listGap(profile.videos, newest)) return { ok: false, why: "gap", pages, newest };
   const known = await io.known(profile.videos.map((v) => v.videoId));
+  let gapChecked: string | undefined;
+  if (newest && listGap(profile.videos, newest)) {
+    // Sa page n'est lue que si la liste remonte au-delà d'elle : sinon, supprimée ou non, le trou reste possible.
+    if (!listReaches(profile.videos, known, newest)) return { ok: false, why: "gap", pages, newest };
+    pages++;
+    const page = await io.page(freeVideoUrl(handle, newest.videoId));
+    if (!page.ok || !gapGone(page.text, newest.videoId)) return { ok: false, why: "gap", pages, newest };
+    gapChecked = newest.videoId;
+  }
   const byId = new Map(known.map((k) => [k.videoId, k]));
   const plan = freePlan(profile.videos, known, now, wantRegion);
   const videos: SignalInput[] = [];
@@ -334,7 +392,7 @@ export async function freeRead(
       ...(profile.bio ? { authorBio: profile.bio } : {}),
     });
   }
-  return { ok: true, videos, light, profile: { fans: profile.fans, bio: profile.bio }, pages };
+  return { ok: true, videos, light, profile: { fans: profile.fans, bio: profile.bio }, pages, ...(gapChecked ? { gapChecked } : {}) };
 }
 
 /** L'état du relevé gratuit pendant un passage : il s'éteint après FREE_BREAKER profils refusés d'affilée. */

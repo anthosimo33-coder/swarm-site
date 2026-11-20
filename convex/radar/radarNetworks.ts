@@ -227,7 +227,7 @@ export const freeKnown = internalQuery({
 /**
  * La vidéo TikTok la plus récente qu'on a de ce compte, pour contrôler que la liste de son profil va jusqu'à elle
  * (radarFreeMath.listGap). `null` quand on n'en a aucune, ou quand c'est celle qu'un relevé payant n'a déjà pas
- * retrouvée (supprimée : `gapChecked`) — sinon chaque relevé du compte repartirait en payant.
+ * retrouvée, ou que sa page dit supprimée (`gapChecked`) — sinon chaque relevé du compte repartirait en payant.
  */
 async function freeNewestCore(ctx: QueryCtx, accountId: Id<"radarTracked">): Promise<NewestKnown | null> {
   const acc = await ctx.db.get(accountId);
@@ -246,7 +246,10 @@ export const freeNewest = internalQuery({
   handler: (ctx, { accountId }): Promise<NewestKnown | null> => freeNewestCore(ctx, accountId),
 });
 
-/** Le relevé payant d'un trou n'a pas retrouvé cette vidéo (supprimée, rendue privée) : elle ne déclenche plus de trou. */
+/**
+ * Le relevé payant d'un trou n'a pas retrouvé cette vidéo (supprimée, rendue privée), ou sa page publique le dit
+ * (radarFreeMath.gapGone) : elle ne déclenche plus de trou.
+ */
 export const markGapChecked = internalMutation({
   args: { accountId: v.id("radarTracked"), videoId: v.string() },
   handler: async (ctx, { accountId, videoId }) => {
@@ -1424,6 +1427,12 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
             const f = await freeRead(acc.handle, { page: freePage, known, newest }, now, undefined, !acc.located);
             if (!f.ok) return f;
             await ctx.runMutation(internal.radar.radarNetworks.applyAccountRead, { accountId: acc.id, videos: f.videos, light: f.light, profile: f.profile, now, ...(apps ? { apps } : {}) });
+            // Sa dernière vidéo manquait à la liste et sa page la dit supprimée (radarFreeMath.gapGone) : le relevé
+            // payant du trou (au moins 1 crédit) n'est pas parti.
+            if (f.gapChecked) {
+              await ctx.runMutation(internal.radar.radarNetworks.markGapChecked, { accountId: acc.id, videoId: f.gapChecked });
+              usage.spare("trou", 1);
+            }
           } catch (e) {
             // Lu gratuitement mais pas rangé : il reste dû, relu gratuitement au passage suivant (pas de repli payant :
             // l'écriture échouerait de même).

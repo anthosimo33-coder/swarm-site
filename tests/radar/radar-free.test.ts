@@ -15,12 +15,14 @@ import {
   freeRead,
   freeStart,
   freeVideoUrl,
+  gapGone,
   gapReached,
   FIRST_FREE_PER_PASS,
   firstReadMisses,
   laneOrder,
   laneQueue,
   listGap,
+  listReaches,
   missCounts,
   overflowToPay,
   paced,
@@ -228,6 +230,105 @@ describe("Radar — relevé gratuit : la liste trouée (14/11/2026)", () => {
     expect(gapReached(liste, cible)).toEqual({ done: true, found: true });
     // Une vidéo plus ancienne que la cible est arrivée, sans la cible : elle n'est plus en ligne.
     expect(gapReached([liste[0], { videoId: V_VIEILLE, publishedAt: videoIdTime(V_VIEILLE) }], cible)).toEqual({ done: true, found: false });
+  });
+});
+
+describe("Radar — relevé gratuit : le trou vérifié sur la page de la vidéo (20/11/2026)", () => {
+  // La dernière vidéo qu'on a du compte, publiée il y a 3 jours, absente de sa liste.
+  const V_PARTIE = idAt(NOW - 3 * 24 * HOUR, 5);
+  const newest = { videoId: V_PARTIE, publishedAt: videoIdTime(V_PARTIE) };
+  const refus = (statusCode: number, statusMsg: string) =>
+    `<html><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({ __DEFAULT_SCOPE__: { "webapp.video-detail": { statusCode, statusMsg } } })}</script></html>`;
+  const listed = (ids: string[]) => ids.map((videoId) => ({ videoId, caption: "", views: 1, publishedAt: videoIdTime(videoId) }));
+  const rangee = (videoId: string, publishedAt = videoIdTime(videoId)): KnownVideo => ({ videoId, publishedAt });
+
+  it("sa page dit qu'elle n'est plus publique : supprimée, n'existe pas, visible par son autrice seule (10204)", () => {
+    expect(gapGone(supprimee, V_PARTIE)).toBe(true);
+    expect(gapGone(refus(10204, "video has been deleted"), V_PARTIE)).toBe(true);
+    expect(gapGone(refus(10204, "item_privacy_authorization&status_self_see"), V_PARTIE)).toBe(true);
+    expect(gapGone(refus(10204, ""), V_PARTIE)).toBe(true);
+    // Bloquée hors de sa région : elle existe ailleurs (le relevé payant peut la voir).
+    expect(gapGone(refus(10231, "cross_border_violation"), V_PARTIE)).toBe(false);
+    expect(gapGone(refus(10204, "author_secret,cross_border_violation"), V_PARTIE)).toBe(false);
+    // Un code inconnu, une vidéo servie (en ligne, une vidéo « photo » comprise), une page illisible : rien ne conclut.
+    expect(gapGone(refus(10101, "item doesn't exist"), V_PARTIE)).toBe(false);
+    expect(gapGone(video(V_PARTIE), V_PARTIE)).toBe(false);
+    expect(gapGone("<html>ratelimit triggered</html>", V_PARTIE)).toBe(false);
+  });
+
+  it("la liste remonte au-delà d'elle : une vidéo DÉJÀ RANGÉE, publiée avant elle (sa vraie date), y est", () => {
+    const liste = listed([V_NEUVE, V_HIER, V_SEMAINE]);
+    expect(listReaches(liste, [rangee(V_SEMAINE)], newest)).toBe(true);
+    // Que des vidéos sorties depuis : le compte a pu publier plus que la liste, vrai trou possible.
+    expect(listReaches(listed([V_NEUVE, V_HIER]), [rangee(V_HIER)], newest)).toBe(false);
+    // Une vidéo qu'on n'a pas : sa date est celle de son téléversement, elle ne prouve rien.
+    expect(listReaches(liste, [], newest)).toBe(false);
+    // Téléversée avant elle mais programmée, publiée après : la vraie date fait foi.
+    expect(listReaches(liste, [rangee(V_SEMAINE, NOW - 2 * HOUR)], newest)).toBe(false);
+    // Rangée mais plus dans la liste : elle ne dit rien de la liste.
+    expect(listReaches(listed([V_NEUVE, V_HIER]), [rangee(V_SEMAINE)], newest)).toBe(false);
+  });
+
+  const P = freeProfileUrl("lea.revise");
+  const U = (id: string) => freeVideoUrl("lea.revise", id);
+  const read = async (ids: string[], partie: FreePage | string | undefined, known: KnownVideo[]) => {
+    const asked: string[] = [];
+    const pages: Record<string, FreePage | string | undefined> = { [P]: profil(ids.map((id) => ({ id, playCount: 500 }))), [U(V_PARTIE)]: partie, [U(V_NEUVE)]: video(V_NEUVE), [U(V_HIER)]: video(V_HIER) };
+    const r = await freeRead(
+      "lea.revise",
+      {
+        page: async (url: string): Promise<FreePage> => {
+          asked.push(url);
+          const p = pages[url];
+          return p === undefined ? { ok: false, kind: "absent" } : typeof p === "string" ? { ok: true, text: p } : p;
+        },
+        known: async (ids2: string[]) => known.filter((k) => ids2.includes(k.videoId)),
+        newest: async () => newest,
+      },
+      NOW,
+    );
+    return { r, asked };
+  };
+
+  it("supprimée et la liste remonte : le relevé gratuit continue, la vidéo est vérifiée, sa page comptée", async () => {
+    const { r, asked } = await read([V_NEUVE, V_HIER, V_SEMAINE], supprimee, [rangee(V_SEMAINE)]);
+    expect(asked).toEqual([P, U(V_PARTIE), U(V_NEUVE), U(V_HIER)]);
+    expect(r).toMatchObject({ ok: true, gapChecked: V_PARTIE, pages: 4 });
+    if (!r.ok) throw new Error("relevé gratuit attendu");
+    expect(r.videos.map((v) => v.videoId)).toEqual([V_NEUVE, V_HIER]);
+    expect(r.light.map((v) => v.videoId)).toEqual([V_SEMAINE]);
+  });
+
+  it("supprimée mais la liste ne remonte pas : trou, sans lire sa page", async () => {
+    const { r, asked } = await read([V_NEUVE, V_HIER], supprimee, [rangee(V_HIER)]);
+    expect(r).toEqual({ ok: false, why: "gap", pages: 1, newest });
+    expect(asked).toEqual([P]);
+    // Une vieille vidéo qu'on n'a pas (date de téléversement seule) ne suffit pas.
+    expect((await read([V_NEUVE, V_HIER, V_VIEILLE], supprimee, [])).r).toEqual({ ok: false, why: "gap", pages: 1, newest });
+  });
+
+  it("en ligne, bloquée hors de sa région, code inconnu, page illisible, refusée ou absente : trou, payant comme avant", async () => {
+    const liste = [V_NEUVE, V_HIER, V_SEMAINE];
+    const cases: (FreePage | string | undefined)[] = [
+      video(V_PARTIE),
+      refus(10231, "cross_border_violation"),
+      refus(10101, "item doesn't exist"),
+      "<html>ratelimit triggered</html>",
+      { ok: false, kind: "suspect", reason: "HTTP 429" },
+      undefined,
+    ];
+    for (const partie of cases) {
+      const { r, asked } = await read(liste, partie, [rangee(V_SEMAINE)]);
+      expect(r).toEqual({ ok: false, why: "gap", pages: 2, newest });
+      expect(asked).toEqual([P, U(V_PARTIE)]);
+    }
+  });
+
+  it("pas de trou : sa page n'est pas lue, rien n'est marqué", async () => {
+    const { r, asked } = await read([V_NEUVE, V_PARTIE, V_SEMAINE], supprimee, [rangee(V_PARTIE), rangee(V_SEMAINE)]);
+    expect(asked).toEqual([P, U(V_NEUVE)]);
+    expect(r).toMatchObject({ ok: true, pages: 2 });
+    expect(r).not.toHaveProperty("gapChecked");
   });
 });
 
