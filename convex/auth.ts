@@ -152,8 +152,22 @@ const googleReady = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGL
  */
 const MAX_SESSIONS = 3;
 
+/**
+ * Google avec son drapeau email_verified (audit S25). Le profil par défaut de Convex Auth le jetait, et toute adresse
+ * Google était tenue pour vérifiée, donc rattachée au compte vérifié de même adresse : un compte Google montrant
+ * l'adresse d'autrui sans l'avoir vérifiée pouvait prendre ce compte. Convex Auth respecte un emailVerified false
+ * (implementation/users.js:22).
+ */
+const google = Google({
+  profile: (p) => {
+    // emailVerified n'est pas dans le type User de @auth/core, mais Convex Auth le lit : objet nommé, sans conversion.
+    const user = { id: p.sub, name: p.name, email: p.email, image: p.picture, emailVerified: p.email_verified === true };
+    return user;
+  },
+});
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: googleReady ? [password, Google] : [password],
+  providers: googleReady ? [password, google] : [password],
   callbacks: {
     async beforeSessionCreation(anyCtx, { userId }) {
       const ctx = anyCtx as unknown as MutationCtx; // le crochet reçoit un contexte générique : c'est celui de auth:store
