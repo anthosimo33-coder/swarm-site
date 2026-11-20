@@ -4,10 +4,6 @@ import { query, type QueryCtx } from "./_generated/server";
 import { avatarUrl, COVER_ID, coverUrl, HANDLE } from "./coverSign";
 
 /**
- * Les données d'un écran de l'app (« apps », « app:astraai », « video:<id> »…),
- * réservées aux personnes connectées. null : pas connecté, ou écran sans données.
- */
-/**
  * Une miniature de vidéo passe toujours par /cover/<id> (convex/coverHttp.ts) : la copie rangée
  * (redirection), sinon copiée à la première vue, et recopiée si la copie est inutilisable (HEIC).
  * Jamais un lien TikTok signé qui expire, ni un vide quand la vidéo en a une. Chaque adresse est signée
@@ -121,6 +117,10 @@ async function preview(ctx: QueryCtx, key: string): Promise<unknown> {
   return LOCKED;
 }
 
+/**
+ * Les données d'un écran de l'app (« apps », « app:astraai », « video:<id> »…), réservées aux personnes connectées.
+ * null : pas connecté, ou écran sans données ; LOCKED : fermé sans abonnement (preview).
+ */
 export const get = query({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {

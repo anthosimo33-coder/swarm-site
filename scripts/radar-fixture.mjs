@@ -99,20 +99,17 @@ export function fixtureRaw() {
   return { apps, tracked, trackedVideos, formats, signals };
 }
 
-/** Les options de la synchro (radarSync.ts, boardOpts) pour un magasin d'images donné. */
+/**
+ * Les options de la synchro (radarSync.ts, boardOpts) pour un magasin d'images donné. L'adresse /cover d'une miniature
+ * pas encore copiée est posée par boardsOf, avec la forme d'id de convex/coverSign.ts (audit Q50 : pas de copie ici).
+ */
 export function syncOpts({ media = {}, misses = new Map(), site = SITE, ...rest } = {}) {
-  return {
-    media,
-    opts: {
-      missing: (k) => (misses.get(k) ?? 0) > NOW - 3 * DAY,
-      coverUrl: (id) => (/^(\d{6,25}|ig:[A-Za-z0-9_-]{5,40})$/.test(id) ? `${site}/cover/${id}` : null),
-      ...rest,
-    },
-  };
+  return { media, site, opts: { missing: (k) => (misses.get(k) ?? 0) > NOW - 3 * DAY, ...rest } };
 }
 
 /** Toutes les pages d'un passage complet (sans groupes), dans une Map clé → document. */
-export function boardsOf(models, raw, { media = {}, opts = {} } = syncOpts()) {
+export function boardsOf(models, raw, { media = {}, site = SITE, opts = {} } = syncOpts()) {
+  opts = { coverUrl: (id) => (models.COVER_ID.test(id) ? `${site}/cover/${id}` : null), ...opts };
   const res = models.buildBoards(raw, NOW, (k) => media[k] ?? (k.startsWith('icon:') ? `https://img.example/${k}.png` : null), () => null, opts);
   const docs = new Map(res.boards);
   for (const [k, f] of res.lazy) docs.set(k, f());

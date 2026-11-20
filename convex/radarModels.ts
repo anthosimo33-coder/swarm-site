@@ -9,6 +9,10 @@
  * docs/donnees-app.md.
  */
 
+import { COVER_ID, TIKTOK_ID } from "./coverSign";
+/** Ids de vidéo servis par /cover (lus par les bancs, qui empaquettent ce module). */
+export { COVER_ID };
+
 // ─── Lignes de l'export ──────────────────────────────────────────────────────
 
 export type Snapshot = { at: number; views: number };
@@ -1000,10 +1004,10 @@ export function buildBoards(
 
   // Comptes sans pays : 3 de leurs vidéos les plus récentes, pour que Swarm lise leur pays de création.
   const regionTodo = accounts.filter((t) => !mkOf(t.id)).map((t) => ({ handle: t.handle,
-    ids: (videosByAccount.get(t.id) ?? []).filter((v) => /^\d{6,25}$/.test(v.videoId)).sort((p, q) => q.publishedAt - p.publishedAt).slice(0, 3).map((v) => v.videoId) }))
+    ids: (videosByAccount.get(t.id) ?? []).filter((v) => TIKTOK_ID.test(v.videoId)).sort((p, q) => q.publishedAt - p.publishedAt).slice(0, 3).map((v) => v.videoId) }))
     .filter((x) => x.ids.length);
   // Les vidéos TikTok montrées dont on ne sait pas encore si ce sont des carrousels, les plus vues d'abord.
-  const laterTodos = () => ({ slideTodo: [...usedVideos.values()].filter((v) => v.platform !== "instagram" && /^\d{6,25}$/.test(v.videoId) && slidesOf(v.videoId) === undefined)
+  const laterTodos = () => ({ slideTodo: [...usedVideos.values()].filter((v) => v.platform !== "instagram" && TIKTOK_ID.test(v.videoId) && slidesOf(v.videoId) === undefined)
     .sort((p, q) => q.views - p.views).map((v) => v.videoId),
   // Lecture IA : les vidéos montrées pas encore lues (les plus vues d'abord), et les comptes « ambassadeur » sans genre
   // (ses vidéos « ambassadeur » les plus vues, 3 au plus, montrées à l'IA avec sa photo de profil).
