@@ -5,6 +5,40 @@ import NouvelleAlerte from './NouvelleAlerte.js';
 import Palette from './Palette.js';
 
 export default class Alertes extends DCLogic {
+  // ── Filtres dans l'adresse (audit F25, 19/11) ──
+  // Les filtres de la liste vivent dans la requête de l'adresse, avec les mêmes noms sur ordinateur et sur téléphone :
+  // quand la mise en page bascule (rotation d'un iPad, fenêtre redimensionnée), l'autre version de l'écran se monte et
+  // les relit dans this.props.query. Un choix va dans l'état et dans l'adresse (history.replaceState : pas d'entrée
+  // d'historique, pas de remontage, la position reste). Sur le canevas (pas de props.query) : l'état local, et
+  // location.search en lecture seule. filters() : clé de l'état -> [paramètre, 'l' liste (clé répétée) | 'b' oui/non |
+  // 's' valeur, valeur par défaut (jamais écrite)]. L'écran écarte une valeur qu'il ne connaît pas (son défaut).
+  filters() { return { tab: ['onglet', 's', 'Toutes'], mine: ['miennes', 'b'] }; }
+  fv(k) {
+    const st = this.state || {};
+    if (st[k] !== undefined) return st[k];
+    const d = this.filters()[k];
+    if (!d) return undefined;
+    let q = (this.props || {}).query;
+    if (!q) { try { q = Object.fromEntries(new URLSearchParams(location.search)); } catch (e) { q = {}; } }
+    const l = [].concat(q[d[0]] === undefined || q[d[0]] === null ? [] : q[d[0]]).map(String).filter(Boolean);
+    if (d[1] === 'l') return l.length ? l : undefined;
+    if (!l.length) return undefined;
+    return d[1] === 'b' ? l[l.length - 1] === '1' : l[l.length - 1];
+  }
+  setF(patch) {
+    this.setState(patch);
+    const F = this.filters();
+    if (!(this.props || {}).query || typeof history === 'undefined' || typeof location === 'undefined') return;
+    const sp = new URLSearchParams(location.search);
+    Object.keys(patch).forEach((k) => {
+      if (!F[k]) return;
+      const v = patch[k];
+      sp.delete(F[k][0]);
+      [].concat(v === true ? '1' : v === false || v === null || v === undefined ? [] : v).map(String).filter((s) => s && s !== F[k][2]).forEach((s) => sp.append(F[k][0], s));
+    });
+    const qs = sp.toString();
+    try { history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) { /* adresse refusée : l'état suffit */ }
+  }
 
   renderVals() {
     const b = this.baseVals();
@@ -75,9 +109,9 @@ export default class Alertes extends DCLogic {
     const items = b.items || [];
     const hits = (r) => items.filter((a) => match(r, a) === true);
     const unsure = (r) => items.some((a) => match(r, a) === null);
-    const mineOn = !!st.mine && mine.length > 0;
+    const mineOn = !!this.fv('mine') && mine.length > 0; // l'état, sinon l'adresse (F25, plus haut)
     const isMine = (a) => mine.some((r) => match(r, a) === true);
-    const tab = st.tab || 'Toutes';
+    const tab0 = this.fv('tab'), tab = ['Formats', 'Vidéos', 'Comptes'].indexOf(tab0) >= 0 ? tab0 : 'Toutes';
     const TABS = [['Toutes', () => true], ['Formats', (a) => a.typ === 'Format' || a.typ === 'Son'], ['Vidéos', (a) => a.typ === 'Vidéo'], ['Comptes', (a) => a.typ === 'Compte']];
     const pool = mineOn ? items.filter(isMine) : items;
     const keep = (TABS.filter((t) => t[0] === tab)[0] || TABS[0])[1];
@@ -104,8 +138,8 @@ export default class Alertes extends DCLogic {
       groups, rules, hasRules: mine.length > 0, noRules: !rulesWait && mine.length === 0,
       subtitle: mineOn ? 'Ce que le Radar a repéré cette semaine, selon tes alertes.' : 'Ce que le Radar a repéré cette semaine.',
       noAlert: groups.length === 0, noAlertText: mineOn ? 'Rien cette semaine pour tes alertes' + (tab === 'Toutes' ? '.' : ' dans ce type.') : 'Aucune alerte de ce type cette semaine.',
-      tabs: TABS.map((t) => ({ l: t[0], d: TABIC[t[0]] || TABIC.Toutes, n: pool.filter(t[1]).length, on: t[0] === tab ? 'true' : 'false', bg: t[0] === tab ? 'rgba(255,255,255,0.10)' : 'transparent', ink: t[0] === tab ? 'var(--ink)' : 'var(--ink-muted)', fw: t[0] === tab ? '600' : '500', ic: t[0] === tab ? 'var(--accent)' : 'var(--ink-faint)', pick: () => this.setState({ tab: t[0] }) })),
-      mineOn: mineOn ? 'true' : 'false', toggleMine: () => this.setState({ mine: !mineOn }),
+      tabs: TABS.map((t) => ({ l: t[0], d: TABIC[t[0]] || TABIC.Toutes, n: pool.filter(t[1]).length, on: t[0] === tab ? 'true' : 'false', bg: t[0] === tab ? 'rgba(255,255,255,0.10)' : 'transparent', ink: t[0] === tab ? 'var(--ink)' : 'var(--ink-muted)', fw: t[0] === tab ? '600' : '500', ic: t[0] === tab ? 'var(--accent)' : 'var(--ink-faint)', pick: () => this.setF({ tab: t[0] }) })),
+      mineOn: mineOn ? 'true' : 'false', toggleMine: () => this.setF({ mine: !mineOn }),
       hasUnread: items.some(unread),
       markRead: () => { const v = Object.assign({}, seenV || {}, { alerts: Date.now() }); if (site) P.save('seen', v); else this.setState({ seen: v }); },
       na: !!st.na, openNa: () => this.setState({ na: true, editId: null }), closeNa: () => this.setState({ na: false, editId: null }),
