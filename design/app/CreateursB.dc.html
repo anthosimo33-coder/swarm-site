@@ -100,6 +100,40 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":1440,"height":1820}}'>
 class Component extends DCLogic {
+  // ── Filtres dans l'adresse (audit F25, 19/11) ──
+  // Les filtres de la liste vivent dans la requête de l'adresse, avec les mêmes noms sur ordinateur et sur téléphone :
+  // quand la mise en page bascule (rotation d'un iPad, fenêtre redimensionnée), l'autre version de l'écran se monte et
+  // les relit dans this.props.query. Un choix va dans l'état et dans l'adresse (history.replaceState : pas d'entrée
+  // d'historique, pas de remontage, la position reste). Sur le canevas (pas de props.query) : l'état local, et
+  // location.search en lecture seule. filters() : clé de l'état -> [paramètre, 'l' liste (clé répétée) | 'b' oui/non |
+  // 's' valeur, valeur par défaut (jamais écrite)]. L'écran écarte une valeur qu'il ne connaît pas (son défaut).
+  filters() { return { niches: ['niche', 'l'], apps: ['app', 'l'], fans: ['abonnes', 's', 'ALL'], kinds: ['type', 'l'], gender: ['genre', 's', 'ALL'], sort: ['tri', 's', 'med'] }; }
+  fv(k) {
+    const st = this.state || {};
+    if (st[k] !== undefined) return st[k];
+    const d = this.filters()[k];
+    if (!d) return undefined;
+    let q = (this.props || {}).query;
+    if (!q) { try { q = Object.fromEntries(new URLSearchParams(location.search)); } catch (e) { q = {}; } }
+    const l = [].concat(q[d[0]] === undefined || q[d[0]] === null ? [] : q[d[0]]).map(String).filter(Boolean);
+    if (d[1] === 'l') return l.length ? l : undefined;
+    if (!l.length) return undefined;
+    return d[1] === 'b' ? l[l.length - 1] === '1' : l[l.length - 1];
+  }
+  setF(patch) {
+    this.setState(patch);
+    const F = this.filters();
+    if (!(this.props || {}).query || typeof history === 'undefined' || typeof location === 'undefined') return;
+    const sp = new URLSearchParams(location.search);
+    Object.keys(patch).forEach((k) => {
+      if (!F[k]) return;
+      const v = patch[k];
+      sp.delete(F[k][0]);
+      [].concat(v === true ? '1' : v === false || v === null || v === undefined ? [] : v).map(String).filter((s) => s && s !== F[k][2]).forEach((s) => sp.append(F[k][0], s));
+    });
+    const qs = sp.toString();
+    try { history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) { /* adresse refusée : l'état suffit */ }
+  }
   componentDidMount() {
     // Un clic hors du menu ouvert le ferme (sauf sur une pastille : elle bascule d'elle-même).
     this.out = (e) => {
@@ -140,17 +174,17 @@ class Component extends DCLogic {
   extraVals(b) {
     const st = this.state || {};
     const open = st.open || '';
-    const niches = st.niches || [];
-    const apps = st.apps || [];
-    const fans = st.fans || 'ALL';
-    const kinds = st.kinds || [];
-    const gender = st.gender || 'ALL';
+    // Les filtres : l'état, sinon l'adresse (F25, plus haut). Une tranche, un type, un genre ou un tri inconnus sont ignorés.
+    const niches = this.fv('niches') || [];
+    const apps = this.fv('apps') || [];
+    const fans0 = this.fv('fans'), kinds0 = this.fv('kinds') || [], gender0 = this.fv('gender'), sort0 = this.fv('sort');
     const active = false;
     const mq = (st.mq || '').toLowerCase();
-    const set = (patch) => this.setState(patch);
+    const set = (patch) => this.setF(patch);
     // Tranches d'abonnés : [clé, libellé, libellé du filtre posé, de, jusqu'à (exclu)].
     const FB = [['ALL', 'Tous', '', 0, 0], ['s', 'Moins de 1 000', 'Moins de 1 000 abonnés', 0, 1e3], ['m', '1 000 à 10 000', '1 000 à 10 000 abonnés', 1e3, 1e4],
       ['l', '10 000 à 100 000', '10 000 à 100 000 abonnés', 1e4, 1e5], ['xl', '100 000 et plus', '100 000 abonnés et plus', 1e5, Infinity]];
+    const fans = FB.some((x) => x[0] === fans0) ? fans0 : 'ALL';
     const fb = FB.filter((x) => x[0] === fans)[0] || FB[0];
     const okN = (c) => niches.length === 0 || niches.indexOf(c.niche) >= 0;
     const okA = (c) => apps.length === 0 || apps.indexOf(c.appName) >= 0;
@@ -160,6 +194,8 @@ class Component extends DCLogic {
     const KL = [['ambassadeur', 'Ambassadeur'], ['carrousel', 'Carrousel'], ['extrait_repris', 'Extrait repris'], ['histoire_messages', 'Histoire en messages'],
       ['demo_ecran', 'Démo d’écran'], ['motion', 'Motion'], ['ambiance_texte', 'Ambiance + texte']];
     const GL = [['ALL', 'Tous', ''], ['femme', 'Femmes', 'Femmes'], ['homme', 'Hommes', 'Hommes'], ['sans_visage', 'Sans visage', 'Sans visage']];
+    const kinds = kinds0.filter((k) => KL.some((x) => x[0] === k));
+    const gender = GL.some((x) => x[0] === gender0) ? gender0 : 'ALL';
     const kl = (k) => (KL.filter((x) => x[0] === k)[0] || [k, k])[1];
     const gl = GL.filter((x) => x[0] === gender)[0] || GL[0];
     const okK = (c) => kinds.length === 0 || kinds.indexOf(c.kind) >= 0;
@@ -168,7 +204,7 @@ class Component extends DCLogic {
     const list = all.filter((c) => okN(c) && okA(c) && okF(c, fb) && okT(c) && okK(c) && okG(c, gender));
     // Le tri choisi dans la barre de résultats (15/11) ; vues médianes par défaut.
     const SORTKEY = { med: (c) => c.nMed, fans: (c) => c.nFans, pace: (c) => c.n7 || 0, recent: (c) => c.lastAt || 0 };
-    if (st.sort && st.sort !== 'med' && SORTKEY[st.sort]) list.sort((x, y) => SORTKEY[st.sort](y) - SORTKEY[st.sort](x));
+    if (sort0 && sort0 !== 'med' && Object.prototype.hasOwnProperty.call(SORTKEY, sort0)) list.sort((x, y) => SORTKEY[sort0](y) - SORTKEY[sort0](x));
     const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); // Safari écrit « 1059 » en fr-FR
     const comptes = (n) => grp(n) + (n > 1 ? ' comptes' : ' compte');
     // Un menu par pastille (comme sur Apps), posé sous la pastille cliquée.
@@ -202,7 +238,7 @@ class Component extends DCLogic {
     if (gender !== 'ALL') chips.push({ label: gl[2], clear: () => set({ gender: 'ALL' }) });
     const radio = (on) => ({ radius: '50%', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const SORTS = [['med', 'Vues médianes', 'vues médianes'], ['fans', 'Abonnés', 'abonnés'], ['pace', 'Rythme', 'rythme (vidéos en 7 j)'], ['recent', 'Dernière vidéo', 'dernière vidéo']];
-    const sortK = SORTS.some((x) => x[0] === st.sort) ? st.sort : 'med';
+    const sortK = SORTS.some((x) => x[0] === sort0) ? sort0 : 'med';
     const sortDef = SORTS.filter((x) => x[0] === sortK)[0];
     const check = (on) => ({ radius: '5px', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const keep = (label) => !mq || label.toLowerCase().indexOf(mq) >= 0;
@@ -269,8 +305,9 @@ class Component extends DCLogic {
     const st = this.state || {};
     const pages = doc && doc.pages > 1 ? doc.pages : 1;
     // Toute la liste dès qu'un filtre ou un autre tri est posé (sinon on ne filtrerait / trierait que les 500 premiers).
-    const whole = !!((st.niches && st.niches.length) || (st.apps && st.apps.length) || (st.fans && st.fans !== 'ALL') || st.active
-      || (st.kinds && st.kinds.length) || (st.gender && st.gender !== 'ALL') || (st.sort && st.sort !== 'med'));
+    const f = (k) => this.fv(k); // filtres de l'état ou de l'adresse (F25)
+    const whole = !!((f('niches') && f('niches').length) || (f('apps') && f('apps').length) || (f('fans') && f('fans') !== 'ALL') || f('active')
+      || (f('kinds') && f('kinds').length) || (f('gender') && f('gender') !== 'ALL') || (f('sort') && f('sort') !== 'med'));
     const want = whole ? pages : Math.min(pages, Math.ceil(((st.lim || 50) + 100) / 500));
     let out = (doc && doc.creators) || [];
     let partial = want < pages;

@@ -5,6 +5,40 @@ import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
 export default class MCreateurs extends DCLogic {
+  // ── Filtres dans l'adresse (audit F25, 19/11) ──
+  // Les filtres de la liste vivent dans la requête de l'adresse, avec les mêmes noms sur ordinateur et sur téléphone :
+  // quand la mise en page bascule (rotation d'un iPad, fenêtre redimensionnée), l'autre version de l'écran se monte et
+  // les relit dans this.props.query. Un choix va dans l'état et dans l'adresse (history.replaceState : pas d'entrée
+  // d'historique, pas de remontage, la position reste). Sur le canevas (pas de props.query) : l'état local, et
+  // location.search en lecture seule. filters() : clé de l'état -> [paramètre, 'l' liste (clé répétée) | 'b' oui/non |
+  // 's' valeur, valeur par défaut (jamais écrite)]. L'écran écarte une valeur qu'il ne connaît pas (son défaut).
+  filters() { return { market: ['m', 's'], kinds: ['type', 'l'], gender: ['genre', 's', 'ALL'], sort: ['tri', 's', 'med'], active: ['actifs', 'b'] }; }
+  fv(k) {
+    const st = this.state || {};
+    if (st[k] !== undefined) return st[k];
+    const d = this.filters()[k];
+    if (!d) return undefined;
+    let q = (this.props || {}).query;
+    if (!q) { try { q = Object.fromEntries(new URLSearchParams(location.search)); } catch (e) { q = {}; } }
+    const l = [].concat(q[d[0]] === undefined || q[d[0]] === null ? [] : q[d[0]]).map(String).filter(Boolean);
+    if (d[1] === 'l') return l.length ? l : undefined;
+    if (!l.length) return undefined;
+    return d[1] === 'b' ? l[l.length - 1] === '1' : l[l.length - 1];
+  }
+  setF(patch) {
+    this.setState(patch);
+    const F = this.filters();
+    if (!(this.props || {}).query || typeof history === 'undefined' || typeof location === 'undefined') return;
+    const sp = new URLSearchParams(location.search);
+    Object.keys(patch).forEach((k) => {
+      if (!F[k]) return;
+      const v = patch[k];
+      sp.delete(F[k][0]);
+      [].concat(v === true ? '1' : v === false || v === null || v === undefined ? [] : v).map(String).filter((s) => s && s !== F[k][2]).forEach((s) => sp.append(F[k][0], s));
+    });
+    const qs = sp.toString();
+    try { history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) { /* adresse refusée : l'état suffit */ }
+  }
 
   // Les créateurs d'un marché arrivent par pages de 500 (« creators:<marché> », puis « :2 », « :3 »…) : la suite se
   // lit quand la liste affichée s'en approche, et toute la liste dès qu'un filtre porte sur elle. Plus de plafond.
@@ -12,8 +46,9 @@ export default class MCreateurs extends DCLogic {
     const st = this.state || {};
     const pages = doc && doc.pages > 1 ? doc.pages : 1;
     // Toute la liste dès qu'un filtre ou un autre tri est posé (sinon on ne filtrerait / trierait que les 500 premiers).
-    const whole = !!((st.niches && st.niches.length) || (st.apps && st.apps.length) || (st.fans && st.fans !== 'ALL') || st.active
-      || (st.kinds && st.kinds.length) || (st.gender && st.gender !== 'ALL') || (st.sort && st.sort !== 'med'));
+    const f = (k) => this.fv(k); // filtres de l'état ou de l'adresse (F25)
+    const whole = !!((f('niches') && f('niches').length) || (f('apps') && f('apps').length) || (f('fans') && f('fans') !== 'ALL') || f('active')
+      || (f('kinds') && f('kinds').length) || (f('gender') && f('gender') !== 'ALL') || (f('sort') && f('sort') !== 'med'));
     const want = whole ? pages : Math.min(pages, Math.ceil(((st.lim || 50) + 100) / 500));
     let out = (doc && doc.creators) || [];
     let partial = want < pages;
@@ -55,9 +90,10 @@ export default class MCreateurs extends DCLogic {
     const MKN = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
     const MKD = D && Array.isArray(D.markets) && D.markets.length ? D.markets : null;
     const MKC = MKD ? MKD.map((m) => m[0]) : ['FR', 'US', 'MX', 'ES', 'BR'];
-    const qm = String((P.query && P.query.m) || '').toUpperCase();
-    const market = st.market || (MKC.indexOf(qm) >= 0 ? qm : '') || (D && D.market) || MKC[0] || 'FR';
-    const active = !!st.active, lim = st.lim || LIM;
+    // Le marché et les filtres : l'état, sinon l'adresse (F25, plus haut ; m comme les liens de marché de l'ordinateur).
+    const qm = String(this.fv('market') || '').toUpperCase();
+    const market = (MKC.indexOf(qm) >= 0 ? qm : '') || (D && D.market) || MKC[0] || 'FR';
+    const active = !!this.fv('active'), lim = st.lim || LIM;
     const PH0 = {};
     // Les autres pays : « en <pays> » à partir du nom du marché (Italie, Indonésie…).
     const PREP = (n) => { n = String(n || ''); if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return ['aux', 'les ']; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return ['en', 'l’']; return /e$/.test(n) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? ['en', 'la '] : ['au', 'le ']; }; // « en France », « au Mexique », « aux États-Unis »
@@ -95,12 +131,13 @@ export default class MCreateurs extends DCLogic {
       tip = star ? { on: true, text: star.h + ' : ' + star.fans + (star.nFans > 1 ? ' abonnés' : ' abonné') + ', ' + star.med + ' vues médianes.' } : { on: false, text: '' };
     }
     // Trier et filtrer (comme sur ordinateur) : type de contenu (plusieurs), genre (un), classement (vues médianes par défaut).
-    const kinds = st.kinds || [], gender = st.gender || 'ALL';
+    const kinds0 = this.fv('kinds') || [], gender0 = this.fv('gender'), sort0 = this.fv('sort');
     const KL = [['ambassadeur', 'Ambassadeur'], ['carrousel', 'Carrousel'], ['extrait_repris', 'Extrait repris'], ['histoire_messages', 'Histoire en messages'],
       ['demo_ecran', 'Démo d’écran'], ['motion', 'Motion'], ['ambiance_texte', 'Ambiance + texte']];
     const GL = [['ALL', 'Tous'], ['femme', 'Femmes'], ['homme', 'Hommes'], ['sans_visage', 'Sans visage']];
     const SORTS = [['med', 'Vues médianes'], ['fans', 'Abonnés'], ['pace', 'Rythme (vidéos en 7 j)'], ['recent', 'Dernière vidéo']];
-    const sortK = SORTS.some((x) => x[0] === st.sort) ? st.sort : 'med';
+    const kinds = kinds0.filter((k) => KL.some((x) => x[0] === k)), gender = GL.some((x) => x[0] === gender0) ? gender0 : 'ALL';
+    const sortK = SORTS.some((x) => x[0] === sort0) ? sort0 : 'med';
     const SORTKEY = { fans: (c) => c.nFans, pace: (c) => c.n7 || 0, recent: (c) => c.lastAt || 0 };
     const okT = (c) => !active || c.active, okK = (c) => kinds.length === 0 || kinds.indexOf(c.kind) >= 0, okG = (c, g) => g === 'ALL' || c.gender === g;
     const pool = (xs) => { const out = (xs || []).filter((c) => okT(c) && okK(c) && okG(c, gender)); if (SORTKEY[sortK]) out.sort((x, y) => SORTKEY[sortK](y) - SORTKEY[sortK](x)); return out; };
@@ -110,14 +147,14 @@ export default class MCreateurs extends DCLogic {
     const pick = (on) => ({ sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500 });
     const radio = (on) => ({ box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const reset = { lim: LIM };
-    const sItems = SORTS.map((x) => Object.assign({ label: x[1], pick: () => this.setState(Object.assign({ sort: x[0] }, reset)) }, pick(x[0] === sortK), radio(x[0] === sortK)));
+    const sItems = SORTS.map((x) => Object.assign({ label: x[1], pick: () => this.setF(Object.assign({ sort: x[0] }, reset)) }, pick(x[0] === sortK), radio(x[0] === sortK)));
     const kItems = KL.map((x) => { const n = base.filter((c) => c.kind === x[0] && okT(c) && okG(c, gender)).length, on = kinds.indexOf(x[0]) >= 0;
-      return Object.assign({ label: x[1], n: grp(n), o: n === 0 && !on ? 0.45 : 1, pick: () => this.setState(Object.assign({ kinds: on ? kinds.filter((k) => k !== x[0]) : kinds.concat([x[0]]) }, reset)) }, pick(on)); });
+      return Object.assign({ label: x[1], n: grp(n), o: n === 0 && !on ? 0.45 : 1, pick: () => this.setF(Object.assign({ kinds: on ? kinds.filter((k) => k !== x[0]) : kinds.concat([x[0]]) }, reset)) }, pick(on)); });
     const gItems = GL.map((x) => { const n = base.filter((c) => okT(c) && okK(c) && okG(c, x[0])).length, on = gender === x[0];
-      return Object.assign({ label: x[1], n: grp(n), o: n === 0 && !on ? 0.45 : 1, pick: () => this.setState(Object.assign({ gender: x[0] }, reset)) }, pick(on)); });
+      return Object.assign({ label: x[1], n: grp(n), o: n === 0 && !on ? 0.45 : 1, pick: () => this.setF(Object.assign({ gender: x[0] }, reset)) }, pick(on)); });
     const chips = [];
-    kinds.forEach((k) => chips.push({ label: (KL.filter((x) => x[0] === k)[0] || [k, k])[1], clear: () => this.setState(Object.assign({ kinds: kinds.filter((x) => x !== k) }, reset)) }));
-    if (gender !== 'ALL') chips.push({ label: (GL.filter((x) => x[0] === gender)[0] || [gender, gender])[1], clear: () => this.setState(Object.assign({ gender: 'ALL' }, reset)) });
+    kinds.forEach((k) => chips.push({ label: (KL.filter((x) => x[0] === k)[0] || [k, k])[1], clear: () => this.setF(Object.assign({ kinds: kinds.filter((x) => x !== k) }, reset)) }));
+    if (gender !== 'ALL') chips.push({ label: (GL.filter((x) => x[0] === gender)[0] || [gender, gender])[1], clear: () => this.setF(Object.assign({ gender: 'ALL' }, reset)) });
     const nFs = kinds.length + (gender !== 'ALL' ? 1 : 0) + (sortK !== 'med' ? 1 : 0);
     const filtered = active || kinds.length > 0 || gender !== 'ALL';
     const swipe = { s: (e) => { this.y0 = e.touches && e.touches[0] ? e.touches[0].clientY : null; }, e: (e) => { const t = e.changedTouches && e.changedTouches[0]; if (this.y0 != null && t && t.clientY - this.y0 > 60) this.setState({ fs: false }); this.y0 = null; } };
@@ -125,14 +162,14 @@ export default class MCreateurs extends DCLogic {
     const cardsAll = pool(src.cards).map((c) => Object.assign({ href: '/app/createurs' }, c));
     const shownAll = b.rows ? rowsAll : cardsAll;
     const more = shownAll.length - lim;
-    return { mkt: MK.map((m) => Object.assign({}, m, { flag: m.c, on: m.c === market ? 'true' : 'false', pick: () => this.setState({ market: m.c, lim: LIM }) })),
+    return { mkt: MK.map((m) => Object.assign({}, m, { flag: m.c, on: m.c === market ? 'true' : 'false', pick: () => this.setF({ market: m.c, lim: LIM }) })),
       rows: rowsAll.slice(0, lim), cards: cardsAll.slice(0, lim), live: pool(src.live).map((c) => Object.assign({ href: '/app/createurs' }, c)), none, tip,
       hasMore: more > 0 || !!this._partial, moreLabel: 'Voir ' + Math.min(LIM, Math.max(more, (total || 0) - lim)) + ' comptes de plus', showMore: () => this.setState({ lim: lim + LIM }),
-      activeOn: active ? 'true' : 'false', toggleActive: () => this.setState({ active: !active, lim: LIM }),
+      activeOn: active ? 'true' : 'false', toggleActive: () => this.setF({ active: !active, lim: LIM }),
       fs: !!st.fs, fsOn: nFs > 0 ? 'true' : 'false', fsLabel: nFs > 0 ? 'Trier et filtrer · ' + nFs : 'Trier et filtrer', openFs: () => this.setState({ fs: true }), closeFs: () => this.setState({ fs: false }),
       fsKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ fs: false }); } }, setFsClose: (el) => { this.fsClose = el; }, tStart: swipe.s, tEnd: swipe.e,
       sItems, kItems, gItems, chips, seeLabel: 'Voir ' + comptes(shownAll.length) + (this._partial ? ' (chargement…)' : ''),
-      clearAll: () => this.setState({ kinds: [], gender: 'ALL', sort: 'med', active: false, lim: LIM }),
+      clearAll: () => this.setF({ kinds: [], gender: 'ALL', sort: 'med', active: false, lim: LIM }),
       countLabel: filtered && total !== null && !none ? comptes(shownAll.length) + ' sur ' + grp(total) : total !== null ? (none ? 'Aucun compte suivi ' + (PH[market] || '') : total.toLocaleString('en-US').replace(/,/g, '\u202f') + ' comptes ' + (PH[market] || ''))
         : (market === 'FR' ? shownAll.length + ' comptes en France' : 'Aucun compte suivi ici') };
   }
