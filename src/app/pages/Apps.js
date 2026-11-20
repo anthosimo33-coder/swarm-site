@@ -31,6 +31,32 @@ export default class Apps extends DCLogic {
     // Encore dans l'écran après un ajout de lignes : on la réobserve pour en demander d'autres.
     if (st.limit !== ps.limit && this.moreEl && this.moreIo) { this.moreIo.unobserve(this.moreEl); this.moreIo.observe(this.moreEl); }
   }
+  // Aperçu d'un marché (fenêtre Marché, maquette F3 du 20/11) : apps suivies, vues sur 30 jours, niches et apps en
+  // tête, calculés sur toutes les apps (pas sur la liste filtrée) et gardés tant que les données ne changent pas.
+  marketPreview(D, code, MKS, MAPPS) {
+    const apps = (D && D.apps) || [];
+    if (!this.mpCache || this.mpCache.D !== D) this.mpCache = { D, by: {} };
+    let r = this.mpCache.by[code];
+    if (!r) {
+      let n = 0, views = 0; const byN = {}; const tops = [];
+      for (const a of apps) {
+        const share = code === 'ALL' ? 1 : (((a.markets || []).filter((m) => m[0] === code)[0] || [null, 0])[1] || 0) / 100;
+        if (!(share > 0)) continue;
+        n++; const v = (a.views30 || 0) * share; views += v;
+        byN[a.niche] = (byN[a.niche] || 0) + v; tops.push([v, a]);
+      }
+      const fmt = (x) => (x >= 1e9 ? (x / 1e9).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' Md' : x >= 1e6 ? Math.round(x / 1e6) + ' M' : Math.round(x / 1e3) + ' k');
+      const nl = Object.keys(byN).map((k) => [k, byN[k]]).sort((x, y) => y[1] - x[1]).slice(0, 3);
+      const top = nl.length ? nl[0][1] : 1;
+      r = { n, views: views > 0 ? fmt(views) : '—',
+        niches: nl.map(([l, v]) => ({ l, p: Math.round((v / (views || 1)) * 100) + ' %', w: Math.max(8, Math.round((v / top) * 100)) + '%' })),
+        tops: tops.sort((x, y) => y[0] - x[0]).slice(0, 3).map(([, a]) => ({ n: a.name, logo: a.icon || false, blank: a.icon ? '' : 'sw-app-blank' })) };
+      this.mpCache.by[code] = r;
+    }
+    const m = MKS.filter((x) => x[0] === code)[0] || ['ALL', 'Tous les marchés', ''];
+    const count = code === 'ALL' ? apps.length : (MAPPS && MAPPS[code] !== undefined ? MAPPS[code] : r.n);
+    return { name: m[1], flag: code === 'ALL' ? false : code, all: code === 'ALL', apps: Number(count).toLocaleString('fr-FR'), views: r.views, niches: r.niches, tops: r.tops };
+  }
   renderVals() {
     const b = this.baseVals();
     return Object.assign({}, b, this.shellVals(), this.extraVals(b));
@@ -200,32 +226,50 @@ return {};
     const nLabel = niches.length === 0 ? 'Toutes' : (niches.length === 1 ? niches[0] : niches.length + ' niches');
     const BIC = { marche: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z', niche: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.01', plateforme: 'M4 5h16v14H4zM10 9l5 3-5 3z' };
     // Le menu s'ouvre sous le filtre cliqué (sa position dans la rangée).
-    const mkBar = (key, k, v) => ({ k, v, d: BIC[key], open: open === key ? 'true' : 'false', bg: open === key ? 'var(--tab-on)' : 'var(--track)', edge: open === key ? 'var(--accent-edge)' : 'var(--line)',
-      toggle: (e) => { const el = e && e.currentTarget; set({ open: open === key ? '' : key, mq: '', menuX: el && typeof el.offsetLeft === 'number' ? el.offsetLeft : null }); } });
+    const mkBar = (key, k, v, extra) => Object.assign({ key, k, v, d: BIC[key], open: open === key ? 'true' : 'false', flag: false, more: false, active: 'false' }, extra || {}, {
+      toggle: (e) => { const el = e && e.currentTarget; set({ open: open === key ? '' : key, mq: '', mh: null, menuX: el && typeof el.offsetLeft === 'number' ? el.offsetLeft : null }); } });
     const PL = { ALL: 'Toutes', tiktok: 'TikTok', instagram: 'Instagram' };
-    const bar = [mkBar('marche', 'Marché', market === 'ALL' ? 'Tous' : mLabel), mkBar('niche', 'Niche', nLabel), mkBar('plateforme', 'Plateforme', PL[platform])];
+    // Le bouton dit le choix : drapeau du marché, première niche et « +N », plateforme ; fond d'accent quand un filtre est posé.
+    const bar = [mkBar('marche', 'Marché', market === 'ALL' ? 'Tous' : mLabel, { flag: market === 'ALL' ? false : market, active: market === 'ALL' ? 'false' : 'true' }),
+      mkBar('niche', 'Niche', niches.length ? niches[0] : 'Toutes', { more: niches.length > 1 ? '+' + (niches.length - 1) : false, active: niches.length ? 'true' : 'false' }),
+      mkBar('plateforme', 'Plateforme', PL[platform], { active: platform === 'ALL' ? 'false' : 'true' })];
     const chips = [];
     if (market !== 'ALL') chips.push({ label: mLabel, clear: () => set({ market: 'ALL' }) });
     niches.forEach((n) => chips.push({ label: n, clear: () => set({ niches: niches.filter((x) => x !== n) }) }));
     if (platform !== 'ALL') chips.push({ label: PL[platform], clear: () => set({ platform: 'ALL' }) });
     const radio = (on) => ({ radius: '50%', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
     const check = (on) => ({ radius: '5px', box: on ? '#4C9AFF' : 'var(--line-strong)', fill: on ? '#4C9AFF' : 'transparent', tick: on ? '#05070C' : 'transparent' });
-    const keep = (label) => !mq || label.toLowerCase().indexOf(mq) >= 0;
+    const fold = (t) => Array.from(String(t)).map((c) => c.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().charAt(0) || c).join('');
+    const fq = fold(mq.trim());
+    const keep = (label) => !fq || fold(label).indexOf(fq) >= 0;
+    const hit = (label) => { const i = fq ? fold(label).indexOf(fq) : -1; return i < 0 ? { pre: label, hit: false, post: '' } : { pre: label.slice(0, i), hit: label.slice(i, i + fq.length), post: label.slice(i + fq.length) }; };
     const menuLeft = (dflt) => (typeof st.menuX === 'number' ? st.menuX + 'px' : dflt);
-    let menu = { on: false, items: [], left: '0px', title: '', search: '', foot: '' };
+    let menu = { on: false, items: [], left: '0px', title: '', search: '', w: '360px', kind: '', multi: 'false' };
+    let mp = { name: '', flag: false, all: false, apps: '', views: '', niches: [], tops: [] };
+    const hov = (k) => () => { if ((this.state || {}).mh !== k) this.setState({ mh: k }); };
     if (open === 'marche') {
-      menu = { on: true, left: menuLeft('0px'), title: 'Marché', search: 'Chercher un marché', foot: 'Le marché choisi vaut pour tout le classement.',
-        items: MKS.filter((m) => keep(m[1])).map((m) => { const n = m[0] === 'ALL' ? (D && D.apps ? D.apps.length : A.length) : (MAPPS && MAPPS[m[0]] !== undefined ? MAPPS[m[0]] : A.filter((r) => a2has(r, m[0])).length); const on = market === m[0];
-          return Object.assign({ label: m[1], flag: m[2] || false, n: n + ' apps', sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1, pick: () => set({ market: m[0] }) }, radio(on)); }) };
+      // F3 (maquette du 20/11) : la liste à gauche, l'aperçu du pays survolé à droite ; un clic choisit et ferme.
+      const items = MKS.filter((m) => keep(m[1])).map((m) => { const n = m[0] === 'ALL' ? (D && D.apps ? D.apps.length : A.length) : (MAPPS && MAPPS[m[0]] !== undefined ? MAPPS[m[0]] : A.filter((r) => a2has(r, m[0])).length); const on = market === m[0];
+        return Object.assign({ key: m[0], shape: 'radio', flag: m[2] || false, globe: m[0] === 'ALL', ic: false, n: n + ' apps', sel: on ? 'true' : 'false', dis: 'false', o: n === 0 ? 0.45 : 1, hover: hov(m[0]), pick: () => set({ market: m[0], open: '', mh: null }) }, hit(m[1])); });
+      menu = { on: true, kind: 'marche', multi: 'false', w: '760px', left: menuLeft('0px'), title: 'Marché', search: 'Chercher un pays', head: fq ? false : 'Les plus suivis', foot: false, preview: true,
+        hasQ: !!fq, q: mq.trim(), empty: items.length === 0, items };
+      mp = this.marketPreview(D, st.mh || market, MKS, MAPPS);
     } else if (open === 'niche') {
-      menu = { on: true, left: menuLeft('190px'), title: 'Niche', search: 'Chercher une niche', foot: 'Plusieurs niches possibles. Les nombres tiennent compte du marché.',
-        items: NIS.filter(keep).map((nm) => { const n = A.filter((r) => okM(r, market) && r[1] === nm).length; const on = niches.indexOf(nm) >= 0;
-          return Object.assign({ label: nm, flag: false, n: n + ' apps', sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: n === 0 ? 0.45 : 1,
-            pick: () => set({ niches: on ? niches.filter((x) => x !== nm) : niches.concat([nm]) }) }, check(on)); }) };
+      // F2 : plusieurs choix, gardés en pastilles en haut ; la recherche surligne ce qu'elle trouve.
+      const items = NIS.filter(keep).map((nm) => { const n = A.filter((r) => okM(r, market) && r[1] === nm).length; const on = niches.indexOf(nm) >= 0;
+        return Object.assign({ key: nm, shape: 'check', flag: false, globe: false, ic: NIC[nm] || NIC0, n: n + ' apps', sel: on ? 'true' : 'false', dis: 'false', o: n === 0 ? 0.45 : 1, hover: null,
+          pick: () => set({ niches: on ? niches.filter((x) => x !== nm) : niches.concat([nm]) }) }, hit(nm)); });
+      menu = { on: true, kind: 'niche', multi: 'true', w: '400px', left: menuLeft('190px'), title: 'Niche', search: 'Chercher une niche', head: false, foot: true, preview: false,
+        tray: true, noPick: niches.length === 0, picked: niches.map((nm) => ({ label: nm, ic: NIC[nm] || NIC0, clear: () => set({ niches: niches.filter((x) => x !== nm) }) })),
+        clearable: true, canClear: niches.length ? 'true' : 'false', clearAll: () => set({ niches: [] }), note: false,
+        hasQ: !!fq, q: mq.trim(), empty: items.length === 0, items };
     } else if (open === 'plateforme') {
-      menu = { on: true, left: menuLeft('380px'), title: 'Plateforme', search: 'Chercher une plateforme', foot: 'YouTube Shorts arrive bientôt.',
-        items: [['ALL', 'Toutes'], ['tiktok', 'TikTok'], ['instagram', 'Instagram']].filter((p) => keep(p[1])).map((p) => { const on = platform === p[0];
-          return Object.assign({ label: p[1], flag: false, n: '', sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', w: on ? 600 : 500, o: 1, pick: () => set({ platform: p[0] }) }, radio(on)); }) };
+      // F1 : un seul choix, logos des plateformes ; YouTube Shorts est annoncé, pas encore choisissable.
+      const items = [['ALL', 'Toutes'], ['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['youtube', 'YouTube Shorts']].filter((p) => keep(p[1])).map((p) => { const on = platform === p[0]; const soon = p[0] === 'youtube';
+        return Object.assign({ key: p[0], shape: 'radio', flag: false, globe: false, ic: false, all: p[0] === 'ALL', tiktok: p[0] === 'tiktok', insta: p[0] === 'instagram', yt: soon, soon, n: '', sel: on ? 'true' : 'false', dis: soon ? 'true' : 'false', o: soon ? 0.55 : 1, hover: null,
+          pick: soon ? () => {} : () => set({ platform: p[0] }) }, hit(p[1])); });
+      menu = { on: true, kind: 'plateforme', multi: 'false', w: '372px', left: menuLeft('380px'), title: 'Plateforme', search: 'Chercher une plateforme', head: false, foot: true, preview: false,
+        note: 'Les vues ne comptent que la plateforme choisie.', hasQ: !!fq, q: mq.trim(), empty: items.length === 0, items };
     }
     const SIC = { vues: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', accel: 'M3 17l6-6 4 4 8-8M15 7h6v6', nouvelles: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z' };
     const sorts = [['vues', 'Les plus vues'], ['accel', 'Qui accélèrent'], ['nouvelles', 'Nouvelles']].map((s) => { const on = s[0] === sort;
@@ -364,6 +408,8 @@ return {};
       rows, more: list.length > limit, setMore: this.setMore, empty: list.length === 0, total: list.length, bar, chips, menu, sorts, periods, pv, ajItem,
       vlab: period === 'custom' ? 'Vues · ' + rangeLabel : (period === '7' ? 'Vues 7 j' : 'Vues 30 j'), sortLabel: SLAB[sortBy],
       closeMenu: () => set({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
+      clearMq: () => { if (this.menuInput) { this.menuInput.value = ''; this.menuInput.focus(); } this.setState({ mq: '' }); },
+      mp,
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
       setMenu: (el) => { this.menuEl = el; }, setMenuInput: (el) => { this.menuInput = el; },
       closePv: () => this.setState({ pv: null, aj: false }), setPvClose: (el) => { this.pvClose = el; },
@@ -583,17 +629,25 @@ return {};
             $h("div", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px;" },
               $h("div", { "style": "position: relative; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;" },
                 ($l($v.bar)).map((b) => [
-                  $h("button", { "type": "button", "data-menu-trigger": "true", "onClick": b?.toggle, "aria-expanded": b?.open, "aria-haspopup": "listbox", "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: ${$t(b?.bg)}; box-shadow: inset 0 0 0 1px ${$t(b?.edge)}; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;` },
+                  $h("button", { "type": "button", "class": "fl-trig", "data-menu-trigger": "true", "data-fl-trig": b?.key, "data-on": b?.active, "onClick": b?.toggle, "aria-expanded": b?.open, "aria-haspopup": "listbox", "style": "display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;" },
                     $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                       $h("path", { "d": b?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
                     $h("span", { "style": "color: var(--ink-muted);" },
                       $t(b?.k)
                     ),
-                    $h("span", { "style": "font-weight: 600;" },
+                    $h("span", { "class": "fl-val", "data-roll": "" },
+                      (b?.flag) ? [
+                        $h("span", { "class": "sw-flag", "data-c": b?.flag, "aria-hidden": "true" })
+                      ] : null,
                       $t(b?.v)
                     ),
-                    $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
+                    (b?.more) ? [
+                      $h("span", { "class": "fl-more" },
+                        $t(b?.more)
+                      )
+                    ] : null,
+                    $h("svg", { "class": "fl-chev", "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
                       $h("path", { "d": "M6 9l6 6 6-6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
@@ -607,44 +661,219 @@ return {};
                   )
                 ]),
                 ($v.menu?.on) ? [
-                  $h("div", { "ref": $v.setMenu, "role": "listbox", "aria-label": $v.menu?.title, "style": `position: absolute; top: 46px; left: ${$t($v.menu?.left)}; z-index: 30; width: 360px; box-sizing: border-box; padding: 8px; border-radius: 22px; background: rgba(13,17,26,0.96); border: 1px solid var(--glass-edge); backdrop-filter: var(--glass-blur-strong); -webkit-backdrop-filter: var(--glass-blur-strong); box-shadow: var(--shadow-float), 0 0 0 1px rgba(0,0,0,0.3); animation: sw-rise .3s cubic-bezier(.2,.8,.2,1) both;` },
-                    $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; margin-bottom: 6px; border-radius: 14px; background: var(--track);" },
-                      $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint);" },
-                        $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  $h("div", { "ref": $v.setMenu, "role": "listbox", "aria-label": $v.menu?.title, "aria-multiselectable": $v.menu?.multi, "data-fl": $v.menu?.kind, "class": "fl-pan", "style": `left: ${$t($v.menu?.left)}; width: ${$t($v.menu?.w)};` },
+                    $h("div", { "class": "fl-side" },
+                      $h("label", { "class": "fl-search", "data-fl-in": "" },
+                        $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                          $h("path", { "d": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        ),
+                        $h("input", { "ref": $v.setMenuInput, "type": "search", "onInput": $v.onMq, "onKeyDown": $v.menuKeys, "aria-label": $v.menu?.search, "placeholder": $v.menu?.search }),
+                        ($v.menu?.hasQ) ? [
+                          $h("button", { "type": "button", "class": "fl-qx", "onClick": $v.clearMq, "aria-label": "Effacer la recherche" },
+                            $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                              $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                            )
+                          )
+                        ] : null
                       ),
-                      $h("input", { "ref": $v.setMenuInput, "type": "search", "onInput": $v.onMq, "onKeyDown": $v.menuKeys, "aria-label": $v.menu?.search, "placeholder": $v.menu?.search, "style": "flex: 1; min-width: 0; border: 0; background: transparent; outline: none; color: var(--ink); font: inherit; font-size: 14px;" })
+                      ($v.menu?.tray) ? [
+                        $h("div", { "class": "fl-tray", "data-fl-in": "" },
+                          ($v.menu?.noPick) ? [
+                            $h("span", { "class": "fl-tray-ph" },
+                              "Aucune niche choisie : toutes comptent."
+                            )
+                          ] : null,
+                          ($l($v.menu?.picked)).map((c) => [
+                            $h("button", { "type": "button", "class": "fl-chip", "data-fl-chip": c?.label, "onClick": c?.clear, "aria-label": `Retirer ${$t(c?.label)}` },
+                              $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("path", { "d": c?.ic, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                              ),
+                              $t(c?.label),
+                              $h("i", null,
+                                $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                  $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                                )
+                              )
+                            )
+                          ])
+                        )
+                      ] : null,
+                      ($v.menu?.head) ? [
+                        $h("span", { "class": "fl-head", "data-fl-in": "" },
+                          $t($v.menu?.head)
+                        )
+                      ] : null,
+                      $h("div", { "class": "fl-list", "data-fl-list": "" },
+                        ($l($v.menu?.items)).map((it) => [
+                          $h("button", { "type": "button", "role": "option", "class": "fl-opt", "data-fl-opt": it?.key, "aria-selected": it?.sel, "aria-disabled": it?.dis, "onClick": it?.pick, "onMouseEnter": it?.hover, "onKeyDown": $v.menuKeys, "style": `opacity: ${$t(it?.o)};` },
+                            $h("span", { "class": "fl-mark", "data-shape": it?.shape, "aria-hidden": "true" },
+                              $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "pathLength": "1", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                              )
+                            ),
+                            (it?.flag) ? [
+                              $h("span", { "class": "sw-flag", "data-c": it?.flag, "aria-hidden": "true" })
+                            ] : null,
+                            (it?.globe) ? [
+                              $h("span", { "class": "fl-glob" },
+                                $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                  $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                                )
+                              )
+                            ] : null,
+                            (it?.ic) ? [
+                              $h("span", { "class": "fl-ic" },
+                                $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                  $h("path", { "d": it?.ic, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                                )
+                              )
+                            ] : null,
+                            (it?.tiktok) ? [
+                              $h("svg", { "class": "fl-logo", "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("path", { "d": "M14 3v11.2a3.3 3.3 0 1 1-3.3-3.3", "fill": "none", "stroke": "#25F4EE", "stroke-width": "2.2", "stroke-linecap": "round", "transform": "translate(-0.8,-0.6)" }),
+                                $h("path", { "d": "M14 3v11.2a3.3 3.3 0 1 1-3.3-3.3", "fill": "none", "stroke": "#FE2C55", "stroke-width": "2.2", "stroke-linecap": "round", "transform": "translate(0.8,0.6)" }),
+                                $h("path", { "d": "M14 3v11.2a3.3 3.3 0 1 1-3.3-3.3M14 3c.5 2.4 2.2 4 4.8 4.2", "fill": "none", "stroke": "#FFFFFF", "stroke-width": "2.2", "stroke-linecap": "round" })
+                              )
+                            ] : null,
+                            (it?.insta) ? [
+                              $h("svg", { "class": "fl-logo", "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("defs", null,
+                                  $h("linearGradient", { "id": "flIg", "x1": "0", "y1": "1", "x2": "1", "y2": "0" },
+                                    $h("stop", { "offset": "0", "stop-color": "#FEDA75" }),
+                                    $h("stop", { "offset": "0.45", "stop-color": "#D62976" }),
+                                    $h("stop", { "offset": "1", "stop-color": "#4F5BD5" })
+                                  )
+                                ),
+                                $h("rect", { "x": "3.5", "y": "3.5", "width": "17", "height": "17", "rx": "5", "fill": "none", "stroke": "url(#flIg)", "stroke-width": "2.2" }),
+                                $h("circle", { "cx": "12", "cy": "12", "r": "3.8", "fill": "none", "stroke": "url(#flIg)", "stroke-width": "2.2" }),
+                                $h("circle", { "cx": "17", "cy": "7", "r": "1.2", "fill": "#D62976" })
+                              )
+                            ] : null,
+                            (it?.yt) ? [
+                              $h("svg", { "class": "fl-logo", "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("rect", { "x": "2.5", "y": "5.5", "width": "19", "height": "13", "rx": "4", "fill": "#FF0033" }),
+                                $h("path", { "d": "M10 9.2v5.6l4.8-2.8z", "fill": "#FFFFFF" })
+                              )
+                            ] : null,
+                            (it?.all) ? [
+                              $h("svg", { "class": "fl-logo", "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("path", { "d": "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5", "fill": "none", "stroke": "#9AA3B2", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                              )
+                            ] : null,
+                            $h("span", { "class": "fl-lab" },
+                              $t(it?.pre),
+                              (it?.hit) ? [
+                                $h("mark", null,
+                                  $t(it?.hit)
+                                )
+                              ] : null,
+                              $t(it?.post)
+                            ),
+                            (it?.soon) ? [
+                              $h("span", { "class": "fl-soon" },
+                                "Bientôt"
+                              )
+                            ] : null,
+                            $h("span", { "class": "fl-n" },
+                              $t(it?.n)
+                            )
+                          )
+                        ]),
+                        ($v.menu?.empty) ? [
+                          $h("span", { "class": "fl-empty" },
+                            "Rien ne correspond à « ", $t($v.menu?.q), " »."
+                          )
+                        ] : null
+                      ),
+                      ($v.menu?.foot) ? [
+                        $h("div", { "class": "fl-foot", "data-fl-in": "" },
+                          ($v.menu?.clearable) ? [
+                            $h("button", { "type": "button", "class": "fl-clear", "data-on": $v.menu?.canClear, "onClick": $v.menu?.clearAll },
+                              "Tout effacer"
+                            )
+                          ] : null,
+                          ($v.menu?.note) ? [
+                            $h("span", { "class": "fl-note" },
+                              $t($v.menu?.note)
+                            )
+                          ] : null,
+                          $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm fl-cta", "type": "button", "onClick": $v.closeMenu },
+                            "Voir ",
+                            $h("span", { "class": "fl-count", "data-roll": "" },
+                              $t($v.total)
+                            ),
+                            " apps",
+                            $h("span", { "class": "sw-btn-tile" },
+                              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                              )
+                            )
+                          )
+                        )
+                      ] : null
                     ),
-                    ($l($v.menu?.items)).map((it) => [
-                      $h("button", { "type": "button", "role": "option", "aria-selected": it?.sel, "onClick": it?.pick, "onKeyDown": $v.menuKeys, "style": `width: 100%; height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 12px; background: ${$t(it?.bg)}; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; opacity: ${$t(it?.o)};` },
-                        $h("span", { "aria-hidden": "true", "style": `width: 18px; height: 18px; border-radius: ${$t(it?.radius)}; border: 1.5px solid ${$t(it?.box)}; background: ${$t(it?.fill)}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;` },
-                          $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                            $h("path", { "d": "M5 12l5 5 9-10", "fill": "none", "stroke": it?.tick, "stroke-width": "3", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    ($v.menu?.preview) ? [
+                      $h("div", { "class": "fl-pv", "data-fl-pv": "", "data-fl-in": "" },
+                        $h("div", { "class": "fl-pv-in", "data-fl-pv-in": "" },
+                          ($v.mp?.flag) ? [
+                            $h("span", { "class": "sw-flag fl-pv-flag", "data-c": $v.mp?.flag, "aria-hidden": "true" })
+                          ] : null,
+                          ($v.mp?.all) ? [
+                            $h("span", { "class": "fl-pv-flag fl-pv-all" },
+                              $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                              )
+                            )
+                          ] : null,
+                          $h("span", { "class": "fl-pv-name" },
+                            $t($v.mp?.name)
+                          ),
+                          $h("span", { "class": "fl-pv-stats" },
+                            $h("span", null,
+                              $h("b", null,
+                                $t($v.mp?.apps)
+                              ),
+                              "apps suivies"
+                            ),
+                            $h("span", null,
+                              $h("b", null,
+                                $t($v.mp?.views)
+                              ),
+                              "vues sur 30 jours"
+                            )
+                          ),
+                          $h("span", { "class": "fl-pv-lab" },
+                            "Les niches qui marchent"
+                          ),
+                          ($l($v.mp?.niches)).map((n) => [
+                            $h("span", { "class": "fl-pv-bar" },
+                              $h("i", { "style": `width: ${$t(n?.w)};` }),
+                              $h("span", null,
+                                $t(n?.l)
+                              ),
+                              $h("b", null,
+                                $t(n?.p)
+                              )
+                            )
+                          ]),
+                          $h("span", { "class": "fl-pv-lab" },
+                            "En tête"
+                          ),
+                          $h("span", { "class": "fl-pv-tops" },
+                            ($l($v.mp?.tops)).map((t) => [
+                              $h("span", { "class": "fl-pv-top" },
+                                $h("span", { "class": `sw-app-icon ${$t(t?.blank)}`, "style": "width: 28px; height: 28px; border-radius: 8px;" },
+                                  (t?.logo) ? [
+                                    $h("img", { "class": "sw-logo-img", "src": $u(t?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
+                                  ] : null
+                                ),
+                                $t(t?.n)
+                              )
+                            ])
                           )
-                        ),
-                        (it?.flag) ? [
-                          $h("span", { "class": "sw-flag", "data-c": it?.flag, "aria-hidden": "true" })
-                        ] : null,
-                        $h("span", { "style": `flex: 1 1 auto; min-width: 0; font-weight: ${$t(it?.w)};` },
-                          $t(it?.label)
-                        ),
-                        $h("span", { "style": "font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;" },
-                          $t(it?.n)
                         )
                       )
-                    ]),
-                    $h("div", { "style": "margin-top: 6px; padding: 12px 12px 6px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px;" },
-                      $h("span", { "style": "font-size: 12px; line-height: 1.4; color: var(--ink-faint); max-width: 190px;" },
-                        $t($v.menu?.foot)
-                      ),
-                      $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.closeMenu },
-                        "Voir ", $t($v.total), " apps",
-                        $h("span", { "class": "sw-btn-tile" },
-                          $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                            $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                          )
-                        )
-                      )
-                    )
+                    ] : null
                   )
                 ] : null
               ),
