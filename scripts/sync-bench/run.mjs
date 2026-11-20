@@ -190,7 +190,8 @@ const ctx = {
 };
 process.env.JARVIA_EXPORT_SECRET = "banc";
 process.env.CONVEX_SITE_URL = "https://blessed-hedgehog-69.convex.site";
-process.env.SWARM_MEM_STOP_MB = process.env.SWARM_MEM_STOP_MB || "100000";
+// Seuil d'arrêt pour mémoire : celui de l'environnement, sans valeur forcée (audit Q70 : forcé à 100 000, l'arrêt et la
+// reprise n'étaient jamais éprouvés). Pour les éprouver : SWARM_MEM_STOP_MB=250 node scripts/sync-bench/run.mjs …
 const mod = await import(BUNDLE);
 const t0 = Date.now();
 try { const res = await mod[FN].handler(ctx, JSON.parse(ARGS)); if (res) console.log("[banc] résultat", JSON.stringify(res)); }

@@ -45,6 +45,15 @@ const MEDIA_BUDGET_MS = 4 * 60_000; // copie dans sa propre action (copyMedia), 
  */
 const RUN_LIMIT_MS = 9 * 60_000;
 const WRITE_RESERVE_MS = 3 * 60_000;
+/**
+ * Audit Q68 (19/11) : la limite de 9 min ne bornait que l'écriture des pages ; une écriture de près de 9 min laissait
+ * l'étape globale finir son ménage (images, parcours de toutes les clés, pages effacées, fin du passage) au-delà de la
+ * coupure de 10 min, sans rien noter. L'écriture s'arrête désormais à 6 min (WRITE_DEADLINE_MS : la reprise existante
+ * prend le relais), le ménage ne commence pas après 7 min (il reprend dans une étape neuve), et la préparation échoue
+ * proprement au-delà de 7 min.
+ */
+const WRITE_DEADLINE_MS = RUN_LIMIT_MS - WRITE_RESERVE_MS;
+const STEP_DEADLINE_MS = 7 * 60_000;
 /** Nouvelles vidéos (ou comptes) mises en file de vérification à chaque passage, au plus. */
 const TODO_MAX = 15_000;
 /**
@@ -52,7 +61,6 @@ const TODO_MAX = 15_000;
  * montrer elle-même sur au moins 2 de ses miniatures lues (sur 1 seule s'il n'y en a qu'une ou deux).
  */
 const selfMin = (covers: number) => (covers >= 3 ? 2 : 1);
-const WRITERS = 1; // 4 écrivains en parallèle : le 14/11 un lot ne revenait jamais (passage bloqué 3 min puis coupé) ; à 3 Mo/s, un seul suffit
 /** Le déploiement Convex refuse plus de 4 Mio écrits par seconde (TooManyWrites, dev du 14/11) : écriture cadencée sous ce plafond. */
 const WRITE_RATE = 3_000_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -81,9 +89,18 @@ const gc: () => void = (() => {
   try { v8.setFlagsFromString("--expose-gc"); return vm.runInNewContext("gc") as () => void; } catch { return () => {}; }
 })();
 
-/** Pic de tas de l'étape (Mo), relevé à chaque MEMLOG : noté dans syncRuns pour suivre la marge sans les journaux. */
-let heapPeak = 0;
-const MEMLOG = (label: string) => { const m = process.memoryUsage(); heapPeak = Math.max(heapPeak, Math.round(m.heapUsed / 1e6)); console.log(`[mem] ${label} rss=${Math.round(m.rss / 1e6)} heap=${Math.round(m.heapUsed / 1e6)} ext=${Math.round(m.external / 1e6)} buf=${Math.round(m.arrayBuffers / 1e6)}`); };
+/**
+ * Pics de tas et de mémoire totale (RSS, sur laquelle l'action meurt à 512 Mo et que MEM_STOP compare) de l'étape (Mo),
+ * relevés à chaque MEMLOG et pendant l'écriture : notés dans syncRuns pour suivre la marge sans les journaux. Audit Q70
+ * (19/11) : le pic n'était jamais remis à zéro (un processus réutilisé reprenait celui d'une action précédente), et le
+ * RSS n'était jamais noté. Remis à zéro au début de chaque étape (resetPeaks).
+ */
+let heapPeak = 0, rssPeak = 0;
+const notePeaks = () => { const m = process.memoryUsage(); heapPeak = Math.max(heapPeak, Math.round(m.heapUsed / 1e6)); rssPeak = Math.max(rssPeak, Math.round(m.rss / 1e6)); return m; };
+const resetPeaks = () => { heapPeak = 0; rssPeak = 0; };
+const MEMLOG = (label: string) => { const m = notePeaks(); console.log(`[mem] ${label} rss=${Math.round(m.rss / 1e6)} heap=${Math.round(m.heapUsed / 1e6)} ext=${Math.round(m.external / 1e6)} buf=${Math.round(m.arrayBuffers / 1e6)}`); };
+/** Le seuil d'arrêt pour mémoire en Mo (SWARM_MEM_STOP_MB), null s'il n'est pas posé : noté pour vérifier la prod sans lire son environnement. */
+const memStopMo = () => (Number.isFinite(MEM_STOP) ? Math.round(MEM_STOP / 1048576) : null);
 /**
  * Une ligne de l'export, réduite à ce que Swarm utilise (15/11 : 86 000 vidéos, 76 Mo de JSON, la synchro de prod mourait
  * à 512 Mo). Vidéos suivies : sans l'adresse signée de la miniature (23 % du poids ; la copie lit la page publique),
@@ -300,18 +317,26 @@ type Stage = {
   writtenBy?: number[];
   retries?: Record<string, number>;
   heapPrep?: number;
+  rssPrep?: number;
+  /** Fichiers rangés et notés aussitôt (audit Q55) : préparation en cours, fichiers d'un groupe pas encore rendus. */
+  extra?: Id<"_storage">[];
   sizes: Record<string, number>;
 };
 type Stores = Record<string, { url: string | null; v: number; art: string | null }>;
 /** Ce qu'une étape de groupe range pour l'étape globale (en plus de `GroupOut`). */
-type GroupFile = { out: GroupOut; markets: string[]; written: number; videos: number; refused?: string[]; heap?: number; biggest?: [number, string]; inParts?: number };
+type GroupFile = { out: GroupOut; markets: string[]; written: number; videos: number; refused?: string[]; heap?: number; rss?: number; biggest?: [number, string]; inParts?: number };
 type GroupTail = { used: string[]; need: [string, string][]; keys: string[] };
 
-/** Des lignes rangées en fichiers JSON de `per` lignes (lus un à un : jamais tout le texte à la fois). */
-async function stageWrite(ctx: ActionCtx, rows: unknown[], per = 4000): Promise<Id<"_storage">[]> {
+/**
+ * Des lignes rangées en fichiers JSON de `per` lignes (lus un à un : jamais tout le texte à la fois). `noted` reçoit
+ * chaque fichier dès qu'il est rangé (audit Q55 : un fichier rangé avant une erreur ou une coupure n'était plus effacé).
+ */
+async function stageWrite(ctx: ActionCtx, rows: unknown[], per = 4000, noted?: (id: Id<"_storage">) => Promise<void>): Promise<Id<"_storage">[]> {
   const ids: Id<"_storage">[] = [];
   for (let i = 0; i === 0 || i < rows.length; i += per) {
-    ids.push(await ctx.storage.store(new Blob([JSON.stringify(rows.slice(i, i + per))], { type: "application/json" })));
+    const id = await ctx.storage.store(new Blob([JSON.stringify(rows.slice(i, i + per))], { type: "application/json" }));
+    ids.push(id);
+    if (noted) await noted(id);
   }
   return ids;
 }
@@ -327,7 +352,7 @@ async function stageRead<T>(ctx: ActionCtx, ids: Id<"_storage">[], keep?: (r: T)
 async function stageDrop(ctx: ActionCtx, ids: Id<"_storage">[]) {
   for (const id of ids) { try { await ctx.storage.delete(id); } catch { /* déjà effacé */ } }
 }
-const stageFiles = (st: Stage) => [...Object.values(st.globals).flat(), ...[...st.outs, ...(st.tails ?? [])].filter((x): x is Id<"_storage"> => !!x)];
+const stageFiles = (st: Stage) => [...new Set([...Object.values(st.globals).flat(), ...[...st.outs, ...(st.tails ?? []), ...(st.extra ?? [])].filter((x): x is Id<"_storage"> => !!x)])];
 
 /** Toutes les pages d'une requête paginée de radarStore. */
 async function readPages<T>(ctx: ActionCtx, query: FunctionReference<"query", "internal", { cursor: string | null }, { items: T[]; cursor: string; done: boolean }>, each: (x: T) => void) {
@@ -400,7 +425,7 @@ const canonicalOf = (apps: RApp[]) => {
  * par lot, plus de lecture de toutes les empreintes), seules celles qui changent partent, cadencées à WRITE_RATE.
  * S'arrête proprement à RUN_LIMIT_MS ou au-delà de MEM_STOP (l'étape reprend : ce qui est écrit n'est pas renvoyé).
  */
-async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Map<string, () => unknown>, now: number, runStart: number) {
+export async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Map<string, () => unknown>, now: number, runStart: number) {
   const keys: string[] = [];
   function* pages(): Generator<[string, unknown]> {
     for (const [k, d] of boards) { boards.delete(k); keys.push(k); yield [k, d]; }
@@ -478,8 +503,8 @@ async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Ma
     if (batch.length) await send(batch, size);
   };
   for (const [key, data] of pages()) {
-    if (++seen % 1000 === 0) gc();
-    if (Date.now() - runStart > RUN_LIMIT_MS) { stopped = "temps écoulé"; break; }
+    if (++seen % 1000 === 0) { gc(); notePeaks(); }
+    if (Date.now() - runStart > WRITE_DEADLINE_MS) { stopped = "temps écoulé"; break; }
     if (process.memoryUsage().rss > MEM_STOP) { gc(); if (process.memoryUsage().rss > MEM_STOP) { stopped = "mémoire pleine"; break; } }
     const { hash, bytes } = hashLen(data);
     pending.push({ key, hash, data, bytes });
@@ -514,7 +539,12 @@ export const run = internalAction({
     if (backgroundOff() && !manual) return { skipped: 1 };
     const runId = await ctx.runMutation(internal.radarStore.startRun, {});
     if (runId === null) return { skipped: 1 }; // un passage tourne déjà
+    resetPeaks();
+    const runStart = Date.now();
     let st: Stage | null = null;
+    const written: Id<"_storage">[] = []; // fichiers rangés par cette préparation (audit Q55)
+    // La préparation n'a pas de reprise : au-delà de STEP_DEADLINE_MS, elle échoue proprement au lieu d'être coupée (Q68).
+    const deadline = (where: string) => { if (Date.now() - runStart > STEP_DEADLINE_MS) throw new Error(`préparation : temps écoulé (${where})`); };
     try {
       const base = process.env.JARVIA_EXPORT_URL ?? DEFAULT_EXPORT_URL;
       const secret = process.env.JARVIA_EXPORT_SECRET;
@@ -530,7 +560,7 @@ export const run = internalAction({
       const pool = new Map<string, string>();
       const slim: Slim = { intern: (x) => { const y = pool.get(x); if (y) return y; pool.set(x, x); return x; }, now };
       const raw = {} as Omit<Raw, "trackedVideos">;
-      for (const t of ["apps", "tracked", "formats", "signals"] as const) { (raw as Record<string, unknown>)[t] = await fetchTable(base, secret, t, slim); gc(); MEMLOG('export ' + t); }
+      for (const t of ["apps", "tracked", "formats", "signals"] as const) { (raw as Record<string, unknown>)[t] = await fetchTable(base, secret, t, slim); gc(); MEMLOG('export ' + t); deadline("export " + t); }
       pool.clear();
       // Essai sur le dev seulement : des comptes marqués « placement payé » à la main (variable SWARM_TEST_PLACEMENT,
       // pseudos séparés par des virgules), tant que l'export du Radar n'envoie pas encore `placement`.
@@ -599,21 +629,29 @@ export const run = internalAction({
       if (cur.length) groups.push(cur);
       const fetchIds = groups.map((g) => { const set = new Set(g); return raw.apps.filter((a) => set.has(canon(a.id)) && (weight.get(canon(a.id)) ?? 0) > 0).map((a) => a.id); });
 
+      deadline("fiches App Store");
       const sizes = { apps: raw.apps.length, tracked: raw.tracked.length, formats: raw.formats.length, signals: raw.signals.length, groups: groups.length };
-      st = {
-        now, groups, fetch: fetchIds, outs: groups.map(() => null), sizes,
-        globals: {
-          apps: await stageWrite(ctx, raw.apps), tracked: await stageWrite(ctx, raw.tracked), formats: await stageWrite(ctx, raw.formats, 1000),
-          signals: await stageWrite(ctx, raw.signals, 2000), stores: await stageWrite(ctx, [stores]),
-        },
+      // Audit Q55 (19/11) : les fichiers d'étape étaient rangés DANS l'objet `st`, enregistré seulement à la fin ; une erreur
+      // ou une coupure entre les deux les laissait pour toujours (~45 Mo par préparation). L'étape est enregistrée d'abord,
+      // vide, et chaque fichier y est noté dès qu'il est rangé : une erreur les efface, une coupure les laisse au ménage des
+      // passages suivants (staleStages).
+      await ctx.runMutation(internal.radarStore.setStage, { id: runId, stage: { now, groups: [], fetch: [], outs: [], sizes, extra: [], globals: { apps: [], tracked: [], formats: [], signals: [], stores: [] } } });
+      const note = async (id: Id<"_storage">) => { written.push(id); await ctx.runMutation(internal.radarStore.stageAdd, { id: runId, files: [id] }); };
+      const globals = {
+        apps: await stageWrite(ctx, raw.apps, 4000, note), tracked: await stageWrite(ctx, raw.tracked, 4000, note), formats: await stageWrite(ctx, raw.formats, 1000, note),
+        signals: await stageWrite(ctx, raw.signals, 2000, note), stores: await stageWrite(ctx, [stores], 4000, note),
       };
+      st = { now, groups, fetch: fetchIds, outs: groups.map(() => null), sizes, globals };
       MEMLOG(`préparation : ${groups.length} groupes`);
       st.heapPrep = heapPeak;
+      st.rssPrep = rssPeak;
+      deadline("fichiers d'étape");
       await ctx.runMutation(internal.radarStore.setStage, { id: runId, stage: st });
       await ctx.scheduler.runAfter(0, internal.radarSync.runGroup, { id: runId, i: 0 });
       return sizes;
     } catch (e) {
       await failRun(ctx, runId, e, st);
+      if (!st) await stageDrop(ctx, written); // rangés avant que l'étape soit complète (audit Q55)
       throw e;
     }
   },
@@ -636,6 +674,8 @@ export const runGroup = internalAction({
     const st: Stage | null = await ctx.runQuery(internal.radarStore.getStage, { id });
     if (!st) return; // passage fini ou abandonné entre-temps
     await ctx.runMutation(internal.radarStore.beat, { id });
+    resetPeaks();
+    const mine: Id<"_storage">[] = []; // fichiers rangés par ce groupe, pas encore rendus (audit Q55)
     try {
       gc();
       MEMLOG(`groupe ${i + 1}/${st.groups.length} départ`);
@@ -687,19 +727,25 @@ export const runGroup = internalAction({
       // Par lots de 100 : 20 textes de 300 caractères par compte, jusqu'à 2,4 Mo en écritures non latines, sous les 5 Mio
       // qu'accepte une action Node.
       for (let j = 0; j < Math.min(res.langTodo.length, TODO_MAX); j += 100) await ctx.scheduler.runAfter(60_000 + j * 100, internal.radarLang.detect, { items: res.langTodo.slice(j, j + 100) });
-      const file: GroupFile = { out: res.out!, markets: res.markets, written: w.written, videos: trackedVideos.length, refused: w.refused, heap: heapPeak, biggest: w.biggest, inParts: w.inParts };
+      const file: GroupFile = { out: res.out!, markets: res.markets, written: w.written, videos: trackedVideos.length, refused: w.refused, heap: heapPeak, rss: rssPeak, biggest: w.biggest, inParts: w.inParts };
       // Images : celles de ses vidéos et de ses comptes seulement (icônes, photos de profil, reprises et alertes sont
       // aussi vues par l'étape globale, qui les compte).
       const ownSlugs = new Set(apps.filter((a) => set.has(canon(a.id))).map((a) => a.slug));
       const ownKey = (k: string) => (k.startsWith("v:") && own.has(k.slice(2))) || (k.startsWith("a:") && ownHandles.has(k.slice(2))) || (k.startsWith("icon:") && ownSlugs.has(k.slice(5)));
       const tail: GroupTail = { used: [...res.used].filter(ownKey), need: [...res.need].filter(([k]) => ownKey(k) && !k.startsWith("icon:")), keys: w.keys };
       const outId = await ctx.storage.store(new Blob([JSON.stringify(file)], { type: "application/json" }));
+      mine.push(outId);
+      await ctx.runMutation(internal.radarStore.stageAdd, { id, files: [outId] });
       const tailId = await ctx.storage.store(new Blob([JSON.stringify(tail)], { type: "application/json" }));
+      mine.push(tailId);
+      await ctx.runMutation(internal.radarStore.stageAdd, { id, files: [tailId] });
       await ctx.runMutation(internal.radarStore.groupDone, { id, i, out: outId, tail: tailId, written: w.written });
+      mine.length = 0;
       if (i + 1 < st.groups.length) await ctx.scheduler.runAfter(0, internal.radarSync.runGroup, { id, i: i + 1 });
       else await ctx.scheduler.runAfter(0, internal.radarSync.runGlobal, { id });
     } catch (e) {
       await failRun(ctx, id, e, st);
+      await stageDrop(ctx, mine); // rangés avant groupDone (audit Q55)
       throw e;
     }
   },
@@ -712,6 +758,7 @@ export const runGlobal = internalAction({
     const st: Stage | null = await ctx.runQuery(internal.radarStore.getStage, { id });
     if (!st) return;
     await ctx.runMutation(internal.radarStore.beat, { id });
+    resetPeaks();
     try {
       gc();
       MEMLOG('global départ');
@@ -742,6 +789,16 @@ export const runGlobal = internalAction({
       gc();
       if (w.stopped) {
         await retryStep(ctx, id, "global", w, () => ctx.scheduler.runAfter(60_000, internal.radarSync.runGlobal, { id }));
+        return;
+      }
+      // Le ménage qui suit (images, toutes les clés, pages effacées, fin du passage) prend jusqu'à 2 ou 3 min : commencé
+      // trop tard, il serait coupé à 10 min sans rien noter (audit Q68). L'étape reprend alors dans une action neuve, où
+      // les pages, déjà écrites, ne sont pas renvoyées.
+      if (Date.now() - runStart > STEP_DEADLINE_MS) {
+        const n: number = await ctx.runMutation(internal.radarStore.stepRetry, { id, step: "global (ménage)" });
+        if (n > STEP_RETRIES) throw new Error("global : le ménage n'a jamais eu le temps de commencer, abandon");
+        console.log(`[étape] global : ${Math.round((Date.now() - runStart) / 1000)} s écoulées avant le ménage, reprise dans 1 min (${n}/${STEP_RETRIES})`);
+        await ctx.scheduler.runAfter(60_000, internal.radarSync.runGlobal, { id });
         return;
       }
 
@@ -801,6 +858,8 @@ export const runGlobal = internalAction({
         // La marge sur les limites de Convex, pour la voir fondre avant qu'une limite casse : pic de tas par étape (sur
         // 512 Mo d'action) et plus grosse page (rangée en morceaux au-delà de 600 000 caractères).
         heapMaxMo: Math.max(heapPeak, st.heapPrep ?? 0, ...files.map((f) => f.heap ?? 0)),
+        // Audit Q70 : la mémoire totale (sur laquelle l'action meurt à 512 Mo), et le seuil d'arrêt réellement posé.
+        rssMaxMo: Math.max(rssPeak, st.rssPrep ?? 0, ...files.map((f) => f.rss ?? 0)), memStopMo: memStopMo(),
         biggestPageKio: Math.round(Math.max(w.biggest[0], ...files.map((f) => f.biggest?.[0] ?? 0)) / 1024),
         biggestPage: ([w.biggest, ...files.map((f) => f.biggest ?? [0, ""])] as [number, string][]).sort((p, q) => q[0] - p[0])[0][1],
         pagesInParts: w.inParts + files.reduce((n, f) => n + (f.inParts ?? 0), 0),
