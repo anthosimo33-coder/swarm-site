@@ -162,8 +162,6 @@ export const APP_CREATORS = 6;
 export const CREATOR_PAGE = 500;
 /** Créateurs par document de l'index de recherche (« search », « search:creators:2 »…). */
 export const SEARCH_CREATORS = 4_000;
-/** Un marché a son onglet à partir de 10 créateurs ; les autres restent sur chaque créateur (son drapeau) et dans « Tous ». */
-export const MIN_MARKET_CREATORS = 1;
 /** « Nouvelle » : sortie sur l'App Store il y a 60 jours au plus ; sans date de sortie, réseau dont la 1re vidéo a 30 jours au plus. */
 const NEW_RELEASE_DAYS = 60;
 const NEW_NETWORK_DAYS = 30;
@@ -235,18 +233,67 @@ const DOMAIN_NAME = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 /** Le site d'où vient l'icône d'une app web : déclaré à la main, sinon son nom quand c'est un domaine (et pas de fiche épinglée). */
 export const siteOf = (slug: string): string | null => APP_SITE[slug] ?? (!APP_STORE_ID[slug] && DOMAIN_NAME.test(slug) ? slug : null);
 
-/** La bio sans les e-mails ni numéros de téléphone : Swarm montre ce que fait un compte, pas comment le contacter. */
+/**
+ * La bio sans ce qui permet de contacter le compte ou de le retrouver ailleurs : Swarm montre ce que fait un compte, pas
+ * comment le contacter. Retirés : e-mails (aussi écrits « (at) gmail (dot) com »), téléphones, pseudos d'autres réseaux
+ * (« snap: … », « insta @… », « 👻 … »), liens vers d'autres comptes ou messageries (linktr.ee, wa.me, instagram.com…),
+ * lieu (« 📍 … ») et âge (« 19 y/o », « 22 ans »). Audit S31 (19/11) : seuls les e-mails en clair et les téléphones
+ * partaient ; « snap: … | insta @… », « linktr.ee/… », « (at) gmail (dot) com », l'âge et la ville restaient.
+ * Les mentions TikTok (« @compte ») restent : c'est souvent l'app elle-même (« Ambassadrice @fitai »).
+ */
+const LINK_HOSTS = [
+  "linktr\\.ee", "linktree\\.com", "beacons\\.(?:ai|page)", "lnk\\.bio", "linkin\\.bio", "linkr\\.bio", "bio\\.link", "tap\\.bio", "campsite\\.bio",
+  "solo\\.to", "allmylinks\\.com", "(?:[\\w-]+\\.)?carrd\\.co", "hoo\\.be", "msha\\.ke", "komi\\.io", "snipfeed\\.co", "stan\\.store", "linkfly\\.to",
+  "bit\\.ly", "tinyurl\\.com", "wa\\.me", "(?:api|chat)\\.whatsapp\\.com", "t\\.me", "telegram\\.me", "m\\.me", "discord\\.gg", "discord\\.com\\/invite",
+  "snapchat\\.com", "instagram\\.com", "instagr\\.am", "facebook\\.com", "fb\\.com", "x\\.com", "twitter\\.com", "threads\\.net", "youtube\\.com",
+  "youtu\\.be", "twitch\\.tv", "onlyfans\\.com", "fansly\\.com", "calendly\\.com", "paypal\\.me", "cash\\.app",
+].join("|");
+const NETWORKS = "snap(?:chat)?|sc|insta(?:gram)?|ig|whats\\s?app|telegram|discord|kik|twitter|threads|youtube|yt|facebook|fb|twitch|bereal|onlyfans|fansly|paypal";
+const DOT = "(?:\\s*\\.\\s*|\\s*[(\\[{<]\\s*dot\\s*[)\\]}>]\\s*|\\s+dot\\s+)";
+const MAILBOX = "(?:gmail|googlemail|hotmail|outlook|live|yahoo|icloud|me|proton(?:mail)?|pm|gmx|orange|free|sfr|laposte|wanadoo|aol|mail|yandex|web)";
+const BIO_CUTS: [RegExp, (m: string) => string][] = [
+  // Liens vers une page de liens, une messagerie ou un autre réseau (avec ou sans https://, avec ou sans chemin).
+  [new RegExp(`(?<![\\w.-])(?:https?:\\/\\/)?(?:www\\.)?(?:${LINK_HOSTS})\\.?(?:\\/[^\\s|·•,;]*)?`, "giu"), () => ""],
+  // E-mails : en clair, « (at) … (dot) … », « at … dot … », « lea @ gmail.com ».
+  [/[\w.+-]+@[\w-]+\.[\w.-]+/gu, () => ""],
+  [new RegExp(`[\\w.+-]+\\s*[(\\[{<]\\s*at\\s*[)\\]}>]\\s*[\\w-]+(?:${DOT}[\\w-]+)+`, "giu"), () => ""],
+  [/[\w.+-]+\s+at\s+[\w-]+(?:\s+dot\s+[\w-]+)+/giu, () => ""],
+  [new RegExp(`[\\w.+-]+\\s*@\\s+[\\w-]+(?:${DOT}[\\w-]+)+`, "giu"), () => ""],
+  [new RegExp(`[\\w.+-]+\\s+@${MAILBOX}${DOT}[a-z]{2,}`, "giu"), () => ""],
+  // Pseudo sur un autre réseau : « snap: lea.b », « insta @lea », « ig - lea », « 👻 lea ».
+  [new RegExp(`(?<![\\p{L}\\p{N}])(?:${NETWORKS})\\s*(?:[:：=>»→\\-–—]+\\s*@?|@)\\s*[\\w.\\-]{2,30}`, "giu"), () => ""],
+  [/👻\s*[:：\-–—]?\s*@?[\w.\-]{2,30}/gu, () => ""],
+  // Téléphone : 9 chiffres ou plus.
+  [/\+?\(?\d[\d .()-]{7,}\d/g, (m) => (m.replace(/\D/g, "").length >= 9 ? "" : m)],
+  // Lieu et âge.
+  [/📍[ \t]*[^|·•;\n]{0,40}/gu, () => ""],
+  [/(?<![\p{L}\p{N}])(?:1\d|[2-9]\d)\s*(?:y\/o|y\.o\.?|yo|yrs?\s*old|years?\s*old)(?![\p{L}\p{N}])/giu, () => ""],
+  [/(?<!(?:depuis|de|pendant|il y a|avec|plus de|moins de|since|for)\s)(?<![\p{L}\p{N}])(?:1\d|[2-9]\d)\s*(?:ans|años|anos)(?![\p{L}\p{N}])(?!\s+d['’e])/giu, () => ""],
+  // Les émojis de contact restés seuls, et les intitulés (« contact: », « business: ») restés sans rien derrière.
+  [/[ \t]*[|·•,:;-]?[ \t]*(?:📧|✉️?|📩|📞|☎️?|📱)[ \t]*[|·•,:;-]?/gu, () => " "],
+  [/(?<![\p{L}\p{N}])(?:contact|business|booking|bookings|inquiries|enquiries|collabs?|partenariats?|pro|e-?mail|mail)\s*[:：]\s*(?=$|[|·•\n\u0000])/gimu, () => ""],
+];
 export const cleanBio = (bio: string | null) => {
   if (!bio) return bio;
-  const out = bio
-    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "")
-    .replace(/\+?\(?\d[\d .()-]{7,}\d/g, (m) => (m.replace(/\D/g, "").length >= 9 ? "" : m)) // téléphone : 9 chiffres ou plus
-    .replace(/[ \t]*[|·•,:;-]?[ \t]*(?:📧|✉️?|📩|📞|☎️?|📱)[ \t]*[|·•,:;-]?/gu, " ")
+  // Chaque morceau retiré laisse une marque, retirée avec le séparateur qui le suit (« snap: x | Paris » → « Paris »).
+  let out = bio.replace(/\u0000/g, "");
+  for (const [re, by] of BIO_CUTS) out = out.replace(re, (m) => (by(m) === "" ? "\u0000" : by(m)));
+  out = out
+    .replace(/[ \t]*\u0000[ \t]*(?:[|·•,;:\-–—][ \t]*)?/g, "")
     .replace(/[ \t]{2,}/g, " ")
-    .replace(/[ \t]*[|·•,:;-][ \t]*$/gm, "")
+    .replace(/(?:[ \t]*[|·•,:;-][ \t]*)+$/gm, "")
+    .replace(/([|·•])(?:[ \t]*[|·•])+/g, "$1")
     .trim();
   return out || null;
 };
+
+/**
+ * Le lien « voir sur la plateforme » venu du Radar, s'il mène bien à TikTok ou Instagram en https ; sinon null (la page
+ * vidéo reconstruit alors le lien). Audit S34 (19/11) : l'adresse du signal était posée telle quelle dans href, si bien
+ * qu'une valeur « javascript:… » aurait tourné au clic, sur l'origine de Kopycat.
+ */
+export const platformUrl = (u: string | null | undefined): string | null =>
+  typeof u === "string" && /^https:\/\/(?:(?:www|m|vm|vt)\.)?(?:tiktok|instagram)\.com\/[^\s"'<>\\]*$/i.test(u) ? u : null;
 
 /** Une vidéo, telle que la voient les écrans (vignette, lecteur). */
 export type VideoCard = { id: string; platform: string; handle: string; app: string | null; views: number; x: number | null; publishedAt: number; cover: string | null; hook: string | null; paid?: boolean; otherLang?: string | null; carousel?: number; kind?: string };
@@ -428,7 +475,12 @@ export function buildBoards(
 
   // Sous une app, seulement les vidéos qui la citent : le 14/11, 27 % des vidéos des comptes suivis ne citaient pas
   // la leur (vidéos perso d'un vrai créateur, vidéos d'une autre app) et gonflaient vues, top et « meilleure ».
-  const videosByApp = groupBy(raw.trackedVideos.filter(citesItsApp), (v) => canonical(v.appId)?.id ?? "");
+  // Et seulement celles des comptes qui la poussent (actifs et prouvés, `accounts` plus bas) : audit Q65 (19/11), les
+  // vues d'une app comptaient les vidéos de comptes en pause (2 apps listées n'avaient que des vues de comptes en
+  // pause), alors que son nombre de comptes ne les comptait pas. Un compte mis en pause dans le Radar (retrait) ne
+  // sort plus non plus dans le top de ses vidéos.
+  const pushes = (accountId: string) => { const t = accountById.get(accountId); return !!t && t.status === "active" && isProven(t); };
+  const videosByApp = groupBy(raw.trackedVideos.filter((v) => citesItsApp(v) && pushes(v.accountId)), (v) => canonical(v.appId)?.id ?? "");
   const videosByAccount = groupBy(raw.trackedVideos, (v) => v.accountId);
   const marketByAccount = new Map<string, string | null>();
   // Son pays : celui que le Radar relève (le plus fréquent de ses vidéos), sinon celui de création de ses vidéos de
@@ -506,9 +558,9 @@ export function buildBoards(
   // Les marchés présents, du plus fourni au moins fourni (comptes actifs).
   const marketCount = new Map<string, number>();
   for (const t of creatorAccounts) { const m = mkOf(t.id); if (m) marketCount.set(m, (marketCount.get(m) ?? 0) + 1); }
-  // Tous les pays où il y a des créateurs : le choix se fait dans une liste avec recherche (plus d'onglets).
+  // Tous les pays où il y a au moins un créateur : le choix se fait dans une liste avec recherche (plus d'onglets, donc
+  // plus de seuil ; audit Q54 : un seuil « à partir de 10 créateurs » réglé à 1 ne retirait rien).
   const MARKETS = [...marketCount.entries()]
-    .filter(([, n]) => n >= MIN_MARKET_CREATORS)
     .sort((p, q) => q[1] - p[1])
     .map(([c, n]) => [c, marketLabel(c), n] as [string, string, number]);
   const accountsByApp = groupBy(creatorAccounts, (t) => canonical(t.appId)?.id ?? "");
@@ -591,7 +643,6 @@ export function buildBoards(
       // Nouvelle : sortie récemment, ou réseau qui vient de démarrer (et non « arrivée récemment dans le Radar » : le
       // 14/11, toutes les apps l'étaient).
       isNew: Number.isFinite(released) ? now - released <= NEW_RELEASE_DAYS * DAY : firstVideo !== null && now - firstVideo <= NEW_NETWORK_DAYS * DAY,
-      released: Number.isFinite(released) ? released : null,
       store,
       _top12: _top.slice(0, 12),
       _accs: accs,
@@ -755,9 +806,12 @@ export function buildBoards(
     usedVideos.set(m.videoId, m._video);
   }
   const plain = (ms: (typeof formatRows)[number]["members"]) => ms.map(({ _video, ...m }) => m);
+  // Un format tel que l'écrivent les documents : ses n premières reprises, sans firstSeenAt (il ne sert qu'au choix des
+  // nouveaux formats des alertes ; aucun écran ne le lit, audit Q66).
+  const formatDoc = ({ firstSeenAt: _first, ...f }: (typeof formatRows)[number], n: number) => ({ ...f, members: plain(f.members.slice(0, n)) });
   if (!G) {
-    boards.set("formats", { updatedAt: now, markets: MARKETS, formats: shown.map((f) => ({ ...f, members: plain(f.members.slice(0, 4)) })) });
-    for (const f of shown) boards.set(`format:${f.id}`, { updatedAt: now, ...f, members: plain(f.members.slice(0, 30)) });
+    boards.set("formats", { updatedAt: now, markets: MARKETS, formats: shown.map((f) => formatDoc(f, 4)) });
+    for (const f of shown) boards.set(`format:${f.id}`, { updatedAt: now, ...formatDoc(f, 30) });
   }
   const formatsByAccount = groupBy(
     raw.formats.flatMap((f) => f.members.map((m) => ({ accountId: m.accountId, f }))),
@@ -774,7 +828,8 @@ export function buildBoards(
       handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
       market: mkOf(t.id), otherLang: otherLangOf(t.id), kind: mainType.get(t.id) ?? null, gender: genderFor(t), app: a ? appRef(a, true) : null,
       // Ce qui le relie à son app (RProof) reste interne au Radar : jamais dans les documents de Swarm (décision du 14/11).
-      igHandle: t.igHandle, best: best.map(card), _vids: vids,
+      // Son compte Instagram non plus (audit S31, 19/11) : aucun écran ne l'affiche, il reliait deux identités.
+      best: best.map(card), _vids: vids,
     };
   };
   // Leur rang parmi les comptes : le tri par médiane le garde à égalité (l'étape globale remet les groupes dans cet ordre).
@@ -853,14 +908,14 @@ export function buildBoards(
     };
   });
   const newFormats = formatRows.filter((f) => f.accounts >= 3 && now - f.firstSeenAt <= 7 * DAY).slice(0, 20);
-  if (!G) boards.set("alerts", { updatedAt: now, videos: hotCards, formats: newFormats.map((f) => ({ ...f, members: plain(f.members.slice(0, 3)) })) });
+  if (!G) boards.set("alerts", { updatedAt: now, videos: hotCards, formats: newFormats.map((f) => formatDoc(f, 3)) });
   const nicheViews = [...groupBy(appsBoard, (a) => a.niche).entries()].map(([n, as]) => [n, as.reduce((s, a) => s + a.views7, 0)] as [string, number]).sort((p, q) => q[1] - p[1]);
   if (!G) boards.set("home", {
     updatedAt: now,
     niches: nicheViews.filter(([n]) => n !== "Autres").slice(0, 6).map(([n]) => n),
     apps: appsBoard.slice(0, 4).map((a) => ({ slug: a.slug, name: a.name, icon: a.icon, views7: a.views7, weekDelta: a.weekDelta, bestX: a.bestX })),
+    // Pas de formats : l'Accueil lit le document « formats » (audit Q66 : home.formats n'était lu nulle part).
     videos: hotCards.slice(0, 4),
-    formats: formatRows.slice(0, 3).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX })),
   });
 
   // ── Ce que le Radar suit, pour la page d'accueil publique et la date du relevé (« Relevé du … ») ──
@@ -914,7 +969,7 @@ export function buildBoards(
     const playlist = a ? playlists.get(a.slug) ?? [] : [];
     return {
       updatedAt: now, id, platform,
-      url: s?.url ?? (platform === "instagram" ? `https://www.instagram.com/reel/${id.replace(/^ig:/, "")}/` : `https://www.tiktok.com/@${handle}/video/${id}`),
+      url: platformUrl(s?.url) ?? (platform === "instagram" ? `https://www.instagram.com/reel/${id.replace(/^ig:/, "")}/` : `https://www.tiktok.com/@${handle}/video/${id}`),
       handle, fans: acc?.fans ?? s?.authorFans ?? null, normal: acc?.medianViews ?? null, paid: isPaid(acc?.id),
       app: a ? appRef(a, true) : null,
       market: acc ? mkOf(acc.id) ?? marketOf(s?.lang, s?.region ?? v?.region) : marketOf(s?.lang, s?.region ?? v?.region), region: s?.region ?? null,

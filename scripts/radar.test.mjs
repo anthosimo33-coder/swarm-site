@@ -99,9 +99,61 @@ const RULES = [
     for (const [from, to] of Object.entries(map)) if (!docs.has(`app:${to}`)) out.push(`${from} → ${to}, sans fiche`);
     return out;
   }],
+  ['Aucun champ qu\'aucun écran ne lit : igHandle, released, firstSeenAt, home.formats (audit S31, Q66)', (docs) => {
+    const out = [];
+    const walk = (k, x) => {
+      if (Array.isArray(x)) return x.forEach((y) => walk(k, y));
+      if (!x || typeof x !== 'object') return;
+      for (const f of ['igHandle', 'released', 'firstSeenAt']) if (f in x) out.push(`${k} : ${f}`);
+      for (const y of Object.values(x)) walk(k, y);
+    };
+    for (const [k, d] of docs) walk(k, d);
+    if (docs.get('home') && 'formats' in docs.get('home')) out.push('home.formats');
+    return [...new Set(out)];
+  }],
+  ['Bios sans moyen de contact ni pseudo d\'un autre réseau (audit S31)', (docs) => {
+    const out = [];
+    for (const [k, d] of docs) for (const c of /^creators:/.test(k) ? d.creators ?? [] : /^creator:/.test(k) ? [d] : [])
+      if (c.bio && /snap|📍|insta/i.test(c.bio)) out.push(`${k} @${c.handle} : ${c.bio}`);
+    return out;
+  }],
+  ['Lien « voir sur la plateforme » : toujours https vers TikTok ou Instagram (audit S34)', (docs) => {
+    const out = [];
+    for (const [k, d] of docs) if (/^video:/.test(k) && !/^https:\/\/(www\.)?(tiktok|instagram)\.com\//.test(d.url ?? '')) out.push(`${k} : ${d.url}`);
+    return out;
+  }],
+  ['Vues d\'une app : seulement les vidéos des comptes qui la poussent, actifs et prouvés (audit Q65)', (docs, raw) => {
+    const out = [], NOW = 1794780000000;
+    const acc = new Map(raw.tracked.map((t) => [t.id, t]));
+    const byId = new Map(raw.apps.map((a) => [a.id, a]));
+    const canon = (a) => { for (let i = 0; a && a.mergedInto && i < 5; i++) a = byId.get(a.mergedInto) ?? a; return a; };
+    const pushes = (id) => { const t = acc.get(id); return t && t.status === 'active' && !(t.proof && t.proof.by === null); };
+    for (const a of docs.get('apps')?.apps ?? []) {
+      const want = raw.trackedVideos.filter((v) => canon(byId.get(v.appId))?.slug === a.slug && v.cites !== false && pushes(v.accountId) && NOW - v.publishedAt <= 30 * DAY)
+        .reduce((n, v) => n + v.views, 0);
+      if (want !== a.views30) out.push(`${a.slug} : ${a.views30} vues sur 30 j, ${want} attendues`);
+      const fiche = docs.get(`app:${a.slug}`);
+      for (const v of [...(a.top ?? []), ...(fiche?.videos ?? [])]) if (!pushes(raw.trackedVideos.find((x) => x.videoId === v.id)?.accountId)) out.push(`${a.slug} : vidéo ${v.id} d'un compte qui ne la pousse pas`);
+    }
+    return [...new Set(out)];
+  }],
 ];
 
-let fail = 0;
+// Nettoyage des bios (audit S31) : ce qui doit partir, et ce qui doit rester.
+const BIOS = [
+  ['📧 lea.b@gmail.com | Paris', 'Paris'], ['snap: lea.b | insta @lea_b', null], ['linktr.ee/leab 💕', '💕'], ['contact: lea (at) gmail (dot) com', null],
+  ['lea at gmail dot com', null], ['lea @ gmail.com', null], ['👻 leab', null], ['📍Paris, France · 22 ans', null], ['19 y/o | fitness', 'fitness'],
+  ['wa.me/33612345678', null], ['IG: @lea.fit', null], ['Appelle +33 6 12 34 56 78', 'Appelle'], ['https://beacons.ai/lea 🔗 collab', '🔗 collab'],
+  ['business: lea[at]gmail[dot]com', null], ['Snapchat → lea.b\nTikTok France 🇫🇷', 'TikTok France 🇫🇷'],
+  // Restent : la mention de l'app, les âges qui n'en sont pas, les mots ordinaires, un code promo, les puces.
+  ['Ambassadrice @fitai ✨', 'Ambassadrice @fitai ✨'], ['Prof depuis 22 ans', 'Prof depuis 22 ans'], ['22 ans d\'expérience', '22 ans d\'expérience'],
+  ['Big fan of Paris', 'Big fan of Paris'], ['Code promo LEA10', 'Code promo LEA10'], ['• currículo • entrevistas', '• currículo • entrevistas'],
+  ['Noise app 📍\nSide hustle', 'Noise app\nSide hustle'],
+];
+const bioFails = BIOS.filter(([inp, want]) => models.cleanBio(inp) !== want);
+console.log(`${bioFails.length ? 'ÉCHEC' : 'OK   '} Nettoyage des bios (audit S31)${bioFails.length ? ` : ${bioFails.length} — ${bioFails.slice(0, 4).map(([i, w]) => `${JSON.stringify(i)} → ${JSON.stringify(models.cleanBio(i))} au lieu de ${JSON.stringify(w)}`).join(' ; ')}` : ''}`);
+
+let fail = bioFails.length ? 1 : 0;
 const run = async (label, docs, strict, raw) => {
   console.log(`── ${label} : ${docs.size} pages`);
   for (const [name, rule] of RULES) {
