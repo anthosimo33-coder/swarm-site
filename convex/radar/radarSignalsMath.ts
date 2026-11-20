@@ -690,8 +690,60 @@ export function allowanceUsd(s: BudgetSettings, state: BudgetState, k: PosteKey)
   return Math.max(0, Math.min(p.qty - state.byPoste[k].usd, s.capUsd - state.spentUsd));
 }
 
-/** Admissions dans la courbe encore possibles aujourd'hui (le poste se règle en vidéos/jour). */
+// ─── La courbe dans la voie gratuite (20/11/2026) ────────────────────────────
+
+/** Ce que la courbe range d'un relevé (radarSignals.applyCurve n'en lit pas plus) : la vidéo et les abonnés de son compte. */
+export type CurveCounts = { authorFans: number; views: number; likes: number; comments: number; shares: number; saves: number };
+export const CURVE_COUNTS: readonly (keyof CurveCounts)[] = ["authorFans", "views", "likes", "comments", "shares", "saves"];
+/** Un relevé payant (la vidéo entière) ramené à ce que la courbe range. */
+export const curveCountsOf = (s: CurveCounts): CurveCounts => ({
+  authorFans: s.authorFans,
+  views: s.views,
+  likes: s.likes,
+  comments: s.comments,
+  shares: s.shares,
+  saves: s.saves,
+});
+
+/**
+ * LES PAGES DE LA COURBE COMPTENT DANS LA VOIE GRATUITE. Lire la courbe sur la page publique d'une vidéo coûte une page
+ * TikTok par relevé, 3 par vidéo admise (H+6, H+24, H+48). Ces pages partent des mêmes serveurs que la voie gratuite des
+ * relevés de comptes (radarFreeMath.FREE_LANE_MAX_MS : une page à la fois, 0,3 à 0,7 s avant chacune — le rythme que
+ * TikTok leur sert sans refus, 13/11/2026) : une seconde file à côté en doublerait le rythme. Elles passent donc DANS la
+ * voie, en tête de chaque passage, dans sa file et dans son temps (radarSignals.curveInLane).
+ * Or la voie est pleine : le 20/11/2026 vers 18 h, son dernier passage a relevé 99 comptes en 7 minutes (2 à 4 pages
+ * chacun, ~200 à 400 pages — estimé, le nombre de pages n'est pas rangé) et en a laissé 42 au suivant. Chaque page de
+ * courbe y prend la place d'une page de compte, d'où un plafond : 6 pages par passage (1,5 à 3 % d'un passage, 2 comptes
+ * au plus repoussés de 10 minutes), 6 × 144 passages = 864 pages par jour, et des admissions bornées en PAGES :
+ * 864 ÷ 3 = 288 vidéos par jour au plus (le poste en règle 100 : 300 pages par jour, 2 par passage en moyenne ; une
+ * seule admission depuis le 15/11). Le relevé payant de l'heure en prenait 13 par heure (allowance : 300 crédits ÷ 24) ;
+ * la voie, 36 : elle ne ralentit pas la courbe. Une vidéo due que la voie n'a pas prise en CURVE_LANE_WAIT_MS (passage
+ * tombé, plafond atteint) part au relevé payant de l'heure (radarSignals.runCurve), comme avant.
+ */
+export const CURVE_PAGES_PER_VIDEO = CURVE_CHECKPOINTS_H.length;
+export const CURVE_PAGES_PER_PASS = 6;
+/** Passages de la voie par jour : la tâche des relevés de comptes part toutes les 10 minutes (convex/crons.ts). */
+export const LANE_PASSES_PER_DAY = 144;
+export const CURVE_PAGES_PER_DAY = CURVE_PAGES_PER_PASS * LANE_PASSES_PER_DAY;
+export const CURVE_ADMISSIONS_MAX = Math.floor(CURVE_PAGES_PER_DAY / CURVE_PAGES_PER_VIDEO);
+/** Trois passages de la voie : au-delà, une vidéo due part au relevé payant de l'heure. */
+export const CURVE_LANE_WAIT_MS = 30 * 60_000;
+
+/**
+ * Vidéos de la courbe que la voie prend à ce passage : CURVE_PAGES_PER_PASS au plus ; tant que le relevé payant part
+ * quand même (`free` faux, radarFreeMath.CURVE_FREE), pas plus que la part payante du passage (`paidLeft`) ; aucune si
+ * le poste est éteint, comme avant.
+ */
+export function curveLaneTake(s: BudgetSettings, free: boolean, paidLeft: number): number {
+  if (!posteOf(s, "curve").on) return 0;
+  return free ? CURVE_PAGES_PER_PASS : Math.max(0, Math.min(CURVE_PAGES_PER_PASS, paidLeft));
+}
+
+/**
+ * Admissions dans la courbe encore possibles aujourd'hui : le poste se règle en vidéos/jour, borné par les pages que la
+ * voie gratuite peut lui donner (CURVE_ADMISSIONS_MAX : 3 pages par vidéo).
+ */
 export function curveAdmissionsLeft(s: BudgetSettings, admittedToday: number): number {
   const p = posteOf(s, "curve");
-  return p.on ? Math.max(0, p.qty - admittedToday) : 0;
+  return p.on ? Math.max(0, Math.min(p.qty, CURVE_ADMISSIONS_MAX) - admittedToday) : 0;
 }

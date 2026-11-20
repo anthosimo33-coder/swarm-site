@@ -122,6 +122,7 @@ import { MARKET_CURRENCY } from "./radarMarketMath";
 import {
   appRef,
   attachAccount,
+  curveInLane,
   ensureSettings,
   ensureSeedApps,
   moveAccount,
@@ -1402,6 +1403,12 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
   const waitFirst = tierDefers(b.tier).firstReads;
   const paid = (list: readonly DueAccount[], reason: PaidReason): Promise<number> =>
     pooled(list, ACCOUNT_READ_POOL, (acc) => readPaid(acc, n, reason), () => Date.now() - now < ACCOUNT_READ_MAX_MS);
+  // La courbe des vues d'abord, dans la file et le temps de la voie (20/11/2026, radarSignals.curveInLane) ; ses relevés
+  // payants et ses écritures suivent PENDANT la voie.
+  const curveRest = await curveInLane(ctx, freePage, st, b, now, () => Date.now() - now < FREE_LANE_MAX_MS).catch((e: unknown) => {
+    console.error(`[radar] courbe dans la voie : ${e instanceof Error ? e.message : String(e)}`);
+    return async (): Promise<void> => undefined;
+  });
   try {
     // Les deux voies avancent en même temps. La voie gratuite prend d'abord les comptes qui ont publié ces dernières
     // 24 heures (leur second regard), puis les plus en retard.
@@ -1424,6 +1431,7 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
         },
         () => Date.now() - now < FREE_LANE_MAX_MS,
       ),
+      curveRest(),
     ]);
     const free = lane.state;
     // Un profil supprimé, privé ou vidé n'a rien à lire, en payant non plus : une erreur de relevé, sans crédit.
