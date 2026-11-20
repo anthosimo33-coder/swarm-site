@@ -90,7 +90,7 @@ const here = () => clean(window.location.pathname) + window.location.search;
 // chiffres. Audit F15 : home, formats, creators:FR et alerts l'étaient aussi, jamais visités pour certains, et chaque
 // réécriture renvoyait ~2,25 Mo par onglet ; ils s'ouvrent maintenant avec leur écran (et se ferment après, F3).
 const WARM = ['apps', 'search', 'stats'];
-const SAVED = ['follows', 'folders', 'alertRules', 'seen'];
+const SAVED = ['follows', 'folders', 'alertRules', 'seen', 'views'];
 
 /** L'adresse -> sa route, ses paramètres (décodés sans lever, audit Q31) et la clé de ses données (src/app/plan.js). */
 const matchRoute = routeMatcher(ROUTES);

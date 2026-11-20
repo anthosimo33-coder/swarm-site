@@ -130,11 +130,13 @@ Le `Format` complet (`members` jusqu'à 30).
 
 ### `creators:<pays>` — créateurs (CreateursA/B, MCreateurs, MCreateursCartes)
 Pays (code ISO) ou `ALL`. Tous les créateurs du pays, par pages de 500 (`CREATOR_PAGE`) :
-`creators:<pays>` = `{ updatedAt, market, markets, total, pages, creators: [Creator] }` (la 1re page),
+`creators:<pays>` = `{ updatedAt, market, markets, total, active7: ceux qui ont publié sur 7 jours (posts7d > 0), pages, creators: [Creator] }` (la 1re page),
 `creators:<pays>:2`, `:3`… = `{ updatedAt, market, page, creators }`. Ordre : les comptes actifs d'abord, puis ceux qui
 n'ont rien publié depuis plus de 30 jours, chaque groupe par vues médianes.
-`Creator = { handle, bio, fans, median, posts7d, lastPostAt, market, otherLang, kind, gender, app: {slug, name, icon, niche, page?}|null, best: [VideoCard ×3] }`
+`Creator = { handle, bio, fans, median, posts7d, days7, lastPostAt, market, otherLang, kind, gender, app: {slug, name, icon, niche, page?}|null, best: [VideoCard ×3] }`
 
+- `days7` : ses vidéos suivies par jour de Paris sur les 7 derniers jours, le plus ancien d'abord, aujourd'hui en dernier
+  (`[0, 2, 1, 0, 0, 1, 0]`). La liste et le profil dessinent son rythme avec ; `posts7d` reste le nombre du Radar ;
 - `bio` : sans e-mail, téléphone, pseudo d'un autre réseau, lien vers une page de liens ou une messagerie, lieu ni âge
   (`cleanBio`, audit S31) ;
 - ce qui relie un compte à son app (la preuve du Radar) et son compte Instagram ne sortent jamais du Radar ;
@@ -196,6 +198,7 @@ Sur le canevas, ces props n'existent pas : l'écran garde un état local, comme 
 | `folders` | `[{ id, name, createdAt, items: [{ kind: 'app'\|'video'\|'format'\|'creator', id, label, cover, at }] }]` |
 | `alertRules` | `[{ id, createdAt, quoi: 'compte'\|'video'\|'format', niche: nom\|null, seuil: nombre, marche: code pays\|null }]` — « montre-moi quand un compte / une vidéo / un format de <niche> fait <seuil>× sa normale (<pays>) » ; aucune alerte n'est envoyée, elles filtrent l'écran Alertes |
 | `seen` | `{ alerts: date en ms }` — « Tout marquer comme lu » |
+| `views` | `[{ id, screen: 'createurs', name, q, at }]` — les vues enregistrées d'une liste (« Mes vues ») : `q` = la requête de l'adresse qui porte ses filtres (`niche=Études&m=FR`), `name` composé par l'écran depuis ces filtres |
 
 Une valeur pèse au plus 256 Ko, comptés comme Convex les compte ; un compte écrit au plus 300 fois par 10 minutes
 (`TROP_DE_REQUETES` au-delà). Sa forme est vérifiée : champs connus du bon type,

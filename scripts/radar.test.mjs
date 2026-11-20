@@ -117,6 +117,32 @@ const RULES = [
       if (c.bio && /snap|📍|insta/i.test(c.bio)) out.push(`${k} @${c.handle} : ${c.bio}`);
     return out;
   }],
+  ['Rythme d\'un créateur : days7 = ses vidéos suivies par jour de Paris, 7 jours, aujourd\'hui en dernier (maquette E1)', (docs, raw) => {
+    const out = [], NOW = 1794780000000;
+    const pDay = (t) => { const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t)); return Date.parse(p + 'T00:00:00Z') / DAY; };
+    const byHandle = new Map(raw.tracked.map((t) => [t.handle, t.id]));
+    let seen = 0, busy = 0;
+    for (const [k, d] of docs) for (const c of /^creators:/.test(k) ? d.creators ?? [] : /^creator:/.test(k) ? [d] : []) {
+      seen++;
+      if (!Array.isArray(c.days7) || c.days7.length !== 7) { out.push(`${k} @${c.handle} : days7 = ${JSON.stringify(c.days7)}`); continue; }
+      const want = [0, 0, 0, 0, 0, 0, 0];
+      for (const v of raw.trackedVideos) if (v.accountId === byHandle.get(c.handle)) { const j = pDay(NOW) - pDay(v.publishedAt); if (j >= 0 && j < 7) want[6 - j]++; }
+      if (want.join() !== c.days7.join()) out.push(`${k} @${c.handle} : ${c.days7.join(',')} au lieu de ${want.join(',')}`);
+      if (want.some((n) => n > 0)) busy++;
+    }
+    if (seen && !busy) out.push('aucun créateur de la fixture n\'a publié sur 7 jours : le test ne prouve rien');
+    return [...new Set(out)].slice(0, 10);
+  }],
+  ['Créateurs : active7 de la 1re page = les comptes du marché qui ont publié sur 7 jours, toutes pages (maquette E1)', (docs) => {
+    const out = [];
+    for (const [k, d] of docs) {
+      if (!/^creators:[A-Z]+$/.test(k)) continue;
+      let n = (d.creators ?? []).filter((c) => c.posts7d > 0).length;
+      for (let i = 2; i <= (d.pages ?? 1); i++) n += (docs.get(`${k}:${i}`)?.creators ?? []).filter((c) => c.posts7d > 0).length;
+      if (d.active7 !== n) out.push(`${k} : active7 = ${d.active7}, ${n} attendus`);
+    }
+    return out;
+  }],
   ['Lien « voir sur la plateforme » : toujours https vers TikTok ou Instagram (audit S34)', (docs) => {
     const out = [];
     for (const [k, d] of docs) if (/^video:/.test(k) && !/^https:\/\/(www\.)?(tiktok|instagram)\.com\//.test(d.url ?? '')) out.push(`${k} : ${d.url}`);

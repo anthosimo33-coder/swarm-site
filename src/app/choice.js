@@ -178,11 +178,12 @@ function refreshPreview() {
   });
 }
 
-// La niche qu'on coche : sa place avant le nouveau rendu.
+// L'option qu'on coche : sa place avant le nouveau rendu.
 document.addEventListener('click', (e) => {
   if (!(e.target instanceof Element)) return;
-  const opt = e.target.closest('[data-fl="niche"] .fl-opt');
-  if (opt && opt.getAttribute('aria-selected') !== 'true') {
+  // Toute fenêtre à pastilles (Niche d'Apps ; Niche, App, Contenu de Créateurs) : l'option cochée s'envole vers la sienne.
+  const opt = e.target.closest('[data-fl] .fl-opt');
+  if (opt && opt.closest('[data-fl]').querySelector('.fl-tray') && opt.getAttribute('aria-selected') !== 'true') {
     const lab = opt.querySelector('.fl-lab');
     pendingChip = { key: optKey(opt), rect: (lab || opt).getBoundingClientRect() };
   }

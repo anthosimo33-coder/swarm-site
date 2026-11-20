@@ -9,9 +9,11 @@ import { mutation, query, type QueryCtx } from "./_generated/server";
  *   folders     [{ id, name, createdAt, items: [{ kind, id, label, cover, at }] }]
  *   alertRules  [{ id, … , createdAt }]
  *   seen        { alerts: date en ms de « Tout marquer comme lu » }
+ *   views       [{ id, screen, name, q, at }] : les vues enregistrées d'une liste (maquette D2, 20/11) — `q` est la requête
+ *               de l'adresse qui porte ses filtres (« niche=Études&m=FR »), `screen` l'écran (« createurs »)
  * Le routeur (src/app/main.js) les passe aux écrans par `saved(clé)` et `save(clé, valeur)`.
  */
-const KEYS = new Set(["follows", "folders", "alertRules", "seen"]);
+const KEYS = new Set(["follows", "folders", "alertRules", "seen", "views"]);
 /**
  * Taille d'une valeur, comptée comme Convex la compte (getConvexSize). Audit Q39 (19/11) : la borne portait sur les
  * caractères du JSON ; 240 031 caractères de zéros pesaient 1 080 174 octets pour Convex (au-delà de 1 Mio : erreur
@@ -50,6 +52,7 @@ const SHAPES: Record<string, Check> = {
     items: list(2_000, shape({ kind: str(40), id: str(200), label: str(500), cover: orNull(str(2_000)), at: num })) })),
   alertRules: list(200, shape({ id: str(100) }, { extra: 15 })),
   seen: shape({}, { extra: 16 }),
+  views: list(50, shape({ id: str(100), screen: str(40), name: str(200), q: str(2_000), at: num }, { extra: 4 })),
 };
 
 /**

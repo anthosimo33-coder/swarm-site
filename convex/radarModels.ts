@@ -831,8 +831,13 @@ export function buildBoards(
     const best = withImage([...vids].filter((v) => now - v.publishedAt <= 30 * DAY).sort((p, q) => q.views - p.views), 3, trackedHasImage);
     use(best);
     const a = canonical(t.appId);
+    // Son rythme jour par jour (maquette E1, 20/11) : ses vidéos des 7 derniers jours de Paris, le plus ancien d'abord,
+    // aujourd'hui en dernier. La rangée de cases de la liste Créateurs et du profil le dessine.
+    const today = parisDay(now);
+    const days7 = [0, 0, 0, 0, 0, 0, 0];
+    for (const v of vids) { const k = today - parisDay(v.publishedAt); if (k >= 0 && k < 7) days7[6 - k]++; }
     return {
-      handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
+      handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, days7, lastPostAt: t.lastPostAt,
       market: mkOf(t.id), otherLang: otherLangOf(t.id), kind: mainType.get(t.id) ?? null, gender: genderFor(t), app: a ? appRef(a, true) : null,
       // Ce qui le relie à son app (RProof) reste interne au Radar : jamais dans les documents de Swarm (décision du 14/11).
       // Son compte Instagram non plus (audit S31, 19/11) : aucun écran ne l'affiche, il reliait deux identités.
@@ -859,7 +864,8 @@ export function buildBoards(
   const pagesOf = (code: string, list: typeof creators) => {
     const plain = list.map((c) => plainOf.get(c.handle)!);
     const pages = Math.max(1, Math.ceil(plain.length / CREATOR_PAGE));
-    boards.set(`creators:${code}`, { updatedAt: now, market: code, markets: MARKETS, total: plain.length, pages, creators: plain.slice(0, CREATOR_PAGE) });
+    // active7 : ceux qui ont publié sur 7 jours (posts7d) — la liste les montre d'abord et compte les autres sans tout lire.
+    boards.set(`creators:${code}`, { updatedAt: now, market: code, markets: MARKETS, total: plain.length, active7: plain.filter((c) => (c.posts7d ?? 0) > 0).length, pages, creators: plain.slice(0, CREATOR_PAGE) });
     for (let i = 2; i <= pages; i++) boards.set(`creators:${code}:${i}`, { updatedAt: now, market: code, page: i, creators: plain.slice((i - 1) * CREATOR_PAGE, i * CREATOR_PAGE) });
   };
   if (!G) {
