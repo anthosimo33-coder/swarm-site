@@ -1,10 +1,13 @@
 import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { radarTables } from "./radar/schemaTables";
 
 export default defineSchema({
   // Comptes (Convex Auth).
   ...authTables,
+  // Le Radar (veille des comptes TikTok qui poussent des apps), déménagé de Jarvia le 20/11/2026 : convex/radar/.
+  ...radarTables,
   // La table des comptes de Convex Auth, plus `pro` (19/11) : true = abonné, tout Kopycat. Absent = l'aperçu
   // (convex/boards.ts) : le top 3 des apps, leurs fiches et leurs vidéos. Mis à true par le paiement (Whop) ou à la main.
   users: defineTable({

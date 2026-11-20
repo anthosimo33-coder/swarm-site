@@ -17,12 +17,17 @@ let fail = 0;
 const ok = (cond, msg) => { console.log(`${cond ? 'OK   ' : 'ÉCHEC'} ${msg}`); if (!cond) fail++; };
 
 // ─── Q42 : appels du front ──────────────────────────────────────────────────────────────────────────────────────
-/** Les fonctions publiques de chaque module convex/ : nom → query | mutation | action. */
+/**
+ * Les fonctions publiques de chaque module convex/ (« radar/radarNetworks » pour un sous-dossier) : nom → query | mutation
+ * | action. Le Radar (convex/radar/, 20/11/2026) déclare les siennes par permissionQuery / permissionMutation (réservées
+ * à l'administration).
+ */
+const BUILDER = { query: 'query', mutation: 'mutation', action: 'action', permissionQuery: 'query', permissionMutation: 'mutation' };
 const exported = (mod) => {
   const f = path.join(root, 'convex', `${mod}.ts`);
   if (!fs.existsSync(f)) return null;
   const out = new Map();
-  for (const m of fs.readFileSync(f, 'utf8').matchAll(/export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*(query|mutation|action)\s*\(/g)) out.set(m[1], m[2]);
+  for (const m of fs.readFileSync(f, 'utf8').matchAll(/export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*(query|mutation|action|permissionQuery|permissionMutation)\s*\(/g)) out.set(m[1], BUILDER[m[2]]);
   return out;
 };
 /** Ce que l'appel attend : la méthode du client ou le hook qui reçoit la référence. */
@@ -32,8 +37,8 @@ const calls = [];
 for (const f of walk(path.join(root, 'src'), (x) => /\.(js|jsx|ts|tsx|mjs)$/.test(x) && !/src\/(app\/)?pages\//.test(x))) {
   const lines = fs.readFileSync(f, 'utf8').split('\n');
   lines.forEach((line, i) => {
-    for (const m of line.matchAll(/(?:\b([A-Za-z_$][\w$]*)\s*\(\s*)?\bapi\.([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)/g))
-      calls.push({ where: `${rel(f)}:${i + 1}`, via: m[1] ?? null, mod: m[2], fn: m[3] });
+    for (const m of line.matchAll(/(?:\b([A-Za-z_$][\w$]*)\s*\(\s*)?\bapi\.((?:[A-Za-z_$][\w$]*\.)+)([A-Za-z_$][\w$]*)/g))
+      calls.push({ where: `${rel(f)}:${i + 1}`, via: m[1] ?? null, mod: m[2].slice(0, -1).split('.').join('/'), fn: m[3] });
   });
 }
 // Appels par l'API HTTP, sans client Convex (src/stats.js, audit Q46) : convexHttp('query', 'stats:get').
@@ -48,11 +53,24 @@ const bad = [];
 for (const c of calls) {
   const fns = exported(c.mod);
   const kind = fns?.get(c.fn);
-  if (!fns) bad.push(`${c.where} : api.${c.mod}.${c.fn}, aucun module convex/${c.mod}.ts`);
-  else if (!kind) bad.push(`${c.where} : api.${c.mod}.${c.fn}, convex/${c.mod}.ts n'exporte aucune fonction publique « ${c.fn} »`);
-  else if (c.via && KIND[c.via] && KIND[c.via] !== kind) bad.push(`${c.where} : api.${c.mod}.${c.fn} est une ${kind}, appelée par ${c.via}()`);
+  const name = `api.${c.mod.split('/').join('.')}.${c.fn}`;
+  if (!fns) bad.push(`${c.where} : ${name}, aucun module convex/${c.mod}.ts`);
+  else if (!kind) bad.push(`${c.where} : ${name}, convex/${c.mod}.ts n'exporte aucune fonction publique « ${c.fn} »`);
+  else if (c.via && KIND[c.via] && KIND[c.via] !== kind) bad.push(`${c.where} : ${name} est une ${kind}, appelée par ${c.via}()`);
 }
 ok(!bad.length, `chaque api.<module>.<nom> du front existe et est appelé comme ce qu'il est${bad.length ? ' :\n      ' + bad.join('\n      ') : ''}`);
+
+// ─── La CI lance npm run verify, et lui seul porte la liste des vérifications (20/11 : la CI en recopiait 15, dont il
+// manquait 10, auth, paiement et Whop compris, quand le README les disait lancées) ─────────────────────────────────
+{
+  const ci = fs.readFileSync(path.join(root, '.github/workflows/verify.yml'), 'utf8');
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const copied = [...ci.matchAll(/run:\s*npm run (test:[\w:-]+|check(?::data)?)\b/g)].map((m) => m[1]);
+  ok(/run:\s*npm run verify\b/.test(ci) && copied.length === 0, `la CI lance npm run verify, sans recopier ses vérifications (${copied.join(', ') || 'aucune recopiée'})`);
+  const tests = Object.keys(pkg.scripts).filter((k) => /^test:|^check/.test(k) && !/^check:i18n/.test(k));
+  const missing = tests.filter((k) => !new RegExp(`npm run ${k.replace(/[:]/g, '\\:')}( |$)`).test(pkg.scripts.verify));
+  ok(missing.length === 0, `npm run verify lance chaque banc de package.json (${missing.join(', ') || 'tous'})`);
+}
 
 // ─── F27 : le jeton gardé est réutilisé au chargement ───────────────────────────────────────────────────────────
 {

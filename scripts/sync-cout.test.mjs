@@ -490,6 +490,27 @@ export const jsonSchemaOutputFormat = (x) => x;`;
   delete process.env.COVER_SECRET;
 }
 
+// ─── Radar déménagé (20/11) : avec RADAR_LOCAL=1, la synchro lit ses propres tables, plus l'export HTTP de Jarvia ──────
+{
+  const realFetch = globalThis.fetch;
+  let exportCalls = 0;
+  globalThis.fetch = async (url) => { if (String(url).includes("/swarm/export")) exportCalls++; return new Response(JSON.stringify({ rows: [], cursor: "", done: true }), { status: 200 }); };
+  const read = async (local) => {
+    if (local) process.env.RADAR_LOCAL = "1"; else delete process.env.RADAR_LOCAL;
+    exportCalls = 0;
+    const pages = [];
+    const t = actionCtx({ startRun: "run1", staleStages: [], appStorePage: { items: [], cursor: "", done: true }, page: (a) => { pages.push(a.table); return { rows: [], cursor: "", done: true }; } });
+    try { await quiet(() => sync.run.handler(t.ctx, {})); } catch { /* étapes suivantes hors banc */ }
+    return { exportCalls, pages };
+  };
+  const local = await read(true), remote = await read(false);
+  ok(local.exportCalls === 0 && local.pages.join() === "apps,tracked,formats,signals",
+    `Radar local : la préparation lit les 4 tables sur place, aucun appel à l'export de Jarvia (${local.pages.join() || "rien"} ; ${local.exportCalls} appels HTTP)`);
+  ok(remote.exportCalls === 4 && remote.pages.length === 0, `Sans RADAR_LOCAL : l'export de Jarvia, comme avant (${remote.exportCalls} appels HTTP)`);
+  delete process.env.RADAR_LOCAL;
+  globalThis.fetch = realFetch;
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);
