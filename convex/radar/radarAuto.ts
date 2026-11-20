@@ -19,7 +19,7 @@ import { internalAction, internalMutation, internalQuery, type MutationCtx, type
 import { e2eMutation } from "./functions";
 import { ERR } from "./errorCodes";
 import { FAMILY_MODEL, haikuCostUsd } from "./radarFamiliesMath";
-import { followCandidateCore, judgeStoredAccount } from "./radarNetworks";
+import { adoptStoreTwin, followCandidateCore, judgeStoredAccount } from "./radarNetworks";
 import {
   AUTO_COMMON_NOTE,
   AUTO_SCHEMA,
@@ -49,9 +49,13 @@ import {
   type AutoVerdict,
   type Triage,
   type TriageToJudge,
+  MERGES_2011,
+  NOT_FIXES_2011,
+  storeTwin,
+  withNot,
 } from "./radarAutoMath";
 import { ficheApp } from "./radarFicheMath";
-import { ensureSettings, refreshAppNet, trackedCounts, type TrackedCounter } from "./radarSignals";
+import { ensureSettings, mergeApp, refreshAppNet, trackedCounts, type TrackedCounter } from "./radarSignals";
 import { MAX_OTHER_TOTAL, MAX_TRACKED } from "./radarNetworkMath";
 import { allowanceUsd, budgetState } from "./radarSignalsMath";
 import { alreadyFollowed } from "./radarStoreMath";
@@ -146,6 +150,15 @@ async function autoFollowCore(ctx: MutationCtx, now: number, verdicts: ReadonlyM
   const shared = { followed: apps, counter };
   for (const c of await pickCandidates(ctx, only)) {
     if (followed >= AUTO_MAX_FOLLOWS) break;
+    // Une app des classements qui EST une app déjà suivie (même nom, son hashtag dans les recherches) : ses comptes
+    // prouvés la rejoignent, sans créer d'app ni lancer de recherche, quel que soit le garde qui l'aurait laissée
+    // proposée (nom courant, preuve insuffisante, motif déjà pris : il porte sur une app à créer, cf radarAutoMath.storeTwin).
+    const twin = storeTwin(c, apps);
+    if (twin) {
+      attached += await adoptStoreTwin(ctx, c, twin, now, counter);
+      await ctx.db.patch(c._id, { autoAt: now, autoNote: `même app que ${twin.name} : ses comptes l'ont rejointe` });
+      continue;
+    }
     const plan = autoPlan(c);
     if ("skip" in plan) {
       await ctx.db.patch(c._id, { autoAt: now, autoNote: plan.skip });
@@ -211,6 +224,8 @@ export const runAutoFollow = internalAction({
     if (!scKeyPresent()) return { skipped: "no-key" };
     const now = Date.now();
     await ctx.runMutation(internal.radar.radarAuto.requeueTrialCandidates, {});
+    await ctx.runMutation(internal.radar.radarAuto.requeueStoreTwins, {});
+    await ctx.runMutation(internal.radar.radarAuto.repair2011, {});
     const batch: AutoToJudge[] = await ctx.runQuery(internal.radar.radarAuto.autoToJudge, {});
     let verdicts: AutoVerdict[] = [];
     let usd = 0;
@@ -481,6 +496,70 @@ export const requeueTrialCandidates = internalMutation({
     }
     await ctx.db.patch(s._id, r.isDone ? { trialRequeueCursor: undefined, trialRequeueDoneAt: Date.now() } : { trialRequeueCursor: r.continueCursor });
     return requeued;
+  },
+});
+
+const TWIN_REQUEUE_SCAN = 200;
+
+/**
+ * Remet UNE fois dans la file du suivi d'office les apps des classements laissées proposées qui sont une app déjà
+ * suivie (radarAutoMath.storeTwin) : au passage suivant, leurs comptes prouvés la rejoignent (20/11/2026 : 94 comptes
+ * sur 34 apps ajoutées à la main). Par pages, d'un passage à l'autre ; ensuite, plus rien à faire.
+ */
+export const requeueStoreTwins = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<number> => {
+    const s = await ensureSettings(ctx);
+    if (s.storeTwinRequeueDoneAt !== undefined) return 0;
+    const r = await ctx.db
+      .query("radarAppCandidates")
+      .withIndex("by_kind_status_count", (q) => q.eq("kind", "store").eq("status", "new"))
+      .paginate({ cursor: s.storeTwinCursor ?? null, numItems: TWIN_REQUEUE_SCAN });
+    const apps = r.page.some((c) => c.autoAt !== undefined) ? (await ctx.db.query("radarApps").collect()).filter((a) => a.mergedInto === undefined) : [];
+    let requeued = 0;
+    for (const c of r.page) {
+      if (c.autoAt === undefined || !storeTwin(c, apps)) continue;
+      await ctx.db.patch(c._id, { autoAt: undefined, autoNote: undefined });
+      requeued++;
+    }
+    await ctx.db.patch(s._id, r.isDone ? { storeTwinCursor: undefined, storeTwinRequeueDoneAt: Date.now() } : { storeTwinCursor: r.continueCursor });
+    return requeued;
+  },
+});
+
+/**
+ * Le rattrapage du 20/11/2026, UNE fois : les tournures qui citaient à tort quelques apps (radarAutoMath.NOT_FIXES_2011)
+ * rejoignent leurs motifs — leurs comptes entrés sur ces tournures sont jugés « hors sujet » à leurs prochains relevés,
+ * comme tout compte qui ne cite jamais son app —, et deux doublons ajoutés à la main sont fondus (MERGES_2011), s'ils
+ * n'ont toujours aucun compte.
+ */
+export const repair2011 = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<{ not: string[]; merged: string[] } | null> => {
+    const s = await ensureSettings(ctx);
+    if (s.repair2011DoneAt !== undefined) return null;
+    const now = Date.now();
+    const bySlug = new Map((await ctx.db.query("radarApps").collect()).map((a) => [a.slug, a]));
+    const report = { not: [] as string[], merged: [] as string[] };
+    for (const [slug, words] of Object.entries(NOT_FIXES_2011)) {
+      const a = bySlug.get(slug);
+      if (!a || a.mergedInto !== undefined) continue;
+      const not = withNot(a.not, words);
+      if (not.length === (a.not ?? []).length) continue;
+      await ctx.db.patch(a._id, { not });
+      report.not.push(slug);
+    }
+    for (const m of MERGES_2011) {
+      const from = bySlug.get(m.from);
+      const into = bySlug.get(m.into);
+      if (!from || !into || from.mergedInto !== undefined || into.mergedInto !== undefined) continue;
+      if (await ctx.db.query("radarTracked").withIndex("by_app", (q) => q.eq("appId", from._id)).first()) continue;
+      const rules = { name: into.name, rivalOf: into.rivalOf, strong: into.strong, weak: into.weak, context: into.context, ...(into.not ? { not: into.not } : {}) };
+      await mergeApp(ctx, from, into, rules, now);
+      report.merged.push(`${m.from} → ${m.into}`);
+    }
+    await ctx.db.patch(s._id, { repair2011DoneAt: now });
+    return report;
   },
 });
 

@@ -103,7 +103,7 @@ import {
 } from "./radarFreeMath";
 import { fetchEmbedPage, storePauseMs, storeUrl } from "./radarStoreMath";
 import { linkCandidate } from "./radarFiche";
-import { accountProof } from "./radarVetMath";
+import { REJECTED_KEEP_MS, accountProof } from "./radarVetMath";
 import { MARKET_CURRENCY } from "./radarMarketMath";
 import {
   appRef,
@@ -1688,6 +1688,30 @@ export async function followCandidateCore(
   await linkCandidate(ctx, c, app._id, now);
   await refreshAppNet(ctx, app._id, now);
   return { appId: app._id, attached };
+}
+
+/**
+ * Une app des classements qui EST une app déjà suivie (radarAutoMath.storeTwin) : ses comptes, déjà prouvés par son
+ * contrôle (pseudo, bio, moitié des vidéos), rejoignent l'app suivie, et sa fiche la suit. Aucune app créée, aucune
+ * recherche lancée. Un compte écarté de cette app il y a moins de 30 jours n'y revient pas.
+ */
+export async function adoptStoreTwin(
+  ctx: MutationCtx,
+  c: Doc<"radarAppCandidates">,
+  app: Doc<"radarApps">,
+  now: number,
+  counter: TrackedCounter = {},
+): Promise<number> {
+  let attached = 0;
+  for (const handle of c.authors) {
+    const rejected = await ctx.db.query("radarRejected").withIndex("by_handle_app", (q) => q.eq("handle", handle).eq("appId", app._id)).first();
+    if (rejected && now - rejected.at < REJECTED_KEEP_MS) continue;
+    if ((await attachAccount(ctx, app, handle, 0, "caption", now, counter)) === "added") attached++;
+  }
+  await ctx.db.patch(c._id, { status: "followed" });
+  await linkCandidate(ctx, c, app._id, now);
+  await refreshAppNet(ctx, app._id, now);
+  return attached;
 }
 
 export const ignoreCandidate = permissionMutation("radar.use")({

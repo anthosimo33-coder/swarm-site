@@ -27,6 +27,7 @@ import {
   trialDecision,
 } from "../../convex/radar/radarAutoMath";
 import { citesApp, shadowingApp } from "../../convex/radar/radarNetworkMath";
+import { appNameKey, MERGES_2011, NOT_FIXES_2011, storeTwin, withNot } from "../../convex/radar/radarAutoMath";
 import { AUTO_MIN_CREATORS, brandFamily, isShopGenre, storeAutoFollow, type CreatorWhy } from "../../convex/radar/radarStoreMath";
 
 /**
@@ -368,5 +369,68 @@ describe("Radar — une app suivie élargie à son nom (16/11/2026)", () => {
     expect(broadenCore(app("Rise", ["riseapp"]), [{ strong: ["weriseapp"] }])).toBeNull();
     expect(broadenCore(app("Rise", ["riseapp"]), [{ strong: ["sunriseclub"] }])).toBeNull();
     expect(broadenCore(app("Daimon", ["daimonapp"]), [{ strong: ["weriseapp"] }])).toBe("daimon");
+  });
+});
+
+describe("Radar — une app des classements qui est déjà suivie (20/11/2026)", () => {
+  const app = (name: string, searches: string[], extra: Record<string, unknown> = {}) => ({ name, searches, status: "active", ...extra });
+  const store = (label: string, tag: string) => ({ kind: "store", label, store: { tag } });
+
+  it("même nom (casse, accents, signes) et son hashtag dans les recherches : c'est elle", () => {
+    expect(appNameKey("Disney+")).toBe("disney");
+    expect(appNameKey("Turbo AI")).toBe("turboai");
+    expect(appNameKey("Éclair")).toBe("eclair");
+    const fable = app("Fable", ["fable app", "#fableapp"]);
+    expect(storeTwin(store("Fable", "fableapp"), [app("Milo", ["#miloapp"]), fable])).toBe(fable);
+    expect(storeTwin(store("Disney+", "#DisneyApp"), [app("Disney+", ["disney+ app", "#disneyapp"])])).not.toBeNull();
+  });
+
+  it("un autre nom, un hashtag absent, deux jumelles, une app en pause ou fondue : aucune", () => {
+    expect(storeTwin(store("Code de la route 2026 Ornikar", "ornikar"), [app("Ornikar", ["#ornikar"])])).toBeNull();
+    expect(storeTwin(store("Fable", "fableapp"), [app("Fable", ["fable app"])])).toBeNull();
+    expect(storeTwin(store("Fable", "fableapp"), [app("Fable", ["#fableapp"]), app("FABLE", ["#fableapp"])])).toBeNull();
+    expect(storeTwin(store("Fable", "fableapp"), [app("Fable", ["#fableapp"], { status: "paused" })])).toBeNull();
+    expect(storeTwin(store("Fable", "fableapp"), [app("Fable", ["#fableapp"], { mergedInto: "x" })])).toBeNull();
+    expect(storeTwin({ kind: "market", label: "Fable", store: { tag: "fableapp" } }, [app("Fable", ["#fableapp"])])).toBeNull();
+    expect(storeTwin({ kind: "store", label: "Fable" }, [app("Fable", ["#fableapp"])])).toBeNull();
+  });
+
+  it("une app suivie déjà rangée sous une fiche des classements ne prend que la même (deux RISE homonymes)", () => {
+    const rise = app("RISE", ["rise app", "#riseapp"], { store: { storeId: "1453884781" } });
+    expect(storeTwin({ kind: "store", label: "RISE", store: { tag: "riseapp", storeId: "1453884781" } }, [rise])).toBe(rise);
+    expect(storeTwin({ kind: "store", label: "RISE", store: { tag: "riseapp", storeId: "6474799344" } }, [rise])).toBeNull();
+  });
+});
+
+describe("Radar — les motifs pris dans d'autres mots (20/11/2026, rejoué sur l'export de prod)", () => {
+  const rule = (slug: string, strong: string[]) => ({ strong, weak: [], not: withNot(undefined, NOT_FIXES_2011[slug] ?? []) });
+  const cas: [string, string[], [string, string][], [string, string][]][] = [
+    ["bsit", ["bsit"], [["Check my new website", "dev"], ["#websitedesign #portfoliowebsite", "x"]], [["#bsit", "x"], ["bsit app", "x"]]],
+    ["staura", ["staura"], [["best restaurant in town", "x"]], [["#staura", "x"]]],
+    ["fits", ["fitsapp"], [["#militarybenefitsapp #usemilitarybenefitsapp", "x"], ["this benefits app", "x"]], [["#fitsapp", "x"], ["", "fitsappofficial"]]],
+    ["ahealth", ["ahealth"], [["#usahealth", "x"], ["", "juliana_healthylife"], ["a healthy dinner", "x"]], [["#ahealth", "x"], ["“ahealth” app", "x"]]],
+    ["mise", ["mise"], [["", "misesdecolombia"], ["#mises #missuniverse2026", "x"], ["I promise", "x"]], [["#mise #mealplanner", "x"], ["#misepartner", "x"], ["", "misewithashley"]]],
+    ["ssme", ["ssme"], [["stop the harassment", "x"]], [["“ssme” app", "x"], ["#ssme", "x"]]],
+    ["enroad", ["enroad"], [["", "openroadapp"], ["open road vibes", "x"], ["en roadtrip", "x"]], [["#enroad", "x"]]],
+    ["knowt", ["knowt"], [["you know the drill", "x"]], [["#knowt flashcards", "x"]]],
+    ["oweyou", ["oweyou"], [["I owe you one", "x"]], [["#oweyou app", "x"]]],
+  ];
+  for (const [slug, strong, faux, vrais] of cas) {
+    it(`${slug} : ses homonymes ne la citent plus, ses vraies citations oui`, () => {
+      for (const [caption, handle] of faux) expect(citesApp(caption, handle, rule(slug, strong)), `${slug} ← « ${caption || handle} »`).toBe(false);
+      for (const [caption, handle] of vrais) expect(citesApp(caption, handle, rule(slug, strong)), `${slug} ← « ${caption || handle} »`).toBe(true);
+    });
+  }
+
+  it("les tournures s'ajoutent à celles de l'app, sans doublon", () => {
+    expect(withNot(["speak appl"], ["website", "speak appl"])).toEqual(["speak appl", "website"]);
+    expect(withNot(undefined, ["website"])).toEqual(["website"]);
+  });
+
+  it("les doublons fondus : Hunch dans Hunch Dating App, Digimetrics dans Digimetrics.ai", () => {
+    expect(MERGES_2011).toEqual([
+      { from: "hunch", into: "hunchdatingapp" },
+      { from: "digimetrics", into: "digimetrics.ai" },
+    ]);
   });
 });
