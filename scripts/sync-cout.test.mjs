@@ -278,6 +278,66 @@ function memDb() {
     `fin de synchro : la copie part seule, pays, carrousels et lecture IA plus tard (${["radarRegions.fill", "radarSlides.fill", "radarAi.fillVideos"].map((f) => `${f} ${after(f)} ms`).join(", ")})`);
 }
 
+// ─── Images rangées : copies simultanées (Q61), fichiers non matriciels (S30), relevé et réparation (Q67), icône
+// toxique (S33), lot refusé (Q62) ───
+{
+  const FILES = { ok1: { contentType: "image/webp", size: 2000 }, ok2: { contentType: "image/webp", size: 2100 }, svg: { contentType: "image/svg+xml", size: 300 },
+    heic: { contentType: "image/heic", size: 9000 }, png: { contentType: "image/png", size: 500 } };
+  const withFiles = (m) => { const deleted = []; m.ctx.db.system = { get: async (id) => FILES[id] ?? null }; m.ctx.storage = { delete: async (id) => { deleted.push(id); } }; return deleted; };
+  // Q61 : la seconde copie d'une miniature déjà rangée est effacée, la première gardée, et son adresse rendue.
+  const m = memDb(), deleted = withFiles(m);
+  await store.saveMedia.handler(m.ctx, { items: [{ key: "v:7000000000000000001", storageId: "ok1", url: "https://u/1" }] });
+  const r = await store.saveMedia.handler(m.ctx, { items: [{ key: "v:7000000000000000001", storageId: "ok2", url: "https://u/2" }] });
+  const row = (m.tables.media ?? []).find((x) => x.key === "v:7000000000000000001");
+  ok(row?.storageId === "ok1" && deleted.join() === "ok2" && r?.[0]?.url === "https://u/1", `Q61 : copie simultanée, la première gardée, la seconde effacée, l'adresse gardée rendue (rangée ${row?.storageId}, effacés ${deleted.join() || "aucun"}, rendue ${r?.[0]?.url})`);
+  // Une copie rangée inutilisable (HEIC, SVG) est remplacée.
+  await m.ctx.db.insert("media", { key: "icon:svg", storageId: "svg", url: "https://u/svg", at: 1 });
+  await store.saveMedia.handler(m.ctx, { items: [{ key: "icon:svg", storageId: "png", url: "https://u/png" }] });
+  ok((m.tables.media ?? []).find((x) => x.key === "icon:svg")?.storageId === "png" && deleted.includes("svg"), "Q61 : une copie rangée inutilisable (SVG) est remplacée, son fichier effacé");
+  // S30 : un fichier rangé non matriciel ne se sert jamais (mediaGet, /cover, /avatar).
+  const s30 = memDb(); withFiles(s30);
+  for (const [key, storageId] of [["icon:x", "svg"], ["v:7000000000000000002", "svg"], ["a:compte", "svg"], ["v:7000000000000000003", "heic"]]) await s30.ctx.db.insert("media", { key, storageId, url: "https://u/" + storageId, at: 1 });
+  const g1 = await store.mediaGet.handler(s30.ctx, { key: "icon:x" }), g2 = await store.coverLookup.handler(s30.ctx, { id: "7000000000000000002" });
+  const g3 = await store.avatarLookup.handler(s30.ctx, { handle: "compte" }), g4 = await store.mediaGet.handler(s30.ctx, { key: "v:7000000000000000003" });
+  ok(g1?.url === null && g1?.heic === null && g2?.url === null && g3?.url === null, `S30 : un SVG rangé ne se sert ni par mediaGet, ni par /cover, ni par /avatar (${[g1?.url, g2?.url, g3?.url].join(", ")})`);
+  ok(g4?.heic === "heic", "S30 : un HEIC rangé reste converti sur place");
+  // Q67 / S30 : relevé des images et réparation sur demande.
+  const audit = memDb(); withFiles(audit);
+  for (const [key, storageId] of [["v:1", "ok1"], ["v:2", "heic"], ["icon:y", "svg"], ["v:3", "perdu"]]) await audit.ctx.db.insert("media", { key, storageId, url: "u", at: 1 });
+  ok(typeof store.mediaAudit?.handler === "function", "Q67 : relevé des images rangées présent (mediaAudit)");
+  if (store.mediaAudit) {
+    const a = await store.mediaAudit.handler(audit.ctx, { cursor: null });
+    ok(a.rows === 4 && a.heic === 1 && a.bad === 2 && a.unusable.sort().join() === "icon:y,v:2,v:3", `Q67 : relevé : 4 images, 1 HEIC, 2 non matricielles ou absentes (${JSON.stringify({ rows: a.rows, heic: a.heic, bad: a.bad })})`);
+    const t = actionCtx({ mediaAudit: a });
+    const rep = await quiet(() => sync.repairMedia.handler(t.ctx, {}));
+    ok(rep.dropped === 0 && !t.calls.includes("dropMedia"), "Q67 : repairMedia sans apply ne fait que compter");
+    const t2 = actionCtx({ mediaAudit: a });
+    const rep2 = await quiet(() => sync.repairMedia.handler(t2.ctx, { apply: true }));
+    ok(rep2.dropped === 3 && t2.calls.includes("dropMedia"), "Q67 : repairMedia apply efface les HEIC, SVG et fichiers absents");
+  }
+  ok(!fs.readdirSync(dir).filter((f) => f.endsWith(".ts")).some((f) => /heicPage|repairHeic\b/.test(fs.readFileSync(path.join(dir, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, ""))), "Q67 : repairHeic et heicPage (jamais appelées) retirées");
+  // S33 : une icône de site tiers est notée « en échec » avant d'être lue ; une icône de l'App Store, non.
+  const order = [];
+  globalThis.__copyImage = async (_c, key) => { order.push("copie " + key); return null; };
+  const c = actionCtx({ takeLease: true });
+  const mm = c.ctx.runMutation;
+  c.ctx.runMutation = async (r2, a2) => { if (r2.__path.endsWith("markMisses")) order.push("note " + a2.keys.join("+")); return mm(r2, a2); };
+  await quiet(() => sync.copyMedia.handler(c.ctx, { items: [{ key: "icon:site", src: "site:exemple.com" }, { key: "icon:store", src: "itunesid:123" }, { key: "icon:art", src: "https://is1-ssl.mzstatic.com/a.png" }] }));
+  ok(order[0] === "note icon:site" && order.indexOf("copie icon:site") > 0, `S33 : l'icône d'un site tiers est notée avant d'être lue, pas celles de l'App Store (${order.join(" ; ")})`);
+  const models = await load("radarModels");
+  const raw = { apps: [{ id: "a1", slug: "theick", name: "The Ick", status: "active", trackedCount: 0, mergedInto: null, createdAt: 0 }], tracked: [], trackedVideos: [], formats: [], signals: [] };
+  const needWith = (missing) => [...models.buildBoards(raw, 1_800_000_000_000, () => null, () => null, { missing }).need.keys()];
+  ok(needWith(() => false).includes("icon:theick") && !needWith((k) => k === "icon:theick").includes("icon:theick"), "S33 : une icône en échec récent n'est pas redemandée par la synchro");
+  // Q62 : un lot que saveMedia refuse : fichiers effacés, rien compté « copié », l'échec noté.
+  globalThis.__copyImage = async (_c, key) => ({ key, storageId: "f-" + key, url: "https://x/" + key });
+  const q = actionCtx({ takeLease: true, saveMedia: () => { throw new Error("conflit"); } });
+  const gone = [];
+  q.ctx.storage.delete = async (id) => { gone.push(id); };
+  const realErr = console.error; let logged = "";
+  const res = await quiet(async () => { console.error = (x) => { logged += x; }; try { return await sync.copyMedia.handler(q.ctx, { items: [{ key: "v:7000000000000000005", src: "https://p16.tiktokcdn.com/x.jpg" }] }); } finally { console.error = realErr; } });
+  ok(res.copied === 0 && gone.includes("f-v:7000000000000000005"), `Q62 : lot refusé par saveMedia : fichier effacé, rien compté copié (${res.copied} copiées, effacés : ${gone.join() || "aucun"})`);
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);

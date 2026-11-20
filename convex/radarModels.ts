@@ -997,7 +997,8 @@ export function buildBoards(
   // Icônes des apps : à chercher si on ne les a pas encore.
   // Icônes des apps : la fiche App Store retenue (identifiant), sinon le site d'une app web, sinon la recherche par nom.
   for (const a of apps) {
-    if (mediaUrl(iconKey(a.slug))) continue;
+    // Déjà rangée, ou en échec récent (audit S33 : une icône toxique ne repasse pas en tête à chaque passage).
+    if (mediaUrl(iconKey(a.slug)) || missing(iconKey(a.slug))) continue;
     const art = opts.artOf?.(a.slug) ?? null;
     const id = (storeOf(a.slug) ?? "").match(/\/id(\d+)/)?.[1] ?? null;
     const site = siteOf(a.slug);
