@@ -33,11 +33,19 @@ export const viewer = query({
 export const setPro = internalMutation({
   args: { email: v.string(), pro: v.union(v.boolean(), v.null()) },
   handler: async (ctx, { email, pro }) => {
-    const user = await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email.trim().toLowerCase())).first();
-    if (user === null) return { found: false };
+    // Audit S14 : deux comptes sur une adresse (mot de passe puis Google) : refus, au lieu de servir le plus ancien.
+    const users = await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email.trim().toLowerCase())).take(2);
+    if (users.length !== 1) return { found: false, ambiguous: users.length > 1 };
+    const user = users[0];
     await ctx.db.patch(user._id, { proManual: pro ?? undefined });
     return { found: true, pro: await recomputePro(ctx, user._id) };
   },
+});
+
+/** Un compte porte-t-il déjà cette adresse (quel que soit son fournisseur) ? */
+export const emailTaken = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => !!(await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email)).first()),
 });
 
 /**

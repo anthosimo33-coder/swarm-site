@@ -17,6 +17,9 @@ export const convexAuth = (config) => { globalThis.__authConfig = config; return
 `]]);
 const limitsFile = path.join(path.dirname(authFile), "authLimits.ts");
 const limits = fs.existsSync(limitsFile) ? await load(limitsFile) : null;
+const usersFile = path.join(path.dirname(authFile), "users.ts");
+const users = fs.existsSync(usersFile) ? await load(usersFile, [[/^@convex-dev\/auth\/server$/, `
+export { getAuthUserId, getAuthSessionId, modifyAccountCredentials, retrieveAccount } from ${JSON.stringify(path.join(IMPL, "index.js"))};`]]) : null;
 
 const config = globalThis.__authConfig;
 const raw = config.providers[0];
@@ -43,6 +46,7 @@ const ctx = {
   },
   runQuery: async (ref, a) => {
     if (ref?.__path?.startsWith("authLimits.") && limits) return limits[ref.__path.split(".")[1]].handler(dbCtx, a);
+    if (ref?.__path?.startsWith("users.") && users) return users[ref.__path.split(".")[1]].handler(dbCtx, a);
     throw new Error(`requête inattendue ${ref?.__path ?? ref}`);
   },
 };

@@ -99,6 +99,9 @@ const password = ConvexCredentials({
         // le bon, sans passer par la limite de 10 échecs par heure de signIn — un essai de mots de passe illimité. Un
         // compte existant est désormais refusé sans jamais regarder le mot de passe : la personne passe par « Se connecter ».
         if (await passwordAccountExists(ctx, email)) throw fail(AUTH_ERRORS.COMPTE_EXISTANT);
+        // Audit S14 : une adresse = un compte. Un compte venu d'ailleurs (Google) sur cette adresse : refusé aussi, au lieu
+        // d'un second compte au même e-mail (setPro et le support ne sauraient plus lequel servir).
+        if (await ctx.runQuery(internal.users.emailTaken, { email })) throw fail(AUTH_ERRORS.COMPTE_EXISTANT);
         const { user } = await createAccount(ctx, {
           provider: PROVIDER,
           account: { id: email, secret },

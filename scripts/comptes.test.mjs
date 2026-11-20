@@ -114,4 +114,26 @@ function world() {
   ok(bad && !bad.ok, 'S11 : adresse inconnue, rien n\'est fait');
 }
 
+// ─── S14 : une adresse = un compte ; setPro refuse une adresse ambiguë ───
+{
+  const w = world();
+  // Un compte venu de Google (sans identifiant « mot de passe »), puis une inscription par mot de passe sur la même adresse.
+  await w.m.db.insert('users', { email: 'google@exemple.fr', emailVerificationTime: Date.now() });
+  const r = await w.auth('signUp', 'google@exemple.fr', 'motdepasse1');
+  ok(r.code === 'COMPTE_EXISTANT' && w.m.rows('users').filter((u) => u.email === 'google@exemple.fr').length === 1, `S14 : inscription par mot de passe sur l'adresse d'un compte Google : refusée, pas de second compte (${r.code ?? 'créé'})`);
+  await w.m.db.insert('users', { email: 'double@exemple.fr' });
+  await w.m.db.insert('users', { email: 'double@exemple.fr' });
+  const p = await w.call({ __path: 'users.setPro' }, { email: 'double@exemple.fr', pro: true });
+  ok(p.found === false && p.ambiguous === true && w.m.rows('users').every((u) => u.pro !== true), `S14 : setPro sur une adresse portée par deux comptes refuse, au lieu de servir le plus ancien (${JSON.stringify(p)})`);
+}
+
+// ─── S25 : le drapeau email_verified de Google est respecté ───
+{
+  const google = providers.find((p) => p.id === 'google');
+  const profile = google?.profile ? await google.profile({ sub: '42', name: 'X', email: 'x@exemple.fr', picture: 'https://p', email_verified: false }, {}) : null;
+  ok(!!profile && profile.emailVerified === false && profile.email === 'x@exemple.fr', `S25 : une adresse Google non vérifiée n'est pas tenue pour vérifiée (${JSON.stringify(profile)})`);
+  const yes = google?.profile ? await google.profile({ sub: '43', email: 'y@exemple.fr', email_verified: true }, {}) : null;
+  ok(!!yes && yes.emailVerified === true && yes.id === '43', 'S25 : une adresse Google vérifiée l\'est');
+}
+
 end();
