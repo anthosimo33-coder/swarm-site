@@ -317,7 +317,7 @@ export default class CreateursCartes extends DCLogic {
     const nCalm = !filtered && typeof b.active7 === 'number' && b.total ? Math.max(0, b.total - b.active7) : calm.length;
     const mkRow = (c, i) => { const h = String(c.h || '').replace(/^@/, ''); const on = h === pvH;
       return Object.assign({}, c, { key: h, rank: String(i + 1).padStart(2, '0'), mk: c.market || (b.market !== 'ALL' ? b.market : 'XX'), bg: on ? 'var(--accent-soft)' : 'transparent', sel: on ? 'true' : 'false',
-        hasCov: !!(c.cov && c.cov.length), noApp: !c.hasApp, badge: c.n7 > 0 ? c.n7 + (c.n7 > 1 ? ' vidéos' : ' vidéo') + ' / 7 j' : 'Rien en 7 j',
+        hasCov: !!(c.cov && c.cov.length), noApp: !c.hasApp, badge: c.n7 > 0 ? (c.n7 >= 30 ? 'au moins 30 vidéos' : c.n7 + (c.n7 > 1 ? ' vidéos' : ' vidéo')) + ' / 7 j' : 'Rien en 7 j',
         open: () => this.setState({ pv: h, open: '' }) }); };
     const rows = act.slice(0, lim).map(mkRow);
     const actDone = lim >= act.length && !(partial && !filtered && act.length < nAct);
@@ -426,7 +426,7 @@ export default class CreateursCartes extends DCLogic {
     return { on: true, h: '@' + h, bio: D.bio || row.bio || '', av: D.avatar || row.av || '', noav: !(D.avatar || row.av), ini: h.charAt(0).toUpperCase(), mk: D.market || row.mk || b.shown || '',
       tt: 'https://www.tiktok.com/@' + h, href: '/app/createurs/' + h,
       stats: [{ l: 'Abonnés', v: fans ? grp(fans) : '—' }, { l: 'Vues médianes', v: med ? nf(med) : '—' }],
-      rythme: n7 === null || n7 === undefined ? '' : n7 > 0 ? n7 + (n7 > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j',
+      rythme: n7 === null || n7 === undefined ? '' : n7 > 0 ? (n7 >= 30 ? 'au moins 30 vidéos' : n7 + (n7 > 1 ? ' vidéos' : ' vidéo')) + ' en 7 j' : 'Rien en 7 j', cap: typeof n7 === 'number' && n7 >= 30,
       hasDays: days.length === 7 && d7.some((n) => n > 0), days, wait: F === undefined && !d7,
       hasTops: (tops.length || rowTops.length) > 0, topsTitle: 'Ses meilleures vidéos', tops: tops.length ? tops : rowTops,
       hasApp: !!appName, appName, appIcon: app ? app.icon || '' : (row.app && row.app.logo) || '', appBlank: (app ? app.icon : row.app && row.app.logo) ? '' : 'sw-app-blank',
@@ -500,13 +500,16 @@ export default class CreateursCartes extends DCLogic {
         const a = c.app || null;
         const ic = (a && a.icon) || '';
         const on = c.posts7d > 0;
+        // Le Radar lit les 30 dernières vidéos d'un compte : 30 en 7 jours veut dire « au moins 30 » (règle de l'Accueil).
+        const cap = isN(c.posts7d) && c.posts7d >= 30;
+        const pace = isN(c.posts7d) ? (on ? (cap ? 'au moins 30 vidéos' : c.posts7d + (c.posts7d > 1 ? ' vidéos' : ' vidéo')) + ' en 7 j' : 'Rien en 7 j') : '';
         return {
           h: '@' + c.handle, market: c.market || '', kind: c.kind || '', gender: c.gender || '', href: '/app/createurs/' + c.handle, bio: line(c.bio), av: c.avatar || '', noav: true,
           app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, hasApp: !!a,
           appName: a ? a.name : '', niche: (a && a.niche) || '', appHref: a ? (a.page === false ? null : '/app/apps/' + a.slug) : '/app/apps',
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('fr-FR') : '', fansK: isN(c.fans) ? nf(c.fans) : '', nFans: isN(c.fans) ? c.fans : -1,
           med: isN(c.median) ? nf(c.median) : '', nMed: isN(c.median) ? c.median : 0,
-          rythme: isN(c.posts7d) ? (on ? c.posts7d + (c.posts7d > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j') : '',
+          rythme: pace, cap,
           last: c.lastPostAt ? 'Dernière ' + ago(c.lastPostAt) : '', n7: isN(c.posts7d) ? c.posts7d : 0, lastAt: c.lastPostAt || 0,
           dot: on ? 'var(--accent)' : 'var(--line-strong)', active: on,
           cov: (c.best || []).map((v) => ({ src: v.cover || '', v: nf(v.views), href: '/app/videos/' + v.id }))
@@ -959,7 +962,7 @@ export default class CreateursCartes extends DCLogic {
               )
             ] : null,
             ($l($v.cards)).map((c) => [
-              $h("article", { "key": c?.key, "data-pv-row": "", "data-key": c?.key, "class": "sw-card", "style": "border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0;" },
+              $h("article", { "key": c?.key, "data-pv-row": "", "data-key": c?.key, "data-dg": "creator", "data-dg-id": c?.key, "data-dg-label": c?.h, "data-dg-cover": c?.av, "class": "sw-card", "style": "border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0;" },
                 $h("div", { "style": "display: flex; align-items: center; gap: 12px; min-width: 0;" },
                   $h("button", { "type": "button", "onClick": c?.open, "aria-label": `Aperçu de ${$t(c?.h)}`, "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;" },
                     $h("span", { "data-mo-ico": "", "style": "position: relative; flex-shrink: 0; display: inline-flex;" },
@@ -989,7 +992,12 @@ export default class CreateursCartes extends DCLogic {
                   ),
                   $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 600; color: var(--ink-soft); white-space: nowrap;" },
                     $h("span", { "style": `width: 7px; height: 7px; border-radius: 50%; background: ${$t(c?.dot)};` }),
-                    $t(c?.badge)
+                    $t(c?.badge),
+                    (c?.cap) ? [
+                      $h("span", { "class": "sw-hint", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
+                        "i"
+                      )
+                    ] : null
                   )
                 ),
                 (c?.hasCov) ? [
@@ -1058,7 +1066,7 @@ export default class CreateursCartes extends DCLogic {
               )
             ] : null,
             ($l($v.qcards)).map((c) => [
-              $h("article", { "key": c?.key, "data-pv-row": "", "data-key": c?.key, "class": "sw-card", "style": "border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0;" },
+              $h("article", { "key": c?.key, "data-pv-row": "", "data-key": c?.key, "data-dg": "creator", "data-dg-id": c?.key, "data-dg-label": c?.h, "data-dg-cover": c?.av, "class": "sw-card", "style": "border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0;" },
                 $h("div", { "style": "display: flex; align-items: center; gap: 12px; min-width: 0;" },
                   $h("button", { "type": "button", "onClick": c?.open, "aria-label": `Aperçu de ${$t(c?.h)}`, "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;" },
                     $h("span", { "data-mo-ico": "", "style": "position: relative; flex-shrink: 0; display: inline-flex;" },
@@ -1088,7 +1096,12 @@ export default class CreateursCartes extends DCLogic {
                   ),
                   $h("span", { "style": "flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 600; color: var(--ink-soft); white-space: nowrap;" },
                     $h("span", { "style": `width: 7px; height: 7px; border-radius: 50%; background: ${$t(c?.dot)};` }),
-                    $t(c?.badge)
+                    $t(c?.badge),
+                    (c?.cap) ? [
+                      $h("span", { "class": "sw-hint", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
+                        "i"
+                      )
+                    ] : null
                   )
                 ),
                 (c?.hasCov) ? [
@@ -1213,8 +1226,13 @@ export default class CreateursCartes extends DCLogic {
                   $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
                     "Rythme · 7 derniers jours"
                   ),
-                  $h("span", { "style": "font-size: 13px; font-weight: 600; white-space: nowrap;" },
-                    $t($v.pv?.rythme)
+                  $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; white-space: nowrap;" },
+                    $t($v.pv?.rythme),
+                    ($v.pv?.cap) ? [
+                      $h("span", { "class": "sw-hint", "tabindex": "0", "role": "img", "aria-label": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.", "data-tip": "Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus." },
+                        "i"
+                      )
+                    ] : null
                   )
                 ),
                 ($v.pv?.hasDays) ? [

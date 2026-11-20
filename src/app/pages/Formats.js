@@ -226,6 +226,8 @@ export default class Formats extends DCLogic {
       const wins = f.wins || 0, n = f.n || 0;
       return {
         key, hkey: 'h:' + key, href: f.id ? '/app/formats/' + f.id : '/app/formats',
+        // Glisser vers un dossier (src/app/drag.js) : ce que la carte range, comme « Ajouter à un dossier » de la fiche du format.
+        id: f.id || '', dgLabel: hook ? '« ' + f.label + ' »' : f.label, dgCover: (ms.filter((m) => m.cover)[0] || {}).cover || '',
         kind: hook ? 'hook' : 'sound', niche: f.niche || 'Autres', market: f.market, accounts: f.accounts || 0, medX: typeof f.medX === 'number' ? f.medX : 0,
         name, fs: len <= 44 ? 36 : len <= 70 ? 30 : 26,
         // La ligne sous le nom : le son quand le nom vient du texte à l'écran ; sinon le genre du format.
@@ -302,7 +304,7 @@ export default class Formats extends DCLogic {
                 "Formats"
               ),
               $h("p", { "style": "margin: 0; font-size: 15px; color: var(--ink-muted);" },
-                "Ce que plusieurs comptes reprennent en même temps. Un format qui marche chez trois inconnus marchera chez toi."
+                "Repris par au moins 3 comptes ces 21 derniers jours. Une reprise réussie fait mieux que la normale de son compte."
               )
             ),
             $h("div", { "role": "search", "class": "sw-search", "style": "flex: 0 1 360px; height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: none; -webkit-backdrop-filter: none;" },
@@ -512,7 +514,7 @@ export default class Formats extends DCLogic {
             )
           ] : null,
           ($v.hasHero) ? [
-            $h("section", { "data-lq-card": $v.hero?.hkey, "aria-label": $v.eyebrow, "style": "position: relative; margin: 20px 40px 0; min-height: 300px; box-sizing: border-box; display: flex; gap: 26px; padding: 26px 28px; border-radius: 20px; overflow: hidden; background: radial-gradient(520px 300px at 100% 0%, rgba(76,154,255,0.16), transparent 70%), linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+            $h("section", { "data-lq-card": $v.hero?.hkey, "data-dg": "format", "data-dg-id": $v.hero?.id, "data-dg-label": $v.hero?.dgLabel, "data-dg-name": $v.hero?.name, "data-dg-cover": $v.hero?.dgCover, "aria-label": $v.eyebrow, "style": "position: relative; margin: 20px 40px 0; min-height: 300px; box-sizing: border-box; display: flex; gap: 26px; padding: 26px 28px; border-radius: 20px; overflow: hidden; background: radial-gradient(520px 300px at 100% 0%, rgba(76,154,255,0.16), transparent 70%), linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
               $h("div", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;" },
                 $h("span", { "style": "display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6FB0FF;" },
                   $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
@@ -625,7 +627,7 @@ export default class Formats extends DCLogic {
             ] : null,
             $h("div", { "style": "margin: 0 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(max(340px, calc((100% - 24px) / 3)), 1fr)); gap: 12px;" },
               ($l($v.cards)).map((f) => [
-                $h("a", { "key": f?.key, "data-lq-card": f?.key, "class": "fm-card", "href": $u(f?.href) },
+                $h("a", { "key": f?.key, "data-lq-card": f?.key, "data-dg": "format", "data-dg-id": f?.id, "data-dg-label": f?.dgLabel, "data-dg-name": f?.name, "data-dg-cover": f?.dgCover, "class": "fm-card", "href": $u(f?.href) },
                   $h("span", { "class": "fm-th" },
                     (f?.cover) ? [
                       $h("img", { "class": "sw-cover", "src": $u(f?.cover), "alt": "", "loading": "lazy", "decoding": "async" })

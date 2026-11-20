@@ -280,6 +280,8 @@ return {};
         kindL: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[a[28]] || '',
         logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank',
         bg: 'transparent', pvKey: a[0],
+        // Glisser vers un dossier (src/app/drag.js) : ce que la ligne range, comme « Garder dans un dossier » du panneau.
+        slug: a[11] || a[0], icon: a[10] || '',
         open: () => this.setState({ pv: a[0], open: '' })
       };
     });
@@ -1093,7 +1095,7 @@ return {};
               ),
               $h("tbody", null,
                 ($l($v.rows)).map((r) => [
-                  $h("tr", { "key": r?.n, "data-pv-row": "", "data-key": r?.n, "style": `background: ${$t(r?.bg)};` },
+                  $h("tr", { "key": r?.n, "data-pv-row": "", "data-key": r?.n, "data-dg": "app", "data-dg-id": r?.slug, "data-dg-label": r?.n, "data-dg-cover": r?.icon, "style": `background: ${$t(r?.bg)};` },
                     $h("td", { "style": "padding: 10px 12px 10px 20px;" },
                       $h("span", { "style": "display: flex; align-items: center; gap: 14px; min-width: 0;" },
                         $h("span", { "style": "width: 20px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
