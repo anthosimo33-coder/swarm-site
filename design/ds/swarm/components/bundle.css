@@ -692,3 +692,68 @@ nav[data-tabbar] [data-tab] { position: relative; z-index: 1; }
 .sw-void-unit { flex-shrink: 0; font-size: 12px; color: var(--ink-faint); }
 .sw-void-clear { align-self: flex-start; padding: 0; border: 0; background: transparent; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-muted); cursor: pointer; }
 .sw-void-clear:hover { color: #FFFFFF; }
+
+/* Le cadre et les squelettes de l'app (src/app/skeleton.js, maquette 1A « le cadre tout de suite » du 20/11) : tant que
+   le document d'un écran charge, le cadre (rail, ou en-tête et barre du bas) et des blocs à la forme de l'écran, aux mêmes
+   marges ; le vrai écran se pose dessous et le squelette s'efface en fondu. Le reflet glisse en transform (pas de
+   background-position, qui repeint chaque image), et rien ne bouge si l'on a demandé moins d'animations. */
+.sk-screen { position: fixed; inset: 0; z-index: 50; display: flex; background: var(--surface); color: var(--ink); font-family: var(--font-body); overflow: hidden; }
+.sk-screen:not(.is-first) { animation: sk-in 0.14s ease-out both; }
+.sk-screen.is-first .sk-main, .sk-screen.is-first .sk-m-body { animation: sk-in 0.2s ease-out both; }
+.sk-screen.is-out { animation: sk-out 0.22s ease-in forwards; pointer-events: none; }
+@keyframes sk-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sk-out { from { opacity: 1; } to { opacity: 0; } }
+.sk-b { display: block; position: relative; overflow: hidden; flex-shrink: 0; background: rgba(255,255,255,0.06); }
+.sk-b::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 50%, transparent); transform: translateX(-100%); animation: sk-glint 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+@keyframes sk-glint { 60%, 100% { transform: translateX(100%); } }
+.sk-row { display: flex; align-items: center; min-width: 0; }
+.sk-col { display: flex; flex-direction: column; min-width: 0; }
+.sk-card { border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); }
+.sk-line { display: block; height: 1px; background: var(--line); }
+.sk-sep { display: block; flex-shrink: 0; width: 1px; height: 26px; margin: 0 6px; background: var(--line); }
+.sk-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.sk-grid { display: grid; }
+.sk-main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; }
+.sk-main > *, .sk-m-body > * { flex-shrink: 0; }
+.sk-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.sk-h1 { margin: 0; font-family: var(--font-display); line-height: 1.05; font-weight: 700; color: var(--ink); }
+.sk-p { margin: 0; font-size: 15px; }
+.sk-search { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 0 18px; border-radius: 14px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-faint); font-size: 15px; white-space: nowrap; overflow: hidden; }
+.sk-search > svg { flex-shrink: 0; }
+.sk-search > span { padding-left: 2px; }
+.sk-tr { display: grid; align-items: center; border-top: 1px solid var(--line); }
+.sk-tr.is-head { border-top: 0; }
+.sk-k-alerts { height: 100vh; height: 100dvh; padding: 30px clamp(24px, 2.8vw, 40px); gap: 20px; }
+.sk-inbox { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 440px minmax(0, 1fr); gap: 16px; }
+.sk-k-home { padding: 30px 40px 40px; gap: 20px; }
+.sk-home { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto 1fr; grid-template-areas: "hero side" "fil side"; gap: 14px 18px; align-items: start; }
+.sk-home-hero { grid-area: hero; }
+.sk-home-fil { grid-area: fil; display: flex; flex-direction: column; gap: 14px; }
+.sk-home-side { grid-area: side; display: flex; flex-direction: column; gap: 14px; min-height: calc(100vh - 140px); }
+.sk-home-side > .sk-card:last-child { flex: 1 1 auto; }
+/* Accueil sous 1 200 px (maquette 4A) : la colonne de droite passe dessous, en trois cartes côte à côte. */
+@media (max-width: 1199px) {
+  .sk-home { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "hero" "side" "fil"; gap: 18px; }
+  .sk-home-side { flex-direction: row; align-items: stretch; min-height: 0; }
+  .sk-home-side > .sk-search { display: none; }
+  .sk-home-side > .sk-card, .sk-home-side > .sk-card:last-child { flex: 1 1 0; min-width: 0; }
+}
+.sk-fiche-1 { margin: 22px 40px 0; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; height: 296px; }
+.sk-fiche-2 { margin: 20px 40px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; height: 370px; }
+.sk-video { flex: 1 1 auto; min-width: 0; padding: 20px; }
+.sk-m { display: block; }
+.sk-m-head { position: relative; z-index: 2; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); border-bottom: 1px solid var(--line); }
+.sk-m-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
+.sk-m-name { flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; }
+.sk-m-back { flex-shrink: 0; margin-left: -10px; }
+.sk-m-tool { flex-shrink: 0; }
+.sk-m-av { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; margin-right: -4px; flex-shrink: 0; }
+.sk-m-av .sw-avatar { width: 36px; height: 36px; font-size: 14px; }
+.sk-m-tabbar { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; height: 64px; padding: 0 6px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 32px; background: rgba(22,27,38,0.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 20px 50px rgba(0,0,0,0.55); }
+.sk-m-tab { height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600; line-height: 1.5; }
+.sk-m-tab[aria-current="page"] { color: #FFFFFF; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) {
+  .sk-b::after { display: none; }
+  .sk-screen, .sk-screen .sk-main, .sk-screen .sk-m-body { animation: none !important; }
+  .sk-screen.is-out { opacity: 0; }
+}

@@ -24,6 +24,8 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 .acc-vig:hover .acc-play{transform:scale(1.08)}
 .acc-clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .acc-ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Sous 1 200 px (maquette 4A du 20/11) : la vidéo prend toute la largeur, la colonne de droite passe dessous en trois cartes côte à côte (la recherche reste au rail), puis le fil. */
+@media (max-width: 1199px){.acc-cols{flex-direction:column;align-items:stretch !important;gap:18px !important}.acc-left{display:contents !important}.acc-hero{order:1}.acc-side{order:2;width:auto !important;position:static !important;min-height:0 !important;flex-direction:row !important;align-items:stretch}.acc-side-search{display:none !important}.acc-side>section{flex:1 1 0 !important;min-width:0}.acc-fil{order:3}}
 </style>
 </helmet>
 <div class="sw" style="display: flex; flex-wrap: wrap; min-height: 900px; background: var(--surface); color: var(--ink); font-family: var(--font-body);">
@@ -45,10 +47,10 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <p style="margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-muted);">{{lede}}</p>
 </header>
 
-<div style="display: flex; align-items: flex-start; gap: 18px;">
-<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
+<div class="acc-cols" style="display: flex; align-items: flex-start; gap: 18px;">
+<div class="acc-left" style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
 
-<sc-if value="{{hasHero}}" hint-placeholder-val="{{true}}"><article aria-labelledby="acc-hero-t" style="position: relative; z-index: 2; display: flex; height: 330px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
+<sc-if value="{{hasHero}}" hint-placeholder-val="{{true}}"><article class="acc-hero" aria-labelledby="acc-hero-t" style="position: relative; z-index: 2; display: flex; height: 330px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
 <a class="acc-vig" href="{{hero.href}}" aria-label="{{hero.aria}}" style="position: relative; display: block; width: 250px; flex-shrink: 0; border-radius: 20px 0 0 20px; overflow: hidden; background: var(--track); color: #FFFFFF; text-decoration: none;">
 <sc-if value="{{hero.cover}}" hint-placeholder-val="{{true}}"><img class="sw-cover" src="{{hero.cover}}" alt=""></sc-if>
 <span class="acc-play" aria-hidden="true" style="position: absolute; left: calc(50% - 22px); top: calc(50% - 22px); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5z" fill="#FFFFFF"></path></svg></span>
@@ -73,7 +75,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 </article></sc-if>
 
-<sc-if value="{{fil.on}}" hint-placeholder-val="{{true}}"><section aria-labelledby="acc-fil-t" style="display: flex; flex-direction: column; gap: 14px;">
+<sc-if value="{{fil.on}}" hint-placeholder-val="{{true}}"><section class="acc-fil" aria-labelledby="acc-fil-t" style="display: flex; flex-direction: column; gap: 14px;">
 <div style="display: flex; align-items: center; gap: 12px; min-height: 32px;">
 <h2 id="acc-fil-t" style="margin: 0; font-size: 15px; font-weight: 600; color: var(--ink);">Le fil de la semaine</h2>
 <span style="flex: 1 1 auto;"></span>
@@ -98,12 +100,12 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 </section></sc-if>
 
-<sc-if value="{{nothing}}" hint-placeholder-val="{{false}}"><div style="padding: 48px 24px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-align: center; font-size: 15px; color: var(--ink-muted);">Rien de neuf dans le Radar cette semaine.</div></sc-if>
+<sc-if value="{{nothing}}" hint-placeholder-val="{{false}}"><div class="acc-fil" style="padding: 48px 24px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-align: center; font-size: 15px; color: var(--ink-muted);">Rien de neuf dans le Radar cette semaine.</div></sc-if>
 
 </div>
 
-<aside aria-label="Raccourcis" style="width: 360px; flex-shrink: 0; position: sticky; top: 30px; min-height: calc(100vh - 140px); box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;">
-<div role="search" class="sw-search" style="height: 46px; padding: 0 16px; gap: 12px; border: 0; border-radius: 14px; background: var(--track); box-shadow: inset 0 0 0 1px var(--glass-edge); backdrop-filter: none; -webkit-backdrop-filter: none;">
+<aside class="acc-side" aria-label="Raccourcis" style="width: 360px; flex-shrink: 0; position: sticky; top: 30px; min-height: calc(100vh - 140px); box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;">
+<div role="search" class="sw-search acc-side-search" style="height: 46px; padding: 0 16px; gap: 12px; border: 0; border-radius: 14px; background: var(--track); box-shadow: inset 0 0 0 1px var(--glass-edge); backdrop-filter: none; -webkit-backdrop-filter: none;">
 <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
 <input class="sw-search-input" onFocus="{{openPal}}" id="q" type="search" aria-label="Chercher une app, un format ou un créateur" placeholder="Chercher…" style="font-size: 15px;">
 </div>

@@ -146,4 +146,55 @@ const has = (f) => fs.existsSync(app(f));
   ok(/initiale: \(Array\.from\(/.test(main) && !/initiale:[^\n]*charAt\(0\)/.test(main), 'Q38 : l\'initiale de main.js n\'est plus une moitié d\'émoji');
 }
 
+// ─── 1A (20/11) : le cadre tout de suite, puis des squelettes à la forme de l'écran ───
+{
+  ok(has('skeleton.js'), '1A : module src/app/skeleton.js présent');
+  if (has('skeleton.js')) {
+    const sk = await import(app('skeleton.js'));
+    const cases = [['/app', 'accueil', 'home'], ['/app/apps', 'apps', 'apps'], ['/app/apps/higgsfield', 'apps', 'fiche'], ['/app/formats', 'formats', 'formats'],
+      ['/app/formats/abc', 'formats', 'fiche'], ['/app/createurs', 'createurs', 'creators'], ['/app/createurs/cartes', 'createurs', 'creatorCards'],
+      ['/app/createurs/3houses', 'createurs', 'fiche'], ['/app/alertes', 'alertes', 'alerts'], ['/app/dossiers', 'dossiers', 'folders'],
+      ['/app/dossiers/x1', 'dossiers', 'folder'], ['/app/videos/123', null, 'video'], ['/app/compte', 'accueil', 'home']];
+    const bad = cases.filter(([p, r, k]) => sk.rubriqueOf(p) !== r || sk.kindOf(p) !== k);
+    ok(!bad.length, `1A : chaque adresse a sa rubrique et sa forme d'écran${bad.length ? ` ; faux : ${bad.map((c) => c[0]).join(', ')}` : ''}`);
+    // Le rail du squelette est celui des écrans : mêmes rubriques, même ordre, mêmes icônes (canevas, liste sb).
+    const mainDc = fs.readFileSync(path.join(root, 'design/app/Main.dc.html'), 'utf8');
+    const I = JSON.parse((mainDc.match(/const I = (\{[^}]*\});/) || [, '{}'])[1]);
+    const sb = JSON.parse((mainDc.match(/const sb = (\[\[.*?\]\])\.map/) || [, '[]'])[1]);
+    const same = sb.length === sk.RUBRIQUES.length && sb.every(([k, label], i) => sk.RUBRIQUES[i][0] === k && sk.RUBRIQUES[i][1] === label && sk.RUBRIQUES[i][3] === I[k]);
+    ok(same, '1A : le rail du squelette = le rail des écrans (rubriques, ordre, libellés, icônes)');
+    // Le cadre statique d'app.html dessine les mêmes rubriques, avec les mêmes icônes, avant le code.
+    const html = fs.readFileSync(path.join(root, 'app.html'), 'utf8');
+    const frame = (html.match(/<div id="app-frame"[\s\S]*?<div id="app">/) || [''])[0];
+    const rail = sk.RUBRIQUES.every(([k, label, , d]) => new RegExp(`data-r="${k}"><span class="af-ico"><svg[^>]*><path d="${d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*/></svg></span>${label}</span>`).test(frame));
+    const tabs = sk.TABS.every((k) => { const [, label, , d] = sk.RUBRIQUES.find((r) => r[0] === k); return frame.includes(`data-r="${k}"><svg`) && frame.includes(`d="${d}"`) && frame.includes(`</svg>${label}</span>`); });
+    ok(!!frame && rail && tabs, `1A : app.html dessine le cadre avant le code (rail ${rail ? 'ok' : 'différent'}, barre du bas ${tabs ? 'ok' : 'différente'})`);
+    ok(/<script src="\/app-frame\.js" async><\/script>/.test(html) && fs.existsSync(path.join(root, 'public/app-frame.js')) && html.indexOf('app-frame.js') < html.indexOf('<body'),
+      '1A : la rubrique est posée par un fichier (public/app-frame.js) chargé sans bloquer la page, pas un script en ligne');
+    // public/app-frame.js suit les mêmes règles que le squelette (rubrique, forme de l'en-tête), avec ou sans abonnement.
+    const src = fs.readFileSync(path.join(root, 'public/app-frame.js'), 'utf8');
+    const vm = await import('node:vm');
+    const run = (pathname, memo) => {
+      const attrs = {}, props = {};
+      vm.runInNewContext(src, { location: { pathname }, localStorage: { getItem: () => (memo ? JSON.stringify(memo) : null) },
+        document: { documentElement: { setAttribute: (k, v) => { attrs[k] = v; }, style: { setProperty: (k, v) => { props[k] = v; } } } } });
+      return { rub: attrs['data-af'], kind: attrs['data-af-k'], ini: props['--af-ini'] };
+    };
+    const fk = (k) => (k === 'fiche' || k === 'video' || k === 'folder' ? k : 'list');
+    const off = cases.filter(([p]) => { const r = run(p); return r.rub !== (sk.rubriqueOf(p) || '') || r.kind !== fk(sk.kindOf(p)); });
+    ok(!off.length, `1A : public/app-frame.js devine la rubrique comme le squelette${off.length ? ` ; faux : ${off.map((c) => c[0]).join(', ')}` : ''}`);
+    const free = run('/app/formats', { i: 'A', p: 0 }), freeFiche = run('/app/apps/x', { i: 'A', p: 0 }), bad2 = run('/app', { i: '"};x{', p: 1 });
+    ok(free.rub === 'apps' && freeFiche.kind === 'fiche' && free.ini === '"A"' && bad2.ini === undefined,
+      '1A : sans abonnement (dernière visite), une rubrique fermée montre Apps ; l\'initiale gardée s\'affiche, une valeur étrange est ignorée');
+  }
+  ok(/import \{ Skeleton \} from '\.\/skeleton\.js'/.test(main) && /getElementById\('app-frame'\)/.test(main) && /SKELETON_AFTER_MS = 150/.test(main),
+    '1A : le routeur montre le squelette (démarrage, changement d\'écran de plus de 150 ms) et retire le cadre statique');
+  // Le reflet des squelettes glisse en transform ; rien ne bouge si l'on a demandé moins d'animations.
+  const bundle = fs.readFileSync(path.join(root, 'design/ds/swarm/components/bundle.css'), 'utf8');
+  const glint = (bundle.match(/@keyframes sk-glint \{([^}]*\})*[^}]*\}/) || [''])[0];
+  ok(/\.sk-b::after \{[^}]*animation: sk-glint/.test(bundle) && /transform/.test(glint) && !/background-position/.test(glint)
+    && /prefers-reduced-motion: reduce\) \{\s*\.sk-b::after \{ display: none; \}/.test(bundle),
+    '1A : le reflet glisse en transform (pas de background-position), absent si l\'on demande moins d\'animations');
+}
+
 end();

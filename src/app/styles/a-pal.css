@@ -1,3 +1,7 @@
 /* Généré par scripts/dc2preact.py depuis design/app/Palette.dc.html */
 body{margin:0}
 a{color:#4C9AFF}@media (hover: hover){a:hover{color:#FFFFFF}}
+.pal-hl{background:rgba(76,154,255,0.24);color:var(--ink);border-radius:3px;box-shadow:0 0 0 1px rgba(76,154,255,0.18)}
+.pal-ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pal-go{opacity:0;transition:opacity .15s ease}
+.pal-row[data-sel="true"] .pal-go{opacity:1}
