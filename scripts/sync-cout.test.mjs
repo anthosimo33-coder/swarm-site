@@ -214,6 +214,17 @@ function memDb() {
   ok(w === 0 && pre.tables.boards[0].updatedAt === 5 && (await store.boardHashes.handler(pre.ctx, { keys: ["app:a"] }))[0] === "h0", "sans empreinte rangée, une page inchangée n'est pas réécrite et son empreinte est rangée");
 }
 
+// ─── Q7 (audit du 19/11) : une grosse page rangée en morceaux ne coupe jamais un émoji en deux ───
+{
+  const m = memDb();
+  const text = "a".repeat(store.PART_CHARS - 1) + "😀" + "b".repeat(10) + "é".repeat(store.PART_CHARS) + "🎉";
+  await store.saveBoards.handler(m.ctx, { items: [{ key: "apps", hash: "h", text }], now: 1 });
+  const parts = (m.tables.boardParts ?? []).slice().sort((p, q) => p.i - q.i);
+  const whole = parts.map((p) => p.text).join("");
+  ok(parts.length >= 2 && parts.every((p) => p.text.isWellFormed()), `Q7 : chaque morceau est un texte valide, sans demi-émoji (${parts.map((p) => p.text.isWellFormed()).join(", ")})`);
+  ok(whole === text && (m.tables.boards ?? [])[0]?.parts === parts.length, "Q7 : les morceaux recollés redonnent la page, et leur nombre est rangé");
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);

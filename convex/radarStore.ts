@@ -269,8 +269,16 @@ export const saveBoards = internalMutation({
       if (old?.parts) await dropParts(ctx, it.key);
       let row: { data: unknown; parts: number | undefined };
       if (it.text !== undefined) {
-        const n = Math.max(1, Math.ceil(it.text.length / PART_CHARS));
-        for (let i = 0; i < n; i++) await ctx.db.insert("boardParts", { key: it.key, i, text: it.text.slice(i * PART_CHARS, (i + 1) * PART_CHARS) });
+        // Coupe sur une frontière de caractère (audit Q7) : couper entre les deux moitiés d'un émoji donnait deux morceaux
+        // invalides, refusés par Convex, et tout le passage échouait. boards.get recolle par simple concaténation.
+        let n = 0;
+        for (let start = 0; start < it.text.length || n === 0; n++) {
+          let end = Math.min(start + PART_CHARS, it.text.length);
+          const c = it.text.charCodeAt(end - 1);
+          if (end < it.text.length && c >= 0xd800 && c <= 0xdbff) end--; // première moitié d'une paire : avec la suivante
+          await ctx.db.insert("boardParts", { key: it.key, i: n, text: it.text.slice(start, end) });
+          start = end;
+        }
         row = { data: null, parts: n };
       } else row = { data: it.data ?? null, parts: undefined };
       if (old) await ctx.db.patch(old._id, { ...row, hash: it.hash, updatedAt: now });
