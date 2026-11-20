@@ -193,7 +193,8 @@ export default class Reglages extends DCLogic {
         }, (e) => this.setState({ busy: null, emErr: errOf(e) }));
       },
       sinceTxt: s && s.since ? 'Session ouverte le ' + dd(s.since) + ' · elle dure 90 jours.' : 'Ta session reste ouverte 90 jours.',
-      othersTxt: others === null ? '…' : others === 0 ? 'Aucun autre appareil n’est connecté.' : others + (others > 1 ? ' autres sessions ouvertes sur ton compte.' : ' autre session ouverte sur ton compte.'),
+      // 3 appareils au plus (audit S23, convex/auth.ts) : une nouvelle connexion ferme la plus ancienne.
+      othersTxt: (others === null ? '…' : others === 0 ? 'Aucun autre appareil n’est connecté.' : others + (others > 1 ? ' autres sessions ouvertes sur ton compte.' : ' autre session ouverte sur ton compte.')) + ' 3 appareils au plus : une nouvelle connexion déconnecte le plus ancien.',
       othersOff: !others || !!st.busy, othersLabel: st.busy === 'out' ? 'Déconnexion…' : 'Déconnecter les autres',
       signOutOthers: () => {
         if (!p.onSignOutOthers || !others) return;

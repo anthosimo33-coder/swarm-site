@@ -5,6 +5,7 @@ import { ConvexError } from "convex/values";
 import { Scrypt } from "lucia";
 import { AUTH_ERRORS, type AuthErrorCode } from "./authErrors";
 import { internal } from "./_generated/api";
+import type { MutationCtx } from "./_generated/server";
 
 /**
  * Authentification de Swarm : e-mail + mot de passe, et Google.
@@ -112,6 +113,28 @@ const password = ConvexCredentials({
 // lieu d'envoyer la personne sur une page d'erreur de Google.
 const googleReady = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
 
+/**
+ * Audit S23 (décision du 20/11) : 3 appareils connectés au plus par compte. Avant chaque nouvelle session, les plus
+ * anciennes sessions vivantes au-delà de 2 sont fermées, avec leurs jetons de renouvellement. Avant, chaque connexion
+ * ajoutait une session de 30 jours, sans jamais en fermer : un compte se partageait sans limite.
+ */
+const MAX_SESSIONS = 3;
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: googleReady ? [password, Google] : [password],
+  callbacks: {
+    async beforeSessionCreation(anyCtx, { userId }) {
+      const ctx = anyCtx as unknown as MutationCtx; // le crochet reçoit un contexte générique : c'est celui de auth:store
+      const now = Date.now();
+      const live = (await ctx.db.query("authSessions").withIndex("userId", (q) => q.eq("userId", userId)).collect())
+        .filter((s) => s.expirationTime > now)
+        .sort((a, b) => a._creationTime - b._creationTime);
+      for (const s of live.slice(0, Math.max(0, live.length - (MAX_SESSIONS - 1)))) {
+        for (const t of await ctx.db.query("authRefreshTokens").withIndex("sessionId", (q) => q.eq("sessionId", s._id)).collect()) {
+          await ctx.db.delete(t._id);
+        }
+        await ctx.db.delete(s._id);
+      }
+    },
+  },
 });
