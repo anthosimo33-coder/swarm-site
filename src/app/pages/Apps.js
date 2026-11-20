@@ -236,7 +236,8 @@ return {};
     // observée, voir componentDidMount). Dessiner les ~520 lignes d'un coup gelait l'écran 260 à 640 ms à chaque
     // changement d'onglet ou retour sur Apps ; seules les lignes dessinées sont calculées. « Affichées » garde le total.
     const limit = st.limit || 40;
-    const rowsKey = [SRC, D, market, niches.join('|'), sort, sortBy, dir, period, platform, limit];
+    // La plage personnalisée en fait partie : sans elle, passer de 7 à 14 jours gardait les vues de la plage d'avant.
+    const rowsKey = [SRC, D, market, niches.join('|'), sort, sortBy, dir, period, range ? range.a + '_' + range.b : '', platform, limit];
     const sameRows = !!this.rowsKey && this.rowsKey.every((v, k) => v === rowsKey[k]);
     const rowsBase = sameRows ? this.rowsBase : list.slice(0, limit).map((a, i) => {
       const w = a[6];
