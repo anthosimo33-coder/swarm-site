@@ -2,3 +2,6 @@
 @media (hover: hover){a:hover{color:#FFFFFF}}
 .m-hit{position:relative}
 .m-hit::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}
+.ib-row:active{background:rgba(255,255,255,0.05)}
+@media (max-width: 359px){[data-swipe-tabs] .sw-tab>span{display:none}}
+@media (hover: none){.ib-row:hover{background:transparent}.ib-row:active{background:rgba(255,255,255,0.05)}}
