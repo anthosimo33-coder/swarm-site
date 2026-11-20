@@ -212,4 +212,26 @@ const topSelectors = (css) => {
   ok(!!q && /MOBILE_QUERY/.test(pre) && !/\(max-width: 860px\)\{#app/.test(pre) && !/'\(max-width: 860px\)'/.test(runtime), 'F25 : pré-rendu et pages publiques basculent sur cette condition, plus sur la seule largeur');
 }
 
+// ─── F23 : la landing et les tarifs ne chargent que la version qui s'affiche, préchargée dès la page HTML ───
+{
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'kopycat-f23-'));
+  execFileSync('npx', ['vite', 'build', '--outDir', out, '--emptyOutDir', 'true', '--logLevel', 'error'], { cwd: root, stdio: 'ignore' });
+  const q = (fs.readFileSync(path.join(root, 'src/runtime.js'), 'utf8').match(/export const MOBILE_QUERY = '([^']+)'/) || [])[1];
+  for (const [page, desk, mob] of [['index.html', 'LP', 'LPMobile'], ['tarifs.html', 'Tarifs', 'TarifsMobile']]) {
+    const html = fs.readFileSync(path.join(out, page), 'utf8');
+    const pre = [...html.matchAll(/<link rel="preload" as="script"[^>]*>/g)].map((m) => m[0]);
+    const of = (name) => pre.find((t) => new RegExp(`href="/assets/${name}-[\\w-]+\\.js"`).test(t));
+    const d = of(desk), m = of(mob);
+    ok(!!q && !!d && !!m && m.includes(`media="${q}"`) && /media="not \(/.test(d) && /crossorigin/.test(d + m),
+      `F23 : ${page} précharge ${desk} et ${mob} chacun selon la condition mobile (${pre.length} préchargements)`);
+    // Ce que la page charge d'office (script d'entrée et ses modulepreload) : plus aucune des deux versions.
+    const always = [...html.matchAll(/<(?:script type="module"[^>]*src|link rel="modulepreload"[^>]*href)="\/(assets\/[^"]+\.js)"/g)].map((x) => x[1]);
+    const size = always.reduce((n, f) => n + fs.statSync(path.join(out, f)).size, 0);
+    ok(always.length && !always.some((f) => new RegExp(`/(${desk}|${mob})-`).test(f)) && size < 30_000, `F23 : ${page} ne charge d'office aucune version (${always.length} fichiers, ${size} o)`);
+  }
+  fs.rmSync(out, { recursive: true, force: true });
+  const entries = ['src/main-lp.js', 'src/main-tarifs.js'].filter((f) => /^import \w+ from '\.\/pages\//m.test(fs.readFileSync(path.join(root, f), 'utf8')));
+  ok(!entries.length, `F23 : les entrées n'importent plus les pages en statique (${entries.join(', ') || 'aucune'})`);
+}
+
 end();

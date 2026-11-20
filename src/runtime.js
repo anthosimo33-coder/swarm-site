@@ -1,4 +1,4 @@
-import { Component, h } from 'preact';
+import { Component, h, render } from 'preact';
 
 // Équivalent de DCLogic (le moteur des maquettes du canevas) : un composant à état
 // dont setState fusionne l'état, comme dans le canevas.
@@ -52,27 +52,29 @@ export const $u = (x) => {
 // (scripts/prerender.mjs).
 export const MOBILE_QUERY = '(max-width: 860px), (pointer: coarse) and (max-height: 500px)';
 
-// Monte la version mobile ou desktop selon MOBILE_QUERY, et bascule si l'écran change (rotation, fenêtre).
-const QUERY = MOBILE_QUERY;
-
-export class Responsive extends Component {
-  constructor(props) {
-    super(props);
-    this.mq = window.matchMedia(QUERY);
-    this.state = { mobile: this.mq.matches };
-    this.onChange = (e) => this.setState({ mobile: e.matches });
-  }
-
-  componentDidMount() {
-    this.mq.addEventListener('change', this.onChange);
-  }
-
-  componentWillUnmount() {
-    this.mq.removeEventListener('change', this.onChange);
-  }
-
-  // `props` : ce que la page reçoit (les chiffres du Radar sur les pages publiques, cf src/stats.js).
-  render({ desktop, mobile, props }, { mobile: isMobile }) {
-    return h(isMobile ? mobile : desktop, props ?? null);
-  }
+/**
+ * Monte une page publique qui a une version ordinateur et une version téléphone (landing, tarifs) dans `el`, en ne
+ * chargeant que celle qui s'affiche ; l'autre ne se charge que si l'écran bascule (rotation, fenêtre). Audit F23 (19/11) :
+ * les deux versions partaient avec la page (≈ 45 % du JS jamais utilisé). Pas d'aller-retour en plus : vite.config.js
+ * précharge le morceau de chaque version dans la page HTML, par l'attribut media (variantPreload). Le pré-rendu (F9) reste
+ * à l'écran jusqu'au premier rendu, retiré dans la même tâche. Rend redraw(), à rappeler quand les props changent.
+ * `loaders` : { desktop: () => import(…), mobile: () => import(…) } ; `props()` : ce que la page reçoit.
+ */
+export function mountResponsive(el, loaders, props) {
+  const mq = window.matchMedia(MOBILE_QUERY);
+  let Page = null;
+  let want = null;
+  const redraw = () => { if (Page) render(h(Page, props() ?? null), el); };
+  const show = async () => {
+    const side = mq.matches ? 'mobile' : 'desktop';
+    want = side;
+    const mod = await loaders[side]();
+    if (want !== side) return; // l'écran a basculé pendant le chargement : l'autre appel dessine
+    if (!Page) el.replaceChildren();
+    Page = mod.default;
+    redraw();
+  };
+  mq.addEventListener('change', show);
+  show();
+  return redraw;
 }

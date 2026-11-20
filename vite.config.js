@@ -71,8 +71,33 @@ const local = {
   configurePreviewServer(server) { vercelRoutes(true)(server, [resolve(import.meta.dirname, VERCEL.outputDirectory ?? 'dist')]); },
 };
 
+/**
+ * Landing et tarifs : chaque version (ordinateur, téléphone) est un morceau à part, chargé à la demande (src/runtime.js,
+ * mountResponsive ; audit F23). Pour qu'il n'y ait pas d'aller-retour en plus, la page HTML le précharge dès le <head>,
+ * celui de la version qui s'affichera seulement : <link rel="preload" as="script" media="…">, la condition de
+ * MOBILE_QUERY ou son contraire. Pas de script en ligne (la CSP de vercel.json n'en permet aucun).
+ */
+const VARIANTS = { 'index.html': ['src/pages/LP.js', 'src/pages/LPMobile.js'], 'tarifs.html': ['src/pages/Tarifs.js', 'src/pages/TarifsMobile.js'] };
+const variantPreload = {
+  name: 'variant-preload',
+  apply: 'build',
+  async transformIndexHtml(html, ctx) {
+    const pair = VARIANTS[ctx.filename.split('/').pop()];
+    if (!pair || !ctx.bundle) return html;
+    const { MOBILE_QUERY } = await import('./src/runtime.js');
+    const media = [`not (${MOBILE_QUERY.split(', ').map((q) => `(${q})`).join(' or ')})`, MOBILE_QUERY];
+    const chunk = (src) => Object.values(ctx.bundle).find((c) => c.type === 'chunk' && c.facadeModuleId === resolve(import.meta.dirname, src));
+    const tags = pair.map((src, i) => {
+      const c = chunk(src);
+      if (!c) throw new Error(`variant-preload : pas de morceau à part pour ${src} (encore importé en statique ?)`);
+      return { tag: 'link', attrs: { rel: 'preload', as: 'script', crossorigin: '', href: `/${c.fileName}`, media: media[i] }, injectTo: 'head' };
+    });
+    return { html, tags };
+  },
+};
+
 export default defineConfig({
-  plugins: [local],
+  plugins: [local, variantPreload],
   // Convex et Convex Auth sont écrits pour React : Preact les fait tourner via preact/compat.
   resolve: {
     alias: {
