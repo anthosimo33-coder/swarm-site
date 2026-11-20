@@ -49,7 +49,9 @@ export function fixtureRaw() {
       const quiet = j === 0;
       const lastPostAt = quiet ? NOW - 200 * DAY : NOW - Math.floor(r() * 5) * DAY;
       const id = `acc-${a.slug}-${j}`;
-      tracked.push({ id, handle, appId: a.id, status: 'active', fans: Math.floor(r() * 90_000) + 1000, bio: `Bio de ${handle}`, lang: 'fr', country: countries[j],
+      // Le 5e compte de chaque app n'a pas de pays relevé : il vient de ses vidéos, que seule l'étape « groupe » voit
+      // (l'étape globale le reçoit du groupe ; audit Q63).
+      tracked.push({ id, handle, appId: a.id, status: 'active', fans: Math.floor(r() * 90_000) + 1000, bio: `Bio de ${handle}`, lang: 'fr', country: j === 4 ? null : countries[j],
         medianViews: quiet ? 900_000 : Math.floor(r() * 50_000) + 1000, videosSeen: 30, lastPostAt, posts7d: quiet ? 0 : 3, igHandle: j === 1 ? `${handle}.insta` : null, igFans: null,
         igMedianViews: null, addedAt: NOW - 50 * DAY, proof: { by: 'handle', cites: 3, of: 30 } });
       for (let k = 0; k < 6; k++) {
