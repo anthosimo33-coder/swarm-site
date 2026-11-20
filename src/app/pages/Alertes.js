@@ -602,23 +602,25 @@ export default class Alertes extends DCLogic {
                 ] : null,
                 ($l($v.groups)).map((g) => [
                   $h("div", { "role": "group", "aria-label": g?.g, "style": "display: flex; flex-direction: column; gap: 2px;" },
-                    $h("div", { "style": `display: flex; align-items: baseline; gap: 8px; padding: ${$t(g?.pad)};` },
+                    $h("div", { "style": `display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: ${$t(g?.pad)};` },
                       $h("span", { "style": "font-size: 15px; font-weight: 600; color: var(--ink);" },
                         $t(g?.g)
                       ),
                       $h("span", { "style": "flex: 1;" }),
                       (g?.first) ? [
-                        $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
-                          $t($v.weekCount)
-                        ),
-                        ($v.hasUnread) ? [
-                          $h("span", { "aria-hidden": "true", "style": "font-size: 12px; color: var(--ink-faint);" },
-                            "·"
+                        $h("span", { "style": "margin-left: auto; display: inline-flex; align-items: baseline; gap: 8px;" },
+                          $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap;" },
+                            $t($v.weekCount)
                           ),
-                          $h("button", { "type": "button", "onClick": $v.markRead, "style": "padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600; color: var(--accent); white-space: nowrap; cursor: pointer;" },
-                            "Tout marquer comme lu"
-                          )
-                        ] : null
+                          ($v.hasUnread) ? [
+                            $h("span", { "aria-hidden": "true", "style": "font-size: 12px; color: var(--ink-faint);" },
+                              "·"
+                            ),
+                            $h("button", { "type": "button", "onClick": $v.markRead, "style": "padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600; color: var(--accent); white-space: nowrap; cursor: pointer;" },
+                              "Tout marquer comme lu"
+                            )
+                          ] : null
+                        )
                       ] : null
                     ),
                     ($l(g?.items)).map((a) => [
@@ -661,7 +663,7 @@ export default class Alertes extends DCLogic {
               ] : null,
               ($v.d?.on) ? [
                 $h("div", { "data-ib-in": "", "style": "display: flex; align-items: center; gap: 12px; min-height: 40px;" },
-                  $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6FB0FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                  $h("span", { "class": "ib-kick", "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6FB0FF;" },
                     $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                       $h("path", { "d": $v.d?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     ),
@@ -684,8 +686,10 @@ export default class Alertes extends DCLogic {
                     ] : null
                   ),
                   $h("span", { "style": "position: relative; display: inline-flex; flex-shrink: 0;" },
-                    $h("button", { "data-aj-trigger": "true", "type": "button", "class": "sw-btn sw-btn-ghost sw-btn-sm", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "aria-pressed": $v.d?.kept, "style": "gap: 10px; padding: 0 14px 0 16px; border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05);" },
-                      $t($v.d?.keepLabel),
+                    $h("button", { "data-aj-trigger": "true", "type": "button", "class": "sw-btn sw-btn-ghost sw-btn-sm ib-keep", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "aria-pressed": $v.d?.kept, "aria-label": $v.d?.keepLabel, "style": "border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05);" },
+                      $h("span", { "class": "ib-keep-l" },
+                        $t($v.d?.keepLabel)
+                      ),
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": $v.d?.keepFill, "stroke": "currentColor", "stroke-width": "2", "stroke-linejoin": "round" })
                       )
@@ -707,7 +711,7 @@ export default class Alertes extends DCLogic {
                     )
                   ] : null
                 ),
-                $h("h2", { "data-ib-in": "", "style": "margin: 12px 0 0; font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.18; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" },
+                $h("h2", { "data-ib-in": "", "style": "margin: 12px 0 0; font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.18; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex-shrink: 0;" },
                   $t($v.d?.title)
                 ),
                 $h("div", { "data-ib-in": "", "style": "margin-top: 14px; display: flex; gap: 34px; flex-wrap: wrap;" },
@@ -745,9 +749,9 @@ export default class Alertes extends DCLogic {
                     $h("span", { "style": "font-size: 12px; font-weight: 600; color: var(--ink-soft);" },
                       $t($v.d?.vTitle)
                     ),
-                    $h("div", { "style": "margin-top: 10px; height: 128px; display: flex; gap: 10px;" },
+                    $h("div", { "class": "ib-vids" },
                       ($l($v.d?.vids)).map((v) => [
-                        $h("a", { "class": "sw-video", "href": $u(v?.href), "aria-label": v?.aria, "style": "display: block; width: 96px; height: 128px; aspect-ratio: auto; flex-shrink: 0; border-radius: 12px;" },
+                        $h("a", { "class": "sw-video ib-vid", "href": $u(v?.href), "aria-label": v?.aria },
                           $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "eager" }),
                           $h("span", { "class": "sw-video-shade" }),
                           $h("span", { "style": "position: absolute; left: 7px; bottom: 6px; font-size: 11px; font-weight: 700; color: #FFFFFF; text-shadow: 0 1px 3px rgba(0,0,0,0.85);" },

@@ -1033,10 +1033,10 @@ return {};
             )
           ),
           $h("div", { "style": "margin: 16px 32px 0; overflow-x: auto; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-            $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1120px;" },
+            $h("table", { "class": "sw-table ap-t", "style": "table-layout: fixed;" },
               $h("thead", null,
                 $h("tr", null,
-                  $h("th", { "aria-sort": $v.hd?.name?.aria, "style": "width: 320px; padding-top: 9px; padding-bottom: 9px; padding-left: 20px;" },
+                  $h("th", { "aria-sort": $v.hd?.name?.aria, "style": "padding-top: 9px; padding-bottom: 9px; padding-left: 20px;" },
                     $h("button", { "type": "button", "onClick": $v.hd?.name?.pick, "style": `display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; border: 0; background: transparent; color: ${$t($v.hd?.name?.ink)}; font: inherit; font-size: 12px; font-weight: ${$t($v.hd?.name?.fw)}; cursor: pointer;` },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t($v.hd?.name?.ic)};` },
                         $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -1049,7 +1049,7 @@ return {};
                       )
                     )
                   ),
-                  $h("th", { "style": "width: 165px; padding-top: 9px; padding-bottom: 9px;" },
+                  $h("th", { "style": "padding-top: 9px; padding-bottom: 9px;" },
                     $h("span", { "class": "sw-th" },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
                         $h("path", { "d": "M3 12V4h8l10 10-8 8zM7.5 7.5h.01", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -1057,7 +1057,7 @@ return {};
                       "Niche"
                     )
                   ),
-                  $h("th", { "style": "width: 215px; padding-top: 9px; padding-bottom: 9px;" },
+                  $h("th", { "style": "padding-top: 9px; padding-bottom: 9px;" },
                     $h("span", { "class": "sw-th" },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: currentColor;" },
                         $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -1065,7 +1065,7 @@ return {};
                       "Leurs vidéos qui cartonnent"
                     )
                   ),
-                  $h("th", { "aria-sort": $v.hd?.views?.aria, "style": "width: 270px; padding-top: 9px; padding-bottom: 9px;" },
+                  $h("th", { "aria-sort": $v.hd?.views?.aria, "style": "padding-top: 9px; padding-bottom: 9px;" },
                     $h("button", { "type": "button", "onClick": $v.hd?.views?.pick, "style": `display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; padding: 0; border: 0; background: transparent; color: ${$t($v.hd?.views?.ink)}; font: inherit; font-size: 12px; font-weight: ${$t($v.hd?.views?.fw)}; cursor: pointer;` },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t($v.hd?.views?.ic)};` },
                         $h("path", { "d": "M3 3v18h18M7 15l4-4 3 3 5-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -1078,7 +1078,7 @@ return {};
                       )
                     )
                   ),
-                  $h("th", { "class": "sw-num", "aria-sort": $v.hd?.best?.aria, "style": "width: 150px; padding-top: 9px; padding-bottom: 9px; padding-right: 20px;" },
+                  $h("th", { "class": "sw-num", "aria-sort": $v.hd?.best?.aria, "style": "padding-top: 9px; padding-bottom: 9px; padding-right: 20px;" },
                     $h("button", { "type": "button", "onClick": $v.hd?.best?.pick, "style": `display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 0; border: 0; background: transparent; color: ${$t($v.hd?.best?.ink)}; font: inherit; font-size: 12px; font-weight: ${$t($v.hd?.best?.fw)}; cursor: pointer;` },
                       $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t($v.hd?.best?.ic)};` },
                         $h("path", { "d": "M13 2L4 14h7l-1 8 9-12h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -1160,9 +1160,9 @@ return {};
                     ),
                     $h("td", null,
                       $h("span", { "style": "display: flex; flex-direction: column; gap: 5px;" },
-                        $h("span", { "style": "display: flex; gap: 8px;" },
+                        $h("span", { "class": "ap-th", "style": "display: flex; gap: 8px;" },
                           ($l(r?.thumbs)).map((t) => [
-                            $h("a", { "href": $u(t?.href), "class": `sw-video ${$t(t?.t)}`, "style": "display: block; width: 58px; height: 78px; aspect-ratio: auto; border-radius: 10px;" },
+                            $h("a", { "href": $u(t?.href), "class": `sw-video ${$t(t?.t)}`, "style": "display: block; aspect-ratio: auto; border-radius: 10px;" },
                               $h("img", { "class": "sw-cover", "src": $u(t?.src), "alt": "", "loading": "lazy" }),
                               $h("span", { "class": "sw-video-shade" }),
                               (t?.car) ? [
@@ -1195,7 +1195,7 @@ return {};
                       )
                     ),
                     $h("td", null,
-                      $h("span", { "style": "display: flex; align-items: center; gap: 14px;" },
+                      $h("span", { "class": "ap-v" },
                         $h("span", { "style": "display: flex; flex-direction: column; gap: 4px; min-width: 92px;" },
                           $h("span", { "data-lq-num": "", "style": "font-family: var(--font-display); font-size: 20px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);" },
                             $t(r?.v30)
