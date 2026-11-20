@@ -51,7 +51,9 @@ export function kindOf(pathname) {
 }
 
 /** Les écrans téléphone sans barre du bas (vidéo, un dossier ouvert). */
-export const noTabbar = (kind) => kind === 'video' || kind === 'folder';
+export const noTabbar = (kind) => kind === 'video' || kind === 'folder' || kind === 'fiche';
+/** Les écrans téléphone dont le retour est la capsule du bas (6C) : fiche et vidéo. */
+export const thumbBack = (kind) => kind === 'fiche' || kind === 'video';
 
 // ─── les briques ───
 const px = (n) => (typeof n === 'number' ? `${n}px` : n);
@@ -196,19 +198,49 @@ const DESK = {
         h('aside', { class: 'sk-home-side' }, h('div', { class: 'sk-search', style: { flex: 'none', height: '46px', padding: '0 16px' } }, icon(SEARCH_D, 18), h('span', null, 'Chercher…')), ...side)),
     ];
   },
-  fiche() {
+  /** Les fiches (maquette 3B) : relevées sur FicheA, CreateurFicheA et FormatFicheA à 1 440 × 900. */
+  fiche(path) {
+    const what = /^\/app\/createurs\//.test(path || '') ? 'creator' : /^\/app\/formats\//.test(path || '') ? 'format' : 'app';
+    const crumb = (ws, top) => row({ margin: `${top}px 32px 0`, height: '20px', gap: '22px' }, ...ws.map((w) => b(w, 12, 5)));
+    const tiles = () => h('div', { class: 'sk-fiche-tiles' },
+      ...times(4, () => card({ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }, b(90, 12, 5), b(120, 22, 7), b(100, 11, 5))));
+    const icons = (n) => row({ gap: '24px' }, ...times(n, () => b(22, 22, 6)));
+    if (what === 'creator') return [
+      crumb([70, 60, 100], 28),
+      card({ margin: '20px 32px 0', height: '186px', borderRadius: '28px', padding: '0 40px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '30px' },
+        b(116, 116, 58), col({ gap: '14px', flex: 1 }, b(240, 40, 10), b('55%', 15, 6), row({ gap: '10px' }, b(110, 20, 6), b(150, 28, 14), b(150, 20, 6))), icons(3)),
+      tiles(),
+      row({ margin: '28px 32px 0' }, b(444, 42, 14)),
+      row({ margin: '21px 32px 0', height: '38px', justifyContent: 'space-between' }, b(130, 20, 7), b(222, 38, 19)),
+      h('div', { class: 'sk-fiche-grid' }, ...times(4, () => card({ height: '420px', padding: '12px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '12px' },
+        row({ gap: '10px' }, b(28, 28, 14), col({ gap: '6px' }, b(110, 12, 5), b(150, 10, 5))), b('100%', 340, 12)))),
+    ];
+    if (what === 'format') return [
+      crumb([60, 40], 28),
+      card({ margin: '20px 32px 0', height: '222px', borderRadius: '28px', padding: '0 40px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '30px' },
+        col({ gap: '14px', minWidth: 0 }, row({ gap: '8px' }, b(60, 28, 14), b(170, 28, 14), b(420, 16, 6)), b(160, 12, 5), b(508, 66, 10, { marginTop: '6px', maxWidth: '100%' })),
+        col({ gap: '24px', alignItems: 'flex-end' }, b(262, 54, 27), icons(2))),
+      tiles(),
+      row({ margin: '28px 32px 0' }, b(274, 42, 14)),
+      row({ margin: '22px 32px 0', height: '26px', justifyContent: 'space-between' }, b(360, 22, 7), b(95, 13, 5)),
+      h('div', { class: 'sk-fiche-grid', style: { marginTop: '13px' } }, ...times(4, () => b('auto', 551, 16))),
+    ];
     return [
-      h('header', { class: 'sk-head', style: { padding: '34px 40px 0', alignItems: 'center' } },
-        row({ gap: '16px' }, b(64, 64, 18), col({ gap: '10px' }, b(220, 30, 8), row({ gap: '6px' }, ...pills([170, 64, 120], 32)))),
-        row({ gap: '10px' }, b(44, 44, 12), b(176, 44, 22))),
-      row({ margin: '22px 40px 0' }, b(476, 42, 14)),
+      crumb([36, 110, 70], 22),
+      h('header', { class: 'sk-row', style: { margin: '20px 32px 0', height: '72px', justifyContent: 'space-between' } },
+        row({ gap: '18px' }, b(64, 64, 18), col({ gap: '12px' }, b(220, 30, 8), row({ gap: '8px' }, ...pills([170, 54, 120], 30), b(170, 12, 5)))),
+        row({ gap: '10px' }, b(44, 44, 22), b(44, 44, 22), b(192, 44, 22))),
+      row({ margin: '31px 32px 0' }, b(466, 42, 14)),
       h('div', { class: 'sk-fiche-1' },
         card({ padding: '22px', display: 'flex', flexDirection: 'column', gap: '12px' }, b(140, 15, 6), b(200, 36, 10), row({ gap: '10px', alignItems: 'flex-end', marginTop: 'auto', height: '150px' }, ...times(6, (i) => b('auto', 40 + i * 18, 7, { flex: '1 1 0' })))),
-        col({ gap: '14px' },
+        col({ gap: '16px' },
           card({ flex: 1, padding: '22px', display: 'flex', flexDirection: 'column', gap: '10px' }, b(80, 15, 6), b(70, 30, 8), b('70%', 11, 5), b('100%', 8, 4)),
-          card({ flex: 1, padding: '22px', display: 'flex', flexDirection: 'column', gap: '10px' }, b(90, 15, 6), b(200, 30, 8)))),
+          card({ flex: 1, padding: '22px', display: 'flex', flexDirection: 'column', gap: '10px' }, b(90, 15, 6), b(200, 30, 8), b('70%', 11, 5), b('100%', 8, 4)))),
       h('div', { class: 'sk-fiche-2' },
-        ...times(3, (i) => card({ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }, b(110, 15, 6), ...(i === 0 ? [b(216, 250, 14)] : times(3, () => row({ gap: '10px' }, b(30, 30, 15), col({ gap: '6px', flex: 1 }, b('80%', 13, 6), b('40%', 10, 5)))))))),
+        card({ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }, b(110, 15, 6),
+          row({ gap: '12px', alignItems: 'stretch', flex: 1 }, b(160, 'auto', 14, { flexShrink: 1 }), col({ gap: '10px', flex: 1 }, b(150, 26, 8), b(110, 12, 5), b('100%', 62, 12, { marginTop: 'auto' }), b('100%', 62, 12)))),
+        ...times(2, () => card({ padding: '22px', display: 'flex', flexDirection: 'column', gap: '22px' }, b(110, 15, 6),
+          ...times(3, () => row({ gap: '10px' }, b(34, 34, 17), col({ gap: '8px', flex: 1 }, b('70%', 13, 6), b('45%', 10, 5)), b(44, 16, 6)))))),
     ];
   },
 };
@@ -240,7 +272,8 @@ const LOGO = h('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true' },
 const MLOGO = h('svg', { class: 'sw-logo-mark on-dark', width: 24, height: 24, viewBox: '0 0 24 24', 'aria-hidden': 'true', style: { width: '24px', height: '24px' } },
   ...[[5, 8, 'd-a'], [11, 5, 'd-a'], [17, 8, 'd-a'], [8, 14, 'd-b'], [14, 13, 'd-b'], [19, 17, 'd-b'], [11, 20, 'd-b']].map(([cx, cy, c]) => h('circle', { class: c, cx, cy, r: 2.3 })));
 function mHead(kind, rub, initiale) {
-  const back = kind === 'fiche' || kind === 'folder' || kind === 'video';
+  const back = kind === 'folder';
+  const bare = back || kind === 'fiche' || kind === 'video';
   const label = (RUBRIQUES.find((r) => r[0] === rub) || [])[1] || '';
   const tools = kind === 'video' || kind === 'folder' ? [] : [
     h('span', { class: 'sw-btn sw-btn-icon sk-m-tool' }, icon(SEARCH_D, 21)),
@@ -249,7 +282,7 @@ function mHead(kind, rub, initiale) {
   ];
   return h('header', { class: 'sk-m-head' },
     h('span', { class: 'sk-m-title' },
-      back ? [h('span', { class: 'sw-btn sw-btn-icon sk-m-back' }, icon('M15 6l-6 6 6 6', 22, 2)), b(150, 18, 6)]
+      bare ? [back ? h('span', { class: 'sw-btn sw-btn-icon sk-m-back' }, icon('M15 6l-6 6 6 6', 22, 2)) : null, b(150, 18, 6)]
         : rub === 'accueil' ? h('span', { class: 'sw-logo' }, MLOGO, h('span', { class: 'sw-wordmark', style: { fontSize: '20px' } }, 'kopycat'))
           : h('span', { class: 'sk-m-name' }, label)),
     ...tools);
@@ -259,7 +292,7 @@ function mTabbar(rub) {
     ...TABS.map((k) => { const [, label, href, d] = RUBRIQUES.find((r) => r[0] === k);
       return h('a', { href, 'data-tab': '', 'aria-current': k === rub ? 'page' : 'false', class: 'sk-m-tab', key: k }, icon(d, 22, 1.9), label); }));
 }
-function mBody(kind) {
+function mBody(kind, path) {
   const c = (k, ht) => card({ height: px(ht), padding: '14px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '12px' },
     row({ gap: '12px' }, b(18, 11, 4), b(48, 48, 14), col({ gap: '8px', flex: 1 }, b(`${70 - (k % 3) * 10}%`, 16, 6), b(130, 26, 13)), col({ gap: '8px', alignItems: 'flex-end' }, b(70, 22, 6), b(40, 11, 5))),
     row({ gap: '6px', marginTop: 'auto', justifyContent: 'flex-end' }, b('100%', 1, 0, { flex: 1, opacity: 0 }), b(56, 100, 9), b(56, 100, 9), b(56, 100, 9)));
@@ -267,6 +300,17 @@ function mBody(kind) {
     col({ gap: '10px', padding: '20px 20px 0' }, b(220, 26, 8), b(260, 13, 6)),
     card({ margin: '24px 20px 0', height: '189px', display: 'flex', gap: '14px', padding: '12px', boxSizing: 'border-box' }, b(108, '100%', 12, { flexShrink: 0 }), col({ gap: '10px', flex: 1 }, b(100, 10, 4), b('90%', 18, 6), b('70%', 18, 6), b('80%', 11, 5), b(120, 36, 18, { marginTop: 'auto' }))),
     col({ gap: '10px', padding: '28px 20px 0' }, b(160, 16, 6), ...times(3, (k) => card({ height: '88px', display: 'flex', alignItems: 'center', gap: '12px', padding: '0 14px' }, b(40, 40, 11), col({ gap: '8px', flex: 1 }, b('70%', 13, 6), b('45%', 10, 5)))))];
+  // Fiches au téléphone (relevées sur MCreateurFiche et MFormatFiche à 390 × 844).
+  if (kind === 'fiche' && /^\/app\/createurs\//.test(path || '')) return [
+    col({ alignItems: 'center', padding: '26px 20px 0' }, b(98, 98, 49), b(200, 30, 8, { marginTop: '23px' }), b('92%', 14, 6, { marginTop: '18px' }), b('70%', 14, 6, { marginTop: '9px' }),
+      row({ gap: '8px', marginTop: '17px' }, b(100, 26, 13), b(130, 26, 13)), b(146, 38, 19, { marginTop: '11px' })),
+    h('div', { class: 'sk-grid', style: { gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '16px 20px 0' } }, ...times(4, () => card({ height: '94px' })))];
+  if (kind === 'fiche' && /^\/app\/formats\//.test(path || '')) return [
+    col({ padding: '20px 20px 0' }, row({ gap: '8px' }, b(60, 22, 11), b(86, 22, 11), b(20, 20, 10)), b(240, 16, 6, { marginTop: '12px' }), b(337, 44, 8, { marginTop: '18px', maxWidth: '100%' }),
+      row({ gap: '8px', marginTop: '18px' }, b(92, 40, 20), b(176, 40, 20))),
+    h('div', { class: 'sk-grid', style: { gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '18px 20px 0' } }, ...times(4, () => card({ height: '104px' }))),
+    row({ padding: '26px 20px 0' }, b(300, 22, 7)),
+    h('div', { class: 'sk-grid', style: { gridTemplateColumns: '1fr 1fr', gap: '14px', padding: '14px 20px 0' } }, b('auto', 300, 16), b('auto', 300, 16))];
   if (kind === 'fiche') return [
     row({ gap: '14px', padding: '20px 20px 0' }, b(72, 72, 20), col({ gap: '10px', flex: 1 }, b('70%', 24, 8), row({ gap: '6px' }, b(120, 26, 13), b(56, 26, 13)))),
     row({ padding: '18px 20px 0' }, b('100%', 54, 16)),
@@ -289,8 +333,12 @@ export function Skeleton({ path, mobile, initiale, first, leaving }) {
   const cls = `sw sk-screen${mobile ? ' sk-m' : ''}${first ? ' is-first' : ''}${leaving ? ' is-out' : ''}`;
   const busy = { 'aria-busy': 'true', 'aria-label': 'Chargement de l’écran', role: 'status' };
   if (mobile) {
-    return h('div', { class: cls, ...busy }, mHead(kind, rub, initiale), h('div', { class: 'sk-m-body' }, ...mBody(kind)), noTabbar(kind) ? null : mTabbar(rub));
+    // La rangée du pouce : capsule retour à gauche ; à droite le signet (fiche d'app ou de créateur) et l'action principale.
+    const fmt = /^\/app\/formats\//.test(path || '');
+    const thumb = thumbBack(kind) ? h('div', { class: 'sk-m-thumb' }, b(118, 50, 25), h('span', { style: { flex: 1 } }),
+      kind === 'fiche' && !fmt ? b(50, 50, 25) : null, b(fmt ? 224 : 116, 50, 25)) : null;
+    return h('div', { class: cls, ...busy }, mHead(kind, rub, initiale), h('div', { class: 'sk-m-body' }, ...mBody(kind, path)), noTabbar(kind) ? thumb : mTabbar(rub));
   }
   if (kind === 'video') return h('div', { class: cls, ...busy }, deskVideo());
-  return h('div', { class: cls, ...busy }, rail(rub, initiale), h('main', { class: `sk-main sk-k-${kind}` }, ...DESK[kind]()));
+  return h('div', { class: cls, ...busy }, rail(rub, initiale), h('main', { class: `sk-main sk-k-${kind}` }, ...DESK[kind](path)));
 }

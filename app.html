@@ -54,9 +54,9 @@
       html[data-af="dossiers"] .af-title::after { content: "Dossiers"; }
       html[data-af-k="fiche"] .af-logo, html[data-af-k="folder"] .af-logo, html[data-af-k="video"] .af-logo { display: none; }
       html[data-af-k="fiche"] .af-title::after, html[data-af-k="folder"] .af-title::after, html[data-af-k="video"] .af-title::after { content: none; }
-      html[data-af-k="fiche"] .af-back, html[data-af-k="folder"] .af-back, html[data-af-k="video"] .af-back,
+      html[data-af-k="folder"] .af-back,
       html[data-af-k="fiche"] .af-bar, html[data-af-k="folder"] .af-bar, html[data-af-k="video"] .af-bar { display: flex; }
-      html[data-af-k="folder"] .af-tool, html[data-af-k="video"] .af-tool, html[data-af-k="folder"] .af-tabs, html[data-af-k="video"] .af-tabs { display: none; }
+      html[data-af-k="folder"] .af-tool, html[data-af-k="video"] .af-tool, html[data-af-k="folder"] .af-tabs, html[data-af-k="video"] .af-tabs, html[data-af-k="fiche"] .af-tabs { display: none; }
       .af-tabs { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); height: 64px; padding: 0 6px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 32px; background: rgba(22,27,38,0.84); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 20px 50px rgba(0,0,0,0.55); }
       .af-t { height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #8A93A3; font-size: 10.5px; font-weight: 600; }
       html[data-af="accueil"] .af-t[data-r="accueil"], html[data-af="apps"] .af-t[data-r="apps"], html[data-af="formats"] .af-t[data-r="formats"],
