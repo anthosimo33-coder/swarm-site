@@ -23,12 +23,17 @@ import './liquid.js';
 import './choice.js';
 // Alertes, boîte de réception : cadre de la ligne choisie, détail en cascade, barres (voir le fichier).
 import './inbox.js';
+// Fiches : la barre des sections collée en haut, qui suit la section lue et y mène (voir le fichier).
+import './sections.js';
 // Téléphone : feuilles du bas au doigt, barre flottante, balayer d'un onglet à l'autre, tirer pour chercher (voir les fichiers).
 import './sheet.js';
 import './tabbar.js';
 import './swipe.js';
 import './pull.js';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+// Ordinateur : glisser une ligne ou une carte vers un dossier ; les explications au survol (voir les fichiers).
+import { connectFolders } from './drag.js';
+import './hint.js';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { ConvexError } from 'convex/values';
@@ -40,6 +45,8 @@ import { createWatcher } from './watcher.js';
 import { createBoards, untilText } from './passes.js';
 import { APERCU, HOME, LOAD_TIMEOUT_MS, SIGN_OUT, isOpen, layoutOnly, loadingView, mayLoadBeforeUser, previewView, routeCodeNeeded, routeMatcher, routesToWarm, safeDecode as dec, screenQuery } from './plan.js';
 import { scrollMemory } from './scroll.js';
+// Le cadre et les squelettes : l'écran de l'adresse dessiné tout de suite, son contenu en attente (voir le fichier).
+import { Skeleton } from './skeleton.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
@@ -81,6 +88,13 @@ const PENDING = 'kopycat.paiement';
 const pendingPay = () => { try { const t = Number(sessionStorage.getItem(PENDING)); return t > 0 && Date.now() - t < 7 * 864e5; } catch { return false; } };
 const setPendingPay = (on) => { try { if (on) sessionStorage.setItem(PENDING, String(Date.now())); else sessionStorage.removeItem(PENDING); } catch { /* stockage refusé */ } };
 const SUITE = 'kopycat.suite'; // l'achat commencé avant de se connecter
+// Le cadre d'avant le code (app.html, public/app-frame.js) : l'initiale du compte et son abonnement, gardés de la dernière
+// visite, pour dessiner l'avatar et la bonne rubrique avant que la session ne soit vérifiée (maquette 1A).
+const CADRE = 'kopycat.cadre';
+const cadre = () => { try { return JSON.parse(localStorage.getItem(CADRE) || 'null'); } catch { return null; } };
+const setCadre = (v) => { try { if (v) localStorage.setItem(CADRE, JSON.stringify(v)); else localStorage.removeItem(CADRE); } catch { /* stockage refusé */ } };
+/** Un changement d'écran plus long que ça montre le squelette de l'écran demandé (en dessous, l'ancien reste). */
+const SKELETON_AFTER_MS = 150;
 // Les Réglages à une adresse (audit Q13 : l'ancienne page Compte, sans résiliation, y était encore routée sur
 // ordinateur). Sur téléphone, Réglages en plein écran ; sur ordinateur, le panneau des Réglages par-dessus l'accueil.
 const ACCOUNT = '/app/compte';
@@ -131,6 +145,12 @@ function save(key, value) {
     .mutation(api.saved.set, { key, value }, { optimisticUpdate: (store) => store.setQuery(api.saved.get, { key }, value) })
     .catch(() => {}); // refus (hors ligne, session finie) : la valeur revient à celle du serveur
 }
+// Glisser vers un dossier (src/app/drag.js) : les dossiers, lus et écrits comme les écrans le font (saved/save).
+connectFolders({
+  read: () => savedEntry('folders').value,
+  write: (value) => save('folders', value),
+  listen: (f) => { const e = savedEntry('folders'); e.listeners.add(f); return () => e.listeners.delete(f); },
+});
 /** Attend qu'un document soit arrivé (ou absent : null). */
 function ready(key) {
   const entry = board(key);
@@ -171,11 +191,13 @@ function App() {
   const [mobile, setMobile] = useState(MOBILE.matches);
   const [, redraw] = useState(0);
   const leaving = useRef(false);
+  const shownOnce = useRef(false); // un premier écran a déjà été affiché (les squelettes suivants entrent en fondu)
   // Documents lus par l'écran affiché (id -> écouteur) : leur mise à jour le redessine ; libérés au changement d'écran.
   const used = useRef(new Map());
 
   const leave = async () => {
     leaving.current = true;
+    setCadre(null);
     await signOut();
     window.location.replace('/');
   };
@@ -185,6 +207,7 @@ function App() {
     if (leaving.current) return;
     if (!isLoading && !isAuthenticated) {
       if (window.location.pathname.startsWith(PAY)) { try { sessionStorage.setItem(SUITE, window.location.pathname); } catch { /* stockage refusé */ } }
+      setCadre(null);
       window.location.replace('/connexion');
     }
     else if (viewer === null) void signOut();
@@ -198,6 +221,8 @@ function App() {
     return lastUser.current;
   }, [viewer, isAuthenticated]);
   const known = user !== null;
+  // Le cadre de la prochaine visite : l'initiale et l'abonnement de ce compte.
+  useEffect(() => { if (user) setCadre({ i: user.initiale, p: user.pro ? 1 : 0 }); }, [user && user.initiale, user && user.pro]);
   // Aperçu : la fenêtre des formules, et l'abonnement lu par les gestionnaires montés une seule fois.
   const [plans, setPlans] = useState(false);
   // Panneau du compte : l'avatar de la barre latérale (ordinateur) l'ouvre au lieu de mener à Compte.
@@ -510,12 +535,33 @@ function App() {
     setPlans(true);
   }, [lockedData]);
 
+  // Le cadre et les squelettes (maquette 1A, src/app/skeleton.js). Au démarrage, tant que l'écran de l'adresse n'est pas
+  // là (session, code, document), son squelette ; puis, à chaque changement d'écran qui dure plus de 150 ms, celui de
+  // l'écran demandé, par-dessus l'ancien. Le vrai écran se pose dessous, le squelette s'efface en fondu.
+  const [slow, setSlow] = useState(null);
+  const screenPath = screen && screen.path;
+  useEffect(() => {
+    if (!loading || !screenPath || loading === screenPath) { setSlow(null); return undefined; }
+    const t = setTimeout(() => setSlow(loading), SKELETON_AFTER_MS);
+    return () => clearTimeout(t);
+  }, [loading, screenPath]);
+  const booting = !user || !screen;
+  // Sans abonnement (d'après la dernière visite, tant que la session n'a pas répondu), une adresse fermée mène à Apps.
+  const bootPath = !booting ? null : !user && cadre()?.p === 0 && !isOpen(path.split('?')[0]) ? APERCU : path;
+  const initiale = user ? user.initiale : (cadre()?.i || '');
+  const skeletonOf = (p) => h(SkeletonLayer, { key: 'skeleton', path: p ? p.split('?')[0] : null, mobile, initiale, first: !shownOnce.current });
+  // Le cadre statique d'app.html s'en va une fois le squelette dessiné (deux images : la barre du bas pose sa pastille).
+  useLayoutEffect(() => {
+    const frame = document.getElementById('app-frame');
+    if (frame) requestAnimationFrame(() => requestAnimationFrame(() => frame.remove()));
+  }, []);
+
   // Le chargement d'un écran : une barre fine (après 150 ms), ou, au-delà du délai, « La connexion est perdue » (F26).
-  const loadState = user ? loadingView({ loading, stalled, path, screenPath: screen && screen.path }) : null;
+  const loadState = user ? loadingView({ loading, stalled, path, screenPath }) : null;
   if (loadState === 'stalled') return h(Stalled, null);
   const progress = loadState === 'progress' ? h('div', { class: 'app-progress', role: 'progressbar', 'aria-label': 'Chargement de l’écran' }) : null;
-  // Rien tant qu'on ne sait pas qui est là : pas d'écran qui clignote.
-  if (!user || !screen) return null;
+  // Tant qu'on ne sait pas qui est là, ou que l'écran n'est pas arrivé : son squelette, jamais un écran qui clignote.
+  if (booting) return h(Fragment, null, skeletonOf(bootPath));
   const fresh = screen.key ? get(screen.key) : undefined;
   const data = view ? view.data : fresh;
   // Quota de pages atteint (audit S22) : l'écran dit quand les nouvelles pages rouvrent.
@@ -600,7 +646,26 @@ function App() {
           : paid === 'slow' ? slowNote()
           : 'Paiement reçu. On ouvre ton accès…')
     : null;
-  return h(Fragment, null, progress, page, account, panel, sheet, payNote, paidNote);
+  // Un écran dont le code arrive encore (l'aperçu, les Réglages sur téléphone) garde aussi son squelette.
+  const skeleton = skeletonOf(page ? slow : screen.path);
+  if (page) shownOnce.current = true;
+  return h(Fragment, null, progress, page, account, panel, sheet, payNote, paidNote, skeleton);
+}
+
+/**
+ * Le squelette affiché (path : l'adresse en attente, null s'il n'y en a plus). Quand l'écran arrive, il reste le temps de
+ * s'effacer en fondu par-dessus (is-out, 0,22 s), puis disparaît.
+ */
+function SkeletonLayer({ path, mobile, initiale, first }) {
+  const [last, setLast] = useState(path ? { path, first } : null);
+  useEffect(() => {
+    if (path) { setLast({ path, first }); return undefined; }
+    const t = setTimeout(() => setLast(null), 240);
+    return () => clearTimeout(t);
+  }, [path, first]);
+  const show = path ? { path, first } : last;
+  if (!show) return null;
+  return h(Skeleton, { path: show.path, mobile, initiale, first: show.first, leaving: !path });
 }
 
 /** L'écran ne vient pas : hors ligne, ou réseau trop lent (audit F26). */

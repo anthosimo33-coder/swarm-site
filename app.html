@@ -12,8 +12,90 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <title>Kopycat</title>
     <meta name="robots" content="noindex">
+    <!-- Le cadre de l'app à la première image, avant le code (maquette 1A du 20/11) : la rubrique de l'adresse, posée sur
+         <html> par public/app-frame.js (pas de script en ligne : la CSP n'en permet aucun). Sans bloquer la page : un
+         script bloquant coûtait un aller-retour réseau avant la première image (mesuré : +570 ms en 3G) ; d'ici là, le
+         cadre s'affiche sans rubrique allumée. -->
+    <script src="/app-frame.js" async></script>
+    <noscript><style>#app-frame { display: none; }</style></noscript>
+    <style>
+      /* Le cadre : même dessin que le rail (sw-sidebar), l'en-tête et la barre du bas des écrans, en attendant le code.
+         Le routeur le retire dès que l'écran-squelette de l'adresse est dessiné (src/app/main.js, src/app/skeleton.js). */
+      html { background: #080B12; }
+      #app-frame { position: fixed; inset: 0; z-index: 100; background: #080B12; color: #FFFFFF; font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+      #app-frame * { box-sizing: border-box; }
+      #app-frame svg { display: block; }
+      .af-rail { position: absolute; left: 0; top: 0; bottom: 0; width: 88px; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 4px; border-right: 1px solid rgba(255,255,255,0.08); }
+      .af-tile { width: 40px; height: 40px; margin-bottom: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 8px 20px rgba(11,111,224,0.35); }
+      .af-tile svg { width: 24px; height: 24px; }
+      .af-i { width: 76px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0 10px; border-radius: 16px; color: #8A93A3; font-size: 12px; font-weight: 500; line-height: 1; }
+      .af-ico { width: 40px; height: 32px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+      .af-foot { margin-top: auto; }
+      .af-av { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); color: #FFFFFF; font-size: 14px; font-weight: 700; line-height: 1; }
+      .af-av::before { content: var(--af-ini, ""); }
+      html[data-af="accueil"] .af-i[data-r="accueil"], html[data-af="apps"] .af-i[data-r="apps"], html[data-af="formats"] .af-i[data-r="formats"],
+      html[data-af="createurs"] .af-i[data-r="createurs"], html[data-af="alertes"] .af-i[data-r="alertes"], html[data-af="dossiers"] .af-i[data-r="dossiers"] { color: #FFFFFF; }
+      html[data-af="accueil"] .af-i[data-r="accueil"] .af-ico, html[data-af="apps"] .af-i[data-r="apps"] .af-ico, html[data-af="formats"] .af-i[data-r="formats"] .af-ico,
+      html[data-af="createurs"] .af-i[data-r="createurs"] .af-ico, html[data-af="alertes"] .af-i[data-r="alertes"] .af-ico, html[data-af="dossiers"] .af-i[data-r="dossiers"] .af-ico { background: rgba(76,154,255,0.12); color: #4C9AFF; box-shadow: inset 0 0 0 1px rgba(76,154,255,0.45); }
+      html[data-af-k="video"] .af-rail { display: none; }
+      .af-m { display: none; }
+      .af-head { height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .af-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; font-family: "Inter Tight", Inter, system-ui, sans-serif; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; }
+      .af-btn { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #9AA3B2; }
+      .af-mav { width: 44px; height: 44px; margin-right: -4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+      .af-back, .af-logo, .af-bar { display: none; }
+      .af-logo { align-items: center; gap: 9px; }
+      .af-word { font-size: 20px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+      .af-bar { width: 150px; height: 18px; border-radius: 6px; background: rgba(255,255,255,0.06); }
+      .af-back { width: 44px; height: 44px; margin-left: -10px; align-items: center; justify-content: center; color: #9AA3B2; }
+      html[data-af="accueil"] .af-logo { display: flex; }
+      html[data-af="apps"] .af-title::after { content: "Apps"; } html[data-af="formats"] .af-title::after { content: "Formats"; }
+      html[data-af="createurs"] .af-title::after { content: "Créateurs"; } html[data-af="alertes"] .af-title::after { content: "Alertes"; }
+      html[data-af="dossiers"] .af-title::after { content: "Dossiers"; }
+      html[data-af-k="fiche"] .af-logo, html[data-af-k="folder"] .af-logo, html[data-af-k="video"] .af-logo { display: none; }
+      html[data-af-k="fiche"] .af-title::after, html[data-af-k="folder"] .af-title::after, html[data-af-k="video"] .af-title::after { content: none; }
+      html[data-af-k="folder"] .af-back,
+      html[data-af-k="fiche"] .af-bar, html[data-af-k="folder"] .af-bar, html[data-af-k="video"] .af-bar { display: flex; }
+      html[data-af-k="folder"] .af-tool, html[data-af-k="video"] .af-tool, html[data-af-k="folder"] .af-tabs, html[data-af-k="video"] .af-tabs, html[data-af-k="fiche"] .af-tabs { display: none; }
+      .af-tabs { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); height: 64px; padding: 0 6px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 32px; background: rgba(22,27,38,0.84); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 20px 50px rgba(0,0,0,0.55); }
+      .af-t { height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #8A93A3; font-size: 10.5px; font-weight: 600; }
+      html[data-af="accueil"] .af-t[data-r="accueil"], html[data-af="apps"] .af-t[data-r="apps"], html[data-af="formats"] .af-t[data-r="formats"],
+      html[data-af="createurs"] .af-t[data-r="createurs"], html[data-af="dossiers"] .af-t[data-r="dossiers"] { color: #FFFFFF; font-weight: 700; background: rgba(76,154,255,0.18); box-shadow: inset 0 0 0 1px rgba(76,154,255,0.42); }
+      @media (max-width: 860px), (pointer: coarse) and (max-height: 500px) {
+        .af-rail { display: none; }
+        .af-m { display: block; }
+      }
+    </style>
   </head>
   <body>
+    <div id="app-frame" aria-hidden="true">
+      <div class="af-rail">
+        <span class="af-tile"><svg viewBox="0 0 24 24"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"/><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"/><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"/><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"/><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"/><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"/><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"/></svg></span>
+        <span class="af-i"><span class="af-ico"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Chercher</span>
+        <span class="af-i" data-r="accueil"><span class="af-ico"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Accueil</span>
+        <span class="af-i" data-r="apps"><span class="af-ico"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Apps</span>
+        <span class="af-i" data-r="formats"><span class="af-ico"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM10 9l5 3-5 3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Formats</span>
+        <span class="af-i" data-r="createurs"><span class="af-ico"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Créateurs</span>
+        <span class="af-i" data-r="alertes"><span class="af-ico"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Alertes</span>
+        <span class="af-i" data-r="dossiers"><span class="af-ico"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Dossiers</span>
+        <span class="af-foot"><span class="af-av"></span></span>
+      </div>
+      <div class="af-m">
+        <div class="af-head">
+          <span class="af-title"><span class="af-back"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="af-bar"></span><span class="af-logo"><svg width="24" height="24" viewBox="0 0 24 24"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"/><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"/><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"/><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"/><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"/><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"/><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"/></svg><span class="af-word">kopycat</span></span></span>
+          <span class="af-btn af-tool"><svg width="21" height="21" viewBox="0 0 24 24"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="af-btn af-tool"><svg width="21" height="21" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="af-mav af-tool"><span class="af-av"></span></span>
+        </div>
+        <div class="af-tabs">
+          <span class="af-t" data-r="accueil"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>Accueil</span>
+          <span class="af-t" data-r="apps"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>Apps</span>
+          <span class="af-t" data-r="formats"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM10 9l5 3-5 3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>Formats</span>
+          <span class="af-t" data-r="createurs"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>Créateurs</span>
+          <span class="af-t" data-r="dossiers"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>Dossiers</span>
+        </div>
+      </div>
+    </div>
     <div id="app"></div>
     <noscript>Active JavaScript pour afficher Kopycat.</noscript>
     <script type="module" src="/src/app/main.js"></script>

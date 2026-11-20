@@ -437,7 +437,7 @@ return {};
         ),
         ($v.fs) ? [
           $h("button", { "data-sheet-veil": "", "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.closeFs, "style": "position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
-          $h("section", { "data-sheet": "", "role": "dialog", "aria-modal": "true", "aria-label": "Filtrer les apps", "onKeyDown": $v.fsKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 88vh; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom));" },
+          $h("section", { "data-sheet": "", "role": "dialog", "aria-modal": "true", "aria-label": "Filtrer les apps", "onKeyDown": $v.fsKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 88vh; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px;" },
             $h("div", { "data-sheet-handle": "", "style": "display: flex; justify-content: center; padding: 10px 0 6px; " },
               $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);" })
             ),
@@ -448,11 +448,6 @@ return {};
               $h("span", { "style": "display: flex; align-items: center; gap: 4px;" },
                 $h("button", { "type": "button", "onClick": $v.clearAll, "style": "min-height: 44px; padding: 0 8px; border: 0; background: transparent; color: var(--ink-muted); font-family: inherit; font-size: 15px; cursor: pointer;" },
                   "Tout effacer"
-                ),
-                $h("button", { "ref": $v.setFsClose, "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.closeFs, "aria-label": "Fermer", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-right: -8px;" },
-                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  )
                 )
               )
             ),
@@ -498,11 +493,16 @@ return {};
                 )
               ])
             ),
-            $h("div", { "style": "display: flex; justify-content: center; padding-top: 14px;" },
-              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.closeFs },
-                $t($v.seeLabel),
+            $h("div", { "style": "position: sticky; bottom: 0; z-index: 2; margin: 0 -20px; padding: 14px 20px max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(13,17,26,0) 0%, rgba(13,17,26,0.96) 34%, #0D111A 100%);" },
+              $h("button", { "class": "sw-btn sw-btn-ghost", "type": "button", "ref": $v.setFsClose, "onClick": $v.closeFs, "style": "flex: 0 0 auto; height: 50px; padding: 0 22px; background: #191D25; font-size: 15px;" },
+                "Fermer"
+              ),
+              $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.closeFs, "style": "flex: 1 1 0; min-width: 0; height: 50px; justify-content: space-between; padding: 0 5px 0 20px; font-size: 15px; text-decoration: none;" },
+                $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                  $t($v.seeLabel)
+                ),
                 $h("span", { "class": "sw-btn-tile" },
-                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )
@@ -512,7 +512,7 @@ return {};
         ] : null,
         ($v.pv?.on) ? [
           $h("button", { "data-sheet-veil": "", "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.closePv, "style": "position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
-          $h("section", { "data-sheet": "", "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 96vh; max-height: 96dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom));" },
+          $h("section", { "data-sheet": "", "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 96vh; max-height: 96dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px;" },
             $h("div", { "data-sheet-handle": "", "style": "display: flex; justify-content: center; padding: clamp(6px, 1.2vh, 10px) 0 clamp(4px, 0.8vh, 6px); " },
               $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);" })
             ),
@@ -528,7 +528,7 @@ return {};
                 ] : null
               ),
               $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;" },
-                $h("span", { "data-sheet-name": "", "style": "font-family: var(--font-display); font-size: clamp(20px, 3.4vh, 24px); font-weight: 700; letter-spacing: -0.03em; white-space: nowrap;" },
+                $h("span", { "data-sheet-name": "", "style": "font-family: var(--font-display); font-size: clamp(20px, 3.4vh, 24px); font-weight: 700; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                   $t($v.pv?.n)
                 ),
                 $h("span", { "style": "display: flex;" },
@@ -538,10 +538,18 @@ return {};
                   )
                 )
               ),
-              $h("button", { "ref": $v.setPvClose, "class": "sw-btn sw-btn-icon", "type": "button", "onClick": $v.closePv, "aria-label": "Fermer l’aperçu", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-right: -8px;" },
-                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
+              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "flex-shrink: 0; height: 40px; gap: 7px; margin-right: -4px;" },
+                ($v.pv?.followYes) ? [
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                ] : null,
+                ($v.pv?.followNo) ? [
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
+                  )
+                ] : null,
+                $t($v.pv?.followLabel)
               )
             ),
             $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(6px, 1vh, 8px);" },
@@ -753,24 +761,16 @@ return {};
                 ] : null
               )
             ),
-            $h("div", { "style": "display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: clamp(8px, 1.4vh, 12px);" },
-              $h("button", { "class": "sw-pill", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "style": "height: 48px; gap: 8px;" },
-                ($v.pv?.followYes) ? [
-                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
-                    $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                  )
-                ] : null,
-                ($v.pv?.followNo) ? [
-                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
-                    $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round" })
-                  )
-                ] : null,
-                $t($v.pv?.followLabel)
+            $h("div", { "style": "position: sticky; bottom: 0; z-index: 2; margin: 0 -20px; padding: 14px 20px max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(13,17,26,0) 0%, rgba(13,17,26,0.96) 34%, #0D111A 100%);" },
+              $h("button", { "class": "sw-btn sw-btn-ghost", "type": "button", "ref": $v.setPvClose, "onClick": $v.closePv, "style": "flex: 0 0 auto; height: 50px; padding: 0 22px; background: #191D25; font-size: 15px;" },
+                "Fermer"
               ),
-              $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": $u($v.pv?.href) },
-                "Ouvrir la fiche",
+              $h("a", { "class": "sw-btn sw-btn-primary", "href": $u($v.pv?.href), "style": "flex: 1 1 0; min-width: 0; height: 50px; justify-content: space-between; padding: 0 5px 0 20px; font-size: 15px; text-decoration: none;" },
+                $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                  "Ouvrir la fiche"
+                ),
                 $h("span", { "class": "sw-btn-tile" },
-                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   )
                 )

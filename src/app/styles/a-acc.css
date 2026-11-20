@@ -11,3 +11,5 @@ a{color:#4C9AFF}@media (hover: hover){a:hover{color:#FFFFFF}}
 .acc-vig:hover .acc-play{transform:scale(1.08)}
 .acc-clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .acc-ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Sous 1 200 px (maquette 4A du 20/11) : la vidéo prend toute la largeur, la colonne de droite passe dessous en trois cartes côte à côte (la recherche reste au rail), puis le fil. */
+@media (max-width: 1199px){.acc-cols{flex-direction:column;align-items:stretch !important;gap:18px !important}.acc-left{display:contents !important}.acc-hero{order:1}.acc-side{order:2;width:auto !important;position:static !important;min-height:0 !important;flex-direction:row !important;align-items:stretch}.acc-side-search{display:none !important}.acc-side>section{flex:1 1 0 !important;min-width:0}.acc-fil{order:3}}
