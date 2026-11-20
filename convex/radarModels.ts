@@ -704,6 +704,9 @@ export function buildBoards(
     // lui : leur pays est exact) ; l'étape globale ne garde que les pays retenus. Pas les pays retenus vus d'ici : un
     // groupe ne connaît le pays des comptes des autres qu'à peu près (le 16/11, 4 groupes sur 5 en voyaient d'autres, et
     // une liste par pays aurait pu manquer leurs lignes). Calculées ici : elles notent les vidéos montrées.
+    // Conséquence connue (audit Q63, banc sur les données du dev du 15/11 : 1 page sur 85 816) : un pays où l'app n'a que
+    // des comptes en placement payé, et où aucun créateur n'est situé, a sa liste ici mais pas à l'étape globale ; la page
+    // vidéo de son top est écrite sans que rien n'y mène. Sans effet à l'écran.
     const codes = new Set<string>();
     for (const r of listed.values()) for (const c of vidsByAppMarket.get(appBySlug.get(r.slug)!.id)?.keys() ?? []) if (c) codes.add(c);
     for (const plat of PLATS) for (const code of [null, ...codes]) {

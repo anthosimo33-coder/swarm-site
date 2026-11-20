@@ -165,6 +165,56 @@ const run = async (label, docs, strict, raw) => {
 };
 const fixture = fixtureRaw();
 await run('export inventé', boardsOf(models, fixture), true, fixture);
+
+// Audit Q63 (19/11) : la synchro de prod passe par groupes d'apps puis une étape globale (convex/radarSync.ts) ; le
+// calcul « tout d'un coup » est la référence. Leur équivalence ne tenait qu'à scripts/sync-bench/parts.mjs, lancé à la
+// main sur les données du dev. La même contre-épreuve tourne ici sur l'export inventé, à chaque vérification : mêmes
+// pages, même contenu, aucune page en double, mêmes files de travail, mêmes images demandées et citées.
+{
+  const { syncOpts: so, NOW: T } = await import('./radar-fixture.mjs');
+  const st = so();
+  const opts = (part) => ({ coverUrl: (id) => (models.COVER_ID.test(id) ? `${st.site}/cover/${id}` : null), ...st.opts, part });
+  const hash = (d) => { const { updatedAt, ...rest } = d ?? {}; return JSON.stringify(rest); };
+  const pagesOf = (raw, part) => {
+    const res = models.buildBoards(raw, T, (k) => (k.startsWith('icon:') ? `https://img.example/${k}.png` : null), () => null, opts(part));
+    const got = new Map([...res.boards].map(([k, d]) => [k, hash(d)]));
+    for (const [k, f] of res.lazy) got.set(k, hash(f()));
+    const l = res.laterTodos();
+    return { got, res, need: [...res.need.keys()], used: [...res.used],
+      todos: [res.regionTodo.length, res.genderTodo.length, res.langTodo.length, l.slideTodo.length, l.videoAiTodo.length] };
+  };
+  const mono = pagesOf(fixture, undefined);
+  const byId = new Map(fixture.apps.map((a) => [a.id, a]));
+  const canon = (id) => { let a = byId.get(id); for (let i = 0; a && a.mergedInto && i < 5; i++) a = byId.get(a.mergedInto) ?? a; return a?.id ?? ''; };
+  const ids = [...new Set(fixture.apps.map((a) => canon(a.id)))];
+  const groups = [ids.filter((_, i) => i % 3 === 0), ids.filter((_, i) => i % 3 === 1), ids.filter((_, i) => i % 3 === 2)];
+  const all = new Map(), outs = [], need = new Set(), used = new Set(), todos = [0, 0, 0, 0, 0], dup = [];
+  const take = (p) => {
+    for (const [k, h] of p.got) { if (all.has(k)) dup.push(k); all.set(k, h); }
+    p.need.forEach((k) => need.add(k)); p.used.forEach((k) => used.add(k)); p.todos.forEach((n, i) => (todos[i] += n));
+  };
+  for (const g of groups) {
+    const set = new Set(g);
+    const p = pagesOf({ ...fixture, trackedVideos: fixture.trackedVideos.filter((v) => set.has(canon(v.appId))) }, { kind: 'group', apps: set });
+    outs.push(JSON.parse(JSON.stringify(p.res.out))); // comme en vrai : transmis en texte
+    take(p);
+  }
+  take(pagesOf({ ...fixture, trackedVideos: [] }, { kind: 'global', outs }));
+  const diff = [...mono.got].filter(([k, h]) => all.has(k) && all.get(k) !== h).map(([k]) => k);
+  const missing = [...mono.got.keys()].filter((k) => !all.has(k)), extra = [...all.keys()].filter((k) => !mono.got.has(k));
+  const sameSet = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+  const bad = [
+    ...(diff.length ? [`${diff.length} pages différentes (${diff.slice(0, 3).join(' ')})`] : []),
+    ...(missing.length ? [`${missing.length} manquantes (${missing.slice(0, 3).join(' ')})`] : []),
+    ...(extra.length ? [`${extra.length} en trop (${extra.slice(0, 3).join(' ')})`] : []),
+    ...(dup.length ? [`${dup.length} produites deux fois (${dup.slice(0, 3).join(' ')})`] : []),
+    ...(todos.join() !== mono.todos.join() ? [`files ${todos} au lieu de ${mono.todos}`] : []),
+    ...(!sameSet(need, new Set(mono.need)) ? ['images demandées différentes'] : []),
+    ...(!sameSet(used, new Set(mono.used)) ? ['images citées différentes'] : []),
+  ];
+  console.log(`${bad.length ? 'ÉCHEC' : 'OK   '} Groupes + étape globale = tout d'un coup (audit Q63 : ${mono.got.size} pages, ${groups.length} groupes)${bad.length ? ' : ' + bad.join(' ; ') : ''}`);
+  if (bad.length) fail++;
+}
 if (process.env.REEL) {
   const { raw, store } = realRaw(process.env.REEL.replace(/^~/, process.env.HOME));
   await run(`export réel (${process.env.REEL})`, boardsOf(models, raw, store), false, raw);
