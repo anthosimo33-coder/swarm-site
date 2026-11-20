@@ -49,6 +49,9 @@ export const radarTables = {
     musicTitle: v.optional(v.string()),
     transcript: v.optional(v.string()), // ce qui est dit (3 000 caractères au plus)
     transcribedAt: v.optional(v.number()), // posé même sans texte : on ne repaie pas
+    // Page publique lue sans sous-titres natifs à prendre (radarSourcesMath.freeTranscript) : la voie gratuite ne la
+    // relit plus, le transcript payant la prend quand son poste est ouvert.
+    subtitlesCheckedAt: v.optional(v.number()),
     // Projets déjà prévenus sur Telegram qu'elle part tôt (radarNetworkMath.isEarlyHit).
     earlyAlerted: v.optional(v.array(v.string())),
     foundBy: v.array(v.string()), // recherches qui l'ont remontée (« cette app·fr »)
@@ -516,6 +519,9 @@ export const radarTables = {
     usd: v.optional(v.number()), // dépense en dollars (l'analyse IA), hors crédits
     // Crédits par motif (relevés de comptes : premier, repli, trou, retard, coupure, sonde ; cf radarFreeMath.PaidReason).
     reasons: v.optional(v.record(v.string(), v.number())),
+    // Appels payants ÉVITÉS par une page publique de TikTok, par brique (radarSignalsMath.SavedKey) : au moins un
+    // crédit chacun. C'est ce qui prouve, sur les serveurs, ce que le banc n'a mesuré que du poste.
+    saved: v.optional(v.record(v.string(), v.number())),
   })
     .index("by_month", ["month"])
     .index("by_day_poste", ["day", "poste"]),

@@ -40,6 +40,7 @@ import {
   SIGNALS_LIST_CAP,
   SC_CURRENCY,
   SC_PRICE_PER_CREDIT,
+  addCounts,
   addSnapshot,
   allowance,
   cleanText,
@@ -750,23 +751,27 @@ export const recordRun = internalMutation({
     usd: v.optional(v.number()),
     // Crédits de ce passage par motif (déjà comptés dans `credits`).
     reasons: v.optional(v.record(v.string(), v.number())),
+    // Appels payants évités par une page publique, par brique (radarSignalsMath.SavedKey) : pas comptés dans `credits`.
+    saved: v.optional(v.record(v.string(), v.number())),
   },
   handler: async (ctx, a): Promise<void> => {
     const settings = await ensureSettings(ctx);
     const day = dayKeyParis(a.now);
-    if (a.calls > 0 || a.credits > 0) {
+    const spared = Object.values(a.saved ?? {}).some((c) => c > 0);
+    if (a.calls > 0 || a.credits > 0 || spared) {
       const row = await ctx.db
         .query("radarUsage")
         .withIndex("by_day_poste", (q) => q.eq("day", day).eq("poste", a.poste))
         .first();
       const usd = a.usd !== undefined ? { usd: (row?.usd ?? 0) + a.usd } : {};
-      const reasons: Record<string, number> = { ...(row?.reasons ?? {}) };
-      for (const [k, c] of Object.entries(a.reasons ?? {})) reasons[k] = (reasons[k] ?? 0) + c;
+      const reasons = addCounts(row?.reasons, a.reasons);
       const why = Object.keys(reasons).length ? { reasons } : {};
+      const saved = addCounts(row?.saved, a.saved);
+      const avoided = Object.keys(saved).length ? { saved } : {};
       if (row) {
-        await ctx.db.patch(row._id, { credits: row.credits + a.credits, calls: row.calls + a.calls, errors: row.errors + a.errors, ...usd, ...why });
+        await ctx.db.patch(row._id, { credits: row.credits + a.credits, calls: row.calls + a.calls, errors: row.errors + a.errors, ...usd, ...why, ...avoided });
       } else {
-        await ctx.db.insert("radarUsage", { day, month: monthKeyParis(a.now), poste: a.poste, credits: a.credits, calls: a.calls, errors: a.errors, ...usd, ...why });
+        await ctx.db.insert("radarUsage", { day, month: monthKeyParis(a.now), poste: a.poste, credits: a.credits, calls: a.calls, errors: a.errors, ...usd, ...why, ...avoided });
       }
     }
     const field = LAST_RUN_FIELD[a.poste];

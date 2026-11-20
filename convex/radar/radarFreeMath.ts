@@ -80,21 +80,35 @@ export function parseFreeProfile(html: string): FreeProfile | null {
 const REHYDRATION = /<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application\/json">([\s\S]*?)<\/script>/;
 
 /**
+ * Ce que la page publique d'une vidéo dit d'elle : la vidéo (`item`), ou le refus de TikTok (`status` non nul, et son
+ * motif). « other » : la page est servie avec ses données, mais sans vidéo (un carrousel photo : app-context,
+ * biz-context, i18n-translation, seo.abtest, a-b, pas de `webapp.video-detail` — 2 pages relevées le 20/11/2026).
+ * `null` : la page ne se lit pas.
+ */
+export function videoDetail(html: string): { item: Record<string, unknown> | null; status: number; statusMsg: string } | "other" | null {
+  const m = REHYDRATION.exec(html);
+  if (!m) return null;
+  let scopes: Record<string, unknown> | null = null;
+  try {
+    scopes = obj(obj(JSON.parse(m[1]))?.__DEFAULT_SCOPE__);
+  } catch {
+    return null;
+  }
+  if (!scopes) return null;
+  const scope = obj(scopes["webapp.video-detail"]);
+  if (!scope) return "other";
+  return { item: obj(obj(scope.itemInfo)?.itemStruct), status: typeof scope.statusCode === "number" ? scope.statusCode : 0, statusMsg: str(scope.statusMsg) };
+}
+
+/**
  * La page publique d'une vidéo, mise dans la forme d'un relevé. « gone » : TikTok dit que la vidéo n'est plus là
  * (supprimée, privée) ; `null` : la page ne se lit pas.
  */
 export function parseFreeVideo(html: string, handle: string, fallbackLang?: string): SignalInput | "gone" | null {
-  const m = REHYDRATION.exec(html);
-  if (!m) return null;
-  let scope: Record<string, unknown> | null = null;
-  try {
-    scope = obj(obj(obj(JSON.parse(m[1]))?.__DEFAULT_SCOPE__)?.["webapp.video-detail"]);
-  } catch {
-    return null;
-  }
-  if (!scope) return null;
-  const it = obj(obj(scope.itemInfo)?.itemStruct);
-  if (!it) return typeof scope.statusCode === "number" && scope.statusCode !== 0 ? "gone" : null;
+  const detail = videoDetail(html);
+  if (!detail || detail === "other") return null;
+  const it = detail.item;
+  if (!it) return detail.status !== 0 ? "gone" : null;
   const videoId = str(it.id);
   const createTime = num(it.createTime);
   if (!videoId || createTime <= 0) return null;

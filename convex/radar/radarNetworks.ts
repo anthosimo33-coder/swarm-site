@@ -78,7 +78,7 @@ import { LANG_BY_HAND, OFF_TOPIC_BY_HAND } from "./radarSeedAccounts";
 import { screenLang } from "./radarTextLang";
 import { isEarlyHit, isTextOnShot } from "./radarDisplay";
 import { networkSearchOutcome, networkSearchOutcomeValidator, networkSearchPhase, networkSearchValidator } from "./radarNetworkSearch";
-import { RETENTION_DAYS, allowance, budgetState, catchUpAllowance, cleanText, keepSignal, needsBalanceProbe, ratioOf, addSnapshot, tierDefers } from "./radarSignalsMath";
+import { RETENTION_DAYS, allowance, budgetState, catchUpAllowance, cleanText, keepSignal, needsBalanceProbe, ratioOf, addSnapshot, tierDefers, type SavedKey } from "./radarSignalsMath";
 import {
   FREE_LANE_MAX_MS,
   PASS_MAX_MS,
@@ -1162,19 +1162,28 @@ function usageWriter(ctx: ActionCtx, poste: string, now: number) {
   /** Les crédits par motif (relevés de comptes, cf radarFreeMath.PaidReason), écrits avec le reste. */
   const reasons: Record<string, number> = {};
   const reasonsWritten: Record<string, number> = {};
+  /** Les appels payants évités par une page publique, par brique (cf radarSignalsMath.SavedKey). */
+  const saved: Record<string, number> = {};
+  const savedWritten: Record<string, number> = {};
   let balance: { remaining: number; at: number } | undefined;
   let chain: Promise<void> = Promise.resolve();
+  const unwritten = (all: Record<string, number>, done: Record<string, number>): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const [k, c] of Object.entries(all)) if (c - (done[k] ?? 0) > 0) out[k] = c - (done[k] ?? 0);
+    return out;
+  };
   const write = async (error?: string) => {
     const d = { credits: spent.credits - written.credits, calls: spent.calls - written.calls, errors: spent.errors - written.errors };
-    const r: Record<string, number> = {};
-    for (const [k, c] of Object.entries(reasons)) if (c - (reasonsWritten[k] ?? 0) > 0) r[k] = c - (reasonsWritten[k] ?? 0);
-    if (d.credits <= 0 && d.calls <= 0 && d.errors <= 0 && !error && !balance) return;
+    const r = unwritten(reasons, reasonsWritten);
+    const sv = unwritten(saved, savedWritten);
+    if (d.credits <= 0 && d.calls <= 0 && d.errors <= 0 && !error && !balance && !Object.keys(sv).length) return;
     const b = balance;
     await ctx.runMutation(internal.radar.radarSignals.recordRun, {
       poste,
       ...d,
       now,
       ...(Object.keys(r).length ? { reasons: r } : {}),
+      ...(Object.keys(sv).length ? { saved: sv } : {}),
       ...(b ? { creditsRemaining: b.remaining, creditsSeenAt: b.at } : {}),
       ...(error ? { lastError: error } : {}),
     });
@@ -1182,6 +1191,7 @@ function usageWriter(ctx: ActionCtx, poste: string, now: number) {
     written.calls += d.calls;
     written.errors += d.errors;
     for (const [k, c] of Object.entries(r)) reasonsWritten[k] = (reasonsWritten[k] ?? 0) + c;
+    for (const [k, c] of Object.entries(sv)) savedWritten[k] = (savedWritten[k] ?? 0) + c;
     if (balance === b) balance = undefined;
   };
   return {
@@ -1189,6 +1199,10 @@ function usageWriter(ctx: ActionCtx, poste: string, now: number) {
     /** Des crédits dépensés pour ce motif (en plus de `spent.credits`, qui les compte déjà). */
     because: (reason: string, credits: number) => {
       if (credits > 0) reasons[reason] = (reasons[reason] ?? 0) + credits;
+    },
+    /** Des appels payants évités par une page publique (au moins un crédit chacun), pour cette brique. */
+    spare: (key: SavedKey, calls: number) => {
+      if (calls > 0) saved[key] = (saved[key] ?? 0) + calls;
     },
     /** Le solde que l'API vient de donner (plus récent que les précédents). */
     seen: (remaining: number | undefined) => {
