@@ -8,25 +8,31 @@ import type { Id } from "./_generated/dataModel";
 import type { FunctionReference } from "convex/server";
 import { internalAction, type ActionCtx } from "./_generated/server";
 import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
+import { backgroundOff } from "./background";
 import { APP_STORE_ID, buildBoards, iconKey, siteOf, type GroupOut, type Part, type RApp, type Raw, type RFormat, type RSignal, type RTracked, type RVideo } from "./radarModels";
 
 /** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
 const STORE_RULE = 6; // 6 : à plusieurs candidates, titre exact ou nette avance en avis ; 5 : fiche exacte par l'identifiant du Radar ; sinon recherche France puis États-Unis, refusée si le nom est ambigu ; icône gardée
 
 /**
- * Synchronisation quotidienne du Radar (cron, convex/crons.ts), en étapes (voir « Synchro par groupes d'apps » plus bas) :
+ * Synchronisation quotidienne du Radar (cron, convex/crons.ts, et lui seul : les lectures de fond ne la relancent plus
+ * depuis le 20/11), en étapes (voir « Synchro par groupes d'apps » plus bas) :
  *  1. `run` lit l'export de Jarvia (clé JARVIA_EXPORT_SECRET) : apps, comptes, formats, signaux, et les fiches App Store ;
  *  2. `runGroup`, un par groupe d'apps : ses vidéos, puis ses fiches d'app, de créateur et ses pages vidéo ;
  *  3. `runGlobal` : les pages communes, puis le ménage (pages et images que plus rien ne cite) et les files de vérification.
- * Les images manquantes sont copiées ensuite (copyMedia). Lancer à la main : `npx convex run radarSync:run` (dev) ;
+ * Les images manquantes sont copiées ensuite (copyMedia, qui se relance jusqu'au bout de la liste). Lancer à la main :
+ * `npx convex run radarSync:run '{"manual": true}'` (passe aussi sur le dev, où SWARM_SYNC_OFF coupe le cron) ;
  * suivre dans `syncRuns` (un passage n'a `finishedAt` qu'une fois l'étape globale finie) et `[mem]` des journaux.
  */
 
 const DEFAULT_EXPORT_URL = "https://giddy-bass-969.eu-west-1.convex.site";
 const TABLES = ["apps", "tracked", "trackedVideos", "formats", "signals"] as const;
-/** Miniatures recopiées par passage, et temps qu'on leur donne : le reste attend le passage suivant
- * (l'URL source sert en attendant). Un passage tient sous les 10 min d'une action. */
-const MEDIA_PER_RUN = 400;
+/**
+ * Images à copier par jour, au plus (F19, 20/11) : toute la liste de la synchro, ~9 000 nouvelles miniatures par jour.
+ * Avant, 400 par passage seulement, et c'étaient les ~23 passages par jour qui suivaient l'afflux. La copie a désormais
+ * son propre rythme : copyMedia copie ce que ses 4 min permettent (~400), puis se relance sur la suite.
+ */
+const MEDIA_PER_DAY = 30_000;
 // 14/11 : 1 min (au lieu de 5) — copier 546 miniatures en 4 min faisait passer la synchro de 387 à 502 Mo (mémoire de
 // sharp non rendue), et elle mourait à l'écriture des pages (limite 512 Mo). Les miniatures non copiées le sont à la
 // première demande de /cover (la lecture IA les demande toutes) ; les icônes passent d'abord.
@@ -171,12 +177,23 @@ export const repairHeic = internalAction({
 
 /**
  * Copie des images demandées par la synchro (icônes d'abord, puis miniatures et photos de profil), dans sa propre action :
- * sharp garde sa mémoire, et la copie faite au milieu de la synchro la faisait dépasser 512 Mo (15/11).
+ * sharp garde sa mémoire, et la copie faite au milieu de la synchro la faisait dépasser 512 Mo (15/11). La liste arrive
+ * dans un fichier (`file`, à partir de `from` : au-delà de 8 192 éléments, Convex refuse une liste en argument) ou en
+ * clair (`items`). Une action copie ce que ses 4 min permettent, puis relance la suite dans une action neuve, jusqu'au
+ * bout ; le fichier est effacé à la fin.
  */
+type CopyItem = { key: string; src: string };
 export const copyMedia = internalAction({
-  args: { items: v.array(v.object({ key: v.string(), src: v.string() })) },
-  handler: async (ctx, { items }): Promise<{ copied: number; failed: number }> => {
+  args: { items: v.optional(v.array(v.object({ key: v.string(), src: v.string() }))), file: v.optional(v.id("_storage")), from: v.optional(v.number()) },
+  handler: async (ctx, args): Promise<{ copied: number; failed: number }> => {
     const start = Date.now();
+    let items: CopyItem[] = args.items ?? [];
+    const from = args.from ?? 0;
+    if (args.file) {
+      const b = await ctx.storage.get(args.file);
+      if (!b) { console.log("[copie] liste introuvable (déjà copiée ?)"); return { copied: 0, failed: 0 }; }
+      items = (JSON.parse(await b.text()) as CopyItem[]).slice(from);
+    }
     const got: { key: string; storageId: Id<"_storage">; url: string }[] = [];
     const failed: string[] = [];
     let copied = 0, nfail = 0, next = 0, skipped = 0;
@@ -199,7 +216,13 @@ export const copyMedia = internalAction({
     };
     await Promise.all(Array.from({ length: PARALLEL }, worker));
     await flush();
-    console.log(`[copie] ${copied} images copiées, ${nfail} introuvables, ${skipped} sans réponse de TikTok (réessayées plus tard), ${items.length - next} laissées pour le passage suivant`);
+    const left = items.length - next;
+    if (left > 0) {
+      // La suite tout de suite, dans une action neuve (sharp garde sa mémoire d'une image à l'autre).
+      if (args.file) await ctx.scheduler.runAfter(5_000, internal.radarSync.copyMedia, { file: args.file, from: from + next });
+      else await ctx.scheduler.runAfter(5_000, internal.radarSync.copyMedia, { items: items.slice(next) });
+    } else if (args.file) await ctx.storage.delete(args.file);
+    console.log(`[copie] ${copied} images copiées, ${nfail} introuvables, ${skipped} sans réponse de TikTok (réessayées au prochain passage ou à la première vue), ${left ? `${left} pour l'action suivante` : "liste finie"}`);
     return { copied, failed: nfail };
   },
 });
@@ -443,8 +466,10 @@ async function retryStep(ctx: ActionCtx, id: Id<"syncRuns">, step: string, w: { 
 }
 
 export const run = internalAction({
-  args: {},
-  handler: async (ctx): Promise<Record<string, number>> => {
+  args: { manual: v.optional(v.boolean()) },
+  handler: async (ctx, { manual }): Promise<Record<string, number>> => {
+    // Le dev (SWARM_SYNC_OFF=1) ne fait pas tourner la synchro planifiée : seulement celle lancée à la main.
+    if (backgroundOff() && !manual) return { skipped: 1 };
     const runId = await ctx.runMutation(internal.radarStore.startRun, {});
     if (runId === null) return { skipped: 1 }; // un passage tourne déjà
     let st: Stage | null = null;
@@ -687,7 +712,7 @@ export const runGlobal = internalAction({
       const globalNeed = new Set(resNeed.keys());
       let needCount = globalNeed.size;
       const icons: [string, string][] = [], others: [string, string][] = [];
-      const wantCopy = (k: string, src: string) => { if (k.startsWith("icon:")) icons.push([k, src]); else if (others.length < MEDIA_PER_RUN) others.push([k, src]); };
+      const wantCopy = (k: string, src: string) => { if (k.startsWith("icon:")) icons.push([k, src]); else if (others.length < MEDIA_PER_DAY) others.push([k, src]); };
       for (const [k, src] of resNeed) wantCopy(k, src);
       for (const tailId of st.tails ?? []) {
         const b = tailId ? await ctx.storage.get(tailId) : null;
@@ -719,8 +744,8 @@ export const runGlobal = internalAction({
       if (goneOk) for (let j = 0; j < gone.length; j += 200) {
         for (let keys = gone.slice(j, j + 200); keys.length; ) keys = await ctx.runMutation(internal.radarStore.dropBoards, { keys });
       }
-      // Les images à copier : icônes d'abord, MEDIA_PER_RUN au plus (le reste à la première vue, par /cover).
-      const copyTodo = [...icons, ...others].slice(0, MEDIA_PER_RUN);
+      // Les images à copier : icônes d'abord, toute la liste (MEDIA_PER_DAY au plus), copiée par une chaîne d'actions.
+      const copyTodo = [...icons, ...others].slice(0, MEDIA_PER_DAY);
       const newSlides = later.slideTodo.filter((x) => !store.slideKnown.has(x)).slice(0, TODO_MAX);
       const newAi = later.videoAiTodo.filter((x) => !store.aiKnown.has(x)).slice(0, TODO_MAX);
       // Pages refusées par Convex (écartées, notées) : une page refusée garde sa version d'avant, jamais effacée.
@@ -745,7 +770,10 @@ export const runGlobal = internalAction({
       for (let j = 0; j < newSlides.length; j += 500) await ctx.runMutation(internal.radarStore.saveSlideTodo, { ids: newSlides.slice(j, j + 500) });
       for (let j = 0; j < newAi.length; j += 500) await ctx.runMutation(internal.radarStore.saveVideoAiTodo, { ids: newAi.slice(j, j + 500) });
       await ctx.scheduler.runAfter(0, internal.radarRegions.fill, {});
-      if (copyTodo.length) await ctx.scheduler.runAfter(0, internal.radarSync.copyMedia, { items: copyTodo.map(([key, src]) => ({ key, src })) });
+      if (copyTodo.length) {
+        const file = await ctx.storage.store(new Blob([JSON.stringify(copyTodo.map(([key, src]) => ({ key, src })))], { type: "application/json" }));
+        await ctx.scheduler.runAfter(0, internal.radarSync.copyMedia, { file });
+      }
       await ctx.scheduler.runAfter(0, internal.radarSlides.fill, {});
       await ctx.scheduler.runAfter(0, internal.radarAi.fillVideos, {});
       await ctx.scheduler.runAfter(0, internal.radarAi.fillGender, {});

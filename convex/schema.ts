@@ -75,6 +75,10 @@ export default defineSchema({
     parts: v.optional(v.number()),
   }).index("by_key", ["key"]),
   boardParts: defineTable({ key: v.string(), i: v.number(), text: v.string() }).index("by_key_i", ["key", "i"]),
+  // L'empreinte de chaque page de boards, à part (≈ 100 o la ligne) : la synchro compare et liste les pages sans les relire
+  // entières (20/11 : 11 Go/jour lus en prod rien que pour les empreintes et les clés). Écrite par saveBoards, effacée
+  // par dropBoards ; remplie une fois par radarStore:backfillBoardMetaAll.
+  boardMeta: defineTable({ key: v.string(), hash: v.string() }).index("by_key", ["key"]),
 
   // Miniatures des vidéos et icônes des apps, recopiées chez Swarm (les URL de
   // TikTok sont signées et expirent). Clé « v:<id vidéo> » ou « icon:<slug> ».
@@ -111,8 +115,8 @@ export default defineSchema({
     tries: v.number(),
     quiet: v.optional(v.number()), // silences de TikTok d'affilée (page sans réponse)
     at: v.number(), // dernier essai (0 : jamais)
-    foundAt: v.optional(v.number()), // pays trouvé à cette date (regionsNeedSync)
-  }).index("by_handle", ["handle"]).index("by_country_at", ["country", "at"]).index("by_country_tries_at", ["country", "tries", "at"]).index("by_found", ["foundAt"]),
+    foundAt: v.optional(v.number()), // pays trouvé à cette date
+  }).index("by_handle", ["handle"]).index("by_country_at", ["country", "at"]).index("by_country_tries_at", ["country", "tries", "at"]),
 
   // Carrousels (diaporamas de photos) : TikTok le dit sur la page publique de la vidéo (`imagePost`), le Radar ne le
   // garde pas sur les vidéos qu'il suit. null = pas encore lu ; images = nombre de photos.

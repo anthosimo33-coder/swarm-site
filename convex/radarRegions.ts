@@ -2,6 +2,7 @@
 
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
+import { backgroundOff } from "./background";
 
 /**
  * Le pays des comptes que le Radar ne situe pas (14/11 : 33 % des comptes, surtout des anglophones et des
@@ -47,13 +48,10 @@ export const fill = internalAction({
   args: {},
   handler: async (ctx): Promise<{ read: number; found: number }> => {
     const start = Date.now();
+    if (backgroundOff()) return { read: 0, found: 0 };
     const batch = await ctx.runMutation(internal.radarStore.claimRegions, { limit: BATCH, now: start });
-    if (!batch.length) {
-      // Rien à lire : des pays lus depuis la dernière synchro réussie (la relance d'après lecture a pu être refusée
-      // parce qu'une synchro tournait) ? Une synchro les met dans les écrans — au plus une par heure.
-      if (await ctx.runQuery(internal.radarStore.regionsNeedSync, { now: start })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
-      return { read: 0, found: 0 };
-    }
+    // Les pays lus entrent dans les écrans à la synchro de nuit (plus de synchro relancée d'ici : 20/11).
+    if (!batch.length) return { read: 0, found: 0 };
     // Un essai par vidéo, la suivante à l'essai d'après : une vidéo disparue, sans pays ou illisible compte un essai ;
     // sans réponse de TikTok, la même vidéo est reprise sans compter d'essai (16/11 : refus passagers comptés).
     const out: { handle: string; country: string | null; retry?: boolean; why?: string }[] = [];
@@ -69,9 +67,7 @@ export const fill = internalAction({
     await Promise.all(Array.from({ length: PARALLEL }, worker));
     await ctx.runMutation(internal.radarStore.saveRegions, { items: out.map(({ why: _w, ...x }) => x), now: Date.now() });
     const found = out.filter((x) => x.country).length;
-    // Plus rien à lire maintenant, et des pays trouvés : une synchro les met tout de suite dans les écrans.
     const left = await ctx.runQuery(internal.radarStore.regionBatch, { limit: 1, now: Date.now() });
-    if (found > 0 && left.length === 0) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
     // Il en reste : le lot suivant tout de suite (10 s), sans attendre la tâche planifiée du quart d'heure.
     if (left.length > 0 && out.length === batch.length) await ctx.scheduler.runAfter(10_000, internal.radarRegions.fill, {});
     const whys = Object.entries(out.reduce((n, x) => (x.why ? { ...n, [x.why]: (n[x.why] ?? 0) + 1 } : n), {} as Record<string, number>)).map(([k, n]) => `${n} ${k}`).join(", ");

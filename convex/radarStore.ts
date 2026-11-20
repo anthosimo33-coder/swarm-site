@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { internalMutation, internalQuery, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { internalAction, internalMutation, internalQuery, type MutationCtx, type QueryCtx } from "./_generated/server";
 
 /**
  * Les images déjà recopiées, page par page : [clé, URL servie par Swarm].
@@ -155,13 +156,58 @@ export const dropMedia = internalMutation({
   },
 });
 
-/** Les clés des documents, page par page (un document peut peser lourd : jamais tout d'un coup). */
+/**
+ * Les clés des documents, page par page, lues dans boardMeta (≈ 100 o par page) : avant le 20/11, la table boards elle-même,
+ * documents entiers (1,6 Ko en moyenne, jusqu'à 600 Ko) pour n'en garder que la clé — 5,4 Go/jour lus en prod le 19/11.
+ */
 export const boardKeys = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
-    // Borné en octets aussi : chaque page est lue entière (jusqu'à 600 Ko), et une requête lit 16 Mio au plus.
-    const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500, maximumBytesRead: 8_000_000 });
+    const r = await ctx.db.query("boardMeta").paginate({ cursor, numItems: 4000 });
     return { keys: r.page.map((b) => b.key), hashes: r.page.map((b) => b.hash), cursor: r.continueCursor, done: r.isDone };
+  },
+});
+
+/** L'empreinte rangée d'une page (boardMeta), créée ou mise à jour. */
+async function setMeta(ctx: MutationCtx, key: string, hash: string, meta?: { _id: Id<"boardMeta">; hash: string } | null) {
+  const row = meta === undefined ? await ctx.db.query("boardMeta").withIndex("by_key", (q) => q.eq("key", key)).first() : meta;
+  if (!row) await ctx.db.insert("boardMeta", { key, hash });
+  else if (row.hash !== hash) await ctx.db.patch(row._id, { hash });
+}
+
+/**
+ * Migration du 20/11 : l'empreinte de chaque page déjà rangée recopiée dans boardMeta (une page de boards par appel).
+ * Lancer une fois après le déploiement : `npx convex run radarStore:backfillBoardMetaAll`. Sans elle, rien ne casse : une
+ * page sans empreinte rangée est vue comme changée, et saveBoards range son empreinte sans la réécrire si elle n'a pas bougé.
+ */
+export const backfillBoardMeta = internalMutation({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500, maximumBytesRead: 8_000_000 });
+    let added = 0;
+    for (const b of r.page) {
+      const meta = await ctx.db.query("boardMeta").withIndex("by_key", (q) => q.eq("key", b.key)).first();
+      if (!meta) added++;
+      await setMeta(ctx, b.key, b.hash, meta);
+    }
+    return { n: r.page.length, added, cursor: r.continueCursor, done: r.isDone };
+  },
+});
+/** La migration entière, par tranches de 2 min : une tranche relance la suivante (le dev du 20/11 : 140 000 pages, une
+ * seule action coupée au bout de 5 min). Suivre dans les journaux : « [boardMeta] ». */
+export const backfillBoardMetaAll = internalAction({
+  args: { cursor: v.optional(v.union(v.string(), v.null())), pages: v.optional(v.number()), added: v.optional(v.number()) },
+  handler: async (ctx, args): Promise<{ pages: number; added: number; done: boolean }> => {
+    const start = Date.now();
+    let pages = args.pages ?? 0, added = args.added ?? 0, cursor: string | null = args.cursor ?? null;
+    while (Date.now() - start < 120_000) {
+      const r: { n: number; added: number; cursor: string; done: boolean } = await ctx.runMutation(internal.radarStore.backfillBoardMeta, { cursor });
+      pages += r.n; added += r.added; cursor = r.cursor;
+      if (r.done) { console.log(`[boardMeta] fini : ${pages} pages, ${added} empreintes ajoutées`); return { pages, added, done: true }; }
+    }
+    console.log(`[boardMeta] ${pages} pages lues, ${added} empreintes ajoutées, la suite dans une action neuve`);
+    await ctx.scheduler.runAfter(0, internal.radarStore.backfillBoardMetaAll, { cursor, pages, added });
+    return { pages, added, done: false };
   },
 });
 
@@ -193,6 +239,8 @@ export const dropBoards = internalMutation({
     let read = 0;
     for (let i = 0; i < keys.length; i++) {
       if (read > 8_000_000) return keys.slice(i);
+      const meta = await ctx.db.query("boardMeta").withIndex("by_key", (q) => q.eq("key", keys[i])).first();
+      if (meta) await ctx.db.delete(meta._id);
       const row = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", keys[i])).first();
       if (!row) continue;
       read += row.parts ? row.parts * PART_CHARS * 3 : JSON.stringify(row.data ?? null).length * 3;
@@ -206,15 +254,18 @@ export const dropBoards = internalMutation({
 /**
  * Écrit les documents des écrans ; un document inchangé (même empreinte) n'est pas réécrit. Une page envoyée en texte
  * (`text`, trop grosse pour un document ou une liste de Convex) est rangée en morceaux (boardParts), recollés par
- * boards.get ; une page redevenue petite reprend `data` et perd ses morceaux.
+ * boards.get ; une page redevenue petite reprend `data` et perd ses morceaux. L'empreinte suit dans boardMeta : la page
+ * elle-même n'est lue que si elle change (ou si son empreinte n'est pas encore rangée : avant la migration du 20/11).
  */
 export const saveBoards = internalMutation({
   args: { items: v.array(v.object({ key: v.string(), hash: v.string(), data: v.optional(v.any()), text: v.optional(v.string()) })), now: v.number() },
   handler: async (ctx, { items, now }) => {
     let written = 0;
     for (const it of items) {
+      const meta = await ctx.db.query("boardMeta").withIndex("by_key", (q) => q.eq("key", it.key)).first();
+      if (meta && meta.hash === it.hash) continue;
       const old = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", it.key)).first();
-      if (old && old.hash === it.hash) continue;
+      if (old && old.hash === it.hash) { await setMeta(ctx, it.key, it.hash, meta); continue; }
       if (old?.parts) await dropParts(ctx, it.key);
       let row: { data: unknown; parts: number | undefined };
       if (it.text !== undefined) {
@@ -224,6 +275,7 @@ export const saveBoards = internalMutation({
       } else row = { data: it.data ?? null, parts: undefined };
       if (old) await ctx.db.patch(old._id, { ...row, hash: it.hash, updatedAt: now });
       else await ctx.db.insert("boards", { key: it.key, ...row, hash: it.hash, updatedAt: now });
+      await setMeta(ctx, it.key, it.hash, meta);
       written++;
     }
     return written;
@@ -318,12 +370,15 @@ export const stageCleaned = internalMutation({
   },
 });
 
-/** Empreinte rangée de chaque page demandée (null : pas de page) : l'écriture n'envoie que les pages qui changent. */
+/**
+ * Empreinte rangée de chaque page demandée (null : pas de page) : l'écriture n'envoie que les pages qui changent. Lue
+ * dans boardMeta : avant le 20/11, chaque page était lue entière pour son empreinte (5,8 Go/jour en prod le 19/11).
+ */
 export const boardHashes = internalQuery({
   args: { keys: v.array(v.string()) },
   handler: async (ctx, { keys }) => {
     const out: (string | null)[] = [];
-    for (const key of keys) out.push((await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", key)).first())?.hash ?? null);
+    for (const key of keys) out.push((await ctx.db.query("boardMeta").withIndex("by_key", (q) => q.eq("key", key)).first())?.hash ?? null);
     return out;
   },
 });
@@ -363,8 +418,12 @@ export const saveAppStore = internalMutation({
 export const resetHashes = internalMutation({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
-    const r = await ctx.db.query("boards").paginate({ cursor, numItems: 500, maximumBytesRead: 6_000_000 });
+    const r = await ctx.db.query("boardMeta").paginate({ cursor, numItems: 500 });
     for (const b of r.page) await ctx.db.patch(b._id, { hash: "" });
+    for (const b of r.page) {
+      const page = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", b.key)).first();
+      if (page) await ctx.db.patch(page._id, { hash: "" });
+    }
     return { n: r.page.length, cursor: r.continueCursor, done: r.isDone };
   },
 });
@@ -403,18 +462,6 @@ export const claimRegions = internalMutation({
     const rows = await pendingRows(limit, (tries) => ctx.db.query("accountRegions").withIndex("by_country_tries_at", (q) => q.eq("country", null).eq("tries", tries).lt("at", now - 6 * 3_600_000)));
     for (const r of rows) await ctx.db.patch(r._id, { at: now });
     return rows.map((r) => ({ handle: r.handle, ids: r.ids, tries: r.tries }));
-  },
-});
-
-/** Faut-il une synchro ? Des pays lus depuis le début de la dernière synchro réussie, et aucune synchro depuis 1 h. */
-export const regionsNeedSync = internalQuery({
-  args: { now: v.number() },
-  handler: async (ctx, { now }) => {
-    const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(20);
-    if (runs[0] && now - runs[0].startedAt < 3_600_000) return false;
-    const lastOk = runs.find((r) => r.ok)?.startedAt ?? 0;
-    // Par l'index des pays trouvés (plus de parcours de toute la table, refusé au-delà de 32 000 lignes lues).
-    return !!(await ctx.db.query("accountRegions").withIndex("by_found", (q) => q.gt("foundAt", lastOk)).first());
   },
 });
 
@@ -512,17 +559,6 @@ export const saveSlides = internalMutation({
       else if (it.gone) await ctx.db.patch(row._id, { tries: 3, at: now });
       else await ctx.db.patch(row._id, { tries: row.tries + 1, at: now });
     }
-  },
-});
-
-/** Faut-il une synchro ? Des carrousels trouvés depuis le début de la dernière synchro réussie, aucune synchro depuis 1 h. */
-export const slidesNeedSync = internalQuery({
-  args: { now: v.number() },
-  handler: async (ctx, { now }) => {
-    const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(20);
-    if (runs[0] && now - runs[0].startedAt < 3_600_000) return false;
-    const lastOk = runs.find((r) => r.ok)?.startedAt ?? 0;
-    return !!(await ctx.db.query("videoSlides").withIndex("by_slideshow_at", (q) => q.eq("slideshow", true).gt("at", lastOk)).first());
   },
 });
 
@@ -648,20 +684,6 @@ export const aiLeft = internalQuery({
   args: { table: v.union(v.literal("videoAi"), v.literal("accountAi")), now: v.number() },
   handler: async (ctx, { table, now }) =>
     (await pendingRows(1, (tries) => ctx.db.query(table).withIndex("by_done_tries_at", (q) => q.eq("done", false).eq("tries", tries).lt("at", now - RETRY_MS)))).length > 0,
-});
-
-/** Faut-il une synchro ? Des lectures faites depuis le début de la dernière synchro réussie, et aucune synchro depuis 1 h. */
-export const aiNeedSync = internalQuery({
-  args: { now: v.number() },
-  handler: async (ctx, { now }) => {
-    const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(20);
-    if (runs[0] && now - runs[0].startedAt < 3_600_000) return false;
-    const lastOk = runs.find((r) => r.ok)?.startedAt ?? 0;
-    for (const t of ["videoAi", "accountAi"] as const) {
-      if (await ctx.db.query(t).withIndex("by_done_at", (q) => q.eq("done", true).gt("at", lastOk)).first()) return true;
-    }
-    return false;
-  },
 });
 
 // ─── Bail des lectures de fond ────────────────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { internalAction, type ActionCtx } from "./_generated/server";
+import { backgroundOff } from "./background";
 
 /**
  * Lecture des images par Claude Haiku 5.5 (clé ANTHROPIC_API_KEY, recopiée de celle du Radar, jamais affichée).
@@ -147,14 +148,15 @@ export const fillVideos = internalAction({
   handler: async (ctx, args): Promise<{ read: number; cost: number }> => {
     const start = Date.now();
     const site = process.env.CONVEX_SITE_URL;
-    if (!process.env.ANTHROPIC_API_KEY || !site) return { read: 0, cost: 0 };
+    if (!process.env.ANTHROPIC_API_KEY || !site || backgroundOff()) return { read: 0, cost: 0 };
     // Une seule chaîne à la fois, et rien pendant une synchro.
     const token = args.token ?? newToken();
     if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: "ai-videos", token, ms: LEASE_MS, now: start }))) return { read: 0, cost: 0 };
     const ids = await ctx.runMutation(internal.radarStore.claimVideoAi, { limit: 150, now: start, max: limit() });
+    // Plus rien à lire : la chaîne s'arrête. Les lectures rangées entrent dans les écrans à la synchro de nuit, jamais
+    // par une synchro relancée d'ici (19/11 : ~23 synchros complètes par jour, relancées ainsi, 114 Go/jour lus en base).
     if (!ids.length) {
       await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-videos", token });
-      if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: start })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
       return { read: 0, cost: 0 };
     }
     const client = new Anthropic();
@@ -188,10 +190,7 @@ export const fillVideos = internalAction({
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "videoAi", now: Date.now() });
     const capped = limit() !== null && out.length < ids.length;
     if (left && !capped && out.length === ids.length) await ctx.scheduler.runAfter(5_000, internal.radarAi.fillVideos, { token });
-    else {
-      await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-videos", token });
-      if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
-    }
+    else await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-videos", token });
     console.log(`[ia vidéos] ${out.length} lues, ${out.filter((x) => x.ok).length} réussies${unshown ? `, ${unshown} retirées (plus montrées)` : ""}${whys ? ` (échecs : ${whys})` : ""}, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, cost };
   },
@@ -202,7 +201,7 @@ export const fillGender = internalAction({
   handler: async (ctx, args): Promise<{ read: number; cost: number }> => {
     const start = Date.now();
     const site = process.env.CONVEX_SITE_URL;
-    if (!process.env.ANTHROPIC_API_KEY || !site) return { read: 0, cost: 0 };
+    if (!process.env.ANTHROPIC_API_KEY || !site || backgroundOff()) return { read: 0, cost: 0 };
     const token = args.token ?? newToken();
     if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: "ai-gender", token, ms: LEASE_MS, now: start }))) return { read: 0, cost: 0 };
     const rows = await ctx.runMutation(internal.radarStore.claimGender, { limit: 100, now: start, max: limit() });
@@ -254,10 +253,7 @@ export const fillGender = internalAction({
     const cost = tin * PRICE_IN + tout * PRICE_OUT;
     const left = await ctx.runQuery(internal.radarStore.aiLeft, { table: "accountAi", now: Date.now() });
     if (left && out.length === rows.length) await ctx.scheduler.runAfter(5_000, internal.radarAi.fillGender, { token });
-    else {
-      await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-gender", token });
-      if (await ctx.runQuery(internal.radarStore.aiNeedSync, { now: Date.now() })) await ctx.scheduler.runAfter(0, internal.radarSync.run, {});
-    }
+    else await ctx.runMutation(internal.radarStore.dropLease, { name: "ai-gender", token });
     console.log(`[ia genre] ${out.length} comptes lus, ${out.filter((x) => x.ok).length} réussis${unshown ? `, ${unshown} retirés (plus montrés)` : ""}${whys ? ` (échecs : ${whys})` : ""}, ${tin}+${tout} tokens, ${cost.toFixed(4)} $, ${left ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, cost };
   },

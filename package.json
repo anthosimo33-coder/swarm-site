@@ -8,7 +8,8 @@
     "build": "vite build && node scripts/seo.mjs",
     "preview": "vite preview",
     "check": "node scripts/check.mjs",
-    "test:apercu": "node scripts/apercu.test.mjs"
+    "test:apercu": "node scripts/apercu.test.mjs",
+    "test:sync": "node scripts/sync-cout.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",
