@@ -87,6 +87,8 @@ La conversion fait aussi : liens `X.dc.html#ancre` → adresse + ancre ; `onChan
 
 Données : le vrai Radar, recalculé chaque nuit (cron 1 h 30 UTC, `convex/radarSync.ts` lit l'export de Jarvia et écrit un document par écran dans `boards`). Contrat complet, liens et formes : `docs/donnees-app.md`. Une fiche absente du Radar mène à une page « introuvable », jamais à l'exemple du canevas. Ce que la personne fait est gardé dans son compte (`convex/saved.ts`) : apps/comptes/formats suivis, dossiers, règles d'alerte, déjà lu.
 
+Après chaque passage, `radarStore.purgeTracking` élague les tables de suivi (lectures IA, carrousels, échecs de copie, vieux passages, langues des comptes sortis) ; `syncRuns.counts.storage` relève le stockage des images. `npx convex run radarSync:repairMedia` (ajouter `--prod`) compte les copies HEIC ou non matricielles encore rangées ; avec `'{"apply": true}'`, il les efface.
+
 Vérifier un écran sur les vraies données, sans navigateur : exporter le dev (`npx convex export --path x.zip`, puis `boards/documents.jsonl` → `[[clé, document], …]`) et `BOARDS=boards.json node scripts/render-data.mjs <Composant> <clé>` (variables `SAVED`, `PARAMS`, `QUERY` en tête du script).
 
 Mobile (sous 860 px) : les artboards `design/app/M*` (`APP_MOBILE_PAGES`), tous branchés.
