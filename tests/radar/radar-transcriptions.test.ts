@@ -319,11 +319,12 @@ describe("un passage de transcriptions", () => {
     const run = src.slice(start, src.indexOf("\n});\n", start));
     expect(run).toMatch(/dueTranscripts, \{ now, limit: n, freeLimit: TRANSCRIPT_FREE_PAGES \}/);
     expect(run).toMatch(/\{ pages: TRANSCRIPT_FREE_PAGES, paid: n \}/);
-    // Aucun retour avant la voie gratuite quand le poste payant n'a rien (éteint, coupé, réserve) ni sans clé.
+    // Aucun retour avant la voie gratuite quand le poste payant n'a rien (éteint, coupé, réserve) : seule l'absence de
+    // clé arrête tout (dev, e2e, preview : rien ne part sur le réseau).
     const before = run.slice(0, run.indexOf("transcriptPass("));
     expect(before).not.toMatch(/if \([^)]*\bn\b[^)]*\) return/);
-    expect(before).not.toMatch(/return \{ skipped/);
-    expect(before).toMatch(/let n = 0;\s+if \(scKeyPresent\(\)\) \{\s+const st[^;]*;\s+n = allowance\(/);
+    expect([...before.matchAll(/return \{ skipped/g)].length).toBe(1);
+    expect(before).toMatch(/if \(!scKeyPresent\(\)\) return \{ skipped: "no-key" \};\s+const st[^;]*;\s+const n = allowance\(/);
     expect(run).toMatch(/saved: \{ transcript: pass\.saved \}/);
     expect(TRANSCRIPT_FREE_PAGES).toBeGreaterThan(0);
   });
@@ -459,40 +460,21 @@ describe("le passage livré, sans clé ScrapeCreators", () => {
     else process.env.SCRAPECREATORS_API_KEY = key;
   });
 
-  it("la voie gratuite transcrit quand même ; ni budget lu, ni appel payant", async () => {
+  it("rien ne part sur le réseau (dev, e2e, preview) : ni page TikTok, ni budget lu, ni écriture", async () => {
     delete process.env.SCRAPECREATORS_API_KEY;
-    vi.spyOn(Math, "random").mockReturnValue(0); // la pause la plus courte (0,3 s)
-    vi.spyOn(console, "log").mockImplementation(() => {});
-    const url = "https://www.tiktok.com/@a/video/7707635935218797837";
     const fetched: string[] = [];
     vi.stubGlobal("fetch", async (u: string) => {
       fetched.push(u);
-      if (u === url) return new Response(page([track("eng-US", "MT"), track("spa-ES", "ASR")], "spa-ES"));
-      if (u === vttUrl("spa-ES")) return new Response(VTT);
       return new Response("", { status: 500 });
     });
-    const name = (ref: unknown) => getFunctionName(ref as never);
-    const calls: [string, Record<string, unknown>][] = [];
+    const calls: string[] = [];
     const ctx = {
-      runQuery: async (ref: unknown, args: Record<string, unknown>) => {
-        calls.push([name(ref), args]);
-        if (name(ref) === name(internal.radar.radarSources.dueTranscripts)) return [{ id: "s1", url, checked: false }];
-        throw new Error(`requête inattendue : ${name(ref)}`);
-      },
-      runMutation: async (ref: unknown, args: Record<string, unknown>) => void calls.push([name(ref), args]),
+      runQuery: async (ref: unknown) => void calls.push(getFunctionName(ref as never)),
+      runMutation: async (ref: unknown) => void calls.push(getFunctionName(ref as never)),
     };
     const res = await (runTranscripts as unknown as { _handler: (ctx: unknown, a: unknown) => Promise<unknown> })._handler(ctx, {});
-    expect(res).toEqual({ calls: 0, credits: 0, errors: 0 });
-    expect(fetched).toEqual([url, vttUrl("spa-ES")]);
-    expect(calls.map(([n]) => n)).toEqual([
-      name(internal.radar.radarSources.dueTranscripts),
-      name(internal.radar.radarSources.setTranscript),
-      name(internal.radar.radarSignals.recordRun),
-    ]);
-    expect(calls[0][1]).toMatchObject({ limit: 0, freeLimit: TRANSCRIPT_FREE_PAGES });
-    expect(calls[1][1]).toMatchObject({ signalId: "s1", text: PAID_TEXT });
-    // Rien n'aurait été payé sans clé : aucun crédit évité compté.
-    expect(calls[2][1]).toMatchObject({ poste: "transcript", calls: 0, credits: 0, errors: 0 });
-    expect(calls[2][1].saved).toBeUndefined();
+    expect(res).toEqual({ skipped: "no-key" });
+    expect(fetched).toEqual([]);
+    expect(calls).toEqual([]);
   });
 });

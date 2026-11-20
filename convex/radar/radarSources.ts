@@ -300,12 +300,12 @@ export const runTranscripts = internalAction({
   args: {},
   handler: async (ctx): Promise<RunResult> => {
     const now = Date.now();
-    // Sans clé ScrapeCreators, le payant ne peut rien (n = 0) ; la voie gratuite, elle, n'en a pas besoin.
-    let n = 0;
-    if (scKeyPresent()) {
-      const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-      n = allowance(st.budget, budgetState(st.budget, st.usage, st.balance), "transcript", todayCredits(st, "transcript"), TRANSCRIPT_RUNS_PER_DAY);
-    }
+    // Sans clé ScrapeCreators (dev, e2e, preview, poste local), rien ne part sur le réseau, pages TikTok comprises :
+    // c'est la garde de toutes les tâches du Radar (voie gratuite des relevés, radarAvailability). Un solde vide, la
+    // réserve ou un poste coupé n'arrêtent, eux, que le payant (n = 0) : la voie gratuite tourne.
+    if (!scKeyPresent()) return { skipped: "no-key" };
+    const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
+    const n = allowance(st.budget, budgetState(st.budget, st.usage, st.balance), "transcript", todayCredits(st, "transcript"), TRANSCRIPT_RUNS_PER_DAY);
     const due: DueTranscript[] = await ctx.runQuery(internal.radar.radarSources.dueTranscripts, { now, limit: n, freeLimit: TRANSCRIPT_FREE_PAGES });
     const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
     const page = retrying(
