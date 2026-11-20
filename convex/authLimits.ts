@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery } from "./_generated/server";
+import { internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
 
 /** La clé du compteur d'échecs de connexion d'un e-mail (haché : audit S12). */
 export const signInKey = async (email: string) =>
@@ -12,16 +12,19 @@ export const signInKey = async (email: string) =>
  */
 export const hit = internalMutation({
   args: { key: v.string(), max: v.number(), windowMs: v.number() },
-  handler: async (ctx, { key, max, windowMs }): Promise<boolean> => {
-    const now = Date.now();
-    const row = await ctx.db.query("authLimits").withIndex("by_key", (q) => q.eq("key", key)).first();
-    if (!row) { await ctx.db.insert("authLimits", { key, n: 1, since: now }); return true; }
-    if (now - row.since >= windowMs) { await ctx.db.patch(row._id, { n: 1, since: now }); return true; }
-    if (row.n >= max) return false;
-    await ctx.db.patch(row._id, { n: row.n + 1 });
-    return true;
-  },
+  handler: async (ctx, { key, max, windowMs }): Promise<boolean> => takeHit(ctx, key, max, windowMs),
 });
+
+/** Le même compteur, depuis une mutation (saved.set, audit Q39). */
+export async function takeHit(ctx: MutationCtx, key: string, max: number, windowMs: number): Promise<boolean> {
+  const now = Date.now();
+  const row = await ctx.db.query("authLimits").withIndex("by_key", (q) => q.eq("key", key)).first();
+  if (!row) { await ctx.db.insert("authLimits", { key, n: 1, since: now }); return true; }
+  if (now - row.since >= windowMs) { await ctx.db.patch(row._id, { n: 1, since: now }); return true; }
+  if (row.n >= max) return false;
+  await ctx.db.patch(row._id, { n: row.n + 1 });
+  return true;
+}
 
 /** La clé est-elle au plafond dans sa fenêtre ? (sans compter de passage) */
 export const blocked = internalQuery({

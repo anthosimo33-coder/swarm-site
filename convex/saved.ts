@@ -1,5 +1,6 @@
 import { ConvexError, getConvexSize, v } from "convex/values";
 import { liveUserId } from "./session";
+import { takeHit } from "./authLimits";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 
 /**
@@ -17,6 +18,12 @@ const KEYS = new Set(["follows", "folders", "alertRules", "seen"]);
  * brute à l'écriture), et 256 000 caractères chinois 768 Ko.
  */
 const MAX_BYTES = 256_000;
+/**
+ * Écritures par compte (audit Q39, 19/11 : aucune limite ; un compte gratuit pouvait écrire ~256 Ko par appel, sans fin).
+ * 300 par tranche de 10 minutes : bien au-delà d'une personne qui range ses dossiers ou suit des comptes à la main.
+ */
+const WRITES_MAX = 300;
+const WRITES_WINDOW_MS = 10 * 60_000;
 
 /**
  * La forme de chaque clé (audit Q39 : v.any() acceptait n'importe quoi). Les champs connus sont vérifiés ; un champ de
@@ -101,6 +108,7 @@ export const set = mutation({
     if (!KEYS.has(key)) throw new ConvexError("CLE_INCONNUE");
     if (getConvexSize(value ?? null) > MAX_BYTES) throw new ConvexError("TROP_LOURD");
     if (!SHAPES[key](value)) throw new ConvexError("FORME_INVALIDE");
+    if (!(await takeHit(ctx, `saved:${userId}`, WRITES_MAX, WRITES_WINDOW_MS))) throw new ConvexError("TROP_DE_REQUETES");
     const row = await ctx.db
       .query("saved")
       .withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", key))
