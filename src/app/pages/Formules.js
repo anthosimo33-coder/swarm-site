@@ -91,7 +91,7 @@ export default class Formules extends DCLogic {
                 "Choisis ta formule"
               ),
               $h("span", { "style": "font-size: 14px; color: var(--ink-muted);" },
-                "Un seul plan, tout Kopycat. Tu changes quand tu veux."
+                "Un seul plan, tout Kopycat."
               )
             ),
             $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch;" },

@@ -99,7 +99,7 @@ ok(!bad.length, `chaque api.<module>.<nom> du front existe et est appelé comme 
   // Sélecteurs de premier niveau (hors @keyframes) : seulement ce qui est propre au site et à son routeur.
   const body = css.replace(/@keyframes[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
   const selectors = [...body.matchAll(/([^{}]+)\{[^{}]*\}/g)].map((m) => m[1].trim()).flatMap((x) => x.split(',').map((y) => y.trim())).filter((x) => x && !x.startsWith('@'));
-  const SITE = [/^html$/, /^body$/, /^img\.is-broken$/, /^\.app-missing( |$)/, /^\.app-paid(\.is-[a-z]+)?$/, /^\.sw-hoverplay( |$)/, /^\.sw-video:has\(img\.is-broken\)::before$/,
+  const SITE = [/^html$/, /^body$/, /^img\.is-broken$/, /^\.app-missing( |$)/, /^\.app-paid(\.is-[a-z]+)?$/, /^\.app-progress(::before)?$/, /^\.sw-hoverplay( |$)/, /^\.sw-video:has\(img\.is-broken\)::before$/,
     /^\.sw-flag(\.sw-flag-\d+)?\[data-c(="[^"]*")?\]$/, /^nav\[aria-label="Navigation principale"\]$/];
   const design = [...new Set(selectors.filter((x) => !SITE.some((re) => re.test(x))))];
   ok(!design.length, `app.css ne porte que ce qui est propre au site (audit Q44)${design.length ? ` ; règles de dessin : ${design.slice(0, 6).join(' ; ')}` : ''}`);
@@ -115,6 +115,16 @@ ok(!bad.length, `chaque api.<module>.<nom> du front existe et est appelé comme 
   ok(!sheets.length, `feuilles du bas à champ : suivent le clavier (visualViewport, audit Q72)${sheets.length ? ` ; manque : ${sheets.join(', ')}` : ''}`);
   const vh = ['MAjout', 'MNouvelleAlerte', 'MApps', 'MCreateurs', 'MCreateursCartes'].filter((m) => /max-height: (88|96)vh;(?! max-height: (calc\()?(88|96)dvh)/.test(read(`design/app/${m}.dc.html`)));
   ok(!vh.length, `feuilles du bas : hauteur en dvh (audit Q72)${vh.length ? ` ; encore en vh seul : ${vh.join(', ')}` : ''}`);
+}
+
+// ─── Canevas (phase 2) : Réglages sur téléphone (Q58), bandeau de l'aperçu (Q71), formules (Q74, décision du 20/11) ───
+{
+  const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
+  const reg = read('design/app/ReglagesA.dc.html');
+  ok(/\.reg-mob \.reg-in,\.reg-mob \.reg-search input\{font-size:16px\}/.test(reg) && /\.reg-mob \.reg-legal a\{[^}]*min-height:44px/.test(reg),
+    'Réglages sur téléphone : champs en 16 px (pas de zoom iOS), liens légaux de 44 px (audit Q58)');
+  ok(/@media \(max-width:389px\)\{\.mapr-bf\{/.test(read('design/app/MApercuApps.dc.html')), 'Aperçu mobile : le bandeau Black Friday se resserre sous 390 px (audit Q71)');
+  ok(!/Tu changes quand tu veux/.test(read('design/app/FormulesA.dc.html') + read('design/app/MFormules.dc.html')), '« Tu changes quand tu veux » retiré des formules (audit Q74)');
 }
 
 // ─── Q50 : formes d'id et de pseudo écrites une fois ────────────────────────────────────────────────────────────

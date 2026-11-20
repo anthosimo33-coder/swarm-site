@@ -170,21 +170,34 @@ for (const who of ['pro', 'free']) {
 }
 
 // Un prénom qui commence par un émoji (audit Q38) : l'initiale de l'avatar est l'émoji entier, jamais sa première moitié.
-// Écrans dont le canevas est tenu par une autre branche, corrigés avec elle (phase 2) : Alertes (ordinateur),
-// Formats (ordinateur et téléphone), Aperçu, Réglages.
+// Chaque écran, l'aperçu, Réglages et le menu du compte.
 {
-  const PENDING = new Set(['Alertes', 'Formats', 'MFormats']);
   const user = { ...userOf(true), prenom: '😀 Léa', nom: '😀 Léa', initiale: '😀' };
   const b = board('pro');
   for (const r of routes) for (const mobile of [false, true]) {
     const name = mobile ? r.mob : r.desk;
-    if (PENDING.has(name)) continue;
     const [key, params] = keysOf(r)[0] ?? [null, {}];
     await b.load(key ? [key, 'apps'] : ['apps']);
     await show(`émoji ${mobile ? 'mobile' : 'ordi'} ${r.path}`, await page(name), { user, signOut() {}, onPlans() {}, params, query: {}, data: key ? b.cache.get(key) : undefined,
       get: (k) => b.cache.get(k) ?? null, saved: () => null, save: async () => {} });
   }
   await show('émoji MenuCompte', await page('MenuCompte'), { user, total: 3, onClose() {}, onPlans() {}, onSettings() {} });
+  const free = { ...user, pro: false };
+  for (const n of ['Apercu', 'MApercuApps']) await show(`émoji ${n}`, await page(n), { user: free, data: { ...(b.cache.get('apps') ?? {}), preview: true }, onPlans() {}, checkout: {} });
+  for (const mobile of [false, true]) await show(`émoji Réglages ${mobile ? 'mobile' : 'ordi'}`, await page('Reglages'), { user, mobile, section: 'profil', abo: { sub: null, payments: [] }, sessions: { since: NOW, others: 0 }, onClose() {} });
+}
+
+// Réglages, ce que l'écran dit (audit Q35, Q37, Q53) : un paiement en attente n'est pas « Payé », une session dure
+// 30 jours, une adhésion terminée n'est ni « Active » ni « Prochain paiement ».
+{
+  const Reglages = await page('Reglages');
+  const txt = (props) => renderToString(h(Reglages, { user: userOf(true), onClose() {}, ...props })).replace(/<(style|script)[\s\S]*?<\/\1>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const pending = txt({ section: 'abo', abo: { sub: { formule: 'mensuel', status: 'active', active: true, price: '29.99', currency: 'eur', periodEnd: NOW + 864e5, cancelAtPeriodEnd: false }, payments: [{ id: 'p9', total: '29.99', currency: 'eur', status: 'pending', at: NOW }] }, sessions: { since: NOW, others: 0 } });
+  if (!/En attente/.test(pending) || /Payé/.test(pending.replace(/Payé le/g, ''))) note('Réglages : paiement en attente affiché « Payé » (Q35)', 'Réglages abo', '');
+  const sec = txt({ section: 'securite', abo: { sub: null, payments: [] }, sessions: { since: NOW, others: 0 } });
+  if (!/30 jours/.test(sec) || /90 jours/.test(sec)) note('Réglages : durée de session fausse (Q37)', 'Réglages sécurité', (sec.match(/.{0,30}jours.{0,10}/) || [''])[0]);
+  const done = txt({ section: 'abo', abo: { sub: { formule: 'mensuel', status: 'expired', active: false, price: '29.99', currency: 'eur', periodEnd: NOW - 864e5, cancelAtPeriodEnd: false }, payments: [] }, sessions: { since: NOW, others: 0 } });
+  if (!/Terminé/.test(done) || /\bActif\b|Prochain paiement/.test(done)) note('Réglages : adhésion terminée affichée active (Q53)', 'Réglages abo expiré', (done.match(/.{0,30}(Actif|Prochain paiement).{0,20}/) || [''])[0]);
 }
 
 console.log(`${reel ? 'export réel' : 'export inventé'} : ${docs.size} pages, ${routes.length} routes, ${renders} rendus`);

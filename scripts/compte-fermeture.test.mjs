@@ -135,5 +135,18 @@ const page = screen(subbed, async () => ({ ok: false, reason: "resiliation" }));
 page.renderVals().delGo();
 await new Promise((r) => setTimeout(r, 10));
 ok(/Whop/.test(page.state.delErr || ""), `Réglages, refus de Whop : « ${page.state.delErr} »`);
+// Audit S27 : un compte « mot de passe » le donne pour fermer ; chaque refus du serveur a son message.
+{
+  const sent = [];
+  const pw = screen(subbed, async (email, password) => { sent.push([email, password]); return { ok: false, reason: password === "Bon-mdp-42" ? "reconnexion" : "motdepasse" }; });
+  pw.props.user.hasPassword = true;
+  ok(/mot de passe/i.test(text(pw)), "Réglages : le champ « Ton mot de passe » est demandé à un compte mot de passe");
+  pw.renderVals().delGo();
+  ok(sent.length === 0, "Réglages : sans mot de passe tapé, rien n'est envoyé");
+  pw.state.delPw = "faux-mdp-1";
+  pw.renderVals().delGo();
+  await new Promise((r) => setTimeout(r, 10));
+  ok(sent[0]?.[1] === "faux-mdp-1" && /incorrect/.test(pw.state.delErr || ""), `Réglages : le mot de passe part avec l'e-mail ; refus : « ${pw.state.delErr} »`);
+}
 
 end();
