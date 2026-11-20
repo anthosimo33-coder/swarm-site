@@ -21,7 +21,7 @@ en page bascule (rotation d'un iPad, fenêtre redimensionnée), les retrouve. Ch
 `setF({ … })` : l'état, plus l'adresse par `history.replaceState` (sans entrée d'historique ni remontage). Sur le
 canevas (sans `props.query`), l'état seul. Un filtre propre à une version reste dans l'adresse quand l'autre en change un
 autre. Paramètres : `m` (marché), `niche`, `tri`, `periode`, `dates`, `plateforme`, `colonne`, `ordre` (Apps) ; `m`,
-`niche`, `app`, `abonnes`, `type`, `genre`, `tri`, `actifs` (Créateurs) ; `m`, `niche`, `type` (Formats) ; `onglet`,
+`niche`, `app`, `abonnes`, `type`, `genre`, `tri`, `actifs` (Créateurs) ; `m`, `niche`, `type`, `tri` (Formats) ; `onglet`,
 `miennes` (Alertes). Banc : `npm run test:filtres`.
 
 Un écran peut lire un autre document avec `this.props.get(clé)` (undefined tant qu'il charge, null s'il

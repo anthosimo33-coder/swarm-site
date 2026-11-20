@@ -6,11 +6,13 @@
 // 2. Apps : au changement de classement ou de période, les lignes coulent vers leur nouvelle place (FLIP), le
 //    chiffre qui change tombe d'en haut, la courbe change de forme.
 // 3. Rail : la nouvelle page tombe en place, bloc par bloc.
+// 4. Formats : au changement de filtre ou de tri, les cartes glissent vers leur nouvelle place (FLIP), les nouvelles
+//    tombent en place.
 //
 // Les écrans ne savent rien de ce module : il lit l'état d'avant au clic (phase de capture), laisse le composant se
 // redessiner, puis anime l'écart avant la première image. Seuls transform et opacity bougent (et, pour une courbe,
 // son tracé) ; le filtre ne couvre que la pastille. Marqueurs posés par les écrans : data-key (une ligne d'Apps),
-// data-lq-num (un chiffre), data-lq-spark (une courbe).
+// data-lq-num (un chiffre), data-lq-spark (une courbe), data-lq-card (une carte de Formats, ou sa une).
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const HEAD = 'cubic-bezier(0.3, 0.9, 0.2, 1)';
@@ -178,6 +180,48 @@ document.addEventListener('click', (e) => {
     }
     if (rows) flowRows(rows);
   });
+}, true);
+
+// ─── Formats : les cartes coulent vers leur nouvelle place quand un filtre ou un tri change ───
+// Marqueur data-lq-card (une clé par carte, et une pour la une) : au clic sur un bouton (onglet, choix d'une fenêtre,
+// tri), la place de chaque carte à l'écran ; à l'image suivante, celles qui restent glissent de l'ancienne place à la
+// nouvelle, celles qui arrivent tombent en place. Un clic qui ne change rien (ouvrir une fenêtre) n'anime rien.
+function snapshotCards() {
+  const els = document.querySelectorAll('[data-lq-card]');
+  if (!els.length) return null;
+  const H = window.innerHeight;
+  const map = new Map();
+  for (const el of els) {
+    const r = el.getBoundingClientRect();
+    if (r.top > H + 300) break; // dans l'ordre de la page : la suite est plus bas
+    if (r.bottom < -300) continue;
+    map.set(el.getAttribute('data-lq-card'), { x: r.left, y: r.top });
+  }
+  return map;
+}
+
+function flowCards(before) {
+  const H = window.innerHeight;
+  let k = 0;
+  for (const el of document.querySelectorAll('[data-lq-card]')) {
+    const r = el.getBoundingClientRect();
+    if (r.top > H) break;
+    if (r.bottom < 0) continue;
+    const old = before.get(el.getAttribute('data-lq-card'));
+    const i = k++;
+    if (old) {
+      const dx = old.x - r.left, dy = old.y - r.top;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 560, delay: Math.min(i, 8) * 18, easing: FLOW, fill: 'backwards' });
+    } else {
+      el.animate([{ transform: 'translateY(-14px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 440, delay: 40 + Math.min(i, 10) * 26, easing: FALL, fill: 'backwards' });
+    }
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (reduced() || !(e.target instanceof Element) || !e.target.closest('button')) return;
+  const before = snapshotCards();
+  if (before) requestAnimationFrame(() => flowCards(before));
 }, true);
 
 // ─── le rail ───
