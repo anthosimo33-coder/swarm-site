@@ -15,7 +15,7 @@ const STUBS = {
   'convex/values': `export const v = new Proxy({}, { get: () => () => ({}) }); export class ConvexError extends Error {}
     export { getConvexSize } from ${JSON.stringify(path.join(root, 'node_modules/convex/dist/esm/values/size.js'))};`,
   './session': 'export const liveUserId = async (ctx) => ctx.userId;',
-  './_generated/server': 'const id = (d) => d; export const query = id, mutation = id;',
+  './_generated/server': 'const id = (d) => d; export const query = id, mutation = id, internalQuery = id, internalMutation = id;',
 };
 const dir = mkdtempSync(path.join(tmpdir(), 'saved-'));
 const out = path.join(dir, 'saved.mjs');
@@ -62,10 +62,13 @@ ok(JSON.stringify(plain) === JSON.stringify(VALUES.follows), 'sans correspondanc
 ok((await get.handler({ userId: null, db: db(true) }, { key: 'follows' })) === null, 'pas connecté : rien');
 // ─── saved.set (audit Q39, S27) ───────────────────────────────────────────────────────────────────────────────
 const writeDb = (users = { u: { email: 'a@b.c' } }) => {
-  const rows = [];
-  return { rows, get: async (id) => users[id] ?? null,
-    query: () => ({ withIndex: (_n, f) => { const c = {}; const q = { eq: (k, val) => ((c[k] = val), q) }; f(q); return { first: async () => rows.find((r) => r.userId === c.userId && r.key === c.key) ?? null }; } }),
-    insert: async (_t, doc) => { rows.push(doc); }, patch: async (id, p) => Object.assign(rows.find((r) => r === id || r._id === id) ?? {}, p) };
+  const tables = { saved: [], authLimits: [] };
+  let next = 1;
+  return { rows: tables.saved, tables, get: async (id) => users[id] ?? null,
+    query: (t) => ({ withIndex: (_n, f) => { const c = {}; const q = { eq: (k, val) => ((c[k] = val), q) }; f(q);
+      return { first: async () => (tables[t] ??= []).find((r) => Object.entries(c).every(([k, val]) => r[k] === val)) ?? null }; } }),
+    insert: async (t, doc) => { const _id = `${t}|${next++}`; (tables[t] ??= []).push({ _id, ...doc }); return _id; },
+    patch: async (id, p) => { for (const rows of Object.values(tables)) { const r = rows.find((x) => x._id === id); if (r) Object.assign(r, p); } } };
 };
 const put = async (key, value, { userId = 'u', users } = {}) => {
   const base = writeDb(users);
@@ -90,6 +93,20 @@ for (const [k, val, why] of [
 ]) { const r = await put(k, val); ok(!r.ok && /FORME_INVALIDE/.test(r.err) && !r.rows.length, `forme refusée : ${why} (${r.ok ? 'acceptée' : r.err})`); }
 { const r = await put('alertRules', [{ id: 'r', createdAt: 1, quoi: 'video', niche: null, seuil: 1e6, marche: 'FR', langue: 'es' }]); ok(r.ok, `alerte avec un champ simple de plus : acceptée${r.ok ? '' : ` (${r.err})`}`); }
 { const r = await put('follows', VALUES.follows, { users: {} }); ok(!r.ok && /NON_CONNECTE/.test(r.err) && !r.rows.length, `compte supprimé, session encore ouverte : rien n'est réinséré (audit S27 ; ${r.ok ? 'écrit' : r.err})`); }
+
+// Audit Q39 : un compte ne peut pas écrire sans fin.
+{
+  const base = writeDb();
+  let refused = 0;
+  for (let i = 1; i <= 400 && !refused; i++) {
+    try { await set.handler({ userId: 'u', db: base }, { key: 'seen', value: { alerts: i } }); } catch (e) { if (/TROP_DE_REQUETES/.test(String(e.message ?? e))) refused = i; }
+  }
+  ok(refused > 250 && refused <= 301, `écritures limitées par compte (refus au ${refused || '?'}e appel en 10 min)`);
+  const realNow = Date.now; Date.now = () => realNow() + 11 * 60_000;
+  let after = true; try { await set.handler({ userId: 'u', db: base }, { key: 'seen', value: { alerts: 1 } }); } catch { after = false; }
+  Date.now = realNow;
+  ok(after, '11 min plus tard, l\'écriture repasse');
+}
 
 console.log(fail ? `${fail} échec(s)` : 'tout passe');
 process.exit(fail ? 1 : 0);
