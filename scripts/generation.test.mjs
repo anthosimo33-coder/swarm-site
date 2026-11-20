@@ -54,4 +54,18 @@ const appPages = pages('src/app/pages');
   ok(!/data-eager/.test(lp + lpm), 'F10 : le marqueur data-eager du canevas ne part pas dans la page');
 }
 
+// ─── F11 : le film de la landing ne part qu'une fois visible, dans la bonne définition ───
+{
+  for (const name of ['LP', 'LPMobile']) {
+    const src = fs.readFileSync(path.join(root, `src/pages/${name}.js`), 'utf8');
+    const video = (src.match(/\$h\("video", \{([^}]*)\}/) || [, ''])[1];
+    const mount = (src.match(/componentDidMount\(\) \{([\s\S]*?)\n  \}/) || [, ''])[1];
+    ok(/"preload": "none"/.test(video) && !/"autoplay"/.test(video), `F11 : ${name}, le film ne se télécharge plus d'avance (preload=none, sans autoplay)`);
+    ok(/IntersectionObserver/.test(mount) && /0\.5/.test(mount) && /film\.paused && half\(\)/.test(mount),
+      `F11 : ${name}, lecture seulement quand la moitié du film est à l'écran (mesurée à chaque appel), plus de lecture sans condition au montage`);
+  }
+  const lp = fs.readFileSync(path.join(root, 'src/pages/LP.js'), 'utf8');
+  ok(/swarm-film-720\.mp4/.test(lp) && /devicePixelRatio/.test(lp) && /saveData/.test(lp), 'F11 : sur ordinateur, le 720p sur un petit écran ou en mode économie de données');
+}
+
 end();

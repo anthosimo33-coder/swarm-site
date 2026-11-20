@@ -112,7 +112,7 @@ a{color:#111216}a:hover{color:#0B6FE0}
 <div aria-hidden="true" style="position: absolute; left: 50%; top: 56%; width: 1200px; height: 600px; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent); pointer-events: none;"></div>
 <div style="position: relative; max-width: 1160px; margin: 0 auto; padding: 10px; border-radius: 36px; background: linear-gradient(180deg, #1C2230 0%, #0B0E15 100%); box-shadow: 0 2px 4px rgba(16,24,40,0.10), 0 50px 110px rgba(16,24,40,0.28), inset 0 1px 0 rgba(255,255,255,0.12); animation: blurIn 1s ease-out both; animation-delay: 0.7s;">
 <div data-film="" style="position: relative; aspect-ratio: 16 / 9; border-radius: 27px; overflow: hidden; background: #05070C;">
-<video src="/media/film/swarm-film.mp4" poster="/media/film/swarm-film-affiche.jpg" autoplay="{{filmOn}}" muted="{{filmMuted}}" loop="{{filmOn}}" playsinline="" preload="auto" aria-label="Film de présentation de Kopycat, 1 minute" style="display: block; width: 100%; height: 100%; object-fit: cover;"></video>
+<video src="/media/film/swarm-film.mp4" poster="/media/film/swarm-film-affiche.jpg" muted="{{filmMuted}}" loop="{{filmOn}}" playsinline="" preload="none" aria-label="Film de présentation de Kopycat, 1 minute" style="display: block; width: 100%; height: 100%; object-fit: cover;"></video>
 <button type="button" onClick="{{toggleSound}}" aria-pressed="{{soundOn}}" style="position: absolute; top: 22px; right: 22px; display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 18px 0 14px; border: 0; border-radius: 999px; background: rgba(14,15,18,0.45); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 500; cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#FFFFFF"></path><path d="M17 9.5l4 5M21 9.5l-4 5" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" style="opacity: {{muteIco}};"></path><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" fill="none" style="opacity: {{soundIco}};"></path></svg>{{soundLabel}}</button>
 </div>
 </div>
@@ -367,15 +367,31 @@ class Component extends DCLogic {
     const film = document.querySelector('[data-film] video');
     if (film) {
       film.muted = true; film.defaultMuted = true; film.setAttribute('muted', '');
-      const go = () => { if (film.paused) { const p = film.play(); if (p && p.catch) p.catch(() => {}); } };
-      go(); film.addEventListener('loadeddata', go); film.addEventListener('canplay', go);
-      if ('IntersectionObserver' in window) { this.filmObs = new IntersectionObserver((es) => { if (es[0].isIntersecting) go(); }); this.filmObs.observe(film); }
-      ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.addEventListener(ev, go, { once: true, passive: true }));
+      // Audit F11 : le film (12 Mo en 1080p) ne se télécharge plus avant d’être visible : preload=none (l’affiche reste), pas d’autoplay,
+      // lecture quand la moitié du cadre est à l'écran, pause quand il en sort. Le 720p (6 Mo) sur un écran de moins de
+      // 1 600 pixels réels ou en mode économie de données.
+      const small = window.innerWidth * (window.devicePixelRatio || 1) < 1600 || !!(navigator.connection && navigator.connection.saveData);
+      if (small) film.src = '/media/film/swarm-film-720.mp4';
+      // La moitié du cadre est-elle à l'écran ? Mesurée à chaque appel (défilement, observateur, données reçues).
+      const half = () => { const r = film.getBoundingClientRect(); return r.height > 0 && Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0) >= r.height / 2; };
+      const go = () => { if (film.paused && half()) { const p = film.play(); if (p && p.catch) p.catch(() => {}); } };
+      // Lecture à l'entrée dans la vue, pause à la sortie. Pas d'essai au montage : la page n'est pas encore posée
+      // (images, polices) et le film peut sembler visible un instant ; l'observateur donne son premier avis ensuite.
+      const check = () => { if (half()) go(); else if (!film.paused) film.pause(); };
+      film.addEventListener('loadeddata', go); film.addEventListener('canplay', go);
+      if ('IntersectionObserver' in window) {
+        this.filmObs = new IntersectionObserver(check, { threshold: [0, 0.5] });
+        this.filmObs.observe(film);
+      } else go();
+      // Mode économie d'énergie (iOS) : la lecture muette peut attendre un premier geste ; elle ne part qu'une fois visible.
+      this.goFilm = check;
+      ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.addEventListener(ev, check, { passive: true }));
     }
   }
   componentWillUnmount() {
     clearInterval(this.timer);
     if (this.filmObs) this.filmObs.disconnect();
+    if (this.goFilm) ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.removeEventListener(ev, this.goFilm));
   }
   renderVals() {
     const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
