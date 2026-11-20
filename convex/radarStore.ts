@@ -678,18 +678,20 @@ export const aiLeft = internalQuery({
 
 // ─── Bail des lectures de fond ────────────────────────────────────────────────────────────────
 
+
 /**
  * Prend (ou renouvelle) le bail `name` pour `token` : faux si une autre chaîne le tient, ou si une synchro tourne.
  * 14/11 : chaque tâche du quart d'heure lançait une chaîne de plus (lecture IA, carrousels) ; elles s'empilaient et
  * appelaient /cover en même temps que la synchro, morte en route à 21h43.
  */
 export const takeLease = internalMutation({
-  args: { name: v.string(), token: v.string(), ms: v.number(), now: v.number() },
-  handler: async (ctx, { name, token, ms, now }) => {
+  args: { name: v.string(), token: v.string(), ms: v.number(), now: v.number(), steal: v.optional(v.boolean()) },
+  handler: async (ctx, { name, token, ms, now, steal }) => {
     const run = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").first();
     if (runAlive(run, now)) return false;
     const row = await ctx.db.query("leases").withIndex("by_name", (q) => q.eq("name", name)).first();
-    if (row && row.until > now && row.token !== token) return false;
+    // steal : la copie des miniatures prend le bail même tenu (la chaîne qui le tenait s'arrête à son prochain lot).
+    if (row && row.until > now && row.token !== token && !steal) return false;
     if (row) await ctx.db.patch(row._id, { token, until: now + ms });
     else await ctx.db.insert("leases", { name, token, until: now + ms });
     return true;

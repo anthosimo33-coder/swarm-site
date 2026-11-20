@@ -124,7 +124,7 @@ const relaunched = (s) => s.some(([p]) => p === "radarSync.run");
   Date.now = () => clock;
   globalThis.__copyImage = async (_ctx, key) => { clock += 1_000; return { key, storageId: "s", url: "https://x/" + key }; }; // 1 s par image
   const items = Array.from({ length: 1000 }, (_, i) => ({ key: `v:${7000000000000000000 + i}`, src: `ttpage:x/${i}` }));
-  const t = actionCtx({});
+  const t = actionCtx({ takeLease: true });
   const r = await quiet(() => sync.copyMedia.handler(t.ctx, { items }));
   Date.now = realNow;
   const next = t.scheduled.find(([p]) => p === "radarSync.copyMedia");
@@ -137,7 +137,7 @@ const relaunched = (s) => s.some(([p]) => p === "radarSync.run");
   for (; step < 100; step++) {
     clock = 1_800_000_000_000;
     Date.now = () => clock;
-    const f = actionCtx({});
+    const f = actionCtx({ takeLease: true });
     f.ctx.storage.get = async (id) => (id === "liste" && !deleted ? new Blob([JSON.stringify(big)]) : null);
     f.ctx.storage.delete = async (id) => { deleted = id; };
     const res = await quiet(() => sync.copyMedia.handler(f.ctx, { file: "liste", from }));
@@ -239,14 +239,43 @@ function memDb() {
 
 // ─── Q16 (audit du 19/11) : « pas encore de miniature » chez TikTok n'est pas un échec : la vidéo n'est pas cachée ───
 {
-  const t = actionCtx({});
+  const t = actionCtx({ takeLease: true });
   globalThis.__copyImage = async (_ctx, _key, _src, report) => { report.blank = true; return null; };
   await quiet(() => sync.copyMedia.handler(t.ctx, { items: [{ key: "v:7000000000000000009", src: "ttpage:x/7000000000000000009" }] }));
   ok(!t.calls.includes("markMisses"), `Q16 : une vidéo TikTok sans miniature encore n'est pas notée introuvable (${t.calls.join(", ") || "aucun appel"})`);
   globalThis.__copyImage = async (_ctx, _key, _src, report) => { report.gone = true; return null; };
-  const g = actionCtx({});
+  const g = actionCtx({ takeLease: true });
   await quiet(() => sync.copyMedia.handler(g.ctx, { items: [{ key: "v:7000000000000000010", src: "ttpage:x/7000000000000000010" }] }));
   ok(g.calls.includes("markMisses"), "Q16 : une vidéo que TikTok dit disparue l'est toujours");
+}
+
+// ─── F24 (audit du 19/11) : une seule chaîne de lecture de pages TikTok à la fois, la copie des miniatures d'abord ───
+{
+  const leases = (t) => t.answers.filter(([fn]) => fn === "takeLease").map(([, a]) => a);
+  const ctxL = (answers) => { const t = actionCtx(answers); t.answers = []; const run = t.ctx.runMutation; t.ctx.runMutation = async (r, a) => { t.answers.push([r.__path.split(".").pop(), a]); return run(r, a); }; return t; };
+  // Pays : un bail, et rien de lu s'il est refusé (synchro en cours, ou une autre chaîne de pages TikTok).
+  let t = ctxL({ takeLease: false, claimRegions: [{ handle: "x", ids: ["7000000000000000001"], tries: 0 }], regionBatch: [] });
+  await quiet(() => regions.fill.handler(t.ctx, {}));
+  ok(leases(t).length === 1 && !t.calls.includes("claimRegions") && !t.calls.includes("saveRegions"), `pays : bail refusé, rien n'est lu (${t.calls.join(", ")})`);
+  t = ctxL({ takeLease: true, claimRegions: [{ handle: "x", ids: ["7000000000000000001"], tries: 0 }], regionBatch: [] });
+  await quiet(() => regions.fill.handler(t.ctx, {}));
+  ok(t.calls.includes("saveRegions") && t.calls.includes("dropLease"), "pays : bail pris, puis rendu en fin de chaîne");
+  const sl = ctxL({ takeLease: false, claimSlides: ["7000000000000000001"] });
+  await quiet(() => slides.fill.handler(sl.ctx, {}));
+  const names = new Set([...leases(t), ...leases(sl)].map((a) => a.name));
+  ok(names.size === 1 && leases(t).length > 0 && !sl.calls.includes("claimSlides"), `pays et carrousels : le même bail (${[...names].join(", ")})`);
+  // Copie : le même bail, pris en priorité ; refusé (synchro en cours), la liste reprend plus tard sans rien copier.
+  globalThis.__copyImage = async (_c, key) => ({ key, storageId: "s", url: "https://x/" + key });
+  const c = ctxL({ takeLease: false });
+  const r = await quiet(() => sync.copyMedia.handler(c.ctx, { items: [{ key: "v:7000000000000000001", src: "ttpage:x/1" }] }));
+  const again = c.scheduled.find(([p]) => p === "radarSync.copyMedia");
+  ok(leases(c)[0]?.name === [...names][0] && leases(c)[0]?.steal === true, `copie des miniatures : même bail, pris en priorité (${JSON.stringify(leases(c)[0] ?? null)})`);
+  ok(r.copied === 0 && again?.[1]?.items?.length === 1, "copie des miniatures : bail refusé, rien de copié, la liste reprend plus tard");
+  // Départs après la synchro : la copie tout de suite, les autres lectures plus tard.
+  const all = fs.readFileSync(path.join(dir, "radarSync.ts"), "utf8"), src = all.slice(all.indexOf("export const runGlobal"));
+  const after = (fn) => Number((src.match(new RegExp(`runAfter\\(([^,]+), internal\\.${fn},`)) ?? [])[1]?.replace(/_/g, "").replace(/\s/g, "").split("*").reduce((a, b) => a * Number(b), 1) ?? NaN);
+  ok(after("radarSync.copyMedia") === 0 && ["radarRegions.fill", "radarSlides.fill", "radarAi.fillVideos", "radarAi.fillGender"].every((f) => after(f) > 0),
+    `fin de synchro : la copie part seule, pays, carrousels et lecture IA plus tard (${["radarRegions.fill", "radarSlides.fill", "radarAi.fillVideos"].map((f) => `${f} ${after(f)} ms`).join(", ")})`);
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });

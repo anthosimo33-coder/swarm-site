@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { videoFactsState } from "./radarRegions";
-import { backgroundOff } from "./background";
+import { backgroundOff, TIKTOK_LEASE } from "./background";
 
 /**
  * Les carrousels (diaporamas de photos) parmi les vidéos que Swarm montre : TikTok le dit sur la page publique de la
@@ -22,12 +22,13 @@ export const fill = internalAction({
   handler: async (ctx, args): Promise<{ read: number; slideshows: number }> => {
     const start = Date.now();
     if (backgroundOff()) return { read: 0, slideshows: 0 };
-    // Une seule chaîne à la fois, et rien pendant une synchro (convex/radarStore.ts, takeLease).
+    // Une seule chaîne de lecture de pages TikTok à la fois (bail commun avec la copie des miniatures et les pays,
+    // audit F24), et rien pendant une synchro (convex/radarStore.ts, takeLease).
     const token = args.token ?? Math.random().toString(36).slice(2);
-    if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: "slides", token, ms: 6 * 60_000, now: start }))) return { read: 0, slideshows: 0 };
+    if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: TIKTOK_LEASE, token, ms: 6 * 60_000, now: start }))) return { read: 0, slideshows: 0 };
     const ids = await ctx.runMutation(internal.radarStore.claimSlides, { limit: BATCH, now: start });
     if (!ids.length) {
-      await ctx.runMutation(internal.radarStore.dropLease, { name: "slides", token });
+      await ctx.runMutation(internal.radarStore.dropLease, { name: TIKTOK_LEASE, token });
       return { read: 0, slideshows: 0 };
     }
     // Sans réponse de TikTok : reprise sans compter d'essai ; disparue : abandonnée ; illisible : un essai.
@@ -48,7 +49,7 @@ export const fill = internalAction({
     // Les carrousels trouvés entrent dans les écrans à la synchro de nuit (plus de synchro relancée d'ici : 20/11).
     // Il en reste : le lot suivant tout de suite (10 s), sans attendre la tâche planifiée du quart d'heure.
     if (left && out.length === ids.length) await ctx.scheduler.runAfter(10_000, internal.radarSlides.fill, { token });
-    else await ctx.runMutation(internal.radarStore.dropLease, { name: "slides", token });
+    else await ctx.runMutation(internal.radarStore.dropLease, { name: TIKTOK_LEASE, token });
     const failed = out.filter((x) => x.slideshow === null);
     const quiet = failed.filter((x) => x.retry).length, gone = failed.filter((x) => x.gone).length;
     console.log(`[carrousels] ${out.length} vidéos lues, ${slideshows} carrousels, ${failed.length} échecs (${quiet} sans réponse, ${gone} disparues, ${failed.length - quiet - gone} illisibles), ${left ? "il en reste" : "plus rien à lire"}`);
