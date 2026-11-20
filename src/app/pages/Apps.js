@@ -95,7 +95,7 @@ return {};
       MKS = [['ALL', 'Tous les marchés', '']].concat(D.markets.map(([c, l]) => [c, l, c]));
       NIS = D.niches;
     }
-    const ficheOf = (a) => (a[11] ? '/app/apps/' + a[11] : '/app/apps/astraai');
+    const ficheOf = (a) => (a[11] ? '/app/apps/' + a[11] : '/app/apps');
     const videoOf = (a, j) => '/app/videos/' + ((a[12] && a[12][j]) || vkey(a[8][j]));
     const open = st.open || '';
     const market = st.market || 'ALL';

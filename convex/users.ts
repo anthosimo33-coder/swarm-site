@@ -1,10 +1,11 @@
 import { getAuthSessionId, modifyAccountCredentials, retrieveAccount } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { liveUserId, liveUserIdInAction } from "./session";
-import { ACCESS, cancelAllNow } from "./whop";
+import { cancelAllNow, hasAccess, recomputePro } from "./whop";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { action, internalMutation, internalQuery, mutation, query, type ActionCtx, type MutationCtx } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, query, type ActionCtx, type MutationCtx } from "./_generated/server";
+import { signInKey } from "./authLimits";
 
 /**
  * La personne connectée (pour l'app), ou null. `name` vient de Google ; l'inscription par e-mail n'en demande pas.
@@ -22,17 +23,48 @@ export const viewer = query({
 });
 
 /**
- * Passe un compte en Pro (ou le repasse à l'aperçu), par son e-mail. Interne : depuis le terminal seulement,
- * `npx convex run users:setPro '{"email":"…","pro":true}'` (ajouter --prod pour la production). En attendant le
- * paiement Whop, c'est la seule façon d'ouvrir tout Kopycat à un compte.
+ * La main de l'exploitant sur l'accès Pro d'un compte, par son e-mail (audit Q5). Interne : depuis le terminal seulement,
+ * `npx convex run users:setPro '{"email":"…","pro":true}'` (ajouter --prod pour la production).
+ *   pro: true  → Pro sans paiement (compte de test, geste commercial) ;
+ *   pro: false → Pro refusé, même avec un abonnement payé (fraude, litige) ;
+ *   pro: null  → la main rendue : l'accès suit les adhésions Whop.
+ * Un événement Whop ne défait plus ce choix (whop.recomputePro le lit d'abord).
  */
 export const setPro = internalMutation({
-  args: { email: v.string(), pro: v.boolean() },
+  args: { email: v.string(), pro: v.union(v.boolean(), v.null()) },
   handler: async (ctx, { email, pro }) => {
-    const user = await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email.trim().toLowerCase())).first();
-    if (user === null) return { found: false };
-    await ctx.db.patch(user._id, { pro: pro || undefined });
-    return { found: true, pro };
+    // Audit S14 : deux comptes sur une adresse (mot de passe puis Google) : refus, au lieu de servir le plus ancien.
+    const users = await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email.trim().toLowerCase())).take(2);
+    if (users.length !== 1) return { found: false, ambiguous: users.length > 1 };
+    const user = users[0];
+    await ctx.db.patch(user._id, { proManual: pro ?? undefined });
+    return { found: true, pro: await recomputePro(ctx, user._id) };
+  },
+});
+
+/** Un compte porte-t-il déjà cette adresse (quel que soit son fournisseur) ? */
+export const emailTaken = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => !!(await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email)).first()),
+});
+
+/**
+ * Migration du 20/11 (audit Q5) : un compte Pro sans adhésion qui donne accès l'est devenu à la main (setPro d'avant) ;
+ * son choix est rangé dans proManual, pour que le premier événement Whop ne l'efface pas. Lancer une fois :
+ * `npx convex run --prod users:migrerProManuel`.
+ */
+export const migrerProManuel = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const done: string[] = [];
+    for (const u of await ctx.db.query("users").collect()) {
+      if (u.pro !== true || u.proManual !== undefined) continue;
+      const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", u._id)).collect();
+      if (subs.some(hasAccess)) continue;
+      await ctx.db.patch(u._id, { proManual: true });
+      done.push(u._id);
+    }
+    return { proManuel: done.length };
   },
 });
 
@@ -120,8 +152,11 @@ export const eraseAccount = internalMutation({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }): Promise<boolean> => {
     const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-    if (subs.some((s) => ACCESS.has(s.status) && !s.cancelAtPeriodEnd)) return false;
+    if (subs.some((s) => hasAccess(s) && !s.cancelAtPeriodEnd)) return false;
     for (const row of await ctx.db.query("saved").withIndex("by_user_key", (q) => q.eq("userId", userId)).collect()) {
+      await ctx.db.delete(row._id);
+    }
+    for (const row of await ctx.db.query("checkoutLinks").withIndex("by_user_key", (q) => q.eq("userId", userId)).collect()) {
       await ctx.db.delete(row._id);
     }
     for (const s of await ctx.db.query("authSessions").withIndex("userId", (q) => q.eq("userId", userId)).collect()) {
@@ -180,6 +215,46 @@ export const changePassword = action({
     await checkPassword(ctx, login, current);
     await modifyAccountCredentials(ctx, { provider: PASSWORD, account: { id: login, secret: next } });
     return await ctx.runMutation(internal.users.closeOtherSessions, { userId, keep: (await getAuthSessionId(ctx)) ?? null });
+  },
+});
+
+/**
+ * Remise d'un mot de passe par le support (audit S11, S13), tant que « mot de passe oublié » n'existe pas faute d'envoi
+ * d'e-mails. Après vérification de l'identité hors de l'app : `npx convex run --prod users:resetPassword
+ * '{"email":"…","password":"…"}'`. Toutes les sessions du compte sont fermées, et les compteurs d'échecs de connexion
+ * remis à zéro : un compte bloqué par les essais d'un tiers (S13) se rouvre ainsi.
+ */
+export const resetPassword = internalAction({
+  args: { email: v.string(), password: v.string() },
+  handler: async (ctx, { email, password }): Promise<{ ok: boolean; raison?: string; sessionsFermees?: number }> => {
+    if (password.length < 8 || password.length > 128) return { ok: false, raison: "8 à 128 caractères" };
+    const found: { userId: Id<"users">; login: string } | null = await ctx.runQuery(internal.users.passwordLogin, { email: email.trim().toLowerCase() });
+    if (!found) return { ok: false, raison: "aucun compte « mot de passe » avec cet e-mail" };
+    await modifyAccountCredentials(ctx, { provider: PASSWORD, account: { id: found.login, secret: password } });
+    const closed: number = await ctx.runMutation(internal.users.closeOtherSessions, { userId: found.userId, keep: null });
+    await ctx.runMutation(internal.users.clearSignInLimits, { userId: found.userId, key: await signInKey(found.login) });
+    return { ok: true, sessionsFermees: closed };
+  },
+});
+
+/** L'identifiant « mot de passe » d'un e-mail, et son compte. */
+export const passwordLogin = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const account = await ctx.db.query("authAccounts").withIndex("providerAndAccountId", (q) => q.eq("provider", PASSWORD).eq("providerAccountId", email)).first();
+    return account ? { userId: account.userId, login: account.providerAccountId } : null;
+  },
+});
+
+/** Remet à zéro les compteurs d'échecs de connexion d'un compte : celui de Convex Auth et le nôtre (par e-mail). */
+export const clearSignInLimits = internalMutation({
+  args: { userId: v.id("users"), key: v.string() },
+  handler: async (ctx, { userId, key }) => {
+    for (const a of await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId)).collect()) {
+      for (const r of await ctx.db.query("authRateLimits").withIndex("identifier", (q) => q.eq("identifier", a._id)).collect()) await ctx.db.delete(r._id);
+    }
+    const mine = await ctx.db.query("authLimits").withIndex("by_key", (q) => q.eq("key", key)).first();
+    if (mine) await ctx.db.delete(mine._id);
   },
 });
 

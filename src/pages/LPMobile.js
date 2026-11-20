@@ -9,15 +9,29 @@ export default class LPMobile extends DCLogic {
     const film = document.querySelector('[data-film] video');
     if (film) {
       film.muted = true; film.defaultMuted = true; film.setAttribute('muted', '');
-      const go = () => { if (film.paused) { const p = film.play(); if (p && p.catch) p.catch(() => {}); } };
-      go(); film.addEventListener('loadeddata', go); film.addEventListener('canplay', go);
-      if ('IntersectionObserver' in window) { this.filmObs = new IntersectionObserver((es) => { if (es[0].isIntersecting) go(); }); this.filmObs.observe(film); }
-      ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.addEventListener(ev, go, { once: true, passive: true }));
+      // Audit F11 : le film (12 Mo en 1080p) ne se télécharge plus avant d’être visible : preload=none (l’affiche reste), pas d’autoplay,
+      // lecture quand la moitié du cadre est à l'écran, pause quand il en sort. Le 720p (6 Mo) sur un écran de moins de
+      // 1 600 pixels réels ou en mode économie de données : sur téléphone, c'est déjà le 720p.
+      // La moitié du cadre est-elle à l'écran ? Mesurée à chaque appel (défilement, observateur, données reçues).
+      const half = () => { const r = film.getBoundingClientRect(); return r.height > 0 && Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0) >= r.height / 2; };
+      const go = () => { if (film.paused && half()) { const p = film.play(); if (p && p.catch) p.catch(() => {}); } };
+      // Lecture à l'entrée dans la vue, pause à la sortie. Pas d'essai au montage : la page n'est pas encore posée
+      // (images, polices) et le film peut sembler visible un instant ; l'observateur donne son premier avis ensuite.
+      const check = () => { if (half()) go(); else if (!film.paused) film.pause(); };
+      film.addEventListener('loadeddata', go); film.addEventListener('canplay', go);
+      if ('IntersectionObserver' in window) {
+        this.filmObs = new IntersectionObserver(check, { threshold: [0, 0.5] });
+        this.filmObs.observe(film);
+      } else go();
+      // Mode économie d'énergie (iOS) : la lecture muette peut attendre un premier geste ; elle ne part qu'une fois visible.
+      this.goFilm = check;
+      ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.addEventListener(ev, check, { passive: true }));
     }
   }
   componentWillUnmount() {
     clearInterval(this.timer);
     if (this.filmObs) this.filmObs.disconnect();
+    if (this.goFilm) ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.removeEventListener(ev, this.goFilm));
   }
   renderVals() {
     const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
@@ -347,7 +361,7 @@ export default class LPMobile extends DCLogic {
           $h("section", { "aria-label": "Vidéo de présentation", "style": "position: relative; padding: 32px 16px 0;" },
             $h("div", { "style": "position: relative; padding: 6px; border-radius: 28px; background: linear-gradient(180deg, #1C2230 0%, #0B0E15 100%); box-shadow: 0 2px 4px rgba(16,24,40,0.10), 0 30px 70px rgba(16,24,40,0.26), inset 0 1px 0 rgba(255,255,255,0.12); animation: lpm-blurIn 1s ease-out both; animation-delay: 0.55s;" },
               $h("div", { "data-film": "", "style": "position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #05070C;" },
-                $h("video", { "src": "/media/film/swarm-film-720.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "autoplay": $v.filmOn, "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "auto", "aria-label": "Film de présentation de Kopycat, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
+                $h("video", { "src": "/media/film/swarm-film-720.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "none", "aria-label": "Film de présentation de Kopycat, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
                 $h("button", { "type": "button", "onClick": $v.toggleSound, "aria-pressed": $v.soundOn, "style": "position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border: 0; border-radius: 999px; background: rgba(14,15,18,0.45); color: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
                   $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M4 9h4l5-4v14l-5-4H4z", "fill": "#FFFFFF" }),
@@ -419,7 +433,7 @@ export default class LPMobile extends DCLogic {
                   ),
                   ($l($v.miniApps)).map((m) => [
                     $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 36px;" },
-                      $h("img", { "src": m?.icon, "alt": "", "style": "width: 28px; height: 28px; border-radius: 8px; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": m?.icon, "alt": "", "style": "width: 28px; height: 28px; border-radius: 8px; display: block; flex-shrink: 0;" }),
                       $h("span", { "style": "flex: 1 1 auto; font-size: 13px; font-weight: 600;" },
                         $t(m?.name)
                       ),
@@ -441,12 +455,12 @@ export default class LPMobile extends DCLogic {
               $h("article", { "role": "listitem", "style": "flex: 0 0 84%; scroll-snap-align: start; border-radius: 24px; background: #FFFFFF; border: 1px solid #E6E6EA; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 16px 40px rgba(16,24,40,0.06); overflow: hidden; display: flex; flex-direction: column;" },
                 $h("div", { "aria-hidden": "true", "style": "height: 224px; box-sizing: border-box; padding: 16px; background: linear-gradient(180deg, #F4F7FC, #FFFFFF); display: flex; flex-direction: column; gap: 6px;" },
                   $h("span", { "style": "display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5F656E;" },
-                    $h("img", { "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
+                    $h("img", { "loading": "lazy", "decoding": "async", "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
                     "Les créateurs d'Astra AI"
                   ),
                   ($l($v.creators)).map((c) => [
                     $h("div", { "style": "display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 10px; border-radius: 14px; background: #FFFFFF; border: 1px solid #EEF0F3;" },
-                      $h("img", { "src": c?.img, "alt": "", "style": "width: 30px; height: 40px; border-radius: 7px; object-fit: cover; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": c?.img, "alt": "", "style": "width: 30px; height: 40px; border-radius: 7px; object-fit: cover; display: block; flex-shrink: 0;" }),
                       $h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;" },
                         $h("span", { "style": "font-size: 13px; font-weight: 600;" },
                           $t(c?.handle)
@@ -474,7 +488,7 @@ export default class LPMobile extends DCLogic {
                 $h("div", { "aria-hidden": "true", "style": "height: 224px; box-sizing: border-box; padding: 16px; background: linear-gradient(180deg, #F4F7FC, #FFFFFF); display: flex; flex-direction: column; gap: 8px;" },
                   $h("span", { "style": "display: flex; justify-content: space-between; align-items: center;" },
                     $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;" },
-                      $h("img", { "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 22px; height: 22px; border-radius: 6px; display: block;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": "/media/app-astra-ai.jpg", "alt": "", "style": "width: 22px; height: 22px; border-radius: 6px; display: block;" }),
                       "Astra AI"
                     ),
                     $h("span", { "style": "font-size: 11px; font-weight: 700; color: #0B6FE0; background: #EEF4FF; border-radius: 999px; padding: 2px 8px;" },
@@ -543,10 +557,10 @@ export default class LPMobile extends DCLogic {
               $h("div", { "style": "display: flex; width: max-content; animation: lpm-rowLeft 80s linear infinite;" },
                 ($l($v.reel)).map((v) => [
                   $h("div", { "style": "position: relative; flex: 0 0 auto; width: 168px; height: 298px; margin-right: 12px; border-radius: 20px; overflow: hidden; background: #111216; box-shadow: 0 16px 34px rgba(16,24,40,0.18);" },
-                    $h("img", { "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                    $h("img", { "loading": "lazy", "decoding": "async", "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                     $h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 28%, transparent 58%, rgba(0,0,0,0.65));" }),
                     $h("span", { "style": "position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); box-sizing: border-box; background: rgba(255,255,255,0.92); color: #111216; border-radius: 999px; padding: 3px 9px 3px 3px; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; gap: 6px;" },
-                      $h("img", { "src": v?.icon, "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block; flex-shrink: 0;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": v?.icon, "alt": "", "style": "width: 18px; height: 18px; border-radius: 5px; display: block; flex-shrink: 0;" }),
                       $t(v?.app)
                     ),
                     $h("div", { "style": "position: absolute; left: 10px; right: 10px; bottom: 12px; display: flex; flex-direction: column; color: #FFFFFF;" },

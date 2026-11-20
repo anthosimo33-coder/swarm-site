@@ -23,7 +23,7 @@ export default class MAlertes extends DCLogic {
   }
   extraVals(b) {
     const st = this.state || {};
-    const MH = {"/app/apps/astraai": "/app/apps/astraai", "/app/formats": "/app/formats", "/app/createurs/zinedine.gsbb": "/app/createurs/zinedine.gsbb", "/app/videos": "/app/videos"};
+    const MH = {"/app/apps": "/app/apps", "/app/formats": "/app/formats", "/app/createurs": "/app/createurs", "/app/videos": "/app/videos"};
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     const P = this.props || {};
     // Ce que la personne garde : ses alertes (alertRules) et « Tout marquer comme lu » (seen). Sur le canevas : état local, alertes d'exemple.

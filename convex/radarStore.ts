@@ -15,24 +15,9 @@ export const mediaPage = internalQuery({
   },
 });
 
-/**
- * La liste des vidéos à ne plus montrer : ajoute (introuvable) ou retire (image rangée).
- * Un seul document, lu par chaque image rangée : on ne le réécrit que s'il change vraiment. Le
- * réécrire à chaque image faisait échouer les lots de la synchro dès que le site copiait des
- * miniatures en même temps (conflit d'écriture à chaque essai : passage prod du 14/11, 11 h 22).
- */
-async function setHidden(ctx: MutationCtx, add: string[], remove: string[]) {
-  if (!add.length && !remove.length) return;
-  const row = await ctx.db.query("hidden").first();
-  const ids = new Set(row?.ids ?? []);
-  let changed = false;
-  for (const k of add) { const id = k.replace(/^v:/, ""); if (!ids.has(id)) { ids.add(id); changed = true; } }
-  for (const k of remove) if (ids.delete(k.replace(/^v:/, ""))) changed = true;
-  if (!changed) return;
-  const list = [...ids].slice(-8000); // une valeur Convex : 8 192 éléments au plus
-  if (row) await ctx.db.patch(row._id, { ids: list, at: Date.now() });
-  else await ctx.db.insert("hidden", { ids: list, at: Date.now() });
-}
+// Audit F2 (20/11) : le document unique « hidden » n'est plus écrit. Plus personne ne le lit (boards.get s'en passe
+// depuis F14 : une vidéo introuvable se lit sur sa ligne mediaMiss) ; chaque écriture ne faisait que provoquer des
+// conflits avec la synchro et relancer toutes les requêtes boards.get, et la liste, jamais élaguée, plafonnait à 8 000.
 
 /** Une image rangée en HEIC (Chrome ne l'affiche pas) compte comme absente : elle sera recopiée. */
 async function usable(ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null) {
@@ -72,7 +57,6 @@ export const markMisses = internalMutation({
       if (miss) await ctx.db.patch(miss._id, { at: now });
       else await ctx.db.insert("mediaMiss", { key, at: now });
     }
-    await setHidden(ctx, keys.filter((k) => k.startsWith("v:")), []);
   },
 });
 
@@ -82,7 +66,6 @@ export const markMiss = internalMutation({
     const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
     if (miss) await ctx.db.patch(miss._id, { at: Date.now() });
     else await ctx.db.insert("mediaMiss", { key, at: Date.now() });
-    if (key.startsWith("v:")) await setHidden(ctx, [key], []);
   },
 });
 
@@ -125,7 +108,6 @@ export const saveMedia = internalMutation({
       const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", it.key)).first();
       if (miss) await ctx.db.delete(miss._id);
     }
-    await setHidden(ctx, [], items.map((it) => it.key).filter((k) => k.startsWith("v:")));
   },
 });
 
@@ -269,8 +251,16 @@ export const saveBoards = internalMutation({
       if (old?.parts) await dropParts(ctx, it.key);
       let row: { data: unknown; parts: number | undefined };
       if (it.text !== undefined) {
-        const n = Math.max(1, Math.ceil(it.text.length / PART_CHARS));
-        for (let i = 0; i < n; i++) await ctx.db.insert("boardParts", { key: it.key, i, text: it.text.slice(i * PART_CHARS, (i + 1) * PART_CHARS) });
+        // Coupe sur une frontière de caractère (audit Q7) : couper entre les deux moitiés d'un émoji donnait deux morceaux
+        // invalides, refusés par Convex, et tout le passage échouait. boards.get recolle par simple concaténation.
+        let n = 0;
+        for (let start = 0; start < it.text.length || n === 0; n++) {
+          let end = Math.min(start + PART_CHARS, it.text.length);
+          const c = it.text.charCodeAt(end - 1);
+          if (end < it.text.length && c >= 0xd800 && c <= 0xdbff) end--; // première moitié d'une paire : avec la suivante
+          await ctx.db.insert("boardParts", { key: it.key, i: n, text: it.text.slice(start, end) });
+          start = end;
+        }
         row = { data: null, parts: n };
       } else row = { data: it.data ?? null, parts: undefined };
       if (old) await ctx.db.patch(old._id, { ...row, hash: it.hash, updatedAt: now });

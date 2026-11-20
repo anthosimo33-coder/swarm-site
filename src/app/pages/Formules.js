@@ -1,6 +1,7 @@
 // Généré par scripts/dc2preact.py depuis design/app/FormulesA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $fonts } from '../../runtime.js';
+$fonts(["https://fonts.googleapis.com/css2?family=Doto:wght@800&display=swap"]); // polices du canevas absentes de la page HTML (audit Q12)
 
 export default class Formules extends DCLogic {
   componentDidMount() {

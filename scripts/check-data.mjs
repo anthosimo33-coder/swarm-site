@@ -103,8 +103,9 @@ function inspect(where, html) {
     if (/undefined|\bnull\b|NaN/.test(val.replace(/x-signature=[^&]*/g, ''))) note(`${attr} undefined/null/NaN`, where, val.slice(0, 80));
     if (attr === 'href' && val.startsWith('/app/')) {
       const r = routeOf(val);
-      // Adresses que le routeur traite lui-même (src/app/main.js : SIGN_OUT, PAY).
-      if (!r && (val === '/app/deconnexion' || /^\/app\/payer\/(mensuel|annuel)$/.test(val))) continue;
+      // Adresses que le routeur traite lui-même (src/app/main.js : SIGN_OUT, PAY, et ACCOUNT depuis Q13 : /app/compte
+      // ouvre les Réglages, l'ancienne page Compte n'est plus une route).
+      if (!r && (val === '/app/deconnexion' || val === '/app/compte' || /^\/app\/payer\/(mensuel|annuel)$/.test(val))) continue;
       if (!r) note('lien vers une adresse inconnue', where, val);
       else if (r.key && !exists(r.key)) note('lien vers une fiche absente', where, `${val} (${r.key})`);
     }

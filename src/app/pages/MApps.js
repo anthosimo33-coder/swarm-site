@@ -69,7 +69,7 @@ return {};
       A = [];
     }
     const flagsOf = (a) => a[2].filter((c) => c).slice(0, 3).map((c) => ({ c }));
-    const ficheOf = (a) => (a[11] ? '/app/apps/' + a[11] : '/app/apps/astraai');
+    const ficheOf = (a) => (a[11] ? '/app/apps/' + a[11] : '/app/apps');
     const videoOf = (a, j) => '/app/videos/' + ((a[12] && a[12][j]) || vkey(a[8][j]));
     const isNew = (a) => (a[13] !== undefined ? a[13] : !!a[6] && a[6][0] + a[6][1] < 0.2);
     // La niche de l'adresse (/app/apps?niche=…) : this.props.query sur le site, dès le premier rendu.

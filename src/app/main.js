@@ -21,28 +21,38 @@ import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
 import { ROUTES } from './routes.js';
-import Apercu from './pages/Apercu.js';
-import MApercuApps from './pages/MApercuApps.js';
-import Formules from './pages/Formules.js';
-import MFormules from './pages/MFormules.js';
-import MenuCompte from './pages/MenuCompte.js';
-import Reglages from './pages/Reglages.js';
+import { createWatcher } from './watcher.js';
+import { APERCU, HOME, SIGN_OUT, isOpen, mayLoadBeforeUser, routeCodeNeeded, routesToWarm } from './plan.js';
+import { scrollMemory } from './scroll.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
-import './styles/a-apr.css';
-import './styles/m-apr.css';
-import './styles/a-for.css';
-import './styles/m-for.css';
-import './styles/a-mnu.css';
-import './styles/a-reg.css';
 
-const HOME = '/app';
-const SIGN_OUT = '/app/deconnexion';
-// L'aperçu : ce qu'un compte sans abonnement peut ouvrir. Accueil mène à Apps ; le reste ouvre les formules.
-const APERCU = '/app/apps';
-const OPEN = [/^\/app\/apps$/, /^\/app\/apps\/[^/]+$/, /^\/app\/videos\/[^/]+$/, /^\/app\/compte$/];
-const isOpen = (pathname) => pathname === SIGN_OUT || pathname.startsWith('/app/payer/') || OPEN.some((re) => re.test(pathname));
+/**
+ * Un écran secondaire chargé à la demande, code et CSS ensemble (audit F4 : Réglages, Aperçu, Formules et le menu du
+ * compte faisaient 80 % de l'entrée de l'app, chargés au démarrage par tout le monde). Rend le composant, ou null tant
+ * qu'il charge (onReady redessine) ; preload() le charge d'avance.
+ */
+function lazyScreen(load) {
+  let Comp = null;
+  let pending = null;
+  const get = (onReady) => {
+    if (Comp) return Comp;
+    if (!pending) pending = load().then((m) => { Comp = m.default; }, () => { pending = null; });
+    if (onReady) pending.then(() => Comp && onReady());
+    return null;
+  };
+  get.preload = () => { get(); };
+  return get;
+}
+const Apercu = lazyScreen(() => Promise.all([import('./pages/Apercu.js'), import('./styles/a-apr.css')]).then(([m]) => m));
+const MApercuApps = lazyScreen(() => Promise.all([import('./pages/MApercuApps.js'), import('./styles/m-apr.css')]).then(([m]) => m));
+const Formules = lazyScreen(() => Promise.all([import('./pages/Formules.js'), import('./styles/a-for.css')]).then(([m]) => m));
+const MFormules = lazyScreen(() => Promise.all([import('./pages/MFormules.js'), import('./styles/m-for.css')]).then(([m]) => m));
+const MenuCompte = lazyScreen(() => Promise.all([import('./pages/MenuCompte.js'), import('./styles/a-mnu.css')]).then(([m]) => m));
+const Reglages = lazyScreen(() => Promise.all([import('./pages/Reglages.js'), import('./styles/a-reg.css')]).then(([m]) => m));
+
+// L'aperçu (ce qu'un compte sans abonnement peut ouvrir, HOME, APERCU, isOpen) : src/app/plan.js.
 // Paiement (Whop, convex/whop.ts) : ces adresses créent le lien de paiement Whop relié au compte et y envoient, sans
 // écran entre les deux. Depuis le site (tarifs) ou un favori, elles mènent ici aussi (après connexion).
 const PAY = '/app/payer/';
@@ -50,15 +60,26 @@ const CHECKOUT = { mensuel: PAY + 'mensuel', annuel: PAY + 'annuel' };
 const formuleOf = (pathname) => (pathname.slice(PAY.length) === 'mensuel' ? 'mensuel' : 'annuel');
 // Retour de Whop : /app?paiement=ok. L'accès vient du webhook ; l'écran attend qu'il arrive.
 const PAID = new URLSearchParams(window.location.search).get('paiement') === 'ok';
+// Paiement en attente d'accès (audit Q6) : gardé dans l'onglet, pour qu'un rechargement garde le message et son recours.
+const PENDING = 'kopycat.paiement';
+const pendingPay = () => { try { const t = Number(sessionStorage.getItem(PENDING)); return t > 0 && Date.now() - t < 7 * 864e5; } catch { return false; } };
+const setPendingPay = (on) => { try { if (on) sessionStorage.setItem(PENDING, String(Date.now())); else sessionStorage.removeItem(PENDING); } catch { /* stockage refusé */ } };
 const SUITE = 'kopycat.suite'; // l'achat commencé avant de se connecter
+// Les Réglages à une adresse (audit Q13 : l'ancienne page Compte, sans résiliation, y était encore routée sur
+// ordinateur). Sur téléphone, Réglages en plein écran ; sur ordinateur, le panneau des Réglages par-dessus l'accueil.
+const ACCOUNT = '/app/compte';
 // Sous 860 px, l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop.
 const MOBILE = window.matchMedia('(max-width: 860px)');
 const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
+// Position de défilement retenue avant chaque navigation, rendue au retour arrière (audit F13).
+const scroll = scrollMemory(window);
 const clean = (path) => (path.length > 1 ? path.replace(/\/+$/, '') : path);
 /** L'adresse affichée : chemin + requête (« /app/apps?niche=Foi »), sans l'ancre. */
 const here = () => clean(window.location.pathname) + window.location.search;
-// Les listes que l'on garde chaudes toute la session : la navigation n'attend rien.
-const WARM = ['home', 'apps', 'formats', 'creators:FR', 'alerts', 'search', 'stats'];
+// Les listes gardées ouvertes toute la session : celles que plusieurs écrans lisent (apps), la recherche ⌘K, les
+// chiffres. Audit F15 : home, formats, creators:FR et alerts l'étaient aussi, jamais visités pour certains, et chaque
+// réécriture renvoyait ~2,25 Mo par onglet ; ils s'ouvrent maintenant avec leur écran (et se ferment après, F3).
+const WARM = ['apps', 'search', 'stats'];
 const SAVED = ['follows', 'folders', 'alertRules', 'seen'];
 
 /** L'adresse -> sa route, ses paramètres et la clé de ses données. */
@@ -81,8 +102,9 @@ function matchRoute(path) {
 // Démarrage : le code du premier écran se télécharge tout de suite, en même temps que la
 // session se vérifie ; et la connexion aux miniatures (/cover/…) s'ouvre d'avance.
 {
+  // Seulement une adresse ouverte à tous (fiche, vidéo) : Accueil ou Apps dépendent de l'abonnement (audit F8).
   const first = matchRoute(clean(window.location.pathname));
-  if (first) loaderOf(first.route, MOBILE.matches)().catch(() => {});
+  if (first && mayLoadBeforeUser(clean(window.location.pathname))) loaderOf(first.route, MOBILE.matches)().catch(() => {});
   const site = (import.meta.env.VITE_CONVEX_URL || '').replace(/\.cloud\/?$/, '.site');
   if (site.startsWith('https://')) {
     const link = Object.assign(document.createElement('link'), { rel: 'preconnect', href: site });
@@ -90,32 +112,13 @@ function matchRoute(path) {
   }
 }
 
-// ─── Les documents du Radar et ce que la personne garde : un abonnement par clé, gardé toute la session ───
-const watched = new Map(); // « board:clé » ou « saved:clé » -> { value, listeners: Set }
-const board = (key) => watch(api.boards.get, `board:${key}`, key);
-const savedEntry = (key) => watch(api.saved.get, `saved:${key}`, key);
-function watch(fn, id, key) {
-  let entry = watched.get(id);
-  if (!entry) {
-    const query = client.watchQuery(fn, { key });
-    entry = { value: undefined, listeners: new Set() };
-    const read = () => {
-      try {
-        // Pendant un renouvellement de session, le serveur renvoie tout : on garde la valeur reçue
-        // (sinon l'écran retomberait un instant sur l'exemple du canevas).
-        const value = query.localQueryResult();
-        if (value !== undefined) entry.value = value;
-      } catch {
-        entry.value = null; // erreur de la requête : l'écran montre son état vide
-      }
-      entry.listeners.forEach((f) => f());
-    };
-    query.onUpdate(read);
-    read();
-    watched.set(id, entry);
-  }
-  return entry;
-}
+// ─── Les documents du Radar et ce que la personne garde : un abonnement par clé (src/app/watcher.js) ───
+// Les listes chaudes et ce que la personne garde restent ouverts toute la session ; un autre document (fiche, vidéo,
+// filtre) est fermé quand plus aucun écran ne le lit, au-delà de 20 ou après 60 s (audit F3).
+const KEPT = new Set([...WARM.map((k) => `board:${k}`), ...SAVED.map((k) => `saved:${k}`)]);
+const watcher = createWatcher(client, { keep: (id) => KEPT.has(id) });
+const board = (key) => watcher.watch(api.boards.get, `board:${key}`, { key });
+const savedEntry = (key) => watcher.watch(api.saved.get, `saved:${key}`, { key });
 /** Enregistre ce que la personne garde ; l'écran le voit aussitôt (mise à jour optimiste). */
 function save(key, value) {
   return client
@@ -153,7 +156,8 @@ function App() {
   const [mobile, setMobile] = useState(MOBILE.matches);
   const [, redraw] = useState(0);
   const leaving = useRef(false);
-  const used = useRef(new Set()); // documents lus par l'écran affiché : leur mise à jour le redessine
+  // Documents lus par l'écran affiché (id -> écouteur) : leur mise à jour le redessine ; libérés au changement d'écran.
+  const used = useRef(new Map());
 
   const leave = async () => {
     leaving.current = true;
@@ -192,9 +196,19 @@ function App() {
   // Un compte déjà Pro qui suit un lien de paiement : Réglages › Formule à la place (compteur : chaque lien rouvre).
   const [toPlan, setToPlan] = useState(0);
   const [planMobile, setPlanMobile] = useState(false);
-  const [paid, setPaid] = useState(PAID ? 'wait' : null);
+  // Une rubrique des Réglages à ouvrir après un changement d'adresse (qui referme les panneaux) : /app/compte sur ordinateur.
+  const [settingsNext, setSettingsNext] = useState(null);
+  const [paid, setPaid] = useState(PAID ? 'wait' : pendingPay() ? 'slow' : null);
+  const [checkPay, setCheckPay] = useState(null); // « Vérifier mon paiement » : null, 'busy', 'none' (pas encore trouvé), 'error'
+  const verifyPay = () => {
+    setCheckPay('busy');
+    client.action(api.whop.verifierPaiement, {}).then((r) => setCheckPay(r && r.pro ? null : 'none'), () => setCheckPay('error'));
+  };
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
+  // Sans abonnement, l'aperçu remplace Apps : son code part dès qu'on sait qui est là (audit F4).
+  const free = !!user && !user.pro;
+  useEffect(() => { if (free) (MOBILE.matches ? MApercuApps : Apercu).preload(); }, [free]);
 
   // Liens internes, ⌘K, largeur de l'écran.
   useEffect(() => {
@@ -223,6 +237,7 @@ function App() {
         event.preventDefault();
         if (clean(url.pathname) !== HOME) setPlans(true);
         else if (here() !== APERCU) {
+          scroll.remember();
           window.history.pushState(null, '', APERCU);
           setPath(APERCU);
         }
@@ -239,10 +254,11 @@ function App() {
       const VIDEOS = HOME + '/videos/';
       const depth = url.pathname.startsWith(VIDEOS)
         ? (window.location.pathname.startsWith(VIDEOS) ? ((window.history.state && window.history.state.viewer) || 0) + 1 : 1) : 0;
+      scroll.remember();
       window.history.pushState(depth ? { viewer: depth } : null, '', next + url.hash);
       setPath(next);
     };
-    const onPop = () => setPath(here());
+    const onPop = () => { scroll.popped(); setPath(here()); };
     // ⌘K / Ctrl+K : chaque écran a un déclencheur [data-cmdk] qui ouvre la recherche.
     const onKey = (event) => {
       if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'k') {
@@ -277,6 +293,7 @@ function App() {
   // Retour de Whop : on retire ?paiement=ok de l'adresse, puis on attend que le webhook ouvre l'accès.
   useEffect(() => {
     if (!PAID) return undefined;
+    setPendingPay(true);
     const params = new URLSearchParams(window.location.search);
     params.delete('paiement');
     const clean = window.location.pathname + (params.toString() ? '?' + params : '');
@@ -287,6 +304,7 @@ function App() {
   }, []);
   useEffect(() => {
     if (!paid || paid === 'ok' || !user || !user.pro) return undefined;
+    setPendingPay(false);
     setPaid('ok');
     const t = setTimeout(() => setPaid(null), 7000);
     return () => clearTimeout(t);
@@ -312,18 +330,23 @@ function App() {
   }, [pay, known]);
 
   // Changer d'écran referme le panneau du compte et les réglages.
-  useEffect(() => { setMenu(false); setSettings(null); if (!path.startsWith('/app/compte')) setPlanMobile(false); }, [path]);
+  useEffect(() => { setMenu(false); setSettings(null); if (!path.startsWith(ACCOUNT)) setPlanMobile(false); }, [path]);
+  useEffect(() => {
+    if (!settingsNext) return;
+    setSettings(settingsNext);
+    setSettingsNext(null);
+  }, [settingsNext]);
   // Réglages › Formule, pour un compte Pro venu d'un lien de paiement. Après l'effet du dessus : un même rendu qui change
   // d'adresse (arrivée par /app/payer/…) ne la referme pas aussitôt. Sur téléphone, c'est l'écran /app/compte.
   useEffect(() => {
     if (!toPlan) return;
     if (!MOBILE.matches) { setSettings('abo'); return; }
     setPlanMobile(true);
-    if (window.location.pathname !== '/app/compte') { window.history.pushState(null, '', '/app/compte'); setPath('/app/compte'); }
+    if (window.location.pathname !== ACCOUNT) { scroll.remember(); window.history.pushState(null, '', ACCOUNT); setPath(ACCOUNT); }
   }, [toPlan]);
   // Les sessions ouvertes (Réglages › Sécurité), lues quand le panneau du compte ou les réglages sont ouverts
   // (dès le panneau : les réglages s'ouvrent ensuite sans attendre).
-  const onSettingsScreen = !!(screen && screen.mobile && screen.route.path === '/app/compte');
+  const onSettingsScreen = !!(screen && screen.mobile && screen.route.path === ACCOUNT);
   const sessions = useQuery(api.users.sessions, isAuthenticated && (settings || menu || onSettingsScreen) ? {} : 'skip');
   // L'abonnement Whop et ses paiements (Réglages › Formule et facturation).
   const abo = useQuery(api.whop.mine, isAuthenticated && (settings || menu || onSettingsScreen) ? {} : 'skip');
@@ -353,6 +376,16 @@ function App() {
       setPath(HOME);
       return undefined;
     }
+    if (pathname === ACCOUNT) {
+      if (!mobile) {
+        window.history.replaceState(null, '', HOME);
+        setPath(HOME);
+        setSettingsNext('profil');
+        return undefined;
+      }
+      setScreen({ path, mobile, Page: null, route: { path: ACCOUNT, title: 'Réglages' }, params: {}, query: {}, key: null });
+      return undefined;
+    }
     const match = matchRoute(pathname);
     if (!match) {
       window.history.replaceState(null, '', HOME);
@@ -360,10 +393,18 @@ function App() {
       return undefined;
     }
     if (!isAuthenticated) return undefined; // le profil (viewer) arrive en parallèle
+    // Audit F8 : une adresse fermée sans abonnement attend de savoir qui est là (pas de code d'Accueil chargé pour un
+    // compte gratuit renvoyé vers l'aperçu) ; et l'aperçu n'attend pas le code d'Apps, qu'il n'affiche pas.
+    if (!known && !mayLoadBeforeUser(pathname)) return undefined;
+    if (known && !proRef.current && !isOpen(pathname)) return undefined; // l'aperçu la renvoie vers Apps (effet ci-dessus)
+    const code = routeCodeNeeded(match.route.path, { known, pro: proRef.current }) ? loaderOf(match.route, mobile)() : Promise.resolve({ default: null });
     let current = true;
-    Promise.all([loaderOf(match.route, mobile)(), match.key ? ready(match.key) : null]).then(
+    Promise.all([code, match.key ? ready(match.key) : null]).then(
       ([module]) => {
         if (!current) return;
+        // L'écran d'avant cesse d'écouter ses documents : le watcher pourra fermer ceux que le nouveau ne lit pas.
+        for (const [id, f] of used.current) watcher.entries.get(id)?.listeners.delete(f);
+        used.current = new Map();
         const query = Object.fromEntries(new URLSearchParams(search));
         setScreen({ path, mobile, Page: module.default, route: match.route, params: match.params, query, key: match.key });
       },
@@ -375,41 +416,52 @@ function App() {
     return () => {
       current = false;
     };
-  }, [path, isAuthenticated, mobile]);
+  }, [path, isAuthenticated, mobile, known, !!(user && user.pro)]);
 
   // Une fois le premier écran affiché : les autres écrans et les listes se chargent en
   // arrière-plan, la navigation devient instantanée.
-  const warmed = useRef(false);
+  // Sans abonnement, seulement ce qu'il peut ouvrir (audit F8) ; tout le reste quand l'abonnement arrive.
+  const warmed = useRef('');
+  const proNow = !!(user && user.pro);
   useEffect(() => {
-    if (!screen || warmed.current) return undefined;
-    warmed.current = true;
+    if (!screen || !user || warmed.current === 'pro' || warmed.current === (proNow ? 'pro' : 'apercu')) return undefined;
+    warmed.current = proNow ? 'pro' : 'apercu';
     const timer = setTimeout(() => {
       WARM.forEach((key) => board(key));
       SAVED.forEach((key) => savedEntry(key));
-      ROUTES.forEach((route) => loaderOf(route, MOBILE.matches)().catch(() => {}));
+      routesToWarm(ROUTES, proNow).forEach((route) => loaderOf(route, MOBILE.matches)().catch(() => {}));
+      // Les écrans secondaires, d'avance mais hors du démarrage (audit F4).
+      [Reglages, MenuCompte, ...(proNow ? [] : [MOBILE.matches ? MFormules : Formules])].forEach((l) => l.preload());
     }, 800);
     return () => clearTimeout(timer);
-  }, [screen]);
+  }, [screen, proNow]);
 
-  // Arrivée sur un écran : titre de l'onglet, puis en haut ou sur l'ancre demandée.
+  // Arrivée sur un écran : titre de l'onglet, puis la position retenue (retour arrière), l'ancre demandée, ou le haut.
   useEffect(() => {
     if (!screen) return;
     const d = screen.key ? board(screen.key).value : null;
     document.title = `${(d && (d.name || (d.handle && `@${d.handle}`) || d.label)) || screen.route.title} · Kopycat`;
     const id = decodeURIComponent(window.location.hash.slice(1));
     const target = id && document.getElementById(id);
-    if (target) target.scrollIntoView();
-    else window.scrollTo(0, 0);
+    scroll.arrive(target);
   }, [screen]);
 
   // Les documents lus par l'écran : on le redessine quand ils changent.
   const follow = (id, entry) => {
     if (!used.current.has(id)) {
-      used.current.add(id);
-      entry.listeners.add(() => redraw((n) => n + 1));
+      const f = () => redraw((n) => n + 1);
+      used.current.set(id, f);
+      entry.listeners.add(f);
     }
     return entry.value;
   };
+  // Après chaque changement d'écran, une fois le nouvel écran rendu (ses documents écoutés) : les abonnements libres
+  // anciens sont fermés (audit F3).
+  useEffect(() => {
+    if (!screen) return undefined;
+    const t = setTimeout(() => watcher.sweep(), 0);
+    return () => clearTimeout(t);
+  }, [screen]);
   const get = (key) => follow(`board:${key}`, board(key));
   const saved = (key) => follow(`saved:${key}`, savedEntry(key));
 
@@ -430,13 +482,17 @@ function App() {
   // Document absent : jamais l'exemple du canevas à la place des données.
   if (data === null) return h(Missing, { fiche: Object.keys(screen.params).length > 0 });
   const onPlans = () => setPlans(true);
+  const loaded = () => redraw((n) => n + 1); // un écran secondaire vient d'arriver (audit F4)
   let page;
   if (!user.pro && (screen.route.path === APERCU || (data && data.locked))) {
     // Apps sans abonnement : le top 3 et la carte « Tout débloquer » (design/app/ApercuA, MApercuApps).
     const apps = screen.route.path === APERCU ? data : get('apps');
-    page = apps && !apps.locked
-      ? h(screen.mobile ? MApercuApps : Apercu, { key: `${screen.mobile ? 'm' : 'd'}/apercu`, user, data: apps, onPlans, checkout: CHECKOUT })
+    const ApercuPage = (screen.mobile ? MApercuApps : Apercu)(loaded);
+    page = apps && !apps.locked && ApercuPage
+      ? h(ApercuPage, { key: `${screen.mobile ? 'm' : 'd'}/apercu`, user, data: apps, onPlans, checkout: CHECKOUT })
       : null;
+  } else if (!screen.Page) {
+    page = null; // l'abonnement vient d'arriver sur l'aperçu : le code d'Apps arrive (l'effet de l'adresse le charge)
   } else {
     page = h(screen.Page, {
       key: `${screen.mobile ? 'm' : 'd'}${screen.path}`,
@@ -452,9 +508,11 @@ function App() {
     });
   }
   const total = (!user.pro && (board('apps').value || {}).total) || undefined;
-  const sheet = plans ? h(screen.mobile ? MFormules : Formules, { onClose: () => setPlans(false), checkout: CHECKOUT, total }) : null;
-  const account = menu && !screen.mobile
-    ? h(MenuCompte, { user, total: (board('apps').value || {}).total, onClose: () => setMenu(false), onPlans: () => { setMenu(false); setPlans(true); },
+  const Sheet = plans ? (screen.mobile ? MFormules : Formules)(loaded) : null;
+  const sheet = Sheet ? h(Sheet, { onClose: () => setPlans(false), checkout: CHECKOUT, total }) : null;
+  const Menu = menu && !screen.mobile ? MenuCompte(loaded) : null;
+  const account = Menu
+    ? h(Menu, { user, total: (board('apps').value || {}).total, onClose: () => setMenu(false), onPlans: () => { setMenu(false); setPlans(true); },
         onSettings: (section) => { setMenu(false); setSettings(section); } })
     : null;
   // Réglages : les actions passent par le serveur (convex/users.ts) ; le prénom revient par viewer, qui suit.
@@ -471,19 +529,31 @@ function App() {
     }),
   };
   if (onSettingsScreen) {
-    const toApp = () => { window.history.pushState(null, '', HOME); setPath(HOME); };
-    page = h(Reglages, { key: planMobile ? 'm/reglages/abo' : 'm/reglages', ...settingsProps, mobile: true, onClose: toApp, ...(planMobile ? { section: 'abo', view: 'detail' } : {}) });
+    const toApp = () => { scroll.remember(); window.history.pushState(null, '', HOME); setPath(HOME); };
+    const Settings = Reglages(loaded);
+    page = Settings ? h(Settings, { key: planMobile ? 'm/reglages/abo' : 'm/reglages', ...settingsProps, mobile: true, onClose: toApp, ...(planMobile ? { section: 'abo', view: 'detail' } : {}) }) : null;
   }
-  const panel = settings && !screen.mobile ? h(Reglages, { key: `reglages-${settings}`, ...settingsProps, section: settings, onClose: () => setSettings(null) }) : null;
+  const Panel = settings && !screen.mobile ? Reglages(loaded) : null;
+  const panel = Panel ? h(Panel, { key: `reglages-${settings}`, ...settingsProps, section: settings, onClose: () => setSettings(null) }) : null;
   const payNote = paying
     ? h('div', { class: `app-paid is-${paying}`, role: paying === 'error' ? 'alert' : 'status' },
         paying === 'error' ? 'Le paiement n’a pas pu s’ouvrir. Réessaie dans un instant.' : 'Ouverture du paiement sécurisé…')
     : null;
-  // Retour de Whop : l'accès arrive par le webhook (quelques secondes en général).
+  // Retour de Whop : l'accès arrive par le webhook (quelques secondes en général). Au-delà de 90 s, ou après un
+  // rechargement, un recours (audit Q6) : relire le paiement chez Whop, ou écrire à l'aide.
+  const link = { color: 'inherit', textDecoration: 'underline', background: 'none', border: 0, padding: 0, font: 'inherit', cursor: 'pointer' };
+  const slowNote = () => [
+    checkPay === 'none' ? 'Pas encore trouvé chez Whop. Réessaie dans quelques minutes. '
+      : checkPay === 'error' ? 'La vérification n’a pas marché. Réessaie dans un instant. '
+      : 'Ton paiement est en cours de validation chez Whop. ',
+    h('button', { type: 'button', style: link, disabled: checkPay === 'busy', onClick: verifyPay }, checkPay === 'busy' ? 'Vérification…' : 'Vérifier mon paiement'),
+    ' · ',
+    h('a', { href: '/#faq', target: '_blank', rel: 'noopener', style: link }, 'Aide et contact'),
+  ];
   const paidNote = paid
     ? h('div', { class: `app-paid is-${paid}`, role: 'status' },
         paid === 'ok' ? 'Bienvenue dans Kopycat Pro : tout est ouvert.'
-          : paid === 'slow' ? 'Ton paiement est en cours de validation chez Whop. L’accès s’ouvrira tout seul, sans rien faire.'
+          : paid === 'slow' ? slowNote()
           : 'Paiement reçu. On ouvre ton accès…')
     : null;
   return h(Fragment, null, page, account, panel, sheet, payNote, paidNote);

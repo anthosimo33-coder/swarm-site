@@ -9,15 +9,31 @@ export default class LP extends DCLogic {
     const film = document.querySelector('[data-film] video');
     if (film) {
       film.muted = true; film.defaultMuted = true; film.setAttribute('muted', '');
-      const go = () => { if (film.paused) { const p = film.play(); if (p && p.catch) p.catch(() => {}); } };
-      go(); film.addEventListener('loadeddata', go); film.addEventListener('canplay', go);
-      if ('IntersectionObserver' in window) { this.filmObs = new IntersectionObserver((es) => { if (es[0].isIntersecting) go(); }); this.filmObs.observe(film); }
-      ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.addEventListener(ev, go, { once: true, passive: true }));
+      // Audit F11 : le film (12 Mo en 1080p) ne se télécharge plus avant d’être visible : preload=none (l’affiche reste), pas d’autoplay,
+      // lecture quand la moitié du cadre est à l'écran, pause quand il en sort. Le 720p (6 Mo) sur un écran de moins de
+      // 1 600 pixels réels ou en mode économie de données.
+      const small = window.innerWidth * (window.devicePixelRatio || 1) < 1600 || !!(navigator.connection && navigator.connection.saveData);
+      if (small) film.src = '/media/film/swarm-film-720.mp4';
+      // La moitié du cadre est-elle à l'écran ? Mesurée à chaque appel (défilement, observateur, données reçues).
+      const half = () => { const r = film.getBoundingClientRect(); return r.height > 0 && Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0) >= r.height / 2; };
+      const go = () => { if (film.paused && half()) { const p = film.play(); if (p && p.catch) p.catch(() => {}); } };
+      // Lecture à l'entrée dans la vue, pause à la sortie. Pas d'essai au montage : la page n'est pas encore posée
+      // (images, polices) et le film peut sembler visible un instant ; l'observateur donne son premier avis ensuite.
+      const check = () => { if (half()) go(); else if (!film.paused) film.pause(); };
+      film.addEventListener('loadeddata', go); film.addEventListener('canplay', go);
+      if ('IntersectionObserver' in window) {
+        this.filmObs = new IntersectionObserver(check, { threshold: [0, 0.5] });
+        this.filmObs.observe(film);
+      } else go();
+      // Mode économie d'énergie (iOS) : la lecture muette peut attendre un premier geste ; elle ne part qu'une fois visible.
+      this.goFilm = check;
+      ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.addEventListener(ev, check, { passive: true }));
     }
   }
   componentWillUnmount() {
     clearInterval(this.timer);
     if (this.filmObs) this.filmObs.disconnect();
+    if (this.goFilm) ['touchstart', 'pointerdown', 'scroll'].forEach((ev) => window.removeEventListener(ev, this.goFilm));
   }
   renderVals() {
     const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
@@ -467,7 +483,7 @@ export default class LP extends DCLogic {
           $h("div", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 56%; width: 1200px; height: 600px; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent); pointer-events: none;" }),
           $h("div", { "style": "position: relative; max-width: 1160px; margin: 0 auto; padding: 10px; border-radius: 36px; background: linear-gradient(180deg, #1C2230 0%, #0B0E15 100%); box-shadow: 0 2px 4px rgba(16,24,40,0.10), 0 50px 110px rgba(16,24,40,0.28), inset 0 1px 0 rgba(255,255,255,0.12); animation: lp-blurIn 1s ease-out both; animation-delay: 0.7s;" },
             $h("div", { "data-film": "", "style": "position: relative; aspect-ratio: 16 / 9; border-radius: 27px; overflow: hidden; background: #05070C;" },
-              $h("video", { "src": "/media/film/swarm-film.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "autoplay": $v.filmOn, "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "auto", "aria-label": "Film de présentation de Kopycat, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
+              $h("video", { "src": "/media/film/swarm-film.mp4", "poster": "/media/film/swarm-film-affiche.jpg", "muted": $v.filmMuted, "loop": $v.filmOn, "playsinline": "", "preload": "none", "aria-label": "Film de présentation de Kopycat, 1 minute", "style": "display: block; width: 100%; height: 100%; object-fit: cover;" }),
               $h("button", { "type": "button", "onClick": $v.toggleSound, "aria-pressed": $v.soundOn, "style": "position: absolute; top: 22px; right: 22px; display: inline-flex; align-items: center; gap: 10px; height: 42px; padding: 0 18px 0 14px; border: 0; border-radius: 999px; background: rgba(14,15,18,0.45); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 500; cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);" },
                 $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": "M4 9h4l5-4v14l-5-4H4z", "fill": "#FFFFFF" }),
@@ -550,7 +566,7 @@ export default class LP extends DCLogic {
                       ($l($v.o1)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 46s linear infinite;" },
-                            $h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -559,7 +575,7 @@ export default class LP extends DCLogic {
                       ($l($v.o2)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spin 70s linear infinite;" },
-                            $h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -568,7 +584,7 @@ export default class LP extends DCLogic {
                       ($l($v.o3)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 96s linear infinite;" },
-                            $h("img", { "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -693,7 +709,7 @@ export default class LP extends DCLogic {
                         $h("div", { "style": "display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;" },
                           ($l($v.thumbs)).map((t) => [
                             $h("span", { "style": "position: relative; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; background: #111216; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; box-sizing: border-box; color: #FFFFFF; font-size: 9px; font-weight: 700;" },
-                              $h("img", { "src": t?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                              $h("img", { "loading": "lazy", "decoding": "async", "src": t?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                               $h("span", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 45%, rgba(0,0,0,0.7));" }),
                               $h("span", { "style": "position: relative;" },
                                 $t(t?.v)
@@ -782,10 +798,10 @@ export default class LP extends DCLogic {
                 ($l($v.arc)).map((v) => [
                   $h("div", { "style": `position: absolute; left: 50%; top: 50%; width: 236px; height: 420px; margin-left: -118px; margin-top: -210px; animation: lp-arcMove 106s linear infinite; animation-delay: ${$t(v?.delay)};` },
                     $h("div", { "style": `position: relative; width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: #111216; outline: 2px solid rgba(11,111,224,0); outline-offset: 4px; animation: lp-arcRing 106s linear infinite; animation-delay: ${$t(v?.delay)};` },
-                      $h("img", { "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                       $h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 28%, transparent 58%, rgba(0,0,0,0.65));" }),
                       $h("span", { "style": "position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.9); color: #111216; border-radius: 999px; padding: 4px 10px 4px 4px; font-size: 12px; font-weight: 600;" },
-                        $h("img", { "src": v?.icon, "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
+                        $h("img", { "loading": "lazy", "decoding": "async", "src": v?.icon, "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
                         $t(v?.app)
                       ),
                       $h("div", { "style": "position: absolute; left: 14px; right: 14px; bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #FFFFFF;" },

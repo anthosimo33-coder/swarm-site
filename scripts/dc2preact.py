@@ -67,12 +67,12 @@ APP_PAGES = [
     ('DossiersA.dc.html', 'Dossiers', 'a-dos', '/app/dossiers', 'Dossiers', None),
     ('DossiersB.dc.html', 'Dossier', 'a-dosb', '/app/dossiers/:id', 'Dossier', None),
     ('AlertesA.dc.html', 'Alertes', 'a-ale', '/app/alertes', 'Alertes', 'alerts'),
-    ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte', None),
 ]
-# Lien sans paramètre vers une fiche (maquette pas encore branchée) : l'exemple de la maquette.
-# Une vidéo d'exemple serait une vraie vidéo du Radar dans un fichier public (audit S4) : pas d'exemple pour /app/videos.
-APP_SAMPLE = {'/app/apps/:slug': 'astraai', '/app/videos/:id': None,
-              '/app/formats/:id': None, '/app/createurs/:handle': 'zinedine.gsbb'}
+# Lien sans paramètre vers une fiche (maquette pas encore branchée) : la liste, plus d'exemple (audit Q11, plus bas).
+# Un lien de canevas sans paramètre vers une fiche ne mène à aucune fiche d'exemple (audit Q11 ; S4 pour les vidéos) :
+# l'app est branchée sur les vraies données, et l'exemple était une vraie app ou un vrai créateur du Radar. Il mène à la
+# liste parente (/app/apps, /app/createurs, /app/formats) ; une vidéo, à /app/videos, que le routeur renvoie à l'accueil.
+APP_SAMPLE = {'/app/apps/:slug': None, '/app/videos/:id': None, '/app/formats/:id': None, '/app/createurs/:handle': None}
 
 # Version mobile (sous 860 px) des mêmes adresses : artboard M* -> (composant, préfixe CSS, adresse).
 # Une adresse sans version mobile garde l'écran desktop.
@@ -89,7 +89,6 @@ APP_MOBILE_PAGES = [
     ('MDossiers.dc.html', 'MDossiers', 'm-dos', '/app/dossiers'),
     ('MDossier.dc.html', 'MDossier', 'm-dosb', '/app/dossiers/:id'),
     ('MAlertes.dc.html', 'MAlertes', 'm-ale', '/app/alertes'),
-    ('MCompte.dc.html', 'MCompte', 'm-cpt', '/app/compte'),
 ]
 
 # SWARM_SANS_MOBILE=1 : génère sans les écrans mobiles (téléphones servis par le desktop), le temps
@@ -132,10 +131,13 @@ APP_LINKS.update({src: _plain(route) for src, _, _, route in APP_MOBILE_PAGES})
 APP_PARAM_LINKS.update({src: route.split('/:')[0] + '/' for src, _, _, route in APP_MOBILE_PAGES if ':' in route})
 APP_LINKS.update({
     # Écrans d'interaction mobiles : s'il en reste un lien, il mène à l'écran hôte.
-    'MFiltres.dc.html': '/app/apps', 'MApercu.dc.html': '/app/apps/astraai', 'MCreerAlerte.dc.html': '/app/alertes',
+    'MFiltres.dc.html': '/app/apps', 'MApercu.dc.html': '/app/apps', 'MCreerAlerte.dc.html': '/app/alertes',
     'MRecherche.dc.html': '/app', 'MAbonnement.dc.html': '/app/compte', 'MConnexion.dc.html': '/app/deconnexion',
 
     'FormatsA.dc.html': '/app/formats',        # ancien écran Formats (restes de données), remplacé par FormatsB
+    # Ancienne page Compte (sans résiliation ni facturation), retirée (audit Q13) : /app/compte ouvre les Réglages
+    # (src/app/main.js : panneau sur ordinateur, plein écran sur téléphone).
+    'CompteA.dc.html': '/app/compte', 'MCompte.dc.html': '/app/compte',
     'ConnexionA.dc.html': '/app/deconnexion',  # « Se déconnecter » du compte : le routeur déconnecte puis renvoie à l'accueil du site
 })
 
@@ -559,6 +561,38 @@ console.log(JSON.stringify(bad));
 """
 
 
+# ─── Polices des canevas (audit Q12) ───
+# La page HTML qui porte chaque écran : ses <link> de polices sont déjà chargés.
+PAGE_HTML = {'app': 'app.html', 'LP': 'index.html', 'LPMobile': 'index.html', 'Tarifs': 'tarifs.html',
+             'TarifsMobile': 'tarifs.html', 'Connexion': 'connexion.html', 'Inscription': 'inscription.html'}
+FONT_LINK = re.compile(r'<link\b[^>]*>', re.S)
+
+
+def font_families(html):
+    """{famille: spécification} des polices Google chargées par les <link rel=stylesheet> d'un texte HTML."""
+    out = {}
+    for tag in FONT_LINK.findall(html):
+        if 'stylesheet' not in tag:
+            continue
+        m = re.search(r'href="([^"]+)"', tag)
+        if not m or 'fonts.googleapis.com/css' not in m.group(1):
+            continue
+        for spec in re.findall(r'family=([^&]+)', m.group(1).replace('&amp;', '&')):
+            out[spec.split(':')[0].replace('+', ' ')] = spec
+    return out
+
+
+def missing_fonts(helmet, name, group):
+    """L'adresse Google Fonts des familles du helmet que la page HTML de l'écran ne charge pas (ou None)."""
+    html_name = PAGE_HTML.get('app' if group == 'app' else name)
+    if not html_name or not (ROOT / html_name).exists():
+        return None
+    have = font_families((ROOT / html_name).read_text())
+    want = font_families(helmet)
+    specs = [spec for fam, spec in want.items() if fam not in have]
+    return 'https://fonts.googleapis.com/css2?' + '&'.join('family=' + x for x in specs) + '&display=swap' if specs else None
+
+
 def check_app_pages():
     """Échec si un écran généré de l'app livre encore des données du Radar, ou si le retrait l'a rendu illisible."""
     files = [str(f) for f in sorted(GROUPS['app']['pages'].glob('*.js'))]
@@ -585,6 +619,11 @@ def convert(src, name, prefix, group='site'):
     xdc = text.split('<x-dc>', 1)[1].split('</x-dc>', 1)[0]
     helmet = re.search(r'<helmet>(.*?)</helmet>', xdc, re.S).group(1)
     template = re.sub(r'<helmet>.*?</helmet>', '', xdc, flags=re.S)
+    if group == 'site':
+        # Audit F10 : les images du site se chargent au défilement (loading=lazy), sauf celles du haut de page, marquées
+        # data-eager dans le canevas. Avant, les ~30 images de la landing partaient d'un coup (1,08 Mo pour 3 visibles).
+        template = re.sub(r'<img\b(?![^>]*\bloading=)(?![^>]*\bdata-eager)', '<img loading="lazy" decoding="async"', template)
+        template = re.sub(r'(<img\b[^>]*?)\s+data-eager(?:="[^"]*")?', r'\1', template)
     css = '\n'.join(re.findall(r'<style>(.*?)</style>', helmet, re.S)).strip()
     script = re.search(r'<script type="text/x-dc" data-dc-script[^>]*>(.*?)</script>', text, re.S).group(1)
 
@@ -607,12 +646,15 @@ def convert(src, name, prefix, group='site'):
         cls_body, samples = strip_samples(cls_body, name)
         write_samples(name, rel, samples)
     css_import = f"import '../styles/{prefix}.css';\n" if g['css_import'] else ''
+    fonts = missing_fonts(helmet, name, group)
     css_import += ''.join(f"import {c} from './{c}.js';\n" for c in sorted(CURRENT['imports']))
     IMPORTS[name] = sorted(CURRENT['imports'])
+    runtime = 'DCLogic, $t, $l, $fonts' if fonts else 'DCLogic, $t, $l'
+    fonts_call = f"$fonts([{json.dumps(fonts)}]); // polices du canevas absentes de la page HTML (audit Q12)\n" if fonts else ''
     js = f"""// Généré par scripts/dc2preact.py depuis design/{rel} — ne pas modifier à la main.
 import {{ h as $h }} from 'preact';  // $h : jamais masqué par une variable de boucle
-import {{ DCLogic, $t, $l }} from '{g['runtime']}';
-{css_import}
+import {{ {runtime} }} from '{g['runtime']}';
+{css_import}{fonts_call}
 export default class {name} extends DCLogic {{{cls_body}
 
   render() {{

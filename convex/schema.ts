@@ -16,6 +16,9 @@ export default defineSchema({
     phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
     pro: v.optional(v.boolean()),
+    // La main de l'exploitant (users:setPro, audit Q5) : true = Pro sans paiement, false = Pro refusé même payé ;
+    // absent = l'accès suit les adhésions Whop. `pro` est recalculé depuis ce champ et les adhésions (whop.recomputePro).
+    proManual: v.optional(v.boolean()),
     // Plus écrit depuis le 19/11 (l'accord est porté par les CGV, sans écran avant Whop) ; gardé pour les comptes de test.
     consentAt: v.optional(v.number()),
   })
@@ -31,7 +34,8 @@ export default defineSchema({
   // Paiement Whop (19/11, convex/whop.ts). Un abonnement par adhésion Whop (mem_…), relié au compte par la donnée
   // `kopycat_user` posée sur le lien de paiement. `users.pro` se recalcule à chaque changement.
   subscriptions: defineTable({
-    userId: v.id("users"),
+    // null : achat fait hors de l'app, sans compte relié (audit Q29) ; rattaché à la main par whop:rattacher.
+    userId: v.union(v.id("users"), v.null()),
     membershipId: v.string(),
     variantId: v.union(v.string(), v.null()),
     status: v.string(), // trialing, active, past_due, completed, canceled, expired, unresolved
@@ -42,6 +46,10 @@ export default defineSchema({
     cancelAtPeriodEnd: v.boolean(),
     manageUrl: v.union(v.string(), v.null()),
     updatedAt: v.number(),
+    // Date de l'adhésion chez Whop (updated_at) : un instantané plus ancien n'écrase pas le rangé (audit S9).
+    whopUpdatedAt: v.optional(v.number()),
+    // Accès coupé par un remboursement total ou un litige (audit S10), même si Whop laisse l'adhésion active.
+    revokedAt: v.optional(v.number()),
   }).index("by_user", ["userId"]).index("by_membership", ["membershipId"]),
   // Les paiements reçus (reçus des Réglages), remboursements compris.
   whopPayments: defineTable({
@@ -54,7 +62,10 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_payment", ["paymentId"]).index("by_user", ["userId"]),
   // Événements déjà traités (Whop peut renvoyer le même) et leur résultat, pour le suivi.
-  whopEvents: defineTable({ eventId: v.string(), type: v.string(), at: v.number(), note: v.optional(v.string()) }).index("by_event", ["eventId"]),
+  // state (audit Q27) : « processing » pendant le traitement, « done » une fois traité ; absent (avant le 20/11) = traité.
+  whopEvents: defineTable({ eventId: v.string(), type: v.string(), at: v.number(), note: v.optional(v.string()), state: v.optional(v.string()) }).index("by_event", ["eventId"]),
+  // Liens de paiement Whop déjà créés (audit F6) : le même est resservi pendant 1 h, par compte, tarif et site de retour.
+  checkoutLinks: defineTable({ userId: v.id("users"), key: v.string(), url: v.string(), at: v.number() }).index("by_user_key", ["userId", "key"]),
   // Limites de l'authentification (convex/authLimits.ts) : passages comptés par fenêtre fixe, une ligne par clé.
   authLimits: defineTable({ key: v.string(), n: v.number(), since: v.number() }).index("by_key", ["key"]),
   // Visites du site public (admin › Mesure) : un compteur par heure, sans cookie, sans identifiant, sans adresse IP.
@@ -103,6 +114,7 @@ export default defineSchema({
   // Journal des synchronisations (la dernière sert à l'écran et au suivi).
   // Les vidéos à ne plus montrer (miniature introuvable : supprimée, compte privé), retirées à la
   // lecture des documents sans attendre la synchro (convex/boards.ts). Une seule ligne.
+  // Plus écrite ni lue depuis le 20/11 (audit F2, F14) : gardée au schéma pour son ancien document, effaçable.
   hidden: defineTable({ ids: v.array(v.string()), at: v.number() }),
 
   // Miniatures introuvables (vidéo supprimée, page refusée) : pas de nouvel essai avant 6 h.

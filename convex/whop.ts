@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { liveUserId, liveUserIdInAction } from "./session";
+import { backgroundOff } from "./background";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
@@ -29,6 +30,8 @@ const ACCOUNT = "biz_iv3yoN0Wnx23qG";
 const PRODUCT = "prod_WtWqNkTHQMRA9";
 /** Statuts d'adhésion qui donnent accès à Kopycat Pro. past_due : Whop relance la carte 5 jours avant d'annuler. */
 export const ACCESS = new Set(["active", "trialing", "past_due"]);
+/** Une adhésion rangée donne-t-elle l'accès ? Son statut, sauf accès coupé pour remboursement ou litige (audit S10). */
+export const hasAccess = (s: { status: string; revokedAt?: number }) => ACCESS.has(s.status) && !s.revokedAt;
 
 type Json = Record<string, any>;
 
@@ -39,6 +42,7 @@ async function whopApi(path: string, init: { method?: string; body?: Json } = {}
     method: init.method ?? "GET",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "application/json" },
     body: init.body ? JSON.stringify(init.body) : undefined,
+    signal: AbortSignal.timeout(15_000), // audit Q27 : une API Whop qui traîne ne bloque plus le webhook jusqu'à la coupure
   });
   const text = await res.text();
   let body: any = text;
@@ -74,52 +78,68 @@ type Variant = { id: string; title?: string | null; billing_period?: number | nu
  * pris : l'annuel serait resté vendu 179,88 € après la fin annoncée.
  */
 export const BF_END = Date.parse("2026-12-01T00:00:00+01:00");
-export const PRICES = { mensuel: 29.99, annuelBlackFriday: 179.88, annuel: 359.88 };
-export const priceFor = (formule: "mensuel" | "annuel", now: number) =>
-  formule === "mensuel" ? PRICES.mensuel : now < BF_END ? PRICES.annuelBlackFriday : PRICES.annuel;
+
+/**
+ * Les tarifs Whop de Kopycat Pro, fixés (audit Q26) : jamais choisis par une recherche (« le premier tarif visible
+ * d'au moins 360 jours » pouvait vendre n'importe quel prix). Chacun est relu chez Whop avant de servir, et refusé si
+ * son produit, son prix, sa période ou sa devise ont changé. L'annuel à 359,88 € a été créé le 20/11 (creerAnnuelNormal),
+ * masqué : la liste publique des tarifs ne le montre pas, d'où les ids fixés.
+ */
+export const PLANS = {
+  mensuel: { id: "plan_ilOWoZwgoZGwK", price: 29.99, days: 30 },
+  annuelBlackFriday: { id: "plan_ZxcFeAaIiBMk1", price: 179.88, days: 365 },
+  annuel: { id: "plan_e3kvvjsKXFANv", price: 359.88, days: 365 },
+} as const;
+type Plan = (typeof PLANS)[keyof typeof PLANS];
+export const KNOWN_PLANS: ReadonlyMap<string, Plan> = new Map(Object.values(PLANS).map((p) => [p.id, p]));
+export const PRICES = { mensuel: PLANS.mensuel.price, annuelBlackFriday: PLANS.annuelBlackFriday.price, annuel: PLANS.annuel.price };
+export const planFor = (formule: "mensuel" | "annuel", now: number): Plan =>
+  formule === "mensuel" ? PLANS.mensuel : now < BF_END ? PLANS.annuelBlackFriday : PLANS.annuel;
+export const priceFor = (formule: "mensuel" | "annuel", now: number) => planFor(formule, now).price;
 const cents = (x: unknown) => Math.round(Number(x) * 100);
 
+/** Les tarifs du produit, masqués compris (par account_id : la liste par product_ids seul ne rend que les visibles). */
 async function listVariants(): Promise<Variant[]> {
   const pick = (b: any): Variant[] => (Array.isArray(b) ? b : Array.isArray(b?.data) ? b.data : []);
-  let list = pick(await whopApi(`/variants?product_ids=${PRODUCT}&first=50`).catch(() => null));
-  if (!list.length) list = pick(await whopApi(`/variants?account_id=${ACCOUNT}&first=100`)).filter((x) => !x.product?.id || x.product.id === PRODUCT);
-  return list;
+  return pick(await whopApi(`/variants?account_id=${ACCOUNT}&product_ids=${PRODUCT}&first=100`)).filter((x) => !x.product?.id || x.product.id === PRODUCT);
 }
 
-const periodOk = (formule: "mensuel" | "annuel", x: Variant) =>
-  formule === "annuel" ? (x.billing_period ?? 0) >= 360 : (x.billing_period ?? 0) > 0 && (x.billing_period ?? 0) <= 31;
+/** Le tarif `plan` relu chez Whop ; null s'il n'existe pas, est archivé, ou ne correspond plus (produit, prix, période, devise). */
+async function checkedVariant(plan: Plan): Promise<Variant | null> {
+  let x: Variant & { product_id?: string };
+  try {
+    x = await whopApi(`/variants/${plan.id}`);
+  } catch (e) {
+    if (/Whop 404/.test(String(e))) return null;
+    throw e;
+  }
+  const product = x.product?.id ?? x.product_id ?? null;
+  const fine = (!product || product === PRODUCT) && (x.billing_type ?? "renewal") === "renewal" && x.visibility !== "archived"
+    && cents(x.renewal_price) === cents(plan.price) && Math.abs((x.billing_period ?? 0) - plan.days) <= 1 && String(x.currency ?? "eur").toLowerCase() === "eur";
+  if (!fine) console.error(`[whop] tarif ${plan.id} ne correspond plus : ${JSON.stringify({ product, prix: x.renewal_price, jours: x.billing_period, devise: x.currency, visibilite: x.visibility })}`);
+  return fine ? x : null;
+}
 
 /**
- * Le tarif Whop de la formule, au prix affiché à cette date (priceFor) : un tarif à un autre prix n'est jamais pris
- * (audit Q14 / Q26). Visible d'abord ; un tarif masqué au bon prix sert aussi (bascule du 1/12 pas encore passée).
- * Aucun : ConvexError TARIF_INDISPONIBLE, plutôt que de vendre à un prix qui n'est pas celui affiché.
+ * Le tarif Whop de la formule, au prix affiché à cette date (planFor) : un tarif à un autre prix n'est jamais pris
+ * (audit Q14 / Q26). Introuvable ou changé : ConvexError TARIF_INDISPONIBLE, plutôt que de vendre à un prix non affiché.
  */
 async function variantFor(formule: "mensuel" | "annuel", now: number): Promise<Variant> {
-  const want = cents(priceFor(formule, now));
-  const ok = (await listVariants())
-    .filter((x) => (x.billing_type ?? "renewal") === "renewal" && (x.visibility ?? "visible") !== "archived" && periodOk(formule, x) && cents(x.renewal_price) === want)
-    .sort((a, b) => Number((b.visibility ?? "visible") === "visible") - Number((a.visibility ?? "visible") === "visible"));
-  if (!ok.length) {
-    console.error(`[whop] aucun tarif ${formule} à ${want / 100} € sur le produit Kopycat Pro`);
-    throw new ConvexError({ code: "TARIF_INDISPONIBLE" });
-  }
-  return ok[0];
+  const found = await checkedVariant(planFor(formule, now));
+  if (!found) throw new ConvexError({ code: "TARIF_INDISPONIBLE" });
+  return found;
 }
 
 /**
- * Crée sur Whop le tarif annuel au prix normal (359,88 €), MASQUÉ jusqu'au 1/12 (sinon achetable sur la page Whop pendant
- * le Black Friday), et planifie la bascule de minuit (finBlackFriday). Copie la forme du tarif Black Friday (taxe, devise,
- * prix initial). Sans `apply` : rend seulement ce qui serait envoyé. Rien de créé deux fois : un tarif annuel à 359,88 €
- * existant est rendu tel quel. Lancer une fois : `npx convex run --prod whop:creerAnnuelNormal '{"apply": true}'`.
+ * A créé sur Whop, le 20/11, l'annuel au prix normal (PLANS.annuel), masqué, et planifié finBlackFriday. Gardé pour
+ * le diagnostic : rend le tarif existant. Sans `apply`, rend ce qui serait envoyé s'il manquait.
  */
 export const creerAnnuelNormal = internalAction({
   args: { apply: v.optional(v.boolean()) },
   handler: async (ctx, { apply }): Promise<Json> => {
-    const all = await listVariants();
-    const annual = (price: number) => all.find((x) => (x.billing_type ?? "renewal") === "renewal" && periodOk("annuel", x) && cents(x.renewal_price) === cents(price) && x.visibility !== "archived");
-    const existing = annual(PRICES.annuel);
+    const existing = await checkedVariant(PLANS.annuel);
     if (existing) return { deja: existing.id, visibilite: existing.visibility ?? null };
-    const bf = annual(PRICES.annuelBlackFriday);
+    const bf = await checkedVariant(PLANS.annuelBlackFriday);
     if (!bf) throw new Error("tarif annuel Black Friday introuvable : rien à copier");
     const initial = cents(bf.initial_price) === cents(bf.renewal_price) ? PRICES.annuel : bf.initial_price ?? 0;
     const body: Json = {
@@ -130,25 +150,59 @@ export const creerAnnuelNormal = internalAction({
     if (!apply) return { envoi: body, copieDe: { id: bf.id, renewal_price: bf.renewal_price, initial_price: bf.initial_price ?? null, tax_type: bf.tax_type ?? null, title: bf.title ?? null } };
     const created = await whopApi("/variants", { method: "POST", body });
     if (Date.now() < BF_END) await ctx.scheduler.runAt(BF_END, internal.whop.finBlackFriday, {});
-    return { cree: created?.id ?? null, bascule: Date.now() < BF_END ? new Date(BF_END).toISOString() : "date passée : lancer whop:finBlackFriday" };
+    return { cree: created?.id ?? null, aRanger: "PLANS.annuel dans convex/whop.ts", bascule: Date.now() < BF_END ? new Date(BF_END).toISOString() : "date passée : lancer whop:finBlackFriday" };
   },
 });
 
-/** Minuit le 1/12 (Paris) : le tarif annuel Black Friday est masqué sur Whop, l'annuel au prix normal devient visible. */
+/** Masque un tarif sur Whop s'il ne l'est pas encore ; rend ce qui a changé. */
+async function hide(plan: Plan): Promise<string | null> {
+  const x: Variant = await whopApi(`/variants/${plan.id}`);
+  if (x.visibility === "hidden" || x.visibility === "archived") return null;
+  await whopApi(`/variants/${plan.id}`, { method: "PATCH", body: { visibility: "hidden" } });
+  return `${plan.id} (${plan.price} €) masqué`;
+}
+
+/**
+ * Minuit le 1/12 (Paris) : l'annuel Black Friday est masqué sur Whop. L'annuel au prix normal reste masqué : tous les
+ * tarifs ne se vendent que par l'app (décision du 20/11, audit Q29), qui les choisit par leur id.
+ */
 export const finBlackFriday = internalAction({
   args: {},
   handler: async (): Promise<string[]> => {
     if (Date.now() < BF_END) return ["Black Friday pas fini : rien à faire"];
-    const done: string[] = [];
-    for (const x of await listVariants()) {
-      if ((x.billing_type ?? "renewal") !== "renewal" || !periodOk("annuel", x)) continue;
-      const to = cents(x.renewal_price) === cents(PRICES.annuelBlackFriday) ? "hidden" : cents(x.renewal_price) === cents(PRICES.annuel) ? "visible" : null;
-      if (!to || (x.visibility ?? "visible") === to) continue;
-      await whopApi(`/variants/${x.id}`, { method: "PATCH", body: { visibility: to } });
-      done.push(`${x.id} (${x.renewal_price} €) → ${to}`);
-    }
+    const done = [await hide(PLANS.annuelBlackFriday)].filter((x): x is string => !!x);
     console.log(`[whop] fin du Black Friday : ${done.join(", ") || "rien à changer"}`);
     return done;
+  },
+});
+
+/**
+ * Audit Q29 (décision du 20/11) : les tarifs de Kopycat Pro ne se vendent que par l'app. Visibles, ils s'achetaient
+ * aussi sur la page Whop du produit, sans compte Kopycat relié. Masqués, ils restent vendables par le lien de paiement de
+ * l'app. Lancer une fois : `npx convex run --prod whop:masquerTarifs`.
+ */
+export const masquerTarifs = internalAction({
+  args: {},
+  handler: async (): Promise<string[]> => {
+    const done: string[] = [];
+    for (const plan of Object.values(PLANS)) { const r = await hide(plan); if (r) done.push(r); }
+    console.log(`[whop] tarifs masqués : ${done.join(", ") || "rien à changer"}`);
+    return done;
+  },
+});
+
+/**
+ * Diagnostic avant masquerTarifs : un lien de paiement pour un tarif masqué (l'annuel à 359,88 €). Rend seulement s'il
+ * a été créé et si sa page répond, jamais l'adresse. metadata « essai » : un achat par ce lien serait listé sans compte.
+ */
+export const essaiTarifMasque = internalAction({
+  args: {},
+  handler: async (): Promise<Json> => {
+    const x = await checkedVariant(PLANS.annuel);
+    const conf = await whopApi("/checkout_configurations", { method: "POST", body: { account_id: ACCOUNT, variant_id: PLANS.annuel.id, metadata: { kopycat_user: "essai" } } });
+    const url = typeof conf?.purchase_url === "string" ? conf.purchase_url : null;
+    const page = url ? await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(15_000) }).then((r) => r.status, (e) => String(e)) : null;
+    return { tarif: PLANS.annuel.id, visibilite: x?.visibility ?? null, lienCree: !!url, pageDuLien: page };
   },
 });
 
@@ -161,6 +215,40 @@ export const tarifs = internalAction({
 
 // ─── Payer : le lien de paiement Whop, relié au compte ───
 
+const LINK_REUSE_MS = 3_600_000;
+const LINKS_PER_HOUR = 10;
+
+/** Le lien de paiement créé il y a moins d'1 h pour ce compte et cette clé (tarif et site de retour), ou null. */
+export const linkFor = internalQuery({
+  args: { userId: v.id("users"), key: v.string(), now: v.number() },
+  handler: async (ctx, { userId, key, now }) => {
+    const row = await ctx.db.query("checkoutLinks").withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", key)).first();
+    return row && now - row.at < LINK_REUSE_MS ? row.url : null;
+  },
+});
+export const saveLink = internalMutation({
+  args: { userId: v.id("users"), key: v.string(), url: v.string(), now: v.number() },
+  handler: async (ctx, { userId, key, url, now }) => {
+    const row = await ctx.db.query("checkoutLinks").withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", key)).first();
+    if (row) await ctx.db.patch(row._id, { url, at: now });
+    else await ctx.db.insert("checkoutLinks", { userId, key, url, at: now });
+  },
+});
+
+/**
+ * L'adresse où Whop renvoie après paiement (audit S6) : seulement le site de Kopycat. Avant, tout hôte https passait :
+ * un vrai lien Whop de Kopycat pouvait renvoyer la personne qui paie vers une page d'hameçonnage. En prod : SITE_URL et
+ * le domaine Vercel du site. Sur le dev (SWARM_DEV_ORIGINS=1) : aussi localhost et les préversions de CE projet Vercel.
+ * Toute autre origine : SITE_URL.
+ */
+export function returnSite(origin: string): string {
+  const site = (process.env.SITE_URL || "https://swarm-site-one.vercel.app").replace(/\/+$/, "");
+  if (origin === site || origin === "https://swarm-site-one.vercel.app") return origin;
+  if (process.env.SWARM_DEV_ORIGINS === "1"
+    && (/^http:\/\/localhost(:\d{2,5})?$/.test(origin) || /^https:\/\/swarm-site-[a-z0-9-]+-anthosimo33-coders-projects\.vercel\.app$/.test(origin))) return origin;
+  return site;
+}
+
 /**
  * Déjà Pro ? `users.pro` (paiement reçu, ou posé à la main) ou une adhésion qui donne accès (audit du 19/11, S3 : un
  * compte Pro pouvait repayer, deux adhésions prélevées dont une seule visible et résiliable dans Réglages).
@@ -169,7 +257,7 @@ export const alreadyPro = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
     if ((await ctx.db.get(userId))?.pro === true) return true;
-    return (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).some((s) => ACCESS.has(s.status));
+    return (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).some(hasAccess);
   },
 });
 
@@ -185,14 +273,24 @@ export const checkout = action({
     const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
     if (await ctx.runQuery(internal.whop.alreadyPro, { userId })) throw new ConvexError({ code: "DEJA_ABONNE" });
-    const variant = await variantFor(formule, Date.now());
-    // Retour sur le site d'où l'on vient (prod, préversion Vercel, local) ; sinon l'adresse du site.
-    const site = /^https:\/\/[a-z0-9.-]+$/i.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin) ? origin : (process.env.SITE_URL || "https://swarm-site-one.vercel.app");
+    // Audit F6 : chaque appel créait un objet chez Whop, sans limite. Le même lien est resservi pendant 1 h (même
+    // compte, même tarif, donc jamais un lien Black Friday après la fin, même site de retour) ; au-delà de 10 liens
+    // neufs par heure, TROP_DE_DEMANDES.
+    const now = Date.now();
+    const key = `${planFor(formule, now).id}|${returnSite(origin)}`;
+    const reuse: string | null = await ctx.runQuery(internal.whop.linkFor, { userId, key, now });
+    if (reuse) return { url: reuse };
+    if (!(await ctx.runMutation(internal.authLimits.hit, { key: `checkout:${userId}`, max: LINKS_PER_HOUR, windowMs: 3_600_000 }))) {
+      throw new ConvexError({ code: "TROP_DE_DEMANDES" });
+    }
+    const variant = await variantFor(formule, now);
+    const site = returnSite(origin);
     const conf = await whopApi("/checkout_configurations", {
       method: "POST",
       body: { account_id: ACCOUNT, variant_id: variant.id, metadata: { kopycat_user: userId }, redirect_url: `${site}/app?paiement=ok` },
     });
     if (typeof conf?.purchase_url !== "string") throw new Error("Whop n'a pas rendu de lien de paiement");
+    await ctx.runMutation(internal.whop.saveLink, { userId, key, url: conf.purchase_url, now });
     return { url: conf.purchase_url };
   },
 });
@@ -203,7 +301,7 @@ export const activeSub = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
     const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-    return subs.filter((s) => ACCESS.has(s.status)).sort((a, b) => (b.periodEnd ?? 0) - (a.periodEnd ?? 0))[0] ?? null;
+    return subs.filter(hasAccess).sort((a, b) => (b.periodEnd ?? 0) - (a.periodEnd ?? 0))[0] ?? null;
   },
 });
 
@@ -211,7 +309,7 @@ export const activeSub = internalQuery({
 export const accessSubs = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) =>
-    (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).filter((s) => ACCESS.has(s.status)),
+    (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).filter(hasAccess),
 });
 
 /**
@@ -236,11 +334,17 @@ export async function cancelAllNow(ctx: ActionCtx, userId: Id<"users">): Promise
   return subs.length;
 }
 
-async function recomputePro(ctx: MutationCtx, userId: Id<"users">) {
-  const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-  const pro = subs.some((s) => ACCESS.has(s.status));
+/**
+ * Recalcule `users.pro` : la main de l'exploitant d'abord (proManual, users:setPro), sinon les adhésions. Avant (audit Q5),
+ * seules les adhésions comptaient : un Pro posé à la main disparaissait au premier événement Whop, et une révocation à
+ * la main était rouverte par le suivant.
+ */
+export async function recomputePro(ctx: MutationCtx, userId: Id<"users">) {
   const user = await ctx.db.get(userId);
-  if (user && (user.pro === true) !== pro) await ctx.db.patch(userId, { pro: pro || undefined });
+  if (!user) return false;
+  const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
+  const pro = user.proManual ?? subs.some(hasAccess);
+  if ((user.pro === true) !== pro) await ctx.db.patch(userId, { pro: pro || undefined });
   return pro;
 }
 
@@ -250,6 +354,7 @@ export const saveMembership = internalMutation({
     membershipId: v.string(),
     userKey: v.union(v.string(), v.null()),
     variantId: v.union(v.string(), v.null()),
+    productId: v.optional(v.union(v.string(), v.null())),
     status: v.string(),
     periodDays: v.union(v.number(), v.null()),
     price: v.union(v.string(), v.null()),
@@ -257,22 +362,65 @@ export const saveMembership = internalMutation({
     periodEnd: v.union(v.number(), v.null()),
     cancelAtPeriodEnd: v.boolean(),
     manageUrl: v.union(v.string(), v.null()),
+    whopUpdatedAt: v.optional(v.union(v.number(), v.null())),
   },
   handler: async (ctx, a): Promise<string> => {
+    // Audit Q26 : seule une adhésion au produit Kopycat Pro, à l'un de ses tarifs, donne l'accès. Un champ absent (forme
+    // de l'adhésion v1 non vérifiée sur un achat réel) ne refuse rien ; un champ présent et étranger, si.
+    if ((a.productId && a.productId !== PRODUCT) || (a.variantId && !KNOWN_PLANS.has(a.variantId))) {
+      console.error(`[whop] adhésion ${a.membershipId} : produit ou tarif étranger (${a.productId ?? "?"}, ${a.variantId ?? "?"}), ignorée`);
+      return `adhésion ${a.membershipId} : produit ou tarif étranger, ignorée`;
+    }
     const old = await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", a.membershipId)).first();
+    // Audit S9 : un instantané plus ancien que celui rangé (relecture lente, renvoi tardif) n'écrase rien.
+    if (old?.whopUpdatedAt && a.whopUpdatedAt && a.whopUpdatedAt < old.whopUpdatedAt) {
+      return `adhésion ${a.membershipId} : instantané du ${new Date(a.whopUpdatedAt).toISOString()} plus ancien que le rangé, ignoré`;
+    }
     const fromKey = a.userKey ? ctx.db.normalizeId("users", a.userKey) : null;
     const userId = (fromKey && (await ctx.db.get(fromKey)) ? fromKey : null) ?? old?.userId ?? null;
-    if (userId === null) return `adhésion ${a.membershipId} sans compte Kopycat (pas de kopycat_user)`;
     const row = {
       userId, membershipId: a.membershipId, variantId: a.variantId ?? old?.variantId ?? null, status: a.status,
       periodDays: a.periodDays ?? old?.periodDays ?? null, price: a.price ?? old?.price ?? null, currency: a.currency ?? old?.currency ?? null,
       periodEnd: a.periodEnd ?? old?.periodEnd ?? null, cancelAtPeriodEnd: a.cancelAtPeriodEnd, manageUrl: a.manageUrl ?? old?.manageUrl ?? null,
-      updatedAt: Date.now(),
+      updatedAt: Date.now(), ...(a.whopUpdatedAt ? { whopUpdatedAt: a.whopUpdatedAt } : {}),
     };
     if (old) await ctx.db.patch(old._id, row);
     else await ctx.db.insert("subscriptions", row);
+    // Achat sans compte relié (fait hors de l'app, audit Q29) : gardé, listé par whop:sansCompte, rattaché à la main.
+    if (userId === null) {
+      console.error(`[whop] adhésion ${a.membershipId} sans compte Kopycat : à rattacher (npx convex run whop:rattacher)`);
+      return `adhésion ${a.membershipId} ${a.status} sans compte Kopycat (pas de kopycat_user) : gardée, à rattacher`;
+    }
     const pro = await recomputePro(ctx, userId);
     return `adhésion ${a.membershipId} ${a.status}${a.cancelAtPeriodEnd ? " (résiliée en fin de période)" : ""} → pro ${pro}`;
+  },
+});
+
+/** Les adhésions sans compte Kopycat relié (audit Q29). `npx convex run --prod whop:sansCompte`. */
+export const sansCompte = internalQuery({
+  args: {},
+  handler: async (ctx) =>
+    (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", null)).collect())
+      .map((s) => ({ membershipId: s.membershipId, status: s.status, variantId: s.variantId, price: s.price, updatedAt: s.updatedAt })),
+});
+
+/**
+ * Rattache une adhésion (et ses paiements) au compte de cet e-mail, puis recalcule son accès.
+ * `npx convex run --prod whop:rattacher '{"membershipId":"mem_…","email":"…"}'`. Refuse si l'e-mail désigne 0 ou 2 comptes.
+ */
+export const rattacher = internalMutation({
+  args: { membershipId: v.string(), email: v.string() },
+  handler: async (ctx, { membershipId, email }) => {
+    const users = await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email.trim().toLowerCase())).take(2);
+    if (users.length !== 1) return { ok: false, raison: users.length ? "plusieurs comptes avec cet e-mail" : "aucun compte avec cet e-mail" };
+    const sub = await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", membershipId)).first();
+    if (!sub) return { ok: false, raison: "adhésion inconnue" };
+    if (sub.userId && sub.userId !== users[0]._id) return { ok: false, raison: "adhésion déjà reliée à un autre compte" };
+    await ctx.db.patch(sub._id, { userId: users[0]._id, updatedAt: Date.now() });
+    for (const p of await ctx.db.query("whopPayments").withIndex("by_user", (q) => q.eq("userId", null)).collect()) {
+      if (p.membershipId === membershipId) await ctx.db.patch(p._id, { userId: users[0]._id });
+    }
+    return { ok: true, pro: await recomputePro(ctx, users[0]._id) };
   },
 });
 
@@ -291,44 +439,115 @@ export const savePayment = internalMutation({
 
 export const markPayment = internalMutation({
   args: { paymentId: v.string(), status: v.string() },
-  handler: async (ctx, { paymentId, status }) => {
+  handler: async (ctx, { paymentId, status }): Promise<{ membershipId: string | null; total: string | null }> => {
     const row = await ctx.db.query("whopPayments").withIndex("by_payment", (q) => q.eq("paymentId", paymentId)).first();
     if (row) await ctx.db.patch(row._id, { status });
     else await ctx.db.insert("whopPayments", { paymentId, userId: null, membershipId: null, total: null, currency: null, status, createdAt: Date.now() });
+    return { membershipId: row?.membershipId ?? null, total: row?.total ?? null };
   },
 });
 
-/** Relit l'adhésion chez Whop (source de vérité) ; à défaut, se contente de ce que l'événement a apporté. */
+/** Coupe l'accès d'une adhésion (remboursement total, litige : audit S10) ; un événement ultérieur ne le rouvre pas. */
+export const revoke = internalMutation({
+  args: { membershipId: v.string(), reason: v.string() },
+  handler: async (ctx, { membershipId, reason }) => {
+    const sub = await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", membershipId)).first();
+    if (!sub) return `adhésion ${membershipId} inconnue, rien à couper (${reason})`;
+    if (!sub.revokedAt) await ctx.db.patch(sub._id, { revokedAt: Date.now() });
+    const pro = sub.userId ? await recomputePro(ctx, sub.userId) : false;
+    return `adhésion ${membershipId} : accès coupé (${reason}) → pro ${pro}`;
+  },
+});
+
+/** L'adhésion rangée, ou null. */
+export const subByMembership = internalQuery({
+  args: { membershipId: v.string() },
+  handler: async (ctx, { membershipId }) => ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", membershipId)).first(),
+});
+
+/**
+ * Relit l'adhésion chez Whop (source de vérité). Si Whop ne répond pas, la charge de l'événement ne sert que si elle
+ * retire l'accès, ou si l'adhésion n'est pas encore rangée (une première activation n'est pas perdue). Sinon l'erreur
+ * remonte : réponse 500, Whop renvoie. Avant (audit S9), un vieux went_valid rejoué pendant une panne rouvrait l'accès.
+ */
 async function syncMembership(ctx: ActionCtx, membershipId: string, fallback: Json | null): Promise<string> {
   let m: Json | null = fallback;
   try {
     m = await whopApi(`/memberships/${membershipId}`);
   } catch (e) {
     if (!m) throw e;
+    const known = await ctx.runQuery(internal.whop.subByMembership, { membershipId });
+    if (known && ACCESS.has(String(m.status ?? ""))) throw e;
   }
   if (!m) return `adhésion ${membershipId} introuvable`;
+  // Audit Q28 : la période et le prix se lisent sur l'adhésion s'ils y sont, sinon sur le tarif fixé (PLANS). Avant,
+  // une adhésion annuelle sans ces champs s'affichait « mensuel », sans prix, avec une période de 30 jours.
+  const variantId: string | null = m.variant_id ?? m.plan_id ?? m.plan?.id ?? m.variant?.id ?? null;
+  const plan = variantId ? KNOWN_PLANS.get(variantId) : undefined;
+  if (typeof m.billing_period_days !== "number" || m.renewal_price == null) {
+    console.log(`[whop] adhésion ${membershipId} sans période ou prix ; champs : ${Object.keys(m).join(", ")}`);
+  }
   return await ctx.runMutation(internal.whop.saveMembership, {
     membershipId,
     userKey: m.metadata?.kopycat_user ? String(m.metadata.kopycat_user) : null,
-    variantId: m.variant_id ?? m.plan_id ?? m.plan?.id ?? null,
+    variantId,
+    productId: m.product_id ?? m.product?.id ?? null,
     status: String(m.status ?? "unresolved"),
-    periodDays: typeof m.billing_period_days === "number" ? m.billing_period_days : null,
-    price: money(m.renewal_price),
-    currency: moneyCurrency(m.renewal_price, m.currency),
+    periodDays: typeof m.billing_period_days === "number" ? m.billing_period_days : plan?.days ?? null,
+    price: money(m.renewal_price) ?? (plan ? plan.price.toFixed(2) : null),
+    currency: moneyCurrency(m.renewal_price, m.currency) ?? (plan ? "eur" : null),
     periodEnd: toMs(m.current_period_end ?? m.renewal_period_end ?? m.expires_at),
     cancelAtPeriodEnd: m.cancel_at_period_end === true,
     manageUrl: typeof m.manage_url === "string" ? m.manage_url : null,
+    whopUpdatedAt: toMs(m.updated_at),
   });
 }
 
+/** Les adhésions rangées avec accès, à relire chez Whop (500 au plus). */
+export const toReconcile = internalQuery({
+  args: {},
+  handler: async (ctx) =>
+    (await ctx.db.query("subscriptions").order("desc").take(2000)).filter(hasAccess).slice(0, 500).map((s) => s.membershipId),
+});
+
+/**
+ * Réconciliation quotidienne (audit S9, Q27) : chaque adhésion rangée avec accès est relue chez Whop. Une adhésion
+ * terminée n'émet plus d'événement : sans cette relecture, un état faux (événement perdu, instantané périmé) restait
+ * Pro à vie. Cron dans convex/crons.ts.
+ */
+export const reconcile = internalAction({
+  args: {},
+  handler: async (ctx): Promise<string[]> => {
+    if (!process.env.WHOP_API_KEY || backgroundOff()) return [];
+    const ids: string[] = await ctx.runQuery(internal.whop.toReconcile, {});
+    const notes: string[] = [];
+    for (const id of ids) {
+      try { notes.push(await syncMembership(ctx, id, null)); } catch (e) { notes.push(`${id} : ${String(e).slice(0, 200)}`); }
+    }
+    console.log(`[whop] réconciliation : ${notes.join(" ; ") || "aucune adhésion avec accès"}`);
+    return notes;
+  },
+});
+
 // ─── Le webhook : https://<déploiement>.convex.site/whop/webhook ───
 
+/**
+ * Prend un événement à traiter (audit Q27) : « go » s'il est neuf (ou si un traitement est resté coupé plus de 5 min),
+ * « busy » s'il est en cours de traitement (Whop doit le renvoyer plus tard, pas recevoir 200), « done » s'il est traité.
+ */
 export const claimEvent = internalMutation({
   args: { eventId: v.string(), type: v.string() },
-  handler: async (ctx, { eventId, type }) => {
-    if (await ctx.db.query("whopEvents").withIndex("by_event", (q) => q.eq("eventId", eventId)).first()) return false;
-    await ctx.db.insert("whopEvents", { eventId, type, at: Date.now() });
-    return true;
+  handler: async (ctx, { eventId, type }): Promise<"go" | "busy" | "done"> => {
+    const now = Date.now();
+    const row = await ctx.db.query("whopEvents").withIndex("by_event", (q) => q.eq("eventId", eventId)).first();
+    if (!row) {
+      await ctx.db.insert("whopEvents", { eventId, type, at: now, state: "processing" });
+      return "go";
+    }
+    if (row.state !== "processing") return "done";
+    if (now - row.at < 5 * 60_000) return "busy";
+    await ctx.db.patch(row._id, { at: now });
+    return "go";
   },
 });
 export const noteEvent = internalMutation({
@@ -338,7 +557,7 @@ export const noteEvent = internalMutation({
     if (!row) return;
     // Échec : l'événement est rendu, pour que le renvoi de Whop soit traité.
     if (release) await ctx.db.delete(row._id);
-    else await ctx.db.patch(row._id, { note });
+    else await ctx.db.patch(row._id, { note, state: "done" });
   },
 });
 
@@ -388,14 +607,34 @@ async function handleEvent(ctx: ActionCtx, event: Json): Promise<string> {
       membershipId: membershipId ? String(membershipId) : null, total: money(d.total ?? d.final_amount ?? d.amount),
       currency: moneyCurrency(d.total, d.currency), status, createdAt: toMs(d.created_at) ?? Date.now(),
     });
-    // Un paiement réussi rattrape une activation dont l'événement se serait perdu.
-    return membershipId ? `paiement ${d.id} ${status} ; ` + (await syncMembership(ctx, String(membershipId), null).catch((e) => String(e))) : `paiement ${d.id} ${status}`;
+    // Un paiement réussi rattrape une activation dont l'événement se serait perdu. Un échec de la relecture remonte
+    // (réponse 500, Whop renvoie) : avant, il était avalé et l'événement marqué traité (audit Q27).
+    return membershipId ? `paiement ${d.id} ${status} ; ` + (await syncMembership(ctx, String(membershipId), null)) : `paiement ${d.id} ${status}`;
   }
   if (type.startsWith("refund.") || type.startsWith("dispute.")) {
+    // Audit S10 : un remboursement total ou un litige coupe l'accès tout de suite, même si Whop laisse l'adhésion active.
+    // L'adhésion se retrouve par le paiement rangé (la charge d'un remboursement ne la porte pas), sinon chez Whop.
+    const dispute = type.startsWith("dispute.");
+    if (!dispute && String(d.status ?? "succeeded") !== "succeeded") return `${type} ${d.id ?? "?"} : ${d.status}, rien à faire encore`;
     const paymentId = d.payment_id ?? d.payment?.id ?? null;
-    if (paymentId) await ctx.runMutation(internal.whop.markPayment, { paymentId: String(paymentId), status: type.startsWith("refund.") ? "refunded" : "disputed" });
-    const membershipId = d.membership_id ?? d.membership?.id ?? d.payment?.membership_id ?? null;
-    return membershipId ? await syncMembership(ctx, String(membershipId), null).catch((e) => String(e)) : `${type} ${paymentId ?? "?"}`;
+    const paid: { membershipId: string | null; total: string | null } | null = paymentId
+      ? await ctx.runMutation(internal.whop.markPayment, { paymentId: String(paymentId), status: dispute ? "disputed" : "refunded" }) : null;
+    let membershipId: string | null = d.membership_id ?? d.membership?.id ?? paid?.membershipId ?? null;
+    let total = paid?.total ?? null;
+    if (paymentId && (!membershipId || total === null)) {
+      const p: Json = await whopApi(`/payments/${paymentId}`);
+      membershipId ??= p.membership_id ?? p.membership?.id ?? null;
+      total ??= money(p.total ?? p.final_amount ?? p.amount);
+    }
+    // Montant du remboursement inconnu : tenu pour total (garder l'accès après un remboursement total serait pire).
+    const amount = money(d.amount ?? d.total);
+    if (!dispute && amount !== null && total !== null && cents(amount) < cents(total)) return `remboursement partiel ${d.id ?? "?"} (${amount} sur ${total}) : accès gardé`;
+    if (!membershipId) return `${type} ${paymentId ?? "?"} : adhésion introuvable`;
+    await whopApi(`/memberships/${membershipId}/cancel`, { method: "POST" }).catch((e) => {
+      if (!/Whop (404|409|422)/.test(String(e))) throw e; // déjà résiliée chez Whop : rien de plus à faire
+    });
+    const cut: string = await ctx.runMutation(internal.whop.revoke, { membershipId: String(membershipId), reason: dispute ? "litige" : "remboursement" });
+    return `${cut} ; ${await syncMembership(ctx, String(membershipId), null)}`;
   }
   return `ignoré : ${type}`;
 }
@@ -416,7 +655,9 @@ export const webhook = httpAction(async (ctx, req) => {
   } catch {
     return new Response("corps illisible", { status: 400 });
   }
-  if (!(await ctx.runMutation(internal.whop.claimEvent, { eventId: id, type: String(event.type ?? "") }))) return new Response("déjà traité", { status: 200 });
+  const claim: "go" | "busy" | "done" = await ctx.runMutation(internal.whop.claimEvent, { eventId: id, type: String(event.type ?? "") });
+  if (claim === "done") return new Response("déjà traité", { status: 200 });
+  if (claim === "busy") return new Response("en cours de traitement, à renvoyer", { status: 409 });
   try {
     const note = await handleEvent(ctx, event);
     await ctx.runMutation(internal.whop.noteEvent, { eventId: id, note: note.slice(0, 500), release: false });
@@ -429,6 +670,28 @@ export const webhook = httpAction(async (ctx, req) => {
   }
 });
 
+// ─── Retour de Whop sans webhook (audit Q6) ───
+
+/**
+ * « Vérifier mon paiement » : relit chez Whop les adhésions du produit reliées à la personne connectée (metadata
+ * kopycat_user) et les range, comme le ferait le webhook. Recours quand le webhook n'arrive pas (secret mal réglé, panne).
+ * 6 vérifications par 10 min au plus. Rend si l'accès est ouvert et combien d'adhésions ont été trouvées.
+ * Hypothèse : GET /memberships accepte account_id et product_ids (doc v1, non essayé sur un achat réel).
+ */
+export const verifierPaiement = action({
+  args: {},
+  handler: async (ctx): Promise<{ pro: boolean; trouvees: number }> => {
+    const userId = await liveUserIdInAction(ctx);
+    if (userId === null) throw new Error("Non connecté");
+    if (!(await ctx.runMutation(internal.authLimits.hit, { key: `verif:${userId}`, max: 6, windowMs: 600_000 }))) throw new ConvexError({ code: "TROP_DE_DEMANDES" });
+    const body = await whopApi(`/memberships?account_id=${ACCOUNT}&product_ids=${PRODUCT}&first=100`);
+    const list: Json[] = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+    const mine = list.filter((m) => String(m.metadata?.kopycat_user ?? "") === userId && m.id);
+    for (const m of mine) await syncMembership(ctx, String(m.id), m);
+    return { pro: await ctx.runQuery(internal.whop.alreadyPro, { userId }), trouvees: mine.length };
+  },
+});
+
 // ─── Réglages › Formule et facturation ───
 
 /** L'abonnement de la personne connectée et ses paiements (Réglages). */
@@ -438,12 +701,12 @@ export const mine = query({
     const userId = await liveUserId(ctx);
     if (userId === null) return null;
     const subs = (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect())
-      .sort((a, b) => Number(ACCESS.has(b.status)) - Number(ACCESS.has(a.status)) || (b.periodEnd ?? 0) - (a.periodEnd ?? 0));
+      .sort((a, b) => Number(hasAccess(b)) - Number(hasAccess(a)) || (b.periodEnd ?? 0) - (a.periodEnd ?? 0));
     const s = subs[0];
     const payments = (await ctx.db.query("whopPayments").withIndex("by_user", (q) => q.eq("userId", userId)).collect())
       .filter((p) => p.status !== "failed").sort((a, b) => b.createdAt - a.createdAt).slice(0, 24);
     return {
-      sub: s ? { formule: (s.periodDays ?? 0) >= 360 ? "annuel" : "mensuel", status: s.status, active: ACCESS.has(s.status), price: s.price, currency: s.currency, periodEnd: s.periodEnd, cancelAtPeriodEnd: s.cancelAtPeriodEnd, manageUrl: s.manageUrl } : null,
+      sub: s ? { formule: (s.periodDays ?? 0) >= 360 ? "annuel" : "mensuel", status: s.status, active: hasAccess(s), price: s.price, currency: s.currency, periodEnd: s.periodEnd, cancelAtPeriodEnd: s.cancelAtPeriodEnd, manageUrl: s.manageUrl } : null,
       payments: payments.map((p) => ({ id: p.paymentId, total: p.total, currency: p.currency, status: p.status, at: p.createdAt })),
     };
   },

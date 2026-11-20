@@ -214,6 +214,41 @@ function memDb() {
   ok(w === 0 && pre.tables.boards[0].updatedAt === 5 && (await store.boardHashes.handler(pre.ctx, { keys: ["app:a"] }))[0] === "h0", "sans empreinte rangée, une page inchangée n'est pas réécrite et son empreinte est rangée");
 }
 
+// ─── Q7 (audit du 19/11) : une grosse page rangée en morceaux ne coupe jamais un émoji en deux ───
+{
+  const m = memDb();
+  const text = "a".repeat(store.PART_CHARS - 1) + "😀" + "b".repeat(10) + "é".repeat(store.PART_CHARS) + "🎉";
+  await store.saveBoards.handler(m.ctx, { items: [{ key: "apps", hash: "h", text }], now: 1 });
+  const parts = (m.tables.boardParts ?? []).slice().sort((p, q) => p.i - q.i);
+  const whole = parts.map((p) => p.text).join("");
+  ok(parts.length >= 2 && parts.every((p) => p.text.isWellFormed()), `Q7 : chaque morceau est un texte valide, sans demi-émoji (${parts.map((p) => p.text.isWellFormed()).join(", ")})`);
+  ok(whole === text && (m.tables.boards ?? [])[0]?.parts === parts.length, "Q7 : les morceaux recollés redonnent la page, et leur nombre est rangé");
+}
+
+// ─── F2 (audit du 19/11) : plus personne ne lit « hidden » (boards.get, F14) : plus personne ne l'écrit ───
+{
+  const m = memDb();
+  await store.markMiss.handler(m.ctx, { key: "v:7000000000000000001" });
+  await store.markMisses.handler(m.ctx, { keys: ["v:7000000000000000002", "a:compte"] });
+  await store.saveMedia.handler({ ...m.ctx, storage: { delete: async () => {} } }, { items: [{ key: "v:7000000000000000001", storageId: "s1", url: "https://x" }] });
+  ok(!(m.tables.hidden ?? []).length && !m.read.hidden, `F2 : copie et échecs de miniatures n'écrivent ni ne lisent plus le document unique hidden (${(m.tables.hidden ?? []).length} écrit, ${m.read.hidden ?? 0} o lus)`);
+  ok((m.tables.mediaMiss ?? []).some((x) => x.key === "v:7000000000000000002") && !(m.tables.mediaMiss ?? []).some((x) => x.key === "v:7000000000000000001"), "F2 : les échecs restent notés dans mediaMiss (seule source de « introuvable »)");
+  const readers = fs.readdirSync(dir).filter((f) => f.endsWith(".ts") && f !== "schema.ts" && /query\("hidden"\)/.test(fs.readFileSync(path.join(dir, f), "utf8")));
+  ok(!readers.length, `F2 : aucun module ne lit ni n'écrit hidden (${readers.join(", ") || "aucun"})`);
+}
+
+// ─── Q16 (audit du 19/11) : « pas encore de miniature » chez TikTok n'est pas un échec : la vidéo n'est pas cachée ───
+{
+  const t = actionCtx({});
+  globalThis.__copyImage = async (_ctx, _key, _src, report) => { report.blank = true; return null; };
+  await quiet(() => sync.copyMedia.handler(t.ctx, { items: [{ key: "v:7000000000000000009", src: "ttpage:x/7000000000000000009" }] }));
+  ok(!t.calls.includes("markMisses"), `Q16 : une vidéo TikTok sans miniature encore n'est pas notée introuvable (${t.calls.join(", ") || "aucun appel"})`);
+  globalThis.__copyImage = async (_ctx, _key, _src, report) => { report.gone = true; return null; };
+  const g = actionCtx({});
+  await quiet(() => sync.copyMedia.handler(g.ctx, { items: [{ key: "v:7000000000000000010", src: "ttpage:x/7000000000000000010" }] }));
+  ok(g.calls.includes("markMisses"), "Q16 : une vidéo que TikTok dit disparue l'est toujours");
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);

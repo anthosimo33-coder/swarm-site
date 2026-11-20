@@ -4,7 +4,9 @@ import { convexAuth, createAccount, retrieveAccount } from "@convex-dev/auth/ser
 import { ConvexError } from "convex/values";
 import { Scrypt } from "lucia";
 import { AUTH_ERRORS, type AuthErrorCode } from "./authErrors";
+import { signInKey } from "./authLimits";
 import { internal } from "./_generated/api";
+import type { MutationCtx } from "./_generated/server";
 
 /**
  * Authentification de Swarm : e-mail + mot de passe, et Google.
@@ -32,6 +34,19 @@ const PASSWORD_MAX = 128;
  */
 const SIGNUP_MAX = 300;
 const SIGNUP_WINDOW_MS = 10 * 60_000;
+/**
+ * Connexion (audit S12) : 10 échecs par heure et par e-mail (haché), adresse inscrite ou non. Avant, seule une adresse
+ * inscrite finissait sur « trop de tentatives » (limite de Convex Auth, par compte), et une adresse inconnue répondait
+ * sans calcul de mot de passe : les deux trahissaient qui a un compte. Une connexion réussie remet le compteur à zéro.
+ */
+const SIGNIN_MAX = 10;
+const SIGNIN_WINDOW_MS = 60 * 60_000;
+/** Même calcul qu'une vraie vérification (Scrypt), pour une adresse inconnue : la durée ne dit plus rien (audit S12). */
+let dummyHash: Promise<string> | null = null;
+const dummyVerify = async (secret: string) => {
+  dummyHash ??= new Scrypt().hash("kopycat:aucun-compte");
+  await new Scrypt().verify(await dummyHash, secret);
+};
 
 const fail = (code: AuthErrorCode) => new ConvexError({ code });
 
@@ -84,6 +99,9 @@ const password = ConvexCredentials({
         // le bon, sans passer par la limite de 10 échecs par heure de signIn — un essai de mots de passe illimité. Un
         // compte existant est désormais refusé sans jamais regarder le mot de passe : la personne passe par « Se connecter ».
         if (await passwordAccountExists(ctx, email)) throw fail(AUTH_ERRORS.COMPTE_EXISTANT);
+        // Audit S14 : une adresse = un compte. Un compte venu d'ailleurs (Google) sur cette adresse : refusé aussi, au lieu
+        // d'un second compte au même e-mail (setPro et le support ne sauraient plus lequel servir).
+        if (await ctx.runQuery(internal.users.emailTaken, { email })) throw fail(AUTH_ERRORS.COMPTE_EXISTANT);
         const { user } = await createAccount(ctx, {
           provider: PROVIDER,
           account: { id: email, secret },
@@ -92,8 +110,23 @@ const password = ConvexCredentials({
         return { userId: user._id };
       }
       if (params.flow === "signIn") {
-        const found = await retrieveAccount(ctx, { provider: PROVIDER, account: { id: email, secret } });
+        const key = await signInKey(email);
+        if (await ctx.runQuery(internal.authLimits.blocked, { key, max: SIGNIN_MAX, windowMs: SIGNIN_WINDOW_MS })) {
+          throw fail(AUTH_ERRORS.TROP_DE_TENTATIVES);
+        }
+        let found;
+        try {
+          found = await retrieveAccount(ctx, { provider: PROVIDER, account: { id: email, secret } });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (message.includes("InvalidAccountId")) await dummyVerify(secret);
+          if (message.includes("InvalidAccountId") || message.includes("InvalidSecret")) {
+            await ctx.runMutation(internal.authLimits.hit, { key, max: SIGNIN_MAX, windowMs: SIGNIN_WINDOW_MS });
+          }
+          throw error;
+        }
         if (found === null) throw fail(AUTH_ERRORS.IDENTIFIANTS_INCORRECTS);
+        await ctx.runMutation(internal.authLimits.clear, { key });
         return { userId: found.user._id };
       }
       throw new Error(`Flow inconnu : ${String(params.flow)}`);
@@ -112,6 +145,42 @@ const password = ConvexCredentials({
 // lieu d'envoyer la personne sur une page d'erreur de Google.
 const googleReady = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
 
+/**
+ * Audit S23 (décision du 20/11) : 3 appareils connectés au plus par compte. Avant chaque nouvelle session, les plus
+ * anciennes sessions vivantes au-delà de 2 sont fermées, avec leurs jetons de renouvellement. Avant, chaque connexion
+ * ajoutait une session de 30 jours, sans jamais en fermer : un compte se partageait sans limite.
+ */
+const MAX_SESSIONS = 3;
+
+/**
+ * Google avec son drapeau email_verified (audit S25). Le profil par défaut de Convex Auth le jetait, et toute adresse
+ * Google était tenue pour vérifiée, donc rattachée au compte vérifié de même adresse : un compte Google montrant
+ * l'adresse d'autrui sans l'avoir vérifiée pouvait prendre ce compte. Convex Auth respecte un emailVerified false
+ * (implementation/users.js:22).
+ */
+const google = Google({
+  profile: (p) => {
+    // emailVerified n'est pas dans le type User de @auth/core, mais Convex Auth le lit : objet nommé, sans conversion.
+    const user = { id: p.sub, name: p.name, email: p.email, image: p.picture, emailVerified: p.email_verified === true };
+    return user;
+  },
+});
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: googleReady ? [password, Google] : [password],
+  providers: googleReady ? [password, google] : [password],
+  callbacks: {
+    async beforeSessionCreation(anyCtx, { userId }) {
+      const ctx = anyCtx as unknown as MutationCtx; // le crochet reçoit un contexte générique : c'est celui de auth:store
+      const now = Date.now();
+      const live = (await ctx.db.query("authSessions").withIndex("userId", (q) => q.eq("userId", userId)).collect())
+        .filter((s) => s.expirationTime > now)
+        .sort((a, b) => a._creationTime - b._creationTime);
+      for (const s of live.slice(0, Math.max(0, live.length - (MAX_SESSIONS - 1)))) {
+        for (const t of await ctx.db.query("authRefreshTokens").withIndex("sessionId", (q) => q.eq("sessionId", s._id)).collect()) {
+          await ctx.db.delete(t._id);
+        }
+        await ctx.db.delete(s._id);
+      }
+    },
+  },
 });

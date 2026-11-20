@@ -208,9 +208,11 @@ export const copyMedia = internalAction({
         const { key, src } = items[next++];
         const report: { gone: boolean; blank?: boolean } = { gone: false };
         const r = await copyImage(ctx, key, src, report);
-        // Notée introuvable (cachée des listes 3 jours) seulement si la plateforme le dit : un refus passager de TikTok
-        // n'efface plus une vidéo vivante des listes (16/11). Instagram et liens directs : comme avant.
-        if (r) { got.push(r); copied++; } else if (key.startsWith("v:") && (report.gone || report.blank || !src.startsWith("ttpage:"))) { failed.push(key); nfail++; } else if (key.startsWith("v:")) skipped++;
+        // Notée introuvable (cachée des listes 3 jours) seulement si la plateforme dit la vidéo disparue : un refus
+        // passager de TikTok (16/11) ni une vidéo vivante pas encore dotée de miniature (`blank`, audit Q16 : cachée
+        // pendant ses jours de décollage) ne l'effacent des listes ; réessayées au passage suivant. Instagram et liens
+        // directs : comme avant.
+        if (r) { got.push(r); copied++; } else if (key.startsWith("v:") && (report.gone || !src.startsWith("ttpage:"))) { failed.push(key); nfail++; } else if (key.startsWith("v:")) skipped++;
         if (got.length + failed.length >= 100) await flush();
       }
     };

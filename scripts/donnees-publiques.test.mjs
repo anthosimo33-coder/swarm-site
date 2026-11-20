@@ -3,8 +3,8 @@
 //      et gabarits du code ; la génération échoue s'il en reste.
 //   2. Les écrans générés n'en contiennent plus ; le build public (dist/assets) passe scripts/check-public.mjs.
 //   3. Rien ne change à l'écran : sans données (exemples remis, comme scripts/check.mjs) et avec de vraies pages
-//      (.bench-data/dump-dump-s4.json, produit par le banc de synchro, s'il existe), chaque écran rend le même HTML
-//      qu'avant le retrait (version de référence : REF, par défaut le commit d'avant ce banc).
+//      (.bench-data/dump-dump-s4.json, produit par le banc de synchro, s'il existe), chaque écran rend le même HTML que
+//      sa version avec l'exemple en ligne (avant retrait).
 // Usage : node scripts/donnees-publiques.test.mjs
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -15,7 +15,6 @@ import { renderToString } from 'preact-render-to-string';
 import { checker, root } from './test-kit.mjs';
 
 const { ok, end } = checker();
-const git = (...a) => execFileSync('git', a, { cwd: root, encoding: 'utf8' }).trim();
 const SAMPLE = /\/media\/app\/|\/_blob\/|\b7\d{18}\b|["'`]@[A-Za-z0-9._]{2,30}["'`]/;
 
 // ─── 1. Le retrait, sur un code piégé ───
@@ -67,61 +66,66 @@ ok(pub.status === 0, `build : scripts/check-public.mjs passe (${(pub.stdout + pu
 fs.rmSync(out, { recursive: true, force: true });
 
 // ─── 3. Rien ne change à l'écran ───
-// Il faut l'historique git : la CI clone sans (CI=1), cette partie y est sautée, sauf REF donné.
-let refOk = false;
-try { git('rev-parse', '--verify', '--quiet', (process.env.REF || 'HEAD') + '^{commit}'); git('rev-list', '-1', 'HEAD', '--', 'scripts/check-public.mjs'); refOk = !process.env.CI || !!process.env.REF; } catch { refOk = false; }
-if (refOk) {
-  const ref = process.env.REF || (() => { const c = git('rev-list', '-1', 'HEAD', '--', 'scripts/check-public.mjs'); return c ? c + '^' : 'HEAD'; })();
-  const old = fs.mkdtempSync(path.join(os.tmpdir(), 'kopycat-ref-'));
-  fs.mkdirSync(path.join(old, 'src/app/pages'), { recursive: true });
-  fs.writeFileSync(path.join(old, 'src/runtime.js'), git('show', `${ref}:src/runtime.js`));
-  for (const f of fs.readdirSync(pagesDir)) fs.writeFileSync(path.join(old, 'src/app/pages', f), git('show', `${ref}:src/app/pages/${f}`));
-  fs.symlinkSync(path.join(root, 'node_modules'), path.join(old, 'node_modules'));
-  const freeze = () => { const t = Date.parse('2026-11-25T12:00:00+01:00'); Date.now = () => t; let r = 0.42; Math.random = () => (r = (r * 9301 + 49297) % 233280 / 233280); };
-  const render = (Page, props) => { freeze(); try { return renderToString(h(Page, props)); } catch (e) { return 'ERREUR ' + e.message; } };
-  const names = fs.readdirSync(pagesDir).map((f) => f.replace('.js', ''));
-  const mods = {};
-  for (const n of names) mods[n] = [(await import(path.join(old, 'src/app/pages', n + '.js'))).default, (await import(path.join(pagesDir, n + '.js'))).default];
-
-  const samples = {};
-  for (const f of fs.readdirSync(path.join(root, 'design/app/samples'))) samples[f.replace('.js', '')] = (await import(path.join(root, 'design/app/samples', f))).default;
-  const diff = [];
-  for (const n of names) {
-    globalThis.__dcSample = undefined;
-    // Seul écart voulu : un lien de vidéo sans id ne mène plus à une vraie vidéo du Radar (APP_SAMPLE de dc2preact.py).
-    const same = (html) => html.replaceAll('/app/videos/7705929733220994337', '/app/videos');
-    const a = same(render(mods[n][0], null));
-    globalThis.__dcSample = samples;
-    const b = same(render(mods[n][1], null));
-    if (a !== b) diff.push(n);
+// Chaque écran actuel contre le même écran où l'exemple est remis en ligne (chaque référence à __dcSample remplacée
+// par la valeur rangée dans design/app/samples) : sans données, exemples remis, et avec de vraies pages, sans
+// exemples comme dans l'app. Ne dépend ni de l'historique git ni des autres changements des écrans.
+const samples = {};
+for (const f of fs.readdirSync(path.join(root, 'design/app/samples'))) samples[f.replace('.js', '')] = (await import(path.join(root, 'design/app/samples', f))).default;
+/** Le texte de l'écran avec l'exemple en ligne, comme avant le retrait. */
+function inline(src) {
+  const OPEN = '(globalThis.__dcSample?.[';
+  let out = '', at = 0;
+  for (let i = src.indexOf(OPEN); i >= 0; i = src.indexOf(OPEN, at)) {
+    const m = src.slice(i).match(/^\(globalThis\.__dcSample\?\.\["([^"]+)"\]\?\.\["([^"]+)"\] \?\? /);
+    let j = i + 1, depth = 1;
+    while (depth) { const c = src[j]; if (c === '"' || c === "'") { j = src.indexOf(c, j + 1) + 1; continue; } if (c === '(') depth++; else if (c === ')') depth--; j++; }
+    out += src.slice(at, i) + JSON.stringify(samples[m[1]][m[2]]);
+    at = j;
   }
-  ok(!diff.length, `sans données, exemples remis : ${names.length - diff.length}/${names.length} écrans identiques à ${ref}${diff.length ? ' — différents : ' + diff.join(', ') : ''}`);
+  return out + src.slice(at);
+}
+const old = fs.mkdtempSync(path.join(os.tmpdir(), 'kopycat-ex-'));
+fs.mkdirSync(path.join(old, 'src/app/pages'), { recursive: true });
+fs.copyFileSync(path.join(root, 'src/runtime.js'), path.join(old, 'src/runtime.js'));
+for (const f of fs.readdirSync(pagesDir)) fs.writeFileSync(path.join(old, 'src/app/pages', f), inline(fs.readFileSync(path.join(pagesDir, f), 'utf8')));
+fs.symlinkSync(path.join(root, 'node_modules'), path.join(old, 'node_modules'));
+const freeze = () => { const t = Date.parse('2026-11-25T12:00:00+01:00'); Date.now = () => t; let r = 0.42; Math.random = () => (r = (r * 9301 + 49297) % 233280 / 233280); };
+const render = (Page, props) => { freeze(); try { return renderToString(h(Page, props)); } catch (e) { return 'ERREUR ' + e.message; } };
+const names = fs.readdirSync(pagesDir).map((f) => f.replace('.js', ''));
+const mods = {};
+for (const n of names) mods[n] = [(await import(path.join(old, 'src/app/pages', n + '.js'))).default, (await import(path.join(pagesDir, n + '.js'))).default];
+const diff = [];
+for (const n of names) {
+  globalThis.__dcSample = undefined;
+  const a = render(mods[n][0], null);
+  globalThis.__dcSample = samples;
+  const b = render(mods[n][1], null);
+  if (a !== b) diff.push(n);
+}
+ok(!diff.length, `sans données, exemples remis : ${names.length - diff.length}/${names.length} écrans identiques à leur version avec l'exemple en ligne${diff.length ? ' — différents : ' + diff.join(', ') : ''}`);
 
-  const dumpFile = path.join(root, '.bench-data/dump-dump-s4.json');
-  if (fs.existsSync(dumpFile)) {
-    const boards = JSON.parse(fs.readFileSync(dumpFile, 'utf8'));
-    const keyOf = (k) => Object.keys(boards).find((x) => x.startsWith(k)) ?? k;
-    const KEY = {
-      Accueil: 'home', Apps: 'apps', Apercu: 'apps', MApercuApps: 'apps', Formats: 'formats', Createurs: 'creators:FR', CreateursCartes: 'creators:FR', Alertes: 'alerts',
-      FicheApp: 'app:', Video: 'video:', FicheFormat: 'format:', FicheCreateur: 'creator:',
-    };
-    const PARAM = { 'app:': 'slug', 'video:': 'id', 'format:': 'id', 'creator:': 'handle' };
-    const user = { prenom: null, email: 'test@exemple.fr', initiale: 'T', pro: true };
-    const real = [], crashed = [];
+const dumpFile = path.join(root, '.bench-data/dump-dump-s4.json');
+if (fs.existsSync(dumpFile)) {
+  const boards = JSON.parse(fs.readFileSync(dumpFile, 'utf8'));
+  const keyOf = (k) => Object.keys(boards).find((x) => x.startsWith(k)) ?? k;
+  const KEY = {
+    Accueil: 'home', Apps: 'apps', Apercu: 'apps', MApercuApps: 'apps', Formats: 'formats', Createurs: 'creators:FR', CreateursCartes: 'creators:FR', Alertes: 'alerts',
+    FicheApp: 'app:', Video: 'video:', FicheFormat: 'format:', FicheCreateur: 'creator:',
+  };
+  const PARAM = { 'app:': 'slug', 'video:': 'id', 'format:': 'id', 'creator:': 'handle' };
+  const user = { prenom: null, email: 'test@exemple.fr', initiale: 'T', pro: true };
+  const real = [];
+  for (const n of names) {
+    const base = KEY[n] ?? KEY[n.replace(/^M/, '')];
+    const key = base ? keyOf(base) : null;
+    const params = base && PARAM[base] ? { [PARAM[base]]: key.slice(base.length) } : {};
+    // preview : Alertes le passe toujours à Nouvelle alerte dans l'app (l'exemple n'y sert que sur le canevas).
+    const props = { data: key ? boards[key] : undefined, get: (k) => boards[k] ?? null, saved: () => null, save: () => Promise.resolve(), params, query: {}, user, signOut: () => {}, preview: () => null };
     globalThis.__dcSample = undefined; // comme dans l'app
-    for (const n of names) {
-      const base = KEY[n] ?? KEY[n.replace(/^M/, '')];
-      const key = base ? keyOf(base) : null;
-      const params = base && PARAM[base] ? { [PARAM[base]]: key.slice(base.length) } : {};
-      // preview : Alertes le passe toujours à Nouvelle alerte dans l'app (l'exemple n'y sert que sur le canevas).
-      const props = { data: key ? boards[key] : undefined, get: (k) => boards[k] ?? null, saved: () => null, save: () => Promise.resolve(), params, query: {}, user, signOut: () => {}, preview: () => null };
-      const a = render(mods[n][0], props), b = render(mods[n][1], props);
-      if (a.startsWith('ERREUR')) { crashed.push(n); continue; } // plantait déjà (Alertes avant Q3) : rien à comparer
-      if (a !== b) real.push(`${n} (${key ?? 'sans clé'})`);
-    }
-    const cmp = names.length - crashed.length;
-    ok(!real.length, `avec de vraies pages : ${cmp - real.length}/${cmp} écrans identiques à ${ref}${crashed.length ? ` (${crashed.join(', ')} plantait déjà)` : ''}${real.length ? ' — différents : ' + real.join(', ') : ''}`);
-  } else console.log('(pas de .bench-data/dump-dump-s4.json : rendu avec de vraies pages non vérifié)');
-  fs.rmSync(old, { recursive: true, force: true });
-} else console.log('(historique git absent : comparaison avec le code d\'avant S4 sautée)');
+    const a = render(mods[n][0], props), b = render(mods[n][1], props);
+    if (a !== b) real.push(`${n} (${key ?? 'sans clé'})`);
+  }
+  ok(!real.length, `avec de vraies pages, sans exemples : ${names.length - real.length}/${names.length} écrans identiques à leur version avec l'exemple en ligne${real.length ? ' — différents : ' + real.join(', ') : ''}`);
+} else console.log('(pas de .bench-data/dump-dump-s4.json : rendu avec de vraies pages non vérifié)');
+fs.rmSync(old, { recursive: true, force: true });
 end();

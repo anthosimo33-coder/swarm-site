@@ -9,7 +9,7 @@ import { checker, load, memDb, root } from "./test-kit.mjs";
 
 const dir = path.resolve(process.argv[2] ?? path.join(root, "convex"));
 const entry = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "kopycat-s3-")), "entry.ts");
-fs.writeFileSync(entry, ["whop", "session"].map((m) => `export * as ${m} from ${JSON.stringify(path.join(dir, m + ".ts"))};`).join("\n"));
+fs.writeFileSync(entry, ["whop", "session", "authLimits"].map((m) => `export * as ${m} from ${JSON.stringify(path.join(dir, m + ".ts"))};`).join("\n"));
 const mods = await load(entry, [[/^@convex-dev\/auth\/server$/, `
 export const getAuthUserId = async (ctx) => ctx.__userId ?? null;
 export const getAuthSessionId = async (ctx) => ctx.__sessionId ?? null;
@@ -20,6 +20,8 @@ let links = 0;
 const json = (x) => new Response(JSON.stringify(x), { status: 200, headers: { "content-type": "application/json" } });
 globalThis.fetch = async (url, init = {}) => {
   if (/\/variants\?/.test(url)) return json({ data: [{ id: "plan_m", billing_period: 30, renewal_price: 29.99, visibility: "visible", billing_type: "renewal" }, { id: "plan_bf", billing_period: 365, renewal_price: 179.88, visibility: "visible", billing_type: "renewal" }, { id: "plan_y", billing_period: 365, renewal_price: 359.88, visibility: "hidden", billing_type: "renewal" }] });
+  const one = String(url).match(/\/variants\/([^/?]+)$/);
+  if (one) return json({ plan_ilOWoZwgoZGwK: { id: one[1], billing_period: 30, renewal_price: 29.99, billing_type: "renewal" }, plan_ZxcFeAaIiBMk1: { id: one[1], billing_period: 365, renewal_price: 179.88, billing_type: "renewal" }, plan_e3kvvjsKXFANv: { id: one[1], billing_period: 365, renewal_price: 359.88, billing_type: "renewal", visibility: "hidden" } }[one[1]] ?? {});
   if (/\/checkout_configurations$/.test(url) && init.method === "POST") { links++; return json({ purchase_url: "https://whop.com/checkout/plan_x" }); }
   return new Response("?", { status: 404 });
 };

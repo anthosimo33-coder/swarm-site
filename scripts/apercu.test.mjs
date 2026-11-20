@@ -123,7 +123,8 @@ const leak = (x) => { const s = JSON.stringify(x) ?? ''; return (s.match(/zz-app
 // et celles qu'un curieux peut taper (listes par pays ou plateforme, pages suivantes, fiches hors du top 3).
 const routeKeys = [...readFileSync(path.join(root, 'src/app/routes.js'), 'utf8').matchAll(/data: "([^"]+)"/g)].map((m) => m[1]);
 const warm = JSON.parse((readFileSync(path.join(root, 'src/app/main.js'), 'utf8').match(/const WARM = (\[[^\]]*\])/)?.[1] ?? '[]').replace(/'/g, '"'));
-ok(routeKeys.length >= 8 && warm.length >= 5, `clés relevées : ${routeKeys.length} routes, ${warm.length} préchauffées`);
+// Depuis F15 (20/11), WARM = apps, search, stats : les autres listes s'ouvrent avec leur écran (clés de routes, essayées ici).
+ok(routeKeys.length >= 8 && warm.length >= 3, `clés relevées : ${routeKeys.length} routes, ${warm.length} préchauffées`);
 const fill = (k) => k.replace('{slug}', slug(7)).replace('{id}', k.startsWith('format') ? 'f1' : '9990000080').replace('{handle}', 'createur.fr');
 const OPEN = new Set(['apps', 'search', 'stats']);
 const LOCKED_KEYS = [...new Set([...routeKeys.map(fill), ...warm, 'home', 'formats', 'format:f1', 'creators:FR', 'creators:FR:2', 'creators:ALL',
