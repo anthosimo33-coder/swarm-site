@@ -1,6 +1,7 @@
 /**
  * BANC CÔTE À CÔTE, HORS LIGNE — le tri des hashtags CORRIGÉ (brique 3 : « absent » ne dispense de payer qu'après une
- * recherche payée vide) contre ce que la recherche PAYÉE a réellement rendu en prod (20/11/2026).
+ * recherche payée vide, retenue depuis moins de TAG_ABSENT_TRUST_MS ; une page vide servie en 200 est un « absent »)
+ * contre ce que la recherche PAYÉE a réellement rendu en prod (20/11/2026).
  *
  * AUCUNE requête TikTok (le robots.txt de TikTok interdit le site aux agents d'IA, 20/11 19 h 35) ni ScrapeCreators :
  * ce script n'importe aucune fonction qui lit le réseau. Il REJOUE les pages de hashtag déjà relevées le 20/11 — le banc
@@ -12,13 +13,15 @@
  * catchUpAllowance, recentPerDay, tierDefers).
  *
  * Ce qu'il met côte à côte :
- *  1. ABSENT (actif sous la garde du payé-vide) : pour chaque hashtag lu absent, ce que le payant a rendu avec ce hashtag
+ *  1. ABSENT (actif sous la garde du payé-vide) : pour chaque hashtag dont la page ne dit rien (400/404, ou vide en 200 :
+ *     compteur 0, liste vide), ce que le payant a rendu avec ce hashtag
  *     EXACT — signaux radarSignals dont foundBy porte « réseau <App> » ou « réseau <App>·fr » et dont la légende porte
  *     #tag (un #tagapp ou un #tagai n'est pas #tag : les hashtags voisins sont listés à part), comptes radarTracked de
  *     l'app rattachés sur une légende (matchedBy caption) dont une vidéo connue publiée avant leur entrée porte #tag —
  *     et ce que le réseau payé de l'app a trouvé par ses MOTS-CLÉS (un mot-clé homonyme, « dawcade » à côté de
- *     « #dawcade », n'est jamais sauté : passSkip) ; puis la décision rejouée sur deux recherches de suite (la
- *     première : l'état de la prod, aucun radarApps.tagCounts ; la suivante : ce que la première a retenu) ;
+ *     « #dawcade », n'est jamais sauté : passSkip) ; puis la décision rejouée sur quatre recherches de suite, à la
+ *     cadence de l'app (la première : l'état de la prod, aucun radarApps.tagCounts ; les suivantes : ce que la
+ *     précédente a retenu — la 4e d'une app non concurrente tombe à 21 jours : `recheck`) ;
  *  2. COMPLET (en mesure, TAG_COMPLETE_SKIP) : ce que la règle active aurait rangé (les vidéos de la liste qui citent
  *     l'app) contre ce que le payant a rendu avec #tag hors de la liste — compte perdu, signal perdu (auteur gardé par
  *     une autre vidéo de la liste), ou trouvable par un mot-clé de l'app ;
@@ -27,14 +30,24 @@
  *     la stabilité des compteurs (contrôle des classements, radarStoreApps ; deux relevés à 50 minutes) ;
  *  4. LE GAIN, sur la cadence réelle : 30 jours de passages horaires rejoués depuis l'instantané (refresh de 3 jours pour
  *     une concurrente, 7 sinon, file networkQueueOrder, garde du passage, tagCounts d'une recherche à l'autre), dans les
- *     trois paliers du solde (survie : le 20/11 ; économie : du 15 au 19/11 ; normal : après l'achat d'un pack) ; une
- *     passe sautée vaut 1 crédit au moins (une recherche payée vide = 1 page) ; face aux crédits « network » de
- *     radarUsage et à ce qui borne ce poste (sa part du jour, le rattrapage, le solde moins la réserve).
+ *     trois paliers du solde (survie : le 20/11 ; économie : du 15 au 19/11 ; normal : après l'achat d'un pack) ; face
+ *     aux crédits « network » de radarUsage et à ce qui borne ce poste (sa part du jour, le rattrapage, le solde moins
+ *     la réserve). Trois règles : « livrée » (payé-vide, borné à TAG_ABSENT_TRUST_MS), « sans borne » (payé-vide sans
+ *     fin : la 1re revue), « avant » (un 400 suffit). Scénarios : le 13/11 (3 % de ce qui existe servi « absent » aux
+ *     serveurs, durablement) ; la NAISSANCE (tous les hashtags « rien » ont des vidéos à partir du 10e jour — une
+ *     campagne les lance — et les serveurs les voient encore « absent ») : ce que chaque règle saute à tort.
+ * Le gain est CONDITIONNEL, pas un plancher : une passe sautée vaut 1 crédit SI ScrapeCreators répond « ok, 0 vidéo »
+ * (une page facturée) à la recherche d'un hashtag inexistant. S'il rend des vidéos quelconques (une recherche floue),
+ * `paid` > 0, le hashtag n'est jamais sauté : gain nul ; si c'est une erreur, la passe n'est pas retenue (notePaidPass) :
+ * gain nul. La prod ne le dit pas : les passes de hashtag ne laissent aucune trace propre (l'issue « done » d'une
+ * recherche ne dit pas que ses passes de hashtag ont réussi, networkSearchOutcome). Les serveurs le diront :
+ * radarApps.tagCounts (absent ≥ 1 avec paid 0, contre absentVideos ; recheck, recheckVideos) et radarUsage.saved.hashtag.
  * Hypothèses écrites : la page d'un hashtag reste celle relevée le 20/11 pendant les 30 jours rejoués (aux deux relevés
- * à 50 minutes d'écart, aucun absent n'a changé) ; une recherche payée rend au moins les vidéos connues en prod qui
- * portent #tag et ont été rangées par le réseau de l'app (un plancher), au moins 1 si la page compte des vidéos, 0 sinon.
- * Une mesure du poste ne dit pas ce que TikTok sert aux serveurs Convex (13/11) : radarApps.tagCounts (absent,
- * absentVideos, completeOut, sameFound) et radarUsage.saved.hashtag le diront après bascule.
+ * à 50 minutes d'écart, aucun absent n'a changé) ; une recherche payée rend les vidéos connues en prod qui portent #tag
+ * et ont été rangées par le réseau de l'app, au moins 1 si la page compte des vidéos, 0 sinon (l'hypothèse OPTIMISTE du
+ * gain : ScrapeCreators « ok, 0 vidéo » pour un hashtag sans vidéo). Une mesure du poste ne dit pas ce que TikTok sert
+ * aux serveurs Convex (13/11) : radarApps.tagCounts (absent, absentVideos, recheck, recheckVideos, completeOut,
+ * sameFound) et radarUsage.saved.hashtag le diront après bascule.
  *
  * Budget : 0 page TikTok, 0 appel payant (lecture de fichiers seulement).
  *
@@ -47,6 +60,7 @@ import { createReadStream, mkdirSync, readFileSync, writeFileSync } from "node:f
 import { createInterface } from "node:readline";
 import { dayKeyParis, monthKeyParis } from "../../convex/radar/dateFr";
 import {
+  TAG_ABSENT_TRUST_MS,
   TAG_COMPLETE_SKIP,
   TAG_ROUTINE_SKIP,
   checkHashtag,
@@ -253,7 +267,11 @@ function paidWithTag(a: Doc, tag: string): Paid {
   }
   return { videos, accounts, anyKnown: known.length };
 }
-/** Le plancher de ce que rend la recherche payée d'un hashtag (rejeu) : le connu en prod, au moins 1 si la page compte des vidéos. */
+/**
+ * Ce que rend la recherche payée d'un hashtag (rejeu) : le connu en prod, au moins 1 si la page compte des vidéos, 0
+ * sinon — un plancher pour la qualité (une passe sautée qui en rend perd), une hypothèse optimiste pour le gain (0 → le
+ * hashtag « rien » est retenu payé vide dès sa 1re recherche ; ScrapeCreators peut rendre des vidéos quelconques).
+ */
 const paidFloor = (a: Doc, tag: string): number => {
   const n = paidWithTag(a, tag).videos.length;
   const r = pageRow(tag);
@@ -267,13 +285,19 @@ const paidReturn = (a: Doc, tag: string) => {
 };
 
 // ─── Une recherche de réseau d'une app, rejouée : le tri de ses hashtags, ses passes sautées ou payées ───────────
-type Rule = "livrée" | "avant";
-type SearchOut = { spared: number; sparedLost: number; hashtagPasses: number; read: number; why: Record<string, number>; unconfirmedPasses: number; counts: TagCount[] | undefined; guard: TagGuard };
+type Rule = "livrée" | "sans borne" | "avant";
+/** Une page qui ne dit rien : absente (400/404), ou vide en 200 (compteur 0, liste vide) — la règle « absent ». */
+const saysNothing = (r: Row | undefined) => r !== undefined && (r.status === "absent" || (r.status === "ok" && r.list?.videos === 0 && r.list.items.length === 0));
+/** La naissance : des hashtags « rien » qui ont des vidéos à partir de `at` (la recherche payée en rend), page inchangée. */
+type Born = { tags: ReadonlySet<string>; at: number };
+type SearchOut = { spared: number; sparedLost: number; hashtagPasses: number; read: number; why: Record<string, number>; unconfirmedPasses: number; recheckPasses: number; counts: TagCount[] | undefined; guard: TagGuard };
 /**
  * Comme runNetworkSearch : un hashtag lu une fois pour ses passes (sous la garde du passage), une passe sautée si son tri
  * le dit (passSkip), payée sinon (elle rend `paidReturn` vidéos), puis ce que l'app retient (paidTags → noteTagCounts).
- * « avant » : la règle d'avant la revue, à qui l'on dit « payé vide » pour tout hashtag (checkHashtag paid: 0).
+ * « avant » : la règle d'avant la revue, à qui l'on dit « payé vide » à l'instant pour tout hashtag (paid: 0, paidAt:
+ * now) ; « sans borne » : la règle de la 1re revue, à qui l'on dit que le payé-vide date de l'instant (paidAt: now).
  * `lying` : hashtags que TikTok sert « absent » aux serveurs alors qu'ils ont des vidéos (le scénario du 13/11).
+ * `born` : hashtags « rien » nés à `born.at` (la recherche payée rend alors au moins une vidéo, la page ne change pas).
  * `sparedLost` : passes sautées alors que la recherche payée aurait rendu des vidéos — l'écart de qualité.
  */
 async function searchApp(
@@ -285,10 +309,12 @@ async function searchApp(
   now: number,
   only?: (tag: string) => boolean,
   lying?: ReadonlySet<string>,
+  born?: Born,
 ): Promise<SearchOut> {
+  const returns = (tag: string) => (born?.tags.has(tag) && now >= born.at ? Math.max(1, paidReturn(a, tag)) : paidReturn(a, tag));
   const passes = networkPasses(a.searches, deep);
   const runs = new Map<string, TagRun>();
-  const res: SearchOut = { spared: 0, sparedLost: 0, hashtagPasses: 0, read: 0, why: {}, unconfirmedPasses: 0, counts: prev, guard };
+  const res: SearchOut = { spared: 0, sparedLost: 0, hashtagPasses: 0, read: 0, why: {}, unconfirmedPasses: 0, recheckPasses: 0, counts: prev, guard };
   for (const p of passes) {
     if (p.kind !== "hashtag") continue;
     const tag = p.value.toLowerCase();
@@ -298,7 +324,7 @@ async function searchApp(
       const r = pageRow(tag);
       if (r && tagGuardRead(res.guard, 0, 1)) {
         const past = prev?.find((t) => t.tag === p.value);
-        const o: TagPast = { deep, last: past?.videos, paid: rule === "avant" ? 0 : past?.paid };
+        const o: TagPast = { deep, last: past?.videos, paid: rule === "avant" ? 0 : past?.paid, paidAt: rule === "livrée" ? past?.at : now, now };
         const page: PageFetch = lying?.has(tag) ? { kind: "absent" } : pageOf(r, a);
         const noted = tagGuardNote(res.guard, await checkHashtag(p.value, ruleOf(a), o, ioOf(p.value, page)));
         res.guard = noted.guard;
@@ -312,11 +338,12 @@ async function searchApp(
     res.hashtagPasses++;
     if (passSkip(p, runs)) {
       res.spared++;
-      if (paidReturn(a, tag) > 0) res.sparedLost++;
+      if (returns(tag) > 0) res.sparedLost++;
       continue;
     }
     if (run.check?.why === "unconfirmed") res.unconfirmedPasses++;
-    const n = paidReturn(a, tag);
+    if (run.check?.why === "recheck") res.recheckPasses++;
+    const n = returns(tag);
     notePaidPage(run, { attached: 0, signals: 0, updated: 0 }, Array.from({ length: n }, (_, k) => ({ videoId: `${tag}-${k}`, authorHandle: "", caption: "" })), ruleOf(a));
     notePaidPass(run, { stopped: false, failed: false });
   }
@@ -325,8 +352,10 @@ async function searchApp(
   return res;
 }
 
-// ─── 1. ABSENT : côte à côte avec le payant, et la décision rejouée sur deux recherches de suite ─────────────────
-const absentTags = [...readings.keys()].filter((t) => pageRow(t)!.status === "absent");
+// ─── 1. ABSENT : côte à côte avec le payant, et la décision rejouée sur quatre recherches de suite ────────────────
+/** Recherches rejouées par hashtag « rien » : la 4e d'une app non concurrente tombe à 21 jours (TAG_ABSENT_TRUST_MS). */
+const ABSENT_SEARCHES = 4;
+const absentTags = [...readings.keys()].filter((t) => saysNothing(pageRow(t)));
 const absentRows = [];
 for (const tag of absentTags) {
   const r = pageRow(tag)!;
@@ -335,12 +364,17 @@ for (const tag of absentTags) {
   const paid = paidWithTag(a, tag);
   const net = netSignalsOf(a);
   const netAccounts = trackedByApp.get(a._id) ?? [];
-  const decisions: Record<Rule, { first: string; firstSpared: number; second: string; secondSpared: number }> = {} as never;
-  for (const rule of ["livrée", "avant"] as const) {
-    const deep = needsDeepSearch(a);
-    const s1 = await searchApp(a, deep, undefined, tagGuardStart(), rule, SNAP_AT, (t) => t === tag);
-    const s2 = await searchApp(a, false, s1.counts, tagGuardStart(), rule, SNAP_AT + networkRefreshMs(isRival(a)), (t) => t === tag);
-    decisions[rule] = { first: Object.keys(s1.why)[0] ?? "pas lu", firstSpared: s1.spared, second: Object.keys(s2.why)[0] ?? "pas lu", secondSpared: s2.spared };
+  // La décision à chaque recherche (à la cadence de l'app), et les passes sautées.
+  const decisions = {} as Record<Rule, { why: string[]; spared: number[] }>;
+  for (const rule of ["livrée", "sans borne", "avant"] as const) {
+    let counts: TagCount[] | undefined;
+    decisions[rule] = { why: [], spared: [] };
+    for (let k = 0; k < ABSENT_SEARCHES; k++) {
+      const o = await searchApp(a, k === 0 && needsDeepSearch(a), counts, tagGuardStart(), rule, SNAP_AT + k * networkRefreshMs(isRival(a)), (t) => t === tag);
+      counts = o.counts;
+      decisions[rule].why.push(Object.keys(o.why)[0] ?? "pas lu");
+      decisions[rule].spared.push(o.spared);
+    }
   }
   const searched = a.networkSearchedAt !== undefined;
   const verdict =
@@ -359,6 +393,7 @@ for (const tag of absentTags) {
     deepSearchedAt: iso(a.deepSearchedAt),
     networkSearchedAt: iso(a.networkSearchedAt),
     searches: a.searches,
+    page: r.status === "absent" ? "absent" : "vide en 200",
     readings: (readings.get(tag) ?? []).map((x) => x.row.status),
     paidWithTag: { videos: paid.videos.length, accounts: paid.accounts.length },
     anyKnownWithTag: paid.anyKnown,
@@ -494,7 +529,7 @@ type Regime = "survie" | "economie" | "normal";
 const tierOf: Record<Regime, CreditTier> = { survie: "survie", economie: "economie", normal: "normal" };
 /** Une app dont tous les hashtags ont une page relevée : son tri est rejoué. Les autres passent dans la file sans tri. */
 const fullyRead = (a: Doc) => (a.searches as string[]).every((s) => searchKind(s).kind !== "hashtag" || pageRow(s.slice(1).toLowerCase()) !== undefined);
-async function simulate(regime: Regime, rule: Rule, lying?: ReadonlySet<string>) {
+async function simulate(regime: Regime, rule: Rule, lying?: ReadonlySet<string>, born?: Born) {
   const defers = tierDefers(tierOf[regime]);
   const st = active.map((a) => ({ a, rival: isRival(a), searchedAt: a.networkSearchedAt as number | undefined, deepAt: a.deepSearchedAt as number | undefined, counts: undefined as TagCount[] | undefined, full: fullyRead(a), stratum: a.networkSearchedAt !== undefined ? "searched" : "never" }));
   const res = {
@@ -503,8 +538,10 @@ async function simulate(regime: Regime, rule: Rule, lying?: ReadonlySet<string>)
     hashtagPasses: { searched: 0, never: 0 },
     spared: { searched: 0, never: 0 },
     sparedLost: 0,
+    sparedLostTags: [] as string[],
     routinePasses: { rival: 0, other: 0 },
     unconfirmedPasses: 0,
+    recheckPasses: 0,
     why: {} as Record<string, number>,
     breakerTrips: 0,
     firstSparedAt: null as string | null,
@@ -529,7 +566,7 @@ async function simulate(regime: Regime, rule: Rule, lying?: ReadonlySet<string>)
       res.passesAll += networkPasses(s.a.searches, deep).length;
       if (!deep) res.routinePasses[s.rival ? "rival" : "other"] += networkPasses(s.a.searches).length;
       if (s.full) {
-        const o = await searchApp(s.a, deep, s.counts, guard, rule, t, undefined, lying);
+        const o = await searchApp(s.a, deep, s.counts, guard, rule, t, undefined, lying, born);
         if (o.guard.stopped && !guard.stopped) res.breakerTrips++;
         guard = o.guard;
         s.counts = o.counts;
@@ -538,7 +575,9 @@ async function simulate(regime: Regime, rule: Rule, lying?: ReadonlySet<string>)
         res.hashtagPasses[k] += o.hashtagPasses;
         res.spared[k] += o.spared;
         res.sparedLost += o.sparedLost;
+        if (o.sparedLost && !res.sparedLostTags.includes(s.a.slug)) res.sparedLostTags.push(s.a.slug);
         res.unconfirmedPasses += o.unconfirmedPasses;
+        res.recheckPasses += o.recheckPasses;
         for (const [w, n] of Object.entries(o.why)) res.why[w] = (res.why[w] ?? 0) + n;
         res.sparedByDay[Math.floor(h / 24)] += o.spared;
         if (o.spared && !res.firstSparedAt) res.firstSparedAt = iso(t);
@@ -560,18 +599,27 @@ const poolRead = {
 let seed = 20_261_113;
 const rnd = () => (seed = (Math.imul(seed, 1103515245) + 12345) >>> 0) / 2 ** 32;
 const lying = new Set([...readings.keys()].filter((t) => pageRow(t)!.status === "ok" && (pageRow(t)!.list?.videos ?? 0) > 0 && rnd() < 67 / 2_210));
-const runs: [Regime, Rule, ReadonlySet<string> | undefined, string][] = [
-  ["survie", "livrée", undefined, ""],
-  ["survie", "avant", undefined, ""],
-  ["economie", "livrée", undefined, ""],
-  ["economie", "avant", undefined, ""],
-  ["normal", "livrée", undefined, ""],
-  ["normal", "avant", undefined, ""],
-  ["normal", "livrée", lying, " · 13/11"],
-  ["normal", "avant", lying, " · 13/11"],
+// La naissance : tous les hashtags « rien » relevés ont des vidéos à partir du 10e jour (une campagne les lance), et les
+// serveurs les voient encore « absent » (leur page relevée ne change pas) — le seul cas où la règle livrée perd.
+const BORN_DAY = 10;
+const born: Born = { tags: new Set(absentTags), at: SNAP_AT + BORN_DAY * DAY };
+const runs: [Regime, Rule, ReadonlySet<string> | undefined, Born | undefined, string][] = [
+  ["survie", "livrée", undefined, undefined, ""],
+  ["survie", "avant", undefined, undefined, ""],
+  ["economie", "livrée", undefined, undefined, ""],
+  ["economie", "sans borne", undefined, undefined, ""],
+  ["economie", "avant", undefined, undefined, ""],
+  ["normal", "livrée", undefined, undefined, ""],
+  ["normal", "sans borne", undefined, undefined, ""],
+  ["normal", "avant", undefined, undefined, ""],
+  ["normal", "livrée", lying, undefined, " · 13/11"],
+  ["normal", "avant", lying, undefined, " · 13/11"],
+  ["normal", "livrée", undefined, born, " · naissance"],
+  ["normal", "sans borne", undefined, born, " · naissance"],
+  ["normal", "avant", undefined, born, " · naissance"],
 ];
 const simRaw: Record<string, Awaited<ReturnType<typeof simulate>>> = {};
-for (const [regime, rule, lie, tag] of runs) simRaw[`${regime} · ${rule}${tag}`] = await simulate(regime, rule, lie);
+for (const [regime, rule, lie, b, tag] of runs) simRaw[`${regime} · ${rule}${tag}`] = await simulate(regime, rule, lie, b);
 
 // ─── Les crédits « network » et ce qui borne ce poste ─────────────────────────────────────────────────────────────
 const usageRows = jsonl("radarUsage.jsonl");
@@ -620,17 +668,45 @@ for (const [k, s] of Object.entries(simRaw)) {
   const floor30 = s.spared.searched * factor.searched + s.spared.never * factor.never;
   // Ce que le poste « network » dépenserait sur ces 30 jours sans la brique (recherches complètes + passes de routine).
   const spend30 = s.searches.deep * creditsPerDeep + s.routinePasses.rival * perPass(true) + s.routinePasses.other * perPass(false);
+  // CONDITIONNEL : 1 crédit la passe sautée SI ScrapeCreators répond « ok, 0 vidéo » à un hashtag sans vidéo (en-tête).
   simulations[k] = {
     ...s,
     extrapolation: factor,
-    creditsFloor30d: Math.round(floor30),
-    creditsFloorPerDay: +(floor30 / SIM_DAYS).toFixed(1),
+    creditsIfScEmpty30d: Math.round(floor30),
+    creditsIfScEmptyPerDay: +(floor30 / SIM_DAYS).toFixed(1),
     networkSpend30dEstimate: Math.round(spend30),
-    floorShareOfSpend: spend30 ? +((100 * floor30) / spend30).toFixed(2) : null,
+    shareOfSpend: spend30 ? +((100 * floor30) / spend30).toFixed(2) : null,
     deepSearchesEquivalent: +(floor30 / creditsPerDeep).toFixed(1),
     usd30d: +(floor30 * SC_PRICE_PER_CREDIT).toFixed(2),
   };
 }
+// En régime (toutes les apps en routine, au-delà des 30 jours rejoués) : la part des recherches d'un hashtag « rien »
+// payé vide que la règle saute, par la vraie décision (hashtagGate) sur 63 jours de routine — 2 sur 3 pour une app
+// (7, 14 jours ; repayé à 21), 6 sur 7 pour une concurrente — et les passes sautées par jour, extrapolées au vivier.
+const skipShare = (rival: boolean, rule: Rule) => {
+  let paidAt = 0;
+  let skipped = 0;
+  let n = 0;
+  for (let t = networkRefreshMs(rival); t <= 63 * DAY; t += networkRefreshMs(rival)) {
+    n++;
+    const g = hashtagGate("absent", { strong: ["x"] }, { deep: false, paid: 0, paidAt: rule === "livrée" ? paidAt : t, now: t });
+    if (g.pay) paidAt = t;
+    else skipped++;
+  }
+  return skipped / n;
+};
+const steadyState = Object.fromEntries(
+  (["livrée", "sans borne"] as const).map((rule) => {
+    let perDay = 0;
+    for (const tag of absentTags) {
+      const a = appBySlug.get(pageRow(tag)!.app);
+      if (!a || a.status !== "active") continue;
+      const passes = networkPasses(a.searches).filter((p) => p.kind === "hashtag" && p.value.toLowerCase() === tag).length;
+      perDay += ((passes * skipShare(isRival(a), rule)) / (networkRefreshMs(isRival(a)) / DAY)) * (a.networkSearchedAt !== undefined ? factor.searched : factor.never);
+    }
+    return [rule, { skipShare: { app: +skipShare(false, rule).toFixed(3), rival: +skipShare(true, rule).toFixed(3) }, passesPerDayIfScEmpty: +perDay.toFixed(1) }];
+  }),
+);
 const credits = {
   networkByDay: network,
   allPostesByDay: allByDay,
@@ -658,10 +734,18 @@ const summary = {
     hashtags: absentRows.length,
     searched: absentRows.filter((r) => r.searched).length,
     verdicts: count(absentRows, (r) => r.verdict),
-    decisions: {
-      livrée: { first: count(absentRows, (r) => r.decisions.livrée.first), second: count(absentRows, (r) => r.decisions.livrée.second), secondSpared: absentRows.reduce((n, r) => n + r.decisions.livrée.secondSpared, 0), firstSpared: absentRows.reduce((n, r) => n + r.decisions.livrée.firstSpared, 0) },
-      avant: { first: count(absentRows, (r) => r.decisions.avant.first), firstSpared: absentRows.reduce((n, r) => n + r.decisions.avant.firstSpared, 0) },
-    },
+    pages: count(absentRows, (r) => r.page),
+    // Par règle, à chaque recherche k (cadence de l'app) : les décisions, et les passes sautées.
+    decisions: Object.fromEntries(
+      (["livrée", "sans borne", "avant"] as const).map((rule) => [
+        rule,
+        Array.from({ length: ABSENT_SEARCHES }, (_, k) => ({
+          search: k + 1,
+          why: count(absentRows, (r) => r.decisions[rule].why[k]),
+          spared: absentRows.reduce((n, r) => n + r.decisions[rule].spared[k], 0),
+        })),
+      ]),
+    ),
     withHomonymKeyword: absentRows.filter((r) => r.homonymKeywords.length).length,
     withNearTags: absentRows.filter((r) => r.nearTags.length).length,
   },
@@ -688,7 +772,10 @@ const summary = {
     twoReadings20_11: twoReadings,
   },
   falseAbsent1311: [...lying],
+  born: { tags: born.tags.size, day: BORN_DAY },
+  trustDays: TAG_ABSENT_TRUST_MS / DAY,
   simulations,
+  steadyState,
   credits,
 };
 writeFileSync(`${out}/absent.json`, JSON.stringify(absentRows, null, 1));

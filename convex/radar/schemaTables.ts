@@ -176,8 +176,9 @@ export const radarTables = {
     // La recherche du réseau en cours, ou la dernière (cf radarNetworkMath.NetworkSearchState).
     networkSearch: v.optional(networkSearchValidator),
     // Chacun de ses hashtags à sa dernière recherche PAYÉE réussie : le compteur de sa page publique lu avant, les vidéos
-    // que la recherche a rendues (`paid` : « absent » ne saute que si elle était vide), et la mesure des règles « absent »,
-    // « compteur inchangé » et « complet » (radarNetworkMath.hashtagGate, TagCount, 20/11/2026).
+    // que la recherche a rendues et quand (`paid`, `at` : « absent » ne saute que si elle était vide, depuis moins de
+    // 21 jours), et la mesure des règles « absent » (`recheck` : sautés puis repayés), « compteur inchangé » et
+    // « complet » (radarNetworkMath.hashtagGate, TagCount, 20/11/2026).
     tagCounts: v.optional(
       v.array(
         v.object({
@@ -187,6 +188,8 @@ export const radarTables = {
           at: v.number(),
           absent: v.optional(v.number()),
           absentVideos: v.optional(v.number()),
+          recheck: v.optional(v.number()),
+          recheckVideos: v.optional(v.number()),
           same: v.optional(v.number()),
           sameFound: v.optional(v.number()),
           sameUpdated: v.optional(v.number()),

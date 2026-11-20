@@ -550,6 +550,7 @@ export const finishNetworkSearch = internalMutation({
           videos: v.optional(v.number()),
           paid: v.number(),
           absent: v.boolean(),
+          recheck: v.boolean(),
           same: v.boolean(),
           found: v.boolean(),
           updated: v.boolean(),
@@ -1097,9 +1098,10 @@ export const runNetworkSearch = internalAction({
       const run = tagRunStart(passes);
       if (!tagGuardRead(tagGuard, Date.now() - now, NETWORK_MAX_MS)) return run;
       try {
-        // Son compteur et ce qu'a rendu sa dernière recherche payée réussie (« absent » ne saute que si elle était vide).
+        // Son compteur, ce qu'a rendu sa dernière recherche payée réussie et quand (« absent » ne saute que si elle était
+        // vide, depuis moins de TAG_ABSENT_TRUST_MS).
         const past = app.tagCounts.find((t) => t.tag === tag);
-        const noted = tagGuardNote(tagGuard, await checkHashtag(tag, app.rule, { deep: app.deep, last: past?.videos, paid: past?.paid }, tagIo));
+        const noted = tagGuardNote(tagGuard, await checkHashtag(tag, app.rule, { deep: app.deep, last: past?.videos, paid: past?.paid, paidAt: past?.at, now: Date.now() }, tagIo));
         tagGuard = noted.guard;
         run.check = noted.check;
       } catch (e) {

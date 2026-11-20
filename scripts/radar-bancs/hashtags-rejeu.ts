@@ -8,12 +8,15 @@
  *
  * Deux recherches de suite de chaque hashtag, la page relevée servie aux deux (un passage = PASSAGE hashtags, une garde
  * neuve par passage, dans l'ordre du relevé) :
- *  - A, la première (l'état de la prod : aucun radarApps.tagCounts) ; B, la suivante, avec ce que A a retenu ;
- *  - la règle d'avant (« absent » saute dès le premier 400) est la règle livrée à qui l'on dit « payé vide » pour tout
- *    hashtag sans compteur : checkHashtag(…, { paid: 0 }) ;
+ *  - A, la première (l'état de la prod : aucun radarApps.tagCounts) ; B, la suivante, une semaine après (la routine
+ *    d'une app, sous TAG_ABSENT_TRUST_MS), avec ce que A a retenu ;
+ *  - la règle d'avant (« absent » saute dès le premier 400) est la règle livrée à qui l'on dit « payé vide » à l'instant
+ *    pour tout hashtag sans compteur : checkHashtag(…, { paid: 0, paidAt: now, now }) ;
+ *  - depuis la 2e revue du 20/11, une page vide servie en 200 (compteur 0, liste vide) suit la règle « absent » ;
  *  - ce que rend la recherche payée de A : les vidéos connues en prod qui portent le hashtag et que la recherche du
- *    réseau de l'app a rangées (radarSignals.foundBy « réseau <App> » ou « ·fr ») — un plancher ; aucune → on suppose 0
- *    (c'est ce que la recherche payée dira sur les serveurs : tagCounts.absent, tagCounts.absentVideos) ;
+ *    réseau de l'app a rangées (radarSignals.foundBy « réseau <App> » ou « ·fr ») ; aucune → on suppose 0 (l'hypothèse
+ *    OPTIMISTE du gain : si ScrapeCreators rend des vidéos quelconques pour un hashtag inexistant, rien n'est jamais
+ *    sauté ; c'est ce que la recherche payée dira sur les serveurs : tagCounts.absent, absentVideos, recheck) ;
  *  - le scénario du 13/11 : TikTok sert « absent » aux serveurs, durablement, pour 3 % de ce qui existe (67 profils sur
  *    2 210, en-tête de radarFreeMath) — tirés au hasard (SEED) parmi les hashtags relevés avec des vidéos, dont la
  *    recherche payée rend alors au moins une vidéo (ils en ont) : ce que chaque règle saute à A et à B.
@@ -58,6 +61,8 @@ const PASSAGE = 40;
 /** Le scénario du 13/11 : part de ce qui existe servi « absent » aux serveurs (67 profils sur 2 210), et sa graine. */
 const FALSE_ABSENT = 67 / 2_210;
 const SEED = 20_261_113;
+/** B, une semaine après A : la routine d'une app non concurrente. */
+const WEEK = 7 * 86_400_000;
 
 type Doc = Record<string, any>;
 type Row = { app: string; tag: string; deep: boolean; searched: boolean; status: string; list?: { videos: number; items: { id: string; author: string }[] } };
@@ -108,7 +113,7 @@ type Search = { rule: Rule; tag: string; why: string; pay: boolean; spared: numb
  * Une recherche de chacun des hashtags d'un passage, comme runNetworkSearch : la garde, la page, ses passes sautées ou
  * payées (`returned` vidéos rendues par passe payée), puis ce que l'app retient (finishNetworkSearch → noteTagCounts).
  */
-async function passage(rule: Rule, rows: Row[], page: (r: Row) => PageFetch, past: Map<string, TagCount[] | undefined>, returned: (r: Row) => number): Promise<Search[]> {
+async function passage(rule: Rule, rows: Row[], page: (r: Row) => PageFetch, past: Map<string, TagCount[] | undefined>, returned: (r: Row) => number, now: number): Promise<Search[]> {
   let guard: TagGuard = tagGuardStart();
   const res: Search[] = [];
   for (const r of rows) {
@@ -121,7 +126,7 @@ async function passage(rule: Rule, rows: Row[], page: (r: Row) => PageFetch, pas
     const prev = past.get(r.tag);
     const rec = prev?.find((t) => t.tag === key);
     // La règle d'avant : tout hashtag sans compteur était tenu pour payé vide.
-    const o: TagPast = { deep: r.deep, last: rec?.videos, paid: rule === "avant" ? 0 : rec?.paid };
+    const o: TagPast = { deep: r.deep, last: rec?.videos, paid: rule === "avant" ? 0 : rec?.paid, paidAt: rule === "avant" ? now : rec?.at, now };
     const run: TagRun = tagRunStart(passes.length);
     if (tagGuardRead(guard, 0, 1)) {
       const io = { page: async (url: string): Promise<PageFetch> => (url === tagEmbedUrl(key) ? page(r) : { kind: "suspect", reason: "pas relevée" }) };
@@ -141,7 +146,7 @@ async function passage(rule: Rule, rows: Row[], page: (r: Row) => PageFetch, pas
       notePaidPass(run, { stopped: false, failed: false });
     }
     const paid = paidTags(runs);
-    res.push({ rule, tag: r.tag, why: run.check?.why ?? "garde", pay: run.check?.pay ?? true, spared, counts: paid.length ? noteTagCounts(prev, paid, searches, 1) : prev });
+    res.push({ rule, tag: r.tag, why: run.check?.why ?? "garde", pay: run.check?.pay ?? true, spared, counts: paid.length ? noteTagCounts(prev, paid, searches, now) : prev });
   }
   return res;
 }
@@ -149,10 +154,10 @@ async function passage(rule: Rule, rows: Row[], page: (r: Row) => PageFetch, pas
 async function twoSearches(rule: Rule, rows: Row[], page: (r: Row) => PageFetch, returned: (r: Row) => number) {
   const chunks = Array.from({ length: Math.ceil(rows.length / PASSAGE) }, (_, i) => rows.slice(i * PASSAGE, (i + 1) * PASSAGE));
   const a: Search[] = [];
-  for (const c of chunks) a.push(...(await passage(rule, c, page, new Map(), returned)));
+  for (const c of chunks) a.push(...(await passage(rule, c, page, new Map(), returned, 0)));
   const past = new Map(a.map((s) => [s.tag, s.counts]));
   const b: Search[] = [];
-  for (const c of chunks) b.push(...(await passage(rule, c, page, past, returned)));
+  for (const c of chunks) b.push(...(await passage(rule, c, page, past, returned, WEEK)));
   return { a, b };
 }
 
@@ -167,7 +172,8 @@ for (const file of rowFiles) {
   const sides: Record<string, unknown> = {};
   for (const rule of ["avant", "livrée"] as const) {
     const { a, b } = await twoSearches(rule, rows, pageOf, paidFloor);
-    const unconfirmedSkips = a.filter((s) => !s.pay && rows.find((r) => r.tag === s.tag)?.status === "absent");
+    const nothing = (r: Row | undefined) => r !== undefined && (r.status === "absent" || (r.status === "ok" && r.list?.videos === 0 && r.list.items.length === 0));
+    const unconfirmedSkips = a.filter((s) => !s.pay && nothing(rows.find((r) => r.tag === s.tag)));
     sides[rule] = {
       A: { decisions: count(a, (s) => s.why), skipped: a.filter((s) => !s.pay).length, passesSpared: spared(a) },
       B: { decisions: count(b, (s) => s.why), skipped: b.filter((s) => !s.pay).length, passesSpared: spared(b) },
@@ -193,6 +199,7 @@ for (const file of rowFiles) {
   report[file.split("/").slice(-2, -1)[0] ?? file] = {
     hashtags: rows.length,
     absentPages: absent.length,
+    emptyPages200: rows.filter((r) => r.status === "ok" && r.list?.videos === 0 && r.list.items.length === 0).length,
     absentSearched: absent.filter((r) => r.searched).length,
     absentCarryingKnown: absent.reduce((n, r) => n + (knownAnyByTag.get(r.tag) ?? 0), 0),
     absentPaidFloor: absent.reduce((n, r) => n + paidFloor(r), 0),
