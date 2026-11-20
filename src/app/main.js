@@ -14,6 +14,10 @@
 //   saved(clé) / save(clé, valeur)  ce que la personne garde (convex/saved.ts) : apps et comptes
 //            suivis, dossiers, règles d'alerte, déjà lu. save() s'affiche tout de suite.
 import { h, Fragment } from 'preact';
+// Aperçu d'une app : la ligne cliquée devient le panneau (animation, voir le fichier).
+import './morph.js';
+// Bascules liquides : onglets, rail, lignes d'Apps (voir le fichier).
+import './liquid.js';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';

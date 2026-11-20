@@ -16,14 +16,20 @@ export default class Apps extends DCLogic {
     // Échap ferme le menu de tri et le calendrier (les menus de filtre ont leur propre champ).
     this.esc = (e) => { const st = this.state || {}; if (e.key === 'Escape' && (st.open === 'tri' || st.open === 'periode')) this.setState({ open: '' }); };
     document.addEventListener('keydown', this.esc);
+    this.moreIo = typeof IntersectionObserver === 'function' ? new IntersectionObserver((es) => {
+      if (es.some((e) => e.isIntersecting)) this.setState({ limit: ((this.state || {}).limit || 40) + 60 });
+    }, { rootMargin: '900px 0px' }) : null;
+    if (this.moreEl && this.moreIo) this.moreIo.observe(this.moreEl);
   }
-  componentWillUnmount() { document.removeEventListener('mousedown', this.out); document.removeEventListener('keydown', this.esc); }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.out); document.removeEventListener('keydown', this.esc); if (this.moreIo) this.moreIo.disconnect(); }
   componentDidUpdate(pp, ps) {
     const st = this.state || {};
     ps = ps || {};
     // Menu ouvert : le focus y reste (Safari ne le donne pas au bouton cliqué), pour qu'Échap le ferme.
     if (st.open && this.menuInput && (st.open !== ps.open || !(this.menuEl && this.menuEl.contains(document.activeElement)))) this.menuInput.focus();
     if (st.pv && st.pv !== ps.pv && this.pvClose) this.pvClose.focus();
+    // Encore dans l'écran après un ajout de lignes : on la réobserve pour en demander d'autres.
+    if (st.limit !== ps.limit && this.moreEl && this.moreIo) { this.moreIo.unobserve(this.moreEl); this.moreIo.observe(this.moreEl); }
   }
   renderVals() {
     const b = this.baseVals();
@@ -154,7 +160,15 @@ return {};
       return k.slice(0, 2).map(([c, p, t]) => ({ c, p: p !== null && p !== undefined ? p + '\u202f%' : '', t })); };
     const mkText = (a) => { const md = MKD[a[0]]; const l = md ? md.map((m) => [m[0], m[2]]) : a[2].map((c) => [c, null]);
       return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p]) => (c === 'XX' ? 'Pays inconnu' : c) + (p !== null && p !== undefined ? ' ' + p + '\u202f%' : '')).join(' · '); };
-    const rows = list.map((a, i) => {
+    // Les lignes ne dépendent que des données et des filtres : ouvrir ou fermer un aperçu ne les recalcule pas
+    // (519 lignes, ~13 ms par clic avant le 20/11) ; seule la ligne de l'app ouverte change de fond.
+    // Rendu progressif (20/11) : 40 lignes d'abord, 60 de plus quand le bas du tableau approche (sentinelle
+    // observée, voir componentDidMount). Dessiner les ~520 lignes d'un coup gelait l'écran 260 à 640 ms à chaque
+    // changement d'onglet ou retour sur Apps ; seules les lignes dessinées sont calculées. « Affichées » garde le total.
+    const limit = st.limit || 40;
+    const rowsKey = [SRC, D, market, niches.join('|'), sort, sortBy, dir, period, platform, limit];
+    const sameRows = !!this.rowsKey && this.rowsKey.every((v, k) => v === rowsKey[k]);
+    const rowsBase = sameRows ? this.rowsBase : list.slice(0, limit).map((a, i) => {
       const w = a[6];
       const max = Math.max.apply(null, w) || 1;
       const pts = w.map((v, j) => [3 + j * (124 / 5), 36 - (v / max) * 30]);
@@ -175,10 +189,13 @@ return {};
         thumbs: a[8].map((src, j) => ({ src, v: a[9][j], t: T[(i + j) % T.length], href: videoOf(a, j), paid: !!(a[26] && a[26][j]), car: a[29] && a[29][j] ? String(a[29][j]) : '' })).filter((t) => t.src),
         kindL: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[a[28]] || '',
         logo: a[10] || false, nologo: !a[10], blank: a[10] ? '' : 'sw-app-blank',
-        bg: st.pv === a[0] ? 'var(--accent-soft)' : 'transparent',
+        bg: 'transparent', pvKey: a[0],
         open: () => this.setState({ pv: a[0], open: '' })
       };
     });
+    if (!sameRows) { this.rowsKey = rowsKey; this.rowsBase = rowsBase; }
+    if (!this.setMore) this.setMore = (el) => { if (this.moreEl && this.moreIo) this.moreIo.unobserve(this.moreEl); this.moreEl = el; if (el && this.moreIo) this.moreIo.observe(el); };
+    const rows = st.pv ? rowsBase.map((r) => (r.pvKey === st.pv ? Object.assign({}, r, { bg: 'var(--accent-soft)' }) : r)) : rowsBase;
     const mLabel = MKS.filter((m) => m[0] === market)[0][1];
     const nLabel = niches.length === 0 ? 'Toutes' : (niches.length === 1 ? niches[0] : niches.length + ' niches');
     const BIC = { marche: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z', niche: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.01', plateforme: 'M4 5h16v14H4zM10 9l5 3-5 3z' };
@@ -344,7 +361,7 @@ return {};
     return {
       lede: market === 'ALL' ? 'Les apps que les réseaux de créateurs poussent, classées par vues.' : 'Les apps qui font le plus de vues ' + PREP(mLabel)[0] + ' ' + mLabel + ' : vues, courbes et vidéos de ce pays seulement.',
       releve: (() => { const S = this.props && typeof this.props.get === 'function' ? this.props.get('stats') : null; if (!S || !S.at) return ''; const d = new Date(S.at); return 'Relevé le ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }).replace(':', ' h ') + '.'; })(), sortMenu, sortBtn, hd, cal, cust, perEdge,
-      rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv, ajItem,
+      rows, more: list.length > limit, setMore: this.setMore, empty: list.length === 0, total: list.length, bar, chips, menu, sorts, periods, pv, ajItem,
       vlab: period === 'custom' ? 'Vues · ' + rangeLabel : (period === '7' ? 'Vues 7 j' : 'Vues 30 j'), sortLabel: SLAB[sortBy],
       closeMenu: () => set({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
@@ -761,14 +778,14 @@ return {};
               ),
               $h("tbody", null,
                 ($l($v.rows)).map((r) => [
-                  $h("tr", { "style": `background: ${$t(r?.bg)};` },
+                  $h("tr", { "key": r?.n, "data-pv-row": "", "data-key": r?.n, "style": `background: ${$t(r?.bg)};` },
                     $h("td", { "style": "padding: 10px 12px 10px 20px;" },
                       $h("span", { "style": "display: flex; align-items: center; gap: 14px; min-width: 0;" },
                         $h("span", { "style": "width: 20px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
                           $t(r?.rank)
                         ),
                         $h("button", { "type": "button", "class": "sw-app", "onClick": r?.open, "aria-label": `Aperçu de ${$t(r?.n)}`, "style": "min-width: 0; gap: 14px; border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;" },
-                          $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 40px; height: 40px; border-radius: 11px;" },
+                          $h("span", { "data-mo-ico": "", "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 40px; height: 40px; border-radius: 11px;" },
                             (r?.logo) ? [
                               $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                             ] : null,
@@ -780,7 +797,7 @@ return {};
                           ),
                           $h("span", { "style": "min-width: 0; display: flex; flex-direction: column; gap: 3px;" },
                             $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; min-width: 0;" },
-                              $h("span", { "class": "sw-app-name", "style": "font-size: 15px; font-weight: 600; letter-spacing: -0.01em;" },
+                              $h("span", { "data-mo-name": "", "class": "sw-app-name", "style": "font-size: 15px; font-weight: 600; letter-spacing: -0.01em;" },
                                 $t(r?.n)
                               ),
                               (r?.kindL) ? [
@@ -863,7 +880,7 @@ return {};
                     $h("td", null,
                       $h("span", { "style": "display: flex; align-items: center; gap: 14px;" },
                         $h("span", { "style": "display: flex; flex-direction: column; gap: 4px; min-width: 92px;" },
-                          $h("span", { "style": "font-family: var(--font-display); font-size: 20px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);" },
+                          $h("span", { "data-lq-num": "", "style": "font-family: var(--font-display); font-size: 20px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);" },
                             $t(r?.v30)
                           ),
                           $h("span", { "style": `font-size: 11px; font-weight: 600; white-space: nowrap; color: ${$t(r?.dInk)};` },
@@ -877,8 +894,8 @@ return {};
                               $h("stop", { "offset": "1", "stop-color": r?.stroke, "stop-opacity": "0" })
                             )
                           ),
-                          $h("path", { "d": r?.area, "fill": `url(#${$t(r?.gid)})` }),
-                          $h("path", { "d": r?.line, "fill": "none", "stroke": r?.stroke, "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" }),
+                          $h("path", { "data-lq-spark": "", "d": r?.area, "fill": `url(#${$t(r?.gid)})` }),
+                          $h("path", { "data-lq-spark": "", "d": r?.line, "fill": "none", "stroke": r?.stroke, "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" }),
                           $h("circle", { "cx": r?.ex, "cy": r?.ey, "r": "3.5", "fill": r?.stroke, "stroke": "#121722", "stroke-width": "2" })
                         )
                       )
@@ -906,7 +923,10 @@ return {};
                   )
                 ] : null
               )
-            )
+            ),
+            ($v.more) ? [
+              $h("div", { "ref": $v.setMore, "aria-hidden": "true", "style": "height: 1px;" })
+            ] : null
           ),
           $h("footer", { "style": "margin-top: auto; padding: 28px 32px 32px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;" },
             $h("p", { "class": "sw-calc", "style": "margin: 0;" },
@@ -918,12 +938,12 @@ return {};
           )
         ),
         ($v.pv?.on) ? [
-          $h("button", { "type": "button", "aria-label": "Fermer l’aperçu", "onClick": $v.closePv, "style": "position: fixed; inset: 0; z-index: 40; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.45);" }),
-          $h("aside", { "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: 520px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; background: var(--surface-raised); border-left: 1px solid var(--line); box-shadow: -40px 0 80px rgba(0,0,0,0.5); animation: sw-rise .4s cubic-bezier(.2,.8,.2,1) both;" },
+          $h("button", { "data-morph-veil": "", "type": "button", "aria-label": "Fermer l’aperçu", "onClick": $v.closePv, "style": "position: fixed; inset: 0; z-index: 40; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.52); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);" }),
+          $h("aside", { "data-morph": "", "role": "dialog", "aria-modal": "true", "aria-label": `Aperçu de ${$t($v.pv?.n)}`, "onKeyDown": $v.pvKeys, "style": "position: fixed; top: 12px; right: 12px; bottom: 12px; z-index: 41; width: 520px; max-width: calc(100% - 24px); box-sizing: border-box; display: flex; flex-direction: column; border-radius: 24px; background: var(--surface-raised); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.09), 0 40px 120px rgba(0,0,0,0.6);" },
             $h("header", { "style": "flex-shrink: 0; padding: clamp(14px, 2.6vh, 24px) 24px clamp(10px, 1.8vh, 18px); display: flex; flex-direction: column;" },
               $h("div", { "style": "display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;" },
                 $h("div", { "class": "sw-app", "style": "gap: 14px;" },
-                  $h("span", { "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: 52px; height: 52px; border-radius: 15px;" },
+                  $h("span", { "data-mo-ico": "", "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: 52px; height: 52px; border-radius: 15px;" },
                     ($v.pv?.logo) ? [
                       $h("img", { "class": "sw-logo-img", "src": $u($v.pv?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                     ] : null,
@@ -934,15 +954,15 @@ return {};
                     ] : null
                   ),
                   $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-                    $h("h2", { "style": "margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;" },
+                    $h("h2", { "data-mo-name": "", "style": "margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap;" },
                       $t($v.pv?.n)
                     ),
-                    $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
+                    $h("span", { "data-mo-in": "", "style": "font-size: 13px; color: var(--ink-faint);" },
                       $t($v.pv?.niche)
                     )
                   )
                 ),
-                $h("span", { "style": "display: flex; gap: 6px;" },
+                $h("span", { "data-mo-in": "", "style": "display: flex; gap: 6px;" },
                   $h("span", { "style": "position: relative; display: inline-flex;" },
                     $h("button", { "data-aj-trigger": "true", "onClick": $v.toggleAj, "aria-expanded": $v.ajOpen, "aria-haspopup": "dialog", "class": "sw-btn sw-btn-icon", "type": "button", "aria-label": "Garder dans un dossier", "style": "width: 40px; height: 40px; background: var(--track);" },
                       $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -964,13 +984,13 @@ return {};
               )
             ),
             $h("div", { "style": `flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 0 24px clamp(10px, 1.8vh, 18px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: ${$t($v.pv?.rows)}; gap: clamp(8px, 1.3vh, 12px);` },
-              $h("section", { "aria-label": "Vues sur 30 jours", "style": "grid-column: 1 / span 2; min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 18px clamp(8px, 1.3vh, 12px); border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("section", { "data-mo-in": "", "aria-label": "Vues sur 30 jours", "style": "grid-column: 1 / span 2; min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 18px clamp(8px, 1.3vh, 12px); border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
                 $h("div", { "style": "display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;" },
                   $h("div", { "style": "display: flex; flex-direction: column; gap: 4px;" },
                     $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                       $t($v.pv?.vLabel)
                     ),
-                    $h("span", { "style": "font-family: var(--font-display); font-size: clamp(30px, 4.6vh, 44px); line-height: 1; font-weight: 700; letter-spacing: -0.045em;" },
+                    $h("span", { "data-mo-count": "", "style": "font-family: var(--font-display); font-size: clamp(30px, 4.6vh, 44px); line-height: 1; font-weight: 700; letter-spacing: -0.045em;" },
                       $t($v.pv?.v30)
                     )
                   ),
@@ -979,7 +999,7 @@ return {};
                       "Cette semaine"
                     ),
                     $h("span", { "style": "display: inline-flex; align-items: baseline; gap: 8px;" },
-                      $h("span", { "style": "font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em;" },
+                      $h("span", { "data-mo-count": "", "style": "font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em;" },
                         $t($v.pv?.week)
                       ),
                       ($v.pv?.delta) ? [
@@ -990,7 +1010,7 @@ return {};
                     )
                   )
                 ),
-                $h("svg", { "viewBox": "0 0 436 72", "preserveAspectRatio": "none", "role": "img", "aria-label": "Vues par semaine sur 6 semaines", "style": "flex: 1; min-height: 24px; width: 100%; margin-top: clamp(4px, 1vh, 10px); overflow: visible;" },
+                $h("svg", { "data-mo-wipe": "", "viewBox": "0 0 436 72", "preserveAspectRatio": "none", "role": "img", "aria-label": "Vues par semaine sur 6 semaines", "style": "flex: 1; min-height: 24px; width: 100%; margin-top: clamp(4px, 1vh, 10px); overflow: visible;" },
                   $h("defs", null,
                     $h("linearGradient", { "id": "apAr", "x1": "0", "y1": "0", "x2": "0", "y2": "1" },
                       $h("stop", { "offset": "0", "stop-color": "#4C9AFF", "stop-opacity": "0.32" }),
@@ -1008,7 +1028,7 @@ return {};
                   ])
                 )
               ),
-              $h("section", { "aria-label": "Sa place", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("section", { "data-mo-in": "", "aria-label": "Sa place", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "Sa place"
                 ),
@@ -1018,18 +1038,18 @@ return {};
                 $h("span", { "style": "margin-top: 4px; font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                   $t($v.pv?.rankOf)
                 ),
-                $h("div", { "aria-hidden": "true", "style": "flex: 1; min-height: 0; margin-top: clamp(6px, 1.2vh, 12px); display: flex; align-items: flex-end; gap: 6px;" },
+                $h("div", { "data-mo-grow": "", "aria-hidden": "true", "style": "flex: 1; min-height: 0; margin-top: clamp(6px, 1.2vh, 12px); display: flex; align-items: flex-end; gap: 6px;" },
                   ($l($v.pv?.bars)).map((b) => [
                     $h("span", { "title": b?.title, "style": `flex: 1; height: ${$t(b?.h)}; min-height: 3px; border-radius: 6px 6px 2px 2px; background: ${$t(b?.bg)};` })
                   ])
                 )
               ),
-              $h("section", { "aria-label": "Son réseau", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("section", { "data-mo-in": "", "aria-label": "Son réseau", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "Son réseau"
                 ),
                 $h("span", { "style": "margin-top: 4px; display: flex; align-items: baseline; gap: 6px;" },
-                  $h("span", { "style": "font-family: var(--font-display); font-size: clamp(24px, 3.6vh, 34px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
+                  $h("span", { "data-mo-count": "", "style": "font-family: var(--font-display); font-size: clamp(24px, 3.6vh, 34px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
                     $t($v.pv?.acc)
                   ),
                   $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
@@ -1037,7 +1057,7 @@ return {};
                   )
                 ),
                 ($v.pv?.hasTop10) ? [
-                  $h("div", { "aria-hidden": "true", "style": "margin-top: auto; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px;" },
+                  $h("div", { "data-mo-pop": "", "aria-hidden": "true", "style": "margin-top: auto; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px;" },
                     ($l($v.pv?.waffle)).map((c) => [
                       $h("span", { "style": `height: clamp(7px, 1.5vh, 15px); border-radius: 3px; background: ${$t(c?.bg)};` })
                     ])
@@ -1051,7 +1071,7 @@ return {};
                 ] : null
               ),
               ($v.pv?.hasTop) ? [
-                $h("a", { "href": $u($v.pv?.top?.href), "aria-label": $v.pv?.top?.aria, "style": "grid-column: 1 / span 2; min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; gap: 14px; padding: clamp(8px, 1.3vh, 12px); border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-decoration: none; color: var(--ink);" },
+                $h("a", { "data-mo-in": "", "href": $u($v.pv?.top?.href), "aria-label": $v.pv?.top?.aria, "style": "grid-column: 1 / span 2; min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; gap: 14px; padding: clamp(8px, 1.3vh, 12px); border-radius: 22px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); text-decoration: none; color: var(--ink);" },
                   $h("span", { "class": "sw-video", "style": "position: relative; flex: 0 0 auto; height: 100%; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden; background: #0A0C12;" },
                     $h("img", { "class": "sw-cover", "src": $u($v.pv?.top?.cover), "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "aria-hidden": "true", "style": "position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; background: rgba(5,7,12,0.55); display: flex; align-items: center; justify-content: center;" },
@@ -1064,7 +1084,7 @@ return {};
                     $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                       "Sa vidéo la plus vue"
                     ),
-                    $h("span", { "style": "font-family: var(--font-display); font-size: clamp(22px, 3.3vh, 30px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
+                    $h("span", { "data-mo-count": "", "style": "font-family: var(--font-display); font-size: clamp(22px, 3.3vh, 30px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
                       $t($v.pv?.top?.views)
                     ),
                     $h("span", { "style": "display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: var(--ink-faint);" },
@@ -1088,11 +1108,11 @@ return {};
                   )
                 )
               ] : null,
-              $h("section", { "aria-label": "Rythme", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
+              $h("section", { "data-mo-in": "", "aria-label": "Rythme", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "Vidéos par semaine"
                 ),
-                $h("span", { "style": "font-family: var(--font-display); font-size: clamp(22px, 3.3vh, 30px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
+                $h("span", { "data-mo-count": "", "style": "font-family: var(--font-display); font-size: clamp(22px, 3.3vh, 30px); line-height: 1; font-weight: 700; letter-spacing: -0.04em;" },
                   $t($v.pv?.ppw)
                 ),
                 $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
@@ -1105,12 +1125,12 @@ return {};
                   ] : null
                 )
               ),
-              $h("section", { "class": "sw-mk-card", "aria-label": "D’où publient ses comptes", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
+              $h("section", { "data-mo-in": "", "class": "sw-mk-card", "aria-label": "D’où publient ses comptes", "style": "min-height: 0; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: clamp(12px, 1.9vh, 16px) 16px; border-radius: 22px; background: var(--track);" },
                 $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
                   "D’où publient ses comptes"
                 ),
                 $h("span", { "style": "display: flex; flex-direction: column; gap: 7px;" },
-                  $h("span", { "class": "sw-mk-bar", "aria-hidden": "true", "style": "display: flex; gap: 2px; height: 6px; border-radius: 3px; overflow: hidden; flex-shrink: 0;" },
+                  $h("span", { "data-mo-wipe": "", "class": "sw-mk-bar", "aria-hidden": "true", "style": "display: flex; gap: 2px; height: 6px; border-radius: 3px; overflow: hidden; flex-shrink: 0;" },
                     ($l($v.pv?.mkd)).map((m) => [
                       $h("span", { "style": `flex: ${$t(m?.flex)}; min-width: 3px; background: ${$t(m?.bg)};` })
                     ])
@@ -1143,7 +1163,7 @@ return {};
                 )
               )
             ),
-            $h("footer", { "style": "flex-shrink: 0; padding: clamp(10px, 1.7vh, 16px) 24px clamp(12px, 2.6vh, 24px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px;" },
+            $h("footer", { "data-mo-in": "", "style": "flex-shrink: 0; padding: clamp(10px, 1.7vh, 16px) 24px clamp(12px, 2.6vh, 24px); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px;" },
               $h("button", { "class": "sw-pill sw-follow", "type": "button", "onClick": $v.pv?.follow, "aria-pressed": $v.pv?.followOn, "title": $v.pv?.followTitle, "style": "height: 48px; min-width: 150px; justify-content: center;" },
                 ($v.pv?.followYes) ? [
                   $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
