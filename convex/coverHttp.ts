@@ -49,9 +49,8 @@ export const cover = httpAction(async (ctx, request) => {
   const found: { handle: string | null; url: string | null } = await ctx.runQuery(internal.radarStore.coverLookup, { id });
   if (found.url) return redirect(found.url);
   if (found.handle === null) return refused();
-  // Copie rangée en HEIC : convertie par covers.ensure, même pendant une pause.
-  const media: { url: string | null; missAt: number | null; heic: unknown } = await ctx.runQuery(internal.radarStore.mediaGet, { key: `v:${id}` });
-  if (!media.heic && paused(media.missAt)) return refused();
+  const media: { url: string | null; missAt: number | null } = await ctx.runQuery(internal.radarStore.mediaGet, { key: `v:${id}` });
+  if (paused(media.missAt)) return refused();
   const url = (await ctx.runAction(internal.covers.ensure, { id, handle: found.handle })).url;
   return url ? redirect(url) : refused();
 });

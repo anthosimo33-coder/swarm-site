@@ -178,8 +178,8 @@ const hashOf = (data: unknown): string => hashLen(data).hash;
  * Relevé, et réparation sur demande, des images rangées (audit S30, Q67) : `npx convex run radarSync:repairMedia` compte
  * les images, leur poids, les HEIC (avant le 13/11) et les fichiers non matriciels (icône SVG, audit S30) ou absents ;
  * `'{"apply": true}'` efface ces derniers (fichier et ligne), recopiés ensuite par la synchro ou à la première vue.
- * Remplace repairHeic (13/11), jamais appelée, qui ne traitait que les HEIC. Une fois les HEIC à 0 en prod, la conversion
- * à la volée (covers.ensure, champ heic de mediaGet) pourra partir (décision : audit Q67).
+ * Remplace repairHeic (13/11), jamais appelée, qui ne traitait que les HEIC. Relevé de la prod le 20/11 : 0 HEIC sur
+ * 158 373 images ; la conversion sur place à la première vue (covers.ensure, champ heic de mediaGet) est retirée (Q67).
  */
 export const repairMedia = internalAction({
   args: { apply: v.optional(v.boolean()) },

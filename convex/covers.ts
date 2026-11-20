@@ -3,9 +3,8 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
 import { MEDIA_RETRY_MS as RETRY_MS } from "./coverSign";
-import { copyImage, shrink } from "./imageCopy";
+import { copyImage } from "./imageCopy";
 
 // Après un échec (vidéo supprimée, page refusée), on ne réessaie pas avant 6 h (MEDIA_RETRY_MS, convex/coverSign.ts) :
 // /cover et /avatar (convex/coverHttp.ts) ne lancent même pas cette action pendant la pause.
@@ -40,21 +39,10 @@ export const ensure = internalAction({
   args: { id: v.string(), handle: v.string() },
   handler: async (ctx, { id, handle }): Promise<{ url: string | null; gone: boolean; blank?: boolean }> => {
     const key = `v:${id}`;
-    const known: { url: string | null; missAt: number | null; heic: Id<"_storage"> | null } = await ctx.runQuery(internal.radarStore.mediaGet, { key });
+    const known: { url: string | null; missAt: number | null } = await ctx.runQuery(internal.radarStore.mediaGet, { key });
     if (known.url) return { url: known.url, gone: false };
-    // Copie rangée en HEIC (avant le 13/11) : convertie sur place, sans repasser par TikTok.
-    if (known.heic) {
-      const blob = await ctx.storage.get(known.heic);
-      const small = blob ? await shrink(await blob.arrayBuffer(), "image/heic", key) : null;
-      if (small) {
-        const storageId = await ctx.storage.store(new Blob([small.data], { type: small.type }));
-        const url = await ctx.storage.getUrl(storageId);
-        if (url) {
-          const [kept]: { key: string; url: string }[] = await ctx.runMutation(internal.radarStore.saveMedia, { items: [{ key, storageId, url }] });
-          return { url: kept?.url ?? url, gone: false };
-        }
-      }
-    }
+    // Plus de conversion sur place d'une copie HEIC rangée (audit Q67 : aucune en prod le 20/11) : une copie
+    // inutilisable est recopiée ci-dessous, et convex/imageCopy.ts convertit un HEIC à la copie.
     // Échec récent (TikTok a dit « disparue » ou « sans miniature ») : pas de nouvel essai avant 6 h ; rendu comme « sans
     // miniature » (un essai pour la lecture IA, qui abandonne au 3e) plutôt que « disparue » (abandon d'emblée).
     if (known.missAt && Date.now() - known.missAt < RETRY_MS) return { url: null, gone: false, blank: true };

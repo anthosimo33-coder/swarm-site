@@ -299,8 +299,11 @@ function memDb() {
   for (const [key, storageId] of [["icon:x", "svg"], ["v:7000000000000000002", "svg"], ["a:compte", "svg"], ["v:7000000000000000003", "heic"]]) await s30.ctx.db.insert("media", { key, storageId, url: "https://u/" + storageId, at: 1 });
   const g1 = await store.mediaGet.handler(s30.ctx, { key: "icon:x" }), g2 = await store.coverLookup.handler(s30.ctx, { id: "7000000000000000002" });
   const g3 = await store.avatarLookup.handler(s30.ctx, { handle: "compte" }), g4 = await store.mediaGet.handler(s30.ctx, { key: "v:7000000000000000003" });
-  ok(g1?.url === null && g1?.heic === null && g2?.url === null && g3?.url === null, `S30 : un SVG rangé ne se sert ni par mediaGet, ni par /cover, ni par /avatar (${[g1?.url, g2?.url, g3?.url].join(", ")})`);
-  ok(g4?.heic === "heic", "S30 : un HEIC rangé reste converti sur place");
+  ok(g1?.url === null && !g1?.heic && g2?.url === null && g3?.url === null, `S30 : un SVG rangé ne se sert ni par mediaGet, ni par /cover, ni par /avatar (${[g1?.url, g2?.url, g3?.url].join(", ")})`);
+  // Q67 : plus de conversion sur place (0 HEIC en prod le 20/11) : un HEIC rangé ne se sert pas, il est recopié.
+  ok(g4?.url === null && !("heic" in (g4 ?? {})), `Q67 : un HEIC rangé ne se sert pas et n'est plus converti sur place (${JSON.stringify(g4)})`);
+  ok(!/known\.heic|"image\/heic"/.test(fs.readFileSync(path.join(dir, "covers.ts"), "utf8")) && !/media\.heic/.test(fs.readFileSync(path.join(dir, "coverHttp.ts"), "utf8")),
+    "Q67 : covers.ensure et /cover n'ont plus de branche HEIC");
   // Q67 / S30 : relevé des images et réparation sur demande.
   const audit = memDb(); withFiles(audit);
   for (const [key, storageId] of [["v:1", "ok1"], ["v:2", "heic"], ["icon:y", "svg"], ["v:3", "perdu"]]) await audit.ctx.db.insert("media", { key, storageId, url: "u", at: 1 });
