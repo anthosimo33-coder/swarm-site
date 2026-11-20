@@ -1,8 +1,9 @@
 "use node";
 
+import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
-import { backgroundOff } from "./background";
+import { backgroundOff, TIKTOK_LEASE } from "./background";
 import { tiktokPage, videoPageUrl } from "./tiktokPage";
 
 /**
@@ -34,13 +35,20 @@ export async function videoFactsState(id: string): Promise<{ facts?: Facts; gone
 }
 
 export const fill = internalAction({
-  args: {},
-  handler: async (ctx): Promise<{ read: number; found: number }> => {
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args): Promise<{ read: number; found: number }> => {
     const start = Date.now();
     if (backgroundOff()) return { read: 0, found: 0 };
+    // Une seule chaîne de lecture de pages TikTok à la fois, et rien pendant une synchro (audit F24 : la lecture des pays
+    // n'avait pas de bail, tournait pendant les synchros, et la tâche du quart d'heure pouvait en empiler une autre).
+    const token = args.token ?? Math.random().toString(36).slice(2);
+    if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: TIKTOK_LEASE, token, ms: 6 * 60_000, now: start }))) return { read: 0, found: 0 };
     const batch = await ctx.runMutation(internal.radarStore.claimRegions, { limit: BATCH, now: start });
     // Les pays lus entrent dans les écrans à la synchro de nuit (plus de synchro relancée d'ici : 20/11).
-    if (!batch.length) return { read: 0, found: 0 };
+    if (!batch.length) {
+      await ctx.runMutation(internal.radarStore.dropLease, { name: TIKTOK_LEASE, token });
+      return { read: 0, found: 0 };
+    }
     // Un essai par vidéo, la suivante à l'essai d'après : une vidéo disparue, sans pays ou illisible compte un essai ;
     // sans réponse de TikTok, la même vidéo est reprise sans compter d'essai (16/11 : refus passagers comptés).
     const out: { handle: string; country: string | null; retry?: boolean; why?: string }[] = [];
@@ -58,7 +66,8 @@ export const fill = internalAction({
     const found = out.filter((x) => x.country).length;
     const left = await ctx.runQuery(internal.radarStore.regionBatch, { limit: 1, now: Date.now() });
     // Il en reste : le lot suivant tout de suite (10 s), sans attendre la tâche planifiée du quart d'heure.
-    if (left.length > 0 && out.length === batch.length) await ctx.scheduler.runAfter(10_000, internal.radarRegions.fill, {});
+    if (left.length > 0 && out.length === batch.length) await ctx.scheduler.runAfter(10_000, internal.radarRegions.fill, { token });
+    else await ctx.runMutation(internal.radarStore.dropLease, { name: TIKTOK_LEASE, token });
     const whys = Object.entries(out.reduce((n, x) => (x.why ? { ...n, [x.why]: (n[x.why] ?? 0) + 1 } : n), {} as Record<string, number>)).map(([k, n]) => `${n} ${k}`).join(", ");
     console.log(`[pays] ${out.length} comptes lus, ${found} situés${whys ? ` (échecs : ${whys})` : ""}, ${left.length ? "il en reste" : "plus rien à lire"}`);
     return { read: out.length, found };

@@ -9,7 +9,7 @@ import type { FunctionReference } from "convex/server";
 import { internalAction, type ActionCtx } from "./_generated/server";
 import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
 import { COVER_ID } from "./coverSign";
-import { backgroundOff } from "./background";
+import { backgroundOff, TIKTOK_LEASE } from "./background";
 import { APP_STORE_ID, buildBoards, iconKey, siteOf, type GroupOut, type Part, type RApp, type Raw, type RFormat, type RSignal, type RTracked, type RVideo } from "./radarModels";
 
 /** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
@@ -185,9 +185,16 @@ export const repairHeic = internalAction({
  */
 type CopyItem = { key: string; src: string };
 export const copyMedia = internalAction({
-  args: { items: v.optional(v.array(v.object({ key: v.string(), src: v.string() }))), file: v.optional(v.id("_storage")), from: v.optional(v.number()) },
+  args: { items: v.optional(v.array(v.object({ key: v.string(), src: v.string() }))), file: v.optional(v.id("_storage")), from: v.optional(v.number()), token: v.optional(v.string()) },
   handler: async (ctx, args): Promise<{ copied: number; failed: number }> => {
     const start = Date.now();
+    // Le bail des lectures de pages TikTok (audit F24), pris en priorité : pays et carrousels attendent la fin de la copie.
+    // Refusé seulement pendant une synchro : la même liste reprend dans 1 min.
+    const token = args.token ?? Math.random().toString(36).slice(2);
+    if (!(await ctx.runMutation(internal.radarStore.takeLease, { name: TIKTOK_LEASE, token, ms: MEDIA_BUDGET_MS + 2 * 60_000, now: start, steal: true }))) {
+      await ctx.scheduler.runAfter(60_000, internal.radarSync.copyMedia, { ...args, token });
+      return { copied: 0, failed: 0 };
+    }
     let items: CopyItem[] = args.items ?? [];
     const from = args.from ?? 0;
     if (args.file) {
@@ -221,10 +228,13 @@ export const copyMedia = internalAction({
     await flush();
     const left = items.length - next;
     if (left > 0) {
-      // La suite tout de suite, dans une action neuve (sharp garde sa mémoire d'une image à l'autre).
-      if (args.file) await ctx.scheduler.runAfter(5_000, internal.radarSync.copyMedia, { file: args.file, from: from + next });
-      else await ctx.scheduler.runAfter(5_000, internal.radarSync.copyMedia, { items: items.slice(next) });
-    } else if (args.file) await ctx.storage.delete(args.file);
+      // La suite tout de suite, dans une action neuve (sharp garde sa mémoire d'une image à l'autre), avec le bail.
+      if (args.file) await ctx.scheduler.runAfter(5_000, internal.radarSync.copyMedia, { file: args.file, from: from + next, token });
+      else await ctx.scheduler.runAfter(5_000, internal.radarSync.copyMedia, { items: items.slice(next), token });
+    } else {
+      if (args.file) await ctx.storage.delete(args.file);
+      await ctx.runMutation(internal.radarStore.dropLease, { name: TIKTOK_LEASE, token });
+    }
     console.log(`[copie] ${copied} images copiées, ${nfail} introuvables, ${skipped} sans réponse de TikTok (réessayées au prochain passage ou à la première vue), ${left ? `${left} pour l'action suivante` : "liste finie"}`);
     return { copied, failed: nfail };
   },
@@ -773,14 +783,17 @@ export const runGlobal = internalAction({
       await ctx.runMutation(internal.radarStore.stageCleaned, { id });
       for (let j = 0; j < newSlides.length; j += 500) await ctx.runMutation(internal.radarStore.saveSlideTodo, { ids: newSlides.slice(j, j + 500) });
       for (let j = 0; j < newAi.length; j += 500) await ctx.runMutation(internal.radarStore.saveVideoAiTodo, { ids: newAi.slice(j, j + 500) });
-      await ctx.scheduler.runAfter(0, internal.radarRegions.fill, {});
+      // Lectures de fond, départs étalés (audit F24) : la copie des miniatures d'abord, qui tient le bail des pages TikTok ;
+      // pays et carrousels le prennent quand elle a fini (tâche du quart d'heure) ; la lecture IA (qui ne lit TikTok que
+      // pour une miniature pas encore copiée) 10 min après.
       if (copyTodo.length) {
         const file = await ctx.storage.store(new Blob([JSON.stringify(copyTodo.map(([key, src]) => ({ key, src })))], { type: "application/json" }));
         await ctx.scheduler.runAfter(0, internal.radarSync.copyMedia, { file });
       }
-      await ctx.scheduler.runAfter(0, internal.radarSlides.fill, {});
-      await ctx.scheduler.runAfter(0, internal.radarAi.fillVideos, {});
-      await ctx.scheduler.runAfter(0, internal.radarAi.fillGender, {});
+      await ctx.scheduler.runAfter(5 * 60_000, internal.radarRegions.fill, {});
+      await ctx.scheduler.runAfter(5 * 60_000, internal.radarSlides.fill, {});
+      await ctx.scheduler.runAfter(10 * 60_000, internal.radarAi.fillVideos, {});
+      await ctx.scheduler.runAfter(10 * 60_000, internal.radarAi.fillGender, {});
     } catch (e) {
       await failRun(ctx, id, e, st);
       throw e;
