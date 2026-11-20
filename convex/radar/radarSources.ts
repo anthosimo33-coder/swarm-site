@@ -12,7 +12,8 @@
  *    médiane, ceux qui sortent du lot entrent dans Signaux (plateforme
  *    « instagram »), leurs hooks nourrissent les formats qui circulent.
  *  - TRANSCRIPTIONS (toutes les 2 h) : ce qui est dit dans les signaux TikTok les
- *    plus vus de la semaine (2 minutes au plus).
+ *    plus vus de la semaine (2 minutes au plus) — par leurs sous-titres natifs
+ *    d'abord (page publique, sans crédit, 20/11/2026), le payant pour le reste.
  *
  * Données GLOBALES (pas de projet), comme les réseaux.
  */
@@ -21,10 +22,20 @@ import { internal } from "../_generated/api";
 import { internalAction, internalMutation, internalQuery } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
 import { e2eMutation, permissionQuery, type ProjectQueryCtx } from "./functions";
-import { MAX_READ_ERRORS, MEDIAN_WINDOW, hookTemplate, medianViews, multiplierOf, nextReadAt, shouldPromote, videoApp, videoCitesApp } from "./radarNetworkMath";
-import { isTextOnShot } from "./radarDisplay";
+import { MAX_READ_ERRORS, MEDIAN_WINDOW, hookTemplate, medianViews, multiplierOf, nextReadAt, shouldPromote } from "./radarNetworkMath";
 import { RETENTION_DAYS, addSnapshot, allowance, budgetState, ratioOf, type SignalInput } from "./radarSignalsMath";
-import { TRANSCRIPT_MAX_SEC, adCitesApp, adRunDays, type AdInput } from "./radarSourcesMath";
+import {
+  TRANSCRIPT_FREE_MAX_MS,
+  TRANSCRIPT_FREE_PAGES,
+  adCitesApp,
+  adRunDays,
+  rankTranscripts,
+  transcriptPass,
+  transcriptQueue,
+  type AdInput,
+} from "./radarSourcesMath";
+import { FREE_RETRY_MS, paced, retrying, type FreePage } from "./radarFreeMath";
+import { fetchEmbedPage, storePauseMs } from "./radarStoreMath";
 import { appRef, todayCredits, writeSignal, type JobState, type RunResult } from "./radarSignals";
 import { shareFormat } from "./radarNetworks";
 import { scIgFollowers, scIgReels, scKeyPresent, scTranscript } from "./scrapeCreatorsApi";
@@ -244,39 +255,21 @@ export const runInstaReads = internalAction({
 
 // ─── Transcriptions ──────────────────────────────────────────────────────────
 
-type DueTranscript = { id: Id<"radarSignals">; url: string };
+type DueTranscript = { id: Id<"radarSignals">; url: string; checked: boolean };
 
 /**
- * Les signaux TikTok de la semaine pas encore transcrits : ceux qui citent une
- * concurrente d'abord, puis une autre app suivie, puis la découverte ; les plus
- * vus d'abord dans chaque rang. Jamais une vidéo d'un compte suivi qui ne cite
- * aucune app (elle n'est montrée nulle part), ni un « texte sur plan » de 12
- * secondes ou moins (personne n'y parle). Du 06 au 09/11/2026, triées par vues
- * seules, 37 transcriptions utiles sur 173 et 18 % des vidéos de concurrents
- * couvertes.
+ * Les signaux TikTok de la semaine pas encore transcrits, rangés (radarSourcesMath.rankTranscripts) : les
+ * `freeLimit` premiers jamais lus sur leur page (la voie gratuite) et les `limit` premiers déjà lus sans
+ * sous-titres natifs (le payant), dans l'ordre de la file.
  */
 export const dueTranscripts = internalQuery({
-  args: { now: v.number(), limit: v.number() },
-  handler: async (ctx, { now, limit }): Promise<DueTranscript[]> => {
-    if (limit <= 0) return [];
+  args: { now: v.number(), limit: v.number(), freeLimit: v.optional(v.number()) },
+  handler: async (ctx, { now, limit, freeLimit = 0 }): Promise<DueTranscript[]> => {
+    if (limit <= 0 && freeLimit <= 0) return [];
     const rows = await ctx.db.query("radarSignals").withIndex("by_published", (q) => q.gte("publishedAt", now - 7 * DAY)).order("desc").take(800);
     const apps = await ctx.db.query("radarApps").collect();
-    const byId = new Map(apps.map((a) => [a._id, a]));
-    const active = apps.filter((a) => a.status === "active");
-    const ranked: { r: Doc<"radarSignals">; rank: number }[] = [];
-    for (const r of rows) {
-      if (r.platform !== "tiktok" || r.transcribedAt !== undefined || isTextOnShot(r)) continue;
-      if (r.durationSec !== undefined && r.durationSec > TRANSCRIPT_MAX_SEC) continue;
-      const own = r.appId ? byId.get(r.appId) : undefined;
-      const text = { caption: r.caption, hook: r.hook, handle: r.authorHandle };
-      const cited = own ? (videoCitesApp(text, own) ? own : videoApp(text, active)) : undefined;
-      if (own && !cited) continue;
-      ranked.push({ r, rank: cited ? (cited.rivalOf.length > 0 ? 0 : 1) : 2 });
-    }
-    return ranked
-      .sort((a, b) => a.rank - b.rank || b.r.views - a.r.views)
-      .slice(0, limit)
-      .map(({ r }) => ({ id: r._id, url: r.url }));
+    // Voie fermée, le payant reprend la tête de la file comme avant : elle doit tenir dans ce que la requête rend.
+    return transcriptQueue(rankTranscripts(rows, apps), Math.max(freeLimit, limit), limit).map(({ row, checked }) => ({ id: row._id, url: row.url, checked }));
   },
 });
 
@@ -288,6 +281,21 @@ export const setTranscript = internalMutation({
   },
 });
 
+/** Page publique lue sans sous-titres natifs à prendre : la voie gratuite ne la relit plus, le payant la prendra. */
+export const markSubtitlesChecked = internalMutation({
+  args: { signalId: v.id("radarSignals"), now: v.number() },
+  handler: async (ctx, { signalId, now }): Promise<void> => {
+    if (!(await ctx.db.get(signalId))) return;
+    await ctx.db.patch(signalId, { subtitlesCheckedAt: now });
+  },
+});
+
+/**
+ * Un passage de transcriptions (radarSourcesMath.transcriptPass) : les sous-titres natifs d'abord, sur les pages
+ * publiques de TikTok — même quand le poste payant est éteint ou coupé (palier, réserve) : elles ne coûtent rien —,
+ * puis le payant dans la limite du budget. Une page à la fois, une pause avant chacune, une page refusée redemandée
+ * une fois (le rythme des relevés gratuits, radarNetworks).
+ */
 export const runTranscripts = internalAction({
   args: {},
   handler: async (ctx): Promise<RunResult> => {
@@ -295,35 +303,45 @@ export const runTranscripts = internalAction({
     if (!scKeyPresent()) return { skipped: "no-key" };
     const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
     const n = allowance(st.budget, budgetState(st.budget, st.usage, st.balance), "transcript", todayCredits(st, "transcript"), TRANSCRIPT_RUNS_PER_DAY);
-    const due: DueTranscript[] = await ctx.runQuery(internal.radar.radarSources.dueTranscripts, { now, limit: n });
-    let credits = 0;
-    let errors = 0;
-    let creditsRemaining: number | undefined;
-    let lastError: string | undefined;
-    for (const s of due) {
-      const r = await scTranscript(s.url);
-      credits += r.credits;
-      if (!r.ok) {
-        errors++;
-        lastError = r.error;
-        if (r.noCredits) break;
-        // Vidéo supprimée ou illisible : on ne repaie pas à chaque passage.
-        await ctx.runMutation(internal.radar.radarSources.setTranscript, { signalId: s.id, text: null, now });
-        continue;
-      }
-      if (r.creditsRemaining !== undefined) creditsRemaining = r.creditsRemaining;
-      await ctx.runMutation(internal.radar.radarSources.setTranscript, { signalId: s.id, text: r.value, now });
-    }
+    const due: DueTranscript[] = await ctx.runQuery(internal.radar.radarSources.dueTranscripts, { now, limit: n, freeLimit: TRANSCRIPT_FREE_PAGES });
+    const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
+    const page = retrying(
+      paced(
+        async (url: string): Promise<FreePage> => {
+          const r = await fetchEmbedPage(url);
+          return r.kind === "ok" ? { ok: true, text: r.text } : r.kind === "suspect" ? { ok: false, kind: "suspect", reason: r.reason } : { ok: false, kind: "absent" };
+        },
+        () => sleep(storePauseMs(Math.random())),
+      ),
+      () => sleep(FREE_RETRY_MS),
+    );
+    const started = Date.now();
+    const pass = await transcriptPass(
+      due,
+      {
+        page,
+        paid: (s) => scTranscript(s.url),
+        apply: async (s, r) => {
+          if (r === "checked") await ctx.runMutation(internal.radar.radarSources.markSubtitlesChecked, { signalId: s.id, now });
+          else await ctx.runMutation(internal.radar.radarSources.setTranscript, { signalId: s.id, text: r.text, now });
+        },
+        alive: () => Date.now() - started < TRANSCRIPT_FREE_MAX_MS,
+      },
+      { pages: TRANSCRIPT_FREE_PAGES, paid: n },
+    );
+    if (pass.free.stopped) console.warn(`[radar] transcriptions : voie gratuite fermée, ${pass.free.stopped}`);
+    const { calls, credits, errors, creditsRemaining, lastError } = pass.paid;
     await ctx.runMutation(internal.radar.radarSignals.recordRun, {
       poste: "transcript",
       credits,
-      calls: due.length,
+      calls,
       errors,
       now,
       ...(creditsRemaining !== undefined ? { creditsRemaining } : {}),
       ...(lastError ? { lastError } : {}),
+      ...(pass.saved > 0 ? { saved: { transcript: pass.saved } } : {}),
     });
-    return { calls: due.length, credits, errors };
+    return { calls, credits, errors };
   },
 });
 
