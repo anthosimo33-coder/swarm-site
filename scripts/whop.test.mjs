@@ -226,4 +226,36 @@ async function deliver(w, id, event) {
   ok(jobs.some((j) => j.ref?.__path === 'whop.reconcile'), `S9 : réconciliation planifiée chaque jour (${jobs.map((j) => j.ref?.__path).join(', ')})`);
 }
 
+// ─── S10 : un remboursement total ou un litige coupe l'accès, même si Whop laisse l'adhésion active ───
+async function paidWorld(mem, pay) {
+  const w = await world();
+  whop.memberships[mem] = { id: mem, status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: w.userId }, cancel_at_period_end: false };
+  await deliver(w, 'evt_v_' + mem, { type: 'membership.went_valid', data: { id: mem } });
+  await deliver(w, 'evt_p_' + mem, { type: 'payment.succeeded', data: { id: pay, membership_id: mem, metadata: { kopycat_user: w.userId }, total: 29.99, currency: 'eur' } });
+  return w;
+}
+{
+  resetWhop();
+  let w = await paidWorld('mem_r1', 'pay_r1');
+  const pro0 = (await w.m.db.get(w.userId)).pro === true;
+  whop.calls = [];
+  // La charge d'un remboursement ne porte pas l'adhésion : elle se retrouve par le paiement rangé.
+  const r = await deliver(w, 'evt_rf1', { type: 'refund.updated', data: { id: 'rf_1', payment_id: 'pay_r1', status: 'succeeded', amount: 29.99 } });
+  const cancelled = whop.calls.some((c) => c.method === 'POST' && c.path === '/memberships/mem_r1/cancel' && !c.body?.cancel_at_period_end);
+  ok(pro0 && cancelled && (await w.m.db.get(w.userId)).pro !== true, `S10 : remboursement total, adhésion résiliée tout de suite et accès coupé (${r.status}, résiliée : ${cancelled})`);
+  w = await paidWorld('mem_r2', 'pay_r2');
+  await deliver(w, 'evt_rf2', { type: 'refund.updated', data: { id: 'rf_2', payment_id: 'pay_r2', status: 'succeeded', amount: 10 } });
+  ok((await w.m.db.get(w.userId)).pro === true, 'S10 : remboursement partiel, l\'accès reste');
+  w = await paidWorld('mem_r3', 'pay_r3');
+  await deliver(w, 'evt_rf3', { type: 'refund.created', data: { id: 'rf_3', payment_id: 'pay_r3', status: 'pending', amount: 29.99 } });
+  ok((await w.m.db.get(w.userId)).pro === true, 'S10 : remboursement en attente, rien ne change encore');
+  w = await paidWorld('mem_d1', 'pay_d1');
+  await deliver(w, 'evt_dp1', { type: 'dispute.created', data: { id: 'dp_1', payment_id: 'pay_d1' } });
+  ok((await w.m.db.get(w.userId)).pro !== true, 'S10 : litige (opposition), accès coupé');
+  // Un événement d'adhésion ultérieur (renouvellement) ne rouvre pas un accès coupé pour remboursement.
+  whop.memberships.mem_d1.status = 'active';
+  await deliver(w, 'evt_v2_d1', { type: 'membership.went_valid', data: { id: 'mem_d1' } });
+  ok((await w.m.db.get(w.userId)).pro !== true, 'S10 : un went_valid ultérieur ne rouvre pas l\'accès coupé');
+}
+
 end();

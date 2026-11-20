@@ -30,6 +30,8 @@ const ACCOUNT = "biz_iv3yoN0Wnx23qG";
 const PRODUCT = "prod_WtWqNkTHQMRA9";
 /** Statuts d'adhésion qui donnent accès à Kopycat Pro. past_due : Whop relance la carte 5 jours avant d'annuler. */
 export const ACCESS = new Set(["active", "trialing", "past_due"]);
+/** Une adhésion rangée donne-t-elle l'accès ? Son statut, sauf accès coupé pour remboursement ou litige (audit S10). */
+export const hasAccess = (s: { status: string; revokedAt?: number }) => ACCESS.has(s.status) && !s.revokedAt;
 
 type Json = Record<string, any>;
 
@@ -255,7 +257,7 @@ export const alreadyPro = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
     if ((await ctx.db.get(userId))?.pro === true) return true;
-    return (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).some((s) => ACCESS.has(s.status));
+    return (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).some(hasAccess);
   },
 });
 
@@ -299,7 +301,7 @@ export const activeSub = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
     const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-    return subs.filter((s) => ACCESS.has(s.status)).sort((a, b) => (b.periodEnd ?? 0) - (a.periodEnd ?? 0))[0] ?? null;
+    return subs.filter(hasAccess).sort((a, b) => (b.periodEnd ?? 0) - (a.periodEnd ?? 0))[0] ?? null;
   },
 });
 
@@ -307,7 +309,7 @@ export const activeSub = internalQuery({
 export const accessSubs = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) =>
-    (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).filter((s) => ACCESS.has(s.status)),
+    (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).filter(hasAccess),
 });
 
 /**
@@ -334,7 +336,7 @@ export async function cancelAllNow(ctx: ActionCtx, userId: Id<"users">): Promise
 
 async function recomputePro(ctx: MutationCtx, userId: Id<"users">) {
   const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-  const pro = subs.some((s) => ACCESS.has(s.status));
+  const pro = subs.some(hasAccess);
   const user = await ctx.db.get(userId);
   if (user && (user.pro === true) !== pro) await ctx.db.patch(userId, { pro: pro || undefined });
   return pro;
@@ -431,10 +433,23 @@ export const savePayment = internalMutation({
 
 export const markPayment = internalMutation({
   args: { paymentId: v.string(), status: v.string() },
-  handler: async (ctx, { paymentId, status }) => {
+  handler: async (ctx, { paymentId, status }): Promise<{ membershipId: string | null; total: string | null }> => {
     const row = await ctx.db.query("whopPayments").withIndex("by_payment", (q) => q.eq("paymentId", paymentId)).first();
     if (row) await ctx.db.patch(row._id, { status });
     else await ctx.db.insert("whopPayments", { paymentId, userId: null, membershipId: null, total: null, currency: null, status, createdAt: Date.now() });
+    return { membershipId: row?.membershipId ?? null, total: row?.total ?? null };
+  },
+});
+
+/** Coupe l'accès d'une adhésion (remboursement total, litige : audit S10) ; un événement ultérieur ne le rouvre pas. */
+export const revoke = internalMutation({
+  args: { membershipId: v.string(), reason: v.string() },
+  handler: async (ctx, { membershipId, reason }) => {
+    const sub = await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", membershipId)).first();
+    if (!sub) return `adhésion ${membershipId} inconnue, rien à couper (${reason})`;
+    if (!sub.revokedAt) await ctx.db.patch(sub._id, { revokedAt: Date.now() });
+    const pro = sub.userId ? await recomputePro(ctx, sub.userId) : false;
+    return `adhésion ${membershipId} : accès coupé (${reason}) → pro ${pro}`;
   },
 });
 
@@ -479,7 +494,7 @@ async function syncMembership(ctx: ActionCtx, membershipId: string, fallback: Js
 export const toReconcile = internalQuery({
   args: {},
   handler: async (ctx) =>
-    (await ctx.db.query("subscriptions").order("desc").take(2000)).filter((s) => ACCESS.has(s.status)).slice(0, 500).map((s) => s.membershipId),
+    (await ctx.db.query("subscriptions").order("desc").take(2000)).filter(hasAccess).slice(0, 500).map((s) => s.membershipId),
 });
 
 /**
@@ -584,10 +599,29 @@ async function handleEvent(ctx: ActionCtx, event: Json): Promise<string> {
     return membershipId ? `paiement ${d.id} ${status} ; ` + (await syncMembership(ctx, String(membershipId), null)) : `paiement ${d.id} ${status}`;
   }
   if (type.startsWith("refund.") || type.startsWith("dispute.")) {
+    // Audit S10 : un remboursement total ou un litige coupe l'accès tout de suite, même si Whop laisse l'adhésion active.
+    // L'adhésion se retrouve par le paiement rangé (la charge d'un remboursement ne la porte pas), sinon chez Whop.
+    const dispute = type.startsWith("dispute.");
+    if (!dispute && String(d.status ?? "succeeded") !== "succeeded") return `${type} ${d.id ?? "?"} : ${d.status}, rien à faire encore`;
     const paymentId = d.payment_id ?? d.payment?.id ?? null;
-    if (paymentId) await ctx.runMutation(internal.whop.markPayment, { paymentId: String(paymentId), status: type.startsWith("refund.") ? "refunded" : "disputed" });
-    const membershipId = d.membership_id ?? d.membership?.id ?? d.payment?.membership_id ?? null;
-    return membershipId ? await syncMembership(ctx, String(membershipId), null) : `${type} ${paymentId ?? "?"}`;
+    const paid: { membershipId: string | null; total: string | null } | null = paymentId
+      ? await ctx.runMutation(internal.whop.markPayment, { paymentId: String(paymentId), status: dispute ? "disputed" : "refunded" }) : null;
+    let membershipId: string | null = d.membership_id ?? d.membership?.id ?? paid?.membershipId ?? null;
+    let total = paid?.total ?? null;
+    if (paymentId && (!membershipId || total === null)) {
+      const p: Json = await whopApi(`/payments/${paymentId}`);
+      membershipId ??= p.membership_id ?? p.membership?.id ?? null;
+      total ??= money(p.total ?? p.final_amount ?? p.amount);
+    }
+    // Montant du remboursement inconnu : tenu pour total (garder l'accès après un remboursement total serait pire).
+    const amount = money(d.amount ?? d.total);
+    if (!dispute && amount !== null && total !== null && cents(amount) < cents(total)) return `remboursement partiel ${d.id ?? "?"} (${amount} sur ${total}) : accès gardé`;
+    if (!membershipId) return `${type} ${paymentId ?? "?"} : adhésion introuvable`;
+    await whopApi(`/memberships/${membershipId}/cancel`, { method: "POST" }).catch((e) => {
+      if (!/Whop (404|409|422)/.test(String(e))) throw e; // déjà résiliée chez Whop : rien de plus à faire
+    });
+    const cut: string = await ctx.runMutation(internal.whop.revoke, { membershipId: String(membershipId), reason: dispute ? "litige" : "remboursement" });
+    return `${cut} ; ${await syncMembership(ctx, String(membershipId), null)}`;
   }
   return `ignoré : ${type}`;
 }
@@ -632,12 +666,12 @@ export const mine = query({
     const userId = await liveUserId(ctx);
     if (userId === null) return null;
     const subs = (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect())
-      .sort((a, b) => Number(ACCESS.has(b.status)) - Number(ACCESS.has(a.status)) || (b.periodEnd ?? 0) - (a.periodEnd ?? 0));
+      .sort((a, b) => Number(hasAccess(b)) - Number(hasAccess(a)) || (b.periodEnd ?? 0) - (a.periodEnd ?? 0));
     const s = subs[0];
     const payments = (await ctx.db.query("whopPayments").withIndex("by_user", (q) => q.eq("userId", userId)).collect())
       .filter((p) => p.status !== "failed").sort((a, b) => b.createdAt - a.createdAt).slice(0, 24);
     return {
-      sub: s ? { formule: (s.periodDays ?? 0) >= 360 ? "annuel" : "mensuel", status: s.status, active: ACCESS.has(s.status), price: s.price, currency: s.currency, periodEnd: s.periodEnd, cancelAtPeriodEnd: s.cancelAtPeriodEnd, manageUrl: s.manageUrl } : null,
+      sub: s ? { formule: (s.periodDays ?? 0) >= 360 ? "annuel" : "mensuel", status: s.status, active: hasAccess(s), price: s.price, currency: s.currency, periodEnd: s.periodEnd, cancelAtPeriodEnd: s.cancelAtPeriodEnd, manageUrl: s.manageUrl } : null,
       payments: payments.map((p) => ({ id: p.paymentId, total: p.total, currency: p.currency, status: p.status, at: p.createdAt })),
     };
   },

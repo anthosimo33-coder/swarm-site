@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import { liveUserId } from "./session";
-import { ACCESS } from "./whop";
+import { hasAccess } from "./whop";
 
 /**
  * Admin › Mesure (page /admin). Réservée aux adresses de la variable d'environnement ADMIN_EMAILS (séparées par
@@ -49,7 +49,7 @@ export const data = query({
       const email = s.userId === null ? "sans compte (à rattacher)" : emailOf.get(s.userId) ?? "";
       return {
         t: s._creationTime, updatedAt: s.updatedAt, email, test: isTest(email), membershipId: s.membershipId,
-        status: s.status, active: ACCESS.has(s.status), annual: (s.periodDays ?? 0) >= 360, periodDays: s.periodDays,
+        status: s.status, active: hasAccess(s), annual: (s.periodDays ?? 0) >= 360, periodDays: s.periodDays,
         price: Number(s.price ?? 0) || 0, periodEnd: s.periodEnd, cancelAtPeriodEnd: s.cancelAtPeriodEnd,
       };
     });

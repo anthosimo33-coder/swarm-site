@@ -1,7 +1,7 @@
 import { getAuthSessionId, modifyAccountCredentials, retrieveAccount } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { liveUserId, liveUserIdInAction } from "./session";
-import { ACCESS, cancelAllNow } from "./whop";
+import { cancelAllNow, hasAccess } from "./whop";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query, type ActionCtx, type MutationCtx } from "./_generated/server";
@@ -120,7 +120,7 @@ export const eraseAccount = internalMutation({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }): Promise<boolean> => {
     const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
-    if (subs.some((s) => ACCESS.has(s.status) && !s.cancelAtPeriodEnd)) return false;
+    if (subs.some((s) => hasAccess(s) && !s.cancelAtPeriodEnd)) return false;
     for (const row of await ctx.db.query("saved").withIndex("by_user_key", (q) => q.eq("userId", userId)).collect()) {
       await ctx.db.delete(row._id);
     }

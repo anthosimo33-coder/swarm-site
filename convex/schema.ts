@@ -45,6 +45,8 @@ export default defineSchema({
     updatedAt: v.number(),
     // Date de l'adhésion chez Whop (updated_at) : un instantané plus ancien n'écrase pas le rangé (audit S9).
     whopUpdatedAt: v.optional(v.number()),
+    // Accès coupé par un remboursement total ou un litige (audit S10), même si Whop laisse l'adhésion active.
+    revokedAt: v.optional(v.number()),
   }).index("by_user", ["userId"]).index("by_membership", ["membershipId"]),
   // Les paiements reçus (reçus des Réglages), remboursements compris.
   whopPayments: defineTable({
