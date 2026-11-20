@@ -7,7 +7,9 @@ import './styles/tfm.css';
 
 import { countVisit, fetchStats } from './stats.js';
 
-// La page s'affiche tout de suite (chiffres du dernier relevé connu), puis avec ceux du Radar.
+// La page s'affiche tout de suite (chiffres du dernier relevé connu), puis avec ceux du Radar. Le pré-rendu du build
+// (scripts/prerender.mjs, audit F9) est retiré dans la même tâche que le premier rendu : pas d'écran vide entre les deux.
+document.getElementById('app').replaceChildren();
 const show = (stats) => render(h(Responsive, { desktop: Tarifs, mobile: TarifsMobile, props: { stats } }), document.getElementById('app'));
 show(null);
 fetchStats().then(show);

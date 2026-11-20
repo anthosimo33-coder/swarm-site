@@ -1,7 +1,9 @@
 // Constats « moyenne » de l'audit du 19/11 sur le convertisseur des canevas (scripts/dc2preact.py) et ce qu'il produit :
 // une section par constat. Lit les écrans générés (src/app/pages, src/pages, src/app/routes.js).
 // Usage : node scripts/generation.test.mjs
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { checker, root } from './test-kit.mjs';
 
@@ -66,6 +68,23 @@ const appPages = pages('src/app/pages');
   }
   const lp = fs.readFileSync(path.join(root, 'src/pages/LP.js'), 'utf8');
   ok(/swarm-film-720\.mp4/.test(lp) && /devicePixelRatio/.test(lp) && /saveData/.test(lp), 'F11 : sur ordinateur, le 720p sur un petit écran ou en mode économie de données');
+}
+
+// ─── F9 : la landing et les tarifs sont rendus au build ; le premier affichage n'attend plus le JS ───
+{
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'kopycat-site-'));
+  execFileSync('npx', ['vite', 'build', '--outDir', out, '--emptyOutDir', 'true', '--logLevel', 'error'], { cwd: root, stdio: 'ignore' });
+  const script = path.join(root, 'scripts/prerender.mjs');
+  if (fs.existsSync(script)) execFileSync('node', [script, out], { cwd: root, stdio: 'ignore' });
+  const text = (f) => { const html = fs.readFileSync(path.join(out, f), 'utf8'); const app = (html.match(/<div id="app">([\s\S]*)<\/div>\s*(?:<noscript>[\s\S]*?<\/noscript>\s*)?<\/body>/) || [, ''])[1]; return app.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '); };
+  const lp = text('index.html'), tf = text('tarifs.html');
+  ok(lp.length > 2000 && /Lance ton premier business/.test(lp), `F9 : index.html porte la landing rendue (${lp.length} car. de texte)`);
+  ok(tf.length > 1000 && /29,99/.test(tf), `F9 : tarifs.html porte les tarifs rendus (${tf.length} car.)`);
+  const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+  ok(/prerender-d/.test(html) && /prerender-m/.test(html) && /max-width: 860px/.test(html), 'F9 : versions ordinateur et téléphone, basculées par la même largeur que l\'app (860 px)');
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  ok(/prerender\.mjs/.test(pkg.scripts.build), 'F9 : npm run build (et donc le build Vercel) lance le pré-rendu');
+  fs.rmSync(out, { recursive: true, force: true });
 }
 
 end();
