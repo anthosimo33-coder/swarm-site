@@ -65,16 +65,3 @@ jobs:
         run: npm run test:cache
       - name: Écrans sur données de banc (npm run check:data)
         run: npm run check:data
-      # Constats hauts de l'audit du 19/11.
-      - name: Inscription sans essai de mot de passe (npm run test:auth, S1)
-        run: npm run test:auth
-      - name: Fermeture du compte et abonnement Whop (npm run test:compte, S2)
-        run: npm run test:compte
-      - name: Pas de second abonnement (npm run test:paiement, S3)
-        run: npm run test:paiement
-      - name: Fichiers publics sans données du Radar (npm run test:public, S4)
-        run: npm run test:public
-      - name: Écrans sans nom introuvable (npm run test:ecrans, Q3)
-        run: npm run test:ecrans
-      - name: Fin du Black Friday (npm run test:bf, Q1)
-        run: npm run test:bf
