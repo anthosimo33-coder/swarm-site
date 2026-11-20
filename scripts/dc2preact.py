@@ -814,7 +814,73 @@ export default class {name} extends DCLogic {{{cls_body}
     print(f'{rel} -> {g["pages"].relative_to(ROOT)}/{name}.js')
 
 
-def write_app_routes():
+MOBILE_BASE = 'm-base'
+
+
+def factor_mobile_css():
+    """Les règles communes à tous les écrans mobiles, une seule fois dans src/app/styles/m-base.css (audit Q32, 19/11).
+
+    Chaque canevas mobile recopie la même feuille de 17,5 Ko : un téléphone en chargeait 2 au premier écran (l'écran et
+    la palette) et 5 après le préchauffage, et le CSSOM gardait autant de jeux de règles identiques. Les règles présentes
+    dans les CSS de TOUS les écrans mobiles routés vont dans m-base.css, chargée avec chaque écran mobile (routes.js,
+    loadMobile) ; elles sont retirées de ces écrans et des composants qu'ils importent. Jamais en statique dans
+    src/app/main.js : la feuille poserait sur ordinateur ses règles globales (fond, liens, zones de clic). La génération
+    s'arrête si une règle restée dans un écran porte un sélecteur de m-base (l'ordre des feuilles compterait alors).
+    Rend la liste des préfixes allégés."""
+    styles = GROUPS['app']['styles']
+    routes = [prefix for _, _, prefix, _ in APP_MOBILE_PAGES]
+    prefixes = {name: prefix for _, name, prefix, *_ in APP_PAGES + APP_COMPONENTS + APP_MOBILE_PAGES}
+    with_mobile = set(routes)
+    for _, name, _, _ in APP_MOBILE_PAGES:  # les composants chargés avec un écran mobile (palette, ajout, alerte)
+        stack = list(IMPORTS.get(name, []))
+        while stack:
+            c = stack.pop()
+            if prefixes[c] not in with_mobile:
+                with_mobile.add(prefixes[c])
+                stack += IMPORTS.get(c, [])
+
+    def rules(prefix):
+        css = (styles / f'{prefix}.css').read_text()
+        head, body = css.split('\n', 1) if css.startswith('/*') else ('', css)
+        return head, [body[a:b].strip() for a, b, _ in top_rules(body)]
+    parsed = {p: rules(p) for p in with_mobile}
+    common = set(parsed[routes[0]][1]).intersection(*(set(parsed[p][1]) for p in routes[1:]))
+    base = [r for r in parsed[routes[0]][1] if r in common]
+    if not base:
+        return []
+    def decls(rs, ctx=''):
+        """(contexte @…, sélecteur, propriété) -> valeur, pour chaque déclaration (règles @media dépliées)."""
+        out = {}
+        for r in rs:
+            pre, _, inner = r.partition('{')
+            inner = inner[:-1] if inner.endswith('}') else inner
+            if pre.strip().startswith('@'):
+                if pre.strip().startswith(('@media', '@supports', '@container')):
+                    out.update(decls([inner[a:b].strip() for a, b, _ in top_rules(inner)], ctx + pre.strip()))
+                continue
+            for sel in pre.split(','):
+                for d in inner.split(';'):
+                    if ':' in d:
+                        k, v = d.split(':', 1)
+                        out[(ctx, sel.strip(), k.strip())] = v.strip()
+        return out
+    base_decls = decls(base)
+    keeps = {}
+    for p in sorted(with_mobile):
+        head, rs = parsed[p]
+        keeps[p] = (head, [r for r in rs if r not in common])
+        clash = [k for k, v in decls(keeps[p][1]).items() if k in base_decls and base_decls[k] != v]
+        if clash:
+            raise GenError(f'src/app/styles/{p}.css : {clash[0][1]} {{ {clash[0][2]} }} diffère de m-base, l\'ordre des feuilles compterait')
+    for p, (head, keep) in keeps.items():
+        (styles / f'{p}.css').write_text(head + '\n' + '\n'.join(keep) + ('\n' if keep else ''))
+    (styles / f'{MOBILE_BASE}.css').write_text('/* Généré par scripts/dc2preact.py : règles communes à tous les écrans mobiles de l\'app (audit Q32) */\n'
+                                             + '\n'.join(base) + '\n')
+    print(f'src/app/styles/{MOBILE_BASE}.css ({len(base)} règles communes, retirées de {len(with_mobile)} feuilles)')
+    return sorted(with_mobile)
+
+
+def write_app_routes(mobile_base=False):
     lines = ['// Généré par scripts/dc2preact.py — ne pas modifier à la main.',
              '// Adresses de l\'app (fixes d\'abord) : titre de l\'onglet, clé des données (convex/boards.ts),',
              '// écran desktop (load) et, s\'il existe, écran mobile (loadMobile).',
@@ -834,7 +900,7 @@ def write_app_routes():
         extra = ''
         if route in mobile:
             mname = mobile[route][0]
-            mcss = ', '.join(f"import('./styles/{x}.css')" for x in css_of(mname))
+            mcss = ', '.join(f"import('./styles/{x}.css')" for x in ([MOBILE_BASE] if mobile_base else []) + css_of(mname))
             extra = f", loadMobile: () => Promise.all([import('./pages/{mname}.js'), {mcss}]).then(([m]) => m)"
         lines.append(f"  {{ path: '{route}', title: {json.dumps(title, ensure_ascii=False)}, data: {json.dumps(data)}, load: () => {load}{extra} }},")
     lines.append('];')
@@ -855,5 +921,5 @@ if __name__ == '__main__':
         else:
             print(f'(mobile) app/{src} absent : l\'adresse garde l\'écran desktop')
     APP_MOBILE_PAGES[:] = [m for m in APP_MOBILE_PAGES if (GROUPS['app']['src'] / m[0]).exists()]
-    write_app_routes()
+    write_app_routes(mobile_base=bool(factor_mobile_css()))
     check_app_pages()

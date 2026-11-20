@@ -186,4 +186,21 @@ const topSelectors = (css) => {
   ok(!wrong.length, `S34 : $u laisse passer chemins, http(s), mailto, images data: ; rend « # » pour tout autre schéma (${wrong.join(' ; ') || CASES.length + ' cas'})`);
 }
 
+// ─── Q32 : la feuille commune des écrans mobiles n'est chargée qu'une fois (m-base.css), avec les seuls écrans mobiles ───
+{
+  const dir = path.join(root, 'src/app/styles');
+  const routes = fs.readFileSync(path.join(root, 'src/app/routes.js'), 'utf8');
+  const lists = [...routes.matchAll(/loadMobile: \(\) => Promise\.all\(\[([^\]]*)\]/g)].map((m) => [...m[1].matchAll(/styles\/([\w-]+)\.css/g)].map((x) => x[1]));
+  const rulesOf = (f) => { const s = fs.readFileSync(path.join(dir, `${f}.css`), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''); const out = []; let d = 0, st = 0;
+    for (let i = 0; i < s.length; i++) { if (s[i] === '{') d++; else if (s[i] === '}') { d--; if (!d) { out.push(s.slice(st, i + 1).trim()); st = i + 1; } } } return out; };
+  const has = fs.existsSync(path.join(dir, 'm-base.css'));
+  const base = has ? new Set(rulesOf('m-base')) : new Set();
+  ok(has && base.size >= 20 && lists.length >= 12 && lists.every((l) => l[0] === 'm-base'), `Q32 : m-base.css (${base.size} règles) chargée en tête de chaque écran mobile (${lists.filter((l) => l[0] === 'm-base').length}/${lists.length})`);
+  const dup = [...new Set(lists.flat())].filter((f) => f !== 'm-base' && rulesOf(f).some((r) => base.has(r)));
+  const big = [...new Set(lists.flat())].filter((f) => f !== 'm-base' && fs.statSync(path.join(dir, `${f}.css`)).size > 4000);
+  ok(has && !dup.length && !big.length, `Q32 : aucune règle de m-base recopiée dans une feuille d'écran ou de composant mobile (${[...dup, ...big].join(', ') || 'aucune'})`);
+  const main = fs.readFileSync(path.join(root, 'src/app/main.js'), 'utf8');
+  ok(!/m-base\.css/.test(main), 'Q32 : m-base.css jamais importée d\'office (ses règles globales ne touchent pas l\'ordinateur)');
+}
+
 end();
