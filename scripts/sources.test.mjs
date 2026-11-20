@@ -89,6 +89,34 @@ ok(!bad.length, `chaque api.<module>.<nom> du front existe et est appelé comme 
   ok(sent[0]?.[0] === 'https://banc.convex.cloud/api/mutation' && sent[0][1].path === 'admin:visit', `countVisit : POST /api/mutation admin:visit (${JSON.stringify(sent[0])})`);
 }
 
+// ─── Styles : le canevas reste la référence (Q44), messages centrés (Q57), encoche (Q59) ──────────────────────
+{
+  const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
+  const same = ['design/ds/swarm/components/bundle.css:src/styles/ds/bundle.css', 'design/ds/swarm/tokens.css:src/styles/ds/tokens.css']
+    .filter((x) => { const [a, b] = x.split(':'); return read(a) !== read(b); });
+  ok(!same.length, `système de design : la copie du site est celle des canevas${same.length ? ` ; différent : ${same.join(', ')}` : ''}`);
+  const css = read('src/app/app.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  // Sélecteurs de premier niveau (hors @keyframes) : seulement ce qui est propre au site et à son routeur.
+  const body = css.replace(/@keyframes[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
+  const selectors = [...body.matchAll(/([^{}]+)\{[^{}]*\}/g)].map((m) => m[1].trim()).flatMap((x) => x.split(',').map((y) => y.trim())).filter((x) => x && !x.startsWith('@'));
+  const SITE = [/^html$/, /^body$/, /^img\.is-broken$/, /^\.app-missing( |$)/, /^\.app-paid(\.is-[a-z]+)?$/, /^\.sw-hoverplay( |$)/, /^\.sw-video:has\(img\.is-broken\)::before$/,
+    /^\.sw-flag(\.sw-flag-\d+)?\[data-c(="[^"]*")?\]$/, /^nav\[aria-label="Navigation principale"\]$/];
+  const design = [...new Set(selectors.filter((x) => !SITE.some((re) => re.test(x))))];
+  ok(!design.length, `app.css ne porte que ce qui est propre au site (audit Q44)${design.length ? ` ; règles de dessin : ${design.slice(0, 6).join(' ; ')}` : ''}`);
+  ok(/\.sw-follow-stop\s*\{\s*display:\s*none/.test(read('design/ds/swarm/components/bundle.css')), 'bouton « Suivie » : la règle qui cache « Ne plus suivre » est dans le système de design, lu par les canevas');
+  const anim = (css.match(/\.app-paid\s*\{[^}]*animation:\s*([\w-]+)/) ?? [])[1];
+  const kf = anim ? (css.match(new RegExp(`@keyframes ${anim}\\s*\\{((?:[^{}]*\\{[^{}]*\\})*)`)) ?? [])[1] ?? '' : '';
+  const steps = [...kf.matchAll(/\{([^}]*)\}/g)].map((m) => m[1]);
+  ok(!!anim && steps.length >= 2 && steps.every((x) => !/transform/.test(x) || /translate(X)?\(-50%/.test(x)) && /width:\s*max-content/.test(css.match(/\.app-paid\s*\{[^}]*\}/)?.[0] ?? ''),
+    `messages de paiement : l'entrée garde translateX(-50%), largeur du contenu (audit Q57 ; animation ${anim ?? 'aucune'})`);
+  ok(/safe-area-inset-left/.test(css) && /safe-area-inset-right/.test(css), 'encoche à gauche et à droite prise en compte (audit Q59)');
+  ok(/interactive-widget=resizes-content/.test(read('app.html')), 'app.html : le clavier réduit la page sur Chrome Android (audit Q72)');
+  const sheets = ['MAjout', 'MNouvelleAlerte'].filter((m) => !/visualViewport/.test(read(`design/app/${m}.dc.html`)));
+  ok(!sheets.length, `feuilles du bas à champ : suivent le clavier (visualViewport, audit Q72)${sheets.length ? ` ; manque : ${sheets.join(', ')}` : ''}`);
+  const vh = ['MAjout', 'MNouvelleAlerte', 'MApps', 'MCreateurs', 'MCreateursCartes'].filter((m) => /max-height: (88|96)vh;(?! max-height: (calc\()?(88|96)dvh)/.test(read(`design/app/${m}.dc.html`)));
+  ok(!vh.length, `feuilles du bas : hauteur en dvh (audit Q72)${vh.length ? ` ; encore en vh seul : ${vh.join(', ')}` : ''}`);
+}
+
 // ─── Q50 : formes d'id et de pseudo écrites une fois ────────────────────────────────────────────────────────────
 const HOME = 'convex/coverSign.ts';
 // Reste à faire avec la branche des constats hauts (fichier qu'elle modifie) : radarSync.ts (coverUrl de boardOpts).
