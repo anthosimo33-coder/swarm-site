@@ -135,44 +135,36 @@ export default class Dossier extends DCLogic {
     const it = (kind, id, label, cover, h) => ({ kind, id, label, cover: cover || null, at: now - h * H });
     return [
       { id: 'etudes', name: 'Études, ce qui marche', createdAt: now - 400 * H, items: [
-        it('format', 'ich-losche', '« Ich lösche das in 2h‼️ »', '/media/app/v-7706579888727231777.jpg', 2),
-        it('format', 'guarda-partilha', '« ‼️🚨GUARDA E PARTILHA🚨‼️ »', '/media/app/v-7705159364558081313.jpg', 3),
-        it('video', '7705368869250075925', '@belajarbersamaespi', '/media/app/v-7705368869250075925.jpg', 5),
-        it('app', 'astraai', 'Astra AI', '/media/app/app-astra-ai.jpg', 30),
-        it('app', 'knowunity', 'Knowunity', '/media/app/app-knowunity.jpg', 31),
-        it('app', 'retaincards', 'Retain Cards', '/media/app/retain-cards.jpg', 32),
-        it('creator', 'learnwithjoel1', '@learnwithjoel1', '/media/app/av-learnwithjoel1.jpg', 33)] },
+        it('format', 'ich-losche', '« Ich lösche das in 2h‼️ »', (globalThis.__dcSample?.["Dossier"]?.["$s1"] ?? ""), 2),
+        it('format', 'guarda-partilha', '« ‼️🚨GUARDA E PARTILHA🚨‼️ »', (globalThis.__dcSample?.["Dossier"]?.["$s2"] ?? ""), 3),
+        it('video', (globalThis.__dcSample?.["Dossier"]?.["$s3"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s4"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s5"] ?? ""), 5),
+        it('app', 'astraai', 'Astra AI', (globalThis.__dcSample?.["Dossier"]?.["$s6"] ?? ""), 30),
+        it('app', 'knowunity', 'Knowunity', (globalThis.__dcSample?.["Dossier"]?.["$s7"] ?? ""), 31),
+        it('app', 'retaincards', 'Retain Cards', (globalThis.__dcSample?.["Dossier"]?.["$s8"] ?? ""), 32),
+        it('creator', 'learnwithjoel1', (globalThis.__dcSample?.["Dossier"]?.["$s9"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s10"] ?? ""), 33)] },
       { id: 'side', name: 'Side hustle', createdAt: now - 300 * H, items: [
-        it('video', '7566200000000000001', '@zinedine.gsbb', '/media/app/v-7700172397613288736.jpg', 20),
+        it('video', (globalThis.__dcSample?.["Dossier"]?.["$s11"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s12"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s13"] ?? ""), 20),
         it('app', 'shortfy', 'Shortfy', null, 40),
-        it('creator', 'zinedine.gsbb', '@zinedine.gsbb', '/media/app/av-zinedine.gsbb.jpg', 41),
-        it('creator', 'toma.ia', '@toma.ia', '/media/app/av-toma.ia.jpg', 42),
-        it('creator', 'laure_acc2', '@laure_acc2', '/media/app/av-laure_acc2.jpg', 43)] },
+        it('creator', 'zinedine.gsbb', (globalThis.__dcSample?.["Dossier"]?.["$s14"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s15"] ?? ""), 41),
+        it('creator', 'toma.ia', (globalThis.__dcSample?.["Dossier"]?.["$s16"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s17"] ?? ""), 42),
+        it('creator', 'laure_acc2', (globalThis.__dcSample?.["Dossier"]?.["$s18"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s19"] ?? ""), 43)] },
       { id: 'jalousie', name: 'Jalousie et ex', createdAt: now - 200 * H, items: [
-        it('format', 'ojala', '« Ojalá entendieras que no siempre te reclamo porqu… »', '/media/app/v-7705537368907959573.jpg', 50),
+        it('format', 'ojala', '« Ojalá entendieras que no siempre te reclamo porqu… »', (globalThis.__dcSample?.["Dossier"]?.["$s20"] ?? ""), 50),
         it('app', 'recentfollow', 'RecentFollow', null, 60),
-        it('app', 'thecringe', 'The Cringe', '/media/app/app-the-cringe.jpg', 61),
-        it('app', 'stalkie', 'Stalkie', '/media/app/stalkie.jpg', 62),
-        it('creator', 'meli83.fit', '@meli83.fit', '/media/app/av-meli83.fit.jpg', 63)] },
+        it('app', 'thecringe', 'The Cringe', (globalThis.__dcSample?.["Dossier"]?.["$s21"] ?? ""), 61),
+        it('app', 'stalkie', 'Stalkie', (globalThis.__dcSample?.["Dossier"]?.["$s22"] ?? ""), 62),
+        it('creator', 'meli83.fit', (globalThis.__dcSample?.["Dossier"]?.["$s23"] ?? ""), (globalThis.__dcSample?.["Dossier"]?.["$s24"] ?? ""), 63)] },
       { id: 'couple', name: 'Couple', createdAt: now - 150 * H, items: [
-        it('format', 'dicsovn', 'original sound - dicsovn', '/media/app/v-7703975267911421191.jpg', 70),
-        it('app', 'love8', 'Love8', '/media/app/app-love8.jpg', 80),
-        it('app', 'loverzz', 'Loverzz', '/media/app/loverzz.jpg', 81),
-        it('creator', 'johan_love8', '@johan_love8', null, 82)] }
+        it('format', 'dicsovn', 'original sound - dicsovn', (globalThis.__dcSample?.["Dossier"]?.["$s25"] ?? ""), 70),
+        it('app', 'love8', 'Love8', (globalThis.__dcSample?.["Dossier"]?.["$s26"] ?? ""), 80),
+        it('app', 'loverzz', 'Loverzz', (globalThis.__dcSample?.["Dossier"]?.["$s27"] ?? ""), 81),
+        it('creator', 'johan_love8', (globalThis.__dcSample?.["Dossier"]?.["$s28"] ?? ""), null, 82)] }
     ];
   }
 
   baseVals() {
     // Sur le canevas : ce que le site lirait dans les listes du Radar, pour les éléments du premier dossier.
-    const exd = {
-      'app:astraai': { niche: 'Études', v: '57,7 M', covs: ['/media/app/v-7700392351268752661.jpg', '/media/app/v-7697654738124442896.jpg', '/media/app/v-7702743575934684437.jpg'] },
-      'app:knowunity': { niche: 'Études', v: '44,4 M', covs: ['/media/app/v-7699151144400244000.jpg', '/media/app/v-7702625361716170002.jpg', '/media/app/v-7698010148391947552.jpg'] },
-      'app:retaincards': { niche: 'Études' },
-      'format:ich-losche': { meta: 'Accroche · 3 comptes', med: '39×', cov: ['/media/app/v-7706579888727231777.jpg', '/media/app/v-7705712961511263521.jpg', '/media/app/v-7705122381735513376.jpg'] },
-      'format:guarda-partilha': { meta: 'Accroche · 3 comptes', med: '17×', cov: ['/media/app/v-7705159364558081313.jpg', '/media/app/v-7702530293768523041.jpg', '/media/app/v-7701734315805166880.jpg'] },
-      'creator:learnwithjoel1': { av: '/media/app/av-learnwithjoel1.jpg', s: '12,2 k abonnés · Astra AI · Espagne', big: '28,5 k' },
-      'video:7705368869250075925': { s: 'Astra AI · 07/11', v: '1,99 M', x: '2 333×' }
-    };
+    const exd = (globalThis.__dcSample?.["Dossier"]?.["exd"] ?? {"app:astraai":{"niche":"","v":"","covs":[]},"app:knowunity":{"niche":"","v":"","covs":[]},"app:retaincards":{"niche":""},"format:ich-losche":{"meta":"","med":"","cov":[]},"format:guarda-partilha":{"meta":"","med":"","cov":[]},"creator:learnwithjoel1":{"av":"","s":"","big":""}});
     return { exd };
   }
 

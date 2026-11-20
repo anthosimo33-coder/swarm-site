@@ -6,6 +6,8 @@
 //   le backend se déploie à la main (README, « Backend »).
 import { execSync } from 'node:child_process';
 
-const command = process.env.CONVEX_DEPLOY_KEY ? 'npx convex deploy --cmd "npm run build"' : 'npm run build';
+// Puis scripts/check-public.mjs : le build échoue si un fichier public livre des données du Radar (audit S4).
+const build = 'npm run build && node scripts/check-public.mjs';
+const command = process.env.CONVEX_DEPLOY_KEY ? `npx convex deploy --cmd "${build}"` : build;
 console.log(`> ${command}`);
 execSync(command, { stdio: 'inherit' });

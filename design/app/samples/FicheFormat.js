@@ -1,0 +1,6 @@
+// Données d'exemple de design/app/FormatFicheA.dc.html, retirées de l'app par scripts/dc2preact.py (audit S4).
+// Chargées par scripts/check.mjs seulement : jamais livrées au navigateur.
+export default {
+  "f": {"quote": "Ich lösche das in 2h‼️", "fr": "Je supprime ça dans 2 h ‼️", "app0": {"name": "Retain Cards", "logo": "/media/app/retain-cards.jpg", "nologo": false, "blank": ""}, "mk": [{"c": "DE"}], "med": "39×", "okText": "3 sur 4", "n": 3, "max": "106 k", "rev": "Entre 500 et 710 €", "niche": "Études", "last": "vu le 10/11"},
+  "reps": [{"src":"/media/app/v-7706579888727231777.jpg", "v": "106 k", "h": "@studywithdenise", "raw": 105676, "date": "10/11", "app": "Retain Cards", "when": "10/11 · 17 h", "day": "10/11"}, {"src": "/media/app/v-7705712961511263521.jpg", "v": "83 k", "h": "@study.mit.lauri", "raw": 83412, "date": "08/11", "app": "Retain Cards", "when": "08/11 · 09 h", "day": "08/11"}, {"src": "/media/app/v-7705122381735513376.jpg", "v": "12 k", "h": "@studywithdenise", "raw": 11628, "date": "06/11", "app": "Retain Cards", "when": "06/11 · 19 h", "day": "06/11"}, {"src": "/media/app/v-7704967516086488353.jpg", "v": "1 k", "h": "@study.mit.sophia", "raw": 1064, "date": "06/11", "app": "Retain Cards", "when": "06/11 · 09 h", "day": "06/11"}],
+};

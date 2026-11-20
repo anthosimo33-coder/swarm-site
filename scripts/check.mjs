@@ -5,6 +5,13 @@ import { existsSync } from 'node:fs';
 
 import { readdirSync } from 'node:fs';
 
+// Les données d'exemple des canevas de l'app, retirées des écrans livrés (audit S4, scripts/dc2preact.py) : remises ici
+// pour que les écrans se rendent comme sur le canevas.
+globalThis.__dcSample = {};
+for (const f of readdirSync(new URL('../design/app/samples/', import.meta.url)).filter((f) => f.endsWith('.js'))) {
+  globalThis.__dcSample[f.replace('.js', '')] = (await import(`../design/app/samples/${f}`)).default;
+}
+
 const pages = ['LP', 'LPMobile', 'Tarifs', 'TarifsMobile', 'Connexion', 'Inscription']
   .map((n) => [n, `../src/pages/${n}.js`])
   .concat(readdirSync(new URL('../src/app/pages/', import.meta.url)).map((f) => [`app/${f.replace('.js', '')}`, `../src/app/pages/${f}`]));

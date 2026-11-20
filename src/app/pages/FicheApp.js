@@ -97,14 +97,7 @@ export default class FicheApp extends DCLogic {
       .map((s, i) => ({ d: ic[s[0]], label: s[1], n: s[2], cur: i === 0 ? 'page' : 'false', bg: i === 0 ? 'var(--tab-on)' : 'transparent', ink: i === 0 ? 'var(--ink)' : 'var(--ink-muted)', w: i === 0 ? 600 : 500 }));
     let W = [10.6, 9.8, 8.9, 8.5, 17.3, 18.4];
     let L = ['1 oct.', '8 oct.', '15 oct.', '22 oct.', '29 oct.', '5 nov.'];
-    let vids = [
-      ['t-navy', 'Who made this?', '2,6 M', '@ivylearns8', 'US', 'il y a 19 j'],
-      ['t-plum', 'KISI KISI SOAL TKA UNTUK SMA', '2,6 M', '@ira.belajaryuk', 'ID', 'il y a 26 j'],
-      ['t-pine', 'TKA SMP mapel apa saja', '2,3 M', '@studywithruney', 'ID', 'il y a 12 j'],
-      ['t-violet', 'TKA SD kelas 6 persiapannya bisa dimulai disini', '2,0 M', '@belajarbersamaespi', 'ID', 'il y a 5 j'],
-      ['t-amber', 'Rahasia para guru akhirnya bocor!', '1,9 M', '@belajarbarengjames', 'ID', 'il y a 30 j'],
-      ['t-umber', 'POV: tienes EXAMEN ORAL y no has estudiado NADA', '1,9 M', '@learnwithjoel1', 'ES', 'il y a 4 j']
-    ].map((v, i) => ({ t: v[0], hook: v[1], v: v[2], h: v[3], mk: v[4], age: v[5], src: ["/media/app/v-7700392351268752661.jpg", "/media/app/v-7697654738124442896.jpg", "/media/app/v-7702743575934684437.jpg", "/media/app/v-7705368869250075925.jpg", "/media/app/v-7696248791560703252.jpg", "/media/app/v-7705929733220994337.jpg"][i] }));
+    let vids = (globalThis.__dcSample?.["FicheApp"]?.["vids"] ?? []).map((v, i) => ({ t: v[0], hook: v[1], v: v[2], h: v[3], mk: v[4], age: v[5], src: [(globalThis.__dcSample?.["FicheApp"]?.["$s4"] ?? ""), (globalThis.__dcSample?.["FicheApp"]?.["$s5"] ?? ""), (globalThis.__dcSample?.["FicheApp"]?.["$s6"] ?? ""), (globalThis.__dcSample?.["FicheApp"]?.["$s7"] ?? ""), (globalThis.__dcSample?.["FicheApp"]?.["$s8"] ?? ""), (globalThis.__dcSample?.["FicheApp"]?.["$s9"] ?? "")][i] }));
     let formats = [
       [ic.texte, '« Je supprime cette vidéo dans 24 h »', 'La même idée en vietnamien chez Astra AI et en allemand chez Retain Cards', '1 226×', '809 k vues'],
       [ic.texte, '« TRATA ESTE VÍDEO COMO QUERES QUE SEJAM AS TUAS NOTAS »', 'Portugais · 4 comptes', '11× en médiane', '2 reprises sur 4'],
@@ -113,19 +106,9 @@ export default class FicheApp extends DCLogic {
     ].map((f) => ({ icon: f[0], t: f[1], meta: f[2], x: f[3], ok: f[4] }));
     let mk = [['ID', 'Indonésie', 37.47], ['US', 'États-Unis', 10.73], ['ES', 'Espagne', 4.83], ['BR', 'Brésil', 2.91], ['FR', 'France', 1.32], ['MX', 'Mexique', 0.39]]
       .map((m, i) => ({ c: m[0], l: m[1], v: m[2].toFixed(1).replace('.', ',') + '\u202fM', p: Math.round(m[2] / 57.65 * 100) + '\u202f%', w: (m[2] / 57.65 * 100).toFixed(1) + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
-    let creators = [
-      ['I', '@ivylearns8', 'Student life + study tips', 'US', '3,1 k', '4,9 M', '17,9 k', 'var(--thumb-navy)'],
-      ['I', '@ira.belajaryuk', 'belajar bareng yuk', 'ID', '4,2 k', '3,3 M', '550', 'var(--thumb-plum)'],
-      ['L', '@learnwithjoel1', 'IG: joel.c.b', 'ES', '12,2 k', '3,2 M', '28,5 k', 'var(--thumb-umber)'],
-      ['S', '@studywithruney', 'Study tips buat dapetin nilai tinggi', 'ID', '2,4 k', '2,7 M', '418', 'var(--thumb-pine)'],
-      ['S', '@studyclubbyinda', 'Studytok Yapping Club', 'ID', '26,4 k', '2,3 M', '4,6 k', 'var(--thumb-violet)'],
-      ['B', '@belajarbersamaespi', 'student tips, productivity, & tech', 'ID', '6,5 k', '2,0 M', '855', 'var(--thumb-amber)']
-    ].map((c) => { const av = {"@belajarbersamaespi": "/media/app/av-belajarbersamaespi.jpg", "@ira.belajaryuk": "/media/app/av-ira.belajaryuk.jpg", "@learnwithjoel1": "/media/app/av-learnwithjoel1.jpg", "@studyclubbyinda": "/media/app/av-studyclubbyinda.jpg", "@studywithruney": "/media/app/av-studywithruney.jpg"}[c[1]] || false; return { ini: c[0], h: c[1], bio: c[2], mk: c[3], fans: c[4], v: c[5], med: c[6], bg: c[7], av, noav: !av }; });
+    let creators = (globalThis.__dcSample?.["FicheApp"]?.["creators"] ?? []).map((c) => { const av = (globalThis.__dcSample?.["FicheApp"]?.["av"] ?? {})[c[1]] || false; return { ini: c[0], h: c[1], bio: c[2], mk: c[3], fans: c[4], v: c[5], med: c[6], bg: c[7], av, noav: !av }; });
     // L'en-tête et les chiffres de l'exemple (le canevas n'a pas de données).
-    let app = { icon: "/media/app/app-astra-ai.jpg", name: 'Astra AI', niche: 'Études', kind: 'App mobile', delta: '+6 % cette semaine', since: '06/11',
-      store: 'https://apps.apple.com/fr/app/astra-ai-r%C3%A9vision-examens/id6751030141', play: 'https://play.google.com/store/search?q=Astra%20AI&c=apps',
-      v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', week: '18,4 M', wd: "+6 % face à la semaine d'avant",
-      acc: '269', ppw: '1 360', best: '2 333×', top10: '43 % des vues', vidsHref: '/app/videos/7705929733220994337', crLabel: 'Tous les créateurs' };
+    let app = (globalThis.__dcSample?.["FicheApp"]?.["app"] ?? {"icon":"","name":"","niche":"","kind":"","delta":"","since":"","store":"","play":"","v30":"","ig":"","week":"","wd":"","acc":"","ppw":"","best":"","top10":"","vidsHref":"","crLabel":""});
     let top = 20;
     // Le tableau de bord du haut de la fiche : mêmes entrées pour l'exemple et pour le Radar.
     let src = { views30: 57.7e6, ig: 2.8e6, weekDelta: 0.06, accounts: 269, ppw: 1360, bestX: 2333, top10: 0.43, videoCount: 2552,
@@ -150,7 +133,7 @@ export default class FicheApp extends DCLogic {
         wd: D.weekDelta === null ? 'première semaine relevée' : pct(D.weekDelta) + " face à la semaine d'avant",
         acc: D.accounts.toLocaleString('fr-FR'), ppw: D.videosPerWeek.toLocaleString('fr-FR'), best: D.bestX ? xf(D.bestX) : '—',
         top10: D.top10Share === null ? '—' : Math.round(D.top10Share * 100) + '\u202f% des vues',
-        vidsHref: D.videos.length ? '/app/videos/' + D.videos[0].id : '/app/videos/7705929733220994337',
+        vidsHref: D.videos.length ? '/app/videos/' + D.videos[0].id : '/app/videos',
         crLabel: 'Tous les créateurs'
       };
       const scale = Math.max.apply(null, D.weeks) || 1;
@@ -222,11 +205,11 @@ export default class FicheApp extends DCLogic {
       hasTop: !!src.top || !(this.props && this.props.data),
       top: src.top ? { cover: src.top.cover, href: src.top.href, views: nfD(src.top.views) + ' vues', x: src.top.x ? xfD(src.top.x) + ' sa normale' : '',
         who: '@' + src.top.handle + ' · ' + new Date(src.top.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }), aria: 'Lire la vidéo de @' + src.top.handle }
-        : { cover: vids[0] ? vids[0].src : '', href: '/app/videos/7705929733220994337', views: vids[0] ? vids[0].v + ' vues' : '', x: '', who: vids[0] ? vids[0].h : '', aria: 'Lire la vidéo' },
+        : { cover: vids[0] ? vids[0].src : '', href: '/app/videos', views: vids[0] ? vids[0].v + ' vues' : '', x: '', who: vids[0] ? vids[0].h : '', aria: 'Lire la vidéo' },
       vid30: grp(src.videoCount), best: src.bestX ? xfD(src.bestX) : '—',
     };
 
-    vids = vids.map((v) => Object.assign({ href: '/app/videos/7705929733220994337' }, v));
+    vids = vids.map((v) => Object.assign({ href: '/app/videos' }, v));
     formats = formats.map((f) => Object.assign({ href: '/app/formats' }, f));
     creators = creators.map((c) => Object.assign({ page: true, href: '/app/createurs/zinedine.gsbb' }, c));
 

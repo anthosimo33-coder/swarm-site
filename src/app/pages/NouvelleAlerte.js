@@ -6,7 +6,7 @@ export default class NouvelleAlerte extends DCLogic {
   componentDidMount() { if (this.first) this.first.focus(); }
   renderVals() {
     // Exemple du canevas : ce que l'alerte par défaut trouve dans la semaine d'exemple.
-    const HITS = [{"src": "/media/app/v-7706010190566542612.jpg", "x": "1 226×"}, {"src": "/media/app/v-7706101547570171143.jpg", "x": "455×"}, {"src": "/media/app/v-7705368869250075925.jpg", "x": "2 333×"}];
+    const HITS = (globalThis.__dcSample?.["NouvelleAlerte"]?.["HITS"] ?? []);
     const NICHES = ["Études", "Couple", "Séduction IA", "Jalousie et ex", "Side hustle", "Santé et physique", "Langues", "Foi", "Social et loisirs", "Beauté IA"];
     // Libellé à l'écran -> valeur gardée dans l'alerte (AlertesA l'enregistre dans saved('alertRules')) :
     // { quoi: 'compte'|'video'|'format', niche: nom|null, seuil: nombre, marche: code du marché|null }.

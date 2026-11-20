@@ -21,7 +21,7 @@ export default class AjoutDossier extends DCLogic {
     if (this.live()) return this.props.saved('folders');
     const st = this.state || {};
     if (st.local) return st.local;
-    return [['Études, ce qui marche', 7, '/media/app/v-7705368869250075925.jpg'], ['Side hustle', 5, '/media/app/v-7700172397613288736.jpg'], ['Jalousie et ex', 5, '/media/app/v-7705376808862076182.jpg'], ['Couple', 4, '/media/app/v-7705441234847862037.jpg']]
+    return [['Études, ce qui marche', 7, (globalThis.__dcSample?.["AjoutDossier"]?.["$s0"] ?? "")], ['Side hustle', 5, (globalThis.__dcSample?.["AjoutDossier"]?.["$s1"] ?? "")], ['Jalousie et ex', 5, (globalThis.__dcSample?.["AjoutDossier"]?.["$s2"] ?? "")], ['Couple', 4, (globalThis.__dcSample?.["AjoutDossier"]?.["$s3"] ?? "")]]
       .map((f, i) => ({ id: 'ex' + i, name: f[0], createdAt: 0, items: Array.from({ length: f[1] }, (_, j) => ({ kind: 'video', id: 'ex' + i + '-' + j, label: '', cover: j === 0 ? f[2] : null, at: 0 })) }));
   }
   write(next) { if (this.live()) this.props.save('folders', next); else this.setState({ local: next }); }
@@ -29,7 +29,7 @@ export default class AjoutDossier extends DCLogic {
     const st = this.state || {};
     const P = this.props || {};
     // L'élément à ranger : passé par l'écran hôte ({ kind, id, label, cover }) ; sur le canevas, une app d'exemple.
-    const item = P.item || (this.live() ? null : { kind: 'app', id: 'astraai', label: 'Astra AI', cover: '/media/app/app-astra-ai.jpg' });
+    const item = P.item || (this.live() ? null : { kind: 'app', id: 'astraai', label: 'Astra AI', cover: (globalThis.__dcSample?.["AjoutDossier"]?.["$s4"] ?? "") });
     const raw = this.folders();
     const loading = raw === undefined;
     const all = Array.isArray(raw) ? raw : [];

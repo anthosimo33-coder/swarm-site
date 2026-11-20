@@ -20,7 +20,8 @@
     "test:sync": "node scripts/sync-cout.test.mjs",
     "test:auth": "node scripts/auth-signup.test.mjs",
     "test:compte": "node scripts/compte-fermeture.test.mjs",
-    "test:paiement": "node scripts/paiement-pro.test.mjs"
+    "test:paiement": "node scripts/paiement-pro.test.mjs",
+    "test:public": "node scripts/donnees-publiques.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",

@@ -52,15 +52,15 @@ export default class FicheFormat extends DCLogic {
 
   baseVals() {
     const nav = [{"d": "M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z", "label": "Accueil", "href": "/app", "cur": "false"}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "label": "Apps", "href": "/app/apps", "cur": "false"}, {"d": "M4 5h16v14H4zM10 9l5 3-5 3z", "label": "Formats", "href": "/app/formats", "cur": "page"}, {"d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "label": "Créateurs", "href": "/app/createurs", "cur": "false"}, {"d": "M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0", "label": "Alertes", "href": "#", "cur": "false"}, {"d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "label": "Dossiers", "href": "#", "cur": "false"}];
-    let f = {"quote": "Ich lösche das in 2h‼️", "fr": "Je supprime ça dans 2 h ‼️", "app0": {"name": "Retain Cards", "logo": "/media/app/retain-cards.jpg", "nologo": false, "blank": ""}, "mk": [{"c": "DE"}], "med": "39×", "okText": "3 sur 4", "n": 3, "max": "106 k", "rev": "Entre 500 et 710 €", "niche": "Études", "last": "vu le 10/11"};
+    let f = (globalThis.__dcSample?.["FicheFormat"]?.["f"] ?? {"quote":"","fr":"","app0":{"name":"","logo":"","nologo":false,"blank":""},"mk":[],"med":"","okText":"","n":3,"max":"","rev":"","niche":"","last":""});
     let tiles = [{"l": "Repris par", "v": "3 comptes", "s": "en 4 jours", "ink": "var(--ink)"}, {"l": "Réussite", "v": "3 sur 4", "s": "au-dessus de leur normale", "ink": "var(--ink)"}, {"l": "× la normale", "v": "39×", "s": "médiane des reprises", "ink": "var(--accent)"}, {"l": "Meilleure reprise", "v": "106 k vues", "s": "@studywithdenise, 10/11", "ink": "var(--ink)"}];
-    let reps = [{"src":"/media/app/v-7706579888727231777.jpg", "v": "106 k", "h": "@studywithdenise", "raw": 105676, "date": "10/11", "app": "Retain Cards", "when": "10/11 · 17 h", "day": "10/11"}, {"src": "/media/app/v-7705712961511263521.jpg", "v": "83 k", "h": "@study.mit.lauri", "raw": 83412, "date": "08/11", "app": "Retain Cards", "when": "08/11 · 09 h", "day": "08/11"}, {"src": "/media/app/v-7705122381735513376.jpg", "v": "12 k", "h": "@studywithdenise", "raw": 11628, "date": "06/11", "app": "Retain Cards", "when": "06/11 · 19 h", "day": "06/11"}, {"src": "/media/app/v-7704967516086488353.jpg", "v": "1 k", "h": "@study.mit.sophia", "raw": 1064, "date": "06/11", "app": "Retain Cards", "when": "06/11 · 09 h", "day": "06/11"}];
+    let reps = (globalThis.__dcSample?.["FicheFormat"]?.["reps"] ?? []);
     let common = [{"d":"M5 6h14M12 6v13M9 19h6", "t": "Le même texte à l’écran", "s": "Mot pour mot sur les 4 vidéos, en allemand."}, {"d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "t": "Une seule app derrière", "s": "Les 3 comptes poussent Retain Cards, une app de révision."}, {"d": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "t": "4 reprises en 4 jours", "s": "Du 06/11 au 10/11, chaque reprise a fait mieux que la précédente."}];
     const HOOK = 'M5 6h14M12 6v13M9 19h6';
     const SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
     // Sur le canevas : l'exemple ci-dessus.
     f = Object.assign({ kind: 'Accroche', ico: HOOK, isSound: false, hasFr: true, moreApps: '', apps: [Object.assign({ href: '/app/apps/' + 'retaincards' }, f.app0)] }, f);
-    reps = reps.map((v) => Object.assign({ href: '/app/videos/7705929733220994337' }, v));
+    reps = reps.map((v) => Object.assign({ href: '/app/videos' }, v));
     let repsTitle = 'Les 4 reprises';
 
     // Sur le site : la fiche du format depuis le Radar (document « format:<id> », convex/radarModels.ts).
