@@ -277,3 +277,8 @@ body { margin: 0; background: var(--surface); color: var(--ink); font-family: va
   .sw-follow:hover .sw-follow-now { display: none; }
   .sw-follow:hover .sw-follow-stop { display: inline; }
 }
+
+/* Aperçu d'une app (src/app/morph.js) : la ligne répond dès l'appui, avant même que le panneau ne s'ouvre. */
+[data-pv-row] .sw-app { transition: opacity 120ms ease; }
+[data-pv-row]:active { background: rgba(255,255,255,0.045) !important; }
+[data-pv-row]:active .sw-app { opacity: 0.86; }
