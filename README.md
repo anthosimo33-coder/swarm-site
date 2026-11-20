@@ -7,7 +7,7 @@ Kopycat (ex-Swarm) : les apps et les formats qui explosent en ce moment sur TikT
 - `/connexion` et `/inscription` : les écrans retenus sur le canevas de l'app (Connexion A, Inscription A), rendus responsives, branchés sur un vrai backend (voir « Comptes »)
 - `/app/…` : l'app, réservée aux personnes connectées (voir « L'app »)
 
-Chaque page existe en version desktop et en version mobile. La version mobile s'affiche sous 860 px de large, et la page bascule si la fenêtre change de taille (`src/runtime.js`, `Responsive`).
+Chaque page existe en version desktop et en version mobile. La version mobile s'affiche sous 860 px de large, ou sur un téléphone couché (`MOBILE_QUERY`, `src/runtime.js`), et la page bascule si la fenêtre change. `mountResponsive` ne charge que la version affichée, préchargée dès le `<head>` (`vite.config.js`, `variantPreload`).
 
 ## D'où vient le code
 

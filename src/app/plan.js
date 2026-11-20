@@ -67,3 +67,9 @@ export function previewView(arrival, value) {
   if (arrival.locked) return { data: value, eject: true };
   return { data: arrival.open ?? value, eject: !arrival.open };
 }
+
+/**
+ * Audit F25 (19/11) : tourner un iPad (820 ↔ 1180 px) remonte l'autre version de l'écran ; la page revenait en haut.
+ * Même adresse, seule la mise en page change : on garde la position.
+ */
+export const layoutOnly = (before, after) => !!before && !!after && before.path === after.path && before.mobile !== after.mobile;

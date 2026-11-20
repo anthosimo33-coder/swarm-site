@@ -20,9 +20,10 @@ import { useAuthActions } from '@convex-dev/auth/react';
 import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
+import { MOBILE_QUERY } from '../runtime.js';
 import { ROUTES } from './routes.js';
 import { createWatcher } from './watcher.js';
-import { APERCU, HOME, LOAD_TIMEOUT_MS, SIGN_OUT, isOpen, loadingView, mayLoadBeforeUser, previewView, routeCodeNeeded, routeMatcher, routesToWarm, safeDecode as dec } from './plan.js';
+import { APERCU, HOME, LOAD_TIMEOUT_MS, SIGN_OUT, isOpen, layoutOnly, loadingView, mayLoadBeforeUser, previewView, routeCodeNeeded, routeMatcher, routesToWarm, safeDecode as dec } from './plan.js';
 import { scrollMemory } from './scroll.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
@@ -68,8 +69,9 @@ const SUITE = 'kopycat.suite'; // l'achat commencé avant de se connecter
 // Les Réglages à une adresse (audit Q13 : l'ancienne page Compte, sans résiliation, y était encore routée sur
 // ordinateur). Sur téléphone, Réglages en plein écran ; sur ordinateur, le panneau des Réglages par-dessus l'accueil.
 const ACCOUNT = '/app/compte';
-// Sous 860 px, l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop.
-const MOBILE = window.matchMedia('(max-width: 860px)');
+// Sous 860 px, ou téléphone en paysage (audit F25 : un iPhone Plus ou Pro Max couché, 932 px, recevait l'interface
+// souris), l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop. Même condition que src/runtime.js.
+const MOBILE = window.matchMedia(MOBILE_QUERY);
 const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
 // Position de défilement retenue avant chaque navigation, rendue au retour arrière (audit F13).
 const scroll = scrollMemory(window);
@@ -435,13 +437,17 @@ function App() {
   }, [screen, proNow]);
 
   // Arrivée sur un écran : titre de l'onglet, puis la position retenue (retour arrière), l'ancre demandée, ou le haut.
+  const shownScreen = useRef(null);
   useEffect(() => {
     if (!screen) return;
     const d = screen.key ? board(screen.key).value : null;
     document.title = `${(d && (d.name || (d.handle && `@${d.handle}`) || d.label)) || screen.route.title} · Kopycat`;
     const id = dec(window.location.hash.slice(1));
     const target = id && document.getElementById(id);
-    scroll.arrive(target);
+    // Audit F25 : seule la mise en page a basculé (rotation, fenêtre redimensionnée) : même adresse, la position reste.
+    const before = shownScreen.current;
+    shownScreen.current = screen;
+    if (!layoutOnly(before, screen)) scroll.arrive(target);
   }, [screen]);
 
   // Les documents lus par l'écran : on le redessine quand ils changent.
@@ -641,7 +647,7 @@ document.addEventListener('load', (event) => {
   };
   document.addEventListener('mouseover', (e) => {
     if (location.pathname.indexOf('/app/videos/') === 0) return; // déjà sur une vidéo : pas de second lecteur
-    if (window.innerWidth < 861) return; // écran étroit = mise en page mobile : pas d'aperçu flottant
+    if (MOBILE.matches) return; // mise en page mobile : pas d'aperçu flottant
     const a = linkOf(e.target);
     if (!a || a === current || !a.querySelector('img')) return;
     const id = idOf(a);
