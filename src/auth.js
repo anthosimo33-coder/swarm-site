@@ -10,7 +10,12 @@ import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { ConvexError } from 'convex/values';
 import { AUTH_ERRORS } from '../convex/authErrors.ts';
 
-export const client = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+// Audit F27 (19/11) : au chargement, le client renvoyait tout de suite un jeton neuf après le jeton gardé, et le serveur
+// ré-exécutait une seconde fois toutes les requêtes de l'onglet (une relecture complète de chaque page ouverte). Le
+// jeton gardé est réutilisé jusqu'à peu avant son expiration (option de convex 1.48, marquée expérimentale ; un jeton
+// refusé par le serveur est aussitôt remplacé). La durée du jeton (1 h) n'est pas allongée : liveUserId (convex/session.ts)
+// ferme une session supprimée tout de suite, mais seul le jeton porte l'identité.
+export const client = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL, { initialAuthTokenReuse: true });
 
 // Où arrive une personne connectée : l'app.
 export const APP_HOME = '/app';

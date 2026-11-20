@@ -1,8 +1,22 @@
 // Ce que le Radar suit (convex/stats.ts), pour les chiffres des pages publiques : « plus de 190 apps, 4 900 comptes ».
 // Arrondi vers le bas, pour que « plus de » reste vrai. Sans réponse (hors ligne, pas encore de synchronisation),
 // les chiffres relevés le 14/11/2026.
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../convex/_generated/api.js';
+//
+// Audit Q46 (19/11) : le client HTTP de Convex (convex/browser, ~20 Ko, 7 Ko gz) partait sur la landing et les tarifs
+// pour cette seule requête. L'API HTTP de Convex est appelée directement (POST /api/query, /api/mutation).
+
+/**
+ * Une fonction publique de convex/, par son chemin (« stats:get ») ; rend sa valeur, lève une erreur sinon. Les noms
+ * sont vérifiés contre convex/ par scripts/sources.test.mjs (audit Q42).
+ */
+export async function convexHttp(kind, path, args = {}) {
+  const res = await fetch(`${import.meta.env.VITE_CONVEX_URL}/api/${kind}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path, args, format: 'json' }),
+  });
+  const body = await res.json();
+  if (!res.ok || body?.status !== 'success') throw new Error(body?.errorMessage ?? `Convex ${res.status}`);
+  return body.value;
+}
 
 export const FALLBACK = { apps: 190, accounts: 4900 };
 
@@ -15,7 +29,7 @@ export const roundStats = (s) =>
 
 export async function fetchStats() {
   try {
-    return roundStats(await new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL).query(api.stats.get, {}));
+    return roundStats(await convexHttp('query', 'stats:get'));
   } catch {
     return FALLBACK;
   }
@@ -32,5 +46,5 @@ export function countVisit() {
   } catch {
     return;
   }
-  new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL).mutation(api.admin.visit, {}).catch(() => {});
+  convexHttp('mutation', 'admin:visit').catch(() => {});
 }
