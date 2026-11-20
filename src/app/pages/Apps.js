@@ -5,6 +5,40 @@ import AjoutDossier from './AjoutDossier.js';
 import Palette from './Palette.js';
 
 export default class Apps extends DCLogic {
+  // ── Filtres dans l'adresse (audit F25, 19/11) ──
+  // Les filtres de la liste vivent dans la requête de l'adresse, avec les mêmes noms sur ordinateur et sur téléphone :
+  // quand la mise en page bascule (rotation d'un iPad, fenêtre redimensionnée), l'autre version de l'écran se monte et
+  // les relit dans this.props.query. Un choix va dans l'état et dans l'adresse (history.replaceState : pas d'entrée
+  // d'historique, pas de remontage, la position reste). Sur le canevas (pas de props.query) : l'état local, et
+  // location.search en lecture seule. filters() : clé de l'état -> [paramètre, 'l' liste (clé répétée) | 'b' oui/non |
+  // 's' valeur, valeur par défaut (jamais écrite)]. L'écran écarte une valeur qu'il ne connaît pas (son défaut).
+  filters() { return { market: ['m', 's', 'ALL'], niches: ['niche', 'l'], sort: ['tri', 's', 'vues'], period: ['periode', 's', '30'], dates: ['dates', 's'], platform: ['plateforme', 's', 'ALL'], sortBy: ['colonne', 's'], dir: ['ordre', 's'] }; }
+  fv(k) {
+    const st = this.state || {};
+    if (st[k] !== undefined) return st[k];
+    const d = this.filters()[k];
+    if (!d) return undefined;
+    let q = (this.props || {}).query;
+    if (!q) { try { q = Object.fromEntries(new URLSearchParams(location.search)); } catch (e) { q = {}; } }
+    const l = [].concat(q[d[0]] === undefined || q[d[0]] === null ? [] : q[d[0]]).map(String).filter(Boolean);
+    if (d[1] === 'l') return l.length ? l : undefined;
+    if (!l.length) return undefined;
+    return d[1] === 'b' ? l[l.length - 1] === '1' : l[l.length - 1];
+  }
+  setF(patch) {
+    this.setState(patch);
+    const F = this.filters();
+    if (!(this.props || {}).query || typeof history === 'undefined' || typeof location === 'undefined') return;
+    const sp = new URLSearchParams(location.search);
+    Object.keys(patch).forEach((k) => {
+      if (!F[k]) return;
+      const v = patch[k];
+      sp.delete(F[k][0]);
+      [].concat(v === true ? '1' : v === false || v === null || v === undefined ? [] : v).map(String).filter((s) => s && s !== F[k][2]).forEach((s) => sp.append(F[k][0], s));
+    });
+    const qs = sp.toString();
+    try { history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) { /* adresse refusée : l'état suffit */ }
+  }
   componentDidMount() {
     this.out = (e) => {
       const st = this.state || {};
@@ -102,8 +136,11 @@ return {};
     const xf = (x) => (x >= 100 ? Math.round(x).toLocaleString('fr-FR') : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
     // Un pays ou une plateforme choisis : leur propre liste (« apps:FR », « apps@instagram », « apps:FR@instagram »),
     // où vues, courbe, vidéos qui cartonnent et meilleure vidéo ne comptent que ce pays et cette plateforme.
-    const st0 = this.state || {};
-    const srcKey = 'apps' + ((st0.market || 'ALL') !== 'ALL' ? ':' + st0.market : '') + ((st0.platform || 'ALL') !== 'ALL' ? '@' + st0.platform : '');
+    // Marché et plateforme : l'état, sinon l'adresse (F25, plus haut) ; un marché ou une plateforme inconnus valent « tous ».
+    const mk0 = this.fv('market'), pl0 = this.fv('platform');
+    const market = mk0 === 'ALL' || (mk0 && (D && D.markets ? D.markets : MKS).some((m) => m[0] === mk0)) ? mk0 : 'ALL';
+    const platform = pl0 === 'tiktok' || pl0 === 'instagram' ? pl0 : 'ALL';
+    const srcKey = 'apps' + (market !== 'ALL' ? ':' + market : '') + (platform !== 'ALL' ? '@' + platform : '');
     let SRC = D;
     if (D && D.apps && srcKey !== 'apps' && this.props && typeof this.props.get === 'function') {
       const g = this.props.get(srcKey);
@@ -130,19 +167,26 @@ return {};
     const ficheOf = (a) => (a[11] ? '/app/apps/' + a[11] : '/app/apps');
     const videoOf = (a, j) => '/app/videos/' + ((a[12] && a[12][j]) || vkey(a[8][j]));
     const open = st.open || '';
-    const market = st.market || 'ALL';
-    // /app/apps?niche=<nom> (pastilles de l'accueil) : cette niche est cochée d'entrée, puis se modifie comme un filtre normal.
-    // Sur le canevas, la même valeur se lit dans location.search. Un nom inconnu est ignoré.
-    const qn = this.props && this.props.query ? this.props.query.niche : (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('niche') : null);
-    const niches = st.niches || (qn && NIS.indexOf(qn) >= 0 ? [qn] : []);
-    const sort = st.sort || 'vues';
-    let period = st.period || '30';
+    // /app/apps?niche=<nom> (pastilles de l'accueil) : cette niche est cochée d'entrée, puis se modifie comme un filtre normal
+    // (l'adresse garde le choix : « niche » répété). Sur le canevas, la même valeur se lit dans location.search. Un nom
+    // inconnu est ignoré, comme un tri ou une période inconnus.
+    const niches = (this.fv('niches') || []).filter((n) => NIS.indexOf(n) >= 0);
+    const sort0 = this.fv('sort'), period0 = this.fv('period');
+    const sort = ['vues', 'accel', 'nouvelles'].indexOf(sort0) >= 0 ? sort0 : 'vues';
+    let period = ['7', '30', 'custom'].indexOf(period0) >= 0 ? period0 : '30';
     // Historique jour par jour : 42 jours, le dernier = aujourd'hui (heure de Paris). Sur le canevas : déduit des semaines.
     const NDAYS = 42;
     const dayEnd = DAYEND !== null ? DAYEND : Math.floor((Date.now() + 3600e3) / 864e5);
     const dayDate = (i) => new Date((dayEnd - NDAYS + 1 + i) * 864e5);
     const dd = (i) => { const x = dayDate(i); return String(x.getUTCDate()).padStart(2, '0') + '/' + String(x.getUTCMonth() + 1).padStart(2, '0'); };
-    const range = st.range && typeof st.range.a === 'number' ? st.range : null;
+    // Période personnalisée : dans l'adresse en dates (« dates=2026-11-01_2026-11-14 »), ramenées aux 42 jours connus.
+    const isoOf = (i) => dayDate(i).toISOString().slice(0, 10);
+    const range = (() => {
+      const m = String(this.fv('dates') || '').match(/^(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})$/);
+      if (!m) return null;
+      const i0 = dayEnd - NDAYS + 1, a = Math.max(0, Math.round(Date.parse(m[1]) / 864e5) - i0), b = Math.min(NDAYS - 1, Math.round(Date.parse(m[2]) / 864e5) - i0);
+      return a <= b ? { a, b } : null;
+    })();
     if (period === 'custom' && !range) period = '30';
     const rangeLabel = range ? (range.a === range.b ? 'le ' + dd(range.a) : dd(range.a) + ' → ' + dd(range.b)) : '';
     const dayArr = (a, ig) => (ig ? a[24] : a[23]) || Array.from({ length: NDAYS }, (_, i) => (ig ? 0 : a[6][Math.floor(i / 7)] * 1e6 / 7));
@@ -153,7 +197,6 @@ return {};
     const vm = (m) => { const n = (m || 0) * 1e6; return n >= 999500 ? fr(n / 1e6, 1) + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n)); };
     const okM = (a, m) => m === 'ALL' || scoped || a[2].indexOf(m) >= 0;
     const okN = (a, ns) => ns.length === 0 || ns.indexOf(a[1]) >= 0;
-    const platform = st.platform || 'ALL';
     const isNew = (a) => (a[13] !== undefined ? a[13] : a[6][0] + a[6][1] < 0.2);
     // Vues de la période et de la plateforme choisies (sans découpage par plateforme dans l'exemple : le total).
     const views = (a) => {
@@ -163,13 +206,14 @@ return {};
       return period === '7' ? a[6][5] : a[5];
     };
     const dlt = (a) => (a[6][4] > 0 ? (a[6][5] - a[6][4]) / a[6][4] : 0);
-    const set = (patch) => this.setState(Object.assign({ open, market, niches, sort, period, platform, menuX: st.menuX }, patch));
+    const set = (patch) => this.setF(Object.assign({ open, market, niches, sort, period, platform, menuX: st.menuX }, patch));
     const pickSort = (k) => set({ sortBy: k, dir: k === sortBy ? (dir === 'asc' ? 'desc' : 'asc') : (k === 'name' ? 'asc' : 'desc'), open: '' });
     let list = A.filter((a) => okM(a, market) && okN(a, niches) && (platform === 'ALL' || views(a) > 0));
     if (sort === 'nouvelles') list = list.filter(isNew);
     // Tri : celui choisi (menu ou en-tête), sinon celui de l'onglet ; l'ordre, sinon décroissant (A → Z pour le nom).
-    const sortBy = st.sortBy || (sort === 'accel' ? 'progress' : 'views');
-    const dir = st.dir || (sortBy === 'name' ? 'asc' : 'desc');
+    const sortBy0 = this.fv('sortBy'), dir0 = this.fv('dir');
+    const sortBy = ['views', 'progress', 'accounts', 'ppw', 'best', 'arrival', 'name'].indexOf(sortBy0) >= 0 ? sortBy0 : (sort === 'accel' ? 'progress' : 'views');
+    const dir = dir0 === 'asc' || dir0 === 'desc' ? dir0 : (sortBy === 'name' ? 'asc' : 'desc');
     const KEY = { views: (a) => views(a), progress: dlt, accounts: (a) => Number(a[3]) || 0, ppw: (a) => Number(a[4]) || 0, best: (a) => a[21] || parseFloat(String(a[7]).replace(/\s/g, '').replace(',', '.')) || 0,
       arrival: (a) => a[22] || 0, name: (a) => String(a[0]).toLowerCase() };
     list = list.slice().sort((x, y) => { const p = KEY[sortBy](x), q = KEY[sortBy](y); const c = typeof p === 'string' ? p.localeCompare(q, 'fr') : p - q; return dir === 'asc' ? c : -c; });
@@ -397,7 +441,7 @@ return {};
       dow: ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((l) => ({ l })),
       prevM: () => this.setState({ calShift: shift - 1 }), nextM: () => this.setState({ calShift: shift + 1 }),
       count: nDays + (nDays > 1 ? ' jours' : ' jour'), since: LONG.format(first).replace(/^\S+ /, ''),
-      apply: () => set({ period: 'custom', range: { a: draft.a, b: draft.b === null ? draft.a : draft.b }, open: '', draft: null }) };
+      apply: () => set({ period: 'custom', dates: isoOf(draft.a) + '_' + isoOf(draft.b === null ? draft.a : draft.b), open: '', draft: null }) };
     const cust = { on: period === 'custom' ? 'true' : 'false', open: open === 'periode' ? 'true' : 'false', l: period === 'custom' ? rangeLabel : 'Du … au …',
       bg: period === 'custom' ? 'var(--accent-soft)' : 'transparent', ink: period === 'custom' ? 'var(--ink)' : 'var(--ink-muted)', fw: period === 'custom' ? '600' : '400', ic: period === 'custom' ? 'var(--accent)' : 'currentColor',
       toggle: () => set({ open: open === 'periode' ? '' : 'periode', draft: range || { a: NDAYS - 30, b: NDAYS - 1 }, calShift: 0 }) };

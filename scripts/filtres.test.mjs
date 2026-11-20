@@ -186,6 +186,14 @@ for (const L of LISTS) {
   ok(calls.replace === replace0 && loc.search === '' && shows(c) !== before, `${L.name} · canevas (sans props.query) : le filtre ${F.f} reste dans l'état local, l'adresse n'est pas touchée`);
 }
 
+// ─── Apps : choisir un tri efface le tri par colonne (ordinateur), sur le téléphone comme sur l'ordinateur ───
+{
+  const Mob = await page('MApps');
+  at('/app/apps', '?colonne=name&ordre=asc&m=FR');
+  run(mount(Mob, propsOf('apps', queryOf(loc.search))), [p('Qui accélèrent')]);
+  ok(loc.search === '?m=FR&tri=accel', `Apps : un tri choisi sur le téléphone efface la colonne de tri de l'ordinateur et garde le reste (${loc.search})`);
+}
+
 // ─── Le routeur ───
 {
   const q = queryOf('?m=FR&niche=Foi&niche=Couple&__proto__=x');
