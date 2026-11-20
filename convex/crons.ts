@@ -14,6 +14,6 @@ crons.interval("lecture IA des videos", { minutes: 15 }, internal.radarAi.fillVi
 crons.interval("lecture IA du genre des comptes", { minutes: 15 }, internal.radarAi.fillGender, {});
 
 // Paiement : chaque adhésion Whop avec accès relue chez Whop une fois par jour (audit S9).
-crons.daily("réconciliation des abonnements Whop", { hourUTC: 4, minuteUTC: 0 }, internal.whop.reconcile, {});
+crons.daily("reconciliation des abonnements Whop", { hourUTC: 4, minuteUTC: 0 }, internal.whop.reconcile, {});
 
 export default crons;

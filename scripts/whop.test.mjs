@@ -225,6 +225,8 @@ async function deliver(w, id, event) {
   ok(has && (await r.m.db.get(r.userId)).pro !== true, 'S9 : la réconciliation relit chez Whop et coupe l\'accès d\'une adhésion expirée');
   const jobs = mods.crons?.default?.jobs ?? [];
   ok(jobs.some((j) => j.ref?.__path === 'whop.reconcile'), `S9 : réconciliation planifiée chaque jour (${jobs.map((j) => j.ref?.__path).join(', ')})`);
+  // Convex refuse au déploiement un nom de tâche planifiée hors ASCII (« Invalid cron identifier »).
+  ok(jobs.every((j) => /^[\x20-\x7e]+$/.test(j.name)), `crons : noms de tâches en ASCII (${jobs.filter((j) => !/^[\x20-\x7e]+$/.test(j.name)).map((j) => j.name).join(', ') || 'tous'})`);
 }
 
 // ─── S10 : un remboursement total ou un litige coupe l'accès, même si Whop laisse l'adhésion active ───
