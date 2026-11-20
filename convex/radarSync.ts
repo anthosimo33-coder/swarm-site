@@ -158,21 +158,27 @@ function fnv(s: string): string {
 const hashOf = (data: unknown): string => hashLen(data).hash;
 
 /**
- * Réparation (13/11) : efface les images rangées en HEIC, recopiées ensuite en JPEG/WebP par
- * la synchro (`radarSync:run`) ou à la première vue (/cover/<id>). Rend le nombre effacé.
+ * Relevé, et réparation sur demande, des images rangées (audit S30, Q67) : `npx convex run radarSync:repairMedia` compte
+ * les images, leur poids, les HEIC (avant le 13/11) et les fichiers non matriciels (icône SVG, audit S30) ou absents ;
+ * `'{"apply": true}'` efface ces derniers (fichier et ligne), recopiés ensuite par la synchro ou à la première vue.
+ * Remplace repairHeic (13/11), jamais appelée, qui ne traitait que les HEIC. Une fois les HEIC à 0 en prod, la conversion
+ * à la volée (covers.ensure, champ heic de mediaGet) pourra partir (décision : audit Q67).
  */
-export const repairHeic = internalAction({
-  args: {},
-  handler: async (ctx): Promise<number> => {
+export const repairMedia = internalAction({
+  args: { apply: v.optional(v.boolean()) },
+  handler: async (ctx, { apply }): Promise<{ rows: number; bytes: number; heic: number; bad: number; dropped: number }> => {
     const keys: string[] = [];
+    let rows = 0, bytes = 0, heic = 0, bad = 0;
     for (let cursor: string | null = null, done = false; !done; ) {
-      const page: { keys: string[]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.heicPage, { cursor });
-      keys.push(...page.keys);
+      const page: { rows: number; bytes: number; heic: number; bad: number; unusable: string[]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.mediaAudit, { cursor });
+      rows += page.rows; bytes += page.bytes; heic += page.heic; bad += page.bad;
+      keys.push(...page.unusable);
       cursor = page.cursor;
       done = page.done;
     }
-    for (let i = 0; i < keys.length; i += 200) await ctx.runMutation(internal.radarStore.dropMedia, { keys: keys.slice(i, i + 200) });
-    return keys.length;
+    if (apply) for (let i = 0; i < keys.length; i += 200) await ctx.runMutation(internal.radarStore.dropMedia, { keys: keys.slice(i, i + 200) });
+    console.log(`[images] ${rows} rangées, ${Math.round(bytes / 1e6)} Mo, ${heic} HEIC, ${bad} non matricielles ou absentes${apply ? `, ${keys.length} effacées` : ""}`);
+    return { rows, bytes, heic, bad, dropped: apply ? keys.length : 0 };
   },
 });
 
@@ -205,12 +211,34 @@ export const copyMedia = internalAction({
     const got: { key: string; storageId: Id<"_storage">; url: string }[] = [];
     const failed: string[] = [];
     let copied = 0, nfail = 0, next = 0, skipped = 0;
-    const retried = async (go: () => Promise<unknown>) => { for (let i = 0; i < 3; i++) { try { await go(); return; } catch { await sleep(500 * (i + 1)); } } };
+    // Trois essais ; l'erreur du dernier est rendue (audit Q62 : elle était avalée).
+    const retried = async (go: () => Promise<unknown>): Promise<unknown> => {
+      let last: unknown = null;
+      for (let i = 0; i < 3; i++) { try { await go(); return null; } catch (e) { last = e; await sleep(500 * (i + 1)); } }
+      return last;
+    };
     const flush = async () => {
       const its = got.splice(0), keys = failed.splice(0);
-      if (its.length) await retried(() => ctx.runMutation(internal.radarStore.saveMedia, { items: its }));
-      if (keys.length) await retried(() => ctx.runMutation(internal.radarStore.markMisses, { keys }));
+      // Audit Q62 (19/11) : un lot que saveMedia refuse 3 fois laissait ses fichiers rangés sans ligne media (jamais
+      // effacés : dropMedia ne passe que par les lignes) et comptés « copiés ». Ils sont effacés, et l'échec noté.
+      const e = its.length ? await retried(() => ctx.runMutation(internal.radarStore.saveMedia, { items: its })) : null;
+      if (e) {
+        for (const it of its) { try { await ctx.storage.delete(it.storageId); } catch { /* déjà effacé */ } }
+        copied -= its.length;
+        console.error(`[copie] ${its.length} images non rangées, fichiers effacés : ${String(e).slice(0, 300)}`);
+      }
+      const m = keys.length ? await retried(() => ctx.runMutation(internal.radarStore.markMisses, { keys })) : null;
+      if (m) console.error(`[copie] ${keys.length} échecs non notés : ${String(m).slice(0, 300)}`);
     };
+    // Audit S33 (19/11) : l'icône d'un site tiers qui fait tomber l'action (flux sans fin, réponse qui pend) n'était
+    // jamais notée, et repassait en tête de file à chaque passage. Elle est notée « en échec » AVANT d'être lue ; une
+    // copie réussie efface la note (saveMedia). Si l'action meurt, la note reste : la synchro ne la redemande pas avant
+    // 3 jours (radarModels, missing). Les icônes de l'App Store, sûres, ne sont pas concernées.
+    const thirdParty = items.filter((x) => x.key.startsWith("icon:") && (x.src.startsWith("site:") || (/^https:\/\//.test(x.src) && !/\.mzstatic\.com\//.test(x.src)))).map((x) => x.key);
+    if (thirdParty.length) {
+      const e = await retried(() => ctx.runMutation(internal.radarStore.markMisses, { keys: thirdParty }));
+      if (e) console.error(`[copie] icônes de sites non notées avant lecture : ${String(e).slice(0, 200)}`);
+    }
     const worker = async () => {
       while (next < items.length && Date.now() - start < MEDIA_BUDGET_MS) {
         const { key, src } = items[next++];

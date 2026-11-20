@@ -19,20 +19,31 @@ export const mediaPage = internalQuery({
 // depuis F14 : une vidéo introuvable se lit sur sa ligne mediaMiss) ; chaque écriture ne faisait que provoquer des
 // conflits avec la synchro et relancer toutes les requêtes boards.get, et la liste, jamais élaguée, plafonnait à 8 000.
 
-/** Une image rangée en HEIC (Chrome ne l'affiche pas) compte comme absente : elle sera recopiée. */
-async function usable(ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null) {
-  if (!row) return false;
+/**
+ * Formats qu'une image rangée peut avoir pour être servie : matriciels seulement. Audit S30 (19/11) : une icône SVG
+ * (script compris) était rangée et servie depuis le stockage Convex ; convex/imageCopy.ts n'en range plus, et une
+ * ancienne compte comme absente (recopiée, ou effacée par repairMedia).
+ */
+const RASTER = /^image\/(jpeg|png|gif|webp|avif|x-icon|vnd\.microsoft\.icon)$/i;
+const HEIC = /hei[cf]/i;
+/** L'état du fichier d'une image rangée : servable, HEIC (Chrome ne l'affiche pas : converti), ou inutilisable. */
+async function fileState(ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null): Promise<"ok" | "heic" | "bad" | null> {
+  if (!row) return null;
   const file = await ctx.db.system.get(row.storageId);
-  return !!file && !/hei[cf]/i.test(file.contentType ?? "");
+  const type = (file?.contentType ?? "").split(";")[0].trim();
+  return !file ? "bad" : RASTER.test(type) ? "ok" : HEIC.test(type) ? "heic" : "bad";
 }
+const usable = async (ctx: QueryCtx, row: { storageId: Id<"_storage"> } | null) => (await fileState(ctx, row)) === "ok";
 
 /** Une image rangée (ou son dernier échec). */
 export const mediaGet = internalQuery({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
     const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", key)).first();
-    if (row && (await usable(ctx, row))) return { url: row.url, missAt: null, heic: null };
-    if (row) return { url: null, missAt: null, heic: row.storageId }; // HEIC rangé : converti sur place
+    const state = await fileState(ctx, row);
+    if (row && state === "ok") return { url: row.url, missAt: null, heic: null };
+    if (row && state === "heic") return { url: null, missAt: null, heic: row.storageId }; // HEIC rangé : converti sur place
+    // Rien de servable rangé (absent, ou fichier non matriciel : recopié par-dessus, audit S30).
     const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", key)).first();
     return { url: null, missAt: miss?.at ?? null, heic: null };
   },
@@ -74,7 +85,7 @@ export const avatarLookup = internalQuery({
   args: { handle: v.string() },
   handler: async (ctx, { handle }) => {
     const row = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", `a:${handle}`)).first();
-    if (row) return { known: true, url: row.url };
+    if (row && (await usable(ctx, row))) return { known: true, url: row.url };
     const page = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", `creator:${handle}`)).first();
     const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", `a:${handle}`)).first();
     return { known: !!page || !!miss, url: null };
@@ -93,35 +104,55 @@ export const coverLookup = internalQuery({
   },
 });
 
+/**
+ * Range des images copiées ; rend l'adresse retenue pour chacune. Audit Q61 (19/11) : deux copies simultanées d'une même
+ * miniature (deux visiteurs, ou la lecture IA et /cover) : la seconde effaçait le fichier vers lequel la première venait
+ * de rediriger (redirection gardée 24 h). Une copie déjà rangée et servable est gardée : la nouvelle est effacée, et
+ * c'est l'adresse gardée qui est rendue. Une copie rangée mais inutilisable (HEIC, non matricielle) est remplacée.
+ */
 export const saveMedia = internalMutation({
   args: { items: v.array(v.object({ key: v.string(), storageId: v.id("_storage"), url: v.string() })) },
-  handler: async (ctx, { items }) => {
+  handler: async (ctx, { items }): Promise<{ key: string; url: string }[]> => {
     const now = Date.now();
+    const out: { key: string; url: string }[] = [];
     for (const it of items) {
       const old = await ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", it.key)).first();
-      if (old) {
-        await ctx.storage.delete(old.storageId);
+      if (old && old.storageId !== it.storageId && (await usable(ctx, old))) {
+        await ctx.storage.delete(it.storageId);
+        out.push({ key: it.key, url: old.url });
+      } else if (old) {
+        if (old.storageId !== it.storageId) await ctx.storage.delete(old.storageId);
         await ctx.db.patch(old._id, { storageId: it.storageId, url: it.url, at: now });
+        out.push({ key: it.key, url: it.url });
       } else {
         await ctx.db.insert("media", { ...it, at: now });
+        out.push({ key: it.key, url: it.url });
       }
       const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", it.key)).first();
       if (miss) await ctx.db.delete(miss._id);
     }
+    return out;
   },
 });
 
-/** Les images rangées en HEIC (avant le 13/11 midi), page par page : Chrome ne les affiche pas. */
-export const heicPage = internalQuery({
+/**
+ * Relevé des images rangées, page par page (audit S30, Q67, F30) : combien, leur poids, et celles qui ne se servent pas
+ * (fichier absent, HEIC, format non matriciel). Lecture seule.
+ */
+export const mediaAudit = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
-    const r = await ctx.db.query("media").paginate({ cursor, numItems: 2000 });
-    const keys: string[] = [];
+    const r = await ctx.db.query("media").paginate({ cursor, numItems: 1000 });
+    const out = { rows: r.page.length, bytes: 0, heic: 0, bad: 0, unusable: [] as string[] };
     for (const m of r.page) {
       const file = await ctx.db.system.get(m.storageId);
-      if (file && /hei[cf]/i.test(file.contentType ?? "")) keys.push(m.key);
+      const type = (file?.contentType ?? "").split(";")[0].trim();
+      out.bytes += file?.size ?? 0;
+      if (file && RASTER.test(type)) continue;
+      if (file && HEIC.test(type)) out.heic++; else out.bad++;
+      out.unusable.push(m.key);
     }
-    return { keys, cursor: r.continueCursor, done: r.isDone };
+    return { ...out, cursor: r.continueCursor, done: r.isDone };
   },
 });
 

@@ -30,8 +30,9 @@ export const ensureAvatar = internalAction({
       if (report.gone || report.blank) await ctx.runMutation(internal.radarStore.markMiss, { key });
       return { url: null, gone: report.gone, blank: !!report.blank };
     }
-    await ctx.runMutation(internal.radarStore.saveMedia, { items: [got] });
-    return { url: got.url, gone: false };
+    // L'adresse retenue : celle d'une copie faite en même temps et déjà rangée, s'il y en a une (audit Q61).
+    const [kept]: { key: string; url: string }[] = await ctx.runMutation(internal.radarStore.saveMedia, { items: [got] });
+    return { url: kept?.url ?? got.url, gone: false };
   },
 });
 
@@ -49,8 +50,8 @@ export const ensure = internalAction({
         const storageId = await ctx.storage.store(new Blob([small.data], { type: small.type }));
         const url = await ctx.storage.getUrl(storageId);
         if (url) {
-          await ctx.runMutation(internal.radarStore.saveMedia, { items: [{ key, storageId, url }] });
-          return { url, gone: false };
+          const [kept]: { key: string; url: string }[] = await ctx.runMutation(internal.radarStore.saveMedia, { items: [{ key, storageId, url }] });
+          return { url: kept?.url ?? url, gone: false };
         }
       }
     }
@@ -68,7 +69,7 @@ export const ensure = internalAction({
       if (gone || report.blank) await ctx.runMutation(internal.radarStore.markMiss, { key });
       return { url: null, gone, blank: !!report.blank };
     }
-    await ctx.runMutation(internal.radarStore.saveMedia, { items: [got] });
-    return { url: got.url, gone: false };
+    const [kept]: { key: string; url: string }[] = await ctx.runMutation(internal.radarStore.saveMedia, { items: [got] });
+    return { url: kept?.url ?? got.url, gone: false };
   },
 });
