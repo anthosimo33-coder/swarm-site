@@ -121,6 +121,35 @@ export const activeSub = internalQuery({
   },
 });
 
+/** Toutes les adhésions du compte qui donnent accès à Pro (il peut y en avoir plusieurs : audit S3). */
+export const accessSubs = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) =>
+    (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).filter((s) => ACCESS.has(s.status)),
+});
+
+/**
+ * Fermeture du compte (audit du 19/11, S2) : chaque adhésion qui donne accès est résiliée chez Whop TOUT DE SUITE (POST
+ * /memberships/{id}/cancel sans cancel_at_period_end : l'accès disparaît de toute façon avec le compte), puis relue chez
+ * Whop. Lève si Whop ne répond pas, ou si une adhésion reste prélevée (accès et renouvellement prévu) : le compte n'est
+ * alors pas effacé, sinon la personne paierait sans compte. Rend le nombre d'adhésions résiliées.
+ */
+export async function cancelAllNow(ctx: ActionCtx, userId: Id<"users">): Promise<number> {
+  const subs: { membershipId: string }[] = await ctx.runQuery(internal.whop.accessSubs, { userId });
+  for (const s of subs) {
+    try {
+      await whopApi(`/memberships/${s.membershipId}/cancel`, { method: "POST" });
+    } catch (e) {
+      // Déjà résiliée chez Whop (instantané périmé) : la relecture le dira ; sinon la vérification plus bas refuse.
+      console.error(`[whop] résiliation de ${s.membershipId} : ${String(e).slice(0, 300)}`);
+    }
+    await syncMembership(ctx, s.membershipId, null); // lève si Whop ne répond pas
+  }
+  const left: { membershipId: string; cancelAtPeriodEnd: boolean }[] = (await ctx.runQuery(internal.whop.accessSubs, { userId })).filter((s: { cancelAtPeriodEnd: boolean }) => !s.cancelAtPeriodEnd);
+  if (left.length) throw new Error(`adhésion encore prélevée chez Whop : ${left.map((s) => s.membershipId).join(", ")}`);
+  return subs.length;
+}
+
 async function recomputePro(ctx: MutationCtx, userId: Id<"users">) {
   const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
   const pro = subs.some((s) => ACCESS.has(s.status));

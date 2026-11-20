@@ -1,6 +1,7 @@
 import { getAuthSessionId, modifyAccountCredentials, retrieveAccount } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { liveUserId, liveUserIdInAction } from "./session";
+import { ACCESS, cancelAllNow } from "./whop";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, internalMutation, internalQuery, mutation, query, type ActionCtx, type MutationCtx } from "./_generated/server";
@@ -90,16 +91,36 @@ export const signOutOthers = mutation({
 });
 
 /**
- * Ferme le compte (Réglages › Profil) : ce que la personne garde (`saved`), ses sessions, ses identifiants et le compte.
- * Il faut retaper son e-mail ; sinon rien n'est effacé ({ ok: false }). Irréversible.
+ * Ferme le compte (Réglages › Profil). Il faut retaper son e-mail ; sinon rien n'est effacé ({ ok: false, reason:
+ * "email" }). Audit du 19/11, S2 : l'abonnement Whop est d'abord résilié tout de suite (convex/whop.ts, cancelAllNow) ;
+ * avant, le compte était effacé et Whop continuait de prélever une personne sans compte. Si Whop ne confirme pas,
+ * rien n'est effacé ({ ok: false, reason: "resiliation" }). Puis ce que la personne garde (`saved`), ses sessions, ses
+ * identifiants et le compte. Irréversible. Une action : une mutation ne peut pas appeler Whop.
  */
-export const deleteAccount = mutation({
+export const deleteAccount = action({
   args: { email: v.string() },
-  handler: async (ctx, { email }) => {
-    const userId = await liveUserId(ctx);
+  handler: async (ctx, { email }): Promise<{ ok: boolean; reason?: "email" | "resiliation" }> => {
+    const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
-    const user = await ctx.db.get(userId);
-    if (user === null || !user.email || email.trim().toLowerCase() !== user.email.trim().toLowerCase()) return { ok: false };
+    const { email: mine } = await ctx.runQuery(internal.users.credentialsOf, { userId });
+    if (!mine || email.trim().toLowerCase() !== mine.trim().toLowerCase()) return { ok: false, reason: "email" };
+    try {
+      await cancelAllNow(ctx, userId);
+    } catch (e) {
+      console.error(`[compte] fermeture refusée, abonnement non résilié : ${String(e).slice(0, 300)}`);
+      return { ok: false, reason: "resiliation" };
+    }
+    const erased: boolean = await ctx.runMutation(internal.users.eraseAccount, { userId });
+    return erased ? { ok: true } : { ok: false, reason: "resiliation" };
+  },
+});
+
+/** L'effacement lui-même, une fois l'abonnement résilié ; refusé (false) si une adhésion prélevée est arrivée entre-temps. */
+export const eraseAccount = internalMutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }): Promise<boolean> => {
+    const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
+    if (subs.some((s) => ACCESS.has(s.status) && !s.cancelAtPeriodEnd)) return false;
     for (const row of await ctx.db.query("saved").withIndex("by_user_key", (q) => q.eq("userId", userId)).collect()) {
       await ctx.db.delete(row._id);
     }
@@ -113,7 +134,7 @@ export const deleteAccount = mutation({
       await ctx.db.delete(a._id);
     }
     await ctx.db.delete(userId);
-    return { ok: true };
+    return true;
   },
 });
 

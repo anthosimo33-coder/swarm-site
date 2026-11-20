@@ -18,7 +18,8 @@
     "check": "node scripts/check.mjs",
     "test:apercu": "node scripts/apercu.test.mjs",
     "test:sync": "node scripts/sync-cout.test.mjs",
-    "test:auth": "node scripts/auth-signup.test.mjs"
+    "test:auth": "node scripts/auth-signup.test.mjs",
+    "test:compte": "node scripts/compte-fermeture.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",

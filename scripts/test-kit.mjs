@@ -8,10 +8,11 @@ import { fileURLToPath } from "node:url";
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const { build } = await import(path.join(root, "node_modules/esbuild/lib/main.js"));
 
-/** Fonctions Convex = leur définition ({ args, handler }) ; `internal.x.y` = { __path: "x.y" }. */
+/** Fonctions Convex = leur définition ({ args, handler, __kind }) ; `internal.x.y` = { __path: "x.y" }. */
 export const CONVEX_STUB = `
-export const internalAction = (c) => c, internalQuery = (c) => c, internalMutation = (c) => c;
-export const action = (c) => c, query = (c) => c, mutation = (c) => c, httpAction = (f) => f;
+const k = (kind) => (c) => ({ ...c, __kind: kind });
+export const internalAction = k("internalAction"), internalQuery = k("internalQuery"), internalMutation = k("internalMutation");
+export const action = k("action"), query = k("query"), mutation = k("mutation"), httpAction = (f) => f;
 const ref = (p) => new Proxy({}, { get: (_t, k) => (k === "__path" ? p.join(".") : ref([...p, String(k)])) });
 export const internal = ref([]), api = ref([]);
 `;

@@ -233,6 +233,9 @@ export default class Reglages extends DCLogic {
       ctaHref: (bill === 'y' ? checkout.annuel : checkout.mensuel) || '/tarifs',
       ctaStyle: orange ? 'background: linear-gradient(180deg, #FF9A4D, #FF641A); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 22px rgba(255,106,31,0.3);' : 'background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: 0 8px 22px rgba(11,111,224,0.3);',
       inc: ['Les ' + String(total).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' apps et leur classement', 'Les formats qui explosent', 'Les créateurs derrière chaque app', 'Tous les marchés', 'Les alertes « vidéo qui explose »', 'Tes dossiers, sans limite'],
+      // Fermer avec un abonnement en cours : il est résilié chez Whop d'abord, tout de suite (convex/users.ts, deleteAccount).
+      delHint: sub && sub.active ? 'Résilie ton abonnement Pro et supprime ton compte, tes dossiers, tes suivis et tes alertes.' : 'Supprime ton compte, tes dossiers, tes suivis et tes alertes.',
+      delWarn: sub && sub.active ? 'Ton abonnement Kopycat Pro est résilié tout de suite : l’accès Pro s’arrête et tu n’es plus prélevé. Puis tout est effacé, sans retour possible.' : 'Tout est effacé, sans retour possible.',
       delShown: !!st.del, delClosed: !st.del, delEmail: st.delEmail || '', delErr: st.delErr || '',
       delOff: !delMatch || st.busy === 'del', delLabel: st.busy === 'del' ? 'Suppression…' : 'Supprimer définitivement',
       delOpen: () => this.setState({ del: true, delEmail: '', delErr: '' }),
@@ -241,7 +244,7 @@ export default class Reglages extends DCLogic {
       delGo: () => {
         if (!delMatch || !p.onDelete) return;
         this.setState({ busy: 'del' });
-        p.onDelete(st.delEmail).then((r) => { if (!r || !r.ok) this.setState({ busy: null, delErr: 'Cet e-mail n’est pas celui du compte.' }); },
+        p.onDelete(st.delEmail).then((r) => { if (!r || !r.ok) this.setState({ busy: null, delErr: r && r.reason === 'resiliation' ? 'Ton abonnement n’a pas pu être résilié chez Whop : rien n’est effacé. Réessaie dans un instant.' : 'Cet e-mail n’est pas celui du compte.' }); },
           () => this.setState({ busy: null, delErr: 'Pas fait : vérifie ta connexion et réessaie.' }));
       },
       mobile: mob, mobCls: mob ? 'reg-mob ' + (view === 'list' ? 'reg-list' : 'reg-detail') : '',
@@ -511,7 +514,7 @@ export default class Reglages extends DCLogic {
                       "Fermer mon compte"
                     ),
                     $h("span", { "class": "reg-h" },
-                      "Supprime ton compte, tes dossiers, tes suivis et tes alertes."
+                      $t($v.delHint)
                     )
                   ),
                   ($v.delClosed) ? [
@@ -523,7 +526,7 @@ export default class Reglages extends DCLogic {
                 ($v.delShown) ? [
                   $h("div", { "style": "display: flex; flex-direction: column; gap: 12px; padding: 4px 0 18px;" },
                     $h("span", { "style": "font-size: 13px; line-height: 1.5; color: var(--ink-soft);" },
-                      "Tout est effacé, sans retour possible. Pour confirmer, retape ton e-mail : ",
+                      $t($v.delWarn), " Pour confirmer, retape ton e-mail : ",
                       $h("b", { "style": "color: #FFFFFF;" },
                         $t($v.me?.email)
                       )
