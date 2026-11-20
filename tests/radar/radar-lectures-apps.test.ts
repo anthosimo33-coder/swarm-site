@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Id } from "../../convex/_generated/dataModel";
-import { applyAccountRead, dueAccounts, holdFreeMisses, markReadError } from "../../convex/radar/radarNetworks";
+import { RESERVE_MISS_WAIT_MS } from "../../convex/radar/radarFreeMath";
+import { applyAccountRead, deferAccounts, dueAccounts, holdFreeMisses, markReadError } from "../../convex/radar/radarNetworks";
 import { dueStoreApps } from "../../convex/radar/radarStore";
 import { exportPage } from "../../convex/radar/swarmExportPage";
 import { memoryDb, type MemoryDoc } from "./convex-memory-db";
@@ -196,14 +197,62 @@ describe("l'échec gratuit retenu (radarFreeMath.holdMisses, brique 7, 20/11/202
     const hold = pass.indexOf("holdMisses(misses.paid");
     expect(hold).toBeGreaterThan(0);
     expect(pass.indexOf("runMutation(internal.radar.radarNetworks.holdFreeMisses")).toBeGreaterThan(hold);
-    // Le payant ne reçoit que ce que holdMisses n'a pas retenu (premiers relevés et comptes suivis).
-    expect(pass).toMatch(/firstReadMisses\(\s*held\.pay\.filter/);
-    expect(pass).toMatch(/pooled\(\s*held\.pay\.filter/);
+    // Le payant ne reçoit que ce que holdMisses n'a pas retenu (premiers relevés et comptes suivis), par reserveMisses
+    // (brique 8 : hors de la réserve, la même liste).
+    expect(pass).toMatch(/reserveMisses\(held\.pay,/);
+    expect(pass).toMatch(/firstReadMisses\(\s*reserve\.pay\.filter/);
+    expect(pass).toMatch(/pooled\(\s*reserve\.pay\.filter/);
     expect(pass).not.toMatch(/misses\.paid\.filter/);
     // Relu gratuitement et rangé : un appel payant évité, après l'écriture du relevé.
     const rangé = pass.indexOf("runMutation(internal.radar.radarNetworks.applyAccountRead, { accountId: acc.id, videos: f.videos");
     expect(rangé).toBeGreaterThan(0);
     expect(pass.indexOf('usage.spare("repli", heldSpared(acc))')).toBeGreaterThan(rangé);
+  });
+});
+
+describe("sous la réserve, le raté attend la sonde (radarFreeMath.reserveMisses, brique 8, 20/11/2026)", () => {
+  const MIN = 60_000;
+  const passage = () => {
+    const src = fs.readFileSync(path.join(__dirname, "../../convex/radar/radarNetworks.ts"), "utf8");
+    const start = src.indexOf("async function accountReadsPass");
+    return src.slice(start, src.indexOf("\n}\n", start));
+  };
+  const dus = async (tables: Record<string, MemoryDoc[]>, now: number) =>
+    ((await handler(dueAccounts)(mutationCtx(tables).ctx, { now, limit: 600 })) as { due: { handle: string }[] }).due.map((d) => d.handle).sort();
+
+  it("deferAccounts ne touche que l'heure du compte ; il n'est plus dû au passage suivant, il revient avec la sonde", async () => {
+    const w = monde();
+    expect(await dus(w.tables, NOW)).toEqual(["creatrice1", "testeuse"]);
+    const { patches, ctx } = mutationCtx(w.tables);
+    await handler(deferAccounts)(ctx, { ids: [w.creatrice._id], until: NOW + RESERVE_MISS_WAIT_MS });
+    // Rien dans radarSettings : un seul champ, sur le compte (son échec retenu, s'il en a un, reste : cf heldSpared).
+    expect(patches).toEqual([{ id: w.creatrice._id, value: { nextReadAt: NOW + RESERVE_MISS_WAIT_MS } }]);
+    w.creatrice.nextReadAt = NOW + RESERVE_MISS_WAIT_MS;
+    for (const k of [1, 2, 3, 4]) expect(await dus(w.tables, NOW + k * 10 * MIN)).toEqual(["testeuse"]);
+    expect(await dus(w.tables, NOW + RESERVE_MISS_WAIT_MS)).toEqual(["creatrice1", "testeuse"]);
+  });
+
+  it("le passage repousse sous la réserve seulement, avant le payant, sans toucher ce que la voie n'a pas atteint ni la sonde", () => {
+    const pass = passage();
+    const hold = pass.indexOf("runMutation(internal.radar.radarNetworks.holdFreeMisses");
+    const reserve = pass.indexOf("const reserve = reserveMisses(held.pay, { reserveReached: b.reserveReached, laneOpen: free.on }, now);");
+    const defer = pass.indexOf(
+      "\n    if (reserve.defer.length) await ctx.runMutation(internal.radar.radarNetworks.deferAccounts, { ids: reserve.defer.map((a) => a.id), until: now + RESERVE_MISS_WAIT_MS });\n",
+    );
+    expect(hold).toBeGreaterThan(0);
+    expect(reserve).toBeGreaterThan(hold);
+    expect(defer).toBeGreaterThan(reserve);
+    // Repoussés avant tout relevé payant (premiers relevés, comptes suivis, débordement).
+    expect(pass.indexOf('await paid(firstMiss.pay, "premier")')).toBeGreaterThan(defer);
+    // Pas atteints : toujours la voie suivante ou le payant d'avant (firstReadMisses, overflowToPay), jamais repoussés ici.
+    expect(pass).toMatch(/lane\.notReached\.filter\(\(a\) => a\.first\)/);
+    expect(pass).toMatch(/overflowToPay\(\s*lane\.notReached\.filter\(\(a\) => !a\.first\)/);
+    // La sonde part toujours, après, telle quelle : le premier compte dû du passage (repoussé ou non) ou le plus ancien.
+    const probe = pass.indexOf("if (needsBalanceProbe(b) && paidCalls === 0) {");
+    expect(probe).toBeGreaterThan(defer);
+    expect(pass).toMatch(/const probe: DueAccount \| null = due\[0\] \?\? \(await ctx\.runQuery\(internal\.radar\.radarNetworks\.probeAccount, \{\}\)\);\s*if \(probe\) await readPaid\(probe, 1, "sonde"\);/);
+    // Rien de nouveau dans radarSettings : noteFreeRun garde ses champs.
+    expect(pass).toMatch(/noteFreeRun, \{\s*ok: free\.ok,\s*fallback: free\.fallback,\s*why: missCounts\(lane\.failed\),\s*stopped: free\.stopped,\s*waiting: lane\.notReached\.length - over\.pay\.length,\s*now: Date\.now\(\),\s*\}/);
   });
 });
 

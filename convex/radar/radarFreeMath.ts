@@ -25,7 +25,7 @@
  * fournisseur les relève sans erreur (TikTok ne sert pas leur page d'intégration) et 9 listes vides → 3,5 % des
  * comptes restent au relevé payant. Un profil « absent » n'est donc PAS un compte disparu.
  */
-import { CURVE_COUNTS, CURVE_PAGES_PER_PASS, cleanText, langBucket, mentionLabel, type CurveCounts, type SignalInput } from "./radarSignalsMath";
+import { BALANCE_PROBE_MS, CURVE_COUNTS, CURVE_PAGES_PER_PASS, cleanText, langBucket, mentionLabel, type CurveCounts, type SignalInput } from "./radarSignalsMath";
 import { cutJson } from "./radarStoreMath";
 import { isTikTokVideoId, reasonOf, type UnavailableReason } from "./radarAvailabilityMath";
 import { SELF_SEE_STATUS_CODE, parseTikTokPublicPage, refusalLabel } from "./tiktokPublicPage";
@@ -609,6 +609,57 @@ export const missReason = (m: { why: FreeWhy }): PaidReason => (m.why === "gap" 
 
 /** Un compte relu gratuitement qui portait un échec retenu : le relevé payant de cet échec n'est jamais parti. */
 export const heldSpared = (a: { freeMissAt?: number }): number => (a.freeMissAt === undefined ? 0 : 1);
+
+/*
+ * SOUS LA RÉSERVE, LE RATÉ ATTEND LA SONDE (brique 8, 20/11/2026). Sous la réserve (solde − CREDIT_RESERVE ≤ 0,
+ * radarSignalsMath.budgetState), la part payante du passage est nulle : aucun relevé payant ne part, sauf la sonde du
+ * solde (radarSignalsMath.needsBalanceProbe). Un compte raté que le payant devait relever restait donc dû sans que son
+ * heure bouge, et la voie le relisait EN TÊTE de file (le plus en retard, cf `laneOrder`) à chaque passage, pour rien :
+ * une liste trouée ne se comble qu'en payant (le relevé gratuit s'arrête sur « gap » sans rien ranger). Le 20/11, le
+ * solde était à 1 646 crédits, 146 au-dessus de la réserve ; « trou » : 101 à 178 crédits par jour du 17 au 20/11, soit
+ * 34 à 178 comptes troués par jour, qui s'entasseraient en tête de la voie (six relectures par heure chacun, pour
+ * ~6 560 relevés gratuits par jour en tout le 19/11). Ce compte attend désormais la sonde : son relevé est repoussé de
+ * RESERVE_MISS_WAIT_MS (radarNetworks.deferAccounts). Aucun crédit en jeu (rien ne serait parti) ; 5 à 6 fois moins de
+ * pages TikTok pour lui (moins de risque de blocage), et la voie garde sa place pour les comptes qu'elle peut lire.
+ * La qualité ne bouge pas :
+ *  - une liste trouée relue gratuitement reste trouée : rien de perdu ;
+ *  - un refus ou une page de vidéo illisible que la brique 7 retiendrait (`holdMisses` : premier échec, dans sa
+ *    fenêtre, voie ouverte) garde son essai du passage suivant : il reste dû, comme avant, mais sans échec retenu — sa
+ *    relecture n'éviterait aucun appel payant, rien ne serait parti (cf `heldSpared`). Relu à chaque passage tant
+ *    qu'il reste dans sa fenêtre (20 minutes ou une heure, cf `laneWait`), il attend ensuite la sonde ;
+ *  - ce que la brique 7 paierait tout de suite (second échec d'affilée, hors de sa fenêtre, voie fermée) a déjà eu son
+ *    essai du passage suivant, ou n'y avait pas droit : son essai gratuit suivant passe de 10 à 50 minutes (40 minutes
+ *    plus tard), pour une donnée que le payant ne pouvait pas lire sous la réserve ;
+ *  - un pack acheté le fait repartir dans l'heure qui suit sa lecture par la sonde (ou par tout appel payant). Sa
+ *    fenêtre repart de sa nouvelle heure : la brique 7 peut le retenir une fois (10 minutes) avant le payant.
+ * Rien ne change pour ce que la voie n'a pas atteint (`notReached`, cf `overflowToPay`), ni pour la sonde, qui part
+ * toujours.
+ */
+
+/**
+ * L'attente d'un raté sous la réserve : celle de la sonde du solde (BALANCE_PROBE_MS, 50 minutes). La sonde relit le
+ * solde quand il a 50 minutes ou plus, en fin de passage — un passage sur six en pratique : un compte repoussé revient
+ * au plus 50 minutes après le passage où elle a vu un pack acheté, et la voie le relit une fois toutes les 50 à 60
+ * minutes au lieu de toutes les 10.
+ */
+export const RESERVE_MISS_WAIT_MS = BALANCE_PROBE_MS;
+
+/**
+ * Parmi les ratés qui partiraient au payant (le `pay` de `holdMisses`), ceux qui attendent la sonde sous la réserve
+ * (`defer`, repoussés de RESERVE_MISS_WAIT_MS) et les autres (`pay`, au payant comme avant ; sous la réserve, rien ne
+ * part : ils restent dus, relus au passage suivant). Hors de la réserve, tout part au payant, comme avant.
+ */
+export function reserveMisses<A extends HeldAccount>(
+  pay: readonly LaneMiss<A>[],
+  pass: { reserveReached: boolean; laneOpen: boolean },
+  now: number,
+): { pay: LaneMiss<A>[]; defer: A[] } {
+  if (!pass.reserveReached) return { pay: [...pay], defer: [] };
+  // Ce que la brique 7 retiendrait si le payant pouvait partir (au palier « reserve », un premier relevé suit la même
+  // règle : seul le palier « survie » le fait attendre, cf radarSignalsMath.tierDefers).
+  const retry = new Set(holdMisses(pay, { laneOpen: pass.laneOpen, canPay: true, waitFirst: false }, now).hold);
+  return { pay: pay.filter((m) => retry.has(m.account)), defer: pay.filter((m) => !retry.has(m.account)).map((m) => m.account) };
+}
 
 /** Une page du relevé payant (ScrapeCreators), sa dépense déjà comptée. */
 export type PaidPage = { ok: true; videos: SignalInput[]; next: string | null } | { ok: false; noCredits: boolean };

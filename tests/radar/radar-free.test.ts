@@ -45,12 +45,26 @@ import {
   TRIAL_TOTAL,
   trialPick,
   trialPlan,
+  RESERVE_MISS_WAIT_MS,
+  reserveMisses,
   type FreePage,
   type FreeWhy,
   type KnownVideo,
+  type LaneMiss,
   type PaidPage,
 } from "../../convex/radar/radarFreeMath";
-import type { SignalInput } from "../../convex/radar/radarSignalsMath";
+import {
+  BALANCE_PROBE_MS,
+  CREDIT_RESERVE,
+  allowance,
+  budgetState,
+  needsBalanceProbe,
+  normalizeBudget,
+  tierDefers,
+  type BudgetSettings,
+  type BudgetState,
+  type SignalInput,
+} from "../../convex/radar/radarSignalsMath";
 import { profileNextCursor } from "../../convex/radar/scrapeCreatorsApi";
 
 /**
@@ -702,6 +716,114 @@ describe("Radar — relevé gratuit : le repli reporté d'un passage (brique 7, 
     const s = holdMisses([miss(neuf("entre")), miss(acc("suivi"))], { ...open, waitFirst: true }, NOW);
     expect(names(s)).toEqual(["suivi"]);
     expect(firstReadMisses(s.pay.map((m) => m.account.name), [], true, true)).toEqual({ pay: [], defer: ["entre"] });
+  });
+});
+
+describe("Radar — relevé gratuit : sous la réserve, le raté attend la sonde (brique 8, 20/11/2026)", () => {
+  // Sous la réserve, la part payante du passage est nulle : un compte raté que le payant devait relever restait dû,
+  // relu gratuitement en tête de file toutes les 10 minutes, pour rien. Il attend la sonde du solde (50 minutes).
+  const MIN = 60_000;
+  type Acc = { name: string; dueAt: number; lastPostAt?: number; first: boolean; freeMissAt?: number };
+  // Un compte suivi qui a publié il y a 18 heures (son second regard), dû depuis 3 minutes.
+  const acc = (name: string, o: Partial<Acc> = {}): Acc => ({ name, dueAt: NOW - 3 * MIN, lastPostAt: NOW - 18 * HOUR, first: false, ...o });
+  const miss = (account: Acc, why: FreeWhy = "suspect"): LaneMiss<Acc> => ({ account, why });
+  const d = normalizeBudget(null);
+  /** Le solde lu il y a `age` (50 minutes par défaut : la sonde partirait). */
+  const solde = (remaining: number, age = BALANCE_PROBE_MS, s: BudgetSettings = d) => budgetState(s, [], { remaining, seenAt: NOW - age, now: NOW });
+  /** Le passage tel que radarNetworks.accountReadsPass l'enchaîne : part payante, brique 7 (holdMisses), brique 8. */
+  const passage = (b: BudgetState, misses: readonly LaneMiss<Acc>[], o: { laneOpen?: boolean; now?: number; s?: BudgetSettings } = {}) => {
+    const { laneOpen = true, now = NOW, s = d } = o;
+    const n = allowance(s, b, "tiktok", 0, 24);
+    const held = holdMisses(misses, { laneOpen, canPay: n > 0, waitFirst: tierDefers(b.tier).firstReads }, now);
+    return { n, held, ...reserveMisses(held.pay, { reserveReached: b.reserveReached, laneOpen }, now) };
+  };
+  const names = (l: readonly (Acc | LaneMiss<Acc>)[]) => l.map((x) => ("account" in x ? x.account.name : x.name));
+  const troue = (): LaneMiss<Acc> => ({ ...miss(acc("troue"), "gap"), newest: { videoId: V_HIER, publishedAt: videoIdTime(V_HIER) } });
+  const ratés = () => [
+    troue(),
+    // Second échec d'affilée : retenu au passage d'avant (brique 7), raté de nouveau.
+    miss(acc("second", { dueAt: NOW - 13 * MIN, freeMissAt: NOW - 10 * MIN })),
+    miss(acc("en-retard-3h", { dueAt: NOW - 3 * HOUR, lastPostAt: NOW - 72 * HOUR }), "detail"),
+    miss(acc("premier-2h", { first: true, lastPostAt: undefined, dueAt: NOW - 2 * HOUR })),
+    // Premier échec, dans sa fenêtre : ce que la brique 7 retiendrait si le payant pouvait partir.
+    miss(acc("refus-frais")),
+  ];
+
+  it("l'attente est celle de la sonde du solde : plus qu'un passage, une heure au plus (un pack acheté les fait repartir dans l'heure)", () => {
+    expect(RESERVE_MISS_WAIT_MS).toBe(BALANCE_PROBE_MS);
+    expect(RESERVE_MISS_WAIT_MS).toBe(50 * MIN);
+    expect(RESERVE_MISS_WAIT_MS).toBeGreaterThan(PASS_EVERY_MS);
+    expect(RESERVE_MISS_WAIT_MS).toBeLessThanOrEqual(60 * MIN);
+  });
+
+  it("sous la réserve : liste trouée, second échec, hors de sa fenêtre et premier relevé raté sont repoussés — rien ne part au payant", () => {
+    const b = solde(CREDIT_RESERVE - 1);
+    const r = passage(b, ratés());
+    // Part payante nulle, palier « reserve » : la brique 7 ne retient rien (rien ne serait parti), un premier relevé non plus.
+    expect([b.reserveReached, b.tier, r.n, r.held.hold, tierDefers(b.tier).firstReads]).toEqual([true, "reserve", 0, [], false]);
+    expect(names(r.defer)).toEqual(["troue", "second", "en-retard-3h", "premier-2h"]);
+    // Le refus tout frais garde son essai du passage suivant : il reste dû, sans échec retenu (aucun appel évité à compter).
+    expect(names(r.pay)).toEqual(["refus-frais"]);
+    expect(heldSpared(r.pay[0].account)).toBe(0);
+  });
+
+  it("repoussés, ils ne sont pas relus au passage suivant ni aux trois d'après : ils reviennent avec la sonde", () => {
+    const misses = ratés();
+    const r = passage(solde(CREDIT_RESERVE - 1), misses);
+    // radarNetworks.deferAccounts : nextReadAt = now + RESERVE_MISS_WAIT_MS ; dueAccounts ne rend que nextReadAt ≤ now.
+    const after = misses.map((m) => (r.defer.includes(m.account) ? { ...m.account, dueAt: NOW + RESERVE_MISS_WAIT_MS } : m.account));
+    const dueAt = (t: number) => names(laneQueue(after.filter((a) => a.dueAt <= t), t)).sort();
+    for (const k of [1, 2, 3, 4]) expect(dueAt(NOW + k * PASS_EVERY_MS)).toEqual(["refus-frais"]);
+    expect(dueAt(NOW + RESERVE_MISS_WAIT_MS)).toEqual(["en-retard-3h", "premier-2h", "refus-frais", "second", "troue"]);
+  });
+
+  it("le refus tout frais : relu au passage suivant, et tant qu'il reste dans sa fenêtre ; raté encore au-delà, il attend la sonde", () => {
+    const b = solde(CREDIT_RESERVE - 1);
+    // Second regard (publié il y a 18 h, fenêtre de 20 min) : relu à +10 min ; raté, hors de sa fenêtre, repoussé.
+    const frais = acc("refus-frais");
+    expect(names(passage(b, [miss(frais)]).pay)).toEqual(["refus-frais"]);
+    expect(names(passage(b, [miss(frais)], { now: NOW + PASS_EVERY_MS }).defer)).toEqual(["refus-frais"]);
+    // Compte calme (fenêtre d'une heure), dû depuis 5 min : relu cinq passages de suite au plus, repoussé au sixième.
+    const calme = acc("calme", { dueAt: NOW - 5 * MIN, lastPostAt: NOW - 72 * HOUR });
+    const relus = [0, 1, 2, 3, 4, 5].map((k) => passage(b, [miss(calme)], { now: NOW + k * PASS_EVERY_MS }).defer.length);
+    expect(relus).toEqual([0, 0, 0, 0, 0, 1]);
+  });
+
+  it("voie fermée sous la réserve (TikTok ne sert plus les profils) : tout raté attend la sonde, même tout frais", () => {
+    const r = passage(solde(CREDIT_RESERVE - 1), [miss(acc("a")), miss(acc("b"), "detail")], { laneOpen: false });
+    expect([names(r.defer), r.pay]).toEqual([["a", "b"], []]);
+  });
+
+  it("hors de la réserve : comportement d'avant — rien n'est repoussé, le payant reçoit la même liste, dans le même ordre", () => {
+    const misses = ratés();
+    // Solde confortable, juste au-dessus de la réserve, jamais lu (dev, e2e), ou part payante nulle pour une autre raison
+    // (poste des relevés éteint) : seule la réserve repousse.
+    const off = { ...d, postes: d.postes.map((p) => (p.key === "tiktok" ? { ...p, on: false } : p)) };
+    const cas = [
+      { b: solde(CREDIT_RESERVE + 5_000) },
+      { b: solde(CREDIT_RESERVE + 1) },
+      { b: budgetState(d, [], null) },
+      { b: solde(CREDIT_RESERVE + 5_000, 0, off), s: off },
+    ];
+    for (const { b, s } of cas) {
+      const r = passage(b, misses, { s });
+      expect(b.reserveReached).toBe(false);
+      expect(r.defer).toEqual([]);
+      expect(r.pay).toHaveLength(r.held.pay.length);
+      r.pay.forEach((m, i) => expect(m).toBe(r.held.pay[i]));
+    }
+    // Avec budget, la brique 7 retient le refus tout frais et paie le reste, comme avant.
+    const plein = passage(solde(CREDIT_RESERVE + 5_000), misses);
+    expect([names(plein.held.hold), names(plein.pay)]).toEqual([["refus-frais"], ["troue", "second", "en-retard-3h", "premier-2h"]]);
+  });
+
+  it("la sonde part toujours : le report ne dépend pas d'elle et ne la change pas", () => {
+    // Solde lu il y a 50 minutes : la sonde part (radarNetworks, en fin de passage), les ratés sont repoussés.
+    const vieux = solde(CREDIT_RESERVE - 1);
+    expect([needsBalanceProbe(vieux), names(passage(vieux, [troue()]).defer)]).toEqual([true, ["troue"]]);
+    // Lu il y a moins de 50 minutes : pas de sonde, les ratés attendent quand même.
+    const recent = solde(CREDIT_RESERVE - 1, BALANCE_PROBE_MS - 1);
+    expect([needsBalanceProbe(recent), names(passage(recent, [troue()]).defer)]).toEqual([false, ["troue"]]);
   });
 });
 

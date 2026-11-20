@@ -109,6 +109,8 @@ import {
   overflowToPay,
   paced,
   paidRead,
+  RESERVE_MISS_WAIT_MS,
+  reserveMisses,
   retrying,
   runFreeLane,
   splitMisses,
@@ -369,7 +371,10 @@ export const dueAccounts = internalQuery({
 /** Au palier « survie », le premier relevé d'un nouveau compte attend une heure, puis est revu. */
 const FIRST_READ_WAIT_MS = 60 * 60_000;
 
-/** Repousse le relevé de ces comptes jusqu'à `until` (premiers relevés au palier « survie »). */
+/**
+ * Repousse le relevé de ces comptes jusqu'à `until` : premiers relevés au palier « survie », ratés qui attendent la
+ * sonde sous la réserve (radarFreeMath.reserveMisses).
+ */
 export const deferAccounts = internalMutation({
   args: { ids: v.array(v.id("radarTracked")), until: v.number() },
   handler: async (ctx, { ids, until }) => {
@@ -1476,10 +1481,14 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     // second échec d'affilée (radarFreeMath.holdMisses ; voie fermée, hors de sa fenêtre ou sans budget : tout de suite).
     const held = holdMisses(misses.paid, { laneOpen: free.on, canPay: n > 0, waitFirst }, now);
     if (held.hold.length) await ctx.runMutation(internal.radar.radarNetworks.holdFreeMisses, { ids: held.hold.map((a) => a.id), at: now });
+    // Sous la réserve, rien ne part au payant (sauf la sonde, plus bas) : ce qu'il devait relever attend la sonde au lieu
+    // d'être relu gratuitement en tête de file à chaque passage, pour rien (radarFreeMath.reserveMisses, brique 8).
+    const reserve = reserveMisses(held.pay, { reserveReached: b.reserveReached, laneOpen: free.on }, now);
+    if (reserve.defer.length) await ctx.runMutation(internal.radar.radarNetworks.deferAccounts, { ids: reserve.defer.map((a) => a.id), until: now + RESERVE_MISS_WAIT_MS });
     // Un premier relevé que la page gratuite n'a pas pu lire : en payant (ou il attend, palier « survie ») ; pas atteint,
     // il attend le passage suivant, sauf voie fermée (cf radarFreeMath.firstReadMisses).
     const firstMiss = firstReadMisses(
-      held.pay.filter((m) => m.account.first).map((m) => m.account),
+      reserve.pay.filter((m) => m.account.first).map((m) => m.account),
       lane.notReached.filter((a) => a.first),
       free.on,
       waitFirst,
@@ -1488,7 +1497,7 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     await paid(firstMiss.pay, "premier");
     // Ce que le gratuit n'a pas relevé : en payant (une liste trouée, page après page jusqu'à sa dernière vidéo connue).
     await pooled(
-      held.pay.filter((m) => !m.account.first),
+      reserve.pay.filter((m) => !m.account.first),
       ACCOUNT_READ_POOL,
       (m) => readPaid(m.account, n, missReason(m), m.why === "gap" ? m.newest : undefined),
       () => Date.now() - now < ACCOUNT_READ_MAX_MS,
