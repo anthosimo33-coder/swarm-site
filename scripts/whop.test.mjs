@@ -9,7 +9,7 @@ import { checker, load, memDb, quiet, root } from './test-kit.mjs';
 const { ok, end } = checker();
 const dir = path.resolve(process.argv[2] ?? path.join(root, 'convex'));
 const entry = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'kopycat-whop-')), 'entry.ts');
-const MODS = ['whop', 'session', 'users', 'crons'].filter((m) => fs.existsSync(path.join(dir, m + '.ts')));
+const MODS = ['whop', 'session', 'users', 'crons', 'authLimits'].filter((m) => fs.existsSync(path.join(dir, m + '.ts')));
 fs.writeFileSync(entry, MODS.map((m) => `export * as ${m} from ${JSON.stringify(path.join(dir, m + '.ts'))};`).join('\n'));
 const mods = await load(entry, [
   [/^@convex-dev\/auth\/server$/, `
@@ -145,6 +145,26 @@ const planOf = (r) => r.url?.split('/').pop() ?? r.code;
   ok((await back('http://localhost:5173')) === 'http://localhost:5173/app?paiement=ok' && (await back('https://swarm-site-abc123-anthosimo33-coders-projects.vercel.app')) === 'https://swarm-site-abc123-anthosimo33-coders-projects.vercel.app/app?paiement=ok', 'S6 : localhost et préversions du projet acceptés sur le dev (SWARM_DEV_ORIGINS=1)');
   ok((await back('https://swarm-site-abc.evil.vercel.app')) === 'https://kopycat.example/app?paiement=ok', 'S6 : même sur le dev, une préversion d\'un autre projet est refusée');
   delete process.env.SWARM_DEV_ORIGINS; delete process.env.SITE_URL;
+}
+
+// ─── F6 : un compte ne crée pas de liens de paiement en boucle chez Whop ───
+{
+  resetWhop();
+  const w = await world();
+  const links = () => whop.calls.filter((c) => c.path === '/checkout_configurations').length;
+  const a = await checkout(w, 'mensuel', NOV25), b = await checkout(w, 'mensuel', NOV25 + 60_000);
+  ok(links() === 1 && a.url && a.url === b.url, `F6 : le même lien resservi pendant 1 h, un seul créé chez Whop (${links()})`);
+  await checkout(w, 'annuel', NOV25 + 120_000);
+  ok(links() === 2, 'F6 : une autre formule, un autre lien');
+  const c = await checkout(w, 'annuel', Date.parse('2026-12-01T00:10:00+01:00'));
+  ok(links() === 3 && planOf(c) === 'plan_e3kvvjsKXFANv', 'F6 : un lien Black Friday n\'est jamais resservi après la fin du Black Friday');
+  let refused = 0;
+  for (let i = 0; i < 15 && !refused; i++) {
+    w.m.tables.checkoutLinks = []; // forcer un nouveau lien à chaque appel
+    const r = await quiet(() => checkout(w, 'mensuel', NOV25 + 200_000 + i * 1000));
+    if (r.code === 'TROP_DE_DEMANDES') refused = i + 1;
+  }
+  ok(refused > 0 && refused <= 11, `F6 : au-delà de 10 liens neufs par heure, TROP_DE_DEMANDES (refus au ${refused || '?'}e)`);
 }
 
 end();

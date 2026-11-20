@@ -9,7 +9,7 @@ import { checker, load, memDb, root } from "./test-kit.mjs";
 
 const dir = path.resolve(process.argv[2] ?? path.join(root, "convex"));
 const entry = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "kopycat-s3-")), "entry.ts");
-fs.writeFileSync(entry, ["whop", "session"].map((m) => `export * as ${m} from ${JSON.stringify(path.join(dir, m + ".ts"))};`).join("\n"));
+fs.writeFileSync(entry, ["whop", "session", "authLimits"].map((m) => `export * as ${m} from ${JSON.stringify(path.join(dir, m + ".ts"))};`).join("\n"));
 const mods = await load(entry, [[/^@convex-dev\/auth\/server$/, `
 export const getAuthUserId = async (ctx) => ctx.__userId ?? null;
 export const getAuthSessionId = async (ctx) => ctx.__sessionId ?? null;

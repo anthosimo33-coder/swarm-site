@@ -211,6 +211,26 @@ export const tarifs = internalAction({
 
 // ─── Payer : le lien de paiement Whop, relié au compte ───
 
+const LINK_REUSE_MS = 3_600_000;
+const LINKS_PER_HOUR = 10;
+
+/** Le lien de paiement créé il y a moins d'1 h pour ce compte et cette clé (tarif et site de retour), ou null. */
+export const linkFor = internalQuery({
+  args: { userId: v.id("users"), key: v.string(), now: v.number() },
+  handler: async (ctx, { userId, key, now }) => {
+    const row = await ctx.db.query("checkoutLinks").withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", key)).first();
+    return row && now - row.at < LINK_REUSE_MS ? row.url : null;
+  },
+});
+export const saveLink = internalMutation({
+  args: { userId: v.id("users"), key: v.string(), url: v.string(), now: v.number() },
+  handler: async (ctx, { userId, key, url, now }) => {
+    const row = await ctx.db.query("checkoutLinks").withIndex("by_user_key", (q) => q.eq("userId", userId).eq("key", key)).first();
+    if (row) await ctx.db.patch(row._id, { url, at: now });
+    else await ctx.db.insert("checkoutLinks", { userId, key, url, at: now });
+  },
+});
+
 /**
  * L'adresse où Whop renvoie après paiement (audit S6) : seulement le site de Kopycat. Avant, tout hôte https passait :
  * un vrai lien Whop de Kopycat pouvait renvoyer la personne qui paie vers une page d'hameçonnage. En prod : SITE_URL et
@@ -249,13 +269,24 @@ export const checkout = action({
     const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
     if (await ctx.runQuery(internal.whop.alreadyPro, { userId })) throw new ConvexError({ code: "DEJA_ABONNE" });
-    const variant = await variantFor(formule, Date.now());
+    // Audit F6 : chaque appel créait un objet chez Whop, sans limite. Le même lien est resservi pendant 1 h (même
+    // compte, même tarif, donc jamais un lien Black Friday après la fin, même site de retour) ; au-delà de 10 liens
+    // neufs par heure, TROP_DE_DEMANDES.
+    const now = Date.now();
+    const key = `${planFor(formule, now).id}|${returnSite(origin)}`;
+    const reuse: string | null = await ctx.runQuery(internal.whop.linkFor, { userId, key, now });
+    if (reuse) return { url: reuse };
+    if (!(await ctx.runMutation(internal.authLimits.hit, { key: `checkout:${userId}`, max: LINKS_PER_HOUR, windowMs: 3_600_000 }))) {
+      throw new ConvexError({ code: "TROP_DE_DEMANDES" });
+    }
+    const variant = await variantFor(formule, now);
     const site = returnSite(origin);
     const conf = await whopApi("/checkout_configurations", {
       method: "POST",
       body: { account_id: ACCOUNT, variant_id: variant.id, metadata: { kopycat_user: userId }, redirect_url: `${site}/app?paiement=ok` },
     });
     if (typeof conf?.purchase_url !== "string") throw new Error("Whop n'a pas rendu de lien de paiement");
+    await ctx.runMutation(internal.whop.saveLink, { userId, key, url: conf.purchase_url, now });
     return { url: conf.purchase_url };
   },
 });

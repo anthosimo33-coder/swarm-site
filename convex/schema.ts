@@ -56,6 +56,8 @@ export default defineSchema({
   }).index("by_payment", ["paymentId"]).index("by_user", ["userId"]),
   // Événements déjà traités (Whop peut renvoyer le même) et leur résultat, pour le suivi.
   whopEvents: defineTable({ eventId: v.string(), type: v.string(), at: v.number(), note: v.optional(v.string()) }).index("by_event", ["eventId"]),
+  // Liens de paiement Whop déjà créés (audit F6) : le même est resservi pendant 1 h, par compte, tarif et site de retour.
+  checkoutLinks: defineTable({ userId: v.id("users"), key: v.string(), url: v.string(), at: v.number() }).index("by_user_key", ["userId", "key"]),
   // Limites de l'authentification (convex/authLimits.ts) : passages comptés par fenêtre fixe, une ligne par clé.
   authLimits: defineTable({ key: v.string(), n: v.number(), since: v.number() }).index("by_key", ["key"]),
   // Visites du site public (admin › Mesure) : un compteur par heure, sans cookie, sans identifiant, sans adresse IP.
