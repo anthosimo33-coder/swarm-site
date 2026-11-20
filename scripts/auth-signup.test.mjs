@@ -38,8 +38,12 @@ const ctx = {
       if (type === "createAccountFromCredentials") return createAccountFromCredentialsImpl(dbCtx, args, getProviderOrThrow, config);
       if (type === "retrieveAccountWithCredentials") return retrieveAccountWithCredentialsImpl(dbCtx, args, getProviderOrThrow, config);
     }
-    if (ref?.__path === "authLimits.hit" && limits) return limits.hit.handler(dbCtx, a);
+    if (ref?.__path?.startsWith("authLimits.") && limits) return limits[ref.__path.split(".")[1]].handler(dbCtx, a);
     throw new Error(`mutation inattendue ${ref?.__path ?? ref}`);
+  },
+  runQuery: async (ref, a) => {
+    if (ref?.__path?.startsWith("authLimits.") && limits) return limits[ref.__path.split(".")[1]].handler(dbCtx, a);
+    throw new Error(`requête inattendue ${ref?.__path ?? ref}`);
   },
 };
 const attempt = async (flow, email, password) => {

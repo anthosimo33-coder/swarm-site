@@ -33,6 +33,21 @@ const PASSWORD_MAX = 128;
  */
 const SIGNUP_MAX = 300;
 const SIGNUP_WINDOW_MS = 10 * 60_000;
+/**
+ * Connexion (audit S12) : 10 échecs par heure et par e-mail (haché), adresse inscrite ou non. Avant, seule une adresse
+ * inscrite finissait sur « trop de tentatives » (limite de Convex Auth, par compte), et une adresse inconnue répondait
+ * sans calcul de mot de passe : les deux trahissaient qui a un compte. Une connexion réussie remet le compteur à zéro.
+ */
+const SIGNIN_MAX = 10;
+const SIGNIN_WINDOW_MS = 60 * 60_000;
+const emailKey = async (email: string) =>
+  "signIn:" + Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)))).map((b) => b.toString(16).padStart(2, "0")).join("");
+/** Même calcul qu'une vraie vérification (Scrypt), pour une adresse inconnue : la durée ne dit plus rien (audit S12). */
+let dummyHash: Promise<string> | null = null;
+const dummyVerify = async (secret: string) => {
+  dummyHash ??= new Scrypt().hash("kopycat:aucun-compte");
+  await new Scrypt().verify(await dummyHash, secret);
+};
 
 const fail = (code: AuthErrorCode) => new ConvexError({ code });
 
@@ -93,8 +108,23 @@ const password = ConvexCredentials({
         return { userId: user._id };
       }
       if (params.flow === "signIn") {
-        const found = await retrieveAccount(ctx, { provider: PROVIDER, account: { id: email, secret } });
+        const key = await emailKey(email);
+        if (await ctx.runQuery(internal.authLimits.blocked, { key, max: SIGNIN_MAX, windowMs: SIGNIN_WINDOW_MS })) {
+          throw fail(AUTH_ERRORS.TROP_DE_TENTATIVES);
+        }
+        let found;
+        try {
+          found = await retrieveAccount(ctx, { provider: PROVIDER, account: { id: email, secret } });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (message.includes("InvalidAccountId")) await dummyVerify(secret);
+          if (message.includes("InvalidAccountId") || message.includes("InvalidSecret")) {
+            await ctx.runMutation(internal.authLimits.hit, { key, max: SIGNIN_MAX, windowMs: SIGNIN_WINDOW_MS });
+          }
+          throw error;
+        }
         if (found === null) throw fail(AUTH_ERRORS.IDENTIFIANTS_INCORRECTS);
+        await ctx.runMutation(internal.authLimits.clear, { key });
         return { userId: found.user._id };
       }
       throw new Error(`Flow inconnu : ${String(params.flow)}`);

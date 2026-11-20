@@ -75,4 +75,25 @@ function world() {
   ok(w.m.rows('authSessions').some((s) => s.userId === other), 'S23 : les sessions d\'un autre compte ne sont pas touchées');
 }
 
+// ─── S12 : à la connexion, une adresse inconnue répond comme une adresse inscrite (compteur et durée) ───
+{
+  const w = world();
+  await w.auth('signUp', 'inscrite@exemple.fr', 'motdepasse1');
+  const codes = async (email) => { const out = []; for (let i = 0; i < 11; i++) out.push((await w.auth('signIn', email, 'mauvais-' + i)).code); return out; };
+  const known = await codes('inscrite@exemple.fr'), unknown = await codes('inconnue@exemple.fr');
+  ok(known.at(-1) === 'TROP_DE_TENTATIVES' && unknown.at(-1) === 'TROP_DE_TENTATIVES' && unknown.slice(0, 10).every((c) => c === 'IDENTIFIANTS_INCORRECTS'),
+    `S12 : 10 échecs puis « trop de tentatives », adresse inscrite comme inconnue (inconnue : ${unknown.at(-1)})`);
+  const time = async (email) => { const t = performance.now(); for (let i = 0; i < 3; i++) await w.auth('signIn', email.replace('@', `+${i}@`), 'mauvais'); return (performance.now() - t) / 3; };
+  await w.auth('signUp', 'inscrite+0@exemple.fr', 'motdepasse1'); await w.auth('signUp', 'inscrite+1@exemple.fr', 'motdepasse1'); await w.auth('signUp', 'inscrite+2@exemple.fr', 'motdepasse1');
+  const tk = await time('inscrite@exemple.fr'), tu = await time('autre@exemple.fr');
+  ok(tu > tk * 0.5, `S12 : même ordre de durée (inscrite ${tk.toFixed(0)} ms, inconnue ${tu.toFixed(0)} ms)`);
+  // Une connexion réussie remet le compteur à zéro.
+  const v = world();
+  await v.auth('signUp', 'c@exemple.fr', 'motdepasse1');
+  for (let i = 0; i < 5; i++) await v.auth('signIn', 'c@exemple.fr', 'faux-mdp-' + i);
+  await v.auth('signIn', 'c@exemple.fr', 'motdepasse1');
+  const after = []; for (let i = 0; i < 6; i++) after.push((await v.auth('signIn', 'c@exemple.fr', 'faux-' + i)).code);
+  ok(after.every((c) => c === 'IDENTIFIANTS_INCORRECTS'), 'S12 : une connexion réussie remet le compteur à zéro');
+}
+
 end();
