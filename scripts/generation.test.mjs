@@ -1,7 +1,7 @@
-// Constats « moyenne » de l'audit du 19/11 sur le convertisseur des canevas (scripts/dc2preact.py) et ce qu'il produit :
-// une section par constat. Lit les écrans générés (src/app/pages, src/pages, src/app/routes.js).
-// Usage : node scripts/generation.test.mjs
-import { execFileSync } from 'node:child_process';
+// Constats de l'audit du 19/11 sur le convertisseur des canevas (scripts/dc2preact.py) et ce qu'il produit : une section
+// par constat (moyens, puis bas). Lit les écrans générés (src/app/pages, src/pages, src/app/routes.js).
+// Usage : node scripts/generation.test.mjs   (DC2PREACT=<autre dc2preact.py> pour les sections qui l'importent)
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -85,6 +85,28 @@ const appPages = pages('src/app/pages');
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   ok(/prerender\.mjs/.test(pkg.scripts.build), 'F9 : npm run build (et donc le build Vercel) lance le pré-rendu');
   fs.rmSync(out, { recursive: true, force: true });
+}
+
+// ─── Constats bas ────────────────────────────────────────────────────────────────────────────────────────────────
+/** Lance du Python avec scripts/dc2preact.py importé comme module `d` (DC2PREACT : une autre version). */
+const dc2 = (code, env = {}) => {
+  const file = process.env.DC2PREACT ? path.resolve(process.env.DC2PREACT) : path.join(root, 'scripts/dc2preact.py');
+  const r = spawnSync('python3', ['-c', `import importlib.util, sys, json
+spec = importlib.util.spec_from_file_location('dc2preact', ${JSON.stringify(file)})
+d = importlib.util.module_from_spec(spec); spec.loader.exec_module(d)
+d.ROOT = __import__('pathlib').Path(${JSON.stringify(root)})
+${code}`], { encoding: 'utf8', cwd: root, env: { ...process.env, ...env } });
+  return { out: r.stdout.trim(), err: (r.stderr || '').trim(), status: r.status };
+};
+
+// ─── Q33 et F22 : ni drapeau qui retire les écrans mobiles, ni correspondance vers un artboard disparu ───
+{
+  const r = dc2(`print(json.dumps({'mobile': len(d.APP_MOBILE_PAGES), 'menu': any(c[1] == 'MenuCompte' for c in d.APP_COMPONENTS), 'links': sorted(d.APP_LINKS)}))`, { SWARM_SANS_MOBILE: '1' });
+  const v = r.status === 0 ? JSON.parse(r.out) : null;
+  ok(v && v.mobile >= 12 && v.menu, `Q33 : SWARM_SANS_MOBILE=1 ne retire plus les écrans mobiles ni MenuCompte (${v ? `${v.mobile} écrans mobiles, MenuCompte ${v.menu}` : r.err.split('\n').pop()})`);
+  const canvases = fs.readdirSync(path.join(root, 'design/app')).filter((f) => f.endsWith('.dc.html')).map((f) => fs.readFileSync(path.join(root, 'design/app', f), 'utf8')).join('\n');
+  const dead = (v?.links ?? []).filter((k) => !fs.existsSync(path.join(root, 'design/app', k)) && !canvases.includes(k));
+  ok(v && !dead.length, `Q33, F22 : chaque correspondance de lien vise un canevas existant ou cité (${dead.join(', ') || 'aucune morte'})`);
 }
 
 end();

@@ -91,11 +91,6 @@ APP_MOBILE_PAGES = [
     ('MAlertes.dc.html', 'MAlertes', 'm-ale', '/app/alertes'),
 ]
 
-# SWARM_SANS_MOBILE=1 : génère sans les écrans mobiles (téléphones servis par le desktop), le temps
-# qu'ils soient branchés ; on ne commite alors ni design/app/M* ni leurs pages.
-if __import__('os').environ.get('SWARM_SANS_MOBILE'):
-    APP_MOBILE_PAGES = []
-
 # Composants partagés, importés par <dc-import name="…"> (pas des routes) : fichier, composant, préfixe CSS.
 APP_COMPONENTS = [
     ('Palette.dc.html', 'Palette', 'a-pal'),
@@ -115,8 +110,9 @@ APP_COMPONENTS = [
     # Réglages (19/11) : fenêtre sur ordinateur, plein écran (liste puis détail) sur téléphone à /app/compte.
     ('ReglagesA.dc.html', 'Reglages', 'a-reg'),
 ]
-if not APP_MOBILE_PAGES:
-    APP_COMPONENTS = [c for c in APP_COMPONENTS if not c[0].startswith('M')]
+# Audit Q33 (19/11) : un drapeau SWARM_SANS_MOBILE retirait ici les écrans mobiles des routes (téléphones servis par le
+# desktop) et, en filtrant sur l'initiale « M », jetait aussi MenuCompte (desktop). Tous les écrans mobiles sont branchés :
+# retiré. Si un filtre redevient nécessaire, une liste explicite de composants, jamais l'initiale du nom de fichier.
 def _plain(route):
     if ':' not in route:
         return route
@@ -129,11 +125,11 @@ APP_LINKS = {src: _plain(route) for src, _, _, route, _, _ in APP_PAGES}
 APP_PARAM_LINKS = {src: route.split('/:')[0] + '/' for src, _, _, route, _, _ in APP_PAGES if ':' in route}
 APP_LINKS.update({src: _plain(route) for src, _, _, route in APP_MOBILE_PAGES})
 APP_PARAM_LINKS.update({src: route.split('/:')[0] + '/' for src, _, _, route in APP_MOBILE_PAGES if ':' in route})
+# Artboards sans écran, encore cités par des canevas. Audit Q33 et F22 (19/11) : six entrées visaient des artboards
+# disparus (MFiltres, MApercu, MCreerAlerte, MRecherche, MAbonnement, MConnexion) ; un lien vers l'un d'eux serait passé en
+# silence au lieu de déclencher « lien(s) sans route ». Chaque entrée ici doit être citée par un canevas
+# (scripts/generation.test.mjs).
 APP_LINKS.update({
-    # Écrans d'interaction mobiles : s'il en reste un lien, il mène à l'écran hôte.
-    'MFiltres.dc.html': '/app/apps', 'MApercu.dc.html': '/app/apps', 'MCreerAlerte.dc.html': '/app/alertes',
-    'MRecherche.dc.html': '/app', 'MAbonnement.dc.html': '/app/compte', 'MConnexion.dc.html': '/app/deconnexion',
-
     'FormatsA.dc.html': '/app/formats',        # ancien écran Formats (restes de données), remplacé par FormatsB
     # Ancienne page Compte (sans résiliation ni facturation), retirée (audit Q13) : /app/compte ouvre les Réglages
     # (src/app/main.js : panneau sur ordinateur, plein écran sur téléphone).
