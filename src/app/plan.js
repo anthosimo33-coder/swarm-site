@@ -73,3 +73,25 @@ export function previewView(arrival, value) {
  * Même adresse, seule la mise en page change : on garde la position.
  */
 export const layoutOnly = (before, after) => !!before && !!after && before.path === after.path && before.mobile !== after.mobile;
+
+/**
+ * Les paramètres d'une requête (« ?m=FR&niche=Foi&niche=Couple ») : une clé répétée donne un tableau
+ * ({ m: 'FR', niche: ['Foi', 'Couple'] }), une clé seule une chaîne. Construit par Object.fromEntries : « __proto__ »
+ * reste une clé comme une autre.
+ */
+export function queryOf(search) {
+  const seen = new Map();
+  for (const [k, v] of new URLSearchParams(search)) seen.set(k, seen.has(k) ? [].concat(seen.get(k), v) : v);
+  return Object.fromEntries(seen);
+}
+
+/**
+ * Audit F25 (19/11) : les écrans de liste écrivent leurs filtres dans l'adresse (history.replaceState), sans que le
+ * routeur le sache : un filtre changé ne remonte pas l'écran. Quand l'écran se remonte pour la même adresse (rotation,
+ * fenêtre redimensionnée, abonnement qui arrive), il reçoit donc la requête affichée, pas celle de la navigation.
+ * path : l'adresse de la navigation (« /app/apps?niche=Foi ») ; pathname, search : celles de la barre d'adresse.
+ */
+export function screenQuery(path, pathname, search) {
+  const [p, s = ''] = path.split('?');
+  return queryOf(p === pathname ? search : s);
+}
