@@ -16,14 +16,20 @@ export default class Apps extends DCLogic {
     // Échap ferme le menu de tri et le calendrier (les menus de filtre ont leur propre champ).
     this.esc = (e) => { const st = this.state || {}; if (e.key === 'Escape' && (st.open === 'tri' || st.open === 'periode')) this.setState({ open: '' }); };
     document.addEventListener('keydown', this.esc);
+    this.moreIo = typeof IntersectionObserver === 'function' ? new IntersectionObserver((es) => {
+      if (es.some((e) => e.isIntersecting)) this.setState({ limit: ((this.state || {}).limit || 40) + 60 });
+    }, { rootMargin: '900px 0px' }) : null;
+    if (this.moreEl && this.moreIo) this.moreIo.observe(this.moreEl);
   }
-  componentWillUnmount() { document.removeEventListener('mousedown', this.out); document.removeEventListener('keydown', this.esc); }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.out); document.removeEventListener('keydown', this.esc); if (this.moreIo) this.moreIo.disconnect(); }
   componentDidUpdate(pp, ps) {
     const st = this.state || {};
     ps = ps || {};
     // Menu ouvert : le focus y reste (Safari ne le donne pas au bouton cliqué), pour qu'Échap le ferme.
     if (st.open && this.menuInput && (st.open !== ps.open || !(this.menuEl && this.menuEl.contains(document.activeElement)))) this.menuInput.focus();
     if (st.pv && st.pv !== ps.pv && this.pvClose) this.pvClose.focus();
+    // Encore dans l'écran après un ajout de lignes : on la réobserve pour en demander d'autres.
+    if (st.limit !== ps.limit && this.moreEl && this.moreIo) { this.moreIo.unobserve(this.moreEl); this.moreIo.observe(this.moreEl); }
   }
   renderVals() {
     const b = this.baseVals();
@@ -156,9 +162,13 @@ return {};
       return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p]) => (c === 'XX' ? 'Pays inconnu' : c) + (p !== null && p !== undefined ? ' ' + p + '\u202f%' : '')).join(' · '); };
     // Les lignes ne dépendent que des données et des filtres : ouvrir ou fermer un aperçu ne les recalcule pas
     // (519 lignes, ~13 ms par clic avant le 20/11) ; seule la ligne de l'app ouverte change de fond.
-    const rowsKey = [SRC, D, market, niches.join('|'), sort, sortBy, dir, period, platform];
+    // Rendu progressif (20/11) : 40 lignes d'abord, 60 de plus quand le bas du tableau approche (sentinelle
+    // observée, voir componentDidMount). Dessiner les ~520 lignes d'un coup gelait l'écran 260 à 640 ms à chaque
+    // changement d'onglet ou retour sur Apps ; seules les lignes dessinées sont calculées. « Affichées » garde le total.
+    const limit = st.limit || 40;
+    const rowsKey = [SRC, D, market, niches.join('|'), sort, sortBy, dir, period, platform, limit];
     const sameRows = !!this.rowsKey && this.rowsKey.every((v, k) => v === rowsKey[k]);
-    const rowsBase = sameRows ? this.rowsBase : list.map((a, i) => {
+    const rowsBase = sameRows ? this.rowsBase : list.slice(0, limit).map((a, i) => {
       const w = a[6];
       const max = Math.max.apply(null, w) || 1;
       const pts = w.map((v, j) => [3 + j * (124 / 5), 36 - (v / max) * 30]);
@@ -184,6 +194,7 @@ return {};
       };
     });
     if (!sameRows) { this.rowsKey = rowsKey; this.rowsBase = rowsBase; }
+    if (!this.setMore) this.setMore = (el) => { if (this.moreEl && this.moreIo) this.moreIo.unobserve(this.moreEl); this.moreEl = el; if (el && this.moreIo) this.moreIo.observe(el); };
     const rows = st.pv ? rowsBase.map((r) => (r.pvKey === st.pv ? Object.assign({}, r, { bg: 'var(--accent-soft)' }) : r)) : rowsBase;
     const mLabel = MKS.filter((m) => m[0] === market)[0][1];
     const nLabel = niches.length === 0 ? 'Toutes' : (niches.length === 1 ? niches[0] : niches.length + ' niches');
@@ -350,7 +361,7 @@ return {};
     return {
       lede: market === 'ALL' ? 'Les apps que les réseaux de créateurs poussent, classées par vues.' : 'Les apps qui font le plus de vues ' + PREP(mLabel)[0] + ' ' + mLabel + ' : vues, courbes et vidéos de ce pays seulement.',
       releve: (() => { const S = this.props && typeof this.props.get === 'function' ? this.props.get('stats') : null; if (!S || !S.at) return ''; const d = new Date(S.at); return 'Relevé le ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }).replace(':', ' h ') + '.'; })(), sortMenu, sortBtn, hd, cal, cust, perEdge,
-      rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv, ajItem,
+      rows, more: list.length > limit, setMore: this.setMore, empty: list.length === 0, total: list.length, bar, chips, menu, sorts, periods, pv, ajItem,
       vlab: period === 'custom' ? 'Vues · ' + rangeLabel : (period === '7' ? 'Vues 7 j' : 'Vues 30 j'), sortLabel: SLAB[sortBy],
       closeMenu: () => set({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },
@@ -767,7 +778,7 @@ return {};
               ),
               $h("tbody", null,
                 ($l($v.rows)).map((r) => [
-                  $h("tr", { "data-pv-row": "", "style": `background: ${$t(r?.bg)};` },
+                  $h("tr", { "key": r?.n, "data-pv-row": "", "data-key": r?.n, "style": `background: ${$t(r?.bg)};` },
                     $h("td", { "style": "padding: 10px 12px 10px 20px;" },
                       $h("span", { "style": "display: flex; align-items: center; gap: 14px; min-width: 0;" },
                         $h("span", { "style": "width: 20px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
@@ -869,7 +880,7 @@ return {};
                     $h("td", null,
                       $h("span", { "style": "display: flex; align-items: center; gap: 14px;" },
                         $h("span", { "style": "display: flex; flex-direction: column; gap: 4px; min-width: 92px;" },
-                          $h("span", { "style": "font-family: var(--font-display); font-size: 20px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);" },
+                          $h("span", { "data-lq-num": "", "style": "font-family: var(--font-display); font-size: 20px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);" },
                             $t(r?.v30)
                           ),
                           $h("span", { "style": `font-size: 11px; font-weight: 600; white-space: nowrap; color: ${$t(r?.dInk)};` },
@@ -883,8 +894,8 @@ return {};
                               $h("stop", { "offset": "1", "stop-color": r?.stroke, "stop-opacity": "0" })
                             )
                           ),
-                          $h("path", { "d": r?.area, "fill": `url(#${$t(r?.gid)})` }),
-                          $h("path", { "d": r?.line, "fill": "none", "stroke": r?.stroke, "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" }),
+                          $h("path", { "data-lq-spark": "", "d": r?.area, "fill": `url(#${$t(r?.gid)})` }),
+                          $h("path", { "data-lq-spark": "", "d": r?.line, "fill": "none", "stroke": r?.stroke, "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" }),
                           $h("circle", { "cx": r?.ex, "cy": r?.ey, "r": "3.5", "fill": r?.stroke, "stroke": "#121722", "stroke-width": "2" })
                         )
                       )
@@ -912,7 +923,10 @@ return {};
                   )
                 ] : null
               )
-            )
+            ),
+            ($v.more) ? [
+              $h("div", { "ref": $v.setMore, "aria-hidden": "true", "style": "height: 1px;" })
+            ] : null
           ),
           $h("footer", { "style": "margin-top: auto; padding: 28px 32px 32px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;" },
             $h("p", { "class": "sw-calc", "style": "margin: 0;" },

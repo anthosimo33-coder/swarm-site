@@ -100,17 +100,18 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </tr></thead>
 <tbody>
 <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
-<tr data-pv-row="" style="background: {{r.bg}};">
+<tr key="{{r.n}}" data-pv-row="" data-key="{{r.n}}" style="background: {{r.bg}};">
 <td style="padding: 10px 12px 10px 20px;"><span style="display: flex; align-items: center; gap: 14px; min-width: 0;"><span style="width: 20px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);">{{r.rank}}</span><button type="button" class="sw-app" onClick="{{r.open}}" aria-label="Aperçu de {{r.n}}" style="min-width: 0; gap: 14px; border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;"><span data-mo-ico="" class="sw-app-icon {{r.blank}}" style="width: 40px; height: 40px; border-radius: 11px;"><sc-if value="{{r.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{r.logo}}" alt=""></sc-if><sc-if value="{{r.nologo}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg></sc-if></span><span style="min-width: 0; display: flex; flex-direction: column; gap: 3px;"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0;"><span data-mo-name="" class="sw-app-name" style="font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">{{r.n}}</span><sc-if value="{{r.kindL}}" hint-placeholder-val="{{false}}"><span style="flex-shrink: 0; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 11px; font-weight: 600; color: var(--ink-soft);">{{r.kindL}}</span></sc-if></span><span style="max-width: 100%; font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.net}}</span><sc-if value="{{r.plc}}" hint-placeholder-val="{{false}}"><span style="display: flex; margin-top: 3px;"><span style="display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><span aria-hidden="true" style="width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;">€</span>{{r.plc}}</span></span></sc-if></span></button></span></td>
 <td><span style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px;"><span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; color: var(--ink); white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-muted);"><path d="{{r.nicheIc}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.niche}}</span><span style="display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--ink-faint); white-space: nowrap;"><sc-for list="{{r.mks}}" as="k" hint-placeholder-count="2"><span title="{{k.t}}" style="display: inline-flex; align-items: center; gap: 6px;"><span class="sw-flag" data-c="{{k.c}}" aria-hidden="true"></span>{{k.p}}</span></sc-for></span></span></td>
 <td><span style="display: flex; flex-direction: column; gap: 5px;"><span style="display: flex; gap: 8px;"><sc-for list="{{r.thumbs}}" as="t" hint-placeholder-count="3"><a href="{{t.href}}" class="sw-video {{t.t}}" style="display: block; width: 58px; height: 78px; aspect-ratio: auto; border-radius: 10px;"><img class="sw-cover" src="{{t.src}}" alt="" loading="lazy"><span class="sw-video-shade"></span><sc-if value="{{t.car}}" hint-placeholder-val="{{false}}"><span title="Carrousel de {{t.car}} photos" aria-label="Carrousel" style="position: absolute; top: 4px; right: 4px; z-index: 2; height: 18px; padding: 0 5px; border-radius: 999px; background: rgba(5,7,12,0.66); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M8 8h12v12H8zM4 16V4h12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"></path></svg>{{t.car}}</span></sc-if><sc-if value="{{t.paid}}" hint-placeholder-val="{{false}}"><span title="Placement payé : compte payé pour cette vidéo" aria-label="Placement payé" style="position: absolute; top: 4px; left: 4px; z-index: 2; width: 18px; height: 18px; border-radius: 50%; background: #F5B941; color: #1A1206; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px rgba(5,7,12,0.6);">€</span></sc-if><span style="position: absolute; left: 6px; bottom: 5px; font-size: 11px; font-weight: 700; color: #FFFFFF;">{{t.v}}</span></a></sc-for></span><sc-if value="{{r.count}}" hint-placeholder-val="{{true}}"><span style="font-size: 11px; color: var(--ink-faint);"><span style="color: var(--ink-soft); font-weight: 600;">{{r.count}}</span> vidéos en 30 jours</span></sc-if></span></td>
-<td><span style="display: flex; align-items: center; gap: 14px;"><span style="display: flex; flex-direction: column; gap: 4px; min-width: 92px;"><span style="font-family: var(--font-display); font-size: 20px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{r.v30}}</span><span style="font-size: 11px; font-weight: 600; white-space: nowrap; color: {{r.dInk}};">{{r.delta}}</span></span><svg width="130" height="40" viewBox="0 0 130 40" aria-hidden="true" style="display: block; flex-shrink: 0; overflow: visible;"><defs><linearGradient id="{{r.gid}}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{{r.stroke}}" stop-opacity="0.28"></stop><stop offset="1" stop-color="{{r.stroke}}" stop-opacity="0"></stop></linearGradient></defs><path d="{{r.area}}" fill="url(#{{r.gid}})"></path><path d="{{r.line}}" fill="none" stroke="{{r.stroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="{{r.ex}}" cy="{{r.ey}}" r="3.5" fill="{{r.stroke}}" stroke="#121722" stroke-width="2"></circle></svg></span></td>
+<td><span style="display: flex; align-items: center; gap: 14px;"><span style="display: flex; flex-direction: column; gap: 4px; min-width: 92px;"><span data-lq-num="" style="font-family: var(--font-display); font-size: 20px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{r.v30}}</span><span style="font-size: 11px; font-weight: 600; white-space: nowrap; color: {{r.dInk}};">{{r.delta}}</span></span><svg width="130" height="40" viewBox="0 0 130 40" aria-hidden="true" style="display: block; flex-shrink: 0; overflow: visible;"><defs><linearGradient id="{{r.gid}}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{{r.stroke}}" stop-opacity="0.28"></stop><stop offset="1" stop-color="{{r.stroke}}" stop-opacity="0"></stop></linearGradient></defs><path data-lq-spark="" d="{{r.area}}" fill="url(#{{r.gid}})"></path><path data-lq-spark="" d="{{r.line}}" fill="none" stroke="{{r.stroke}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="{{r.ex}}" cy="{{r.ey}}" r="3.5" fill="{{r.stroke}}" stroke="#121722" stroke-width="2"></circle></svg></span></td>
 <td class="sw-num" style="padding-right: 20px;"><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;"><span style="font-family: var(--font-display); font-size: 20px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; color: var(--accent);">{{r.best}}</span><span style="font-size: 11px; font-weight: 400; color: var(--ink-faint);">sa normale</span></span></td>
 </tr>
 </sc-for>
 <sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><tr><td colspan="5" style="padding: 48px 20px; text-align: center; color: var(--ink-muted);">Aucune app pour ces filtres. <button class="sw-link" type="button" onClick="{{clearAll}}" style="border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: 600;">Effacer les filtres</button></td></tr></sc-if>
 </tbody>
 </table>
+<sc-if value="{{more}}" hint-placeholder-val="{{false}}"><div ref="{{setMore}}" aria-hidden="true" style="height: 1px;"></div></sc-if>
 </div>
 
 <footer style="margin-top: auto; padding: 28px 32px 32px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
@@ -190,14 +191,20 @@ class Component extends DCLogic {
     // Échap ferme le menu de tri et le calendrier (les menus de filtre ont leur propre champ).
     this.esc = (e) => { const st = this.state || {}; if (e.key === 'Escape' && (st.open === 'tri' || st.open === 'periode')) this.setState({ open: '' }); };
     document.addEventListener('keydown', this.esc);
+    this.moreIo = typeof IntersectionObserver === 'function' ? new IntersectionObserver((es) => {
+      if (es.some((e) => e.isIntersecting)) this.setState({ limit: ((this.state || {}).limit || 40) + 60 });
+    }, { rootMargin: '900px 0px' }) : null;
+    if (this.moreEl && this.moreIo) this.moreIo.observe(this.moreEl);
   }
-  componentWillUnmount() { document.removeEventListener('mousedown', this.out); document.removeEventListener('keydown', this.esc); }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.out); document.removeEventListener('keydown', this.esc); if (this.moreIo) this.moreIo.disconnect(); }
   componentDidUpdate(pp, ps) {
     const st = this.state || {};
     ps = ps || {};
     // Menu ouvert : le focus y reste (Safari ne le donne pas au bouton cliqué), pour qu'Échap le ferme.
     if (st.open && this.menuInput && (st.open !== ps.open || !(this.menuEl && this.menuEl.contains(document.activeElement)))) this.menuInput.focus();
     if (st.pv && st.pv !== ps.pv && this.pvClose) this.pvClose.focus();
+    // Encore dans l'écran après un ajout de lignes : on la réobserve pour en demander d'autres.
+    if (st.limit !== ps.limit && this.moreEl && this.moreIo) { this.moreIo.unobserve(this.moreEl); this.moreIo.observe(this.moreEl); }
   }
   renderVals() {
     const b = this.baseVals();
@@ -330,9 +337,13 @@ return {};
       return l.filter((m) => m[1] !== null || m[0] !== 'XX').slice(0, 2).map(([c, p]) => (c === 'XX' ? 'Pays inconnu' : c) + (p !== null && p !== undefined ? ' ' + p + '\u202f%' : '')).join(' · '); };
     // Les lignes ne dépendent que des données et des filtres : ouvrir ou fermer un aperçu ne les recalcule pas
     // (519 lignes, ~13 ms par clic avant le 20/11) ; seule la ligne de l'app ouverte change de fond.
-    const rowsKey = [SRC, D, market, niches.join('|'), sort, sortBy, dir, period, platform];
+    // Rendu progressif (20/11) : 40 lignes d'abord, 60 de plus quand le bas du tableau approche (sentinelle
+    // observée, voir componentDidMount). Dessiner les ~520 lignes d'un coup gelait l'écran 260 à 640 ms à chaque
+    // changement d'onglet ou retour sur Apps ; seules les lignes dessinées sont calculées. « Affichées » garde le total.
+    const limit = st.limit || 40;
+    const rowsKey = [SRC, D, market, niches.join('|'), sort, sortBy, dir, period, platform, limit];
     const sameRows = !!this.rowsKey && this.rowsKey.every((v, k) => v === rowsKey[k]);
-    const rowsBase = sameRows ? this.rowsBase : list.map((a, i) => {
+    const rowsBase = sameRows ? this.rowsBase : list.slice(0, limit).map((a, i) => {
       const w = a[6];
       const max = Math.max.apply(null, w) || 1;
       const pts = w.map((v, j) => [3 + j * (124 / 5), 36 - (v / max) * 30]);
@@ -358,6 +369,7 @@ return {};
       };
     });
     if (!sameRows) { this.rowsKey = rowsKey; this.rowsBase = rowsBase; }
+    if (!this.setMore) this.setMore = (el) => { if (this.moreEl && this.moreIo) this.moreIo.unobserve(this.moreEl); this.moreEl = el; if (el && this.moreIo) this.moreIo.observe(el); };
     const rows = st.pv ? rowsBase.map((r) => (r.pvKey === st.pv ? Object.assign({}, r, { bg: 'var(--accent-soft)' }) : r)) : rowsBase;
     const mLabel = MKS.filter((m) => m[0] === market)[0][1];
     const nLabel = niches.length === 0 ? 'Toutes' : (niches.length === 1 ? niches[0] : niches.length + ' niches');
@@ -524,7 +536,7 @@ return {};
     return {
       lede: market === 'ALL' ? 'Les apps que les réseaux de créateurs poussent, classées par vues.' : 'Les apps qui font le plus de vues ' + PREP(mLabel)[0] + ' ' + mLabel + ' : vues, courbes et vidéos de ce pays seulement.',
       releve: (() => { const S = this.props && typeof this.props.get === 'function' ? this.props.get('stats') : null; if (!S || !S.at) return ''; const d = new Date(S.at); return 'Relevé le ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }).replace(':', ' h ') + '.'; })(), sortMenu, sortBtn, hd, cal, cust, perEdge,
-      rows, empty: rows.length === 0, total: rows.length, bar, chips, menu, sorts, periods, pv, ajItem,
+      rows, more: list.length > limit, setMore: this.setMore, empty: list.length === 0, total: list.length, bar, chips, menu, sorts, periods, pv, ajItem,
       vlab: period === 'custom' ? 'Vues · ' + rangeLabel : (period === '7' ? 'Vues 7 j' : 'Vues 30 j'), sortLabel: SLAB[sortBy],
       closeMenu: () => set({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       menuKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); set({ open: '' }); } },

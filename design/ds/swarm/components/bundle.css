@@ -282,3 +282,13 @@ body { margin: 0; background: var(--surface); color: var(--ink); font-family: va
 [data-pv-row] .sw-app { transition: opacity 120ms ease; }
 [data-pv-row]:active { background: rgba(255,255,255,0.045) !important; }
 [data-pv-row]:active .sw-app { opacity: 0.86; }
+
+/* Bascules liquides (src/app/liquid.js) : la pastille coule d'un onglet ou d'une rubrique à l'autre. */
+.lq-host { position: relative; }
+.lq-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; filter: url(#lq-goo); }
+.lq-layer > i { position: absolute; display: block; will-change: transform; }
+.lq-host > [role="tab"], .lq-host .sw-side-item { position: relative; z-index: 1; }
+.lq-run [role="tab"][aria-selected="true"] { background: transparent !important; box-shadow: none !important; }
+.lq-run .sw-side-item[aria-current="page"] .sw-side-ico { background: transparent !important; box-shadow: none !important; }
+.lq-rows [data-pv-row] { background-color: var(--lq-row-bg) !important; }
+[data-lq-num] { display: inline-block; }
