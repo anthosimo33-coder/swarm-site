@@ -1,11 +1,11 @@
-// L'app Swarm : réservée aux personnes connectées, une seule page à routes internes.
+// L'app Kopycat : réservée aux personnes connectées, une seule page à routes internes.
 // La session n'est vérifiée qu'une fois ; passer d'un écran à l'autre ne recharge rien.
 // Les écrans viennent du canevas de l'app (design/app, convertis par scripts/dc2preact.py).
 // Sans abonnement (user.pro faux), l'aperçu (19/11) : Apps montre le top 3 (écran Apercu), les fiches et vidéos de
 // ces 3 apps et le compte restent ouverts ; tout autre écran ouvre la fenêtre des formules (Formules). Le serveur
 // n'envoie de toute façon rien d'autre (convex/boards.ts) : ce routeur ne fait que l'expliquer à l'écran.
 // Chacun reçoit par ses props :
-//   user    { prenom, email, initiale, pro }   signOut()   onPlans() : ouvre la fenêtre des formules
+//   user    { prenom, nom, email, initiale, pro, emailVerified, hasPassword }   signOut()   onPlans() : ouvre la fenêtre des formules
 //   data    le document de son adresse (convex/boards.ts), déjà calculé depuis le Radar
 //   params  les paramètres de l'adresse (ex. { slug: 'astraai' })
 //   query   les paramètres de la requête (ex. { niche: 'Foi' } pour /app/apps?niche=Foi)
@@ -22,7 +22,7 @@ import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
 import { ROUTES } from './routes.js';
 import { createWatcher } from './watcher.js';
-import { APERCU, HOME, SIGN_OUT, isOpen, mayLoadBeforeUser, routeCodeNeeded, routesToWarm } from './plan.js';
+import { APERCU, HOME, LOAD_TIMEOUT_MS, SIGN_OUT, isOpen, loadingView, mayLoadBeforeUser, previewView, routeCodeNeeded, routeMatcher, routesToWarm, safeDecode as dec } from './plan.js';
 import { scrollMemory } from './scroll.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
@@ -74,6 +74,7 @@ const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
 // Position de défilement retenue avant chaque navigation, rendue au retour arrière (audit F13).
 const scroll = scrollMemory(window);
 const clean = (path) => (path.length > 1 ? path.replace(/\/+$/, '') : path);
+
 /** L'adresse affichée : chemin + requête (« /app/apps?niche=Foi »), sans l'ancre. */
 const here = () => clean(window.location.pathname) + window.location.search;
 // Les listes gardées ouvertes toute la session : celles que plusieurs écrans lisent (apps), la recherche ⌘K, les
@@ -82,22 +83,8 @@ const here = () => clean(window.location.pathname) + window.location.search;
 const WARM = ['apps', 'search', 'stats'];
 const SAVED = ['follows', 'folders', 'alertRules', 'seen'];
 
-/** L'adresse -> sa route, ses paramètres et la clé de ses données. */
-const COMPILED = ROUTES.map((route) => {
-  const names = [];
-  const re = new RegExp(`^${route.path.replace(/:([a-z]+)/g, (_, n) => (names.push(n), '([^/]+)'))}$`);
-  return { route, re, names };
-});
-function matchRoute(path) {
-  for (const { route, re, names } of COMPILED) {
-    const m = path.match(re);
-    if (!m) continue;
-    const params = Object.fromEntries(names.map((n, i) => [n, decodeURIComponent(m[i + 1])]));
-    const key = route.data ? route.data.replace(/\{([a-z]+)\}/g, (_, n) => params[n]) : null;
-    return { route, params, key };
-  }
-  return null;
-}
+/** L'adresse -> sa route, ses paramètres (décodés sans lever, audit Q31) et la clé de ses données (src/app/plan.js). */
+const matchRoute = routeMatcher(ROUTES);
 
 // Démarrage : le code du premier écran se télécharge tout de suite, en même temps que la
 // session se vérifie ; et la connexion aux miniatures (/cover/…) s'ouvre d'avance.
@@ -143,8 +130,9 @@ function ready(key) {
 function toUser(viewer) {
   const email = viewer.email ?? '';
   const prenom = viewer.name ? viewer.name.trim().split(/\s+/)[0] : null;
-  return { prenom, nom: viewer.name ?? '', email, initiale: (prenom || email || '?').charAt(0).toUpperCase(), pro: viewer.pro === true,
-    emailVerified: viewer.emailVerified === true };
+  // L'initiale : le premier caractère entier, jamais la moitié d'un émoji (audit Q38).
+  return { prenom, nom: viewer.name ?? '', email, initiale: (Array.from(prenom || email || '?')[0] || '?').toUpperCase(), pro: viewer.pro === true,
+    emailVerified: viewer.emailVerified === true, hasPassword: viewer.password === true };
 }
 
 function App() {
@@ -153,6 +141,9 @@ function App() {
   const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : 'skip');
   const [path, setPath] = useState(here); // chemin + requête
   const [screen, setScreen] = useState(null);
+  // Audit F26 : l'adresse dont l'écran se charge, et celle qui n'est pas arrivée dans le délai (LOAD_TIMEOUT_MS).
+  const [loading, setLoading] = useState(null);
+  const [stalled, setStalled] = useState(null);
   const [mobile, setMobile] = useState(MOBILE.matches);
   const [, redraw] = useState(0);
   const leaving = useRef(false);
@@ -365,6 +356,7 @@ function App() {
   // Écran de l'adresse : son code et ses données arrivent ensemble ; l'écran précédent
   // reste affiché d'ici là (pas d'écran vide, pas de données d'exemple qui clignotent).
   useEffect(() => {
+    setLoading(null);
     if (path === SIGN_OUT) {
       void leave();
       return undefined;
@@ -399,9 +391,14 @@ function App() {
     if (known && !proRef.current && !isOpen(pathname)) return undefined; // l'aperçu la renvoie vers Apps (effet ci-dessus)
     const code = routeCodeNeeded(match.route.path, { known, pro: proRef.current }) ? loaderOf(match.route, mobile)() : Promise.resolve({ default: null });
     let current = true;
+    setLoading(path);
+    const late = setTimeout(() => { if (current) setStalled(path); }, LOAD_TIMEOUT_MS);
     Promise.all([code, match.key ? ready(match.key) : null]).then(
       ([module]) => {
+        clearTimeout(late);
         if (!current) return;
+        setLoading(null);
+        setStalled(null);
         // L'écran d'avant cesse d'écouter ses documents : le watcher pourra fermer ceux que le nouveau ne lit pas.
         for (const [id, f] of used.current) watcher.entries.get(id)?.listeners.delete(f);
         used.current = new Map();
@@ -415,6 +412,7 @@ function App() {
     );
     return () => {
       current = false;
+      clearTimeout(late);
     };
   }, [path, isAuthenticated, mobile, known, !!(user && user.pro)]);
 
@@ -441,7 +439,7 @@ function App() {
     if (!screen) return;
     const d = screen.key ? board(screen.key).value : null;
     document.title = `${(d && (d.name || (d.handle && `@${d.handle}`) || d.label)) || screen.route.title} · Kopycat`;
-    const id = decodeURIComponent(window.location.hash.slice(1));
+    const id = dec(window.location.hash.slice(1));
     const target = id && document.getElementById(id);
     scroll.arrive(target);
   }, [screen]);
@@ -467,8 +465,14 @@ function App() {
 
   // Aperçu : une fiche hors du top 3 (document verrouillé par le serveur) renvoie à Apps, fenêtre ouverte. Seulement
   // sur une adresse ouverte : un écran fermé (Accueil chargé avant que le profil arrive) relève de l'effet précédent.
-  const lockedData = !!(screen && screen.key && user && !user.pro && isOpen(screen.path.split('?')[0])
-    && (board(screen.key).value || {}).locked);
+  // Audit F29 : seulement si elle était verrouillée à l'arrivée ; une fiche sortie du top 3 pendant qu'on la lit garde sa
+  // dernière valeur jusqu'à la navigation suivante (src/app/plan.js, previewView).
+  const arrival = useRef({ screen: null, locked: false, open: null });
+  if (screen && arrival.current.screen !== screen) {
+    arrival.current = { screen, locked: !!(screen.key && (board(screen.key).value || {}).locked), open: null };
+  }
+  const view = screen && screen.key && user && !user.pro ? previewView(arrival.current, board(screen.key).value) : null;
+  const lockedData = !!(view && view.eject && isOpen(screen.path.split('?')[0]));
   useEffect(() => {
     if (!lockedData) return;
     window.history.replaceState(null, '', APERCU);
@@ -476,9 +480,14 @@ function App() {
     setPlans(true);
   }, [lockedData]);
 
+  // Le chargement d'un écran : une barre fine (après 150 ms), ou, au-delà du délai, « La connexion est perdue » (F26).
+  const loadState = user ? loadingView({ loading, stalled, path, screenPath: screen && screen.path }) : null;
+  if (loadState === 'stalled') return h(Stalled, null);
+  const progress = loadState === 'progress' ? h('div', { class: 'app-progress', role: 'progressbar', 'aria-label': 'Chargement de l’écran' }) : null;
   // Rien tant qu'on ne sait pas qui est là : pas d'écran qui clignote.
   if (!user || !screen) return null;
-  const data = screen.key ? get(screen.key) : undefined;
+  const fresh = screen.key ? get(screen.key) : undefined;
+  const data = view ? view.data : fresh;
   // Document absent : jamais l'exemple du canevas à la place des données.
   if (data === null) return h(Missing, { fiche: Object.keys(screen.params).length > 0 });
   const onPlans = () => setPlans(true);
@@ -523,7 +532,8 @@ function App() {
     onChangePassword: (current, next) => client.action(api.users.changePassword, { current, next }),
     onChangeEmail: (email, password) => client.action(api.users.changeEmail, { email, password }),
     onSignOutOthers: () => client.mutation(api.users.signOutOthers, {}),
-    onDelete: (email) => client.action(api.users.deleteAccount, { email }).then(async (r) => {
+    // Audit S27 : le mot de passe est demandé pour fermer un compte « mot de passe » (convex/users.ts, deleteAccount).
+    onDelete: (email, password) => client.action(api.users.deleteAccount, password ? { email, password } : { email }).then(async (r) => {
       if (r && r.ok) { leaving.current = true; await signOut().catch(() => {}); window.location.replace('/'); }
       return r;
     }),
@@ -556,7 +566,16 @@ function App() {
           : paid === 'slow' ? slowNote()
           : 'Paiement reçu. On ouvre ton accès…')
     : null;
-  return h(Fragment, null, page, account, panel, sheet, payNote, paidNote);
+  return h(Fragment, null, progress, page, account, panel, sheet, payNote, paidNote);
+}
+
+/** L'écran ne vient pas : hors ligne, ou réseau trop lent (audit F26). */
+function Stalled() {
+  return h('main', { class: 'app-missing', role: 'alert' },
+    h('h1', null, 'La connexion est perdue'),
+    h('p', null, 'L’écran ne se charge pas. Vérifie ta connexion, puis réessaie.'),
+    h('a', { href: window.location.pathname + window.location.search, onClick: (e) => { e.preventDefault(); window.location.reload(); } }, 'Réessayer'),
+  );
 }
 
 /** Une fiche qui n'existe pas (ou plus) dans le Radar, ou une liste pas encore calculée. */
@@ -595,7 +614,7 @@ document.addEventListener('load', (event) => {
   const W = 300, H = 534, PAD = 14;
   let timer = 0, current = null, box = null;
   const linkOf = (el) => (el && el.closest ? el.closest('a[href*="/app/videos/"]') : null);
-  const idOf = (a) => { const m = (a.getAttribute('href') || '').match(/\/app\/videos\/([^/?#]+)/); return m ? decodeURIComponent(m[1]) : null; };
+  const idOf = (a) => { const m = (a.getAttribute('href') || '').match(/\/app\/videos\/([^/?#]+)/); return m ? dec(m[1]) : null; };
   const hide = () => { clearTimeout(timer); current = null; if (box) { box.remove(); box = null; } };
   const show = (a, id) => {
     hide();
