@@ -17,6 +17,8 @@ for (const [name, from, to] of MUTANTS) {
   writeFileSync(f, src.replace(from, to));
   const r = spawnSync(process.execPath, [path.join(root, 'scripts/apercu.test.mjs'), f], { encoding: 'utf8' });
   const fails = (r.stdout.match(/^ÉCHEC.*$/gm) ?? []);
+  // Un mutant qui ne meurt que d'une erreur de code (variable disparue…) ne prouve rien : le banc est à remettre à jour.
+  if (/ReferenceError|is not defined|SyntaxError/.test(r.stdout + r.stderr)) { survived++; console.log(`INVALIDE ${name} : erreur de code, pas un échec du verrou (${(r.stdout + r.stderr).match(/(ReferenceError|SyntaxError)[^)"]*/)?.[0] ?? ''})`); continue; }
   const killed = r.status !== 0 && fails.length > 0;
   if (!killed) survived++;
   console.log(`${killed ? 'TUÉ   ' : 'SURVIT'} ${name} (${fails.length} échec(s)${r.status !== 0 && !fails.length ? ', sortie ' + r.status + ' sans échec : ' + (r.stderr || r.stdout).slice(0, 160) : ''})${fails[0] ? ' : ' + fails[0].slice(6, 110) : ''}`);
