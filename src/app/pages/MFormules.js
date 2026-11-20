@@ -32,6 +32,8 @@ export default class MFormules extends DCLogic {
     const checkout = p.checkout || {};
     return {
       bfOn: bfLeft > 0, tiles,
+      // Après le 30/11 minuit (audit Q1, décision du 20/11) : l’annuel à 29,99 € / mois, facturé 359,88 € par an, sans réduction.
+      annualPrice: bfLeft > 0 ? '14,99 €' : '29,99 €', annualBilled: bfLeft > 0 ? 'Facturé 179,88 € par an' : 'Facturé 359,88 € par an',
       bfAria: dd + ' jours, ' + hh + ' heures, ' + mm + ' minutes',
       titleId: bfLeft > 0 ? 'mfor-titre' : 'mfor-sous-titre',
       annualCta: bfLeft > 0 ? 'J’en profite' : 'Choisir l’annuel',
@@ -96,19 +98,23 @@ export default class MFormules extends DCLogic {
                     "Annuel"
                   ),
                   $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                    "Facturé 179,88 € par an"
+                    $t($v.annualBilled)
                   )
                 ),
-                $h("span", { "style": "height: 26px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; background: #FF6A1F; color: #FFFFFF; font-size: 12px; font-weight: 700;" },
-                  "−50 %"
-                )
+                ($v.bfOn) ? [
+                  $h("span", { "style": "height: 26px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; background: #FF6A1F; color: #FFFFFF; font-size: 12px; font-weight: 700;" },
+                    "−50 %"
+                  )
+                ] : null
               ),
               $h("div", { "style": "display: flex; align-items: baseline; gap: 8px;" },
-                $h("span", { "style": "font-size: 15px; color: var(--ink-faint); text-decoration: line-through; font-variant-numeric: tabular-nums;" },
-                  "29,99 €"
-                ),
+                ($v.bfOn) ? [
+                  $h("span", { "style": "font-size: 15px; color: var(--ink-faint); text-decoration: line-through; font-variant-numeric: tabular-nums;" },
+                    "29,99 €"
+                  )
+                ] : null,
                 $h("span", { "style": "font-family: var(--font-display); font-size: 38px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums;" },
-                  "14,99 €"
+                  $t($v.annualPrice)
                 ),
                 $h("span", { "style": "font-size: 14px; color: var(--ink-muted);" },
                   "/ mois"

@@ -36,16 +36,13 @@ export default class MVideo extends DCLogic {
   }
 
   baseVals() {
-    let v = {"src": "/media/app/v-7705929733220994337.jpg"};
+    let v = (globalThis.__dcSample?.["MVideo"]?.["v"] ?? {"src":""});
     let facts = [{"k": "Texte à l’écran", "v": "« POV: tienes EXAMEN ORAL y no has estudiado NADA », puis « la aplicación que uso es Astra Ai »"}, {"k": "Ce qui est dit", "v": "Un oral en visio. Elle fait répéter la question, « que se ha cortado », puis répond sans faute sur la glycolyse."}, {"k": "Son", "v": "original sound - learnwithjoel1"}, {"k": "Légende", "v": "« OTRO EXAMEN APROBADO, así de fácil » #studyhacks #buenasnotas #examenes"}, {"k": "Réactions", "v": "52,6 k j’aime · 3,2 k enregistrements · 846 partages · 325 commentaires"}];
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
-    let nxt = [{"src": "/media/app/v-7705368869250075925.jpg", "x": "2 333×", "t": "TKA SD kelas 6 persiapannya bisa dimulai disini", "v": "2,0 M"}, {"src": "/media/app/v-7706010190566542612.jpg", "x": "1 226×", "t": "Mình sẽ xoá vid này trong 24h nữa", "v": "809 k"}, {"src": "/media/app/v-7706101547570171143.jpg", "x": "455×", "t": "Bí mật giúp bạn học giỏi hơn đứa mình ghét", "v": "1,2 M"}];
+    let nxt = (globalThis.__dcSample?.["MVideo"]?.["nxt"] ?? []);
     nxt = nxt.map((x) => Object.assign({}, x, { href: '/app/videos/' + vkey(x.src) }));
-    let au = { av: '/media/app/av-learnwithjoel1.jpg', noav: true };
-    let vid = { embed: 'https://www.tiktok.com/player/v1/7705929733220994337?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0', pos: '1 sur 14', back: '/app/apps/astraai', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', hasApp: true, appName: 'Astra AI', where: 'Espagne · 08/11', mk: 'ES', paid: false, paidNote: '',
-      views: '1,87 M', who: '@learnwithjoel1 · 12,2 k abonnés', hasDur: true, dur: '0:49', url: 'https://www.tiktok.com/@learnwithjoel1/video/7705929733220994337', hasX: true, x: '65×',
-      story: '1,87 M vues en 92 heures, alors que le compte fait d’habitude 28,5 k vues. +38 % entre H+52 et H+92.',
-      appHref: '/app/apps/astraai', appLink: 'Voir l’app Astra AI', copyText: 'POV: tienes EXAMEN ORAL y no has estudiado NADA' };
+    let au = (globalThis.__dcSample?.["MVideo"]?.["au"] ?? {"av":"","noav":true});
+    let vid = (globalThis.__dcSample?.["MVideo"]?.["vid"] ?? {"embed":"","pos":"","back":"","hook":"","hasApp":true,"appName":"","where":"","mk":"","paid":false,"paidNote":"","views":"","who":"","hasDur":true,"dur":"","url":"","hasX":true,"x":"","story":"","appHref":"","appLink":"","copyText":""});
     // Sur le site : la vidéo (document « video:<id> »), lue comme VideoA ; « Ensuite » = la suite de la liste de lecture de l'app.
     const D = this.props && this.props.data;
     if (D && D.id) {

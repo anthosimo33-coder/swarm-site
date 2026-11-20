@@ -30,9 +30,9 @@ export default class MAccueil extends DCLogic {
 
   baseVals() {
     let niches = [{"l": "Études"}, {"l": "Couple"}, {"l": "Séduction IA"}, {"l": "Foi"}, {"l": "Side hustle"}];
-    let look = [{"name": "Luv or Pop", "logo": "/media/app/app-luv-or-pop.jpg", "nologo": false, "blank": "", "sub": "Vidéo à 7,5 M vues", "v": "H+26"}, {"name": "DJ Kartier", "logo": "/media/app/app-dj-kartier.jpg", "nologo": false, "blank": "", "sub": "Vidéo à 5,5 M vues", "v": "H+43"}, {"name": "Astra AI", "logo": "/media/app/app-astra-ai.jpg", "nologo": false, "blank": "", "sub": "Une vidéo face à sa normale", "v": "2 333×"}, {"name": "Love8", "logo": "/media/app/app-love8.jpg", "nologo": false, "blank": "", "sub": "Comptes en une recherche", "v": "+69"}];
+    let look = (globalThis.__dcSample?.["MAccueil"]?.["look"] ?? []);
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
-    let alert = {"src": "/media/app/v-7705368869250075925.jpg"};
+    let alert = (globalThis.__dcSample?.["MAccueil"]?.["alert"] ?? {"src":""});
     alert = Object.assign({}, alert, { href: '/app/videos/' + vkey(alert.src) });
     alert = Object.assign({ on: true, views: '2,0 M', kicker: 'Alerte · Astra AI', text: 'Une vidéo à 2 333× sa normale' }, alert);
     look = look.map((r) => Object.assign({ href: '/app/apps/astraai' }, r));

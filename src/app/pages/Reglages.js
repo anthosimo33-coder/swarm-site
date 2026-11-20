@@ -51,7 +51,7 @@ export default class Reglages extends DCLogic {
     const u = p.user || { nom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A', pro: false, emailVerified: true };
     const pro = !!u.pro;
     const mob = !!p.mobile;
-    const view = mob ? (st.view || 'list') : 'detail';
+    const view = mob ? (st.view || p.view || 'list') : 'detail'; // p.view : ouvert sur une rubrique (src/app/main.js)
     const sec = st.sec || p.section || 'profil';
     const fold = (s) => Array.from(String(s)).map((c) => c.normalize('NFD').charAt(0).toLowerCase()).join('');
     // Ce qu’on peut chercher : le réglage, sa rubrique, et les mots qu’on taperait pour le trouver.
@@ -227,12 +227,18 @@ export default class Reglages extends DCLogic {
       bfOn: bfLeft > 0, bfTime,
       billM: bill === 'm' ? 'true' : 'false', billY: bill === 'y' ? 'true' : 'false',
       pickM: () => this.setState({ bill: 'm' }), pickY: () => this.setState({ bill: 'y' }),
-      price: bill === 'y' ? '14,99 €' : '29,99 €',
-      priceSub: bill === 'y' ? '179,88 € aujourd’hui, puis chaque année. Annulable en un clic.' : '29,99 € aujourd’hui, puis chaque mois. Sans engagement.',
-      ctaLabel: bill === 'y' ? 'Passer Pro · 179,88 €' : 'Passer Pro · 29,99 €',
+      // Après le 30/11 minuit (audit Q1, décision du 20/11) : l’annuel à 29,99 € / mois, facturé 359,88 € par an, sans
+      // réduction ni prix barré (le serveur choisit le tarif Whop par date, convex/whop.ts).
+      strikeOn: bill === 'y' && bfLeft > 0,
+      price: bill === 'y' ? (bfLeft > 0 ? '14,99 €' : '29,99 €') : '29,99 €',
+      priceSub: bill === 'y' ? (bfLeft > 0 ? '179,88 €' : '359,88 €') + ' aujourd’hui, puis chaque année. Annulable en un clic.' : '29,99 € aujourd’hui, puis chaque mois. Sans engagement.',
+      ctaLabel: bill === 'y' ? 'Passer Pro · ' + (bfLeft > 0 ? '179,88 €' : '359,88 €') : 'Passer Pro · 29,99 €',
       ctaHref: (bill === 'y' ? checkout.annuel : checkout.mensuel) || '/tarifs',
       ctaStyle: orange ? 'background: linear-gradient(180deg, #FF9A4D, #FF641A); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 22px rgba(255,106,31,0.3);' : 'background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: 0 8px 22px rgba(11,111,224,0.3);',
       inc: ['Les ' + String(total).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' apps et leur classement', 'Les formats qui explosent', 'Les créateurs derrière chaque app', 'Tous les marchés', 'Les alertes « vidéo qui explose »', 'Tes dossiers, sans limite'],
+      // Fermer avec un abonnement en cours : il est résilié chez Whop d'abord, tout de suite (convex/users.ts, deleteAccount).
+      delHint: sub && sub.active ? 'Résilie ton abonnement Pro et supprime ton compte, tes dossiers, tes suivis et tes alertes.' : 'Supprime ton compte, tes dossiers, tes suivis et tes alertes.',
+      delWarn: sub && sub.active ? 'Ton abonnement Kopycat Pro est résilié tout de suite : l’accès Pro s’arrête et tu n’es plus prélevé. Puis tout est effacé, sans retour possible.' : 'Tout est effacé, sans retour possible.',
       delShown: !!st.del, delClosed: !st.del, delEmail: st.delEmail || '', delErr: st.delErr || '',
       delOff: !delMatch || st.busy === 'del', delLabel: st.busy === 'del' ? 'Suppression…' : 'Supprimer définitivement',
       delOpen: () => this.setState({ del: true, delEmail: '', delErr: '' }),
@@ -241,7 +247,7 @@ export default class Reglages extends DCLogic {
       delGo: () => {
         if (!delMatch || !p.onDelete) return;
         this.setState({ busy: 'del' });
-        p.onDelete(st.delEmail).then((r) => { if (!r || !r.ok) this.setState({ busy: null, delErr: 'Cet e-mail n’est pas celui du compte.' }); },
+        p.onDelete(st.delEmail).then((r) => { if (!r || !r.ok) this.setState({ busy: null, delErr: r && r.reason === 'resiliation' ? 'Ton abonnement n’a pas pu être résilié chez Whop : rien n’est effacé. Réessaie dans un instant.' : 'Cet e-mail n’est pas celui du compte.' }); },
           () => this.setState({ busy: null, delErr: 'Pas fait : vérifie ta connexion et réessaie.' }));
       },
       mobile: mob, mobCls: mob ? 'reg-mob ' + (view === 'list' ? 'reg-list' : 'reg-detail') : '',
@@ -511,7 +517,7 @@ export default class Reglages extends DCLogic {
                       "Fermer mon compte"
                     ),
                     $h("span", { "class": "reg-h" },
-                      "Supprime ton compte, tes dossiers, tes suivis et tes alertes."
+                      $t($v.delHint)
                     )
                   ),
                   ($v.delClosed) ? [
@@ -523,7 +529,7 @@ export default class Reglages extends DCLogic {
                 ($v.delShown) ? [
                   $h("div", { "style": "display: flex; flex-direction: column; gap: 12px; padding: 4px 0 18px;" },
                     $h("span", { "style": "font-size: 13px; line-height: 1.5; color: var(--ink-soft);" },
-                      "Tout est effacé, sans retour possible. Pour confirmer, retape ton e-mail : ",
+                      $t($v.delWarn), " Pour confirmer, retape ton e-mail : ",
                       $h("b", { "style": "color: #FFFFFF;" },
                         $t($v.me?.email)
                       )
@@ -671,16 +677,18 @@ export default class Reglages extends DCLogic {
                       ),
                       $h("button", { "type": "button", "role": "radio", "aria-checked": $v.billY, "onClick": $v.pickY },
                         "Annuel",
-                        $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FF9C57;" },
-                          "−50 %"
-                        )
+                        ($v.bfOn) ? [
+                          $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FF9C57;" },
+                            "−50 %"
+                          )
+                        ] : null
                       )
                     )
                   ),
                   $h("span", { "style": "display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;" },
                     $h("span", { "style": "display: flex; flex-direction: column; gap: 6px;" },
                       $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
-                        ($v.billY) ? [
+                        ($v.strikeOn) ? [
                           $h("span", { "style": "font-size: 16px; color: var(--ink-faint); text-decoration: line-through;" },
                             "29,99 €"
                           )

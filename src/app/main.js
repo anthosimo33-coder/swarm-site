@@ -17,6 +17,7 @@ import { h, Fragment } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';
+import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
 import { ROUTES } from './routes.js';
@@ -188,6 +189,9 @@ function App() {
   // et, au retour de Whop, l'attente de l'accès.
   const [pay, setPay] = useState(null);
   const [paying, setPaying] = useState(null);
+  // Un compte déjà Pro qui suit un lien de paiement : Réglages › Formule à la place (compteur : chaque lien rouvre).
+  const [toPlan, setToPlan] = useState(0);
+  const [planMobile, setPlanMobile] = useState(false);
   const [paid, setPaid] = useState(PAID ? 'wait' : null);
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
@@ -267,7 +271,7 @@ function App() {
     if (!known) return;
     let suite = null;
     try { suite = sessionStorage.getItem(SUITE); sessionStorage.removeItem(SUITE); } catch { /* stockage refusé */ }
-    if (suite && suite.startsWith(PAY) && !(user && user.pro)) setPay(formuleOf(suite));
+    if (suite && suite.startsWith(PAY)) setPay(formuleOf(suite)); // déjà Pro : l'effet de paiement mène à Réglages
   }, [known]);
 
   // Retour de Whop : on retire ?paiement=ok de l'adresse, puis on attend que le webhook ouvre l'accès.
@@ -288,20 +292,35 @@ function App() {
     return () => clearTimeout(t);
   }, [paid, user]);
 
-  // Payer : le lien Whop se crée côté serveur (relié au compte), puis on y va.
+  // Payer : le lien Whop se crée côté serveur (relié au compte), puis on y va. Tous les chemins vers le paiement passent
+  // ici (clic, adresse /app/payer/…, achat repris après connexion), une fois le compte connu : un compte déjà Pro ne
+  // repaie jamais (audit du 19/11, S3 : deux adhésions prélevées) et arrive dans Réglages › Formule. Le serveur refuse
+  // aussi (DEJA_ABONNE), par exemple quand une adhésion est arrivée avant la mise à jour de `pro`.
   useEffect(() => {
     if (!pay || !known) return;
     const formule = pay;
     setPay(null);
+    if (proRef.current) { setToPlan((n) => n + 1); return; }
     setPaying('open');
     client.action(api.whop.checkout, { formule, origin: window.location.origin }).then(
       (r) => { window.location.assign(r.url); },
-      () => { setPaying('error'); setTimeout(() => setPaying(null), 6000); },
+      (e) => {
+        if (e instanceof ConvexError && e.data && e.data.code === 'DEJA_ABONNE') { setPaying(null); setToPlan((n) => n + 1); return; }
+        setPaying('error'); setTimeout(() => setPaying(null), 6000);
+      },
     );
   }, [pay, known]);
 
   // Changer d'écran referme le panneau du compte et les réglages.
-  useEffect(() => { setMenu(false); setSettings(null); }, [path]);
+  useEffect(() => { setMenu(false); setSettings(null); if (!path.startsWith('/app/compte')) setPlanMobile(false); }, [path]);
+  // Réglages › Formule, pour un compte Pro venu d'un lien de paiement. Après l'effet du dessus : un même rendu qui change
+  // d'adresse (arrivée par /app/payer/…) ne la referme pas aussitôt. Sur téléphone, c'est l'écran /app/compte.
+  useEffect(() => {
+    if (!toPlan) return;
+    if (!MOBILE.matches) { setSettings('abo'); return; }
+    setPlanMobile(true);
+    if (window.location.pathname !== '/app/compte') { window.history.pushState(null, '', '/app/compte'); setPath('/app/compte'); }
+  }, [toPlan]);
   // Les sessions ouvertes (Réglages › Sécurité), lues quand le panneau du compte ou les réglages sont ouverts
   // (dès le panneau : les réglages s'ouvrent ensuite sans attendre).
   const onSettingsScreen = !!(screen && screen.mobile && screen.route.path === '/app/compte');
@@ -446,14 +465,14 @@ function App() {
     onChangePassword: (current, next) => client.action(api.users.changePassword, { current, next }),
     onChangeEmail: (email, password) => client.action(api.users.changeEmail, { email, password }),
     onSignOutOthers: () => client.mutation(api.users.signOutOthers, {}),
-    onDelete: (email) => client.mutation(api.users.deleteAccount, { email }).then(async (r) => {
+    onDelete: (email) => client.action(api.users.deleteAccount, { email }).then(async (r) => {
       if (r && r.ok) { leaving.current = true; await signOut().catch(() => {}); window.location.replace('/'); }
       return r;
     }),
   };
   if (onSettingsScreen) {
     const toApp = () => { window.history.pushState(null, '', HOME); setPath(HOME); };
-    page = h(Reglages, { key: 'm/reglages', ...settingsProps, mobile: true, onClose: toApp });
+    page = h(Reglages, { key: planMobile ? 'm/reglages/abo' : 'm/reglages', ...settingsProps, mobile: true, onClose: toApp, ...(planMobile ? { section: 'abo', view: 'detail' } : {}) });
   }
   const panel = settings && !screen.mobile ? h(Reglages, { key: `reglages-${settings}`, ...settingsProps, section: settings, onClose: () => setSettings(null) }) : null;
   const payNote = paying

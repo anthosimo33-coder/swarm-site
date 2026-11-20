@@ -97,7 +97,7 @@ cgv = page("cgv", "Conditions générales de vente",
 <h2>3. Prix</h2>
 <ul>
 <li>Kopycat Pro mensuel : 29,99 € TTC par mois.</li>
-<li>Kopycat Pro annuel : 179,88 € TTC par an.</li>
+<li>Kopycat Pro annuel : 359,88 € TTC par an. Offre Black Friday : 179,88 € TTC par an pour un abonnement souscrit jusqu’au 30 novembre 2026 à minuit (heure de Paris).</li>
 </ul>
 <p>Les prix sont indiqués en euros, toutes taxes comprises (TVA française de 20 % incluse). JARVIA STUDIO peut modifier ses prix ; un nouveau prix ne s’applique qu’à la période d’abonnement suivante, après information du Membre.</p>
 

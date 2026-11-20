@@ -5,7 +5,7 @@ import { DCLogic, $t, $l } from '../../runtime.js';
 export default class MAjout extends DCLogic {
   componentWillUnmount() { clearTimeout(this.tm); }
   renderVals() {
-    const FL = [{"name": "Études, ce qui marche", "n": 7, "src": "/media/app/v-7705368869250075925.jpg"}, {"name": "Side hustle", "n": 5, "src": "/media/app/v-7700172397613288736.jpg"}, {"name": "Jalousie et ex", "n": 5, "src": "/media/app/v-7705376808862076182.jpg"}, {"name": "Couple", "n": 4, "src": "/media/app/v-7705441234847862037.jpg"}];
+    const FL = (globalThis.__dcSample?.["MAjout"]?.["FL"] ?? []);
     const close = () => { if (this.props.onClose) this.props.onClose(); };
     const sheet = {
       close,

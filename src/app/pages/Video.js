@@ -29,7 +29,7 @@ export default class Video extends DCLogic {
     const P = this.props || {};
     const live = typeof P.saved === 'function' && typeof P.save === 'function';
     const D = P.data;
-    const id = (D && D.id) || (P.params && P.params.id) || (live ? '' : '7705929733220994337');
+    const id = (D && D.id) || (P.params && P.params.id) || (live ? '' : (globalThis.__dcSample?.["Video"]?.["$s1"] ?? ""));
     // Gardée : la vidéo est dans au moins un dossier (saved('folders')) ; sur le canevas, l'état local.
     const fs = live ? P.saved('folders') : null;
     const kept = live ? (Array.isArray(fs) ? fs : []).some((x) => (x.items || []).some((i) => i.kind === 'video' && i.id === id)) : !!st.kept;
@@ -60,14 +60,10 @@ export default class Video extends DCLogic {
       ['Réactions', '52,6 k j’aime · 3,2 k enregistrements · 846 partages · 325 commentaires']
     ].map((f) => ({ k: f[0], v: f[1] }));
     let next = [['t-navy', '2 333×', 'TKA SD kelas 6 persiapannya bisa dimulai disini', 'Astra AI', '2,0 M'], ['t-pine', '1 226×', 'Mình sẽ xoá vid này trong 24h nữa', 'Astra AI', '809 k'], ['t-violet', '455×', 'Bí mật giúp bạn học giỏi hơn đứa mình ghét', 'Astra AI', '1,2 M'], ['t-plum', '100×', 'Imagine being in a relationship where you stop telling your partner…', 'RecentFollow', '1,2 M']]
-      .map((n, i) => ({ t: n[0], x: n[1], hook: n[2], app: n[3], v: n[4], src: ["/media/app/v-7705368869250075925.jpg", "/media/app/v-7706010190566542612.jpg", "/media/app/v-7706101547570171143.jpg", "/media/app/v-7705376808862076182.jpg"][i] }));
-    next = next.map((n) => Object.assign({ href: '/app/videos/7705929733220994337' }, n));
+      .map((n, i) => ({ t: n[0], x: n[1], hook: n[2], app: n[3], v: n[4], src: [(globalThis.__dcSample?.["Video"]?.["$s2"] ?? ""), (globalThis.__dcSample?.["Video"]?.["$s3"] ?? ""), (globalThis.__dcSample?.["Video"]?.["$s4"] ?? ""), (globalThis.__dcSample?.["Video"]?.["$s5"] ?? "")][i] }));
+    next = next.map((n) => Object.assign({ href: '/app/videos' }, n));
     // L'exemple de la maquette (le canevas n'a pas de données).
-    let vid = { pos: '1 sur 14', progress: '7%', prevHref: '/app/videos/7705929733220994337', prevO: 0.4, nextHref: '/app/videos/7705929733220994337', nextO: 1,
-      cover: '/media/app/v-7705929733220994337.jpg', hook: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', durS: '49s', dur: '0:49',
-      url: 'https://www.tiktok.com/@learnwithjoel1/video/7705929733220994337', appName: 'Astra AI', appHref: '/app/apps/astraai', market: 'Espagne', date: '08/11',
-      handle: '@learnwithjoel1', whoMeta: " · 12,2 k abonnés · fait d'habitude 28,5 k vues", x: '65×', views: '1,87 M vues', age: 'en 92 heures · 154× ses abonnés',
-      growth: '+340 k vues sur les dernières 24 h : elle continue de monter.', copyText: 'POV: tienes EXAMEN ORAL y no has estudiado NADA', copyParts: 'Texte à l’écran' };
+    let vid = (globalThis.__dcSample?.["Video"]?.["vid"] ?? {"pos":"","progress":"","prevHref":"","prevO":0.4,"nextHref":"","nextO":1,"cover":"","hook":"","durS":"","dur":"","url":"","appName":"","appHref":"","market":"","date":"","handle":"","whoMeta":"","x":"","views":"","age":"","growth":"","copyText":"","copyParts":""});
     // Courbe « ses vues face à sa normale » : la publication, les relevés, la normale du compte.
     // obs = [{ h: heures depuis la publication, v: vues }]. Le tronçon publication -> premier relevé
     // n'a pas été relevé : il est en pointillés. Une seule étiquette (la dernière valeur), 3 repères de temps.

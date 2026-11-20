@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as authErrors from "../authErrors.js";
+import type * as authLimits from "../authLimits.js";
 import type * as background from "../background.js";
 import type * as boards from "../boards.js";
 import type * as coverHttp from "../coverHttp.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   auth: typeof auth;
   authErrors: typeof authErrors;
+  authLimits: typeof authLimits;
   background: typeof background;
   boards: typeof boards;
   coverHttp: typeof coverHttp;

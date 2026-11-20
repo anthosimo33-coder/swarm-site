@@ -90,6 +90,8 @@ export default class Tarifs extends DCLogic {
       // « Passer Pro » (19/11) : l’écran de paiement de l’app, formule choisie ici (connexion demandée d’abord).
       payHref: annual ? '/app/payer/annuel' : '/app/payer/mensuel',
       bfOn: bfLeft > 0, bfOff: bfLeft === 0, bfTime,
+      // Après le 30/11 minuit (audit Q1, décision du 20/11) : l’annuel à 29,99 € / mois, facturé 359,88 € par an, sans réduction.
+      annualPrice: bfLeft > 0 ? '14,99 €' : '29,99 €', annualBilled: bfLeft > 0 ? 'Facturé 179,88 € par an' : 'Facturé 359,88 € par an',
       bfGo: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ bill: 'y' }); const el = typeof document !== 'undefined' && document.getElementById('bf-prix'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
       bfBadge: bfLeft > 0 ? 'linear-gradient(180deg, #FFA266, #FF6A2B)' : '#0B6FE0',
       menuOpen,
@@ -110,7 +112,7 @@ export default class Tarifs extends DCLogic {
       toY: () => this.setState({ bill: 'y' }),
       oM: annual ? 0 : 1, trM: annual ? 'translateY(-12px)' : 'translateY(0)',
       oY: annual ? 1 : 0, trY: annual ? 'translateY(0)' : 'translateY(12px)',
-      lastNote: annual ? '14,99 € par mois · annulable en un clic' : '29,99 € par mois · annulable en un clic',
+      lastNote: annual ? (bfLeft > 0 ? '14,99 €' : '29,99 €') + ' par mois · annulable en un clic' : '29,99 € par mois · annulable en un clic',
       groups, nums, qs,
       tick: ticks[Math.floor(el / 3200) % ticks.length],
       tickO: (el % 3200) < 2900 ? 1 : 0,
@@ -153,9 +155,11 @@ export default class Tarifs extends DCLogic {
               ),
               $h("span", { "style": "color: #C9CED8;" },
                 "Jusqu’à ",
-                $h("span", { "style": "color: #FF8A4C; font-weight: 700;" },
-                  "−50 %"
-                ),
+                ($v.bfOn) ? [
+                  $h("span", { "style": "color: #FF8A4C; font-weight: 700;" },
+                    "−50 %"
+                  )
+                ] : null,
                 " sur l’abonnement annuel"
               ),
               $h("span", { "aria-hidden": "true", "style": "color: #3A4150;" },
@@ -304,9 +308,11 @@ export default class Tarifs extends DCLogic {
             ),
             $h("button", { "type": "button", "aria-pressed": $v.isY, "onClick": $v.toY, "style": `position: relative; width: 180px; height: 46px; border: 0; background: transparent; color: ${$t($v.inkY)}; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: color 0.3s ease;` },
               "Annuel",
-              $h("span", { "style": `font-size: 12px; font-weight: 700; color: #FFFFFF; background: ${$t($v.bfBadge)}; border-radius: 999px; padding: 2px 8px;` },
-                "−50 %"
-              )
+              ($v.bfOn) ? [
+                $h("span", { "style": `font-size: 12px; font-weight: 700; color: #FFFFFF; background: ${$t($v.bfBadge)}; border-radius: 999px; padding: 2px 8px;` },
+                  "−50 %"
+                )
+              ] : null
             )
           )
         ),
@@ -352,22 +358,26 @@ export default class Tarifs extends DCLogic {
                   ),
                   $h("div", { "style": `position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; opacity: ${$t($v.oY)}; transform: ${$t($v.trY)}; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);` },
                     $h("span", { "style": "display: flex; align-items: baseline; gap: 10px;" },
-                      $h("span", { "style": "font-size: 24px; font-weight: 600; color: #6B7385; text-decoration: line-through; text-decoration-color: rgba(255,138,76,0.9); text-decoration-thickness: 2px;" },
-                        "29,99 €"
-                      ),
+                      ($v.bfOn) ? [
+                        $h("span", { "style": "font-size: 24px; font-weight: 600; color: #6B7385; text-decoration: line-through; text-decoration-color: rgba(255,138,76,0.9); text-decoration-thickness: 2px;" },
+                          "29,99 €"
+                        )
+                      ] : null,
                       $h("span", { "style": "font-family: 'Inter Tight', sans-serif; font-size: 80px; font-weight: 700; letter-spacing: -0.06em; line-height: 0.95;" },
-                        "14,99 €"
+                        $t($v.annualPrice)
                       ),
                       $h("span", { "style": "font-size: 17px; color: #9AA3B2;" },
                         "/ mois"
                       )
                     ),
                     $h("span", { "style": "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;" },
-                      $h("span", { "style": "font-size: 13px; font-weight: 700; color: #FF9C57; background: rgba(255,122,61,0.14); box-shadow: inset 0 0 0 1px rgba(255,122,61,0.32); border-radius: 8px; padding: 4px 9px;" },
-                        "Économise 50 %"
-                      ),
+                      ($v.bfOn) ? [
+                        $h("span", { "style": "font-size: 13px; font-weight: 700; color: #FF9C57; background: rgba(255,122,61,0.14); box-shadow: inset 0 0 0 1px rgba(255,122,61,0.32); border-radius: 8px; padding: 4px 9px;" },
+                          "Économise 50 %"
+                        )
+                      ] : null,
                       $h("span", { "style": "font-size: 15px; color: #9AA3B2;" },
-                        "Facturé 179,88 € par an."
+                        $t($v.annualBilled), "."
                       )
                     )
                   )

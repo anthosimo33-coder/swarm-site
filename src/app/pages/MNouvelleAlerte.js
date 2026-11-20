@@ -5,7 +5,7 @@ import { DCLogic, $t, $l } from '../../runtime.js';
 export default class MNouvelleAlerte extends DCLogic {
   renderVals() {
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
-    let HITS = [{"src": "/media/app/v-7706010190566542612.jpg", "x": "1 226×"}, {"src": "/media/app/v-7706101547570171143.jpg", "x": "455×"}, {"src": "/media/app/v-7705368869250075925.jpg", "x": "2 333×"}];
+    let HITS = (globalThis.__dcSample?.["MNouvelleAlerte"]?.["HITS"] ?? []);
     HITS = HITS.map((x) => Object.assign({}, x, { href: '/app/videos/' + vkey(x.src) }));
     const NICHES = ["Études", "Couple", "Séduction IA", "Jalousie et ex", "Side hustle", "Santé et physique", "Langues", "Foi", "Social et loisirs", "Beauté IA"];
     const close = () => { if (this.props.onClose) this.props.onClose(); };

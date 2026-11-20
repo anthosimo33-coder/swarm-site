@@ -106,15 +106,9 @@ export default class Accueil extends DCLogic {
     };
     const nav = [['accueil', 'Accueil'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs'], ['alertes', 'Alertes'], ['dossiers', 'Dossiers']]
       .map((x, i) => ({ d: ic[x[0]], label: x[1], cur: i === 0 ? 'page' : 'false' }));
-    let look = [
-      { logo: '/media/app/app-luv-or-pop.jpg', ini: 'L', name: 'Luv or Pop', sub: 'Vidéo à 7,5 M vues', v: 'H+26', bg: 'var(--thumb-plum)' },
-      { logo: '/media/app/app-dj-kartier.jpg', ini: 'D', name: 'DJ Kartier', sub: 'Vidéo à 5,5 M vues', v: 'H+43', bg: 'var(--thumb-navy)' },
-      { logo: '/media/app/app-astra-ai.jpg', ini: 'A', name: 'Astra AI', sub: 'Une vidéo face à sa normale', v: '2 333×', bg: 'var(--blue-600)' },
-      { logo: '/media/app/app-love8.jpg', ini: 'L', name: 'Love8', sub: 'Comptes en une recherche', v: '+69', bg: 'var(--thumb-pine)' }
-    ].map((r) => Object.assign(r, { href: '/app/apps/astraai', blank: '', nologo: false }));
+    let look = (globalThis.__dcSample?.["Accueil"]?.["look"] ?? []).map((r) => Object.assign(r, { href: '/app/apps/astraai', blank: '', nologo: false }));
     let niches = ['Études', 'Couple', 'Séduction IA', 'Foi', 'Side hustle'];
-    let alert = { on: true, cover: '/media/app/v-7705368869250075925.jpg', logo: '/media/app/app-astra-ai.jpg', app: 'Astra AI', views: '2,0 M',
-      kicker: 'Alerte · Astra AI', text: 'Une vidéo à 2 333× sa normale', aria: 'Voir la vidéo', href: '/app/videos/7705929733220994337' };
+    let alert = (globalThis.__dcSample?.["Accueil"]?.["alert"] ?? {"on":true,"cover":"","logo":"","app":"","views":"","kicker":"","text":"","aria":"","href":""});
 
     // Sur le site : l'accueil depuis le Radar (document « home », convex/radarModels.ts).
     // « Ça explose » = les 2 apps qui progressent le plus cette semaine, puis 2 vidéos qui décollent

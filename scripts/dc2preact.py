@@ -13,12 +13,20 @@ Deux groupes d'écrans :
 Chaque composant = la classe d'origine + une méthode render(). Les keyframes sont préfixées
 par écran pour éviter les collisions. Un lien vers un artboard sans route fait échouer la conversion.
 
+Données d'exemple de l'app (audit du 19/11, S4) : les canevas de l'app portent un extrait réel du Radar (apps, créateurs,
+revenus estimés, vidéos) pour se dessiner sans données. Il était livré tel quel, sans compte, dans les fichiers JS publics.
+Chaque littéral qui en contient (id de vidéo TikTok, « @pseudo », /media/app/, /_blob/) est retiré de l'écran généré,
+remplacé par `globalThis.__dcSample?.[écran]?.[nom] ?? []` (vide dans l'app, qui n'affiche un écran qu'avec ses vraies
+données), et rangé dans design/app/samples/<Écran>.js, que seul scripts/check.mjs charge. La génération échoue s'il en
+reste dans src/app/pages ; scripts/check-public.mjs fait de même sur dist/assets au build Vercel.
+
 Usage : python3 scripts/dc2preact.py   (ou npm run gen)
 """
 from html.parser import HTMLParser
 from pathlib import Path
 import json
 import re
+import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
 PAGES = [
@@ -62,7 +70,8 @@ APP_PAGES = [
     ('CompteA.dc.html', 'Compte', 'a-cpt', '/app/compte', 'Compte', None),
 ]
 # Lien sans paramètre vers une fiche (maquette pas encore branchée) : l'exemple de la maquette.
-APP_SAMPLE = {'/app/apps/:slug': 'astraai', '/app/videos/:id': '7705929733220994337',
+# Une vidéo d'exemple serait une vraie vidéo du Radar dans un fichier public (audit S4) : pas d'exemple pour /app/videos.
+APP_SAMPLE = {'/app/apps/:slug': 'astraai', '/app/videos/:id': None,
               '/app/formats/:id': None, '/app/createurs/:handle': 'zinedine.gsbb'}
 
 # Version mobile (sous 860 px) des mêmes adresses : artboard M* -> (composant, préfixe CSS, adresse).
@@ -358,6 +367,213 @@ GROUPS = {
 CURRENT = {'links': LINKS, 'imports': set()}
 IMPORTS = {}  # composant généré -> composants qu'il importe (<dc-import>)
 
+# ─── Données d'exemple de l'app (audit S4) ───
+# Ce qui ne doit jamais partir dans un fichier public de l'app : id de vidéo TikTok, « @pseudo », image de l'app.
+SAMPLE = re.compile(r'/media/app/|/_blob/|\b7\d{18}\b|["\'`]@[A-Za-z0-9._]{2,30}["\'`]')
+SAMPLES_DIR = ROOT / 'design' / 'app' / 'samples'
+DECL = re.compile(r'\b(let|const|var)\s+([A-Za-z_$][\w$]*)\s*=\s*([\[{])')
+
+
+def _skip_str(s, i):
+    """s[i] ouvre une chaîne ' ou " : l'index qui suit sa fin."""
+    q, i = s[i], i + 1
+    while s[i] != q:
+        i += 2 if s[i] == '\\' else 1
+    return i + 1
+
+
+def _skip_tpl(s, i):
+    """s[i] ouvre un gabarit ` : l'index qui suit sa fin, expressions ${…} comprises."""
+    i += 1
+    while s[i] != '`':
+        if s[i] == '\\':
+            i += 2
+        elif s.startswith('${', i):
+            i = js_end(s, i + 1)  # l'expression, de son accolade ouvrante à la fermante
+        else:
+            i += 1
+    return i + 1
+
+
+def js_end(s, i):
+    """s[i] ouvre [, { ou ( : l'index qui suit le crochet fermant (chaînes, gabarits et commentaires sautés)."""
+    depth, n = 0, len(s)
+    while i < n:
+        c = s[i]
+        if c in '"\'':
+            i = _skip_str(s, i)
+            continue
+        if c == '`':
+            i = _skip_tpl(s, i)
+            continue
+        if s.startswith('//', i):
+            i = s.index('\n', i)
+            continue
+        if s.startswith('/*', i):
+            i = s.index('*/', i) + 2
+            continue
+        if c in '[{(':
+            depth += 1
+        elif c in ']})':
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    raise SystemExit('dc2preact : littéral non fermé')
+
+
+REGEX_BEFORE = set('(,=:[!&|?{};+-*%<>~^')
+REGEX_WORDS = {'return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'new', 'delete', 'void', 'throw', 'yield', 'await'}
+
+
+def _skip_regex(s, i):
+    """s[i] ouvre une regex /…/ : l'index qui suit ses drapeaux."""
+    i, cls = i + 1, False
+    while cls or s[i] != '/':
+        if s[i] == '\\':
+            i += 1
+        elif s[i] == '[':
+            cls = True
+        elif s[i] == ']':
+            cls = False
+        i += 1
+    i += 1
+    while i < len(s) and s[i].isalpha():
+        i += 1
+    return i
+
+
+def string_tokens(s):
+    """(début, fin) de chaque chaîne '…' ou "…" du code ; commentaires, gabarits et regex sautés."""
+    out, i, n, prev, word = [], 0, len(s), '', ''
+    while i < n:
+        c = s[i]
+        if c in '"\'':
+            j = _skip_str(s, i)
+            out.append((i, j))
+            i, prev, word = j, 'x', ''
+            continue
+        if c == '`':
+            i, prev, word = _skip_tpl(s, i), 'x', ''
+            continue
+        if s.startswith('//', i):
+            i = s.index('\n', i)
+            continue
+        if s.startswith('/*', i):
+            i = s.index('*/', i) + 2
+            continue
+        if c == '/' and (prev == '' or prev in REGEX_BEFORE or word in REGEX_WORDS):
+            i, prev, word = _skip_regex(s, i), 'x', ''
+            continue
+        if c.isalnum() or c in '_$':
+            word = word + c if prev and (prev.isalnum() or prev in '_$') else c
+        elif not c.isspace():
+            word = ''
+        if not c.isspace():
+            prev = c
+        i += 1
+    return out
+
+
+# Pour chaque littéral : faux s'il ne se calcule pas seul (il lit une variable de l'écran) ; sinon sa valeur vide, de
+# même forme : [] pour une liste ; pour un objet, mêmes clés, chaînes vides, listes vides, objets vidés de même (un écran
+# qui traite toujours l'exemple, Formats et sa « une », ne tombe pas sur une clé absente). Faux aussi si l'objet porte
+# une fonction (elle ne se recopie pas). Une clé qui est elle-même une donnée (objet indexé par pseudo, par id de vidéo)
+# disparaît.
+EMPTY_JS = r"""
+const l = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+const KEY = /\/media\/app\/|\/_blob\/|\b7\d{18}\b|^@[A-Za-z0-9._]{2,30}$/;
+const empty = (x) => {
+  if (Array.isArray(x)) return [];
+  if (typeof x === 'string') return '';
+  if (typeof x === 'function') throw new Error('fonction');
+  if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).filter(([k]) => !KEY.test(k)).map(([k, v]) => [k, empty(v)]));
+  return x;
+};
+console.log(JSON.stringify(l.map((src) => { try { return JSON.stringify(empty(new Function('return (' + src + ')')())); } catch { return false; } })));
+"""
+
+
+def pure(literals):
+    """La valeur vide de chaque littéral (texte JS), ou False s'il ne se calcule pas seul. Un seul appel à Node."""
+    if not literals:
+        return []
+    r = subprocess.run(['node', '-e', EMPTY_JS], input=json.dumps(literals), capture_output=True, text=True, check=True)
+    return json.loads(r.stdout)
+
+
+def strip_samples(body, name):
+    """Retire les littéraux d'exemple sensibles du corps de classe ; rend le corps et {nom: littéral}."""
+    found = []
+    for m in DECL.finditer(body):
+        start = m.start(3)
+        end = js_end(body, start)
+        lit = body[start:end]
+        if SAMPLE.search(lit):
+            found.append((start, end, m.group(2), lit))
+    ok = pure([f[3] for f in found])
+    samples, out, at = {}, [], 0
+    for (start, end, var, lit), empty in zip(found, ok):
+        if empty is False or start < at:  # calculé depuis l'écran (ex. dash), ou imbriqué dans un littéral déjà retiré
+            continue
+        key = var if var not in samples else f'{var}_{len(samples)}'
+        samples[key] = lit
+        out.append(body[at:start] + f'(globalThis.__dcSample?.[{json.dumps(name)}]?.[{json.dumps(key)}] ?? {empty})')
+        at = end
+    body = ''.join(out) + body[at:]
+    # Ce qui reste (valeur par défaut en ligne, argument d'appel, littéral calculé) : chaque chaîne concernée seule.
+    out, at = [], 0
+    for start, end in string_tokens(body):
+        text = body[start:end]
+        if not SAMPLE.search(text):
+            continue
+        if text[1:-1].endswith('/'):
+            raise SystemExit(f'{name} : {text} ressemble à un début de chemin construit par le code, pas à un exemple')
+        key = f'$s{len(samples)}'
+        samples[key] = text
+        out.append(body[at:start] + f'(globalThis.__dcSample?.[{json.dumps(name)}]?.[{json.dumps(key)}] ?? "")')
+        at = end
+    return ''.join(out) + body[at:], samples
+
+
+def write_samples(name, rel, samples):
+    path = SAMPLES_DIR / f'{name}.js'
+    if not samples:
+        if path.exists():
+            path.unlink()
+        return
+    SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+    items = ',\n'.join(f'  {json.dumps(k)}: {v}' for k, v in samples.items())
+    path.write_text(f'// Données d\'exemple de design/{rel}, retirées de l\'app par scripts/dc2preact.py (audit S4).\n'
+                    f'// Chargées par scripts/check.mjs seulement : jamais livrées au navigateur.\n'
+                    f'export default {{\n{items},\n}};\n')
+
+
+SYNTAX_JS = r"""
+const { transformSync } = require('esbuild');
+const bad = [];
+for (const f of JSON.parse(require('fs').readFileSync(0, 'utf8'))) {
+  try { transformSync(require('fs').readFileSync(f, 'utf8'), { loader: 'js', format: 'esm' }); } catch (e) { bad.push(f + ' : ' + e.message.split('\n')[1]); }
+}
+console.log(JSON.stringify(bad));
+"""
+
+
+def check_app_pages():
+    """Échec si un écran généré de l'app livre encore des données du Radar, ou si le retrait l'a rendu illisible."""
+    files = [str(f) for f in sorted(GROUPS['app']['pages'].glob('*.js'))]
+    r = subprocess.run(['node', '-e', SYNTAX_JS], input=json.dumps(files), capture_output=True, text=True, check=True, cwd=ROOT)
+    broken = json.loads(r.stdout)
+    if broken:
+        raise SystemExit('Écran de l\'app illisible après le retrait des exemples :\n  ' + '\n  '.join(broken))
+    bad = []
+    for f in sorted(GROUPS['app']['pages'].glob('*.js')):
+        hits = sorted(set(SAMPLE.findall(f.read_text())))
+        if hits:
+            bad.append(f'{f.relative_to(ROOT)} : {", ".join(hits[:6])}{" …" if len(hits) > 6 else ""} ({len(hits)})')
+    if bad:
+        raise SystemExit('Données du Radar dans un écran de l\'app (livré sans compte) :\n  ' + '\n  '.join(bad))
+
 
 def convert(src, name, prefix, group='site'):
     g = GROUPS[group]
@@ -387,6 +603,9 @@ def convert(src, name, prefix, group='site'):
     cls_body = script[start:end].rstrip()
 
     rel = src if group == 'site' else f'app/{src}'
+    if group == 'app':
+        cls_body, samples = strip_samples(cls_body, name)
+        write_samples(name, rel, samples)
     css_import = f"import '../styles/{prefix}.css';\n" if g['css_import'] else ''
     css_import += ''.join(f"import {c} from './{c}.js';\n" for c in sorted(CURRENT['imports']))
     IMPORTS[name] = sorted(CURRENT['imports'])
@@ -457,3 +676,4 @@ if __name__ == '__main__':
             print(f'(mobile) app/{src} absent : l\'adresse garde l\'écran desktop')
     APP_MOBILE_PAGES[:] = [m for m in APP_MOBILE_PAGES if (GROUPS['app']['src'] / m[0]).exists()]
     write_app_routes()
+    check_app_pages()

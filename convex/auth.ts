@@ -4,6 +4,7 @@ import { convexAuth, createAccount, retrieveAccount } from "@convex-dev/auth/ser
 import { ConvexError } from "convex/values";
 import { Scrypt } from "lucia";
 import { AUTH_ERRORS, type AuthErrorCode } from "./authErrors";
+import { internal } from "./_generated/api";
 
 /**
  * Authentification de Swarm : e-mail + mot de passe, et Google.
@@ -24,6 +25,13 @@ const PROVIDER = "password";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
+/**
+ * Inscriptions par mot de passe, tous e-mails confondus : 300 essais par tranche de 10 min au plus (audit du 19/11, S1
+ * et S8). Bien au-delà d'un afflux réel à ce jour (18 comptes en tout le 19/11) : seule une création de comptes en
+ * masse par script s'y heurte. Convex ne voit pas l'adresse IP : la limite ne peut pas être par personne.
+ */
+const SIGNUP_MAX = 300;
+const SIGNUP_WINDOW_MS = 10 * 60_000;
 
 const fail = (code: AuthErrorCode) => new ConvexError({ code });
 
@@ -32,7 +40,7 @@ function translate(error: unknown): unknown {
   if (error instanceof ConvexError) return error;
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("TooManyFailedAttempts")) return fail(AUTH_ERRORS.TROP_DE_TENTATIVES);
-  // Même e-mail, autre mot de passe. (Même mot de passe : Convex Auth connecte la personne.)
+  // createAccount sur un compte créé entre-temps (deux inscriptions au même instant) : refusé comme un compte existant.
   if (message.includes("already exists")) return fail(AUTH_ERRORS.COMPTE_EXISTANT);
   // Même réponse pour « compte inconnu » et « mauvais mot de passe » :
   // ne pas révéler quelles adresses ont un compte.
@@ -40,6 +48,22 @@ function translate(error: unknown): unknown {
     return fail(AUTH_ERRORS.IDENTIFIANTS_INCORRECTS);
   }
   return error;
+}
+
+/**
+ * Un compte « mot de passe » existe-t-il pour cet e-mail ? Demandé SANS secret : Convex Auth ne vérifie alors aucun mot
+ * de passe et ne touche pas au compteur d'échecs (@convex-dev/auth 0.0.96, retrieveAccountWithCredentials.js:22-35).
+ * Seule l'erreur InvalidAccountId veut dire « absent » ; toute autre erreur remonte (une panne passagère lue comme
+ * « absent » renverrait vers createAccount, qui, lui, vérifie le mot de passe d'un compte existant).
+ */
+async function passwordAccountExists(ctx: Parameters<typeof retrieveAccount>[0], email: string): Promise<boolean> {
+  try {
+    await retrieveAccount(ctx, { provider: PROVIDER, account: { id: email } });
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message === "InvalidAccountId") return false;
+    throw error;
+  }
 }
 
 const password = ConvexCredentials({
@@ -53,6 +77,13 @@ const password = ConvexCredentials({
         if (secret.length < PASSWORD_MIN || secret.length > PASSWORD_MAX) {
           throw fail(AUTH_ERRORS.MOT_DE_PASSE_TROP_COURT);
         }
+        if (!(await ctx.runMutation(internal.authLimits.hit, { key: "signUp", max: SIGNUP_MAX, windowMs: SIGNUP_WINDOW_MS }))) {
+          throw fail(AUTH_ERRORS.TROP_DE_TENTATIVES);
+        }
+        // Audit du 19/11, S1 : sur un e-mail déjà inscrit, createAccount vérifiait le mot de passe et CONNECTAIT si c'était
+        // le bon, sans passer par la limite de 10 échecs par heure de signIn — un essai de mots de passe illimité. Un
+        // compte existant est désormais refusé sans jamais regarder le mot de passe : la personne passe par « Se connecter ».
+        if (await passwordAccountExists(ctx, email)) throw fail(AUTH_ERRORS.COMPTE_EXISTANT);
         const { user } = await createAccount(ctx, {
           provider: PROVIDER,
           account: { id: email, secret },

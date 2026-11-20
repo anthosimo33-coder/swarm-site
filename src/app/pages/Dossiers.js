@@ -118,30 +118,30 @@ export default class Dossiers extends DCLogic {
     const it = (kind, id, label, cover, h) => ({ kind, id, label, cover: cover || null, at: now - h * H });
     return [
       { id: 'etudes', name: 'Études, ce qui marche', createdAt: now - 400 * H, items: [
-        it('format', 'ich-losche', '« Ich lösche das in 2h‼️ »', '/media/app/v-7706579888727231777.jpg', 2),
-        it('format', 'guarda-partilha', '« ‼️🚨GUARDA E PARTILHA🚨‼️ »', '/media/app/v-7705159364558081313.jpg', 3),
-        it('video', '7705368869250075925', '@belajarbersamaespi', '/media/app/v-7705368869250075925.jpg', 5),
-        it('app', 'astraai', 'Astra AI', '/media/app/app-astra-ai.jpg', 30),
-        it('app', 'knowunity', 'Knowunity', '/media/app/app-knowunity.jpg', 31),
-        it('app', 'retaincards', 'Retain Cards', '/media/app/retain-cards.jpg', 32),
-        it('creator', 'learnwithjoel1', '@learnwithjoel1', '/media/app/av-learnwithjoel1.jpg', 33)] },
+        it('format', 'ich-losche', '« Ich lösche das in 2h‼️ »', (globalThis.__dcSample?.["Dossiers"]?.["$s0"] ?? ""), 2),
+        it('format', 'guarda-partilha', '« ‼️🚨GUARDA E PARTILHA🚨‼️ »', (globalThis.__dcSample?.["Dossiers"]?.["$s1"] ?? ""), 3),
+        it('video', (globalThis.__dcSample?.["Dossiers"]?.["$s2"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s3"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s4"] ?? ""), 5),
+        it('app', 'astraai', 'Astra AI', (globalThis.__dcSample?.["Dossiers"]?.["$s5"] ?? ""), 30),
+        it('app', 'knowunity', 'Knowunity', (globalThis.__dcSample?.["Dossiers"]?.["$s6"] ?? ""), 31),
+        it('app', 'retaincards', 'Retain Cards', (globalThis.__dcSample?.["Dossiers"]?.["$s7"] ?? ""), 32),
+        it('creator', 'learnwithjoel1', (globalThis.__dcSample?.["Dossiers"]?.["$s8"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s9"] ?? ""), 33)] },
       { id: 'side', name: 'Side hustle', createdAt: now - 300 * H, items: [
-        it('video', '7566200000000000001', '@zinedine.gsbb', '/media/app/v-7700172397613288736.jpg', 20),
+        it('video', (globalThis.__dcSample?.["Dossiers"]?.["$s10"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s11"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s12"] ?? ""), 20),
         it('app', 'shortfy', 'Shortfy', null, 40),
-        it('creator', 'zinedine.gsbb', '@zinedine.gsbb', '/media/app/av-zinedine.gsbb.jpg', 41),
-        it('creator', 'toma.ia', '@toma.ia', '/media/app/av-toma.ia.jpg', 42),
-        it('creator', 'laure_acc2', '@laure_acc2', '/media/app/av-laure_acc2.jpg', 43)] },
+        it('creator', 'zinedine.gsbb', (globalThis.__dcSample?.["Dossiers"]?.["$s13"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s14"] ?? ""), 41),
+        it('creator', 'toma.ia', (globalThis.__dcSample?.["Dossiers"]?.["$s15"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s16"] ?? ""), 42),
+        it('creator', 'laure_acc2', (globalThis.__dcSample?.["Dossiers"]?.["$s17"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s18"] ?? ""), 43)] },
       { id: 'jalousie', name: 'Jalousie et ex', createdAt: now - 200 * H, items: [
-        it('format', 'ojala', '« Ojalá entendieras que no siempre te reclamo porqu… »', '/media/app/v-7705537368907959573.jpg', 50),
+        it('format', 'ojala', '« Ojalá entendieras que no siempre te reclamo porqu… »', (globalThis.__dcSample?.["Dossiers"]?.["$s19"] ?? ""), 50),
         it('app', 'recentfollow', 'RecentFollow', null, 60),
-        it('app', 'thecringe', 'The Cringe', '/media/app/app-the-cringe.jpg', 61),
-        it('app', 'stalkie', 'Stalkie', '/media/app/stalkie.jpg', 62),
-        it('creator', 'meli83.fit', '@meli83.fit', '/media/app/av-meli83.fit.jpg', 63)] },
+        it('app', 'thecringe', 'The Cringe', (globalThis.__dcSample?.["Dossiers"]?.["$s20"] ?? ""), 61),
+        it('app', 'stalkie', 'Stalkie', (globalThis.__dcSample?.["Dossiers"]?.["$s21"] ?? ""), 62),
+        it('creator', 'meli83.fit', (globalThis.__dcSample?.["Dossiers"]?.["$s22"] ?? ""), (globalThis.__dcSample?.["Dossiers"]?.["$s23"] ?? ""), 63)] },
       { id: 'couple', name: 'Couple', createdAt: now - 150 * H, items: [
-        it('format', 'dicsovn', 'original sound - dicsovn', '/media/app/v-7703975267911421191.jpg', 70),
-        it('app', 'love8', 'Love8', '/media/app/app-love8.jpg', 80),
-        it('app', 'loverzz', 'Loverzz', '/media/app/loverzz.jpg', 81),
-        it('creator', 'johan_love8', '@johan_love8', null, 82)] }
+        it('format', 'dicsovn', 'original sound - dicsovn', (globalThis.__dcSample?.["Dossiers"]?.["$s24"] ?? ""), 70),
+        it('app', 'love8', 'Love8', (globalThis.__dcSample?.["Dossiers"]?.["$s25"] ?? ""), 80),
+        it('app', 'loverzz', 'Loverzz', (globalThis.__dcSample?.["Dossiers"]?.["$s26"] ?? ""), 81),
+        it('creator', 'johan_love8', (globalThis.__dcSample?.["Dossiers"]?.["$s27"] ?? ""), null, 82)] }
     ];
   }
 
