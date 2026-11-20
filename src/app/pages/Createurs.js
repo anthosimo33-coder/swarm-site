@@ -905,13 +905,13 @@ export default class Createurs extends DCLogic {
               )
             ),
             $h("div", { "style": "overflow-x: auto; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-              $h("table", { "class": "sw-table", "style": "table-layout: fixed; min-width: 1150px;" },
+              $h("table", { "class": "sw-table cr-t", "style": "table-layout: fixed;" },
                 $h("thead", null,
                   $h("tr", null,
-                    $h("th", { "style": "width: 44px; padding-left: 20px;" },
+                    $h("th", { "style": "padding-left: 20px;" },
                       "#"
                     ),
-                    $h("th", { "style": "width: 290px;" },
+                    $h("th", null,
                       $h("span", { "class": "sw-th" },
                         $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                           $h("path", { "d": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -919,7 +919,7 @@ export default class Createurs extends DCLogic {
                         "Créateur"
                       )
                     ),
-                    $h("th", { "style": "width: 150px;" },
+                    $h("th", null,
                       $h("span", { "class": "sw-th" },
                         $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                           $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -927,7 +927,7 @@ export default class Createurs extends DCLogic {
                         "Pousse"
                       )
                     ),
-                    $h("th", { "class": "sw-num", "style": "width: 90px;" },
+                    $h("th", { "class": "sw-num" },
                       $h("span", { "class": "sw-th" },
                         $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                           $h("path", { "d": "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -935,7 +935,7 @@ export default class Createurs extends DCLogic {
                         "Abonnés"
                       )
                     ),
-                    $h("th", { "class": "sw-num", "style": "width: 110px;" },
+                    $h("th", { "class": "sw-num" },
                       $h("span", { "class": "sw-th" },
                         $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                           $h("path", { "d": "M3 3v18h18M7 15l4-4 3 3 5-6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -943,7 +943,7 @@ export default class Createurs extends DCLogic {
                         "Vues médianes"
                       )
                     ),
-                    $h("th", { "style": "width: 180px;" },
+                    $h("th", null,
                       $h("span", { "class": "sw-th" },
                         $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                           $h("path", { "d": "M3 12h4l3-8 4 16 3-8h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -951,7 +951,7 @@ export default class Createurs extends DCLogic {
                         "Rythme"
                       )
                     ),
-                    $h("th", { "style": "width: 236px; padding-right: 20px;" },
+                    $h("th", { "style": "padding-right: 20px;" },
                       $h("span", { "class": "sw-th" },
                         $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                           $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -987,9 +987,29 @@ export default class Createurs extends DCLogic {
                             $h("span", { "data-mo-name": "", "style": "font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap;" },
                               $t(c?.h)
                             ),
-                            $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                            $h("span", { "class": "cr-bio", "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                               $t(c?.bio)
-                            )
+                            ),
+                            (c?.hasApp) ? [
+                              $h("span", { "class": "cr-app" },
+                                $h("span", { "class": `sw-app-icon ${$t(c?.app?.blank)}`, "style": "width: 18px; height: 18px; border-radius: 5px;" },
+                                  (c?.app?.logo) ? [
+                                    $h("img", { "class": "sw-logo-img", "src": $u(c?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
+                                  ] : null,
+                                  (c?.app?.nologo) ? [
+                                    $h("svg", { "width": "8", "height": "8", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                      $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                                    )
+                                  ] : null
+                                ),
+                                $h("b", null,
+                                  $t(c?.appName)
+                                ),
+                                $h("span", { "class": "cr-app-n" },
+                                  "· ", $t(c?.niche)
+                                )
+                              )
+                            ] : null
                           )
                         )
                       ),
@@ -1072,7 +1092,7 @@ export default class Createurs extends DCLogic {
                       $h("td", { "style": "padding-right: 20px;" },
                         $h("span", { "style": "display: flex; gap: 6px; justify-content: flex-end;" },
                           ($l(c?.cov)).map((v) => [
-                            $h("a", { "href": $u(v?.href), "class": "sw-video", "aria-label": `Vidéo à ${$t(v?.v)} vues`, "style": "display: block; width: 44px; height: 58px; aspect-ratio: auto; border-radius: 8px; flex-shrink: 0;" },
+                            $h("a", { "href": $u(v?.href), "class": "sw-video cr-cov", "aria-label": `Vidéo à ${$t(v?.v)} vues`, "style": "display: block; aspect-ratio: auto; border-radius: 8px; flex-shrink: 0;" },
                               (v?.src) ? [
                                 $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy" })
                               ] : null,
@@ -1133,9 +1153,29 @@ export default class Createurs extends DCLogic {
                             $h("span", { "data-mo-name": "", "style": "font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap;" },
                               $t(c?.h)
                             ),
-                            $h("span", { "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                            $h("span", { "class": "cr-bio", "style": "font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                               $t(c?.bio)
-                            )
+                            ),
+                            (c?.hasApp) ? [
+                              $h("span", { "class": "cr-app" },
+                                $h("span", { "class": `sw-app-icon ${$t(c?.app?.blank)}`, "style": "width: 18px; height: 18px; border-radius: 5px;" },
+                                  (c?.app?.logo) ? [
+                                    $h("img", { "class": "sw-logo-img", "src": $u(c?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
+                                  ] : null,
+                                  (c?.app?.nologo) ? [
+                                    $h("svg", { "width": "8", "height": "8", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                                      $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                                    )
+                                  ] : null
+                                ),
+                                $h("b", null,
+                                  $t(c?.appName)
+                                ),
+                                $h("span", { "class": "cr-app-n" },
+                                  "· ", $t(c?.niche)
+                                )
+                              )
+                            ] : null
                           )
                         )
                       ),
@@ -1218,7 +1258,7 @@ export default class Createurs extends DCLogic {
                       $h("td", { "style": "padding-right: 20px;" },
                         $h("span", { "style": "display: flex; gap: 6px; justify-content: flex-end;" },
                           ($l(c?.cov)).map((v) => [
-                            $h("a", { "href": $u(v?.href), "class": "sw-video", "aria-label": `Vidéo à ${$t(v?.v)} vues`, "style": "display: block; width: 44px; height: 58px; aspect-ratio: auto; border-radius: 8px; flex-shrink: 0;" },
+                            $h("a", { "href": $u(v?.href), "class": "sw-video cr-cov", "aria-label": `Vidéo à ${$t(v?.v)} vues`, "style": "display: block; aspect-ratio: auto; border-radius: 8px; flex-shrink: 0;" },
                               (v?.src) ? [
                                 $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy" })
                               ] : null,

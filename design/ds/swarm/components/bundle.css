@@ -622,6 +622,46 @@ a.ib-pill:hover { color: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(255,255,255,0
 .fc-ph[data-none="true"] .fc-ph-t, .sw-video:has(> img.sw-cover.is-broken) .fc-ph-t { opacity: 1; }
 .sw-video.fc-th:has(> img.is-broken)::before { content: none; }
 
+/* Largeur 1024 (maquette 8B « deux étages », 20/11) : sous 1 200 px, les tableaux d'Apps et de Créateurs gardent tout ce
+   qu'ils montrent, rangé sur deux étages, sans défilement de côté. Alertes : le titre ne s'écrase plus, rien ne déborde. */
+.ap-t { min-width: 1120px; }
+.ap-t th:nth-child(1) { width: 320px; } .ap-t th:nth-child(2) { width: 165px; } .ap-t th:nth-child(3) { width: 215px; }
+.ap-t th:nth-child(4) { width: 270px; } .ap-t th:nth-child(5) { width: 150px; }
+.ap-th .sw-video { width: 58px; height: 78px; }
+.ap-v { display: flex; align-items: center; gap: 14px; }
+.cr-t { min-width: 1150px; }
+.cr-t th:nth-child(1) { width: 44px; } .cr-t th:nth-child(2) { width: 290px; } .cr-t th:nth-child(3) { width: 150px; }
+.cr-t th:nth-child(4) { width: 90px; } .cr-t th:nth-child(5) { width: 110px; } .cr-t th:nth-child(6) { width: 180px; } .cr-t th:nth-child(7) { width: 236px; }
+.cr-cov { width: 44px; height: 58px; }
+.cr-app { display: none; align-items: center; gap: 7px; min-width: 0; font-size: 12px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; }
+.cr-app > .sw-app-icon { flex-shrink: 0; }
+.cr-app > b { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--ink-soft); }
+.cr-app-n { flex-shrink: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ib-kick { white-space: nowrap; overflow: hidden; }
+.ib-keep { gap: 10px; padding: 0 14px 0 16px; }
+.ib-vids { margin-top: 10px; display: flex; gap: 10px; }
+.ib-vid { display: block; width: 96px; height: 128px; aspect-ratio: auto; flex-shrink: 0; border-radius: 12px; }
+@media (max-width: 1199px) {
+  .ap-t, .cr-t { min-width: 0; width: 100%; }
+  .ap-t th, .ap-t th *, .cr-t th, .cr-t th * { white-space: normal; }
+  .ap-t td, .cr-t td { overflow: hidden; }
+  .ap-t th:nth-child(1) { width: 30%; } .ap-t th:nth-child(2) { width: 19%; } .ap-t th:nth-child(3) { width: 22%; }
+  .ap-t th:nth-child(4) { width: 16.5%; } .ap-t th:nth-child(5) { width: 12.5%; }
+  .ap-th .sw-video { width: 50px; height: 67px; }
+  .ap-v { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .ap-v > svg { width: 100%; max-width: 130px; height: auto; }
+  .cr-t th:nth-child(3), .cr-t td:nth-child(3) { display: none; }
+  .cr-t th:nth-child(1) { width: 5%; } .cr-t th:nth-child(2) { width: 31%; } .cr-t th:nth-child(4) { width: 11%; }
+  .cr-t th:nth-child(5) { width: 12%; } .cr-t th:nth-child(6) { width: 22%; } .cr-t th:nth-child(7) { width: 19%; }
+  .cr-bio { display: none; }
+  .cr-app { display: flex; }
+  .cr-cov { width: 40px; height: 54px; }
+  .ib-kick { flex-wrap: wrap; row-gap: 2px; white-space: normal; line-height: 1.5; }
+  .ib-keep { gap: 0; padding: 0; width: 40px; justify-content: center; }
+  .ib-keep-l { display: none; }
+  .ib-vid { flex: 1 1 0; min-width: 0; max-width: 96px; width: auto; height: auto; aspect-ratio: 3 / 4; }
+}
+
 /* Téléphone (maquettes T2 et T3 du 20/11) : la pastille de la barre flottante (tabbar.js), la pastille qui suit le doigt
    dans une feuille (sheet.js), la capsule « Chercher » qu'on tire (pull.js), les listes qu'on balaie (swipe.js). */
 nav[data-tabbar] [data-tab] { position: relative; z-index: 1; }
