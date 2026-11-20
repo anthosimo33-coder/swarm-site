@@ -30,6 +30,9 @@ import './sheet.js';
 import './tabbar.js';
 import './swipe.js';
 import './pull.js';
+// Ordinateur : glisser une ligne ou une carte vers un dossier ; les explications au survol (voir les fichiers).
+import { connectFolders } from './drag.js';
+import './hint.js';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';
@@ -133,6 +136,12 @@ function save(key, value) {
     .mutation(api.saved.set, { key, value }, { optimisticUpdate: (store) => store.setQuery(api.saved.get, { key }, value) })
     .catch(() => {}); // refus (hors ligne, session finie) : la valeur revient à celle du serveur
 }
+// Glisser vers un dossier (src/app/drag.js) : les dossiers, lus et écrits comme les écrans le font (saved/save).
+connectFolders({
+  read: () => savedEntry('folders').value,
+  write: (value) => save('folders', value),
+  listen: (f) => { const e = savedEntry('folders'); e.listeners.add(f); return () => e.listeners.delete(f); },
+});
 /** Attend qu'un document soit arrivé (ou absent : null). */
 function ready(key) {
   const entry = board(key);
