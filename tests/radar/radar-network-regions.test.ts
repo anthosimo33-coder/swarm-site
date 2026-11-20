@@ -110,8 +110,8 @@ describe("plafond de comptes par app non concurrente (300 ; 100 jusqu'au 13/11/2
   });
 
   it("une app au plafond : une vidéo en français fait entrer son compte, une vidéo en anglais non", () => {
-    // Dans Kopycat (20/11/2026) : 15 000 comptes au plus, et plus de réserve pour les concurrentes d'un projet.
-    expect([MAX_TRACKED, MAX_PER_OTHER_APP, MAX_OTHER_TOTAL]).toEqual([15_000, 300, 15_000]);
+    // Dans Kopycat : 25 000 comptes au plus depuis le 20/11/2026 (15 000 avant), sans réserve pour les concurrentes d'un projet.
+    expect([MAX_TRACKED, MAX_PER_OTHER_APP, MAX_OTHER_TOTAL]).toEqual([25_000, 300, 25_000]);
     const plein = counts(2_174, MAX_PER_OTHER_APP, 1_300);
     expect(canAttach(plein, false, "caption", "fr")).toBe(true);
     expect(canAttach(plein, false, "caption", "en")).toBe(false);
