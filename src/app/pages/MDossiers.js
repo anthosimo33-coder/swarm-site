@@ -33,6 +33,8 @@ export default class MDossiers extends DCLogic {
     const KL = { app: 'App', format: 'Format', creator: 'Créateur', video: 'Vidéo' };
     const hrefOf = (x) => (x.kind === 'app' ? '/app/apps/' + x.id : x.kind === 'format' ? '/app/formats/' + x.id : x.kind === 'creator' ? '/app/createurs/' + x.id : '/app/videos/' + x.id);
     const newName = st.newName || '';
+    // « Créer un dossier » de l'accueil : /app/dossiers?nouveau=1 ouvre la création, comme sur ordinateur (DossiersA).
+    const creating = st.creating === undefined ? !!(P.query && P.query.nouveau) : !!st.creating;
     const raw = live ? P.saved('folders') : null;
     const loading = live && raw === undefined;
     let folders, recent, create;
@@ -44,7 +46,7 @@ export default class MDossiers extends DCLogic {
         its.forEach((x) => { cnt[x.kind] = (cnt[x.kind] || 0) + 1; });
         const mix = [['app', 'app', 'apps'], ['format', 'format', 'formats'], ['creator', 'créateur', 'créateurs'], ['video', 'vidéo', 'vidéos']].filter((k) => cnt[k[0]])
           .map((k) => cnt[k[0]] + ' ' + (cnt[k[0]] > 1 ? k[2] : k[1])).join(' · ');
-        return { name: f.name, href: '/app/dossiers/' + f.id, full: its.length > 0, empty: its.length === 0, mos: its.slice(0, 4).map((x) => ({ src: x.cover || '' })),
+        return { ck: 'd:' + f.id, name: f.name, href: '/app/dossiers/' + f.id, full: its.length > 0, empty: its.length === 0, mos: its.slice(0, 4).map((x) => ({ src: x.cover || '' })),
           logos: its.filter((x) => x.kind === 'app' && x.cover).slice(0, 3).map((x) => ({ logo: x.cover, nologo: false, blank: '' })),
           mix: mix || 'Aucun élément', count: plural(its.length, 'élément'), when: 'modifié ' + dayTxt(last(f)), at: last(f) }; });
       folders = st.sort === 'az' ? folders.sort((x, y) => x.name.localeCompare(y.name, 'fr')) : folders.sort((x, y) => y.at - x.at);
@@ -55,14 +57,32 @@ export default class MDossiers extends DCLogic {
         this.setState({ creating: false, newName: '' }); };
     } else {
       const made = st.made || [];
-      folders = made.map((name) => ({ name, mos: [], logos: [], mix: 'Aucun élément', count: '0 élément', when: 'créé à l’instant', full: false, empty: true }))
+      folders = made.map((name) => ({ ck: 'n:' + name, name, mos: [], logos: [], mix: 'Aucun élément', count: '0 élément', when: 'créé à l’instant', full: false, empty: true }))
         .concat((b.folders || []).map((f) => Object.assign({}, f, { full: true, empty: false })));
       if (st.sort === 'az') folders = folders.slice().sort((x, y) => x.name.localeCompare(y.name, 'fr'));
-      folders = folders.map((f) => Object.assign({ href: '/app/dossiers' }, f));
+      folders = folders.map((f, i) => Object.assign({ ck: 'x:' + i, href: '/app/dossiers' }, f));
       recent = (b.recent || []).map((r) => Object.assign({}, r, { href: r.kind === 'Vidéo' ? '/app/videos/' + vkey(r.src) : '/app/formats' }));
       create = () => { const n = newName.trim(); if (!n) return; this.setState({ made: [n].concat(made), creating: false, newName: '' }); };
     }
-    return { folders, recent, hasRecent: recent.length > 0, noFolders: live && !loading && folders.length === 0 && !st.creating, creating: !!st.creating, newName, createNew: create,
+    // Aucun dossier (maquette V3 du 20/11) : le geste montré sur l'app la plus vue sur 30 jours (document « apps »), et
+    // « Garder <app> » (ou son signet) qui crée en un clic le dossier « Mes idées » avec elle, à la forme qu'écrit MAjout
+    // (saved('folders'), docs/donnees-app.md). Sans liste d'apps lisible : « Créer un dossier ». Même règle que DossiersA.
+    const none = live && !loading && folders.length === 0 && !creating;
+    const A = none && typeof P.get === 'function' ? P.get('apps') : null;
+    const top = A && Array.isArray(A.apps) ? A.apps.filter((a) => a && a.slug && a.name).reduce((m, a) => (!m || (a.views30 || 0) > (m.views30 || 0) ? a : m), null) : null;
+    const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
+    const keepTop = () => {
+      const cur = live ? P.saved('folders') : undefined;
+      if (!top || cur === undefined || (Array.isArray(cur) && cur.length)) return; // un double toucher ne crée pas deux « Mes idées »
+      const now = Date.now();
+      P.save('folders', [{ id: now.toString(36) + Math.random().toString(36).slice(2, 6), name: 'Mes idées', createdAt: now,
+        items: [{ kind: 'app', id: top.slug, label: top.name, cover: top.icon || null, at: now }] }].concat(Array.isArray(cur) ? cur : []));
+    };
+    const vd = { app: !!top, wait: none && A === undefined, noApp: none && !top && A !== undefined, slotOn: !!top, slot: 'se crée d’un clic sur Garder',
+      name: top ? top.name : '', sub: top ? nf(top.views30 || 0) + ' vues sur 30 jours' : '', href: top ? '/app/apps/' + top.slug : '',
+      logo: (top && top.icon) || '', nologo: !(top && top.icon), blank: top && top.icon ? '' : 'sw-app-blank',
+      cta: top ? 'Garder ' + top.name : '', label: top ? 'Garder ' + top.name + ' dans « Mes idées »' : '', keep: keepTop };
+    return { folders, recent, hasRecent: recent.length > 0, noFolders: none, hasSorts: !live || folders.length > 0, btnMain: !none, vd, creating, newName, createNew: create,
       startNew: () => this.setState({ creating: true }), cancelNew: () => this.setState({ creating: false, newName: '' }), onNew: (e) => this.setState({ newName: e.target.value }),
       newKeys: (e) => { if (e.key === 'Enter') { e.preventDefault(); create(); } else if (e.key === 'Escape') { e.preventDefault(); this.setState({ creating: false, newName: '' }); } },
       setNew: (el) => { if (el && el !== this.newEl) { this.newEl = el; el.focus(); } },
@@ -107,22 +127,34 @@ export default class MDossiers extends DCLogic {
           )
         ),
         $h("div", { "style": "padding: 14px 20px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;" },
-          $h("div", { "class": "m-tc is-scroll", "role": "tablist", "aria-label": "Tri" },
-            ($l($v.sorts)).map((s) => [
-              $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick, "style": "height: 44px;" },
-                $h("span", { "class": "m-ic", "data-i": s?.l, "aria-hidden": "true" }),
-                $t(s?.l)
-              )
-            ])
-          ),
-          $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.startNew },
-            "Nouveau dossier",
-            $h("span", { "class": "sw-btn-tile" },
-              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+          ($v.hasSorts) ? [
+            $h("div", { "class": "m-tc is-scroll", "role": "tablist", "aria-label": "Tri" },
+              ($l($v.sorts)).map((s) => [
+                $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick, "style": "height: 44px;" },
+                  $h("span", { "class": "m-ic", "data-i": s?.l, "aria-hidden": "true" }),
+                  $t(s?.l)
+                )
+              ])
+            )
+          ] : null,
+          ($v.btnMain) ? [
+            $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.startNew },
+              "Nouveau dossier",
+              $h("span", { "class": "sw-btn-tile" },
+                $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
               )
             )
-          )
+          ] : null,
+          ($v.noFolders) ? [
+            $h("button", { "class": "sw-btn sw-btn-sm", "type": "button", "onClick": $v.startNew, "style": "height: 42px; gap: 10px; padding: 0 16px; border-radius: 12px; background: var(--track); box-shadow: inset 0 0 0 1px var(--glass-edge); color: var(--ink);" },
+              "Nouveau dossier",
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                $h("path", { "d": "M12 5v14M5 12h14", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              )
+            )
+          ] : null
         ),
         $h("div", { "style": "padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px;" },
           ($v.creating) ? [
@@ -147,12 +179,100 @@ export default class MDossiers extends DCLogic {
             )
           ] : null,
           ($v.noFolders) ? [
-            $h("p", { "style": "margin: 0; padding: 18px 4px; font-size: 15px; line-height: 1.5; color: var(--ink-muted);" },
-              "Aucun dossier pour l’instant. Crée un dossier, puis ranges-y des apps, des formats, des créateurs ou des vidéos depuis leur fiche, avec le bouton dossier."
+            $h("section", { "data-lq-card": "vide", "aria-labelledby": "md-v-t", "style": "padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 14px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+              $h("span", { "style": "display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6FB0FF;" },
+                $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                  $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
+                "Aucun dossier"
+              ),
+              $h("h2", { "id": "md-v-t", "style": "margin: 0; font-size: 19px; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; color: var(--ink);" },
+                "Le signet de chaque fiche range ici"
+              ),
+              ($v.vd?.app) ? [
+                $h("div", { "style": "margin-top: 4px; display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 18px; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);" },
+                  $h("a", { "href": $u($v.vd?.href), "style": "flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent;" },
+                    $h("span", { "class": `sw-app-icon ${$t($v.vd?.blank)}`, "style": "width: 42px; height: 42px; border-radius: 12px;" },
+                      ($v.vd?.logo) ? [
+                        $h("img", { "class": "sw-logo-img", "src": $u($v.vd?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
+                      ] : null,
+                      ($v.vd?.nologo) ? [
+                        $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      ] : null
+                    ),
+                    $h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px;" },
+                      $h("span", { "class": "sw-app-name", "style": "font-size: 15px;" },
+                        $t($v.vd?.name)
+                      ),
+                      $h("span", { "class": "sw-app-sub" },
+                        $t($v.vd?.sub)
+                      )
+                    )
+                  ),
+                  $h("button", { "type": "button", "onClick": $v.vd?.keep, "aria-label": $v.vd?.label, "style": "flex-shrink: 0; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: rgba(76,154,255,0.18); color: #FFFFFF; box-shadow: 0 0 0 6px rgba(76,154,255,0.12), 0 0 30px rgba(76,154,255,0.45); cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+                    $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                    )
+                  )
+                ),
+                $h("span", { "aria-hidden": "true", "style": "align-self: center; display: flex; margin: -4px 0; color: var(--ink-faint);" },
+                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M7 7l10 10M17 9v8H9", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                )
+              ] : null,
+              ($v.vd?.wait) ? [
+                $h("div", { "style": "height: 106px;" })
+              ] : null,
+              ($v.vd?.slotOn) ? [
+                $h("div", { "style": "display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 18px; border: 1.5px dashed rgba(76,154,255,0.4); background: rgba(76,154,255,0.05);" },
+                  $h("span", { "style": "flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(76,154,255,0.14); color: #4C9AFF;" },
+                    $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  ),
+                  $h("span", { "style": "flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px;" },
+                    $h("span", { "class": "sw-app-name", "style": "font-size: 15px;" },
+                      "Mes idées"
+                    ),
+                    $h("span", { "class": "sw-app-sub" },
+                      $t($v.vd?.slot)
+                    )
+                  )
+                )
+              ] : null,
+              ($v.vd?.app) ? [
+                $h("div", { "style": "padding-top: 8px;" },
+                  $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.vd?.keep, "style": "max-width: 100%; -webkit-tap-highlight-color: transparent;" },
+                    $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis;" },
+                      $t($v.vd?.cta)
+                    ),
+                    $h("span", { "class": "sw-btn-tile" },
+                      $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      )
+                    )
+                  )
+                )
+              ] : null,
+              ($v.vd?.noApp) ? [
+                $h("div", { "style": "padding-top: 4px;" },
+                  $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.startNew, "style": "-webkit-tap-highlight-color: transparent;" },
+                    "Créer un dossier",
+                    $h("span", { "class": "sw-btn-tile" },
+                      $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      )
+                    )
+                  )
+                )
+              ] : null
             )
           ] : null,
           ($l($v.folders)).map((f) => [
-            $h("a", { "href": $u(f?.href), "class": "sw-card", "style": "border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u(f?.href), "data-lq-card": f?.ck, "class": "sw-card", "style": "border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: inherit;" },
               (f?.full) ? [
                 $h("span", { "style": "display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; height: 116px; overflow: hidden;" },
                   ($l(f?.mos)).map((m) => [
