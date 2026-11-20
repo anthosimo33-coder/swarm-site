@@ -84,7 +84,7 @@ export default class FicheFormat extends DCLogic {
       f = {
         quote: D.label, kind: hook ? 'Accroche' : 'Son', ico: hook ? HOOK : SON, isSound: !hook, niche: D.niche,
         mk: D.market === 'XX' ? [] : [{ c: D.market }], hasFr: false, fr: '',
-        apps: shown.map((a) => ({ name: a.name, logo: a.icon || false, nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug })),
+        apps: shown.map((a) => ({ name: a.name, logo: a.icon || false, nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: a.page === false ? null : '/app/apps/' + a.slug })),
         moreApps: more > 0 ? others(more) : '', last: 'dernière reprise le ' + day(D.lastPostAt)
       };
       // De la première reprise connue à la dernière (dates de publication).

@@ -217,7 +217,7 @@ export default class Createurs extends DCLogic {
     return { on: true, h: '@' + h, bio: D.bio || row.bio || '', av: D.avatar || row.av || '', noav: !(D.avatar || row.av), ini: h.charAt(0).toUpperCase(), mk: D.market || row.mk || b.shown || '',
       tt: 'https://www.tiktok.com/@' + h, href: '/app/createurs/' + h,
       hasApp: !!(app || row.appName), appName: app ? app.name : row.appName || '', appIcon: app ? app.icon || '' : (row.app && row.app.logo) || '', appBlank: (app ? app.icon : row.app && row.app.logo) ? '' : 'sw-app-blank',
-      appHref: app && app.slug ? '/app/apps/' + app.slug : (row.appHref || '/app/apps/astraai'), niche: app ? app.niche || '' : row.niche || '',
+      appHref: app && app.slug ? (app.page === false ? null : '/app/apps/' + app.slug) : (row.appHref || '/app/apps/astraai'), niche: app ? app.niche || '' : row.niche || '',
       act: lastAt ? (active ? 'Actif' : 'Calme') + ' · dernière ' + ago(lastAt) : '', actBg: active ? 'var(--accent-soft)' : 'var(--track)', actInk: active ? 'var(--accent)' : 'var(--ink-muted)',
       tiles: [['Abonnés', fans ? grp(fans) : '—', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3'],
         ['Vues médianes', med ? nf(med) : '—', 'M3 3v18h18M7 15l4-4 3 3 5-6'], ['Vidéos en 7 j', p7 !== null ? String(p7) : '—', 'M3 12h4l3-8 4 16 3-8h4']].map(([l, v, d]) => ({ l, v, d })),
@@ -294,7 +294,7 @@ export default class Createurs extends DCLogic {
         return {
           h: '@' + c.handle, market: c.market || '', kind: c.kind || '', gender: c.gender || '', href: '/app/createurs/' + c.handle, bio: line(c.bio), av: c.avatar || '', noav: true,
           app: { name: a ? a.name : '', logo: ic, nologo: !ic, blank: ic ? '' : 'sw-app-blank' }, hasApp: !!a,
-          appName: a ? a.name : '', niche: (a && a.niche) || '', appHref: a ? '/app/apps/' + a.slug : '/app/apps',
+          appName: a ? a.name : '', niche: (a && a.niche) || '', appHref: a ? (a.page === false ? null : '/app/apps/' + a.slug) : '/app/apps',
           fans: isN(c.fans) ? Math.round(c.fans).toLocaleString('fr-FR') : '', fansK: isN(c.fans) ? nf(c.fans) : '', nFans: isN(c.fans) ? c.fans : -1,
           med: isN(c.median) ? nf(c.median) : '', nMed: isN(c.median) ? c.median : 0,
           rythme: isN(c.posts7d) ? (on ? c.posts7d + (c.posts7d > 1 ? ' vidéos' : ' vidéo') + ' en 7 j' : 'Rien en 7 j') : '',

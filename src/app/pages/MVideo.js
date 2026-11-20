@@ -82,7 +82,7 @@ export default class MVideo extends DCLogic {
       const KINDL = (k, g) => ({ ambassadeur: g === 'femme' ? 'Ambassadrice' : 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte' })[k] || '';
       vid = { embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
           : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/player/v1/' + D.id + '?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0' : '',
-        pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app ? '/app/apps/' + D.app.slug : '/app/apps',
+        pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app && D.app.page !== false ? '/app/apps/' + D.app.slug : '/app/apps',
         hook: D.hook || D.caption || '@' + D.handle, hasApp: !!D.app, appName: D.app ? D.app.name : '',
         // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
         car: D.carousel ? 'Carrousel · ' + D.carousel + ' photos' : '', kindL: D.kind && D.kind !== 'carrousel' ? KINDL(D.kind) : '', paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
@@ -91,7 +91,7 @@ export default class MVideo extends DCLogic {
         url: D.url || 'https://www.tiktok.com/@' + D.handle, hasX: !!D.x, x: D.x ? xf(D.x) : '',
         story: nf(D.views || 0) + ' vues ' + (hours >= 48 ? 'en ' + Math.round(hours / 24) + ' jours' : 'en ' + hours + ' heures')
           + (D.normal ? ', alors que le compte fait d’habitude ' + nf(D.normal) + ' vues.' : '.') + growth,
-        appHref: D.app ? '/app/apps/' + D.app.slug : '/app/apps', appLink: D.app ? 'Voir l’app ' + D.app.name : '',
+        appHref: D.app ? (D.app.page === false ? null : '/app/apps/' + D.app.slug) : '/app/apps', appLink: D.app ? 'Voir l’app ' + D.app.name : '',
         copyText: [D.hook, D.caption, D.music ? 'Son : ' + D.music : ''].filter(Boolean).join('\n') || '@' + D.handle };
       v = { src: D.cover || '' };
       const rr = (n) => (n === null || n === undefined ? '' : nf(n));
@@ -99,7 +99,7 @@ export default class MVideo extends DCLogic {
       facts = [['Texte à l’écran', D.hook], ['Ce qui est dit', said], ['Son', D.music], ['Légende', D.caption],
         ['Réactions', [rr(D.likes) && rr(D.likes) + ' j’aime', rr(D.saves) && rr(D.saves) + ' enregistrements', rr(D.shares) && rr(D.shares) + ' partages', rr(D.comments) && rr(D.comments) + ' commentaires'].filter(Boolean).join(' · ')]]
         .filter((f) => f[1]).map((f) => ({ k: f[0], v: f[1] }));
-      const ap = D.app && this.props.get ? this.props.get('app:' + D.app.slug) : null;
+      const ap = D.app && D.app.page !== false && this.props.get ? this.props.get('app:' + D.app.slug) : null; // app en pause : pas de fiche à lire
       const cards = ap && ap.videos ? ap.videos : [];
       nxt = cards.filter((c) => c.id !== D.id).slice(Math.max(0, idx), Math.max(0, idx) + 3).map((c) => ({ src: c.cover || '', x: c.x ? xf(c.x) : nf(c.views),
         t: c.hook || '@' + c.handle, v: nf(c.views), href: '/app/videos/' + c.id }));

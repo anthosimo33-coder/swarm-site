@@ -123,7 +123,7 @@ export default class FicheCreateur extends DCLogic {
       z = {
         av: D.avatar || '', noav: true, h: '@' + D.handle, bio: D.bio ? D.bio.replace(/\s+/g, ' ').trim() : '',
         kindL: ((KINDL) => KINDL(D.kind, D.gender))((k, g) => ({ ambassadeur: g === 'femme' ? 'Ambassadrice' : 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte' })[k] || ''), mk: M[D.market] || '', mkHero: D.market && DEPUIS(M[D.market]) ? ['Publie ' + DEPUIS(M[D.market]), LANGN(D.otherLang)].filter(Boolean).join(' · ') : (M[D.market] || ''), flag: D.market || '', mkHref: '/app/createurs' + (D.market ? '?m=' + D.market : ''), tt: 'https://www.tiktok.com/@' + D.handle,
-        app: a ? { name: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: '/app/apps/' + a.slug }
+        app: a ? { name: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', href: a.page === false ? null : '/app/apps/' + a.slug }
                : { name: '', niche: '', logo: '', nologo: true, blank: 'sw-app-blank', href: '' }
       };
       // Rythme : le compte, complété par ses vidéos de la liste (une vidéo Instagram n'est pas dans posts7d).

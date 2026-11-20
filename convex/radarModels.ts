@@ -320,6 +320,14 @@ export function buildBoards(
   };
   const apps = raw.apps.filter((a) => !a.mergedInto && a.status === "active");
   const icon = (a: RApp) => (used.add(iconKey(a.slug)), mediaUrl(iconKey(a.slug)));
+  /**
+   * Une app citée par une vidéo, un créateur ou un format. Seules les apps actives ont une fiche : une app en pause (ou
+   * dont la fusion ne mène nulle part) reste nommée, marquée page:false, et l'écran ne pose pas de lien. Audit Q23
+   * (19/11) : 7 apps en pause, citées par 771 pages vidéo, 114 fiches créateur et 185 lignes de listes, menaient à
+   * « Cette fiche n'est plus dans le Radar ».
+   */
+  const appRef = (a: RApp, withNiche = false) => ({ slug: a.slug, name: a.name, icon: icon(a), ...(withNiche ? { niche: nicheOf(a) } : {}),
+    ...(a.status === "active" && !a.mergedInto ? {} : { page: false as const }) });
   const G = opts.part?.kind === "group" ? opts.part : null;
   const GL = opts.part?.kind === "global" ? opts.part : null;
   /** Étape « groupe » : l'app (canonique) ou le compte est-il du groupe ? Sans groupe : tout l'est. */
@@ -690,7 +698,7 @@ export function buildBoards(
   };
   const appMini = (id: string) => {
     const a = canonical(id);
-    return a ? { slug: a.slug, name: a.name, icon: icon(a) } : null;
+    return a ? appRef(a) : null;
   };
   const formatRows = raw.formats
     // Un format = repris par au moins 3 comptes : à 2, ce sont surtout des sons au hasard.
@@ -748,7 +756,7 @@ export function buildBoards(
     const a = canonical(t.appId);
     return {
       handle: t.handle, bio: cleanBio(t.bio), fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, lastPostAt: t.lastPostAt,
-      market: mkOf(t.id), otherLang: otherLangOf(t.id), kind: mainType.get(t.id) ?? null, gender: genderFor(t), app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
+      market: mkOf(t.id), otherLang: otherLangOf(t.id), kind: mainType.get(t.id) ?? null, gender: genderFor(t), app: a ? appRef(a, true) : null,
       // Ce qui le relie à son app (RProof) reste interne au Radar : jamais dans les documents de Swarm (décision du 14/11).
       igHandle: t.igHandle, best: best.map(card), _vids: vids,
     };
@@ -818,7 +826,7 @@ export function buildBoards(
   const hotCards = hot.slice(0, 40).map((s) => {
     const a = canonical(s.appId);
     return {
-      id: s.videoId, platform: s.platform, handle: s.authorHandle, app: a ? { slug: a.slug, name: a.name, icon: icon(a) } : null,
+      id: s.videoId, platform: s.platform, handle: s.authorHandle, app: a ? appRef(a) : null,
       views: s.views, x: round(s.multiplier ?? 0, 1), publishedAt: s.publishedAt, cover: cover(s.videoId, s.coverUrl, s.authorHandle), hook: s.hook,
       market: s.trackedAccountId && mkOf(s.trackedAccountId) ? mkOf(s.trackedAccountId) : marketOf(s.lang, s.region), region: s.region,
       ...(isPaid(s.trackedAccountId) ? { paid: true } : {}),
@@ -888,7 +896,7 @@ export function buildBoards(
       updatedAt: now, id, platform,
       url: s?.url ?? (platform === "instagram" ? `https://www.instagram.com/reel/${id.replace(/^ig:/, "")}/` : `https://www.tiktok.com/@${handle}/video/${id}`),
       handle, fans: acc?.fans ?? s?.authorFans ?? null, normal: acc?.medianViews ?? null, paid: isPaid(acc?.id),
-      app: a ? { slug: a.slug, name: a.name, icon: icon(a), niche: nicheOf(a) } : null,
+      app: a ? appRef(a, true) : null,
       market: acc ? mkOf(acc.id) ?? marketOf(s?.lang, s?.region ?? v?.region) : marketOf(s?.lang, s?.region ?? v?.region), region: s?.region ?? null,
       otherLang: acc ? otherLangOf(acc.id) : null,
       carousel: slidesOf(id) || null,

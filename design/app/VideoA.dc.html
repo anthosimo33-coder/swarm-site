@@ -249,7 +249,7 @@ class Component extends DCLogic {
         // Le lecteur officiel de la plateforme, qui démarre au clic sur lecture.
         embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
           : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/player/v1/' + D.id + '?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0' : '',
-        url: D.url, appName: D.app ? D.app.name : '', appHref: D.app ? 'FicheA.dc.html?app=' + D.app.slug : 'AppsA.dc.html',
+        url: D.url, appName: D.app ? D.app.name : '', appHref: D.app ? (D.app.page === false ? null : 'FicheA.dc.html?app=' + D.app.slug) : 'AppsA.dc.html',
         market: D.market && DEPUIS(M[D.market]) ? ['Publiée ' + DEPUIS(M[D.market]), LANGN(D.otherLang)].filter(Boolean).join(' · ') : '', mk: D.market || '', date: D.publishedAt ? new Date(D.publishedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—',
         handle: '@' + D.handle, whoMeta: (D.fans ? ' · ' + nf(D.fans) + ' abonnés' : '') + (D.normal ? " · fait d'habitude " + nf(D.normal) + ' vues' : ''),
         // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
@@ -279,7 +279,7 @@ class Component extends DCLogic {
         ['Texte à l’écran', D.hook], ['Ce qui est dit', D.transcript], ['Son', D.music], ['Légende', D.caption],
         ['Réactions', [r(D.likes) && r(D.likes) + ' j’aime', r(D.saves) && r(D.saves) + ' enregistrements', r(D.shares) && r(D.shares) + ' partages', r(D.comments) && r(D.comments) + ' commentaires'].filter(Boolean).join(' · ')]
       ].filter((f) => f[1]).map((f) => ({ k: f[0], v: f[1] }));
-      const ap = D.app && this.props.get ? this.props.get('app:' + D.app.slug) : null;
+      const ap = D.app && D.app.page !== false && this.props.get ? this.props.get('app:' + D.app.slug) : null; // app en pause : pas de fiche à lire
       const cards = ap && ap.videos ? ap.videos : [];
       const T = ['t-navy', 't-pine', 't-violet', 't-plum'];
       next = cards.filter((c) => c.id !== D.id).slice(Math.max(0, idx), Math.max(0, idx) + 4).map((c, i) => ({
