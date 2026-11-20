@@ -241,6 +241,33 @@ export function parseTagEmbed(html: string): TagPage | null {
   return { videos: count(info.videoCount), views: count(info.viewCount), items };
 }
 
+/** Une vidéo listée par la page d'un hashtag, légende entière (`parseTagEmbed` la coupe), pour la recherche de réseau. */
+export type TagItem = { id: string; author: string; desc: string; views: number; private: boolean };
+/** La page d'un hashtag pour la recherche de réseau (radarNetworkMath.hashtagGate) : son compteur et ce qu'elle liste. */
+export type TagList = { videos: number; items: TagItem[] };
+
+/**
+ * La page d'un hashtag telle que la recherche de réseau la juge. `null` sans compteur lisible ou sans liste : une page
+ * à moitié servie ne fait rien conclure (`count` y lirait 0, et un hashtag « vide » ne serait pas payé). Une vidéo
+ * listée sans identifiant ni auteur est écartée : elle ne compte pas parmi les listées, le hashtag n'est pas complet.
+ */
+export function parseTagList(html: string): TagList | null {
+  const info = obj(cutJson(html, '"embedInfo":'));
+  const list = cutJson(html, '"videoList":');
+  const raw = info?.videoCount;
+  const videos = typeof raw === "number" ? raw : typeof raw === "string" && /^\d+$/.test(raw) ? Number(raw) : NaN;
+  if (!Number.isSafeInteger(videos) || videos < 0 || !Array.isArray(list)) return null;
+  const items: TagItem[] = [];
+  for (const x of list) {
+    const v = obj(x);
+    const id = str(v?.id);
+    const author = str(v?.authorUniqueId);
+    if (!v || !/^\d{15,}$/.test(id) || !author || items.some((i) => i.id === id)) continue;
+    items.push({ id, author, desc: str(v.desc), views: count(v.playCount), private: v.privateItem === true });
+  }
+  return { videos, items };
+}
+
 /** Le profil public d'un auteur : sa bio, ses abonnés, ses dernières légendes (10 environ). */
 export type AuthorProfile = { fans: number; bio: string; verified: boolean; descs: string[] };
 

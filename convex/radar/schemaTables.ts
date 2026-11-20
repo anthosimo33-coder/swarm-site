@@ -175,6 +175,9 @@ export const radarTables = {
     deepSearchedAt: v.optional(v.number()),
     // La recherche du réseau en cours, ou la dernière (cf radarNetworkMath.NetworkSearchState).
     networkSearch: v.optional(networkSearchValidator),
+    // Le compteur de vidéos de chacun de ses hashtags (page publique de TikTok) à sa dernière recherche PAYÉE réussie,
+    // et la mesure de la règle « compteur inchangé » (radarNetworkMath.hashtagGate, TagCount, 20/11/2026).
+    tagCounts: v.optional(v.array(v.object({ tag: v.string(), videos: v.number(), at: v.number(), same: v.optional(v.number()), sameFound: v.optional(v.number()) }))),
     adsSearchedAt: v.optional(v.number()), // bibliothèques de pubs TikTok et Meta
     trackedCount: v.optional(v.number()), // comptes de son réseau (cf radarSignals.attachAccount)
     // Le résumé de son réseau pour l'onglet Comptes suivis (radarNetworkMath.appNet), refait quand ses

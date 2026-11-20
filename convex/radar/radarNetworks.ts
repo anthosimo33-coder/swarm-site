@@ -73,6 +73,13 @@ import {
   networkFoundBy,
   networkPasses,
   shouldPromote,
+  checkHashtag,
+  noteTagCounts,
+  paidTags,
+  passSkip,
+  type AppRule,
+  type TagCount,
+  type TagRun,
 } from "./radarNetworkMath";
 import { LANG_BY_HAND, OFF_TOPIC_BY_HAND } from "./radarSeedAccounts";
 import { screenLang } from "./radarTextLang";
@@ -101,7 +108,7 @@ import {
   type PaidPage,
   type PaidReason,
 } from "./radarFreeMath";
-import { fetchEmbedPage, storePauseMs, storeUrl } from "./radarStoreMath";
+import { STORE_BREAKER, fetchEmbedPage, storePauseMs, storeUrl, type PageFetch } from "./radarStoreMath";
 import { linkCandidate } from "./radarFiche";
 import { REJECTED_KEEP_MS, accountProof } from "./radarVetMath";
 import { MARKET_CURRENCY } from "./radarMarketMath";
@@ -140,8 +147,21 @@ const videoUrl = (handle: string, videoId: string) => `https://www.tiktok.com/@$
 
 // ─── Lectures des tâches (types de retour DÉCLARÉS, cf radarSignals) ─────────
 
-/** `never` : jamais cherchée — elle passe par le rattrapage (radarSignalsMath.catchUpAllowance). */
-type DueApp = { id: Id<"radarApps">; name: string; searches: string[]; rival: boolean; deep: boolean; never: boolean };
+/**
+ * `never` : jamais cherchée — elle passe par le rattrapage (radarSignalsMath.catchUpAllowance). `rule` et `tagCounts` :
+ * le tri de ses hashtags avant la recherche payante (radarNetworkMath.checkHashtag).
+ */
+type DueApp = { id: Id<"radarApps">; name: string; searches: string[]; rival: boolean; deep: boolean; never: boolean; rule: AppRule; tagCounts: TagCount[] };
+const dueApp = (a: Doc<"radarApps">): DueApp => ({
+  id: a._id,
+  name: a.name,
+  searches: a.searches,
+  rival: a.rivalOf.length > 0,
+  deep: needsDeepSearch(a),
+  never: a.networkSearchedAt === undefined,
+  rule: { strong: a.strong, weak: a.weak, context: a.context, ...(a.not ? { not: a.not } : {}) },
+  tagCounts: a.tagCounts ?? [],
+});
 /** `located` : on connaît déjà le pays d'où le compte publie. `first` : il n'a encore jamais été relevé. */
 /** Un compte dû : `dueAt` (son `nextReadAt`) et `lastPostAt` disent à la voie gratuite s'il peut attendre (radarFreeMath.overflowToPay). */
 type DueAccount = { id: Id<"radarTracked">; handle: string; located: boolean; first: boolean; dueAt: number; lastPostAt?: number };
@@ -155,7 +175,7 @@ export const dueApps = internalQuery({
       // Une recherche demandée à l'écran tourne déjà : la tâche ne la double pas.
       .filter((a) => networkSearchPhase(a.networkSearch, now) !== "running")
       .sort((x, y) => networkQueueOrder({ ...x, rival: x.rivalOf.length > 0 }, { ...y, rival: y.rivalOf.length > 0 }))
-      .map((a) => ({ id: a._id, name: a.name, searches: a.searches, rival: a.rivalOf.length > 0, deep: needsDeepSearch(a), never: a.networkSearchedAt === undefined }));
+      .map(dueApp);
   },
 });
 
@@ -166,7 +186,7 @@ export const appToSearch = internalQuery({
     const a = await ctx.db.get(appId);
     if (!a) return null;
     if (a.status !== "active") return "paused";
-    return { id: a._id, name: a.name, searches: a.searches, rival: a.rivalOf.length > 0, deep: needsDeepSearch(a), never: a.networkSearchedAt === undefined };
+    return dueApp(a);
   },
 });
 
@@ -503,8 +523,17 @@ export const startNetworkSearch = internalMutation({
  * pour une concurrente, une semaine sinon) ; sinon elle reprend au passage suivant.
  */
 export const finishNetworkSearch = internalMutation({
-  args: { appId: v.id("radarApps"), now: v.number(), outcome: networkSearchOutcomeValidator, error: v.optional(v.string()), searched: v.boolean(), deep: v.optional(v.boolean()) },
-  handler: async (ctx, { appId, now, outcome, error, searched, deep }): Promise<void> => {
+  args: {
+    appId: v.id("radarApps"),
+    now: v.number(),
+    outcome: networkSearchOutcomeValidator,
+    error: v.optional(v.string()),
+    searched: v.boolean(),
+    deep: v.optional(v.boolean()),
+    // Ses hashtags payés avec succès, et leur compteur lu juste avant (radarNetworkMath.paidTags).
+    tags: v.optional(v.array(v.object({ tag: v.string(), videos: v.number(), same: v.boolean(), found: v.boolean() }))),
+  },
+  handler: async (ctx, { appId, now, outcome, error, searched, deep, tags }): Promise<void> => {
     const app = await ctx.db.get(appId);
     if (!app) return;
     const p = app.networkSearch ?? { requestedAt: now, step: 0, steps: 0, attached: 0, signals: 0 };
@@ -515,6 +544,7 @@ export const finishNetworkSearch = internalMutation({
       ...(searched ? { networkSearchedAt: now } : {}),
       // Sa recherche complète est allée au bout : les suivantes seront courtes.
       ...(searched && deep ? { deepSearchedAt: now } : {}),
+      ...(tags?.length ? { tagCounts: noteTagCounts(app.tagCounts, tags, app.searches, now) } : {}),
     });
   },
 });
@@ -1026,6 +1056,24 @@ export const runNetworkSearch = internalAction({
     let left = due[0]?.never ? Math.max(left0, catchUp0) : left0;
     let spentAtLeft = 0;
     let timedOut = false;
+    // Le tri des hashtags (radarNetworkMath.checkHashtag) : une page publique à la fois, une pause avant chacune ;
+    // STORE_BREAKER hashtags refusés d'affilée, ou le temps du passage écoulé, et les suivants paient comme avant.
+    let tagRefused = 0;
+    const tagPage = async (url: string): Promise<PageFetch> => {
+      await new Promise<void>((done) => setTimeout(done, storePauseMs(Math.random())));
+      return fetchEmbedPage(url);
+    };
+    const tagRun = async (tag: string, app: DueApp, passes: number): Promise<TagRun> => {
+      const run: TagRun = { check: null, passes, paid: 0, found: false };
+      if (tagRefused >= STORE_BREAKER || Date.now() - now > NETWORK_MAX_MS) return run;
+      try {
+        run.check = await checkHashtag(tag, app.rule, { deep: app.deep, last: app.tagCounts.find((t) => t.tag === tag)?.videos }, tagPage);
+        tagRefused = run.check.refused ? tagRefused + 1 : 0;
+      } catch (e) {
+        console.error(`[radar] page du hashtag #${tag} : ${String(e)}`);
+      }
+      return run;
+    };
     try {
       for (const [k, app] of due.entries()) {
         if (k > 0) {
@@ -1045,8 +1093,20 @@ export const runNetworkSearch = internalAction({
         let appError: string | undefined;
         let crashed = false;
         let appAttached = 0;
+        const tags = new Map<string, TagRun>();
         try {
-          for (const [i, { kind, value, region, sort }] of passes.entries()) {
+          for (const [i, pass] of passes.entries()) {
+            const { kind, value, region, sort } = pass;
+            // Un hashtag est lu une fois pour ses deux passes ; absent, ou complet et ses vidéos lues : la passe ne paie pas.
+            if (kind === "hashtag" && !tags.has(value)) tags.set(value, await tagRun(value, app, passes.filter((p) => p.kind === kind && p.value === value).length));
+            const tag = kind === "hashtag" ? tags.get(value) : undefined;
+            const skip = passSkip(pass, tags);
+            if (skip) {
+              usage.spare("hashtag", 1);
+              if (skip.length) appAttached += (await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, { appId: app.id, videos: skip, foundBy: networkFoundBy(app.name, region), now, step: i + 1 })).attached;
+              continue;
+            }
+            const failuresBefore = appFailures;
             let cursor: number | undefined;
             // Recherche complète : tant que les pages ramènent de nouveaux comptes ; de routine : 2 ou 3 pages.
             const read = { page: 0, dry: 0 };
@@ -1074,7 +1134,7 @@ export const runNetworkSearch = internalAction({
                 }
                 break;
               }
-              const found: { attached: number } = await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, {
+              const found: { attached: number; signals: number } = await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, {
                 appId: app.id,
                 videos: r.value.videos,
                 foundBy: networkFoundBy(app.name, region),
@@ -1082,11 +1142,13 @@ export const runNetworkSearch = internalAction({
                 step: i + 1,
               });
               appAttached += found.attached;
+              if (tag && found.attached + found.signals > 0) tag.found = true;
               read.page++;
               read.dry = found.attached > 0 ? 0 : read.dry + 1;
               cursor = r.value.cursor;
               if (cursor === undefined || r.value.videos.length === 0) break;
             }
+            if (tag && !stop && appFailures === failuresBefore) tag.paid++;
             if (stop) break;
           }
         } catch (e) {
@@ -1099,12 +1161,14 @@ export const runNetworkSearch = internalAction({
         }
         // Une app à moitié cherchée (budget du passage épuisé) reprend au suivant.
         const outcome = crashed ? "error" : networkSearchOutcome({ complete, noCredits, calls: appCalls, failures: appFailures });
+        const paid = paidTags(tags);
         await ctx.runMutation(internal.radar.radarNetworks.finishNetworkSearch, {
           appId: app.id,
           now: Date.now(),
           outcome,
           searched: complete,
           deep: app.deep,
+          ...(paid.length ? { tags: paid } : {}),
           ...(outcome !== "done" && outcome !== "budget" && appError ? { error: appError } : {}),
         });
         attached += appAttached;

@@ -12,6 +12,9 @@
  * elle dépasse la médiane des vues de SON compte, ce qui est plus juste que vues ÷
  * abonnés pour des comptes neufs à 0 abonné.
  */
+import { freeVideoUrl, parseFreeVideo } from "./radarFreeMath";
+import type { SignalInput } from "./radarSignalsMath";
+import { parseTagList, tagEmbedUrl, type PageFetch, type TagItem, type TagList } from "./radarStoreMath";
 
 export type AppRule = {
   /** Cité tel quel (espaces, tirets et soulignés retirés) : suffit à rattacher. */
@@ -806,6 +809,146 @@ export function nextSearchPage(read: { page: number; dry: number }, deep: boolea
 }
 /** Un réseau se recherche à nouveau au bout de 3 jours pour une concurrente, d'une semaine sinon. */
 export const networkRefreshMs = (rival: boolean) => (rival ? 3 : 7) * DAY;
+
+// ─── Le tri des hashtags avant la recherche payante (20/11/2026) ─────────────
+
+/**
+ * Chaque hashtag d'une app passe deux fois à la recherche payante (une passe par région, 2 ou 3 pages en routine,
+ * jusqu'à DEEP_PAGES en recherche complète). Sa page d'intégration publique (`/embed/tag/<tag>`, gratuite, lue par
+ * le contrôle des classements depuis le 12/11) dit s'il existe et combien il a de vidéos, et liste les 10 plus vues.
+ * Lue UNE fois pour ses deux passes, on ne paie pas :
+ *  - absent : TikTok répond 400/404, le hashtag n'existe pas — la recherche payante ne rendrait rien ;
+ *  - complete : son compteur est le nombre de vidéos que la page liste — elle les a TOUTES. Celles qui citent l'app
+ *    (le premier tri de `attachFromSearch`, sur la légende entière de la page) sont lues sur leur page vidéo et passées
+ *    à `attachFromSearch`, comme la recherche payante l'aurait fait (comptes rattachés, signaux neufs, chiffres des
+ *    signaux connus) : pas de « déjà connue » qui dispenserait de lire, la recherche payante rafraîchissait aussi
+ *    celles-là. Une page qui manque → on paie. Un compteur en dessous de la liste (compteur caché ou en retard) ne
+ *    prouve rien → on paie ;
+ *  - same (routine seulement) : son compteur n'a pas bougé depuis sa dernière recherche PAYÉE. Pas prouvable du poste
+ *    en une séance : en MESURE tant que TAG_ROUTINE_SKIP est faux — on paie, et l'app retient combien de ces
+ *    recherches « inutiles » ont rattaché un compte ou rangé un signal neuf (radarApps.tagCounts).
+ * Une page refusée ou servie sans ses données → on paie, comme avant.
+ *
+ * Mesuré le 20/11/2026 du poste (scripts/radar-bancs/hashtags.ts, 586 pages) sur 500 hashtags d'apps actives, dont
+ * 356 d'apps déjà cherchées en payant : 28 absents (relus : 28 absents ; aucune vidéo connue en prod ne les porte),
+ * 20 complets (0 à 9 vidéos), 452 trop grands. Sur les 20 complets, une seule vidéo connue en prod qui porte le
+ * hashtag manquait à la page (#facelessclone, 439 vues, auteur déjà suivi : la recherche payante n'en aurait rien
+ * rangé) ; les 57 pages vidéo à lire se sont toutes lues. La citation jugée sur la légende de la page du hashtag et
+ * sur celle rangée en prod (1 023 vidéos) : jamais citée en prod sans l'être par la page (9 fois l'inverse : légende
+ * rangée tronquée). 48 hashtags sur 500 ne paient plus leurs deux passes (19 sur 356 des apps déjà cherchées, 29 sur
+ * 144 des jamais cherchées). « same » : 41 des 237 hashtags dont le contrôle des classements avait lu le compteur
+ * (6,7 jours avant, en médiane) n'avaient pas bougé — une estimation, pas une preuve.
+ */
+export const TAG_ROUTINE_SKIP = false;
+/** Pages vidéo lues au plus pour un hashtag complet (la page d'un hashtag en liste 10 au plus). */
+export const TAG_VIDEO_PAGES = 10;
+
+/** Ce que la page d'un hashtag a rendu : sa liste, « absent » (il n'existe pas), ou « suspect » (refus, page sans données). */
+export type TagRead = TagList | "absent" | "suspect";
+
+export type TagGate = {
+  pay: boolean;
+  /** absent · complete · same (cf ci-dessus) · suspect : page refusée · large : compteur différent de ce que la page liste. */
+  why: "absent" | "complete" | "same" | "suspect" | "large";
+  /** Hashtag complet : ses vidéos qui citent l'app, à lire sur leur page avant de sauter le paiement. */
+  read: TagItem[];
+  /** Routine, compteur inchangé depuis la dernière recherche payée : la règle « same » s'applique (mesurée ou non). */
+  same: boolean;
+};
+
+/** La décision pour un hashtag : `last`, son compteur à sa dernière recherche payée réussie ; `deep`, recherche complète. */
+export function hashtagGate(page: TagRead, app: AppRule, o: { deep: boolean; last?: number }, routineSkip = TAG_ROUTINE_SKIP): TagGate {
+  if (page === "absent") return { pay: false, why: "absent", read: [], same: false };
+  if (page === "suspect") return { pay: true, why: "suspect", read: [], same: false };
+  const same = !o.deep && o.last !== undefined && page.videos === o.last;
+  if (page.videos === page.items.length) {
+    const read = page.items.filter((v) => citesApp(v.desc, v.author, app));
+    if (read.length <= TAG_VIDEO_PAGES) return { pay: false, why: "complete", read, same };
+  }
+  return { pay: !(same && routineSkip), why: same ? "same" : "large", read: [], same };
+}
+
+export type TagCheck = Omit<TagGate, "why"> & {
+  /** `video` : hashtag complet, mais la page d'une de ses vidéos qui citent l'app manque — on paie. */
+  why: TagGate["why"] | "video";
+  /** Le compteur lu, retenu après une recherche payée réussie (`noteTagCounts`). */
+  count?: number;
+  /** Hashtag complet : ses vidéos qui citent l'app, dans la forme de la recherche payante, pour `attachFromSearch`. */
+  videos: SignalInput[];
+  /** Pages TikTok lues. `refused` : l'une d'elles a été refusée ou servie sans données (le coupe-circuit du passage). */
+  pages: number;
+  refused: boolean;
+};
+
+/**
+ * Le tri d'un hashtag de bout en bout : sa page, puis (hashtag complet) celle de chacune de ses vidéos qui citent
+ * l'app. `page` lit une adresse (la pause avant chaque page est à l'appelant, cf storePauseMs).
+ */
+export async function checkHashtag(
+  tag: string,
+  app: AppRule,
+  o: { deep: boolean; last?: number },
+  page: (url: string) => Promise<PageFetch>,
+  routineSkip = TAG_ROUTINE_SKIP,
+): Promise<TagCheck> {
+  const r = await page(tagEmbedUrl(tag));
+  const list = r.kind === "ok" ? parseTagList(r.text) : null;
+  const read: TagRead = r.kind === "absent" ? "absent" : (list ?? "suspect");
+  const gate = hashtagGate(read, app, o, routineSkip);
+  const out: TagCheck = { ...gate, ...(list ? { count: list.videos } : {}), videos: [], pages: 1, refused: read === "suspect" };
+  if (gate.why !== "complete") return out;
+  for (const item of gate.read) {
+    out.pages++;
+    const p = await page(freeVideoUrl(item.author, item.id));
+    const v = p.kind === "ok" ? parseFreeVideo(p.text, item.author) : null;
+    // Refusée, illisible, ou retirée entre la liste et sa page : la recherche payante l'aurait peut-être rendue.
+    if (!v || v === "gone" || v.videoId !== item.id) return { ...out, pay: true, why: "video", read: [], videos: [], refused: p.kind === "suspect" || (p.kind === "ok" && v === null) };
+    out.videos.push(v);
+  }
+  return out;
+}
+
+/** Le compteur d'un hashtag à sa dernière recherche payée réussie ; `same` / `sameFound` : la mesure de la règle « same ». */
+export type TagCount = { tag: string; videos: number; at: number; same?: number; sameFound?: number };
+/** Un hashtag pendant la recherche d'une app : son tri, ses passes, celles payées sans erreur, et si elles ont trouvé. */
+export type TagRun = { check: TagCheck | null; passes: number; paid: number; found: boolean };
+
+/**
+ * Une passe saute-t-elle la recherche payante ? Seulement un hashtag que son tri dispense de payer : rend alors ses
+ * vidéos à ranger (hashtag complet) — `null` sinon, la passe paie comme avant. Un mot-clé ne l'est jamais, même s'il
+ * s'écrit comme un hashtag sauté (« wallbit » et « #wallbit »).
+ */
+export function passSkip(pass: NetworkPass, runs: ReadonlyMap<string, TagRun>): SignalInput[] | null {
+  if (pass.kind !== "hashtag") return null;
+  const check = runs.get(pass.value)?.check;
+  return check && !check.pay ? check.videos : null;
+}
+
+/** Les hashtags payés dont TOUTES les passes ont réussi, avec leur compteur lu juste avant : à retenir sur l'app. */
+export function paidTags(runs: ReadonlyMap<string, TagRun>): { tag: string; videos: number; same: boolean; found: boolean }[] {
+  const out: { tag: string; videos: number; same: boolean; found: boolean }[] = [];
+  for (const [tag, r] of runs) {
+    if (r.check?.pay && r.check.count !== undefined && r.paid === r.passes) out.push({ tag, videos: r.check.count, same: r.check.same, found: r.found });
+  }
+  return out;
+}
+
+/** Les compteurs de l'app après une recherche : ceux des hashtags payés remplacés, la mesure cumulée ; seuls ses hashtags restent. */
+export function noteTagCounts(
+  prev: readonly TagCount[] | undefined,
+  paid: readonly { tag: string; videos: number; same: boolean; found: boolean }[],
+  searches: readonly string[],
+  now: number,
+): TagCount[] {
+  const byTag = new Map((prev ?? []).map((t) => [t.tag, t]));
+  for (const p of paid) {
+    const before = byTag.get(p.tag);
+    const same = (before?.same ?? 0) + Number(p.same);
+    const sameFound = (before?.sameFound ?? 0) + Number(p.same && p.found);
+    byTag.set(p.tag, { tag: p.tag, videos: p.videos, at: now, ...(same ? { same } : {}), ...(sameFound ? { sameFound } : {}) });
+  }
+  return [...byTag.values()].filter((t) => searches.includes(`#${t.tag}`));
+}
 
 /**
  * L'ordre de la file des recherches de réseau : les concurrentes d'abord ; puis les apps de la liste de départ jamais
