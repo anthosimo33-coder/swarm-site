@@ -25,7 +25,7 @@
  * fournisseur les relève sans erreur (TikTok ne sert pas leur page d'intégration) et 9 listes vides → 3,5 % des
  * comptes restent au relevé payant. Un profil « absent » n'est donc PAS un compte disparu.
  */
-import { BALANCE_PROBE_MS, CURVE_COUNTS, CURVE_PAGES_PER_PASS, cleanText, langBucket, mentionLabel, type CurveCounts, type SignalInput } from "./radarSignalsMath";
+import { BALANCE_PROBE_MS, CURVE_COUNTS, CURVE_PAGES_PER_PASS, cleanText, langBucket, mentionLabel, type CurveCounts, type SavedKey, type SignalInput } from "./radarSignalsMath";
 import { cutJson } from "./radarStoreMath";
 import { isTikTokVideoId, reasonOf, type UnavailableReason } from "./radarAvailabilityMath";
 import { SELF_SEE_STATUS_CODE, parseTikTokPublicPage, refusalLabel } from "./tiktokPublicPage";
@@ -243,10 +243,12 @@ export type FreeWhy = "absent" | "suspect" | "private" | "empty" | "detail" | "g
 /**
  * `gapChecked` : la dernière vidéo connue manquait à la liste, et sa page dit qu'elle n'est plus en ligne (`gapGone`) :
  * le relevé a continué ; l'appelant la marque vérifiée (radarNetworks.markGapChecked), comme le relevé payant l'aurait fait.
+ * `newest` d'un échec : la vidéo que le relevé payant doit retrouver, page après page (un trou, ou un trou vérifié dont
+ * une page de vidéo a manqué ensuite) ; `seen` : ce que la page de cette vidéo a dit (la mesure, cf GAP_FREE_CHECK).
  */
 export type FreeRead =
   | { ok: true; videos: SignalInput[]; light: LightVideo[]; profile: { fans: number; bio: string }; pages: number; gapChecked?: string }
-  | { ok: false; why: FreeWhy; pages: number; reason?: string; newest?: NewestKnown };
+  | { ok: false; why: FreeWhy; pages: number; reason?: string; newest?: NewestKnown; seen?: GapSeen };
 
 /**
  * La liste d'un profil ne donne que ses 10 à 13 dernières vidéos (le relevé payant, 9). Un compte qui en publie plus
@@ -315,6 +317,53 @@ export function gapGone(html: string, videoId: string): boolean {
 }
 
 /**
+ * POURQUOI EN MESURE (GAP_FREE_CHECK = false, revue du 20/11/2026). `gapGone` tranche sur ce que TikTok sert AUX
+ * SERVEURS (fetchEmbedPage, sans en-têtes de navigateur) pour une vidéo partie, et rien ne l'a mesuré de là (le 13/11,
+ * le même code lisait 31 profils sur 32 du poste, 0 sur 6 des serveurs). Le risque : une vidéo EN LIGNE servie sous
+ * 10204 (une publication « photo » demandée en /video/<id>, que la liste d'intégration ne porte pas : 2 des 932 vidéos
+ * du payant de la mesure C4) serait marquée vérifiée, et le relevé payant du trou, qui l'aurait retrouvée, ne
+ * partirait plus. Aucune page n'a mesuré la règle : le banc (scripts/radar-bancs/trou.ts : 301 vidéos `gapChecked`
+ * par le payant, 40 vivantes, les 2 photos ; 380 pages au plus) est écrit mais pas lancé — depuis le 20/11 19 h 35,
+ * aucune requête du poste vers TikTok (son robots.txt interdit le site aux agents IA) ; le fondateur le lancera s'il le
+ * décide. Seul rejeu possible (sans réseau) : les 2 pages « photo » relevées avant l'arrêt — servies (statusCode 0,
+ * l'une sans compteurs), gapGone faux : pas de faux « partie », mais deux cas ne prouvent rien, et aucune page 10204
+ * relevée n'existe à rejouer (les tests en construisent, sur le relevé du 14/09 : 416 posts, cf refusalLabel).
+ * Tant que c'est faux : la page est lue (si un relevé payant peut partir au passage, cf `freeRead`), la décision part
+ * avec le trou (`GapSeen`), le relevé payant « trou » part comme avant, et l'accord des deux est compté, par compte
+ * (radarUsage.measured, `gapMeasure`). La bascule se fera sur cette preuve : des « trou-egal », aucun « trou-ecart ».
+ */
+export const GAP_FREE_CHECK = false;
+
+/** Ce que la page de la vidéo partie a dit (`gone` : gapGone), la liste du profil à cet instant (`listed`, `at`). */
+export type GapSeen = { gone: boolean; listed: string[]; at: number };
+
+/**
+ * La mesure côte à côte d'un trou dont la page a été lue, par compte (radarUsage.measured du poste « tiktok ») :
+ *  trou-egal : la page la disait partie, le payant aussi (passé avant sa date sans la voir), sans rien rapporter de plus
+ *    récent qu'elle que la liste du profil n'avait déjà : la page aurait suffi ;
+ *  trou-ecart : la page la disait partie, mais le payant l'a retrouvée, ou a rapporté une vidéo plus récente qu'elle
+ *    absente de la liste (une « photo », par exemple) : la bascule l'aurait perdue — un seul cas suffit à la refuser ;
+ *  trou-manque : la page ne concluait pas (vidéo servie, illisible, refusée, autre code) et le payant n'a rien
+ *    rapporté de plus : une économie que la règle manque ;
+ *  trou-paye : la page ne concluait pas, et le payant a retrouvé la vidéo ou rapporté plus : payer était utile ;
+ *  trou-panne : le payant n'a pas conclu (première page refusée, plus de crédits, GAP_PAGES lues sans passer sa date).
+ * Une vidéo publiée après le début du passage (`at`) ne compte pas : la liste ne pouvait pas l'avoir.
+ */
+export type GapMeasure = "trou-egal" | "trou-ecart" | "trou-manque" | "trou-paye" | "trou-panne";
+
+export function gapMeasure(
+  seen: GapSeen,
+  paid: { outcome: "read" | "error" | "stop"; videos: readonly { videoId: string; publishedAt: number }[]; reached: { done: boolean; found: boolean } },
+  newest: NewestKnown,
+): GapMeasure {
+  if (paid.outcome !== "read" || !paid.reached.done) return "trou-panne";
+  const listed = new Set(seen.listed);
+  const more = paid.reached.found || paid.videos.some((v) => v.publishedAt > newest.publishedAt && v.publishedAt <= seen.at && !listed.has(v.videoId));
+  if (seen.gone) return more ? "trou-ecart" : "trou-egal";
+  return more ? "trou-paye" : "trou-manque";
+}
+
+/**
  * Pourquoi un relevé payant est parti, compté à part dans `radarUsage.reasons` (l'écran du budget le montre) :
  * premier (le premier relevé d'un compte), repli (le gratuit n'a pas abouti), trou (liste trouée, cf `listGap`),
  * retard / coupure (pas pris par la voie gratuite, cf `overflowToPay`), sonde (relire le solde sous la réserve).
@@ -323,9 +372,10 @@ export type PaidReason = "premier" | "repli" | "trou" | "retard" | "coupure" | "
 
 /**
  * Le relevé gratuit d'un compte, de bout en bout. `page` lit une adresse ; `known` dit ce qu'on a déjà de ces
- * vidéos ; `newest`, la plus récente qu'on a de lui (sans elle, pas de contrôle de la liste). Rend les vidéos lues
- * en entier (dans la forme du relevé payant), celles dont seules les vues bougent, et le profil — ou la raison de
- * passer au payant.
+ * vidéos ; `newest`, la plus récente qu'on a de lui (sans elle, pas de contrôle de la liste) ; `gapPage`, si la page
+ * d'une vidéo partie peut être lue maintenant (absent : oui). Rend les vidéos lues en entier (dans la forme du relevé
+ * payant), celles dont seules les vues bougent, et le profil — ou la raison de passer au payant. `gapFree` : le trou
+ * vérifié sur la page dispense du payant (GAP_FREE_CHECK ; vrai pour les tests de la bascule).
  */
 export async function freeRead(
   handle: string,
@@ -333,11 +383,13 @@ export async function freeRead(
     page: (url: string) => Promise<FreePage>;
     known: (videoIds: string[]) => Promise<KnownVideo[]>;
     newest?: () => Promise<NewestKnown | null>;
+    gapPage?: () => boolean;
   },
   now: number,
   fallbackLang?: string,
   // Le compte n'a pas encore de pays : on en profite pour situer deux de ses vidéos déjà rangées.
   wantRegion = false,
+  gapFree: boolean = GAP_FREE_CHECK,
 ): Promise<FreeRead> {
   let pages = 1;
   const p = await io.page(freeProfileUrl(handle));
@@ -351,11 +403,15 @@ export async function freeRead(
   const known = await io.known(profile.videos.map((v) => v.videoId));
   let gapChecked: string | undefined;
   if (newest && listGap(profile.videos, newest)) {
-    // Sa page n'est lue que si la liste remonte au-delà d'elle : sinon, supprimée ou non, le trou reste possible.
-    if (!listReaches(profile.videos, known, newest)) return { ok: false, why: "gap", pages, newest };
+    // Sa page n'est lue que si la liste remonte au-delà d'elle (sinon, supprimée ou non, le trou reste possible), et
+    // qu'un relevé payant peut partir au passage (`gapPage` ; sinon rien à éviter ni à comparer : le compte reste dû,
+    // et sa page serait relue à chaque passage pour rien).
+    if (!listReaches(profile.videos, known, newest) || (io.gapPage && !io.gapPage())) return { ok: false, why: "gap", pages, newest };
     pages++;
     const page = await io.page(freeVideoUrl(handle, newest.videoId));
-    if (!page.ok || !gapGone(page.text, newest.videoId)) return { ok: false, why: "gap", pages, newest };
+    const seen: GapSeen = { gone: page.ok && gapGone(page.text, newest.videoId), listed: profile.videos.map((v) => v.videoId), at: now };
+    // En mesure, le payant part quand même : la décision l'accompagne, pour être comparée à ce qu'il rapporte.
+    if (!seen.gone || !gapFree) return { ok: false, why: "gap", pages, newest, seen };
     gapChecked = newest.videoId;
   }
   const byId = new Map(known.map((k) => [k.videoId, k]));
@@ -375,8 +431,10 @@ export async function freeRead(
       continue;
     }
     if (!parsed) {
-      // Une vidéo qu'on n'a pas encore ne peut pas entrer à moitié : le compte passe au relevé payant.
-      if (!before) return { ok: false, why: "detail", pages };
+      // Une vidéo qu'on n'a pas encore ne peut pas entrer à moitié : le compte passe au relevé payant. Après un trou
+      // vérifié, ce relevé payant reprend le trou (`newest`) : page après page jusqu'à sa date, comme avant la brique 4
+      // (une page seule laisserait au-delà de la 10e vidéo ce que la liste avait de plus).
+      if (!before) return { ok: false, why: "detail", pages, ...(gapChecked && newest ? { newest } : {}) };
       asLight();
       continue;
     }
@@ -501,8 +559,11 @@ export function paced(page: (url: string) => Promise<FreePage>, pause: () => Pro
   };
 }
 
-/** Un compte que la voie gratuite n'a pas relevé : pourquoi, et (liste trouée) la vidéo à retrouver en payant. */
-export type LaneMiss<A> = { account: A; why: FreeWhy; newest?: NewestKnown };
+/**
+ * Un compte que la voie gratuite n'a pas relevé : pourquoi, la vidéo à retrouver en payant (liste trouée, ou trou
+ * vérifié puis page de vidéo illisible) et ce que sa page a dit (`seen`, la mesure du trou).
+ */
+export type LaneMiss<A> = { account: A; why: FreeWhy; newest?: NewestKnown; seen?: GapSeen };
 
 /**
  * Un profil qui n'a rien à lire, ni gratuitement ni en payant. Vérifié le 16/11/2026 sur les 25 comptes suivis
@@ -546,9 +607,22 @@ export function missCounts(failed: readonly { why: FreeWhy }[]): Partial<Record<
  * gratuit ou payant, et par une erreur de relevé) ; le payant ne part qu'au SECOND échec d'affilée. Relu gratuitement
  * entre-temps : un appel payant évité (radarUsage.saved.repli, cf `heldSpared`).
  * La qualité ne bouge pas : le compte est relu gratuitement (la même donnée que le payant : mesures du 13/11 et C4,
- * cf l'en-tête et FIRST_FREE_PER_PASS) ou en payant comme avant — un passage plus tard au plus, et seulement s'il
- * reste dans la fenêtre où `overflowToPay` laisse un compte attendre la voie : le second regard d'un compte qui a
- * publié ces 24 heures (à H+18, avant H+24) glisse de 20 minutes au plus, comme pour un compte pas atteint.
+ * cf l'en-tête et FIRST_FREE_PER_PASS) ou en payant comme avant, un passage plus tard. Un compte suivi n'est retenu
+ * que s'il reste dans la fenêtre où `overflowToPay` laisse un compte attendre la voie : pas relu au passage suivant
+ * (voie coupée par le temps), il attend comme un compte pas atteint, et `overflowToPay` le paie « retard » en fin de
+ * voie s'il en sort — le repli d'avant. Le second regard d'un compte qui a publié ces 24 heures (dû à H+18, avant
+ * H+24) glisse d'un passage : relu au passage suivant, avant H+18 h 20, ou payé à la fin de ce passage au second échec
+ * (H+18 h 28 au plus, contre H+18 h 18) ; pas relu, il attend comme tout compte pas atteint — loin de H+24. Un
+ * premier relevé pas relu au passage suivant y est payé, en tête (`heldFirstNotReached`, `missPlan`). Sous une part
+ * payante saturée, seuls les ratés que le passage aurait payés sont retenus, et leur part n'est pas dépensée ailleurs
+ * (`holdMisses`, `missPlan`) : la dépense du passage baisse d'autant, et ce qui suit garde la part qu'il avait.
+ * Pur changement d'ordre, aucune donnée autre : soit le compte est relu par la voie gratuite déjà validée, soit le
+ * payant d'avant part, plus tard. Le retard reste à chiffrer sur un rejeu des vraies fonctions. Économie estimée, pas
+ * mesurée (le 13/11 ne compte que les refus au PREMIER essai, que `retrying` rattrape déjà) : elle se lit sur les
+ * serveurs, radarUsage.saved.repli, avec radarSettings.lastFreeWhy (suspect, detail) et reasons.repli.
+ * Au dernier passage de l'instantané du 20/11 (14:09 UTC ; l'instantané est de 17:14, aucun passage entre-temps) :
+ * 98 comptes relevés gratuitement, 1 raté, 42 laissés au passage suivant, tous en retard de moins de 10 minutes. Dans
+ * ce régime, quasiment tout « suspect » ou « detail » d'un compte suivi est retenu un passage.
  */
 
 /** Un passage de relevé de comptes toutes les 10 minutes (convex/crons.ts) : l'attente d'un échec retenu. */
@@ -561,7 +635,9 @@ export const PASS_EVERY_MS = 10 * 60_000;
  * aucun passage ne l'a relu depuis deux : il a été mis de côté entre-temps (app en pause : un jour ; premier relevé au
  * palier « survie » : une heure) ou la voie ne l'atteignait plus, et son échec appartient à une autre rafale (elles
  * durent 5 à 20 secondes) : le nouvel échec est un premier échec, qui attend à son tour. Il n'attend pas sans fin :
- * sa fenêtre (`laneWait`) court depuis son heure (`dueAt`), que la retenue ne repousse pas.
+ * un compte suivi a sa fenêtre (`laneWait`), qui court depuis son heure (`dueAt`), que la retenue ne repousse pas ; un
+ * PREMIER relevé, que la voie n'atteint pas toujours (`firstReadMisses` ne le paie jamais pour un retard), est payé au
+ * passage suivant s'il n'y est pas relu (`heldFirstNotReached`).
  */
 export const FREE_MISS_KEEP_MS = 2 * PASS_EVERY_MS + PASS_EVERY_MS / 2;
 
@@ -571,9 +647,12 @@ export const MISS_HOLD: readonly FreeWhy[] = ["suspect", "detail"];
 /** Un compte dû, et le premier échec gratuit retenu sur lui (`freeMissAt` : l'heure du passage où il a échoué). */
 export type HeldAccount = LaneAccount & { first: boolean; freeMissAt?: number };
 
+/** Ce qu'un raté coûterait au payant, au plus : GAP_PAGES pages pour un trou à combler (`newest`), une sinon. */
+export const missCost = (m: { newest?: NewestKnown }): number => (m.newest ? GAP_PAGES : 1);
+
 /**
  * Parmi les ratés qui passeraient au payant (`splitMisses`), ceux qui attendent le passage suivant (`hold` : leur
- * échec est retenu, à l'heure du passage `now`) et ceux qui partent au payant maintenant (`pay`) :
+ * échec est retenu, à l'heure du passage `now`) et ceux qui partent au payant maintenant (`pay`, dans l'ordre reçu) :
  *  - une liste trouée (« gap », brique 4) : au payant, comme avant ;
  *  - un second échec d'affilée (un échec retenu il y a FREE_MISS_KEEP_MS au plus) : au payant, « repli » (ou
  *    « premier ») ;
@@ -582,26 +661,41 @@ export type HeldAccount = LaneAccount & { first: boolean; freeMissAt?: number };
  *    suivante, y serait refusé de nouveau ;
  *  - un compte qui sortirait de sa fenêtre avant le passage suivant (`overflowToPay` l'y paierait « retard » s'il
  *    n'était pas atteint), ou qui en est déjà sorti : au payant, comme avant ;
- *  - pas de budget payant au passage (`canPay` faux) : rien ne serait parti, rien n'est retenu (le compte reste dû de
- *    toute façon) — sinon sa relecture compterait un appel évité qui ne serait jamais parti ;
+ *  - un raté que la part payante du passage (`capacity`, les appels qui peuvent encore partir) n'aurait pas payé :
+ *    rien ne serait parti, rien n'est retenu (le compte reste dû de toute façon) — sinon sa relecture compterait un
+ *    appel évité qui ne serait jamais parti (radarUsage.saved.repli est un plancher). La part se consomme dans l'ordre
+ *    où le passage paie — premiers relevés, puis comptes suivis — au coût le plus haut de chacun (`missCost`) ; un
+ *    raté retenu garde la sienne (le passage ne la dépense pas ailleurs : `missPlan`, `limit`) ;
  *  - un PREMIER relevé suit la même règle (sa fenêtre court depuis son entrée ; mesure C4 : gratuit = payant), sauf au
- *    palier « survie » (`waitFirst`) : il y attend déjà une heure sans rien payer (`firstReadMisses`), rien à éviter.
+ *    palier « survie » (`waitFirst`) : il y attend déjà une heure sans rien payer (`firstReadMisses`), rien à éviter ni
+ *    à dépenser. Pas relu au passage suivant, il y est payé (`heldFirstNotReached`).
  */
 export function holdMisses<A extends HeldAccount>(
   paid: readonly LaneMiss<A>[],
-  pass: { laneOpen: boolean; canPay: boolean; waitFirst: boolean },
+  pass: { laneOpen: boolean; capacity: number; waitFirst: boolean },
   now: number,
 ): { pay: LaneMiss<A>[]; hold: A[] } {
-  const pay: LaneMiss<A>[] = [];
-  const hold: A[] = [];
-  for (const m of paid) {
+  const held = new Set<LaneMiss<A>>();
+  let left = pass.capacity;
+  for (const m of [...paid.filter((x) => x.account.first), ...paid.filter((x) => !x.account.first)]) {
     const a = m.account;
+    if (a.first && pass.waitFirst) continue;
     const second = a.freeMissAt !== undefined && now - a.freeMissAt <= FREE_MISS_KEEP_MS;
     const inWindow = now + PASS_EVERY_MS - a.dueAt < laneWait(a, now);
-    if (MISS_HOLD.includes(m.why) && pass.laneOpen && pass.canPay && !(a.first && pass.waitFirst) && !second && inWindow) hold.push(a);
-    else pay.push(m);
+    if (MISS_HOLD.includes(m.why) && pass.laneOpen && left > 0 && !second && inWindow) held.add(m);
+    left -= missCost(m);
   }
-  return { pay, hold };
+  return { pay: paid.filter((m) => !held.has(m)), hold: paid.filter((m) => held.has(m)).map((m) => m.account) };
+}
+
+/**
+ * Les PREMIERS relevés retenus au passage d'avant (un échec retenu de FREE_MISS_KEEP_MS au plus) que la voie n'a pas
+ * atteints : payés « premier » maintenant, comme un second échec. Un premier relevé pas atteint attend sinon le passage
+ * suivant sans limite tant que la voie reste ouverte (`firstReadMisses`, jamais payé pour un retard : le 16/11, des
+ * nouveaux comptes attendaient jusqu'à 12 heures), et la retenue d'un passage en aurait duré des heures.
+ */
+export function heldFirstNotReached<A extends HeldAccount>(notReached: readonly A[], now: number): A[] {
+  return notReached.filter((a) => a.first && a.freeMissAt !== undefined && now - a.freeMissAt <= FREE_MISS_KEEP_MS);
 }
 
 /** Le motif du relevé payant d'un compte suivi raté par la voie : « trou » pour une liste trouée, « repli » sinon. */
@@ -609,6 +703,17 @@ export const missReason = (m: { why: FreeWhy }): PaidReason => (m.why === "gap" 
 
 /** Un compte relu gratuitement qui portait un échec retenu : le relevé payant de cet échec n'est jamais parti. */
 export const heldSpared = (a: { freeMissAt?: number }): number => (a.freeMissAt === undefined ? 0 : 1);
+
+/**
+ * Ce qu'un relevé gratuit réussi a évité, en appels payants (radarUsage.saved, un plancher) : le relevé payant de
+ * l'échec retenu au passage d'avant (« repli », `heldSpared`), sinon celui du trou dont la page a dit la vidéo partie
+ * (« trou », `gapChecked`, brique 4 en bascule). Les deux à la fois n'en évitent qu'un : sans la brique 7, l'échec
+ * retenu partait au payant, qui rangeait la liste et effaçait le trou ; sans la brique 4, ce relevé-ci partait en « trou ».
+ */
+export function freeReadSaved(f: { gapChecked?: string }, acc: { freeMissAt?: number }): Partial<Record<SavedKey, number>> {
+  if (heldSpared(acc)) return { repli: heldSpared(acc) };
+  return f.gapChecked ? { trou: 1 } : {};
+}
 
 /*
  * SOUS LA RÉSERVE, LE RATÉ ATTEND LA SONDE (brique 8, 20/11/2026). Sous la réserve (solde − CREDIT_RESERVE ≤ 0,
@@ -657,8 +762,49 @@ export function reserveMisses<A extends HeldAccount>(
   if (!pass.reserveReached) return { pay: [...pay], defer: [] };
   // Ce que la brique 7 retiendrait si le payant pouvait partir (au palier « reserve », un premier relevé suit la même
   // règle : seul le palier « survie » le fait attendre, cf radarSignalsMath.tierDefers).
-  const retry = new Set(holdMisses(pay, { laneOpen: pass.laneOpen, canPay: true, waitFirst: false }, now).hold);
+  const retry = new Set(holdMisses(pay, { laneOpen: pass.laneOpen, capacity: Infinity, waitFirst: false }, now).hold);
   return { pay: pay.filter((m) => retry.has(m.account)), defer: pay.filter((m) => !retry.has(m.account)).map((m) => m.account) };
+}
+
+/**
+ * Ce que le passage (radarNetworks.accountReadsPass) fait des comptes que la voie n'a pas relevés, avant tout relevé
+ * payant : `paid`, les ratés qui passeraient au payant (`splitMisses`) ; `notReached`, ceux qu'elle n'a pas pris ;
+ * `n`, la part payante du passage. Dans l'ordre où le passage paie :
+ *  1. les PREMIERS relevés retenus au passage d'avant et pas atteints (`heldFirstNotReached`) : payés « premier » en
+ *     tête de `firstPay` (au palier « survie », ils attendent l'heure habituelle, `firstDefer`). Leur part est prise
+ *     AVANT toute retenue : un raté retenu la leur prendrait, et ils attendraient encore ;
+ *  2. la brique 7 (`holdMisses`) sur la part qui reste : `hold`, retenus (holdFreeMisses). Leur part n'est dépensée
+ *     nulle part ailleurs (`limit` = n − retenus, pour tout ce qui suit) : l'appel évité l'est vraiment, et le reste
+ *     (comptes suivis, débordement « retard ») garde la part qu'il avait sans la brique ;
+ *  3. la brique 8 (`reserveMisses`) : sous la réserve, `reserveDefer` attend la sonde ;
+ *  4. les premiers relevés (`firstReadMisses`) : `firstPay` (« premier ») ou `firstDefer` (palier « survie ») ;
+ *  5. `missPay` : les comptes suivis ratés, au payant dans l'ordre reçu (« trou » ou « repli », avec la vidéo à
+ *     retrouver d'un trou, cf `missReason`).
+ * Ce que la voie n'a pas pris parmi les comptes suivis reste à `overflowToPay`, jugé à l'heure de la fin de la voie.
+ */
+export function missPlan<A extends HeldAccount>(
+  paid: readonly LaneMiss<A>[],
+  notReached: readonly A[],
+  pass: { laneOpen: boolean; n: number; waitFirst: boolean; reserveReached: boolean },
+  now: number,
+): { hold: A[]; reserveDefer: A[]; firstPay: A[]; firstDefer: A[]; missPay: LaneMiss<A>[]; limit: number } {
+  const late = heldFirstNotReached(notReached, now);
+  const held = holdMisses(paid, { laneOpen: pass.laneOpen, capacity: pass.n - (pass.waitFirst ? 0 : late.length), waitFirst: pass.waitFirst }, now);
+  const reserve = reserveMisses(held.pay, { reserveReached: pass.reserveReached, laneOpen: pass.laneOpen }, now);
+  const first = firstReadMisses(
+    [...late, ...reserve.pay.filter((m) => m.account.first).map((m) => m.account)],
+    notReached.filter((a) => a.first && !late.includes(a)),
+    pass.laneOpen,
+    pass.waitFirst,
+  );
+  return {
+    hold: held.hold,
+    reserveDefer: reserve.defer,
+    firstPay: first.pay,
+    firstDefer: first.defer,
+    missPay: reserve.pay.filter((m) => !m.account.first),
+    limit: Math.max(0, pass.n - held.hold.length),
+  };
 }
 
 /** Une page du relevé payant (ScrapeCreators), sa dépense déjà comptée. */
@@ -713,7 +859,7 @@ export async function paidRead(
  */
 export async function runFreeLane<A>(
   accounts: readonly A[],
-  read: (account: A) => Promise<{ ok: true } | { ok: false; why: FreeWhy; reason?: string; newest?: NewestKnown }>,
+  read: (account: A) => Promise<{ ok: true } | { ok: false; why: FreeWhy; reason?: string; newest?: NewestKnown; seen?: GapSeen }>,
   alive: () => boolean,
   start: FreeState = freeStart(),
 ): Promise<{ state: FreeState; failed: LaneMiss<A>[]; notReached: A[] }> {
@@ -727,7 +873,7 @@ export async function runFreeLane<A>(
     }
     const r = await read(account);
     state = freeNote(state, r.ok ? "ok" : r.why, r.ok ? undefined : r.reason);
-    if (!r.ok) failed.push({ account, why: r.why, ...(r.newest ? { newest: r.newest } : {}) });
+    if (!r.ok) failed.push({ account, why: r.why, ...(r.newest ? { newest: r.newest } : {}), ...(r.seen ? { seen: r.seen } : {}) });
   }
   return { state, failed, notReached };
 }

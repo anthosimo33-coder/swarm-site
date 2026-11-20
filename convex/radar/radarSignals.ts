@@ -782,13 +782,14 @@ export const recordRun = internalMutation({
     reasons: v.optional(v.record(v.string(), v.number())),
     // Appels payants évités par une page publique, par brique (radarSignalsMath.SavedKey) : pas comptés dans `credits`.
     saved: v.optional(v.record(v.string(), v.number())),
-    // Une mesure côte à côte (page publique contre payant), EN VIDÉOS, par verdict (radarFreeMath.CurveMeasure).
+    // Une mesure côte à côte (page publique contre payant), par verdict : courbe en VIDÉOS (radarFreeMath.CurveMeasure),
+    // trou en comptes (radarFreeMath.GapMeasure).
     measured: v.optional(v.record(v.string(), v.number())),
   },
   handler: async (ctx, a): Promise<void> => {
     const settings = await ensureSettings(ctx);
     const day = dayKeyParis(a.now);
-    const spared = Object.values(a.saved ?? {}).some((c) => c > 0);
+    const spared = Object.values({ ...a.saved, ...a.measured }).some((c) => c > 0);
     if (a.calls > 0 || a.credits > 0 || spared) {
       const row = await ctx.db
         .query("radarUsage")
