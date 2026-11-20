@@ -203,4 +203,13 @@ const topSelectors = (css) => {
   ok(!/m-base\.css/.test(main), 'Q32 : m-base.css jamais importée d\'office (ses règles globales ne touchent pas l\'ordinateur)');
 }
 
+// ─── F25 : la mise en page mobile suit aussi un téléphone en paysage, partout où le site la choisit ───
+{
+  const runtime = fs.readFileSync(path.join(root, 'src/runtime.js'), 'utf8');
+  const q = (runtime.match(/export const MOBILE_QUERY = '([^']+)'/) || [])[1];
+  ok(q === '(max-width: 860px), (pointer: coarse) and (max-height: 500px)', `F25 : src/runtime.js exporte la condition mobile, largeur ou téléphone en paysage (${q ?? 'absente'})`);
+  const pre = fs.readFileSync(path.join(root, 'scripts/prerender.mjs'), 'utf8');
+  ok(!!q && /MOBILE_QUERY/.test(pre) && !/\(max-width: 860px\)\{#app/.test(pre) && !/'\(max-width: 860px\)'/.test(runtime), 'F25 : pré-rendu et pages publiques basculent sur cette condition, plus sur la seule largeur');
+}
+
 end();

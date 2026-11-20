@@ -1,7 +1,8 @@
 // Pré-rendu de la landing et des tarifs (audit F9, 19/11), lancé par npm run build après vite build.
 // Avant, index.html et tarifs.html ne portaient qu'un <div id="app"></div> vide : rien ne s'affichait avant ~37 Ko gz
 // de JS, et un robot ou un aperçu de partage sans JS ne voyait aucun texte. Ici, les deux versions de chaque page
-// (ordinateur et téléphone) sont rendues dans #app, basculées par la même largeur que l'app (860 px) ; au chargement du
+// (ordinateur et téléphone) sont rendues dans #app, basculées par la même condition que l'app (MOBILE_QUERY de
+// src/runtime.js : 860 px, ou un écran tactile de moins de 500 px de haut, audit F25) ; au chargement du
 // JS, main-lp.js et main-tarifs.js vident #app et rendent la page dans la même tâche (pas d'écran vide entre les deux).
 // Le rendu fige l'heure du build : le décompte du Black Friday et son bandeau suivent dès que le JS tourne.
 // Usage : node scripts/prerender.mjs [dossier du build, défaut dist]
@@ -14,7 +15,8 @@ import { renderToString } from 'preact-render-to-string';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.resolve(process.argv[2] ?? path.join(root, 'dist'));
 const PAGES = [['index.html', 'LP', 'LPMobile'], ['tarifs.html', 'Tarifs', 'TarifsMobile']];
-const SWITCH = '<style>@media (max-width: 860px){#app>.prerender-d{display:none}}@media (min-width: 861px){#app>.prerender-m{display:none}}</style>';
+const { MOBILE_QUERY } = await import(path.join(root, 'src/runtime.js'));
+const SWITCH = `<style>#app>.prerender-m{display:none}@media ${MOBILE_QUERY}{#app>.prerender-d{display:none}#app>.prerender-m{display:block}}</style>`;
 
 for (const [file, desktop, mobile] of PAGES) {
   const target = path.join(dist, file);
