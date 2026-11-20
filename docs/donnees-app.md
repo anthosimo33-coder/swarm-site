@@ -172,6 +172,22 @@ Un compte dont `users.pro` n'est pas `true` reçoit de `boards.get` :
 À l'écran (`src/app/main.js`) : Apps devient l'aperçu (`ApercuA`, `MApercuApps`) ; Accueil y mène ; tout écran fermé ouvre
 la fenêtre des formules (`FormulesA`, `MFormules`). Test du verrou : `npm run test:apercu` (et ses mutants).
 
+## Quota de pages des abonnés (audit S22)
+Un abonné ne lit une page de `boards.get` qu'avec son laissez-passer (`{ key, pass }`), délivré par la mutation
+`boards.passes({ keys })` (`convex/boardQuota.ts`) :
+- au plus **300 pages par heure et 1 500 par 24 h** (décision du 20/11) ; chaque fenêtre part de la première page
+  comptée après la précédente. Au-delà, `passes` rend les clés dans `refused` et l'heure de reprise dans `until` ;
+- un laissez-passer vaut **2 h** (`exp`), pour cette clé et ce compte : une page relue dans ce délai ne compte pas ;
+- `stats` se lit sans laissez-passer ; un compte sans abonnement n'en reçoit pas et n'en a pas besoin (l'aperçu) ;
+- sans laissez-passer valable, `boards.get` lève l'erreur `LAISSEZ_PASSER` sans rien lire. La requête ne lit ni n'écrit
+  le compteur (`pageQuota`, une ligne par compte, une écriture par lot de pages) : il ne relance pas les pages ouvertes ;
+- le premier refus de chaque fenêtre est tracé dans les journaux Convex (`[quota S22] compte …`).
+
+Côté app (`src/app/passes.js`) : les pages demandées dans le même tour partent en un appel (60 clés au plus), le
+laissez-passer est gardé jusqu'à son échéance et renouvelé quand le serveur le réclame. Au-delà du quota, la page vaut
+`null` et porte `quota` (heure de reprise) : le routeur affiche « Beaucoup de pages ouvertes … rouvrent à 15 h 37 », les
+pages déjà ouvertes restent lisibles, et celles en attente s'ouvrent seules à l'heure dite. Banc : `npm run test:quota`.
+
 ## Abonnement (Whop)
 `users.pro` ouvre tout Kopycat. Il est tenu par Whop (`convex/whop.ts`) :
 - « Passer Pro » appelle `whop.checkout` (action, compte connecté et pas déjà Pro), qui crée chez Whop un paiement pour la

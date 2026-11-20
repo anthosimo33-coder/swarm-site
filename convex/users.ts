@@ -203,6 +203,10 @@ export const eraseAccount = internalMutation({
     for (const row of await ctx.db.query("checkoutLinks").withIndex("by_user_key", (q) => q.eq("userId", userId)).collect()) {
       await ctx.db.delete(row._id);
     }
+    // Le compteur de pages (convex/boardQuota.ts, audit S22).
+    for (const row of await ctx.db.query("pageQuota").withIndex("by_user", (q) => q.eq("userId", userId)).collect()) {
+      await ctx.db.delete(row._id);
+    }
     for (const s of await ctx.db.query("authSessions").withIndex("userId", (q) => q.eq("userId", userId)).collect()) {
       await dropSession(ctx, s._id);
     }

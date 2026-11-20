@@ -10,30 +10,41 @@
  * @param opts    keep(id) : garder toujours ; max : abonnements libres gardés au plus ; idleMs : délai avant fermeture
  */
 export function createWatcher(client, { keep = () => false, max = 20, idleMs = 60_000, now = () => Date.now() } = {}) {
-  const entries = new Map(); // id -> { value, listeners: Set, stop, at }
-  /** L'abonnement `id` (créé au besoin) : { value, listeners } ; value vaut undefined tant qu'il charge. */
-  function watch(fn, id, args) {
+  const entries = new Map(); // id -> { value, listeners: Set, stop, at, args }
+  /**
+   * L'abonnement `id` : { value, listeners, args } ; value vaut undefined tant qu'il charge. `args` null : l'entrée sans
+   * abonnement (créée au besoin), en attente d'arguments (un laissez-passer, src/app/passes.js). Des arguments différents
+   * de ceux de l'abonnement en cours le remplacent ; l'entrée, ses écouteurs et sa dernière valeur restent.
+   * `onError(e, entry)` : vrai si l'erreur de la requête est prise en charge (la valeur reste celle d'avant).
+   */
+  function watch(fn, id, args, onError) {
     let entry = entries.get(id);
     if (!entry) {
-      const query = client.watchQuery(fn, args);
-      entry = { value: undefined, listeners: new Set(), stop: null, at: now() };
-      const read = () => {
-        try {
-          // Pendant un renouvellement de session, le serveur renvoie tout : on garde la valeur reçue
-          // (sinon l'écran retomberait un instant sur un état vide).
-          const value = query.localQueryResult();
-          if (value !== undefined) entry.value = value;
-        } catch {
-          entry.value = null; // erreur de la requête : l'écran montre son état vide
-        }
-        entry.listeners.forEach((f) => f());
-      };
-      entry.stop = query.onUpdate(read);
-      read();
+      entry = { value: undefined, listeners: new Set(), stop: null, at: now(), args: null };
       entries.set(id, entry);
     }
+    if (args && !(entry.args && JSON.stringify(entry.args) === JSON.stringify(args))) arm(entry, fn, args, onError);
     entry.at = now();
     return entry;
+  }
+  function arm(entry, fn, args, onError) {
+    if (typeof entry.stop === 'function') entry.stop();
+    entry.args = args;
+    const query = client.watchQuery(fn, args);
+    const read = () => {
+      try {
+        // Pendant un renouvellement de session, le serveur renvoie tout : on garde la valeur reçue
+        // (sinon l'écran retomberait un instant sur un état vide).
+        const value = query.localQueryResult();
+        if (value !== undefined) entry.value = value;
+      } catch (e) {
+        if (onError && onError(e, entry)) return;
+        entry.value = null; // erreur de la requête : l'écran montre son état vide
+      }
+      entry.listeners.forEach((f) => f());
+    };
+    entry.stop = query.onUpdate(read);
+    read();
   }
   /** Ferme les abonnements libres : ni gardés, ni écoutés ; au-delà de `max` (les plus anciens), ou inutilisés depuis idleMs. */
   function sweep() {

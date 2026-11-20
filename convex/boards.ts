@@ -1,7 +1,8 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { liveUserId } from "./session";
-import { query, type QueryCtx } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
 import { SIGNED, signMark, signMedia } from "./coverSign";
+import { FREE_KEYS, KEY_MAX, PASS_BATCH, PASS_ERROR, PASS_MS, passFor, passOk, takePages } from "./boardQuota";
 
 /**
  * Une page prête pour l'écran. Audit F28 (19/11) : chaque lecture recopiait tout l'arbre de la page pour y réécrire les
@@ -110,13 +111,48 @@ async function preview(ctx: QueryCtx, key: string): Promise<unknown> {
 /**
  * Les données d'un écran de l'app (« apps », « app:astraai », « video:<id> »…), réservées aux personnes connectées.
  * null : pas connecté, ou écran sans données ; LOCKED : fermé sans abonnement (preview).
+ * Abonné : chaque page demande son laissez-passer (`pass`, délivré par `passes`, audit S22 : convex/boardQuota.ts) ;
+ * sans laissez-passer valable, l'erreur PASS_ERROR, sans rien lire (l'app en demande un et reprend l'abonnement ; une
+ * app d'avant le quota y montre « les données arrivent »). Rien n'est lu ni écrit pour compter : la requête ne relance
+ * pas les pages déjà ouvertes quand le compteur bouge.
  */
 export const get = query({
-  args: { key: v.string() },
-  handler: async (ctx, { key }) => {
+  args: { key: v.string(), pass: v.optional(v.string()) },
+  handler: async (ctx, { key, pass }) => {
     const userId = await liveUserId(ctx);
     if (userId === null) return null;
-    if ((await ctx.db.get(userId))?.pro === true) return read(ctx, key);
+    if ((await ctx.db.get(userId))?.pro === true) return proRead(ctx, userId, key, pass);
     return preview(ctx, key);
+  },
+});
+
+async function proRead(ctx: QueryCtx, userId: string, key: string, pass: string | undefined): Promise<unknown> {
+  if (!FREE_KEYS.has(key) && !passOk(userId, key, pass, Date.now())) throw new ConvexError({ code: PASS_ERROR });
+  return read(ctx, key);
+}
+
+/**
+ * Les laissez-passer des pages qu'un abonné ouvre (audit S22) : un par clé, valable PASS_MS, comptés sur le quota
+ * (convex/boardQuota.ts). `refused` : les clés au-delà du quota, `until` : quand de nouvelles pages rouvrent, `at` :
+ * l'heure du serveur (l'app en tire son échéance, quelle que soit l'avance ou le retard de son horloge). Sans
+ * abonnement, rien (l'aperçu n'en demande pas). PASS_BATCH clés au plus par appel ; l'app regroupe ses demandes.
+ */
+export const passes = mutation({
+  args: { keys: v.array(v.string()) },
+  handler: async (ctx, { keys }) => {
+    const none = { passes: {} as Record<string, string>, exp: 0, refused: [] as string[], until: null as number | null, at: Date.now() };
+    const userId = await liveUserId(ctx);
+    if (userId === null || (await ctx.db.get(userId))?.pro !== true) return none;
+    const want = [...new Set(keys)].filter((k) => k.length > 0 && k.length <= KEY_MAX && !FREE_KEYS.has(k)).slice(0, PASS_BATCH);
+    if (!want.length) return none;
+    const now = Date.now();
+    const { granted, until } = await takePages(ctx, userId, want.length, now);
+    const exp = now + PASS_MS;
+    const out: Record<string, string> = {};
+    for (const key of want.slice(0, granted)) {
+      const p = passFor(userId, key, exp);
+      if (p) out[key] = p;
+    }
+    return { passes: out, exp, refused: want.slice(granted), until, at: now };
   },
 });

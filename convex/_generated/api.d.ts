@@ -13,6 +13,7 @@ import type * as auth from "../auth.js";
 import type * as authErrors from "../authErrors.js";
 import type * as authLimits from "../authLimits.js";
 import type * as background from "../background.js";
+import type * as boardQuota from "../boardQuota.js";
 import type * as boards from "../boards.js";
 import type * as coverHttp from "../coverHttp.js";
 import type * as coverSign from "../coverSign.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   authErrors: typeof authErrors;
   authLimits: typeof authLimits;
   background: typeof background;
+  boardQuota: typeof boardQuota;
   boards: typeof boards;
   coverHttp: typeof coverHttp;
   coverSign: typeof coverSign;

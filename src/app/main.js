@@ -30,6 +30,7 @@ import { client, mount } from '../auth.js';
 import { MOBILE_QUERY } from '../runtime.js';
 import { ROUTES } from './routes.js';
 import { createWatcher } from './watcher.js';
+import { createBoards, untilText } from './passes.js';
 import { APERCU, HOME, LOAD_TIMEOUT_MS, SIGN_OUT, isOpen, layoutOnly, loadingView, mayLoadBeforeUser, previewView, routeCodeNeeded, routeMatcher, routesToWarm, safeDecode as dec, screenQuery } from './plan.js';
 import { scrollMemory } from './scroll.js';
 import '../styles/ds/tokens.css';
@@ -113,7 +114,9 @@ const matchRoute = routeMatcher(ROUTES);
 // filtre) est fermé quand plus aucun écran ne le lit, au-delà de 20 ou après 60 s (audit F3).
 const KEPT = new Set([...WARM.map((k) => `board:${k}`), ...SAVED.map((k) => `saved:${k}`)]);
 const watcher = createWatcher(client, { keep: (id) => KEPT.has(id) });
-const board = (key) => watcher.watch(api.boards.get, `board:${key}`, { key });
+// Audit S22 : un abonné ouvre chaque page avec son laissez-passer, compté sur son quota (src/app/passes.js).
+const who = { pro: false }; // tenu par App, lu par les laissez-passer
+const { board } = createBoards({ client, watcher, get: api.boards.get, passes: api.boards.passes, isPro: () => who.pro });
 const savedEntry = (key) => watcher.watch(api.saved.get, `saved:${key}`, { key });
 /** Enregistre ce que la personne garde ; l'écran le voit aussitôt (mise à jour optimiste). */
 function save(key, value) {
@@ -211,6 +214,7 @@ function App() {
   };
   const proRef = useRef(false);
   proRef.current = !!(user && user.pro);
+  who.pro = proRef.current;
   // Sans abonnement, l'aperçu remplace Apps : son code part dès qu'on sait qui est là (audit F4).
   const free = !!user && !user.pro;
   useEffect(() => { if (free) (MOBILE.matches ? MApercuApps : Apercu).preload(); }, [free]);
@@ -507,6 +511,9 @@ function App() {
   if (!user || !screen) return null;
   const fresh = screen.key ? get(screen.key) : undefined;
   const data = view ? view.data : fresh;
+  // Quota de pages atteint (audit S22) : l'écran dit quand les nouvelles pages rouvrent.
+  const quota = data === null && screen.key ? board(screen.key).quota : null;
+  if (quota) return h(Quota, { until: quota });
   // Document absent : jamais l'exemple du canevas à la place des données.
   if (data === null) return h(Missing, { fiche: Object.keys(screen.params).length > 0 });
   const onPlans = () => setPlans(true);
@@ -595,6 +602,18 @@ function Stalled() {
     h('h1', null, 'La connexion est perdue'),
     h('p', null, 'L’écran ne se charge pas. Vérifie ta connexion, puis réessaie.'),
     h('a', { href: window.location.pathname + window.location.search, onClick: (e) => { e.preventDefault(); window.location.reload(); } }, 'Réessayer'),
+  );
+}
+
+/**
+ * Quota de pages atteint (audit S22, convex/boardQuota.ts : 300 par heure, 1 500 par 24 h). Les pages déjà ouvertes
+ * restent lisibles ; celle-ci s'ouvre d'elle-même à l'heure dite (src/app/passes.js).
+ */
+function Quota({ until }) {
+  return h('main', { class: 'app-missing', role: 'status' },
+    h('h1', null, 'Beaucoup de pages ouvertes'),
+    h('p', null, `Tu as ouvert beaucoup de pages en peu de temps. Les nouvelles pages rouvrent ${untilText(until)} ; celles déjà ouvertes restent lisibles.`),
+    h('a', { href: HOME }, 'Retour à l’accueil'),
   );
 }
 
