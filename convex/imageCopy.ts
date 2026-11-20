@@ -1,5 +1,7 @@
 "use node";
 
+import { promises as dns } from "node:dns";
+import { isIP } from "node:net";
 import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 
@@ -30,7 +32,123 @@ const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15
  * coupée sans rien écrire — 14/11, 10 h 09) : 15 s par appel, lecture du corps comprise.
  */
 const FETCH_MS = 15_000;
-const get = (url: string, init: RequestInit = {}) => fetch(url, { ...init, signal: AbortSignal.timeout(FETCH_MS) });
+/** Page d'accueil d'un site, lue pour y trouver son icône : ses premiers octets seulement. */
+const MAX_HTML_BYTES = 200_000;
+const MAX_HOPS = 5;
+
+/**
+ * Hôtes des plateformes d'où viennent miniatures, photos et icônes App Store : connus, leurs adresses ne sont pas
+ * vérifiées une à une. Tout autre hôte (site d'une app web) est résolu et refusé s'il mène au réseau privé.
+ */
+const KNOWN_HOSTS = /(^|\.)(tiktok\.com|tiktokcdn\.com|tiktokcdn-us\.com|tiktokcdn-eu\.com|ibyteimg\.com|byteimg\.com|muscdn\.com|tiktokv\.com|mzstatic\.com|apple\.com|instagram\.com|cdninstagram\.com|fbcdn\.net)$/i;
+/** Une adresse IP du réseau privé, local, de bouclage ou réservée (v4 et v6). */
+export function privateIp(ip: string): boolean {
+  const v = isIP(ip);
+  if (v === 4) {
+    const [a, b] = ip.split(".").map(Number);
+    return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
+  }
+  if (v === 6) {
+    const x = ip.toLowerCase();
+    if (x === "::" || x === "::1") return true;
+    const v4 = x.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (v4) return privateIp(v4[1]);
+    return /^(fc|fd|fe8|fe9|fea|feb|ff)/.test(x) || x.startsWith("64:ff9b:") || x.startsWith("2001:db8:");
+  }
+  return true; // illisible : refusé
+}
+/**
+ * L'adresse peut-elle être lue ? Audit S33 (19/11) : toute adresse, de tout schéma, vers tout hôte, était lue (une
+ * icône déclarée en http://169.254.169.254/… ou vers le réseau interne passait). Seulement https, jamais une IP écrite
+ * en clair ni un nom local ; un hôte inconnu doit résoudre vers des adresses publiques.
+ */
+export async function readable(url: string): Promise<boolean> {
+  let u: URL;
+  try { u = new URL(url); } catch { return false; }
+  if (u.protocol !== "https:" || u.username || u.password) return false;
+  const host = u.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  if (!host || isIP(host) || !host.includes(".") || /(^|\.)(localhost|local|internal|intranet|lan|home|corp|localdomain)$/.test(host)) return false;
+  if (KNOWN_HOSTS.test(host)) return true;
+  try {
+    const addrs = await dns.lookup(host, { all: true });
+    return addrs.length > 0 && addrs.every((a) => !privateIp(a.address));
+  } catch {
+    return false;
+  }
+}
+/**
+ * GET avec délai, en suivant les redirections une à une : chaque saut est revérifié (readable). null si une adresse
+ * est refusée ou s'il y a trop de sauts.
+ */
+async function get(url: string, init: RequestInit = {}): Promise<Response | null> {
+  const signal = AbortSignal.timeout(FETCH_MS);
+  for (let hop = 0; hop <= MAX_HOPS; hop++) {
+    if (!(await readable(url))) return null;
+    const res = await fetch(url, { ...init, redirect: "manual", signal });
+    const to = res.status >= 300 && res.status < 400 ? res.headers.get("location") : null;
+    if (!to) return res;
+    await res.body?.cancel().catch(() => {});
+    url = new URL(to, url).toString();
+  }
+  return null;
+}
+/**
+ * Le corps, lu au plus `max` octets : null au-delà (lecture arrêtée), ou si le serveur annonce déjà plus. Audit S33 :
+ * le corps était lu en entier avant d'être comparé aux 4 Mo ; un flux de centaines de Mo tuait l'action de copie.
+ */
+async function readCapped(res: Response, max: number, cut = false): Promise<Uint8Array | null> {
+  const announced = Number(res.headers.get("content-length") ?? NaN);
+  if (!cut && Number.isFinite(announced) && announced > max) { await res.body?.cancel().catch(() => {}); return null; }
+  if (!res.body) return new Uint8Array(0);
+  const reader = res.body.getReader();
+  const parts: Uint8Array[] = [];
+  let n = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (n + value.byteLength > max) {
+      await reader.cancel().catch(() => {});
+      if (!cut) return null;
+      parts.push(value.subarray(0, max - n));
+      n = max;
+      break;
+    }
+    parts.push(value);
+    n += value.byteLength;
+  }
+  const out = new Uint8Array(n);
+  let at = 0;
+  for (const p of parts) { out.set(p, at); at += p.byteLength; }
+  return out;
+}
+
+/**
+ * Le format réel d'une image, d'après ses premiers octets : seulement des formats matriciels (pas de SVG, qui peut
+ * porter un script). Audit S30 (19/11) : le type annoncé par le serveur suffisait, et une icône SVG était rangée telle
+ * quelle, servie depuis le stockage Convex, où un script tournait à l'ouverture directe de l'adresse.
+ */
+export function sniff(b: Uint8Array): string | null {
+  const at = (i: number, ...xs: number[]) => xs.every((x, j) => b[i + j] === x);
+  const ascii = (i: number, t: string) => [...t].every((c, j) => b[i + j] === c.charCodeAt(0));
+  if (b.length < 12) return null;
+  if (at(0, 0xff, 0xd8, 0xff)) return "image/jpeg";
+  if (at(0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "image/png";
+  if (ascii(0, "GIF87a") || ascii(0, "GIF89a")) return "image/gif";
+  if (ascii(0, "RIFF") && ascii(8, "WEBP")) return "image/webp";
+  if (ascii(4, "ftyp")) {
+    // Marque principale (octets 8 à 11) puis marques compatibles, jusqu'à la fin de la boîte ftyp.
+    const end = Math.min(b.length, ((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]) >>> 0 || 32);
+    const brands: string[] = [];
+    for (let i = 8; i + 4 <= end; i += i === 8 ? 8 : 4) brands.push(String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]));
+    if (brands.some((x) => x === "avif" || x === "avis")) return "image/avif";
+    if (brands.some((x) => /^(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(x))) return "image/heic";
+  }
+  if (at(0, 0x00, 0x00, 0x01, 0x00)) return "image/x-icon";
+  return null;
+}
+/** Formats qu'on peut ranger et servir tels quels (si la réduction en WebP n'y gagne rien). */
+const SAFE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/x-icon"]);
 
 type StoreHit = { artworkUrl512?: string; artworkUrl100?: string; trackViewUrl?: string; trackName?: string; trackId?: number; userRatingCount?: number };
 const normName = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
@@ -64,7 +182,6 @@ const exactName = (name: string, title: string) => {
   return w.join("") === t.join("");
 };
 
-/** La fiche App Store d'une app : le premier résultat de la recherche dont le titre est bien le sien. */
 /** L'App Store tolère ~20 appels par minute : un appel toutes les 3,2 s, pour toute l'action. */
 let nextCall = 0;
 async function storeGet(url: string): Promise<{ results?: StoreHit[] }> {
@@ -72,7 +189,7 @@ async function storeGet(url: string): Promise<{ results?: StoreHit[] }> {
   nextCall = Math.max(Date.now(), nextCall) + 3_200;
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   const res = await get(url);
-  if (!res.ok) throw new Error(`App Store ${res.status}`); // refus ou panne : ce n'est pas « aucune fiche »
+  if (!res?.ok) throw new Error(`App Store ${res?.status ?? "refusé"}`); // refus ou panne : ce n'est pas « aucune fiche »
   return (await res.json()) as { results?: StoreHit[] };
 }
 
@@ -111,21 +228,28 @@ export async function appStoreLookup(id: string): Promise<StoreHit | null> {
   return null;
 }
 
-/** L'icône d'un site (app web) : son apple-touch-icon, sinon la plus grande icône déclarée, sinon /favicon.ico. */
+/**
+ * L'icône d'un site (app web) : son apple-touch-icon, sinon la plus grande icône déclarée, sinon /favicon.ico. Jamais
+ * une icône SVG (audit S30) ; seuls les MAX_HTML_BYTES premiers octets de la page sont lus (audit S33).
+ */
 export async function siteIcon(domain: string): Promise<string | null> {
   try {
     const base = `https://${domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")}/`;
-    const res = await get(base, { headers: { "User-Agent": UA, Accept: "text/html" }, redirect: "follow" });
-    if (!res.ok) return null;
-    const html = (await res.text()).slice(0, 200_000);
+    const res = await get(base, { headers: { "User-Agent": UA, Accept: "text/html" } });
+    if (!res?.ok) return null;
+    const bytes = await readCapped(res, MAX_HTML_BYTES, true);
+    if (!bytes) return null;
+    const html = new TextDecoder().decode(bytes);
     const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((m) => m[0]);
     const attr = (tag: string, k: string) => (tag.match(new RegExp(`${k}\\s*=\\s*["']([^"']+)["']`, "i")) || [])[1] ?? null;
     const icons = links.filter((t) => /rel\s*=\s*["'][^"']*icon[^"']*["']/i.test(t)).map((t) => ({
       href: attr(t, "href"), apple: /apple-touch-icon/i.test(attr(t, "rel") ?? ""), size: Number((attr(t, "sizes") ?? "0").split("x")[0]) || 0,
-    })).filter((i) => i.href);
+      svg: /svg/i.test(attr(t, "type") ?? "") || /\.svgz?(?:[?#]|$)/i.test(attr(t, "href") ?? ""),
+    })).filter((i) => i.href && !i.svg);
     icons.sort((p, q) => Number(q.apple) - Number(p.apple) || q.size - p.size);
     const href = icons[0]?.href ?? "/favicon.ico";
-    return new URL(href, res.url || base).toString();
+    const url = new URL(href, res.url || base).toString();
+    return url.startsWith("https://") ? url : null;
   } catch {
     return null;
   }
@@ -142,7 +266,7 @@ export async function tiktokCoverState(handle: string, id: string): Promise<{ ur
     const res = await get(`https://www.tiktok.com/@${encodeURIComponent(handle || "tiktok")}/video/${id}`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
     });
-    if (!res.ok) return {};
+    if (!res?.ok) return {};
     const html = await res.text();
     const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
     if (m) {
@@ -164,16 +288,17 @@ export async function tiktokCoverState(handle: string, id: string): Promise<{ ur
     return {};
   }
 }
-export const tiktokCover = async (handle: string, id: string): Promise<string | null> => (await tiktokCoverState(handle, id)).url ?? null;
 
-/** La photo de profil d'un compte TikTok, lue dans les données de sa page publique. */
-/** La photo de profil d'un compte TikTok : `gone` (TikTok dit que le compte n'existe pas ou plus), `blank` (pas de photo), sinon pas de réponse. */
+/**
+ * La photo de profil d'un compte TikTok, lue dans les données de sa page publique : `gone` (TikTok dit que le compte
+ * n'existe pas ou plus), `blank` (pas de photo), sinon pas de réponse.
+ */
 export async function tiktokAvatarState(handle: string): Promise<{ url?: string; gone?: boolean; blank?: boolean }> {
   try {
     const res = await get(`https://www.tiktok.com/@${encodeURIComponent(handle)}`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
     });
-    if (!res.ok) return {};
+    if (!res?.ok) return {};
     const html = await res.text();
     const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
     if (!m) return {};
@@ -187,7 +312,6 @@ export async function tiktokAvatarState(handle: string): Promise<{ url?: string;
     return {};
   }
 }
-export const tiktokAvatar = async (handle: string): Promise<string | null> => (await tiktokAvatarState(handle)).url ?? null;
 
 /** La miniature d'un reel Instagram, lue sur sa page d'intégration publique (sans connexion). */
 export async function instagramCover(code: string): Promise<string | null> {
@@ -196,13 +320,13 @@ export async function instagramCover(code: string): Promise<string | null> {
     const res = await get(`https://www.instagram.com/reel/${encodeURIComponent(code)}/embed/`, {
       headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
     });
-    if (res.ok) {
+    if (res?.ok) {
       const html = await res.text();
       const m = html.match(/class="EmbeddedMediaImage"[^>]*src="([^"]+)"/) ?? html.match(/src="([^"]+)"[^>]*class="EmbeddedMediaImage"/);
       if (m) return decode(m[1]);
     }
     const page = await get(`https://www.instagram.com/reel/${encodeURIComponent(code)}/`, { headers: { "User-Agent": UA } });
-    if (!page.ok) return null;
+    if (!page?.ok) return null;
     const og = (await page.text()).match(/property="og:image" content="([^"]+)"/);
     return og ? decode(og[1]) : null;
   } catch {
@@ -251,10 +375,12 @@ async function fromHeic(buf: ArrayBuffer): Promise<ArrayBuffer | null> {
 }
 
 /**
- * L'image réduite à sa taille d'affichage, en WebP (5 à 10 fois plus légère) ; l'originale si la
- * réduction échoue — sauf un HEIC, converti d'abord, et jamais rangé tel quel (null).
+ * L'image réduite à sa taille d'affichage, en WebP (5 à 10 fois plus légère) ; l'originale si la réduction n'y gagne
+ * rien ou échoue, seulement dans un format matriciel sûr (SAFE_TYPES : jamais un SVG, audit S30) — un HEIC est converti
+ * d'abord, et jamais rangé tel quel (null).
  */
 export async function shrink(buf: ArrayBuffer, type: string, key: string): Promise<{ data: ArrayBuffer; type: string } | null> {
+  type = type.split(";")[0].trim().toLowerCase();
   if (isHeic(type)) {
     const jpeg = await fromHeic(buf);
     if (!jpeg) return null;
@@ -271,10 +397,10 @@ export async function shrink(buf: ArrayBuffer, type: string, key: string): Promi
       : key.startsWith("a:")
       ? await img.resize({ width: AVATAR_SIZE, height: AVATAR_SIZE, fit: "cover" }).webp({ quality: 80 }).toBuffer()
       : await img.resize({ width: COVER_WIDTH, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer();
-    if (out.byteLength >= buf.byteLength) return { data: buf, type };
+    if (out.byteLength >= buf.byteLength && SAFE_TYPES.has(type)) return { data: buf, type };
     return { data: out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer, type: "image/webp" };
   } catch {
-    return { data: buf, type };
+    return SAFE_TYPES.has(type) ? { data: buf, type } : null;
   }
 }
 
@@ -288,7 +414,7 @@ export async function copyImage(ctx: ActionCtx, key: string, source: string, rep
     if (!url) return null;
     let res = await get(url, { headers: { "User-Agent": UA } });
     // Lien signé expiré : la page publique de la vidéo (TikTok ou Instagram) en donne un neuf.
-    if (!res.ok && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
+    if (!res?.ok && key.startsWith("v:") && !/^(ttpage|igpage):/.test(source)) {
       const id = key.slice(2);
       if (/^\d+$/.test(id)) {
         const st = await tiktokCoverState("tiktok", id);
@@ -298,10 +424,13 @@ export async function copyImage(ctx: ActionCtx, key: string, source: string, rep
       if (!url) return null;
       res = await get(url, { headers: { "User-Agent": UA } });
     }
-    const type = res.headers.get("content-type") ?? "";
-    if (!res.ok || !type.startsWith("image/")) return null;
-    const buf = await res.arrayBuffer();
-    if (buf.byteLength === 0 || buf.byteLength > MAX_IMAGE_BYTES) return null;
+    if (!res?.ok || !(res.headers.get("content-type") ?? "").toLowerCase().startsWith("image/")) return null;
+    const bytes = await readCapped(res, MAX_IMAGE_BYTES);
+    if (!bytes || bytes.byteLength === 0) return null;
+    // Le format vient des octets, pas de l'en-tête (un SVG annoncé « image/png » ne passe pas).
+    const type = sniff(bytes);
+    if (!type) return null;
+    const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
     const small = await shrink(buf, type, key);
     if (!small) return null;
     const storageId = (await ctx.storage.store(new Blob([small.data], { type: small.type }))) as Id<"_storage">;
