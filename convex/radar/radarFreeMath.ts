@@ -81,18 +81,22 @@ const REHYDRATION = /<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="appli
 
 /**
  * Ce que la page publique d'une vidéo dit d'elle : la vidéo (`item`), ou le refus de TikTok (`status` non nul, et son
- * motif). `null` : la page ne se lit pas.
+ * motif). « other » : la page est servie avec ses données, mais sans vidéo (un carrousel photo : app-context,
+ * biz-context, i18n-translation, seo.abtest, a-b, pas de `webapp.video-detail` — 2 pages relevées le 20/11/2026).
+ * `null` : la page ne se lit pas.
  */
-export function videoDetail(html: string): { item: Record<string, unknown> | null; status: number; statusMsg: string } | null {
+export function videoDetail(html: string): { item: Record<string, unknown> | null; status: number; statusMsg: string } | "other" | null {
   const m = REHYDRATION.exec(html);
   if (!m) return null;
-  let scope: Record<string, unknown> | null = null;
+  let scopes: Record<string, unknown> | null = null;
   try {
-    scope = obj(obj(obj(JSON.parse(m[1]))?.__DEFAULT_SCOPE__)?.["webapp.video-detail"]);
+    scopes = obj(obj(JSON.parse(m[1]))?.__DEFAULT_SCOPE__);
   } catch {
     return null;
   }
-  if (!scope) return null;
+  if (!scopes) return null;
+  const scope = obj(scopes["webapp.video-detail"]);
+  if (!scope) return "other";
   return { item: obj(obj(scope.itemInfo)?.itemStruct), status: typeof scope.statusCode === "number" ? scope.statusCode : 0, statusMsg: str(scope.statusMsg) };
 }
 
@@ -102,7 +106,7 @@ export function videoDetail(html: string): { item: Record<string, unknown> | nul
  */
 export function parseFreeVideo(html: string, handle: string, fallbackLang?: string): SignalInput | "gone" | null {
   const detail = videoDetail(html);
-  if (!detail) return null;
+  if (!detail || detail === "other") return null;
   const it = detail.item;
   if (!it) return detail.status !== 0 ? "gone" : null;
   const videoId = str(it.id);

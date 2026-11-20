@@ -7,9 +7,11 @@
  *  - « cote » (côte à côte) : des signaux que le transcript payant (ScrapeCreators) a transcrits en production (un
  *    instantané de radarSignals). Pour chacun, la voie gratuite lit sa page publique puis le WebVTT de sa piste ASR,
  *    et son texte est comparé à celui que le payant a rangé. Rend : cas mesurés, textes identiques, différents
- *    (lesquels, les deux textes), vidéos sans piste à prendre (et pourquoi), supprimées, pages manquées, pages lues.
+ *    (lesquels, les deux textes), vidéos sans piste à prendre (et pourquoi), supprimées, pages manquées, pages lues,
+ *    crédits évités (un par texte : le payant ne facture que quand il rend un texte ; une supprimée ne coûte rien).
  *  - « file » : la file des transcriptions (rankTranscripts) sur l'instantané, sans aucune page : combien de signaux
- *    attendent, combien y entrent par jour (ce qui règle TRANSCRIPT_FREE_PAGES).
+ *    attendent, combien y entrent par jour (ce qui règle TRANSCRIPT_FREE_PAGES), et les carrousels photo qu'elle
+ *    écarte (ce que le payant en avait tiré).
  *
  * BUDGET DE PAGES (cote) : N pages vidéo (40 au plus) et au plus un WebVTT chacune, une page refusée redemandée une
  * fois (`retrying`) : 4 × N requêtes au plus, jamais plus de 160. Une à la fois, une pause storePauseMs (0,3 à 0,7 s)
@@ -39,7 +41,7 @@ import {
 const DAY = 86_400_000;
 const MAX_N = 40;
 
-type Row = TranscriptRow & { _id: string; videoId: string; url: string; publishedAt: number; firstSeenAt: number; transcript?: string; lang?: string };
+type Row = TranscriptRow & { _id: string; videoId: string; publishedAt: number; firstSeenAt: number; transcript?: string; lang?: string };
 
 const lines = <T>(file: string): T[] =>
   readFileSync(file, "utf8")
@@ -52,7 +54,8 @@ const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
 async function cote(snap: string, out: string, n: number): Promise<void> {
   mkdirSync(out, { recursive: true });
   const rows = lines<Row>(join(snap, "radarSignals.jsonl"))
-    .filter((r) => r.platform === "tiktok" && !!r.transcript && /^https:\/\/www\.tiktok\.com\/@[^/]+\/video\/\d+$/.test(r.url))
+    // Vidéos et carrousels photo (ceux-ci n'ont jamais de texte payant : la file les écarte, cf mode « file »).
+    .filter((r) => r.platform === "tiktok" && !!r.transcript && /^https:\/\/www\.tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+$/.test(r.url))
     .sort((a, b) => (b.transcribedAt ?? 0) - (a.transcribedAt ?? 0) || (a.videoId < b.videoId ? -1 : 1))
     .slice(0, Math.min(n, MAX_N));
   let requests = 0;
@@ -115,7 +118,8 @@ async function cote(snap: string, out: string, n: number): Promise<void> {
     pourquoi: why,
     supprimees: count("gone"),
     manquees: count("miss"),
-    creditsEvites: texts.length + count("gone"),
+    // Chaque vidéo mesurée a coûté 1 crédit au payant (il a rendu un texte) : un texte gratuit l'aurait évité.
+    creditsEvites: texts.length,
   };
   writeFileSync(join(out, "cote.jsonl"), results.map((x) => JSON.stringify(x)).join("\n") + "\n");
   writeFileSync(join(out, "cote-resume.json"), JSON.stringify(summary, null, 2) + "\n");
@@ -130,6 +134,9 @@ function file(snap: string): void {
   // Ce que la requête lit (les 800 plus récents), et toute la semaine pour le flux par jour.
   const due = rankTranscripts(week.slice(0, 800), apps);
   const all = rankTranscripts(week, apps);
+  // Les carrousels photo que la file écarte : ce que le payant en avait tiré (instantané entier).
+  const photos = signals.filter((s) => s.platform === "tiktok" && s.url.includes("/photo/"));
+  const photosPaid = photos.filter((s) => s.transcribedAt !== undefined);
   const perDay: Record<string, number> = {};
   for (const { row } of all) {
     const day = new Date(row.firstSeenAt).toISOString().slice(0, 10);
@@ -145,6 +152,8 @@ function file(snap: string): void {
       {
         instantane: new Date(now).toISOString(),
         signauxTikTokSemaine: week.filter((s) => s.platform === "tiktok").length,
+        photosTikTok: photos.length,
+        photosTranscritesParLePayant: { total: photosPaid.length, avecTexte: photosPaid.filter((s) => !!s.transcript).length },
         fileDuPassage: due.length,
         fileSemaineEntiere: all.length,
         entreesParJour: perDay,

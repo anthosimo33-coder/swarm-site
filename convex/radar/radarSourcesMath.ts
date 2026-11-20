@@ -194,6 +194,7 @@ export const TRANSCRIPT_MAX_SEC = 120;
 /** Un signal tel que la base le range, ce qu'il faut pour le ranger dans la file des transcriptions. */
 export type TranscriptRow = {
   platform: string;
+  url: string;
   transcribedAt?: number;
   subtitlesCheckedAt?: number;
   durationSec?: number;
@@ -208,18 +209,26 @@ export type TranscriptApp = AppRule & { _id: string; status: string; rivalOf: re
 export type TranscriptRanked<R> = { row: R; checked: boolean };
 
 /**
+ * Un carrousel photo (`/@x/photo/<id>`) n'a rien à transcrire. Instantané du 20/11/2026 : le payant en avait
+ * transcrit 26, aucun avec un mot (ni un crédit : il ne coûte que quand il rend un texte) ; leur page publique ne
+ * porte pas de vidéo (radarFreeMath.videoDetail). 1 462 des 19 709 signaux TikTok en sont, et ils prenaient la tête
+ * de la file (5 des 40 premiers) : la voie gratuite les relisait à chaque passage, le payant y perdait ses appels.
+ */
+const isPhotoPost = (url: string): boolean => url.includes("/photo/");
+
+/**
  * La file des transcriptions (cf radarSources.dueTranscripts) : les signaux TikTok pas encore transcrits, ceux qui
  * citent une concurrente d'abord, puis une autre app suivie, puis la découverte ; les plus vus d'abord dans chaque
  * rang. Jamais une vidéo d'un compte suivi qui ne cite aucune app (elle n'est montrée nulle part), ni un « texte sur
- * plan » de 12 secondes ou moins (personne n'y parle). Du 06 au 09/11/2026, triées par vues seules, 37 transcriptions
- * utiles sur 173 et 18 % des vidéos de concurrents couvertes.
+ * plan » de 12 secondes ou moins (personne n'y parle), ni un carrousel photo. Du 06 au 09/11/2026, triées par vues
+ * seules, 37 transcriptions utiles sur 173 et 18 % des vidéos de concurrents couvertes.
  */
 export function rankTranscripts<R extends TranscriptRow>(rows: readonly R[], apps: readonly TranscriptApp[]): TranscriptRanked<R>[] {
   const byId = new Map(apps.map((a) => [a._id, a]));
   const active = apps.filter((a) => a.status === "active");
   const ranked: { row: R; rank: number }[] = [];
   for (const r of rows) {
-    if (r.platform !== "tiktok" || r.transcribedAt !== undefined || isTextOnShot(r)) continue;
+    if (r.platform !== "tiktok" || r.transcribedAt !== undefined || isTextOnShot(r) || isPhotoPost(r.url)) continue;
     if (r.durationSec !== undefined && r.durationSec > TRANSCRIPT_MAX_SEC) continue;
     const own = r.appId ? byId.get(r.appId) : undefined;
     const text = { caption: r.caption, hook: r.hook, handle: r.authorHandle };
@@ -261,12 +270,16 @@ export function transcriptQueue<R>(ranked: readonly TranscriptRanked<R>[], free:
  * Mesuré du poste : ce que TikTok sert aux serveurs Convex, `radarUsage.saved.transcript` le dira.
  */
 export type SubtitleTrack = { lang: string; source: string; url: string };
-export type SubtitlesPage = { kind: "subs"; tracks: SubtitleTrack[]; spoken?: string } | { kind: "refused"; reason: UnavailableReason };
+export type SubtitlesPage = { kind: "subs"; tracks: SubtitleTrack[]; spoken?: string } | { kind: "refused"; reason: UnavailableReason } | { kind: "other" };
 
-/** Les pistes de sous-titres WebVTT d'une page vidéo, ou le refus de TikTok ; `null` si la page ne se lit pas. */
+/**
+ * Les pistes de sous-titres WebVTT d'une page vidéo, ou le refus de TikTok ; « other » : page servie sans vidéo ;
+ * `null` si la page ne se lit pas.
+ */
 export function parseVideoSubtitles(html: string): SubtitlesPage | null {
   const d = videoDetail(html);
   if (!d) return null;
+  if (d === "other") return { kind: "other" };
   if (!d.item) return d.status !== 0 ? { kind: "refused", reason: reasonOf(d.status, d.statusMsg) } : null;
   const video = obj(d.item.video) ?? {};
   const tracks: SubtitleTrack[] = [];
@@ -334,10 +347,12 @@ export const SUBS_GONE: readonly UnavailableReason[] = ["removed", "private", "r
 /**
  * Ce que la page publique a donné pour une vidéo :
  *  text : sa piste ASR, mise en forme · gone : supprimée ou plus publique (TikTok le dit) — rien à transcrire ·
- *  checked : page lue, rien à prendre (pas de piste ASR, traduction seule, piste vide ; ou TikTok ne nous la sert
- *    pas : région, vérification, page absente) — le payant la prendra · miss : page ou WebVTT qui manque
- *    (`refused` : refusé ou servi sans ses données, compté pour le coupe-circuit) — le payant tout de suite, la voie
- *    gratuite la relira au passage suivant.
+ *  checked : page lue, rien à prendre (pas de piste ASR, traduction seule, piste vide ; page servie sans vidéo ;
+ *    ou TikTok ne nous la sert pas : région, vérification, page absente) — le payant la prendra · miss : page ou
+ *    WebVTT qui manque (`refused` : refusé ou servi sans ses données, compté pour le coupe-circuit) — le payant tout
+ *    de suite, la voie gratuite la relira au passage suivant.
+ * Une page servie AVEC ses données mais sans vidéo (« page sans vidéo ») n'est pas un refus : TikTok répond, et la
+ * relire rendrait la même chose — elle est marquée une fois, et ne pèse pas sur le coupe-circuit.
  */
 export type FreeSubs =
   | { kind: "text"; text: string; lang: string }
@@ -353,7 +368,8 @@ export async function freeTranscript(url: string, page: (url: string) => Promise
   const p = await page(url);
   if (!p.ok) return p.kind === "absent" ? { kind: "checked", why: "page absente" } : { kind: "miss", refused: true, reason: p.reason ?? "page refusée" };
   const subs = parseVideoSubtitles(p.text);
-  if (!subs) return { kind: "miss", refused: true, reason: "page sans vidéo" };
+  if (!subs) return { kind: "miss", refused: true, reason: "page sans données" };
+  if (subs.kind === "other") return { kind: "checked", why: "page sans vidéo" };
   if (subs.kind === "refused") return SUBS_GONE.includes(subs.reason) ? { kind: "gone" } : { kind: "checked", why: `refus : ${subs.reason}` };
   const track = asrTrack(subs);
   if (!track) {
@@ -386,7 +402,13 @@ export type TranscriptIo<S> = {
 export type TranscriptPass = {
   free: { pages: number; texts: number; gone: number; checked: number; missed: number; stopped: string | null };
   paid: { calls: number; credits: number; errors: number; creditsRemaining?: number; lastError?: string };
-  /** Appels payants évités (radarUsage.saved.transcript) : un par vidéo réglée par sa page publique. */
+  /**
+   * Appels payants évités (radarUsage.saved.transcript) : les vidéos transcrites par leur page publique parmi les
+   * `paid` premières de la file — celles que le payant aurait prises à ce passage sans la voie gratuite. 0 quand le
+   * poste est coupé : rien n'aurait été payé. Une vidéo supprimée n'en est pas un : le transcript payant ne coûte rien
+   * quand il ne rend pas de texte (du 06 au 15/11/2026, les crédits du poste égalent chaque jour les transcriptions
+   * AVEC texte : 25/25, 50/50… 27/27). Les autres textes gratuits sont de la couverture en plus (`free.texts`).
+   */
   saved: number;
 };
 
@@ -394,8 +416,9 @@ export type TranscriptPass = {
  * Pages vidéo lues au plus par passage de transcriptions (toutes les 2 heures), chacune suivie d'au plus un WebVTT :
  * 40 × 12 passages = 480 par jour, le rythme du contrôle de visibilité (radarAvailabilityMath.CHECKS_PER_RUN, 40
  * toutes les 2 heures), qui lit les mêmes pages depuis les mêmes serveurs. Le flux tient dedans : le 20/11/2026
- * (banc, mode « file »), 432 signaux attendaient dans la file d'un passage, et 148 à 287 y entraient chaque jour du 15
- * au 19/11 ; le retard se rattrape en deux jours, puis chaque vidéo est lue une fois.
+ * (banc, mode « file », carrousels photo écartés), 424 signaux attendaient dans la file d'un passage, et 146 à 284 y
+ * entraient chaque jour du 15 au 19/11 ; le retard se rattrape en deux jours, puis chaque vidéo est lue une fois (une
+ * page servie sans vidéo comprise : elle est marquée, freeTranscript).
  */
 export const TRANSCRIPT_FREE_PAGES = 40;
 /** La voie gratuite s'arrête au bout de ce temps : le payant passe ensuite (une tâche est coupée à 10 minutes). */
@@ -415,6 +438,9 @@ export async function transcriptPass<S extends { url: string; checked: boolean }
   limits: { pages: number; paid: number },
 ): Promise<TranscriptPass> {
   const free: TranscriptPass["free"] = { pages: 0, texts: 0, gone: 0, checked: 0, missed: 0, stopped: null };
+  // Ce que le payant aurait pris à ce passage sans la voie gratuite : la tête de la file, dans sa limite.
+  const head = new Set(due.slice(0, Math.max(0, limits.paid)));
+  let saved = 0;
   const settled = new Set<S>();
   const tried = new Set<S>();
   let streak = 0;
@@ -427,8 +453,10 @@ export async function transcriptPass<S extends { url: string; checked: boolean }
     if (r.kind === "text" || r.kind === "gone") {
       await io.apply(s, { text: r.kind === "text" ? r.text : null });
       settled.add(s);
-      if (r.kind === "text") free.texts++;
-      else free.gone++;
+      if (r.kind === "text") {
+        free.texts++;
+        if (head.has(s)) saved++;
+      } else free.gone++;
       continue;
     }
     tried.add(s);
@@ -458,5 +486,5 @@ export async function transcriptPass<S extends { url: string; checked: boolean }
     }
     await io.apply(s, { text: r.value });
   }
-  return { free, paid, saved: free.texts + free.gone };
+  return { free, paid, saved };
 }

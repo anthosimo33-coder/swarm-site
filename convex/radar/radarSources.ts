@@ -292,17 +292,20 @@ export const markSubtitlesChecked = internalMutation({
 
 /**
  * Un passage de transcriptions (radarSourcesMath.transcriptPass) : les sous-titres natifs d'abord, sur les pages
- * publiques de TikTok — même quand le poste payant est éteint ou coupé (palier, réserve) : elles ne coûtent rien —,
- * puis le payant dans la limite du budget. Une page à la fois, une pause avant chacune, une page refusée redemandée
- * une fois (le rythme des relevés gratuits, radarNetworks).
+ * publiques de TikTok — même quand le poste payant est éteint ou coupé (palier, réserve), ou sans clé : elles ne
+ * coûtent rien —, puis le payant dans la limite du budget. Une page à la fois, une pause avant chacune, une page
+ * refusée redemandée une fois (le rythme des relevés gratuits, radarNetworks).
  */
 export const runTranscripts = internalAction({
   args: {},
   handler: async (ctx): Promise<RunResult> => {
     const now = Date.now();
-    if (!scKeyPresent()) return { skipped: "no-key" };
-    const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    const n = allowance(st.budget, budgetState(st.budget, st.usage, st.balance), "transcript", todayCredits(st, "transcript"), TRANSCRIPT_RUNS_PER_DAY);
+    // Sans clé ScrapeCreators, le payant ne peut rien (n = 0) ; la voie gratuite, elle, n'en a pas besoin.
+    let n = 0;
+    if (scKeyPresent()) {
+      const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
+      n = allowance(st.budget, budgetState(st.budget, st.usage, st.balance), "transcript", todayCredits(st, "transcript"), TRANSCRIPT_RUNS_PER_DAY);
+    }
     const due: DueTranscript[] = await ctx.runQuery(internal.radar.radarSources.dueTranscripts, { now, limit: n, freeLimit: TRANSCRIPT_FREE_PAGES });
     const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
     const page = retrying(
@@ -330,6 +333,9 @@ export const runTranscripts = internalAction({
       { pages: TRANSCRIPT_FREE_PAGES, paid: n },
     );
     if (pass.free.stopped) console.warn(`[radar] transcriptions : voie gratuite fermée, ${pass.free.stopped}`);
+    // Ce que TikTok sert aux serveurs : tous les textes gratuits (saved ne compte que ceux qui remplacent un appel payant).
+    const f = pass.free;
+    if (f.pages > 0) console.log(`[radar] transcriptions : ${f.pages} pages, ${f.texts} textes par les sous-titres natifs (${pass.saved} à la place du payant), ${f.checked} sans piste, ${f.gone} supprimées, ${f.missed} manquées`);
     const { calls, credits, errors, creditsRemaining, lastError } = pass.paid;
     await ctx.runMutation(internal.radar.radarSignals.recordRun, {
       poste: "transcript",
