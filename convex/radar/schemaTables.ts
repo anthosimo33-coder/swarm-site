@@ -516,6 +516,9 @@ export const radarTables = {
     usd: v.optional(v.number()), // dépense en dollars (l'analyse IA), hors crédits
     // Crédits par motif (relevés de comptes : premier, repli, trou, retard, coupure, sonde ; cf radarFreeMath.PaidReason).
     reasons: v.optional(v.record(v.string(), v.number())),
+    // Appels payants ÉVITÉS par une page publique de TikTok, par brique (radarSignalsMath.SavedKey) : au moins un
+    // crédit chacun. C'est ce qui prouve, sur les serveurs, ce que le banc n'a mesuré que du poste.
+    saved: v.optional(v.record(v.string(), v.number())),
   })
     .index("by_month", ["month"])
     .index("by_day_poste", ["day", "poste"]),
