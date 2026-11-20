@@ -21,9 +21,9 @@ en page bascule (rotation d'un iPad, fenêtre redimensionnée), les retrouve. Ch
 `setF({ … })` : l'état, plus l'adresse par `history.replaceState` (sans entrée d'historique ni remontage). Sur le
 canevas (sans `props.query`), l'état seul. Un filtre propre à une version reste dans l'adresse quand l'autre en change un
 autre. Paramètres : `m` (marché), `niche`, `tri`, `periode`, `dates`, `plateforme`, `colonne`, `ordre` (Apps) ; `m`,
-`niche`, `app`, `abonnes`, `abmin`, `abmax`, `type`, `genre`, `tri`, `m`, `actifs` (Créateurs ; `actifs` : téléphone seulement) ; `m`, `niche`, `type`, `tri` (Formats) ; `onglet`,
+`niche`, `app`, `abonnes`, `abmin`, `abmax`, `type`, `genre`, `tri`, `m`, `vue` (Créateurs ; `vue` : téléphone seulement, `liste` ou `cartes`, la vue basculée sur place ; `actifs`, l'ancien filtre du téléphone, n'est plus lu : les actifs d'abord, sur les deux versions) ; `m`, `niche`, `type`, `tri` (Formats ; `tri` : ordinateur seulement) ; `onglet`,
 `miennes`, `alerte` (Alertes ; `alerte` = l'alerte ouverte, `f-<id de format>` ou `v-<id de vidéo>`, écrite quand on la
-choisit, ordinateur seulement). Banc : `npm run test:filtres`.
+choisit ; au téléphone, l'alerte ouverte en plein écran, effacée au retour à la liste). Banc : `npm run test:filtres`.
 
 Un écran peut lire un autre document avec `this.props.get(clé)` (undefined tant qu'il charge, null s'il
 n'existe pas), par exemple les créateurs d'un autre marché, une liste d'apps par pays ou l'index de recherche.
@@ -234,7 +234,7 @@ Sur le canevas, ces props n'existent pas : l'écran garde un état local, comme 
 | `follows` | `{ apps: [slug], creators: [handle], formats: [id] }` — ce que la personne suit (cloche, « Suivre ») |
 | `folders` | `[{ id, name, createdAt, items: [{ kind: 'app'\|'video'\|'format'\|'creator', id, label, cover, at }] }]` |
 | `alertRules` | `[{ id, createdAt, quoi: 'compte'\|'video'\|'format', niche: nom\|null, seuil: nombre, marche: code pays\|null }]` — « montre-moi quand un compte / une vidéo / un format de <niche> fait <seuil>× sa normale (<pays>) » ; aucune alerte n'est envoyée, elles filtrent l'écran Alertes |
-| `seen` | `{ alerts: date en ms, alertsRead?: texte }` — `alerts` : « Tout marquer comme lu » ; `alertsRead` : les alertes ouvertes sur ordinateur (une empreinte de 7 caractères au plus par alerte, FNV-1a en base 36 de `f-<id>` ou `v-<id>`, séparées par des espaces ; seules celles encore non lues par la date, 500 caractères au plus). Le téléphone ne le lit pas encore |
+| `seen` | `{ alerts: date en ms, alertsRead?: texte }` — `alerts` : « Tout marquer comme lu » ; `alertsRead` : les alertes ouvertes, sur ordinateur comme au téléphone (une empreinte de 7 caractères au plus par alerte, FNV-1a en base 36 de `f-<id>` ou `v-<id>`, séparées par des espaces ; seules celles encore non lues par la date, 500 caractères au plus) |
 | `views` | `[{ id, screen: 'createurs', name, q, at }]` — les vues enregistrées d'une liste (« Mes vues ») : `q` = la requête de l'adresse qui porte ses filtres (`niche=Études&m=FR`), `name` composé par l'écran depuis ces filtres |
 
 Une valeur pèse au plus 256 Ko, comptés comme Convex les compte ; un compte écrit au plus 300 fois par 10 minutes

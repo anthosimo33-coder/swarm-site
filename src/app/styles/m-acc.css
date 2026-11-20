@@ -1,2 +1,9 @@
 /* Généré par scripts/dc2preact.py depuis design/app/MAccueil.dc.html */
 @media (hover: hover){a:hover{color:#FFFFFF}}
+.ma-ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ma-clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ma-clamp4{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.ma-hit{position:relative}
+.ma-hit::after{content:"";position:absolute;left:-4px;right:-4px;top:-5px;bottom:-5px}
+.ma-press{transition:transform .2s cubic-bezier(0.2,0.8,0.2,1)}
+.ma-press:active{transform:scale(0.985)}

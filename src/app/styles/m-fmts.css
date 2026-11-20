@@ -1,2 +1,6 @@
 /* Généré par scripts/dc2preact.py depuis design/app/MFormats.dc.html */
 @media (hover: hover){a:hover{color:#FFFFFF}}
+/* Une carte hors de l'écran n'est ni mise en page ni peinte (rendu progressif plus léger, mesuré). */
+.fm-card{content-visibility:auto;contain-intrinsic-size:auto 140px}
+.fm-card:active{background:linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.04))}
+@media (hover: none){.fm-card:hover{box-shadow:inset 0 0 0 1px var(--card-edge)}.fm-card:hover .fm-th img{transform:none}}

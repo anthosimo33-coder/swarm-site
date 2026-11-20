@@ -108,7 +108,7 @@ class Component extends DCLogic {
   // location.search en lecture seule. filters() : clé de l'état -> [paramètre, 'l' liste (clé répétée) | 'b' oui/non |
   // 's' valeur, valeur par défaut (jamais écrite)]. L'écran écarte une valeur qu'il ne connaît pas (son défaut).
   // « alerte » : l'alerte ouverte (boîte de réception B2, 20/11), écrite seulement quand on la choisit ; le téléphone
-  // ne la lit pas et la laisse dans l'adresse.
+  // l'ouvre en plein écran (MAlertes, maquette T1).
   filters() { return { tab: ['onglet', 's', 'Toutes'], mine: ['miennes', 'b'], sel: ['alerte', 's'] }; }
   fv(k) {
     const st = this.state || {};

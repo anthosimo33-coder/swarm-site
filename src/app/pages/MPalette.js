@@ -26,6 +26,12 @@ export default class MPalette extends DCLogic {
       const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
       const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
       const AD = get('apps'), FD = get('formats');
+      // Les listes mises en forme ne se refont que si un document a changé : la recherche se redessine à chaque lettre
+      // tapée (4 000 créateurs et plus), et l'ouverture ne doit pas les refaire deux fois (fluidité, téléphone).
+      const SC0 = S.creatorPages > 1 ? Array.from({ length: S.creatorPages - 1 }, (_, j) => get('search:creators:' + (j + 2))) : [];
+      const docs = [S, AD, FD].concat(SC0);
+      const ix = this.constructor._ix; // gardé d’une ouverture à l’autre
+      if (ix && ix.docs.length === docs.length && ix.docs.every((d, i) => d === docs[i])) { AP = ix.AP; FM = ix.FM; CR = ix.CR; } else {
       const byApp = {}, byFmt = {};
       ((AD && AD.apps) || []).forEach((a) => { byApp[a.slug] = a; });
       ((FD && FD.formats) || []).forEach((f) => { byFmt[f.id] = f; });
@@ -38,17 +44,20 @@ export default class MPalette extends DCLogic {
           sub: [hook ? 'Accroche' : 'Son', f.accounts + ' comptes', full && full.medX ? xf(full.medX) + ' la normale' : ''].filter(Boolean).join(' · '),
           href: '/app/formats/' + f.id, key: f.label }; });
       // Les créateurs de l'index, par documents de 4 000 : « search », puis « search:creators:2 », « :3 »… (16/11).
-      const SC = S.creatorPages > 1 ? Array.from({ length: S.creatorPages - 1 }, (_, j) => get('search:creators:' + (j + 2))) : [];
+      const SC = SC0;
       CR = (S.creators || []).concat(...SC.map((d) => (d && d.creators) || [])).map((c) => ({ av: c.avatar || '', noav: true, handle: c.handle, k: 'cr', h: '@' + c.handle, s: [c.app, nf(c.fans || 0) + ' abonnés', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
         href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || '') }));
+      [AP, FM, CR].forEach((L) => L.forEach((x) => { x._n = String(x.key || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }));
+      this.constructor._ix = { docs, AP, FM, CR };
+      }
     }
     const st = this.state || {};
     const q = st.q || '';
     const scope = st.scope || 'tout';
     const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const nq = norm(q.trim());
-    const hit = (s) => !nq || norm(s).indexOf(nq) >= 0;
-    let apps = AP.filter((a) => hit(a.key)), fms = FM.filter((f) => hit(f.key)), crs = CR.filter((c) => hit(c.key));
+    const hit = (x) => !nq || (x._n !== undefined ? x._n : norm(x.key)).indexOf(nq) >= 0;
+    let apps = AP.filter(hit), fms = FM.filter(hit), crs = CR.filter(hit);
     apps = apps.slice(0, nq ? 8 : 5); fms = fms.slice(0, nq ? 5 : 3); crs = crs.slice(0, nq ? 5 : 3);
     if (scope === 'apps') { fms = []; crs = []; }
     if (scope === 'formats') { apps = []; crs = []; }

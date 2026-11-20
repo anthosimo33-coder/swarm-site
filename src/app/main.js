@@ -23,6 +23,11 @@ import './liquid.js';
 import './choice.js';
 // Alertes, boîte de réception : cadre de la ligne choisie, détail en cascade, barres (voir le fichier).
 import './inbox.js';
+// Téléphone : feuilles du bas au doigt, barre flottante, balayer d'un onglet à l'autre, tirer pour chercher (voir les fichiers).
+import './sheet.js';
+import './tabbar.js';
+import './swipe.js';
+import './pull.js';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';

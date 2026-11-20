@@ -41,25 +41,153 @@ a{color:#4C9AFF}
 .m-chip[aria-pressed="true"]{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent-edge);color:var(--ink);font-weight:600}
 .m-chip[aria-pressed="true"] .m-ic{color:var(--accent)}
 .m-ttl{display:flex;align-items:center;gap:8px}.m-ttl>svg{flex-shrink:0;color:var(--ink-faint)}
+
+.ib-row:active{background:rgba(255,255,255,0.05)}
+@media (max-width: 359px){[data-swipe-tabs] .sw-tab>span{display:none}}
+@media (hover: none){.ib-row:hover{background:transparent}.ib-row:active{background:rgba(255,255,255,0.05)}}
 </style>
 </helmet>
-<div class="sw " style="position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(96px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);">
-<header style="position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);"><span style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;"><span style="flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Alertes</span></span><button class="sw-btn sw-btn-icon" type="button" onClick="{{openPal}}" aria-label="Chercher" style="flex-shrink: 0; width: 44px; height: 44px;"><svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button><a class="sw-btn sw-btn-icon" href="MAlertes.dc.html" aria-label="Alertes" aria-current="page" style="flex-shrink: 0; position: relative; width: 44px; height: 44px; color: var(--accent);"><svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a><a href="MCompte.dc.html" aria-label="Mon compte" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-right: -4px;"><span class="sw-avatar" style="width: 36px; height: 36px; font-size: 14px;">{{me.initiale}}</span></a></header>
-<div style="padding: 10px 20px 0; display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 13px; color: var(--ink-muted);">{{unreadLabel}}</span><sc-if value="{{hasUnread}}" hint-placeholder-val="{{true}}"><button class="sw-more" type="button" onClick="{{markRead}}" style="min-height: 44px; border: 0; background: transparent; cursor: pointer; font-family: inherit;">Tout marquer comme lu</button></sc-if></div>
-<div style="margin-top: 6px;  padding: 0 20px;"><div class="m-tc is-scroll" role="tablist"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button class="sw-tab" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="flex-shrink: 0; display: inline-flex; gap: 6px; align-items: center;"><span class="m-ic" data-i="a:{{t.l}}" aria-hidden="true"></span>{{t.l}}<span style="font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);">{{t.n}}</span></button></sc-for></div></div><sc-if value="{{hasRules}}" hint-placeholder-val="{{true}}"><div style="padding: 12px 20px 0; display: flex;"><button class="sw-pill" type="button" aria-pressed="{{mineOn}}" onClick="{{toggleMine}}" style="height: 44px; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Selon tes alertes</button></div></sc-if>
-<sc-if value="{{noAlert}}" hint-placeholder-val="{{false}}"><p style="margin: 16px 20px; font-size: 15px; color: var(--ink-muted);">{{noAlertText}}</p></sc-if><sc-for list="{{groups}}" as="g" hint-placeholder-count="5"><section><h2 style="display: flex; align-items: center; gap: 8px; margin: 0; padding: 16px 20px 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted);"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M4 6h16v14H4zM4 10h16M9 3v4M15 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{g.g}}</h2><sc-for list="{{g.items}}" as="a" hint-placeholder-count="2"><a href="{{a.href}}" style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 20px; background: {{a.bg}}; text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);">
-<span style="position: relative; flex-shrink: 0;"><span class="sw-video" style="display: block; width: 46px; border-radius: 10px;"><img class="sw-cover" src="{{a.cov0}}" alt=""></span><span style="position: absolute; left: -6px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: {{a.dot}}; box-shadow: 0 0 0 2px var(--surface);"></span></span>
-<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;"><span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-faint);"><span style="color: var(--accent); display: inline-flex;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="{{a.ico}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{a.typ}} · {{a.when}}<sc-if value="{{a.paid}}" hint-placeholder-val="{{false}}"><span style="margin-left: 6px; display: inline-flex;"><span style="display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px 0 4px; border-radius: 999px; background: #F5B941; color: #1A1206; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><span aria-hidden="true" style="width: 13px; height: 13px; border-radius: 50%; background: rgba(26,18,6,0.14); display: inline-flex; align-items: center; justify-content: center; font-size: 9px;">€</span>Placement payé</span></span></sc-if></span><span style="font-size: 15px; font-weight: {{a.w}}; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{a.title}}</span><span style="font-size: 12px; color: var(--ink-faint); line-height: 1.4;">{{a.sub}}</span></span>
-<span style="font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--accent); white-space: nowrap;">{{a.big}}</span></a></sc-for></section></sc-for>
-<div style="padding: 28px 20px 0; display: flex; flex-direction: column; gap: 10px;"><div style="display: flex; justify-content: space-between; align-items: baseline;"><h2 style="display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 700;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Tes alertes</h2></div>
-<sc-if value="{{noRules}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-muted);">Aucune alerte pour l’instant. Une alerte trie ce que le Radar repère ici, selon ta niche, ton marché et ton seuil.</p></sc-if><sc-for list="{{rules}}" as="r" hint-placeholder-count="3"><div style="display: flex; gap: 12px; align-items: center; padding: 14px; border-radius: 18px; background: var(--surface-raised); border: 1px solid var(--line);"><span style="width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="{{r.ico}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><button type="button" onClick="{{r.edit}}" aria-label="Modifier l’alerte {{r.t}}" style="flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;"><span style="font-size: 14px; font-weight: 600; line-height: 1.35;">{{r.t}}</span><span style="font-size: 12px; color: var(--ink-faint);">{{r.sub}}</span></button><button class="sw-btn sw-btn-icon" type="button" onClick="{{r.remove}}" aria-label="{{r.rmLabel}}" style="width: 44px; height: 44px; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div></sc-for>
-<div style="display: flex; justify-content: center;"><button class="sw-btn sw-btn-primary sw-btn-lg" type="button" onClick="{{openNa}}">Créer une alerte<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></div></div>
-
-
-<nav aria-label="Navigation principale" style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 6px 6px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: rgba(8,11,18,0.9); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid var(--line);"><a href="MAccueil.dc.html" aria-current="false" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;"><svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Accueil</a><a href="MApps.dc.html" aria-current="false" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;"><svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Apps</a><a href="MFormats.dc.html" aria-current="false" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;"><svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM10 9l5 3-5 3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Formats</a><a href="MCreateurs.dc.html" aria-current="false" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;"><svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Créateurs</a><a href="MDossiers.dc.html" aria-current="false" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 11px; font-weight: 500;"><svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Dossiers</a></nav>
-<sc-if value="{{pal}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 60;"><dc-import name="MPalette" on-close="{{closePal}}" get="{{getFn}}" hint-size="100%,100%"></dc-import></div></sc-if>
-<sc-if value="{{aj}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 70;"><dc-import name="MAjout" on-close="{{closeAj}}" item="{{ajItem}}" saved="{{savedFn}}" save="{{saveFn}}" hint-size="100%,100%"></dc-import></div></sc-if>
-<sc-if value="{{na}}" hint-placeholder-val="{{false}}"><div style="position: fixed; inset: 0; z-index: 70;"><dc-import name="MNouvelleAlerte" on-close="{{closeNa}}" on-create="{{addRule}}" rule="{{naRule}}" niches="{{naNiches}}" preview="{{naPreview}}" get="{{getFn}}" hint-size="100%,100%"></dc-import></div></sc-if>
+<div data-pull="" class="sw " style="position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(150px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);">
+<header style="position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);">
+<span style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;"><span style="flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Alertes</span></span>
+<button data-pull-search="" class="sw-btn sw-btn-icon" type="button" onClick="{{openPal}}" aria-label="Chercher" style="flex-shrink: 0; width: 44px; height: 44px;"><svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<a class="sw-btn sw-btn-icon" href="MAlertes.dc.html" aria-label="Alertes" aria-current="page" style="flex-shrink: 0; position: relative; width: 44px; height: 44px; color: var(--accent);"><svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
+<a href="MCompte.dc.html" aria-label="Mon compte" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-right: -4px;"><span class="sw-avatar" style="width: 36px; height: 36px; font-size: 14px;">{{me.initiale}}</span></a>
+</header>
+<div style="padding: 10px 20px 0; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+<span style="min-width: 0; font-size: 14px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{subtitle}}</span>
+<sc-if value="{{hasUnread}}" hint-placeholder-val="{{true}}"><button class="m-hit" type="button" onClick="{{markRead}}" style="flex-shrink: 0; padding: 0; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent;">Tout marquer comme lu</button></sc-if>
+</div>
+<div style="padding: 6px 20px 0; display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-if value="{{hasRules}}" hint-placeholder-val="{{true}}">
+<button class="m-fb {{mineCls}}" type="button" aria-pressed="{{mineOn}}" onClick="{{toggleMine}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Selon tes alertes</button>
+<button class="m-fb" type="button" onClick="{{openRw}}" aria-haspopup="dialog" aria-expanded="{{rwOpen}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><span class="m-fb-k">Tes alertes</span><span class="m-fb-v">{{nRules}}</span><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: var(--ink-faint);"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</sc-if>
+<sc-if value="{{noRules}}" hint-placeholder-val="{{false}}">
+<button class="m-fb" type="button" onClick="{{openNa}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>Créer une alerte</button>
+</sc-if>
+</div>
+<div data-swipe="" style="padding: 6px 10px 0; display: flex; flex-direction: column;">
+<sc-if value="{{noAlert}}" hint-placeholder-val="{{false}}"><p style="margin: 16px 10px; font-size: 15px; line-height: 1.5; color: var(--ink-muted);">{{noAlertText}}</p></sc-if>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<div role="group" aria-label="{{g.g}}" style="display: flex; flex-direction: column; gap: 2px;">
+<div style="display: flex; align-items: baseline; gap: 8px; padding: {{g.pad}};"><span style="font-size: 15px; font-weight: 600; color: var(--ink);">{{g.g}}</span><span style="flex: 1;"></span><sc-if value="{{g.first}}" hint-placeholder-val="{{true}}"><span style="font-size: 12px; color: var(--ink-faint); white-space: nowrap;">{{weekCount}}</span></sc-if></div>
+<sc-for list="{{g.items}}" as="a" hint-placeholder-count="3">
+<button type="button" class="ib-row" onClick="{{a.pick}}" onPointerDown="{{a.warm}}" style="padding: 13px 12px; -webkit-tap-highlight-color: transparent;">
+<span class="ib-dot" data-on="{{a.dot}}" aria-hidden="true" style="margin-top: 7px;"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px;">
+<span style="display: flex; align-items: baseline; gap: 8px; min-width: 0;"><span style="flex: 1; min-width: 0; font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{a.short}}</span><sc-if value="{{a.paid}}" hint-placeholder-val="{{false}}"><span style="align-self: center; height: 18px; padding: 0 7px; border-radius: 999px; display: inline-flex; align-items: center; background: #F5B941; color: #1A1206; font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">Placement payé</span></sc-if><span style="flex-shrink: 0; font-size: 12px; color: var(--ink-faint);">{{a.when}}</span></span>
+<span style="display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; color: var(--ink-faint);"><sc-if value="{{a.mk}}" hint-placeholder-val="{{true}}"><span class="sw-flag sw-flag-14" data-c="{{a.mk}}" aria-hidden="true"></span></sc-if><span style="min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{a.sub}}</span></span>
+</span>
+</button>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div data-swipe-skip="" style="position: fixed; left: 12px; right: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 72px); z-index: 29; padding: 4px; border-radius: 16px; background: rgba(22,27,38,0.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 14px 36px rgba(0,0,0,0.45);">
+<div class="m-tc is-flat" role="tablist" aria-label="Type d’alerte" data-swipe-tabs="">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button class="sw-tab" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="min-height: 40px; padding: 0 4px; gap: 5px; font-size: 13px; font-weight: 600;">{{t.l}}<span style="font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--ink-faint);">{{t.n}}</span></button></sc-for>
+</div>
+</div>
+<nav data-tabbar="" aria-label="Navigation principale" style="position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 30; height: 64px; padding: 0 6px; box-sizing: border-box; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; border-radius: 32px; background: rgba(22,27,38,0.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 20px 50px rgba(0,0,0,0.55);"><a href="MAccueil.dc.html" data-tab="" aria-current="false" style="height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Accueil</a><a href="MApps.dc.html" data-tab="" aria-current="false" style="height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Apps</a><a href="MFormats.dc.html" data-tab="" aria-current="false" style="height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM10 9l5 3-5 3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Formats</a><a href="MCreateurs.dc.html" data-tab="" aria-current="false" style="height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Créateurs</a><a href="MDossiers.dc.html" data-tab="" aria-current="false" style="height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; color: var(--ink-faint); font-size: 10.5px; font-weight: 600;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>Dossiers</a></nav>
+<sc-if value="{{d.on}}" hint-placeholder-val="{{false}}">
+<section ref="{{setDetail}}" data-swipe-pager="" data-swipe-at="{{d.at}}" role="dialog" aria-modal="true" aria-label="{{d.aria}}" onKeyDown="{{dKeys}}" style="position: fixed; inset: 0; z-index: 45; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; background: var(--surface); color: var(--ink); font-family: var(--font-body); box-shadow: -24px 0 60px rgba(0,0,0,0.5);">
+<div style="position: sticky; top: 0; z-index: 2; height: 56px; padding: 0 8px 0 6px; display: flex; align-items: center; gap: 2px; background: rgba(8,11,18,0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);">
+<button ref="{{setBack}}" type="button" onClick="{{closeD}}" style="height: 44px; padding: 0 10px 0 2px; display: inline-flex; align-items: center; gap: 2px; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 16px; cursor: pointer; -webkit-tap-highlight-color: transparent;"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Alertes</button>
+<span style="flex: 1;"></span>
+<button data-swipe-prev="" type="button" onClick="{{d.prev}}" disabled="{{d.noPrev}}" aria-label="Alerte précédente" style="position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); border: 0; white-space: nowrap;">Alerte précédente</button>
+<span style="font-size: 13px; color: var(--ink-faint); font-variant-numeric: tabular-nums; white-space: nowrap;">{{d.pos}}</span>
+<button data-swipe-next="" class="sw-btn sw-btn-icon" type="button" onClick="{{d.next}}" disabled="{{d.noNext}}" aria-label="Alerte suivante" style="flex-shrink: 0; width: 44px; height: 44px; opacity: {{d.nextO}};"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</div>
+<div data-swipe="" style="padding: 16px 20px calc(96px + env(safe-area-inset-bottom)); display: flex; flex-direction: column;">
+<span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.5; color: #6FB0FF;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="{{d.ico}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{d.kick}}<sc-if value="{{d.mk}}" hint-placeholder-val="{{true}}"><span aria-hidden="true">·</span><span class="sw-flag sw-flag-14" data-c="{{d.mk}}" aria-hidden="true"></span>{{d.mkName}}</sc-if><span aria-hidden="true">·</span>{{d.when}}<sc-if value="{{d.paid}}" hint-placeholder-val="{{false}}"><span style="height: 18px; padding: 0 7px; border-radius: 999px; display: inline-flex; align-items: center; background: #F5B941; color: #1A1206; font-size: 10px; letter-spacing: 0; text-transform: none; font-weight: 700;">Placement payé</span></sc-if></span>
+<h1 style="margin: 10px 0 0; font-family: var(--font-display); font-size: 25px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.16; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">{{d.title}}</h1>
+<div style="margin-top: 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+<sc-for list="{{d.stats}}" as="s" hint-placeholder-count="3"><span style="min-width: 0; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: var(--font-display); font-size: 23px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; white-space: nowrap;">{{s.v}}</span><span style="font-size: 11px; line-height: 1.3; color: var(--ink-faint);">{{s.l}}</span></span></sc-for>
+</div>
+<sc-if value="{{d.isFormat}}" hint-placeholder-val="{{true}}">
+<div style="margin-top: 18px; padding: 14px 14px 10px; border-radius: 18px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px;"><span style="font-size: 12px; font-weight: 600; color: var(--ink-soft);">Reprises par jour</span><span style="font-size: 11px; color: var(--ink-faint);">{{d.chartNote}}</span></div>
+<div role="img" aria-label="{{d.chartAria}}" style="margin-top: 10px; height: 92px; display: flex; align-items: flex-end; gap: 6px;">
+<sc-for list="{{d.bars}}" as="b" hint-placeholder-count="7"><span style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 5px;"><i style="display: block; width: 100%; height: {{b.h}}px; border-radius: 6px 6px 2px 2px; background: {{b.bg}};"></i><span style="font-size: 10px; color: var(--ink-faint); white-space: nowrap;">{{b.d}}</span></span></sc-for>
+</div>
+</div>
+<sc-if value="{{d.hasVids}}" hint-placeholder-val="{{true}}">
+<span style="margin-top: 20px; font-size: 13px; font-weight: 600; color: var(--ink-soft);">{{d.vTitle}}</span>
+<div style="margin-top: 10px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px;">
+<sc-for list="{{d.vids}}" as="v" hint-placeholder-count="5"><a class="sw-video" href="{{v.href}}" aria-label="{{v.aria}}" style="display: block; aspect-ratio: 3 / 4; border-radius: 10px;"><img class="sw-cover" src="{{v.src}}" alt="" loading="eager"><span class="sw-video-shade"></span><span style="position: absolute; left: 5px; bottom: 4px; font-size: 11px; font-weight: 700; color: #FFFFFF; text-shadow: 0 1px 3px rgba(0,0,0,0.85);">{{v.v}}</span></a></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{d.hasAccs}}" hint-placeholder-val="{{true}}">
+<span style="margin-top: 20px; font-size: 13px; font-weight: 600; color: var(--ink-soft);">Les comptes qui le reprennent</span>
+<div style="margin-top: 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px;">
+<sc-for list="{{d.accs}}" as="c" hint-placeholder-count="4"><span style="display: flex; align-items: center; gap: 10px; min-width: 0;"><span aria-hidden="true" style="width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: {{c.bg}}; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); font-size: 13px; font-weight: 700; color: #FFFFFF;">{{c.i}}</span><span style="min-width: 0; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{c.h}}</span><span style="font-size: 12px; color: var(--ink-faint);">{{c.v}}</span></span></span></sc-for>
+</div>
+<sc-if value="{{d.accMore}}" hint-placeholder-val="{{true}}"><span style="margin-top: 10px; font-size: 12px; color: var(--ink-faint);">{{d.accMore}}</span></sc-if>
+</sc-if>
+<sc-if value="{{d.hasApps}}" hint-placeholder-val="{{true}}">
+<div style="margin-top: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"><span style="font-size: 12px; color: var(--ink-faint);">Les apps qui l’utilisent :</span>
+<sc-for list="{{d.apps}}" as="p" hint-placeholder-count="3"><sc-if value="{{p.link}}" hint-placeholder-val="{{true}}"><a class="ib-pill" href="{{p.href}}" style="height: 36px;">{{p.name}}</a></sc-if><sc-if value="{{p.nolink}}" hint-placeholder-val="{{false}}"><span class="ib-pill" style="height: 36px;">{{p.name}}</span></sc-if></sc-for>
+<sc-if value="{{d.appsMore}}" hint-placeholder-val="{{true}}"><span style="font-size: 12px; color: var(--ink-faint);">{{d.appsMore}}</span></sc-if>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{d.isVideo}}" hint-placeholder-val="{{false}}">
+<div style="margin-top: 20px; display: flex; gap: 16px; align-items: flex-start;">
+<a class="sw-video" href="{{d.href}}" aria-label="{{d.cta}}" style="display: block; flex: 0 0 46%; aspect-ratio: 9 / 16; border-radius: 16px;"><img class="sw-cover" src="{{d.cover}}" alt="" loading="eager"><span class="sw-video-shade"></span><span class="sw-video-foot"><span class="sw-video-views">{{d.views}}</span></span></a>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; padding-top: 2px;">
+<sc-if value="{{d.hook}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; font-weight: 600; color: var(--ink-soft);">L’accroche</span><p style="margin: 0; font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--ink); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden;">« {{d.hook}} »</p></div></sc-if>
+<div style="display: flex; flex-direction: column; gap: 8px;"><span style="font-size: 12px; font-weight: 600; color: var(--ink-soft);">Le compte</span><span style="display: inline-flex; align-items: center; gap: 9px; min-width: 0;"><span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: {{d.accBg}}; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); font-size: 13px; font-weight: 700; color: #FFFFFF;">{{d.accI}}</span><span style="min-width: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere;">{{d.handle}}</span></span></div>
+<sc-if value="{{d.app}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;"><span style="font-size: 12px; font-weight: 600; color: var(--ink-soft);">L’app</span>
+<sc-if value="{{d.app.link}}" hint-placeholder-val="{{true}}"><a class="ib-pill" href="{{d.app.href}}" style="max-width: 100%; height: 40px; padding: 0 14px 0 6px; gap: 9px;"><span class="sw-app-icon {{d.app.blank}}" style="width: 28px; height: 28px; border-radius: 8px; font-size: 12px; flex-shrink: 0;"><sc-if value="{{d.app.icon}}" hint-placeholder-val="{{false}}"><img class="sw-logo-img" src="{{d.app.icon}}" alt=""></sc-if><sc-if value="{{d.app.noicon}}" hint-placeholder-val="{{true}}">{{d.app.ini}}</sc-if></span><span style="min-width: 0; overflow: hidden; text-overflow: ellipsis;">{{d.app.name}}</span></a></sc-if>
+<sc-if value="{{d.app.nolink}}" hint-placeholder-val="{{false}}"><span class="ib-pill" style="max-width: 100%; height: 40px; padding: 0 14px 0 6px; gap: 9px;"><span class="sw-app-icon {{d.app.blank}}" style="width: 28px; height: 28px; border-radius: 8px; font-size: 12px; flex-shrink: 0;"><sc-if value="{{d.app.icon}}" hint-placeholder-val="{{false}}"><img class="sw-logo-img" src="{{d.app.icon}}" alt=""></sc-if><sc-if value="{{d.app.noicon}}" hint-placeholder-val="{{true}}">{{d.app.ini}}</sc-if></span><span style="min-width: 0; overflow: hidden; text-overflow: ellipsis;">{{d.app.name}}</span></span></sc-if>
+</div></sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+<div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; padding: 14px 16px max(14px, env(safe-area-inset-bottom)); display: flex; gap: 8px; background: linear-gradient(180deg, rgba(8,11,18,0) 0%, rgba(8,11,18,0.94) 30%, #080B12 100%);">
+<button type="button" class="sw-btn sw-btn-ghost" onClick="{{openAj}}" aria-pressed="{{d.kept}}" style="flex: 1 1 0; min-width: 0; height: 50px; justify-content: center; gap: 9px; padding: 0 14px; border-color: rgba(255,255,255,0.12); background: rgba(22,27,38,0.9); font-size: 15px;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M7 4h10v16l-5-3.5L7 20z" fill="{{d.keepFill}}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>{{d.keepLabel}}</button>
+<sc-if value="{{d.href}}" hint-placeholder-val="{{true}}"><a class="sw-btn sw-btn-primary" href="{{d.href}}" style="flex: 1.4 1 0; min-width: 0; height: 50px; justify-content: space-between; padding: 0 6px 0 18px; font-size: 15px; text-decoration: none;">{{d.cta}}<span class="sw-btn-tile"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a></sc-if>
+</div>
+</section>
+</sc-if>
+<sc-if value="{{rw}}" hint-placeholder-val="{{false}}">
+<button data-sheet-veil="" type="button" aria-label="Fermer" tabindex="-1" onClick="{{closeRw}}" style="position: fixed; inset: 0; z-index: 40; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;"></button>
+<section data-sheet="" role="dialog" aria-modal="true" aria-label="Tes alertes" onKeyDown="{{rwKeys}}" style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 88vh; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px;">
+<div data-sheet-handle="" style="display: flex; justify-content: center; padding: 10px 0 6px;"><span aria-hidden="true" style="width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);"></span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 0 6px;">
+<span style="display: flex; align-items: baseline; gap: 10px;"><span style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Tes alertes</span><span style="font-size: 13px; color: var(--ink-faint);">{{rwCount}}</span></span>
+<button ref="{{setRwClose}}" class="sw-btn sw-btn-icon" type="button" onClick="{{closeRw}}" aria-label="Fermer" style="flex-shrink: 0; width: 44px; height: 44px; margin-right: -8px;"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</div>
+<p style="margin: 0 0 6px; font-size: 13px; line-height: 1.45; color: var(--ink-faint);">Elles trient cette liste avec « Selon tes alertes ».</p>
+<div data-sheet-opts="" role="list" style="display: flex; flex-direction: column; padding: 4px 0 12px;">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="3">
+<div data-sheet-opt="" data-sheet-in="" role="listitem" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 0 0 0 10px; border-radius: 14px;">
+<span style="width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="{{r.ico}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<button type="button" onClick="{{r.edit}}" aria-label="Modifier l’alerte {{r.t}}" style="flex: 1; min-width: 0; min-height: 56px; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;"><span style="font-size: 15px; font-weight: 600; line-height: 1.3;">{{r.t}}</span><span style="font-size: 12px; color: var(--ink-faint);">{{r.s}}<sc-if value="{{r.n}}" hint-placeholder-val="{{true}}"> · <span style="color: var(--accent); font-weight: 600;">{{r.n}}</span></sc-if></span></button>
+<button class="sw-btn sw-btn-icon" type="button" onClick="{{r.remove}}" aria-label="{{r.rmLabel}}" style="width: 44px; height: 44px; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</div>
+</sc-for>
+</div>
+<div style="position: sticky; bottom: 0; z-index: 2; margin: 0 -20px; padding: 14px 20px max(16px, env(safe-area-inset-bottom)); display: flex; justify-content: center; background: linear-gradient(180deg, rgba(13,17,26,0) 0%, rgba(13,17,26,0.96) 34%, #0D111A 100%);"><button class="sw-btn sw-btn-primary sw-btn-lg" type="button" onClick="{{openNa}}">Créer une alerte<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg></span></button></div>
+</section>
+</sc-if>
+<sc-if value="{{pal}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 60;">
+<dc-import name="MPalette" on-close="{{closePal}}" get="{{getFn}}" hint-size="100%,100%"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{aj}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 70;">
+<dc-import name="MAjout" on-close="{{closeAj}}" item="{{ajItem}}" saved="{{savedFn}}" save="{{saveFn}}" hint-size="100%,100%"></dc-import>
+</div>
+</sc-if>
+<sc-if value="{{na}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 70;">
+<dc-import name="MNouvelleAlerte" on-close="{{closeNa}}" on-create="{{addRule}}" rule="{{naRule}}" niches="{{naNiches}}" preview="{{naPreview}}" get="{{getFn}}" hint-size="100%,100%"></dc-import>
+</div>
+</sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"user":{"editor":null},"signOut":{"editor":null},"$preview":{"width":390,"height":1540}}'>
@@ -71,7 +199,9 @@ class Component extends DCLogic {
   // d'historique, pas de remontage, la position reste). Sur le canevas (pas de props.query) : l'état local, et
   // location.search en lecture seule. filters() : clé de l'état -> [paramètre, 'l' liste (clé répétée) | 'b' oui/non |
   // 's' valeur, valeur par défaut (jamais écrite)]. L'écran écarte une valeur qu'il ne connaît pas (son défaut).
-  filters() { return { tab: ['onglet', 's', 'Toutes'], mine: ['miennes', 'b'] }; }
+  // « alerte » : l'alerte ouverte en plein écran (maquette T1, 20/11), la même que celle de la boîte de réception de
+  // l'ordinateur ; écrite quand on en ouvre une, effacée quand on revient à la liste.
+  filters() { return { tab: ['onglet', 's', 'Toutes'], mine: ['miennes', 'b'], sel: ['alerte', 's'] }; }
   fv(k) {
     const st = this.state || {};
     if (st[k] !== undefined) return st[k];
@@ -99,6 +229,82 @@ class Component extends DCLogic {
     try { history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) { /* adresse refusée : l'état suffit */ }
   }
 
+  // ── L'alerte ouverte en plein écran : lue, son voisinage préparé ──
+  componentDidMount() { this.settle(); }
+  componentWillUnmount() { clearTimeout(this.flushT); clearTimeout(this.focusT); clearTimeout(this.focusR); this.flush(); }
+  componentDidUpdate(pp, ps) {
+    const st = this.state || {};
+    ps = ps || {};
+    if (st.rw && !ps.rw) { clearTimeout(this.focusR); this.focusR = setTimeout(() => { if (this.rwClose && (this.state || {}).rw) this.rwClose.focus({ preventScroll: true }); }, 560); }
+    this.settle();
+  }
+  // Après chaque rendu : une nouvelle alerte ouverte repart du haut (la première prend le focus, sans défiler), elle
+  // est marquée lue, et les fiches et miniatures de ses voisines se chargent d'avance (le balayage les montre aussitôt).
+  settle() {
+    const k = this._sel;
+    if (k !== this._shownKey) {
+      const was = this._shownKey;
+      this._shownKey = k;
+      // Seulement si on l'a fait défiler (__y, tenu par swipe.js) : écrire scrollTop force une mise en page.
+      if (k && this.detailEl && this.detailEl.__y > 0) { this.detailEl.scrollTop = 0; this.detailEl.__y = 0; }
+      // Le focus va au retour une fois la page arrivée (focus() force le calcul de la page : pas pendant l'entrée).
+      clearTimeout(this.focusT);
+      if (k && !was) this.focusT = setTimeout(() => { if (this.backEl && this._sel) { try { this.backEl.focus({ preventScroll: true }); } catch (e) { /* ancien navigateur */ } } }, 480);
+    }
+    if (k && this._readReady && this._marked !== k) { this._marked = k; this.markOne(k); }
+    (this._near || []).forEach((a) => this.warm(a));
+  }
+  // La fiche d'un format (format:<id>, ses 30 reprises les plus vues) et ses premières miniatures ; la miniature d'une vidéo.
+  warm(a) {
+    if (!a) return;
+    const P = this.props || {};
+    let covers = [];
+    if (a.kind === 'format') {
+      if (typeof P.get !== 'function') return;
+      const d = P.get('format:' + a.f.id);
+      if (!d || !d.members) return;
+      covers = d.members.filter((m) => m.cover && typeof m.x === 'number' && m.x > 1).slice(0, 5).map((m) => m.cover);
+    } else if (a.v && a.v.cover) covers = [a.v.cover];
+    if (typeof Image === 'undefined') return;
+    this._pre = this._pre || new Set();
+    covers.forEach((src) => {
+      if (this._pre.has(src)) return;
+      this._pre.add(src);
+      const im = new Image();
+      im.decoding = 'async';
+      im.src = src;
+    });
+  }
+  // « Lu » d'une alerte ouverte, comme sur ordinateur (AlertesA) : une empreinte courte de sa clé dans seen.alertsRead
+  // (texte, séparées par des espaces ; la forme de « seen » n'accepte que des champs simples, convex/saved.ts). Seules y
+  // restent les alertes encore non lues par la date (aujourd'hui et hier, ou après « Tout marquer comme lu »). Écrit
+  // 400 ms après la dernière ouverture : balayer plusieurs alertes n'écrit qu'une fois.
+  fp(k) { let h = 2166136261; for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
+  markOne(k) {
+    this.pend = this.pend || new Set();
+    this.pend.add(this.fp(k));
+    clearTimeout(this.flushT);
+    this.flushT = setTimeout(() => this.flush(), 400);
+  }
+  flush() {
+    if (!this.pend || !this.pend.size) return;
+    const P = this.props || {};
+    const site = typeof P.saved === 'function' && typeof P.save === 'function';
+    const cur = site ? P.saved('seen') : (this.state || {}).seen;
+    if (site && cur === undefined) return;
+    const was = String((cur && cur.alertsRead) || '');
+    const have = new Set(was.split(' ').filter(Boolean));
+    this.pend.forEach((x) => have.add(x));
+    this.pend.clear();
+    const keep = this._timeUnread || new Set();
+    const list = [...have].filter((x) => keep.has(x));
+    let s = list.join(' ');
+    while (s.length > 500) { list.shift(); s = list.join(' '); }
+    if (s === was) return;
+    const v = Object.assign({}, cur || {}, { alertsRead: s });
+    if (site) P.save('seen', v); else this.setState({ seen: v });
+  }
+
   renderVals() {
     const b = this.baseVals();
     return Object.assign({}, b, this.shellVals(), this.extraVals(b));
@@ -109,156 +315,309 @@ class Component extends DCLogic {
     const me = u ? { prenom: u.prenom || null, email: u.email || '', initiale: (Array.from(String(u.initiale || u.prenom || u.email || '?'))[0] || '?').toUpperCase() }
                  : { prenom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A' };
     return {
-      me, getFn: this.props && this.props.get, savedFn: this.props && this.props.saved, saveFn: this.props && this.props.save, ajItem: null, pal: !!st.pal, openPal: () => this.setState({ pal: true }), closePal: () => this.setState({ pal: false }),
-      aj: !!st.aj, openAj: () => this.setState({ aj: true }), closeAj: () => this.setState({ aj: false })
+      me, getFn: this.props && this.props.get, savedFn: this.props && this.props.saved, saveFn: this.props && this.props.save, pal: !!st.pal, openPal: () => this.setState({ pal: true }), closePal: () => this.setState({ pal: false }),
+      aj: !!st.aj, openAj: () => this.setState({ aj: true }), closeAj: () => this.setState({ aj: false }),
+      setDetail: (el) => { this.detailEl = el; }, setBack: (el) => { this.backEl = el; }, setRwClose: (el) => { this.rwClose = el; }
     };
   }
+  // Noms de pays et de langues (comme AlertesA) : partagés par baseVals (lignes) et extraVals (règles).
+  nomsPays() {
+    const MKN = (c) => c === 'XX' ? 'Pays inconnu' : ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
+    // La langue de ses vidéos quand ce n'en est pas une de son pays (otherLang, calculé par la synchro) : « en espagnol ».
+    const LANGN = (l) => { if (!l) return ''; try { return 'en ' + new Intl.DisplayNames(['fr'], { type: 'language' }).of(l); } catch (e) { return ''; } };
+    const MKW = (t) => new Proxy(t, { get: (o, c) => o[c] || MKN(String(c)) }); // un nom pour chaque pays
+    return { MKN, LANGN, MKW };
+  }
+
   extraVals(b) {
     const st = this.state || {};
-    const MH = {"FicheA.dc.html": "MFiche.dc.html", "FormatFicheA.dc.html": "MFormatFiche.dc.html", "CreateurFicheA.dc.html": "MCreateurFiche.dc.html", "VideoA.dc.html": "MVideo.dc.html"};
-    const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     const P = this.props || {};
-    // Ce que la personne garde : ses alertes (alertRules) et « Tout marquer comme lu » (seen). Sur le canevas : état local, alertes d'exemple.
+    const { nf, xf, kickWhen, M } = b.fmt;
+    // Ce que la personne garde (saved) : ses alertes (alertRules), le moment de « Tout marquer comme lu » et les alertes
+    // ouvertes (seen), ses dossiers (folders, pour « Garder »). Sur le canevas, ces props n'existent pas : état local.
     const site = typeof P.saved === 'function' && typeof P.save === 'function';
-    const SAMPLE = [{ id: 's1', quoi: 'format', niche: null, seuil: 3, marche: null }, { id: 's2', quoi: 'video', niche: 'Études', seuil: 1e6, marche: null }, { id: 's3', quoi: 'compte', niche: 'Études', seuil: 100, marche: null }];
     const rulesV = site ? P.saved('alertRules') : st.rules;
     const rulesWait = site && rulesV === undefined;
-    const mine = Array.isArray(rulesV) ? rulesV.filter((r) => r && typeof r === 'object') : site ? [] : SAMPLE;
+    const mine = Array.isArray(rulesV) ? rulesV.filter((r) => r && typeof r === 'object') : site ? [] : b.sampleRules;
     const seenV = site ? P.saved('seen') : st.seen;
     const seenAt = seenV && typeof seenV.alerts === 'number' ? seenV.alerts : null;
+    this._readReady = !site || seenV !== undefined;
     const keepRules = (xs) => (site ? P.save('alertRules', xs) : this.setState({ rules: xs }));
+    // Une alerte = { id, createdAt, quoi: 'compte'|'video'|'format', niche: nom|null, seuil: nombre, marche: code|null }.
     const SL = { compte: [[10, '10×'], [100, '100×'], [1000, '1 000×']], video: [[5e5, '500 k'], [1e6, '1 M'], [5e6, '5 M']], format: [[3, '3'], [5, '5'], [10, '10']] };
     const sl = (r) => { const m = (SL[r.quoi] || []).filter((x) => x[0] === r.seuil)[0]; return m ? m[1] : String(r.seuil); };
-    const MKNL = (c) => ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
-    const MKL = new Proxy({ US: 'États-Unis' }, { get: (o, c) => o[c] || MKNL(String(c)) });
+    const MKL = b.fmt.MKW({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil' });
     const ICO = { compte: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6', video: 'M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6', format: 'M5 6h14M12 6v13M9 19h6' };
     const known = (r) => !!SL[r.quoi] && typeof r.seuil === 'number';
     const titleOf = (r) => (!known(r) ? String(r.t || 'Alerte') : r.quoi === 'compte' ? 'Un compte fait ' + sl(r) + ' sa normale'
       : r.quoi === 'video' ? 'Une vidéo d’app passe ' + sl(r) + ' de vues' : 'Un format repris par ' + sl(r) + ' comptes ou plus');
     const subOf = (r) => (!known(r) ? String(r.s || '') : (r.niche || 'Toutes niches') + ' · ' + (MKL[r.marche] || 'tous les marchés'));
-    const AD = site && typeof P.get === 'function' ? P.get('apps') : undefined;
-    const NOA = {}; ((AD && AD.apps) || []).forEach((a) => { NOA[a.slug] = a.niche; });
-    const nicheOf = (a) => (a.kind === 'format' ? a.niche || null : a.slug && AD ? NOA[a.slug] || '' : null);
-    // Une alerte de la semaine répond-elle à une règle ? null : pas encore sûr (niche d'une vidéo tant que « apps » charge).
+    // Une alerte de la semaine répond-elle à une alerte de la personne ? null : on ne sait pas encore (niche d'une vidéo
+    // tant que le document « apps » charge).
     const match = (r, a) => {
       if (!known(r)) return false;
-      if (a.kind === undefined) return a.rule === titleOf(r);
       if (r.marche && a.market !== r.marche) return false;
-      if (r.quoi === 'format' ? !(a.kind === 'format' && a.accounts >= r.seuil) : r.quoi === 'video' ? !(a.kind === 'video' && !!a.slug && a.views >= r.seuil) : !(a.kind === 'video' && a.x >= r.seuil)) return false;
+      if (r.quoi === 'format' ? !(a.kind === 'format' && a.accounts >= r.seuil)
+        : r.quoi === 'video' ? !(a.kind === 'video' && !!a.slug && a.views >= r.seuil)
+        : !(a.kind === 'video' && a.x >= r.seuil)) return false;
       if (!r.niche) return true;
-      const n = nicheOf(a);
+      const n = b.nicheOf ? b.nicheOf(a) : null;
       return n === null ? null : n === r.niche;
     };
-    const all = [].concat(...(b.groups || []).map((g) => g.items));
-    const hits = (r) => all.filter((a) => match(r, a) === true);
-    const unsure = (r) => all.some((a) => match(r, a) === null);
-    const unread = (a) => (seenAt !== null ? !!a.at && a.at > seenAt : !!a.unread);
+    const items = b.items || [];
+    const hits = (r) => items.filter((a) => match(r, a) === true);
+    const unsure = (r) => items.some((a) => match(r, a) === null);
     const mineOn = !!this.fv('mine') && mine.length > 0; // l'état, sinon l'adresse (F25, plus haut)
     const isMine = (a) => mine.some((r) => match(r, a) === true);
-    const pool = mineOn ? all.filter(isMine) : all;
     const tab0 = this.fv('tab'), tab = ['Formats', 'Vidéos', 'Comptes'].indexOf(tab0) >= 0 ? tab0 : 'Toutes';
     const TABS = [['Toutes', () => true], ['Formats', (a) => a.typ === 'Format' || a.typ === 'Son'], ['Vidéos', (a) => a.typ === 'Vidéo'], ['Comptes', (a) => a.typ === 'Compte']];
-    const keep = (TABS.filter((t) => t[0] === tab)[0] || TABS[0])[1];
-    const groups = (b.groups || []).map((g) => ({ g: g.g, items: g.items.filter((a) => keep(a) && (!mineOn || isMine(a))).map((a) => { const u = unread(a);
-      return Object.assign({}, a, { href: a.href === 'VideoA.dc.html' ? 'MVideo.dc.html?v=' + vkey(a.cov0) : (MH[a.href] || a.href),
-        dot: u ? 'var(--accent)' : 'transparent', bg: u ? 'var(--accent-soft)' : 'transparent', w: u ? '700' : '600' }); }) })).filter((g) => g.items.length > 0);
-    const nU = all.filter(unread).length;
-    // Le nombre d'une alerte compte les alertes listées ici (document « alerts »), pas toute la semaine : comme le desktop.
-    const count = (r) => { if (!known(r) || unsure(r)) return ''; const c = hits(r).length; return c === 0 ? 'Aucune parmi les alertes' : c + ' parmi les alertes'; };
+    const pool = mineOn ? items.filter(isMine) : items;
+    const keepOf = (t) => (TABS.filter((x) => x[0] === t)[0] || TABS[0])[1];
+    const vis = pool.filter(keepOf(tab));
+
+    // Non lu : publié après « Tout marquer comme lu » (sans rien d'enregistré : aujourd'hui ou hier), et jamais ouvert,
+    // ici ou sur ordinateur (la même empreinte).
+    const timeUnread = (a) => (seenAt !== null ? !!a.at && a.at > seenAt : !!a.fresh);
+    this._timeUnread = new Set(items.filter(timeUnread).map((a) => this.fp(a.key)));
+    const opened = new Set(String((seenV && seenV.alertsRead) || '').split(' ').filter(Boolean));
+    (this.pend || new Set()).forEach((x) => opened.add(x));
+    const stored = (a) => timeUnread(a) && !opened.has(this.fp(a.key));
+
+    // L'alerte ouverte : celle de l'état ou de l'adresse, si elle est dans la liste montrée ; sinon la liste.
+    const sel0 = this.fv('sel');
+    const at = sel0 ? vis.map((a) => a.key).indexOf(sel0) : -1;
+    const sel = at >= 0 ? sel0 : null;
+    this._sel = sel;
+    const unread = (a) => a.key !== sel && stored(a);
+    this._near = at >= 0 ? [vis[at + 1], vis[at - 1], vis[at + 2]].filter(Boolean) : [];
+    const choose = (k) => this.setF({ sel: k });
+
+    const groups = [];
+    vis.forEach((a) => {
+      const it = Object.assign({}, a, { dot: unread(a) ? 'true' : 'false', pick: () => choose(a.key), warm: () => this.warm(a) });
+      if (!groups.length || groups[groups.length - 1].g !== a.g) groups.push({ g: a.g, items: [], first: !groups.length, pad: groups.length ? '18px 12px 6px' : '8px 12px 6px' });
+      groups[groups.length - 1].items.push(it);
+    });
+
+    // Le nombre d'une alerte compte les alertes listées ici (document « alerts » : 40 vidéos et 20 formats au plus), pas toute la semaine.
+    const count = (r) => { if (!known(r) || unsure(r)) return ''; const c = hits(r).length;
+      return c === 0 ? 'aucune parmi les alertes' : c + ' parmi les alertes'; };
     const editId = st.na ? st.editId || null : null;
+    const rules = mine.map((r) => ({ id: String(r.id || ''), t: titleOf(r), s: subOf(r), n: count(r), ico: ICO[r.quoi] || ICO.format,
+      edit: () => this.setState({ na: true, editId: r.id, rw: false }),
+      remove: () => keepRules(mine.filter((x) => x !== r)), rmLabel: 'Supprimer l’alerte « ' + titleOf(r) + ' »' }));
     const same = (p, q) => p.quoi === q.quoi && (p.niche || null) === (q.niche || null) && p.seuil === q.seuil && (p.marche || null) === (q.marche || null);
     const kindN = (r, n) => n + (r.quoi === 'format' ? (n > 1 ? ' formats' : ' format') : (n > 1 ? ' vidéos' : ' vidéo'));
-    return { groups, noAlert: groups.length === 0, hasRules: mine.length > 0, mineOn: mineOn ? 'true' : 'false', toggleMine: () => this.setF({ mine: !mineOn }),
-      noAlertText: mineOn ? 'Rien cette semaine pour tes alertes' + (tab === 'Toutes' ? '.' : ' dans ce type.') : 'Aucune alerte de ce type cette semaine.',
-      hasUnread: nU > 0, unreadLabel: nU ? nU + (nU > 1 ? ' non lues' : ' non lue') : 'Tout est lu',
-      rules: mine.map((r) => ({ t: titleOf(r), sub: [subOf(r), count(r)].filter(Boolean).join(' · '), ico: ICO[r.quoi] || ICO.format,
-        edit: () => this.setState({ na: true, editId: r.id }), remove: () => keepRules(mine.filter((x) => x !== r)), rmLabel: 'Supprimer l’alerte « ' + titleOf(r) + ' »' })),
-      noRules: !rulesWait && mine.length === 0,
-      tabs: TABS.map((t) => ({ l: t[0], n: pool.filter(t[1]).length, on: t[0] === tab ? 'true' : 'false', pick: () => this.setF({ tab: t[0] }) })),
-      markRead: () => { const v = Object.assign({}, seenV || {}, { alerts: Date.now() }); if (site) P.save('seen', v); else this.setState({ seen: v }); },
-      na: !!st.na, openNa: () => this.setState({ na: true, editId: null }), closeNa: () => this.setState({ na: false, editId: null }),
+
+    // En-tête : les nouvelles (non lues) de toute la liste, quel que soit l'onglet.
+    const nU = pool.filter(unread).length;
+    const since = seenAt === null ? 'depuis hier' : b.fmt.ago(seenAt) === 0 ? 'depuis ' + b.fmt.hh(seenAt) : b.fmt.ago(seenAt) === 1 ? 'depuis hier' : 'depuis le ' + b.fmt.dm(seenAt);
+    const subtitle = nU ? nU + (nU > 1 ? ' nouvelles ' : ' nouvelle ') + since : 'Rien de nouveau ' + since;
+
+    // Ce que « Garder » range, et s'il y est déjà.
+    const fs = site ? P.saved('folders') : null;
+    const keptOf = (kind, id) => (Array.isArray(fs) ? fs : []).some((f) => (f.items || []).some((x) => x.kind === kind && x.id === id));
+
+    // ── L'alerte ouverte, en plein écran (le contenu du détail d'AlertesA) ──
+    const AV = ['#3A86F0', '#22A06B', '#D95926', '#9085E9', '#C98500', '#D55181', '#199E70'];
+    const avBg = (h) => { let s = 0; for (const c of String(h)) s += c.codePointAt(0); return 'linear-gradient(160deg, ' + AV[s % AV.length] + ', #0B1220)'; };
+    const ini = (h) => (Array.from(String(h).replace(/^@/, ''))[0] || '?').toUpperCase();
+    const others = (n) => 'et ' + n + (n > 1 ? ' autres' : ' autre');
+    const a = at >= 0 ? vis[at] : null;
+    const close = () => this.setF({ sel: null });
+    const go = (i) => { if (vis[i]) choose(vis[i].key); };
+    let d = { on: false, key: '', at: 0, isFormat: false, isVideo: false, stats: [], bars: [], vids: [], accs: [], apps: [] };
+    if (a) {
+      const nav = { on: true, key: a.key, at, pos: (at + 1) + ' sur ' + vis.length, prev: () => go(at - 1), next: () => go(at + 1),
+        noPrev: at <= 0, noNext: at >= vis.length - 1, nextO: at >= vis.length - 1 ? '0.35' : '1', ico: a.ico, mk: a.mk, mkName: a.mk ? M[a.mk] : '', title: a.title };
+      if (a.kind === 'format') {
+        const f = a.f;
+        const D = b.docOf(f.id); // undefined tant qu'elle charge, null sans fiche
+        const ms = (D && D.members) || f.members || [];
+        const hook = f.kind === 'hook';
+        const dn = (dt) => Math.round(new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime() / 86400000);
+        const L = new Date(f.lastPostAt);
+        const days = [6, 5, 4, 3, 2, 1, 0].map((k) => new Date(L.getFullYear(), L.getMonth(), L.getDate() - k));
+        const loading = D === undefined;
+        const counts = days.map((dt) => ms.filter((m) => dn(new Date(m.publishedAt)) === dn(dt)).length);
+        const mx = Math.max(1, Math.max.apply(null, counts));
+        const lab = (dt) => b.fmt.dm(dt.getTime());
+        const nRep = (c) => c + (c > 1 ? ' reprises' : ' reprise');
+        const bars = days.map((dt, i) => {
+          const c = counts[i];
+          return { d: lab(dt), t: loading ? lab(dt) : lab(dt) + ' : ' + nRep(c),
+            h: loading ? 4 : c ? Math.max(8, Math.round(c / mx * 66)) : 3,
+            bg: loading ? 'rgba(255,255,255,0.06)' : i === 6 && c ? 'linear-gradient(180deg, #4C9AFF, #0B6FE0)' : c ? 'rgba(76,154,255,0.32)' : 'rgba(255,255,255,0.08)' };
+        });
+        // Les vidéos qui marchent : les reprises au-dessus de la normale de leur compte, les plus vues d'abord.
+        const good = ms.filter((m) => m.cover && typeof m.x === 'number' && m.x > 1).slice(0, 5);
+        const shown = good.length ? good : ms.filter((m) => m.cover).slice(0, 5);
+        const seenH = new Set();
+        const accs = [];
+        ms.forEach((m) => { if (accs.length < 4 && !seenH.has(m.handle)) { seenH.add(m.handle); accs.push({ h: '@' + m.handle, v: nf(m.views) + ' vues', i: ini(m.handle), bg: avBg(m.handle) }); } });
+        const apps = (f.apps || []).filter(Boolean);
+        const cover = ((ms.filter((m) => m.cover)[0]) || {}).cover || null;
+        const kept = keptOf('format', f.id);
+        d = Object.assign(nav, { isFormat: true, isVideo: false, aria: 'Alerte : ' + a.title, kick: hook ? 'Une accroche se répand' : 'Un son se répand',
+          when: kickWhen(f.lastPostAt), paid: false,
+          href: D === null ? '' : 'MFormatFiche.dc.html?f=' + f.id, cta: 'Voir le format',
+          kept: kept ? 'true' : 'false', keepLabel: kept ? 'Gardé' : 'Garder', keepFill: kept ? 'currentColor' : 'none',
+          ajItem: { kind: 'format', id: f.id, label: hook ? '« ' + f.label + ' »' : f.label, cover },
+          // Les trois chiffres de l'ordinateur, aux libellés courts de la maquette T1.
+          stats: [{ v: f.wins + '/' + f.n, l: 'au-dessus de leur normale' }, f.maxViews ? { v: nf(f.maxViews), l: 'la meilleure' } : null,
+            typeof f.medX === 'number' ? { v: xf(f.medX), l: 'la normale' } : null].filter(Boolean),
+          bars, chartNote: loading ? '' : ms.length < f.n ? 'les ' + ms.length + ' plus vues, sur ' + f.n : '',
+          chartAria: 'Reprises par jour : ' + (loading ? 'chargement' : bars.map((x) => x.t).join(', ')),
+          hasVids: shown.length > 0, vTitle: good.length ? 'Les vidéos au-dessus de leur normale' : 'Les reprises les plus vues',
+          vids: shown.map((m) => ({ src: m.cover, v: nf(m.views), href: 'MVideo.dc.html?v=' + m.videoId, aria: '@' + m.handle + ', ' + nf(m.views) + ' vues' })),
+          hasAccs: accs.length > 0, accs, accMore: f.accounts > accs.length ? others(f.accounts - accs.length) : '',
+          hasApps: apps.length > 0, apps: apps.slice(0, 3).map((x) => ({ name: x.name, link: x.page !== false, nolink: x.page === false, href: x.page === false ? '' : 'MFiche.dc.html?app=' + x.slug })),
+          appsMore: apps.length > 3 ? others(apps.length - 3) : '' });
+      } else {
+        const v = a.v;
+        const kept = keptOf('video', v.id);
+        const app = v.app ? { name: v.app.name, icon: v.app.icon || '', noicon: !v.app.icon, ini: ini(v.app.name), blank: v.app.icon ? '' : 'sw-app-blank',
+          link: v.app.page !== false, nolink: v.app.page === false, href: v.app.page === false ? '' : 'MFiche.dc.html?app=' + v.app.slug } : null;
+        d = Object.assign(nav, { isFormat: false, isVideo: true, aria: 'Alerte : ' + a.title,
+          kick: a.typ === 'Compte' ? 'Un compte hors norme' : v.views >= 1e6 ? 'Une vidéo passe le million' : v.x > 1 ? 'Une vidéo au-dessus de sa normale' : 'Une vidéo de la semaine',
+          when: kickWhen(v.publishedAt), paid: !!v.paid,
+          href: 'MVideo.dc.html?v=' + v.id, cta: 'Voir la vidéo',
+          kept: kept ? 'true' : 'false', keepLabel: kept ? 'Gardée' : 'Garder', keepFill: kept ? 'currentColor' : 'none',
+          ajItem: { kind: 'video', id: v.id, label: v.handle, cover: v.cover || null },
+          stats: [{ v: nf(v.views), l: 'vues' }, v.x ? { v: xf(v.x), l: 'sa normale' } : null, v.x ? { v: nf(v.views / v.x), l: 'vues d’habitude' } : null].filter(Boolean),
+          cover: v.cover || '', views: nf(v.views), hook: v.hook ? String(v.hook).trim() : '', handle: '@' + v.handle, accI: ini(v.handle), accBg: avBg(v.handle), app,
+          bars: [], vids: [], accs: [], apps: [] });
+      }
+    }
+    const dKeys = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'ArrowRight' && at >= 0) { e.preventDefault(); go(at + 1); }
+      else if (e.key === 'ArrowLeft' && at >= 0) { e.preventDefault(); go(at - 1); }
+    };
+    const TABIC = { Toutes: 'M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0', Formats: 'M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4', 'Vidéos': 'M4 6h11v12H4zM15 10l5-3v10l-5-3z', Comptes: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6' };
+
+    return {
+      groups, d, dKeys, closeD: () => { if (st.aj) this.setState({ aj: false }); close(); }, ajItem: d.on ? d.ajItem : null,
+      rules, hasRules: mine.length > 0, noRules: !rulesWait && mine.length === 0, nRules: String(mine.length),
+      rwCount: mine.length + (mine.length > 1 ? ' alertes' : ' alerte'),
+      subtitle, weekCount: vis.length + ' cette semaine',
+      noAlert: groups.length === 0, noAlertText: mineOn ? 'Rien cette semaine pour tes alertes' + (tab === 'Toutes' ? '.' : ' dans ce type.') : 'Aucune alerte de ce type cette semaine.',
+      tabs: TABS.map((t) => ({ l: t[0], d: TABIC[t[0]] || TABIC.Toutes, n: pool.filter(t[1]).length, on: t[0] === tab ? 'true' : 'false', pick: () => this.setF({ tab: t[0] }) })),
+      mineOn: mineOn ? 'true' : 'false', mineCls: mineOn ? 'is-on' : '', toggleMine: () => this.setF({ mine: !mineOn }),
+      hasUnread: nU > 0,
+      markRead: () => { const v = Object.assign({}, seenV || {}, { alerts: Date.now() }); delete v.alertsRead; if (this.pend) this.pend.clear();
+        if (site) P.save('seen', v); else this.setState({ seen: v }); },
+      rw: !!st.rw, rwOpen: st.rw ? 'true' : 'false', openRw: () => this.setState({ rw: true }), closeRw: () => this.setState({ rw: false }),
+      rwKeys: (e) => { if (e.key === 'Escape') { e.preventDefault(); this.setState({ rw: false }); } },
+      na: !!st.na, openNa: () => this.setState({ na: true, editId: null, rw: false }), closeNa: () => this.setState({ na: false, editId: null }),
       naRule: editId ? mine.filter((r) => r.id === editId)[0] || null : null,
-      naNiches: (AD && AD.niches) || null,
-      naPreview: site ? (r) => { if (unsure(r)) return null; const xs = hits(r);
-        return { text: xs.length ? kindN(r, xs.length) : 'Aucune pour ces critères', hits: xs.filter((a) => a.cov0).slice(0, 3).map((a) => ({ src: a.cov0, x: a.big, href: a.href })) }; } : null,
-      addRule: (f) => { const r = { quoi: f.quoi, niche: f.niche || null, seuil: f.seuil, marche: f.marche || null }; const now = Date.now();
+      naNiches: b.niches || null,
+      // Ce que l'alerte en cours de réglage trouve dans les alertes de la semaine (aperçu de « Nouvelle alerte »).
+      naPreview: (r) => { if (unsure(r)) return null; const xs = hits(r);
+        return { text: xs.length ? kindN(r, xs.length) : 'Aucune pour ces critères', hits: xs.filter((x) => x.covs && x.covs[0] && x.covs[0].src).slice(0, 3).map((x) => ({ src: x.covs[0].src, x: x.big, href: x.href })) }; },
+      addRule: (f) => {
+        const r = { quoi: f.quoi, niche: f.niche || null, seuil: f.seuil, marche: f.marche || null };
+        const now = Date.now();
         if (editId) keepRules(mine.map((x) => (x.id === editId ? Object.assign({}, x, r) : x)));
-        else if (!mine.some((x) => same(x, r))) keepRules([Object.assign({ id: now.toString(36) + Math.random().toString(36).slice(2, 6), createdAt: now }, r)].concat(mine)); } };
+        else if (!mine.some((x) => same(x, r))) keepRules([Object.assign({ id: now.toString(36) + Math.random().toString(36).slice(2, 6), createdAt: now }, r)].concat(mine));
+      }
+    };
   }
 
   baseVals() {
-    let tabs = [{"l": "Toutes", "n": 8, "on": "true"}, {"l": "Formats", "n": 4, "on": "false"}, {"l": "Vidéos", "n": 2, "on": "false"}, {"l": "Comptes", "n": 2, "on": "false"}];
-    let groups = [{"g": "Aujourd’hui", "items": [{"group": "Aujourd’hui", "when": "12/11", "typ": "Son", "ico": "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z", "title": "Un son se répète : « original sound - ex7stence »", "sub": "RecentFollow · 3 comptes · États-Unis et Mexique", "big": "3,2×", "covs": [{"src": "/_blob/34482dbafd6b280d21af2c85a0cd25a4"}, {"src": "/_blob/4b54677d97ff7a66e303ff0d242a3431"}, {"src": "/_blob/a24b163adc17ed20697734e238754f85"}], "cov0": "/_blob/34482dbafd6b280d21af2c85a0cd25a4", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "FormatFicheA.dc.html", "cta": "Voir le format"}]}, {"g": "Hier", "items": [{"group": "Hier", "when": "11/11", "typ": "Format", "ico": "M5 6h14M12 6v13M9 19h6", "title": "Une accroche se répète : « POV: terminaste de estudiar 4 horas antes… »", "sub": "Retain Cards · Mexique · 7 reprises sur 11 au-dessus de leur normale", "big": "4,7×", "covs": [{"src": "/_blob/1fef92aa131c335a4c6c4780f4189a4e"}, {"src": "/_blob/90d88398981d9c49586ee1a7ed4ca2c8"}, {"src": "/_blob/827fd97780c1ebcb3d670bf81ef0533e"}], "cov0": "/_blob/1fef92aa131c335a4c6c4780f4189a4e", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "FormatFicheA.dc.html", "cta": "Voir le format"}, {"group": "Hier", "when": "11/11", "typ": "Son", "ico": "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z", "title": "Un son se répète : « exam vibes »", "sub": "Astra AI · 4 reprises sur 6 au-dessus de leur normale", "big": "7×", "covs": [{"src": "/_blob/6d87484cf453a4108345ba9552b66677"}, {"src": "/_blob/0ef21f0b18aa1a7896d51f733239ac88"}, {"src": "/_blob/a9b09d02a071c19286e4ca9ce7a19326"}], "cov0": "/_blob/6d87484cf453a4108345ba9552b66677", "rule": "Un format repris par 3 comptes ou plus", "unread": true, "dot": "var(--accent)", "bg": "var(--accent-soft)", "w": "700", "href": "FormatFicheA.dc.html", "cta": "Voir le format"}]}, {"g": "Lundi 10/11", "items": [{"group": "Lundi 10/11", "when": "10/11 · 17 h", "typ": "Format", "ico": "M5 6h14M12 6v13M9 19h6", "title": "« Ich lösche das in 2h‼️ » : 4e reprise, et la meilleure", "sub": "@studywithdenise · 106 k vues · Retain Cards · Allemagne", "big": "39×", "covs": [{"src": "/_blob/0d296413178c5acb1c0fb28fed4013c6"}, {"src": "/_blob/5ea53bae5c1defd49d76b191b8b19228"}, {"src": "/_blob/5673512c9e670bb5420a2e01270be326"}], "cov0": "/_blob/0d296413178c5acb1c0fb28fed4013c6", "rule": "Un format repris par 3 comptes ou plus", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "FormatFicheA.dc.html", "cta": "Voir le format"}]}, {"g": "Dimanche 09/11", "items": [{"group": "Dimanche 09/11", "when": "09/11 · 10 h", "typ": "Compte", "ico": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "title": "@hocba.tapsu fait 455× sa normale", "sub": "Astra AI · Indonésie · 1,2 M vues", "big": "455×", "covs": [{"src": "/_blob/2010c321b827a0e032d25e98d057eca3"}], "cov0": "/_blob/2010c321b827a0e032d25e98d057eca3", "rule": "Un compte fait 100× sa normale", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "CreateurFicheA.dc.html", "cta": "Voir le compte"}, {"group": "Dimanche 09/11", "when": "09/11 · 04 h", "typ": "Compte", "ico": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", "title": "@studywith_elsie fait 1 226× sa normale", "sub": "Astra AI · 572 abonnés · 809 k vues", "big": "1 226×", "covs": [{"src": "/_blob/8a6c2da5244cd29c8c4935f8ddb5e5c5"}], "cov0": "/_blob/8a6c2da5244cd29c8c4935f8ddb5e5c5", "rule": "Un compte fait 100× sa normale", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "CreateurFicheA.dc.html", "cta": "Voir le compte"}]}, {"g": "Samedi 08/11", "items": [{"group": "Samedi 08/11", "when": "08/11 · 23 h", "typ": "Vidéo", "ico": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "title": "Une vidéo d’Astra AI passe 1 M de vues", "sub": "@learnwithjoel1 · Espagne · 65× sa normale", "big": "1,87 M", "covs": [{"src": "/_blob/ca1fa398c68488e3e076343e789d6194"}], "cov0": "/_blob/ca1fa398c68488e3e076343e789d6194", "rule": "Une vidéo d’app passe 1 M de vues", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "VideoA.dc.html", "cta": "Voir la vidéo"}]}, {"g": "Vendredi 07/11", "items": [{"group": "Vendredi 07/11", "when": "07/11 · 11 h", "typ": "Vidéo", "ico": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "title": "Une vidéo d’Astra AI passe 1 M de vues", "sub": "@belajarbersamaespi · Indonésie · 2 333× sa normale", "big": "1,99 M", "covs": [{"src": "/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4"}], "cov0": "/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4", "rule": "Une vidéo d’app passe 1 M de vues", "unread": false, "dot": "transparent", "bg": "transparent", "w": "600", "href": "VideoA.dc.html", "cta": "Voir la vidéo"}]}];
-    let rules = [{"t": "Un format repris par 3 comptes ou plus", "s": "Toutes niches · tous les marchés", "n": "4 cette semaine", "ico": "M5 6h14M12 6v13M9 19h6"}, {"t": "Une vidéo d’app passe 1 M de vues", "s": "Études · tous les marchés", "n": "2 cette semaine", "ico": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6"}, {"t": "Un compte fait 100× sa normale", "s": "Études et Couple · tous les marchés", "n": "2 cette semaine", "ico": "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"}];
-    let nUnread = 3;
-    // Sur le site : les alertes du Radar (document « alerts »), lues comme AlertesA : les vidéos de la semaine qui font le plus
-    // de fois leur normale et les formats apparus cette semaine, rangés par jour ; non lues = aujourd'hui et hier.
-    const D = this.props && this.props.data;
-    if (D === null) { groups = []; nUnread = 0; tabs = tabs.map((t) => Object.assign({}, t, { n: 0 }));
-      rules = rules.map((r) => Object.assign({}, r, { s: 'Toutes niches · tous les marchés', n: 'rien cette semaine' })); }
-    if (D && D.videos) {
-      const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
-      const xf = (x) => (x < 0.05 ? '< 0,1' : x >= 100 ? Math.round(x).toLocaleString('en-US').replace(/,/g, '\u202f') : x >= 10 ? String(Math.round(x)) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
-      const pct = (d) => (d >= 9 ? '×' + Math.round(1 + d).toLocaleString('en-US').replace(/,/g, '\u202f') : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%');
-      const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-      const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? 'aujourd’hui' : 'il y a ' + d + '\u202fj'; };
-      const MKN = (c) => c === 'XX' ? 'Pays inconnu' : ({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil', DE: 'Allemagne', SA: 'Arabie saoudite', RU: 'Russie' })[c] || (c && /^[A-Z]{2}$/.test(c) && typeof Intl !== 'undefined' && Intl.DisplayNames ? (new Intl.DisplayNames(['fr'], { type: 'region' }).of(c) || c) : '');
-      // « depuis la France », « depuis les États-Unis », « depuis l’Allemagne », « depuis Singapour » ; rien pour un pays inconnu.
-      const DEPUIS = (n) => { n = String(n || ''); if (!n || n === 'Pays inconnu' || /^[A-Z]{2}$/.test(n)) return ''; if (/^(Singapour|Chypre|Cuba|Madagascar|Taïwan|Porto Rico|Malte|Haïti|Bahreïn|Israël|Monaco|Oman|Hong Kong|Maurice|La Réunion|Djibouti)$/.test(n)) return 'depuis ' + n;
-        if (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n)) return 'depuis les ' + n; if (/^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n)) return 'depuis l’' + n;
-        return 'depuis ' + (/e$/.test(n.split(/[\s-]/)[0]) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize|Royaume-Uni|Suriname)$/.test(n) ? 'la ' : 'le ') + n; };
-      // La langue de ses vidéos quand ce n'en est pas une de son pays (otherLang, calculé par la synchro) : « en espagnol ».
-      const LANGN = (l) => { if (!l) return ''; try { return 'en ' + new Intl.DisplayNames(['fr'], { type: 'language' }).of(l); } catch (e) { return ''; } };
-      const ML = new Proxy({}, { get: (o, c) => MKN(String(c)) });
-      const ico = (o) => ({ logo: (o && o.icon) || '', nologo: !(o && o.icon), blank: o && o.icon ? '' : 'sw-app-blank' });
-      const flags = (cs) => (cs || []).filter((c) => c).slice(0, 3).map((c) => ({ c }));
-      const names = (as) => { const n = (as || []).map((a) => a.name); return n.length > 3 ? n.slice(0, 2).join(', ') + ' et ' + (n.length - 2) + ' autres' : n.length > 1 ? n.slice(0, -1).join(', ') + ' et ' + n[n.length - 1] : n.join(''); };
-      const TXT = 'M5 6h14M12 6v13M9 19h6', SON = 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z';
-      const de = (n) => (/^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? 'd’' : 'de ') + n;
-      const ICO = { video: 'M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6', compte: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6' };
-      const day0 = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
-      const today = day0(Date.now());
-      const age = (t) => Math.max(0, Math.round((today - day0(t)) / 86400000));
-      const label = (t) => { const k = age(t); if (k === 0) return 'Aujourd’hui'; if (k === 1) return 'Hier';
-        const s = new Date(t).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: '2-digit' }); return s.charAt(0).toUpperCase() + s.slice(1); };
-      const when = (t) => day(t) + ' · ' + String(new Date(t).getHours()).padStart(2, '0') + '\u202fh';
-      const items = [];
-      D.videos.forEach((v) => {
-        const appN = v.app ? v.app.name : '', mk = v.market ? [DEPUIS(ML[v.market]), LANGN(v.otherLang)].filter(Boolean).join(' · ') : '';
-        const million = v.views >= 1e6, acc = !million && v.x >= 100, une = 'Une vidéo ' + (appN ? de(appN) + ' ' : '');
-        items.push({ paid: !!v.paid, at: v.publishedAt, typ: acc ? 'Compte' : 'Vidéo', ico: acc ? ICO.compte : ICO.video,
-          title: million ? une + 'passe ' + Math.floor(v.views / 1e6) + ' M de vues' : acc ? '@' + v.handle + ' fait ' + xf(v.x) + ' sa normale' : une + (v.x ? 'à ' + xf(v.x) + ' sa normale' : 'à ' + nf(v.views) + ' vues'),
-          sub: (acc ? [appN, mk, nf(v.views) + ' vues'] : ['@' + v.handle, mk, million && v.x ? xf(v.x) + ' sa normale' : nf(v.views) + ' vues']).filter(Boolean).join(' · '),
-          big: million || !v.x ? nf(v.views) : xf(v.x), cov0: v.cover || '', href: 'MVideo.dc.html?v=' + v.id, cta: 'Voir la vidéo',
-          kind: 'video', views: v.views, x: v.x || 0, slug: v.app ? v.app.slug : '', market: v.market || '' });
-      });
-      (D.formats || []).forEach((f) => {
-        items.push({ at: f.lastPostAt, typ: f.kind === 'sound' ? 'Son' : 'Format', ico: f.kind === 'sound' ? SON : TXT,
-          title: (f.kind === 'sound' ? 'Un son se répète : « ' : 'Une accroche se répète : « ') + f.label + ' »',
-          sub: [names(f.apps), f.market ? ML[f.market] : ''].filter(Boolean).join(' · '),
-          big: f.accounts + ' comptes', cov0: ((f.members || []).filter((x) => x.cover)[0] || {}).cover || '', href: 'MFormatFiche.dc.html?f=' + f.id, cta: 'Voir le format',
-          kind: 'format', accounts: f.accounts, market: f.market || '', niche: f.niche || null });
-      });
-      items.sort((p, q) => q.at - p.at);
-      nUnread = 0;
-      const byDay = [];
-      items.forEach((it) => {
-        const unread = age(it.at) <= 1;
-        if (unread) nUnread++;
-        const g = label(it.at);
-        const x = Object.assign(it, { group: g, when: when(it.at), unread, dot: unread ? 'var(--accent)' : 'transparent', bg: unread ? 'var(--accent-soft)' : 'transparent', w: unread ? '700' : '600' });
-        const last = byDay[byDay.length - 1];
-        if (last && last.g === g) last.items.push(x); else byDay.push({ g, items: [x] });
-      });
-      groups = byDay;
-      const c = (fn) => items.filter(fn).length;
-      tabs = [['Toutes', () => true], ['Formats', (x) => x.typ === 'Format' || x.typ === 'Son'], ['Vidéos', (x) => x.typ === 'Vidéo'], ['Comptes', (x) => x.typ === 'Compte']]
-        .map((t, i) => ({ l: t[0], n: c(t[1]), on: i === 0 ? 'true' : 'false' }));
-      // « Tes alertes » : les mêmes règles, comptées sur les données de la semaine.
-      const nR = [(D.formats || []).length, D.videos.filter((v) => v.views >= 1e6).length, D.videos.filter((v) => v.views < 1e6 && v.x >= 100).length];
-      rules = rules.map((r, i) => Object.assign({}, r, { s: 'Toutes niches · tous les marchés', n: nR[i] + ' cette semaine' }));
+    const { LANGN, MKW } = this.nomsPays();
+    // Alertes d'exemple (canevas) : même forme que celles enregistrées (saved('alertRules')).
+    const sampleRules = [{ id: 'ex1', createdAt: 0, quoi: 'format', niche: null, seuil: 3, marche: null },
+      { id: 'ex2', createdAt: 0, quoi: 'video', niche: 'Études', seuil: 1e6, marche: null },
+      { id: 'ex3', createdAt: 0, quoi: 'compte', niche: null, seuil: 100, marche: null }];
+    // Sur le canevas : un extrait du document « alerts » du 20/11 (mêmes champs), miniatures du canevas ; « _members »
+    // tient lieu de la fiche format:<id> du premier format. Ses dates sont décalées pour que « Hier » reste hier.
+    const sample = {"updatedAt": 1795181548082, "videos": [{"id": "7707838500388801822", "platform": "tiktok", "handle": "joyjoylithium", "app": {"slug": "ahealth", "name": "AHEALTH", "icon": null}, "views": 6300000, "x": 1947.3, "publishedAt": 1794621016000, "cover": "/_blob/c14ebd0e0a8670ca25e430d53eb50b5a", "hook": null, "market": "US", "region": "US"}, {"id": "7708448921336433934", "platform": "tiktok", "handle": "wendymakes1", "app": {"slug": "higgsfield", "name": "Higgsfield", "icon": null}, "views": 567600, "x": 1280.5, "publishedAt": 1794763146000, "cover": "/_blob/c23067a92da30db45a0ad2c0999138f2", "hook": null, "market": "US", "region": "US"}, {"id": "7709805681368517908", "platform": "tiktok", "handle": "studywith_elsie", "app": {"slug": "astraai", "name": "Astra AI", "icon": null}, "views": 529900, "x": 829.3, "publishedAt": 1795079026000, "cover": "/_blob/c406311df36a68d913f0a477c4b8454a", "hook": null, "market": "VN", "region": "VN"}, {"id": "7709218149148757261", "platform": "tiktok", "handle": "meme.atethat", "app": {"slug": "mise", "name": "mise", "icon": null}, "views": 837300, "x": 338.1, "publishedAt": 1794942274000, "cover": "/_blob/c486ed7703cb1a402d8b8e7042d66531", "hook": "My baby daddy gave me $150 to feed these kids", "market": "US", "region": "US"}, {"id": "7709084684470324500", "platform": "tiktok", "handle": "malysh_bully", "app": {"slug": "higgsfield", "name": "Higgsfield", "icon": null}, "views": 1100000, "x": 322.2, "publishedAt": 1794911155000, "cover": "/_blob/c79155853ab19fe0209db97ca5bbc352", "hook": null, "market": "AE", "region": "FR"}, {"id": "7708439187808177441", "platform": "tiktok", "handle": "studywithgio1", "app": {"slug": "knowunity", "name": "Knowunity", "icon": null}, "views": 1900000, "x": 302.1, "publishedAt": 1794760865000, "cover": "/_blob/ca1fa398c68488e3e076343e789d6194", "hook": "studio storia come fosse 📚 una puntata di gossip girl 💋", "market": "IT", "region": "IT"}, {"id": "7708056522600762645", "platform": "tiktok", "handle": "malysh_bully", "app": {"slug": "higgsfield", "name": "Higgsfield", "icon": null}, "views": 894200, "x": 268.3, "publishedAt": 1794671765000, "cover": "/_blob/cb598f2e10f42af598895778e315d4e0", "hook": null, "market": "AE", "region": "AE"}, {"id": "7707997804722933025", "platform": "tiktok", "handle": "techwithkadeb", "app": {"slug": "higgsfield", "name": "Higgsfield", "icon": null}, "views": 774200, "x": 261.7, "publishedAt": 1794658094000, "cover": "/_blob/d2f0034b50433fc13d2790b6a8ba22b0", "hook": null, "market": "BE", "region": "BE"}], "formats": [{"id": "yn7ds7kh373968hczazxmkc7bh8j497g", "kind": "sound", "label": "my moon my man finneas cover", "accounts": 32, "niche": "Autres", "market": "FR", "maxViews": 289200, "medX": 1.1, "wins": 21, "n": 40, "lastPostAt": 1795113866000, "apps": [{"slug": "ecogpt", "name": "EcoGPT", "icon": null}, {"slug": "followpeek", "name": "followpeek", "icon": null}, {"slug": "solaia", "name": "Solaia", "icon": null}, {"slug": "cosmos", "name": "Cosmos", "icon": null}, {"slug": "vandraw", "name": "VanDraw", "icon": null}, {"slug": "studyflash", "name": "Studyflash", "icon": null}, {"slug": "westash", "name": "WeStash", "icon": null}, {"slug": "vocabulary", "name": "Vocabulary", "icon": null}, {"slug": "followotter", "name": "FollowOtter", "icon": null}, {"slug": "freenotes", "name": "Freenotes", "icon": null}, {"slug": "slowread", "name": "SlowRead", "icon": null}, {"slug": "uniperks", "name": "uniperks", "icon": null}, {"slug": "milionegle", "name": "Milionegle", "icon": null}, {"slug": "jobstep", "name": "JobStep", "icon": null}, {"slug": "love8", "name": "Love8", "icon": null}, {"slug": "thea", "name": "Thea", "icon": null}, {"slug": "astraai", "name": "Astra AI", "icon": null}, {"slug": "layora", "name": "LAYORA", "icon": null}, {"slug": "bump", "name": "Bump", "icon": null}, {"slug": "retaincards", "name": "Retain Cards", "icon": null}, {"slug": "finzee", "name": "Finzee", "icon": null}, {"slug": "yope", "name": "yope", "icon": null}, {"slug": "crushon.ai", "name": "CrushOn.AI", "icon": null}, {"slug": "whatbrandonthinks", "name": "What Brandon Thinks", "icon": null}, {"slug": "jellypal", "name": "JellyPal", "icon": null}, {"slug": "fluencify", "name": "Fluencify", "icon": null}, {"slug": "tethered", "name": "Tethered", "icon": null}], "members": [{"handle": "help.animals.worldwide", "videoId": "7707777296899362070", "views": 289200, "x": 19.3, "publishedAt": 1794606757000, "cover": "/_blob/038553a877ce8b36325c1a7dffb2e12a"}, {"handle": "earthsimpact", "videoId": "7709702028020288790", "views": 68600, "x": 3.4, "publishedAt": 1795054921000, "cover": "/_blob/0488fb4a3b81c670ae8e5e16539e99ff"}, {"handle": "help.animals.worldwide", "videoId": "7708876691422137622", "views": 66200, "x": 3.1, "publishedAt": 1794862727000, "cover": "/_blob/069e47467e9285e830a4d635a578367a"}], "_members": [{"handle": "help.animals.worldwide", "videoId": "7707777296899362070", "views": 289200, "x": 19.3, "publishedAt": 1794606757000, "cover": "/_blob/06aed12697d59d747a1110b546008143"}, {"handle": "earthsimpact", "videoId": "7709702028020288790", "views": 68600, "x": 3.4, "publishedAt": 1795054921000, "cover": "/_blob/08803231eb7ba99e9f91930899051246"}, {"handle": "help.animals.worldwide", "videoId": "7708876691422137622", "views": 66200, "x": 3.1, "publishedAt": 1794862727000, "cover": "/_blob/091747503c814d8ad50a7617c2c969cf"}, {"handle": "amarafindnow", "videoId": "7708965507751349535", "views": 63200, "x": 5.6, "publishedAt": 1794883414000, "cover": "/_blob/0d296413178c5acb1c0fb28fed4013c6"}, {"handle": "help.animals.worldwide", "videoId": "7708889231971618070", "views": 26300, "x": 1.2, "publishedAt": 1794865648000, "cover": "/_blob/0d7866f32701e79b125d5a7156c47297"}, {"handle": "lya_au_feminin", "videoId": "7709181685782285600", "views": 16300, "x": 8.7, "publishedAt": 1794933739000, "cover": "/_blob/0ef21f0b18aa1a7896d51f733239ac88"}, {"handle": "lya_au_feminin", "videoId": "7708516444358724897", "views": 10900, "x": 13.2, "publishedAt": 1794778850000, "cover": "/_blob/0f20a04249db07d37eb7dc358b7d50c8"}, {"handle": "missaylah_xo", "videoId": "7709051068029750534", "views": 10900, "x": 15.7, "publishedAt": 1794903343000, "cover": "/_blob/16c864ec0be333a14d2784b79b7e6955"}, {"handle": "mem.cosmos", "videoId": "7709553314085506325", "views": 8255, "x": 1.8, "publishedAt": 1795020268000, "cover": "/_blob/19d2cc78672d2b74e3acaeb184e7cf66"}, {"handle": "inspovikk", "videoId": "7709635855870135572", "views": 6857, "x": 0.8, "publishedAt": 1795039489000, "cover": "/_blob/1cf900fc861f4782e4602704e335a7d5"}, {"handle": "sophiieengell", "videoId": "7709533446342839585", "views": 5672, "x": 0.4, "publishedAt": 1795015642000, "cover": "/_blob/1fc331466e2c5d12d8c528a65fc51d29"}, {"handle": "lya_au_feminin", "videoId": "7709569574462704928", "views": 5241, "x": 2.8, "publishedAt": 1795024054000, "cover": "/_blob/1fef92aa131c335a4c6c4780f4189a4e"}, {"handle": "lilistash56", "videoId": "7709955327973805345", "views": 4923, "x": 2.5, "publishedAt": 1795113866000, "cover": "/_blob/2010c321b827a0e032d25e98d057eca3"}, {"handle": "eliestash", "videoId": "7709383836366327062", "views": 4572, "x": 6.1, "publishedAt": 1794980816000, "cover": "/_blob/212e3ebafa229f9b48b5aab01ffacf27"}, {"handle": "daisy.another.inc", "videoId": "7708276195481095446", "views": 4509, "x": 10.7, "publishedAt": 1794722927000, "cover": "/_blob/27f73773c1d39838dbcf6fb2a60837f8"}, {"handle": "kels.girlcode", "videoId": "7709219007777312023", "views": 4483, "x": 0.8, "publishedAt": 1794942431000, "cover": "/_blob/2b138743063f2e9b53ff19c2a1933fed"}, {"handle": "eliestash", "videoId": "7709952266446343446", "views": 4034, "x": 5.9, "publishedAt": 1795113154000, "cover": "/_blob/2d6036b691ddcfc59946680849fc23d5"}, {"handle": "studywithmmesi", "videoId": "7709076352527338770", "views": 3174, "x": 0.7, "publishedAt": 1794909216000, "cover": "/_blob/2e5ff046edd6c16e60ac09e0c83f2a8a"}, {"handle": "stirreel", "videoId": "7708841364624018708", "views": 1751, "x": 1, "publishedAt": 1794854502000, "cover": "/_blob/32d0dea06e6de90a53eebd0045b11da5"}, {"handle": "alexandra.teculescu", "videoId": "7708854504824917270", "views": 1576, "x": 0.6, "publishedAt": 1794857562000, "cover": "/_blob/33eb90ba89cfd8c85b70fa6dc1472419"}, {"handle": "rebecca.emprende", "videoId": "7709530908004535555", "views": 1522, "x": 3.2, "publishedAt": 1795015051000, "cover": "/_blob/34482dbafd6b280d21af2c85a0cd25a4"}, {"handle": "dianapracuje", "videoId": "7708444735760796961", "views": 1412, "x": 1, "publishedAt": 1794762155000, "cover": "/_blob/354456ba1333357e346f0904993e999e"}, {"handle": "ginaflove8", "videoId": "7709900071113854230", "views": 1394, "x": 0.6, "publishedAt": 1795101001000, "cover": "/_blob/3c235b9b1e575761d2c35f09383cfaf6"}, {"handle": "clearskinryanna", "videoId": "7708990694425218317", "views": 1154, "x": 1.7, "publishedAt": 1794889282000, "cover": "/_blob/3ccf8c7bb4fa7fd436b74b4eaa51b396"}, {"handle": "studyingwithcaroline", "videoId": "7707716622793854241", "views": 1081, "x": 0.3, "publishedAt": 1794592626000, "cover": "/_blob/3d311cc9df04ec48df25bf6273370f52"}, {"handle": "atlz825", "videoId": "7709235269827956001", "views": 1001, "x": 0.9, "publishedAt": 1794946215000, "cover": "/_blob/4123877874903f5c4476b28136bedb0d"}, {"handle": "alysa.bump", "videoId": "7708066299921878294", "views": 914, "x": 1.1, "publishedAt": 1794674043000, "cover": "/_blob/41f89a7b769d3942e4128b714c3d582d"}, {"handle": "etudie.avec.manal", "videoId": "7708438161847749920", "views": 878, "x": 1, "publishedAt": 1794760624000, "cover": "/_blob/42c065d63ea703294afdc40aa1b3c19a"}, {"handle": "monbudgetchill", "videoId": "7708805256691338528", "views": 872, "x": 1.1, "publishedAt": 1794846093000, "cover": "/_blob/46d2a3631b757f853a21b190df8a1e1e"}, {"handle": "jessicaadiary", "videoId": "7707390990046350612", "views": 867, "x": 1.4, "publishedAt": 1794516811000, "cover": "/_blob/4af8eef5c7b8089c8eea427a6a44b6e7"}]}, {"id": "yn7ewnwh8nyvqh2gjv89ty252h8j5wd7", "kind": "sound", "label": "original sound - 7_linx", "accounts": 38, "niche": "Langues", "market": "US", "maxViews": 12287, "medX": 1.1, "wins": 18, "n": 38, "lastPostAt": 1795166138000, "apps": [{"slug": "wordy", "name": "Wordy", "icon": null}, {"slug": "texmirizzapp", "name": "Texmi Rizz App", "icon": null}, {"slug": "nursemind", "name": "NurseMind", "icon": null}, {"slug": "noise", "name": "Noise", "icon": null}, {"slug": "militarybenefits", "name": "Military Benefits App", "icon": null}, {"slug": "aistote", "name": "Aistote", "icon": null}, {"slug": "amorly", "name": "Amorly", "icon": null}, {"slug": "slowread", "name": "SlowRead", "icon": null}, {"slug": "repostzap", "name": "RepostZap", "icon": null}, {"slug": "dealseek", "name": "DealSeek", "icon": null}, {"slug": "been", "name": "been", "icon": null}, {"slug": "raide", "name": "Raide", "icon": null}, {"slug": "fig", "name": "Fig", "icon": null}, {"slug": "vocabulary", "name": "Vocabulary", "icon": null}], "members": [{"handle": "thatbxtch65", "videoId": "7706790802470604046", "views": 12287, "x": null, "publishedAt": 1794377081000, "cover": "/_blob/4b54677d97ff7a66e303ff0d242a3431"}, {"handle": "des_rizz", "videoId": "7706662830979697951", "views": 1332, "x": 1.3, "publishedAt": 1794347285000, "cover": "/_blob/4d277b6b8b270d5ecf2d32f3598772ed"}, {"handle": "billybob1311", "videoId": "7704514824876657951", "views": 1156, "x": 3.6, "publishedAt": 1793847159000, "cover": "/_blob/5673512c9e670bb5420a2e01270be326"}], "_members": [{"handle": "thatbxtch65", "videoId": "7706790802470604046", "views": 12287, "x": null, "publishedAt": 1794377081000, "cover": "/_blob/570b80a20d7dc09945ec1557166a3166"}, {"handle": "des_rizz", "videoId": "7706662830979697951", "views": 1332, "x": 1.3, "publishedAt": 1794347285000, "cover": "/_blob/58b17fafa46873a6b7c1a6e765a36201"}, {"handle": "billybob1311", "videoId": "7704514824876657951", "views": 1156, "x": 3.6, "publishedAt": 1793847159000, "cover": "/_blob/5e621c7ef9aae41691538726fbba1393"}, {"handle": "jay_noise18", "videoId": "7706252139101719822", "views": 1121, "x": 1.5, "publishedAt": 1794251698000, "cover": "/_blob/5ea53bae5c1defd49d76b191b8b19228"}, {"handle": "zoeyvsdebt", "videoId": "7706797962281717006", "views": 1083, "x": null, "publishedAt": 1794378746000, "cover": "/_blob/608419d1efd84ba7895e44ce6290cd99"}, {"handle": "courtcourtishere", "videoId": "7706591519981014285", "views": 1062, "x": 5, "publishedAt": 1794330711000, "cover": "/_blob/63119f505f58b810c055512e54a2709e"}, {"handle": "lilyb9878", "videoId": "7707422653497347359", "views": 965, "x": 3.6, "publishedAt": 1794524185000, "cover": "/_blob/66f4fa9843feb3f97ceb21022e5fba21"}, {"handle": "stargirlxo363", "videoId": "7705473049365073182", "views": 854, "x": 1.5, "publishedAt": 1794070266000, "cover": "/_blob/69d491e75cbe53aa87f9a799a937b2ce"}, {"handle": "christineabadies0", "videoId": "7706667129608703263", "views": 853, "x": 1, "publishedAt": 1794348286000, "cover": "/_blob/6ba7ec5b522785acc5d4c6cbc36c6410"}, {"handle": "f0ry0u0nlyy", "videoId": "7708040684837555487", "views": 836, "x": null, "publishedAt": 1794668092000, "cover": "/_blob/6d87484cf453a4108345ba9552b66677"}, {"handle": "user879602394", "videoId": "7706729600134466829", "views": 833, "x": null, "publishedAt": 1794362828000, "cover": "/_blob/6e8d7a4f2d0e84e8ade285ae95e67d3b"}, {"handle": "pooptaarrt", "videoId": "7706697300629835022", "views": 727, "x": 1.7, "publishedAt": 1794355321000, "cover": "/_blob/6f73acb699e8fe94beb5bf8ad1417ec7"}, {"handle": "thestudyscrubs", "videoId": "7706671446746991903", "views": 720, "x": 1.6, "publishedAt": 1794349291000, "cover": "/_blob/6fd8276e795b93a061c9687655d067ee"}, {"handle": "welovemilitaryand", "videoId": "7706656716548558111", "views": 707, "x": 1, "publishedAt": 1794345865000, "cover": "/_blob/712cc0328d364ee5284d8b86b822b0eb"}, {"handle": "doctorm0721", "videoId": "7709987154952342816", "views": 680, "x": 1.1, "publishedAt": 1795121276000, "cover": "/_blob/72c15d63bd3df15fa4eb69f537051b1b"}, {"handle": "majanowak074", "videoId": "7710179808608668960", "views": 650, "x": 0, "publishedAt": 1795166138000, "cover": "/_blob/74d916f3159ab7092af6b95dc667f725"}, {"handle": "totallybooked18", "videoId": "7704004776798850318", "views": 645, "x": 1, "publishedAt": 1793728432000, "cover": "/_blob/7c0a9bffe1ede23706d52348b19ce9c9"}, {"handle": "appleuser94959968", "videoId": "7705368316717714701", "views": 615, "x": null, "publishedAt": 1794045985000, "cover": "/_blob/80840e562ab65d914272b812428ab08e"}, {"handle": "almavwlxtlx", "videoId": "7707841343619403021", "views": 557, "x": 2.3, "publishedAt": 1794621680000, "cover": "/_blob/827fd97780c1ebcb3d670bf81ef0533e"}, {"handle": "user52947300246", "videoId": "7708589341680979214", "views": 552, "x": 2.2, "publishedAt": 1794795846000, "cover": "/_blob/82db985053d13a0d5f335cb7adf35889"}, {"handle": "ale.lifestyle6", "videoId": "7704573347077655838", "views": 542, "x": 0.8, "publishedAt": 1793860812000, "cover": "/_blob/8a6c2da5244cd29c8c4935f8ddb5e5c5"}, {"handle": "useronchrome", "videoId": "7706430493054536974", "views": 526, "x": 2.6, "publishedAt": 1794293201000, "cover": "/_blob/8b480a4fa406ceb6e6769d2b4ce75483"}, {"handle": "alisatravelsplaces", "videoId": "7708069755374079263", "views": 522, "x": 1.3, "publishedAt": 1794675900000, "cover": "/_blob/8bc8a8963b674a7b0fec37ee86f4e04c"}, {"handle": "ava.dailyfits", "videoId": "7706390749423750414", "views": 491, "x": 1, "publishedAt": 1794283953000, "cover": "/_blob/8e66028e7ffad86e763e752dc3ff002d"}, {"handle": "glass_fruit4", "videoId": "7706592067161656589", "views": 479, "x": 1.9, "publishedAt": 1794330837000, "cover": "/_blob/8e907222154e04e6b79c5823b24977cd"}, {"handle": "enchantedbookshelf8", "videoId": "7705154281820671263", "views": 447, "x": 0.8, "publishedAt": 1793996049000, "cover": "/_blob/90d88398981d9c49586ee1a7ed4ca2c8"}, {"handle": "3satimon", "videoId": "7707827800371105037", "views": 436, "x": 2.2, "publishedAt": 1794618524000, "cover": "/_blob/91095e98935d2e421fd54617524daa0f"}, {"handle": "lostallshelfcontrol", "videoId": "7705877015961898254", "views": 427, "x": 1.1, "publishedAt": 1794164333000, "cover": "/_blob/92240dd6d92a99a2a8de90b903aa9ce4"}, {"handle": "epicginger5", "videoId": "7707455516192230687", "views": 394, "x": 1, "publishedAt": 1794531837000, "cover": "/_blob/932a36156bc322466d143e38a3872dfa"}, {"handle": "keytou14", "videoId": "7706998890171616525", "views": 372, "x": 1.9, "publishedAt": 1794425544000, "cover": "/_blob/93a1db3bd92781d93c7837e90b164174"}]}, {"id": "yn78gbzjqv3qad1hzm91nq0mc58jaesf", "kind": "sound", "label": "original sound - dextermr8", "accounts": 35, "niche": "Jalousie et ex", "market": "US", "maxViews": 917900, "medX": 0.9, "wins": 10, "n": 35, "lastPostAt": 1795162375000, "apps": [{"slug": "followotter", "name": "FollowOtter", "icon": null}, {"slug": "declic", "name": "declic", "icon": null}, {"slug": "thea", "name": "Thea", "icon": null}, {"slug": "love8", "name": "Love8", "icon": null}, {"slug": "tethered", "name": "Tethered", "icon": null}, {"slug": "recentfollow", "name": "RecentFollow", "icon": null}, {"slug": "musa", "name": "Musa", "icon": null}, {"slug": "222", "name": "222", "icon": null}, {"slug": "solaia", "name": "Solaia", "icon": null}, {"slug": "texmirizzapp", "name": "Texmi Rizz App", "icon": null}, {"slug": "nursemind", "name": "NurseMind", "icon": null}, {"slug": "loverzz", "name": "Loverzz", "icon": null}, {"slug": "enroad", "name": "Enroad", "icon": null}, {"slug": "fits", "name": "Fits", "icon": null}, {"slug": "slowread", "name": "SlowRead", "icon": null}, {"slug": "zoya", "name": "Zoya", "icon": null}, {"slug": "vocabulary", "name": "Vocabulary", "icon": null}, {"slug": "reading.com", "name": "Reading.com", "icon": null}, {"slug": "youmeal", "name": "Youmeal", "icon": null}, {"slug": "dealseek", "name": "DealSeek", "icon": null}], "members": [{"handle": "lily.girltea", "videoId": "7708961642394045709", "views": 917900, "x": 6.2, "publishedAt": 1794882521000, "cover": "/_blob/9425946159f0abd1e16e2d073e7e4f0d"}, {"handle": "mia.girlcode", "videoId": "7709473127088082198", "views": 777000, "x": 141.4, "publishedAt": 1795001603000, "cover": "/_blob/9c2bbd02075ad7fe4b7b510742e9bf5e"}, {"handle": "wyattsocialhacks", "videoId": "7709169032737459469", "views": 8598, "x": 0.8, "publishedAt": 1794930847000, "cover": "/_blob/9ccefe8ea9c3dcf09dc01715eb4628d2"}]}, {"id": "yn769sa4x1k8r0mq80yx1ejp358j4b2p", "kind": "sound", "label": "Hey, look at this! Look!Hey!", "accounts": 32, "niche": "Jalousie et ex", "market": "US", "maxViews": 12900, "medX": 1, "wins": 14, "n": 36, "lastPostAt": 1795097261000, "apps": [{"slug": "recentfollow", "name": "RecentFollow", "icon": null}, {"slug": "militarybenefits", "name": "Military Benefits App", "icon": null}, {"slug": "finzee", "name": "Finzee", "icon": null}, {"slug": "tryp.com", "name": "Tryp.com", "icon": null}, {"slug": "studley", "name": "Studley", "icon": null}, {"slug": "musa", "name": "Musa", "icon": null}, {"slug": "solaia", "name": "Solaia", "icon": null}, {"slug": "vocabulary", "name": "Vocabulary", "icon": null}, {"slug": "sauceai", "name": "Sauce AI", "icon": null}, {"slug": "shortical", "name": "Shortical", "icon": null}, {"slug": "reading.com", "name": "Reading.com", "icon": null}, {"slug": "fits", "name": "Fits", "icon": null}, {"slug": "noise", "name": "Noise", "icon": null}, {"slug": "slowread", "name": "SlowRead", "icon": null}, {"slug": "fig", "name": "Fig", "icon": null}, {"slug": "nursemind", "name": "NurseMind", "icon": null}, {"slug": "dealseek", "name": "DealSeek", "icon": null}, {"slug": "pcospal", "name": "PCOS Pal", "icon": null}, {"slug": "texmirizzapp", "name": "Texmi Rizz App", "icon": null}, {"slug": "wordy", "name": "Wordy", "icon": null}], "members": [{"handle": "mandy.hottea", "videoId": "7708960715796647188", "views": 12900, "x": 4.8, "publishedAt": 1794882293000, "cover": "/_blob/9d1a5a6fb54ebb141a481af2ed54ffc0"}, {"handle": "erin.elsewhere", "videoId": "7707394337327336718", "views": 1293, "x": null, "publishedAt": 1794517597000, "cover": "/_blob/a24b163adc17ed20697734e238754f85"}, {"handle": "pointbudget", "videoId": "7705837976500161824", "views": 961, "x": 1.7, "publishedAt": 1794155221000, "cover": "/_blob/a7c4d5fedcf7826a22f2882c28b7eb7a"}]}, {"id": "yn74ewhcjc9yqk4tkke52kn8kn8j5vjf", "kind": "sound", "label": "original sound - teazxsx", "accounts": 29, "niche": "Jalousie et ex", "market": "US", "maxViews": 154700, "medX": 1, "wins": 11, "n": 30, "lastPostAt": 1795116418000, "apps": [{"slug": "followpeek", "name": "followpeek", "icon": null}, {"slug": "webcomics", "name": "WebComics", "icon": null}, {"slug": "thea", "name": "Thea", "icon": null}, {"slug": "milionegle", "name": "Milionegle", "icon": null}, {"slug": "enroad", "name": "Enroad", "icon": null}, {"slug": "bump", "name": "Bump", "icon": null}, {"slug": "sideshift", "name": "SideShift", "icon": null}, {"slug": "lurk", "name": "Lurk", "icon": null}, {"slug": "parrot", "name": "Parrot", "icon": null}, {"slug": "nursemind", "name": "NurseMind", "icon": null}, {"slug": "musa", "name": "Musa", "icon": null}, {"slug": "hubcapture", "name": "Hub Capture", "icon": null}, {"slug": "recentfollow", "name": "RecentFollow", "icon": null}, {"slug": "slowread", "name": "SlowRead", "icon": null}, {"slug": "vocabulary", "name": "Vocabulary", "icon": null}, {"slug": "fluencify", "name": "Fluencify", "icon": null}, {"slug": "shortical", "name": "Shortical", "icon": null}, {"slug": "courtside", "name": "Courtside", "icon": null}, {"slug": "liftly", "name": "Liftly", "icon": null}], "members": [{"handle": "ines.hustles3", "videoId": "7709503468586798368", "views": 154700, "x": 28, "publishedAt": 1795008661000, "cover": "/_blob/a9b09d02a071c19286e4ca9ce7a19326"}, {"handle": "manhwa..king", "videoId": "7708738783348313352", "views": 21900, "x": 5.7, "publishedAt": 1794830619000, "cover": "/_blob/aed77f1709cd6e8e52638f43b380008f"}, {"handle": "clearskinzoey", "videoId": "7706709403663093023", "views": 10003, "x": 1.3, "publishedAt": 1794358124000, "cover": "/_blob/afc2379db076184c8271781217758b61"}]}, {"id": "yn73yhmzsxe9dgw9j60dah4ybx8j63wc", "kind": "hook", "label": "is ANYONE else getting halfway through their sentences and forgetting the one word that would make it make sense 😭 it got me thinking… i finished school and apparently stopped trying to expand my voc", "accounts": 30, "niche": "Langues", "market": "US", "maxViews": 1046, "medX": 1, "wins": 15, "n": 40, "lastPostAt": 1795075615000, "apps": [{"slug": "vocabulary", "name": "Vocabulary", "icon": null}, {"slug": "dealseek", "name": "DealSeek", "icon": null}, {"slug": "nursemind", "name": "NurseMind", "icon": null}], "members": [{"handle": "daisy.another.inc", "videoId": "7707255873948699926", "views": 1046, "x": 2.5, "publishedAt": 1794485353000, "cover": "/_blob/b2416580f57606acc9d4f5837adced74"}, {"handle": "amanda.eats45", "videoId": "7707716017467755790", "views": 978, "x": 1, "publishedAt": 1794592492000, "cover": "/_blob/b4bd2f77f49284da6cb01fbacea27c87"}, {"handle": "lollalee_xoxo", "videoId": "7707016261661740295", "views": 925, "x": 1.3, "publishedAt": 1794429568000, "cover": "/_blob/b7e96a5823d1c7581bbb73dee6ce987d"}]}, {"id": "yn78bhax1fj6g3rhpk9xym1syn8j5e7n", "kind": "sound", "label": "Inside Algorithm", "accounts": 28, "niche": "Side hustle", "market": "ES", "maxViews": 430397, "medX": 1, "wins": 19, "n": 39, "lastPostAt": 1795074829000, "apps": [{"slug": "sideshift", "name": "SideShift", "icon": null}, {"slug": "canvasugc", "name": "Canvas UGC", "icon": null}, {"slug": "fluencify", "name": "Fluencify", "icon": null}, {"slug": "liftly", "name": "Liftly", "icon": null}, {"slug": "slowread", "name": "SlowRead", "icon": null}, {"slug": "bump", "name": "Bump", "icon": null}], "members": [{"handle": "be_like_olaa", "videoId": "7705897846918171936", "views": 430397, "x": 52.8, "publishedAt": 1794169161000, "cover": "/_blob/b9000ec4bbec676a12fd7d82db3bf9e4"}, {"handle": "be_like_olaa", "videoId": "7707213016361651489", "views": 94139, "x": 6.8, "publishedAt": 1794475374000, "cover": "/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4"}, {"handle": "creatorera.anabel57", "videoId": "7708765547642604822", "views": 91800, "x": 114.9, "publishedAt": 1794836851000, "cover": "/_blob/baff158bb1734b6396c526d138a7fbf6"}]}, {"id": "yn7285w0anmqs2hjp3sccxmtvd8j5em5", "kind": "hook", "label": "I DNF’d a book and wasn’t expecting this to happen 😭📚", "accounts": 25, "niche": "Social et loisirs", "market": "US", "maxViews": 15147, "medX": 1.2, "wins": 25, "n": 40, "lastPostAt": 1794973434000, "apps": [{"slug": "slowread", "name": "SlowRead", "icon": null}], "members": [{"handle": "cat777736", "videoId": "7705602833856367893", "views": 15147, "x": 55.5, "publishedAt": 1794100476000, "cover": "/_blob/bd005e510952851f4696e90852329ec2"}, {"handle": "worshipmebora", "videoId": "7703014597107666189", "views": 7053, "x": 10.8, "publishedAt": 1793497862000, "cover": "/_blob/be0a7599f0ffcacb20f6e29f2259fec1"}, {"handle": "summerkore7", "videoId": "7702626686264757518", "views": 5642, "x": 6, "publishedAt": 1793407548000, "cover": "/_blob/c10b1420aa6d84f3dd58cef8a3218bc5"}]}]};
+    const P = this.props || {};
+    const real = !!(P.data && P.data.videos);
+    let D = real ? P.data : sample;
+    if (P.data === null) D = { videos: [], formats: [] };
+    else if (!real) {
+      const k = Date.now() - (sample.updatedAt || Date.now());
+      const sh = (m) => Object.assign({}, m, { publishedAt: m.publishedAt + k });
+      D = { updatedAt: Date.now(), videos: (sample.videos || []).map(sh),
+        formats: (sample.formats || []).map((f) => Object.assign({}, f, { lastPostAt: f.lastPostAt + k, members: (f.members || []).map(sh), _members: f._members ? f._members.map(sh) : null })) };
     }
-    return { tabs, groups, rules, nUnread };
+    // Les éléments ne dépendent que du document (et de l'heure) : calculés une fois par document, pas à chaque rendu
+    // (ouvrir une alerte, balayer à la suivante).
+    const day0 = (ms) => { const dt = new Date(ms); dt.setHours(0, 0, 0, 0); return dt.getTime(); };
+    const today = day0(Date.now());
+    const A = real && typeof P.get === 'function' ? P.get('apps') : null;
+    // (this.memo et non this.base : Preact range dans this.base l'élément de l'écran.)
+    if (this.memo && this.memo.D === D && this.memo.today === today && this.memo.A === A) return this.memo.v;
+    // La fiche d'un format (format:<id>, 30 reprises) : undefined tant qu'elle charge, null si le format n'en a pas.
+    const docOf = (id) => {
+      const G = (this.props || {}).get; // le get du rendu en cours (le résultat de baseVals est gardé d'un rendu à l'autre)
+      if (real) return typeof G === 'function' ? G('format:' + id) : undefined;
+      const f = (D.formats || []).filter((x) => x.id === id)[0];
+      return f && f._members ? Object.assign({}, f, { members: f._members }) : null;
+    };
+    const M = MKW({ FR: 'France', US: 'États-Unis', MX: 'Mexique', ES: 'Espagne', BR: 'Brésil' });
+    // Nombres : « 289 k », « 6,3 M », « 9,4 k » ; multiplicateur « 1 947× », « 1,1× ».
+    const trim = (s) => s.replace(/[.,]0$/, '').replace('.', ',');
+    const nf = (n) => (n >= 1e6 ? trim((n / 1e6).toFixed(1)) + ' M' : n >= 1e4 ? Math.round(n / 1e3) + ' k' : n >= 1e3 ? trim((n / 1e3).toFixed(1)) + ' k' : String(Math.round(n)));
+    // Sans toLocaleString ni toLocaleDateString : chaque appel construit un formateur Intl (le plus lent du rendu, mesuré).
+    const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); // « 1 947 », comme fr-FR
+    const xf = (x) => (x >= 100 ? grp(Math.round(x)) : String(Math.round(x * 10) / 10).replace('.', ',')) + '×';
+    const de = (n) => (/^[aeiouyhàâäéèêëîïôöùûü]/i.test(n) ? 'd’' : 'de ') + n;
+    const ago = (ms) => Math.max(0, Math.round((today - day0(ms)) / 86400000));
+    const hh = (ms) => new Date(ms).getHours() + ' h';
+    const p2 = (n) => (n < 10 ? '0' : '') + n;
+    const dm = (ms) => { const dt = new Date(ms); return p2(dt.getDate()) + '/' + p2(dt.getMonth() + 1); };
+    const WD = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const wd = (ms) => WD[new Date(ms).getDay()] + ' ' + dm(ms);
+    const dayLabel = (ms) => { const k = ago(ms); if (k === 0) return 'Aujourd’hui'; if (k === 1) return 'Hier'; const s = wd(ms); return s.charAt(0).toUpperCase() + s.slice(1); };
+    const kickWhen = (ms) => { const k = ago(ms); return (k === 0 ? 'aujourd’hui ' : k === 1 ? 'hier ' : 'le ' + dm(ms) + ', ') + hh(ms); };
+    // « original sound - poseract » : « son de @poseract » (le son d'un compte, comme sur ordinateur).
+    const son = (s) => { const m = String(s || '').match(/^(?:original sound|son original|sonido original|som original|suono originale|originalton|оригинальный звук)\s*[-–—]\s*(.+)$/i); return m ? 'son de @' + m[1].trim() : String(s || ''); };
+    const I = { video: 'M4 6h11v12H4zM15 10l5-3v10l-5-3z', compte: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
+      repeat: 'M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4' };
+    // Les alertes du Radar (document « alerts », convex/radarModels.ts), lues comme AlertesA : les vidéos de la semaine
+    // qui font le plus de fois leur normale, et les formats apparus cette semaine, rangés par jour de publication
+    // (dernière reprise pour un format). Une vidéo d'un million de vues ou plus : « Vidéo » ; sinon à 100× sa normale ou
+    // plus : « Compte ».
+    const items = [];
+    (D.videos || []).forEach((v) => {
+      const app = v.app ? v.app.name : '';
+      const mk = v.market && v.market !== 'XX' ? v.market : '';
+      const million = v.views >= 1e6;
+      const acc = !million && v.x >= 100;
+      const une = 'Une vidéo ' + (app ? de(app) + ' ' : '');
+      items.push({ key: 'v-' + v.id, kind: 'video', v, at: v.publishedAt, typ: acc ? 'Compte' : 'Vidéo', ico: acc ? I.compte : I.video,
+        title: million ? une + 'passe ' + Math.floor(v.views / 1e6) + ' M de vues' : acc ? '@' + v.handle + ' fait ' + xf(v.x) + ' sa normale' : une + (v.x ? 'à ' + xf(v.x) + ' sa normale' : 'à ' + nf(v.views) + ' vues'),
+        short: '@' + v.handle + ' · ' + (million || !v.x ? nf(v.views) + ' vues' : xf(v.x) + ' sa normale'),
+        sub: [mk ? M[mk] : '', app, LANGN(v.otherLang)].filter(Boolean).join(' · '),
+        mk, big: million || !v.x ? nf(v.views) : xf(v.x), covs: v.cover ? [{ src: v.cover }] : [], href: 'MVideo.dc.html?v=' + v.id,
+        views: v.views, x: v.x || 0, slug: v.app ? v.app.slug : '', market: v.market || '', paid: !!v.paid });
+    });
+    (D.formats || []).forEach((f) => {
+      const names = (f.apps || []).filter(Boolean).map((x) => x.name);
+      const mk = f.market && f.market !== 'XX' ? f.market : '';
+      items.push({ key: 'f-' + f.id, kind: 'format', f, at: f.lastPostAt, typ: f.kind === 'sound' ? 'Son' : 'Format', ico: I.repeat,
+        title: f.accounts + ' comptes reprennent « ' + son(f.label) + ' »',
+        short: f.accounts + ' comptes · « ' + son(f.label) + ' »',
+        sub: [mk ? M[mk] : '', names.slice(0, 2).join(', ') + (names.length > 2 ? ' +' + (names.length - 2) : '')].filter(Boolean).join(' · '),
+        mk, big: f.accounts + ' comptes', covs: (f.members || []).filter((m) => m.cover).slice(0, 3).map((m) => ({ src: m.cover })), href: 'MFormatFiche.dc.html?f=' + f.id,
+        accounts: f.accounts, niche: f.niche || '', market: f.market || '', paid: false });
+    });
+    items.sort((p, q) => q.at - p.at);
+    items.forEach((a) => Object.assign(a, { g: dayLabel(a.at), when: hh(a.at), fresh: ago(a.at) <= 1 }));
+    // La niche d'une vidéo vient de son app (document « apps ») : tant qu'il charge, elle est inconnue (null).
+    let niches = null;
+    let nicheOf = (a) => (a.kind === 'format' ? a.niche : null);
+    if (real) {
+      const NI = A && A.apps ? Object.fromEntries(A.apps.map((x) => [x.slug, x.niche || ''])) : null;
+      nicheOf = (a) => (a.kind === 'format' ? a.niche : NI ? NI[a.slug] || '' : null);
+      if (A && A.niches) niches = A.niches.slice().sort((p, q) => p.localeCompare(q, 'fr'));
+    } else nicheOf = (a) => (a.kind === 'format' ? a.niche : ''); // canevas : la niche des apps d'exemple n'est pas connue
+    const v = { items, sampleRules, niches, nicheOf, docOf, fmt: { nf, xf, kickWhen, M, MKW, ago, hh, dm } };
+    this.memo = { D, today, A, v };
+    return v;
   }
 }
 </script>
