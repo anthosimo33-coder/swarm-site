@@ -4,6 +4,7 @@ import { convexAuth, createAccount, retrieveAccount } from "@convex-dev/auth/ser
 import { ConvexError } from "convex/values";
 import { Scrypt } from "lucia";
 import { AUTH_ERRORS, type AuthErrorCode } from "./authErrors";
+import { signInKey } from "./authLimits";
 import { internal } from "./_generated/api";
 import type { MutationCtx } from "./_generated/server";
 
@@ -40,8 +41,6 @@ const SIGNUP_WINDOW_MS = 10 * 60_000;
  */
 const SIGNIN_MAX = 10;
 const SIGNIN_WINDOW_MS = 60 * 60_000;
-const emailKey = async (email: string) =>
-  "signIn:" + Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)))).map((b) => b.toString(16).padStart(2, "0")).join("");
 /** Même calcul qu'une vraie vérification (Scrypt), pour une adresse inconnue : la durée ne dit plus rien (audit S12). */
 let dummyHash: Promise<string> | null = null;
 const dummyVerify = async (secret: string) => {
@@ -108,7 +107,7 @@ const password = ConvexCredentials({
         return { userId: user._id };
       }
       if (params.flow === "signIn") {
-        const key = await emailKey(email);
+        const key = await signInKey(email);
         if (await ctx.runQuery(internal.authLimits.blocked, { key, max: SIGNIN_MAX, windowMs: SIGNIN_WINDOW_MS })) {
           throw fail(AUTH_ERRORS.TROP_DE_TENTATIVES);
         }

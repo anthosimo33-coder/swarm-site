@@ -96,4 +96,22 @@ function world() {
   ok(after.every((c) => c === 'IDENTIFIANTS_INCORRECTS'), 'S12 : une connexion réussie remet le compteur à zéro');
 }
 
+// ─── S11 / S13 : sans e-mail, le support remet un mot de passe et débloque le compte ───
+{
+  const w = world();
+  const { ok: made } = await w.auth('signUp', 'bloquee@exemple.fr', 'motdepasse1');
+  await w.m.db.insert('authSessions', { userId: made.userId, expirationTime: Date.now() + 864e5 });
+  for (let i = 0; i < 11; i++) await w.auth('signIn', 'bloquee@exemple.fr', 'attaque-' + i); // S13 : un tiers bloque le compte
+  const blocked = (await w.auth('signIn', 'bloquee@exemple.fr', 'motdepasse1')).code;
+  const has = typeof mods.users.resetPassword?.handler === 'function';
+  const r = has ? await quiet(() => mods.users.resetPassword.handler(w.ctx, { email: 'Bloquee@exemple.fr', password: 'nouveau-mdp-1' })) : null;
+  const after = await w.auth('signIn', 'bloquee@exemple.fr', 'nouveau-mdp-1');
+  const old = await w.auth('signIn', 'bloquee@exemple.fr', 'motdepasse1');
+  ok(blocked === 'TROP_DE_TENTATIVES' && has && r?.ok && after.ok?.userId === made.userId && old.code === 'IDENTIFIANTS_INCORRECTS',
+    `S11 / S13 : compte bloqué par un tiers, le support remet un mot de passe ; il marche tout de suite, l'ancien non (${JSON.stringify(r)})`);
+  ok(w.m.rows('authSessions').filter((x) => x.userId === made.userId).length === 0, 'S11 : les sessions ouvertes sont fermées');
+  const bad = has ? await quiet(() => mods.users.resetPassword.handler(w.ctx, { email: 'personne@exemple.fr', password: 'nouveau-mdp-1' })) : null;
+  ok(bad && !bad.ok, 'S11 : adresse inconnue, rien n\'est fait');
+}
+
 end();

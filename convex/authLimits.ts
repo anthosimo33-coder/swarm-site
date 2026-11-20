@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 
+/** La clé du compteur d'échecs de connexion d'un e-mail (haché : audit S12). */
+export const signInKey = async (email: string) =>
+  "signIn:" + Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email.trim().toLowerCase()))))
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+
 /**
  * Limite à fenêtre fixe : au plus `max` passages par `windowMs` pour une clé (ex. « signUp », convex/auth.ts). Rend faux
  * au-delà ; un passage refusé n'est pas compté.
