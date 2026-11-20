@@ -71,3 +71,5 @@ jobs:
         run: npm run test:vercel
       - name: Écrans sur données de banc (npm run check:data)
         run: npm run check:data
+      - name: Filtres des listes dans l'adresse (npm run test:filtres)
+        run: npm run test:filtres
