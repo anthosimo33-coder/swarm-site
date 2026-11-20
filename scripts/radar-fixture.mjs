@@ -50,7 +50,7 @@ export function fixtureRaw() {
       const lastPostAt = quiet ? NOW - 200 * DAY : NOW - Math.floor(r() * 5) * DAY;
       const id = `acc-${a.slug}-${j}`;
       tracked.push({ id, handle, appId: a.id, status: 'active', fans: Math.floor(r() * 90_000) + 1000, bio: `Bio de ${handle}`, lang: 'fr', country: countries[j],
-        medianViews: quiet ? 900_000 : Math.floor(r() * 50_000) + 1000, videosSeen: 30, lastPostAt, posts7d: quiet ? 0 : 3, igHandle: null, igFans: null,
+        medianViews: quiet ? 900_000 : Math.floor(r() * 50_000) + 1000, videosSeen: 30, lastPostAt, posts7d: quiet ? 0 : 3, igHandle: j === 1 ? `${handle}.insta` : null, igFans: null,
         igMedianViews: null, addedAt: NOW - 50 * DAY, proof: { by: 'handle', cites: 3, of: 30 } });
       for (let k = 0; k < 6; k++) {
         vid += 1n;
@@ -60,9 +60,21 @@ export function fixtureRaw() {
       }
     }
   }
+  // Un compte en pause dans le Radar (retrait, audit Q65) sous app-2, aux vidéos très vues qui citent l'app : elles ne
+  // comptent ni dans ses vues ni dans son top.
+  {
+    const a = apps[2], id = 'acc-pause', handle = 'compte.en.pause';
+    tracked.push({ id, handle, appId: a.id, status: 'paused', fans: 50_000, bio: 'snap: compte.pause | 📍 Lyon', lang: 'fr', country: 'FR', medianViews: 80_000, videosSeen: 30,
+      lastPostAt: NOW - DAY, posts7d: 3, igHandle: 'compte.pause', igFans: null, igMedianViews: null, addedAt: NOW - 50 * DAY, proof: { by: 'handle', cites: 3, of: 30 } });
+    for (let k = 0; k < 6; k++) {
+      vid += 1n;
+      trackedVideos.push({ id: `tv-${vid}`, accountId: id, appId: a.id, platform: 'tiktok', videoId: String(vid), publishedAt: NOW - (k + 1) * DAY, views: 9_000_000 + k,
+        snapshots: [], caption: 'Pause', hook: 'Pause', hookKey: null, musicTitle: null, coverUrl: null, region: 'FR', cites: true });
+    }
+  }
   // Formats : 170 actifs (3 comptes ou plus, repris dans les 21 jours), plus 20 anciens (60 jours) que des comptes citent.
   const formats = [];
-  const vids = trackedVideos.filter((v) => NOW - v.publishedAt < 30 * DAY);
+  const vids = trackedVideos.filter((v) => NOW - v.publishedAt < 30 * DAY && v.accountId !== 'acc-pause');
   for (let f = 0; f < 190; f++) {
     const old = f >= 170;
     const members = [];
@@ -79,7 +91,8 @@ export function fixtureRaw() {
   for (let s = 0; s < 12; s++) {
     const v = vids[s * 7];
     const t = tracked.find((x) => x.id === v.accountId);
-    signals.push({ id: `sig-${s}`, platform: 'tiktok', videoId: v.videoId, url: `https://www.tiktok.com/@${t.handle}/video/${v.videoId}`, authorHandle: t.handle, authorFans: t.fans,
+    // Le signal n°3 porte un lien piégé (audit S34) : la page vidéo doit reconstruire le lien TikTok.
+    signals.push({ id: `sig-${s}`, platform: 'tiktok', videoId: v.videoId, url: s === 3 ? 'javascript:alert(document.cookie)' : `https://www.tiktok.com/@${t.handle}/video/${v.videoId}`, authorHandle: t.handle, authorFans: t.fans,
       caption: 'Signal', lang: 'fr', region: 'FR', publishedAt: NOW - 2 * DAY, durationSec: 20, coverUrl: null, views: v.views, likes: 10, comments: 2, shares: 1, saves: 1, ratio: 0.1,
       snapshots: [], appId: v.appId, appName: null, trackedAccountId: t.id, multiplier: 5 + s, hook: 'Ça décolle', musicTitle: null, transcript: null, unavailable: null, cites: true });
   }
