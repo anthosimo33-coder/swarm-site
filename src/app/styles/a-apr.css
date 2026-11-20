@@ -1,6 +1,6 @@
 /* Généré par scripts/dc2preact.py depuis design/app/ApercuA.dc.html */
 body{margin:0;background:#05070C}
-a{color:#4C9AFF}a:hover{color:#FFFFFF}
+a{color:#4C9AFF}@media (hover: hover){a:hover{color:#FFFFFF}}
 .apr-bf{appearance:none;border:0;margin:0;width:100%;cursor:pointer;font-family:inherit}
 .apr-bf:hover .apr-go{color:#FF9C57}
 .apr-top{transition:transform .25s ease}.apr-top:hover{transform:translateY(-2px)}

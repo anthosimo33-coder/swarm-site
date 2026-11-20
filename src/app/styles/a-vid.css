@@ -19,4 +19,4 @@
 @keyframes a-vid-va-fade { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .va-draw, .va-fade { animation: none; stroke-dashoffset: 0; opacity: 1; } }
 body{margin:0;background:#05070C}
-a{color:#4C9AFF}a:hover{color:#FFFFFF}
+a{color:#4C9AFF}@media (hover: hover){a:hover{color:#FFFFFF}}

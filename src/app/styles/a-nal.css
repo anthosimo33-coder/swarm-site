@@ -1,3 +1,3 @@
 /* Généré par scripts/dc2preact.py depuis design/app/NouvelleAlerte.dc.html */
 body{margin:0}
-a{color:#4C9AFF}a:hover{color:#FFFFFF}
+a{color:#4C9AFF}@media (hover: hover){a:hover{color:#FFFFFF}}

@@ -652,6 +652,40 @@ def font_families(html):
     return out
 
 
+def top_rules(css):
+    """(début, fin, sélecteur) de chaque règle de premier niveau d'une feuille (hors @media, @keyframes…)."""
+    out, i, depth, start = [], 0, 0, 0
+    css_wo = re.sub(r'/\*.*?\*/', lambda m: ' ' * len(m.group(0)), css, flags=re.S)
+    for i, c in enumerate(css_wo):
+        if c == '{':
+            if depth == 0:
+                sel_start = start
+                sel = css_wo[start:i].strip()
+            depth += 1
+        elif c == '}':
+            depth -= 1
+            if depth == 0:
+                out.append((sel_start, i + 1, sel))
+                start = i + 1
+        elif c == ';' and depth == 0:
+            start = i + 1
+    return out
+
+
+def hover_for_mice(css):
+    """Le survol global des liens (« a:hover ») sous @media (hover: hover), comme dans les canevas mobiles. Audit Q45 (19/11) :
+    a-apr.css, importé d'office par src/app/main.js, le posait sans condition ; sur téléphone, un lien touché restait
+    blanc (survol collant) tant qu'on ne touchait pas ailleurs."""
+    out, at = [], 0
+    for start, end, sel in top_rules(css):
+        if sel.startswith('@') or not any(x.strip() == 'a:hover' for x in sel.split(',')):
+            continue
+        rule = css[start:end].strip()
+        out.append(css[at:start] + f'@media (hover: hover){{{rule}}}')
+        at = end
+    return ''.join(out) + css[at:]
+
+
 def missing_fonts(helmet, name, group):
     """L'adresse Google Fonts des familles du helmet que la page HTML de l'écran ne charge pas (ou None)."""
     html_name = PAGE_HTML.get('app' if group == 'app' else name)
@@ -709,6 +743,8 @@ def convert(src, name, prefix, group='site'):
     script = re.search(r'<script type="text/x-dc" data-dc-script[^>]*>(.*?)</script>', text, re.S).group(1)
 
     css, template, script = prefix_keyframes(css, template, script, prefix)
+    if group == 'app':
+        css = hover_for_mice(css)
     script = rewrite_script_links(script, g['links'])
 
     p = Parser()
