@@ -32,9 +32,11 @@ globalThis.fetch = async (url, init = {}) => {
   const method = init.method ?? 'GET', body = init.body ? JSON.parse(init.body) : null;
   calls.push({ method, url: String(url), body });
   if (/\/variants\?/.test(url)) return json({ data: variants });
-  if (/\/variants$/.test(url) && method === 'POST') { const v = { id: 'plan_normal', ...body }; variants.push(v); return json(v); }
+  // Le tarif créé reçoit l'id fixé dans convex/whop.ts (PLANS.annuel), comme celui créé en prod le 20/11.
+  if (/\/variants$/.test(url) && method === 'POST') { const v = { id: 'plan_e3kvvjsKXFANv', ...body }; variants.push(v); return json(v); }
   const m = String(url).match(/\/variants\/([^/?]+)$/);
   if (m && method === 'PATCH') { Object.assign(variants.find((x) => x.id === m[1]), body); return json({}); }
+  if (m) { const v = variants.find((x) => x.id === m[1]); return v ? json(v) : new Response('{"error":"introuvable"}', { status: 404 }); }
   if (/\/checkout_configurations$/.test(url)) return json({ purchase_url: 'https://whop.com/checkout/' + body.variant_id });
   return new Response('?', { status: 404 });
 };
@@ -74,14 +76,14 @@ if (have) {
   const made = await mods.whop.creerAnnuelNormal.handler(actx, { apply: true });
   const again = await mods.whop.creerAnnuelNormal.handler(actx, { apply: true });
   Date.now = realNow;
-  ok(made.cree === 'plan_normal' && calls.filter((c) => c.method === 'POST' && /\/variants$/.test(c.url)).length === 1 && again.deja === 'plan_normal', 'apply : un seul tarif créé, même lancé deux fois');
+  ok(made.cree === 'plan_e3kvvjsKXFANv' && calls.filter((c) => c.method === 'POST' && /\/variants$/.test(c.url)).length === 1 && again.deja === 'plan_e3kvvjsKXFANv', 'apply : un seul tarif créé, même lancé deux fois');
   ok(sched.length === 1 && sched[0][0] === Date.parse(DATE) && sched[0][1] === 'whop.finBlackFriday', `bascule planifiée le 1/12 à 00:00 Paris (${sched[0] ? new Date(sched[0][0]).toISOString() : 'rien'})`);
   ok(planOf(await pay('annuel', NOV25)) === 'plan_ZxcFeAaIiBMk1', '25/11, tarif normal déjà créé (masqué) : toujours 179,88 €');
-  ok(planOf(await pay('annuel', DEC02)) === 'plan_normal', '2/12 : l\'annuel part au tarif normal, 359,88 €, même avant la bascule');
+  ok(planOf(await pay('annuel', DEC02)) === 'plan_e3kvvjsKXFANv', '2/12 : l\'annuel part au tarif normal, 359,88 €, même avant la bascule');
   Date.now = () => DEC02;
   await quiet(() => mods.whop.finBlackFriday.handler({}, {}));
   Date.now = realNow;
-  ok(variants.find((x) => x.id === 'plan_ZxcFeAaIiBMk1').visibility === 'hidden' && variants.find((x) => x.id === 'plan_normal').visibility === 'visible', 'à minuit : Black Friday masqué sur Whop, annuel normal visible');
+  ok(variants.find((x) => x.id === 'plan_ZxcFeAaIiBMk1').visibility === 'hidden' && variants.find((x) => x.id === 'plan_e3kvvjsKXFANv').visibility === 'visible', 'à minuit : Black Friday masqué sur Whop, annuel normal visible');
 }
 
 // ─── 2. Écrans ───

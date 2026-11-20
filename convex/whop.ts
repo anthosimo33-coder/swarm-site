@@ -74,52 +74,68 @@ type Variant = { id: string; title?: string | null; billing_period?: number | nu
  * pris : l'annuel serait resté vendu 179,88 € après la fin annoncée.
  */
 export const BF_END = Date.parse("2026-12-01T00:00:00+01:00");
-export const PRICES = { mensuel: 29.99, annuelBlackFriday: 179.88, annuel: 359.88 };
-export const priceFor = (formule: "mensuel" | "annuel", now: number) =>
-  formule === "mensuel" ? PRICES.mensuel : now < BF_END ? PRICES.annuelBlackFriday : PRICES.annuel;
+
+/**
+ * Les tarifs Whop de Kopycat Pro, fixés (audit Q26) : jamais choisis par une recherche (« le premier tarif visible
+ * d'au moins 360 jours » pouvait vendre n'importe quel prix). Chacun est relu chez Whop avant de servir, et refusé si
+ * son produit, son prix, sa période ou sa devise ont changé. L'annuel à 359,88 € a été créé le 20/11 (creerAnnuelNormal),
+ * masqué : la liste publique des tarifs ne le montre pas, d'où les ids fixés.
+ */
+export const PLANS = {
+  mensuel: { id: "plan_ilOWoZwgoZGwK", price: 29.99, days: 30 },
+  annuelBlackFriday: { id: "plan_ZxcFeAaIiBMk1", price: 179.88, days: 365 },
+  annuel: { id: "plan_e3kvvjsKXFANv", price: 359.88, days: 365 },
+} as const;
+type Plan = (typeof PLANS)[keyof typeof PLANS];
+export const KNOWN_PLANS: ReadonlyMap<string, Plan> = new Map(Object.values(PLANS).map((p) => [p.id, p]));
+export const PRICES = { mensuel: PLANS.mensuel.price, annuelBlackFriday: PLANS.annuelBlackFriday.price, annuel: PLANS.annuel.price };
+export const planFor = (formule: "mensuel" | "annuel", now: number): Plan =>
+  formule === "mensuel" ? PLANS.mensuel : now < BF_END ? PLANS.annuelBlackFriday : PLANS.annuel;
+export const priceFor = (formule: "mensuel" | "annuel", now: number) => planFor(formule, now).price;
 const cents = (x: unknown) => Math.round(Number(x) * 100);
 
+/** Les tarifs du produit, masqués compris (par account_id : la liste par product_ids seul ne rend que les visibles). */
 async function listVariants(): Promise<Variant[]> {
   const pick = (b: any): Variant[] => (Array.isArray(b) ? b : Array.isArray(b?.data) ? b.data : []);
-  let list = pick(await whopApi(`/variants?product_ids=${PRODUCT}&first=50`).catch(() => null));
-  if (!list.length) list = pick(await whopApi(`/variants?account_id=${ACCOUNT}&first=100`)).filter((x) => !x.product?.id || x.product.id === PRODUCT);
-  return list;
+  return pick(await whopApi(`/variants?account_id=${ACCOUNT}&product_ids=${PRODUCT}&first=100`)).filter((x) => !x.product?.id || x.product.id === PRODUCT);
 }
 
-const periodOk = (formule: "mensuel" | "annuel", x: Variant) =>
-  formule === "annuel" ? (x.billing_period ?? 0) >= 360 : (x.billing_period ?? 0) > 0 && (x.billing_period ?? 0) <= 31;
+/** Le tarif `plan` relu chez Whop ; null s'il n'existe pas, est archivé, ou ne correspond plus (produit, prix, période, devise). */
+async function checkedVariant(plan: Plan): Promise<Variant | null> {
+  let x: Variant & { product_id?: string };
+  try {
+    x = await whopApi(`/variants/${plan.id}`);
+  } catch (e) {
+    if (/Whop 404/.test(String(e))) return null;
+    throw e;
+  }
+  const product = x.product?.id ?? x.product_id ?? null;
+  const fine = (!product || product === PRODUCT) && (x.billing_type ?? "renewal") === "renewal" && x.visibility !== "archived"
+    && cents(x.renewal_price) === cents(plan.price) && Math.abs((x.billing_period ?? 0) - plan.days) <= 1 && String(x.currency ?? "eur").toLowerCase() === "eur";
+  if (!fine) console.error(`[whop] tarif ${plan.id} ne correspond plus : ${JSON.stringify({ product, prix: x.renewal_price, jours: x.billing_period, devise: x.currency, visibilite: x.visibility })}`);
+  return fine ? x : null;
+}
 
 /**
- * Le tarif Whop de la formule, au prix affiché à cette date (priceFor) : un tarif à un autre prix n'est jamais pris
- * (audit Q14 / Q26). Visible d'abord ; un tarif masqué au bon prix sert aussi (bascule du 1/12 pas encore passée).
- * Aucun : ConvexError TARIF_INDISPONIBLE, plutôt que de vendre à un prix qui n'est pas celui affiché.
+ * Le tarif Whop de la formule, au prix affiché à cette date (planFor) : un tarif à un autre prix n'est jamais pris
+ * (audit Q14 / Q26). Introuvable ou changé : ConvexError TARIF_INDISPONIBLE, plutôt que de vendre à un prix non affiché.
  */
 async function variantFor(formule: "mensuel" | "annuel", now: number): Promise<Variant> {
-  const want = cents(priceFor(formule, now));
-  const ok = (await listVariants())
-    .filter((x) => (x.billing_type ?? "renewal") === "renewal" && (x.visibility ?? "visible") !== "archived" && periodOk(formule, x) && cents(x.renewal_price) === want)
-    .sort((a, b) => Number((b.visibility ?? "visible") === "visible") - Number((a.visibility ?? "visible") === "visible"));
-  if (!ok.length) {
-    console.error(`[whop] aucun tarif ${formule} à ${want / 100} € sur le produit Kopycat Pro`);
-    throw new ConvexError({ code: "TARIF_INDISPONIBLE" });
-  }
-  return ok[0];
+  const found = await checkedVariant(planFor(formule, now));
+  if (!found) throw new ConvexError({ code: "TARIF_INDISPONIBLE" });
+  return found;
 }
 
 /**
- * Crée sur Whop le tarif annuel au prix normal (359,88 €), MASQUÉ jusqu'au 1/12 (sinon achetable sur la page Whop pendant
- * le Black Friday), et planifie la bascule de minuit (finBlackFriday). Copie la forme du tarif Black Friday (taxe, devise,
- * prix initial). Sans `apply` : rend seulement ce qui serait envoyé. Rien de créé deux fois : un tarif annuel à 359,88 €
- * existant est rendu tel quel. Lancer une fois : `npx convex run --prod whop:creerAnnuelNormal '{"apply": true}'`.
+ * A créé sur Whop, le 20/11, l'annuel au prix normal (PLANS.annuel), masqué, et planifié finBlackFriday. Gardé pour
+ * le diagnostic : rend le tarif existant. Sans `apply`, rend ce qui serait envoyé s'il manquait.
  */
 export const creerAnnuelNormal = internalAction({
   args: { apply: v.optional(v.boolean()) },
   handler: async (ctx, { apply }): Promise<Json> => {
-    const all = await listVariants();
-    const annual = (price: number) => all.find((x) => (x.billing_type ?? "renewal") === "renewal" && periodOk("annuel", x) && cents(x.renewal_price) === cents(price) && x.visibility !== "archived");
-    const existing = annual(PRICES.annuel);
+    const existing = await checkedVariant(PLANS.annuel);
     if (existing) return { deja: existing.id, visibilite: existing.visibility ?? null };
-    const bf = annual(PRICES.annuelBlackFriday);
+    const bf = await checkedVariant(PLANS.annuelBlackFriday);
     if (!bf) throw new Error("tarif annuel Black Friday introuvable : rien à copier");
     const initial = cents(bf.initial_price) === cents(bf.renewal_price) ? PRICES.annuel : bf.initial_price ?? 0;
     const body: Json = {
@@ -130,7 +146,7 @@ export const creerAnnuelNormal = internalAction({
     if (!apply) return { envoi: body, copieDe: { id: bf.id, renewal_price: bf.renewal_price, initial_price: bf.initial_price ?? null, tax_type: bf.tax_type ?? null, title: bf.title ?? null } };
     const created = await whopApi("/variants", { method: "POST", body });
     if (Date.now() < BF_END) await ctx.scheduler.runAt(BF_END, internal.whop.finBlackFriday, {});
-    return { cree: created?.id ?? null, bascule: Date.now() < BF_END ? new Date(BF_END).toISOString() : "date passée : lancer whop:finBlackFriday" };
+    return { cree: created?.id ?? null, aRanger: "PLANS.annuel dans convex/whop.ts", bascule: Date.now() < BF_END ? new Date(BF_END).toISOString() : "date passée : lancer whop:finBlackFriday" };
   },
 });
 
@@ -140,12 +156,11 @@ export const finBlackFriday = internalAction({
   handler: async (): Promise<string[]> => {
     if (Date.now() < BF_END) return ["Black Friday pas fini : rien à faire"];
     const done: string[] = [];
-    for (const x of await listVariants()) {
-      if ((x.billing_type ?? "renewal") !== "renewal" || !periodOk("annuel", x)) continue;
-      const to = cents(x.renewal_price) === cents(PRICES.annuelBlackFriday) ? "hidden" : cents(x.renewal_price) === cents(PRICES.annuel) ? "visible" : null;
-      if (!to || (x.visibility ?? "visible") === to) continue;
-      await whopApi(`/variants/${x.id}`, { method: "PATCH", body: { visibility: to } });
-      done.push(`${x.id} (${x.renewal_price} €) → ${to}`);
+    for (const [plan, to] of [[PLANS.annuelBlackFriday, "hidden"], [PLANS.annuel, "visible"]] as const) {
+      const x = await checkedVariant(plan);
+      if (!x || (x.visibility ?? "visible") === to) continue;
+      await whopApi(`/variants/${plan.id}`, { method: "PATCH", body: { visibility: to } });
+      done.push(`${plan.id} (${plan.price} €) → ${to}`);
     }
     console.log(`[whop] fin du Black Friday : ${done.join(", ") || "rien à changer"}`);
     return done;
@@ -250,6 +265,7 @@ export const saveMembership = internalMutation({
     membershipId: v.string(),
     userKey: v.union(v.string(), v.null()),
     variantId: v.union(v.string(), v.null()),
+    productId: v.optional(v.union(v.string(), v.null())),
     status: v.string(),
     periodDays: v.union(v.number(), v.null()),
     price: v.union(v.string(), v.null()),
@@ -259,6 +275,12 @@ export const saveMembership = internalMutation({
     manageUrl: v.union(v.string(), v.null()),
   },
   handler: async (ctx, a): Promise<string> => {
+    // Audit Q26 : seule une adhésion au produit Kopycat Pro, à l'un de ses tarifs, donne l'accès. Un champ absent (forme
+    // de l'adhésion v1 non vérifiée sur un achat réel) ne refuse rien ; un champ présent et étranger, si.
+    if ((a.productId && a.productId !== PRODUCT) || (a.variantId && !KNOWN_PLANS.has(a.variantId))) {
+      console.error(`[whop] adhésion ${a.membershipId} : produit ou tarif étranger (${a.productId ?? "?"}, ${a.variantId ?? "?"}), ignorée`);
+      return `adhésion ${a.membershipId} : produit ou tarif étranger, ignorée`;
+    }
     const old = await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", a.membershipId)).first();
     const fromKey = a.userKey ? ctx.db.normalizeId("users", a.userKey) : null;
     const userId = (fromKey && (await ctx.db.get(fromKey)) ? fromKey : null) ?? old?.userId ?? null;
@@ -310,7 +332,8 @@ async function syncMembership(ctx: ActionCtx, membershipId: string, fallback: Js
   return await ctx.runMutation(internal.whop.saveMembership, {
     membershipId,
     userKey: m.metadata?.kopycat_user ? String(m.metadata.kopycat_user) : null,
-    variantId: m.variant_id ?? m.plan_id ?? m.plan?.id ?? null,
+    variantId: m.variant_id ?? m.plan_id ?? m.plan?.id ?? m.variant?.id ?? null,
+    productId: m.product_id ?? m.product?.id ?? null,
     status: String(m.status ?? "unresolved"),
     periodDays: typeof m.billing_period_days === "number" ? m.billing_period_days : null,
     price: money(m.renewal_price),
