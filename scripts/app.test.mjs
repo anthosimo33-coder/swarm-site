@@ -134,6 +134,14 @@ const has = (f) => fs.existsSync(app(f));
     ok(!r1.eject && r2.data === open && !r2.eject && r3.eject, 'F29 : sortie du top 3 en pleine lecture → la dernière valeur reste ; verrouillée dès l\'arrivée → retour à Apps');
   } else ok(false, 'F29 : plan.previewView absente');
   ok(/previewView\(/.test(main), 'F29 : main.js l\'applique');
+  // F25 : téléphone en paysage = mise en page mobile ; une bascule de mise en page sur la même adresse garde la position.
+  const css = fs.readFileSync(app('app.css'), 'utf8');
+  ok(/matchMedia\(MOBILE_QUERY\)/.test(main) && !/max-width: 860px'\)/.test(main) && !/innerWidth < 861/.test(main)
+    && !/@media \(max-width: 860px\) \{/.test(css) && !/@media \(min-width: 861px\) \{/.test(css),
+    'F25 : main.js et app.css suivent MOBILE_QUERY (largeur ou téléphone couché), plus la seule largeur');
+  ok(typeof plan.layoutOnly === 'function' && plan.layoutOnly({ path: '/app/apps', mobile: true }, { path: '/app/apps', mobile: false })
+    && !plan.layoutOnly({ path: '/app/apps', mobile: true }, { path: '/app/formats', mobile: true }) && !plan.layoutOnly(null, { path: '/app', mobile: false })
+    && /layoutOnly\(/.test(main), 'F25 : rotation ou redimensionnement sur la même adresse : la position reste ; une autre adresse arrive en haut');
   // Q38 : l'initiale envoyée aux écrans est un caractère entier.
   ok(/initiale: \(Array\.from\(/.test(main) && !/initiale:[^\n]*charAt\(0\)/.test(main), 'Q38 : l\'initiale de main.js n\'est plus une moitié d\'émoji');
 }
