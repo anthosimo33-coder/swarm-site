@@ -15,4 +15,22 @@ const appPages = pages('src/app/pages');
   ok(!hits.length, `Q11 : aucun écran ne renvoie vers Astra AI, zinedine.gsbb ou une vidéo d'exemple (${hits.join(', ') || 'aucun'})`);
 }
 
+// ─── Q12 : une police chargée par le canevas (helmet) et pas par la page HTML de l'app est chargée par l'écran ───
+{
+  const injects = appPages.filter(([, s]) => /\$fonts\(/.test(s)).map(([f, s]) => [f, (s.match(/\$fonts\((\[[^\]]*\])\)/) || [])[1]]);
+  const doto = injects.filter(([, a]) => /family=Doto/.test(a ?? '')).map(([f]) => f).sort();
+  ok(doto.join() === 'Formules.js,MFormules.js', `Q12 : Formules et MFormules chargent Doto (le décompte du Black Friday) (${doto.join(', ') || 'aucun'})`);
+  ok(injects.every(([, a]) => !/family=Inter|JetBrains/.test(a ?? '')), 'Q12 : rien de ce que app.html charge déjà n\'est rechargé');
+  const runtime = fs.readFileSync(path.join(root, 'src/runtime.js'), 'utf8');
+  if (/export const \$fonts/.test(runtime)) {
+    const { $fonts } = await import(path.join(root, 'src/runtime.js'));
+    const added = [];
+    globalThis.document = { querySelectorAll: () => added.map((l) => ({ getAttribute: () => l.href })), createElement: () => ({}), head: { appendChild: (l) => added.push(l) } };
+    $fonts(['https://fonts.googleapis.com/css2?family=Doto:wght@800&display=swap']);
+    $fonts(['https://fonts.googleapis.com/css2?family=Doto:wght@800&display=swap']);
+    delete globalThis.document;
+    ok(added.length === 1 && added[0].rel === 'stylesheet', `Q12 : la police est ajoutée une seule fois à la page (${added.length})`);
+  } else ok(false, 'Q12 : $fonts présent dans src/runtime.js');
+}
+
 end();

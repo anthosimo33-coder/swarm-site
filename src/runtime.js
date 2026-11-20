@@ -9,6 +9,21 @@ export class DCLogic extends Component {
   }
 }
 
+// Polices chargées par le canevas (<link> du helmet) et pas par la page HTML de l'écran : ajoutées à la page à l'import
+// de l'écran, une seule fois (audit Q12 : le convertisseur jetait ces <link>, et le décompte des formules perdait Doto).
+export const $fonts = (hrefs) => {
+  if (typeof document === 'undefined') return;
+  const have = new Set([...document.querySelectorAll('link[rel="stylesheet"]')].map((l) => l.getAttribute('href')));
+  for (const href of hrefs) {
+    if (have.has(href)) continue;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+    have.add(href);
+  }
+};
+
 // Valeur d'un trou {{…}} : rien plutôt que « undefined ».
 export const $t = (x) => (x === undefined || x === null ? '' : x);
 // Liste d'un <sc-for> : tableau vide si la valeur manque.
