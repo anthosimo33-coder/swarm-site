@@ -22,7 +22,7 @@ a{color:#4C9AFF}
 </helmet>
 <div class="sw" style="position: fixed; inset: 0; z-index: 70; color: var(--ink); font-family: var(--font-body);">
 <button type="button" aria-label="Fermer" tabindex="-1" onClick="{{sheet.close}}" style="position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;"></button>
-<section role="dialog" aria-modal="true" aria-label="Ajouter à un dossier" onKeyDown="{{sheet.keys}}" style="position: absolute; left: 0; right: 0; bottom: 0; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom)); animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;">
+<section role="dialog" aria-modal="true" aria-label="Ajouter à un dossier" onKeyDown="{{sheet.keys}}" style="position: absolute; left: 0; right: 0; bottom: {{kb}}; max-height: 88vh; max-height: calc(88dvh - {{kb}}); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom)); animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;">
 <div onTouchStart="{{sheet.tStart}}" onTouchEnd="{{sheet.tEnd}}" style="display: flex; justify-content: center; padding: 10px 0 6px; touch-action: none;"><span aria-hidden="true" style="width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);"></span></div>
 <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 12px;"><span style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Ajouter à un dossier</span><button class="sw-btn sw-btn-icon" type="button" onClick="{{sheet.close}}" aria-label="Fermer" style="flex-shrink: 0; width: 44px; height: 44px; margin-right: -8px;"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div>
 <div class="sw-search" style="height: 48px; padding: 0 14px; box-shadow: none; border-radius: 14px;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5L20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><input ref="{{setInput}}" class="sw-search-input" type="search" value="{{q}}" onChange="{{onQ}}" aria-label="Chercher ou créer un dossier" placeholder="Chercher ou créer un dossier…" autocomplete="off" style="font-size: 16px;"></div>
@@ -39,7 +39,17 @@ a{color:#4C9AFF}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"item":{"editor":null},"saved":{"editor":null},"save":{"editor":null},"onClose":{"editor":null},"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
-  componentWillUnmount() { clearTimeout(this.tm); }
+  // Clavier ouvert (audit Q72) : sur iPhone, il recouvre le bas de la page sans la réduire ; la feuille remonte de ce qu'il
+  // cache (visualViewport). Chrome Android réduit la page lui-même (interactive-widget=resizes-content, app.html) : 0 ici.
+  componentDidMount() {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!vv) return;
+    this.onVv = () => { const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)); if (kb !== ((this.state || {}).kb || 0)) this.setState({ kb }); };
+    vv.addEventListener('resize', this.onVv);
+    vv.addEventListener('scroll', this.onVv);
+    this.onVv();
+  }
+  componentWillUnmount() { clearTimeout(this.tm); const vv = typeof window !== 'undefined' ? window.visualViewport : null; if (vv && this.onVv) { vv.removeEventListener('resize', this.onVv); vv.removeEventListener('scroll', this.onVv); } }
   renderVals() {
     const FL = [{"name": "Études, ce qui marche", "n": 7, "src": "/_blob/ba0c093e34600f0dfeb6bacdc6dee0a4"}, {"name": "Side hustle", "n": 5, "src": "/_blob/0488fb4a3b81c670ae8e5e16539e99ff"}, {"name": "Jalousie et ex", "n": 5, "src": "/_blob/608419d1efd84ba7895e44ce6290cd99"}, {"name": "Couple", "n": 4, "src": "/_blob/63119f505f58b810c055512e54a2709e"}];
     const close = () => { if (this.props.onClose) this.props.onClose(); };
@@ -80,6 +90,7 @@ class Component extends DCLogic {
         toggle: () => toggle(f.id) }; });
     const n = all.filter(has).length;
     return {
+      kb: ((this.state || {}).kb || 0) + 'px',
       sheet, q, rows, canCreate, create, noFolders: !loading && all.length === 0 && !nq,
       onQ: (e) => this.setState({ q: e.target.value }), setInput: (el) => { this.inp = el; },
       saved: n > 0, savedLabel: 'Dans ' + n + (n > 1 ? ' dossiers' : ' dossier'), save: close

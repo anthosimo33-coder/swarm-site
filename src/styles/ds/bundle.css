@@ -227,3 +227,53 @@ body { margin: 0; background: var(--surface); color: var(--ink); font-family: va
 @keyframes sw-drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -20px); } }
 .sw-enter { animation: sw-blur-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 @media (prefers-reduced-motion: reduce) { .sw *, .sw-btn, .sw-dot, .sw-toast, .sw-empty-radar::after, .sw-video-bar, .sw-enter { animation: none !important; transition: none !important; } }
+
+/* ─── Règles des écrans de l'app, remontées d'src/app/app.css (audit Q44, 19/11) ─────────────────────────────────
+   Elles n'existaient que dans le site : le canevas montrait « Suivie » et « Ne plus suivre » côte à côte, des en-têtes
+   de tableau et une barre latérale différents. Elles vivent ici, lues par les canevas et par le site (src/styles/ds,
+   copie identique, vérifiée par scripts/sources.test.mjs). */
+/* Logos d'app : certaines icônes portent un bord clair ou des coins arrondis dessinés dans l'image
+   (Astra AI). Agrandie de 12 % dans sa tuile, qui coupe ce qui dépasse, l'image perd ce bord ; et
+   la tuile n'a plus de fond clair qui ferait un liseré au bord de l'arrondi. */
+.sw-app-icon img.sw-logo-img { transform: scale(1.12); }
+.sw-app-icon:has(img.sw-logo-img:not(.is-broken)) { background: transparent !important; }
+
+/* Codes de marché (US, MX…) : du texte discret, plus de petits rectangles vides à côté des noms. */
+.sw-flag { width: auto !important; height: auto !important; min-width: 0; padding: 0 !important; border: 0 !important; border-radius: 0; background: none !important;
+  font-family: var(--font-mono); font-size: 11px !important; font-weight: 500; letter-spacing: 0.02em; color: var(--ink-faint); }
+
+/* En-têtes de tableau : casse normale, gris doux, une icône devant (direction « après »). */
+/* En-tête des tableaux « sans bande » (choisi le 14/11) : pas de fond, petites capitales fines, un filet. */
+.sw-table th { text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; color: var(--ink-faint); padding-top: 12px; padding-bottom: 10px; background: transparent !important; }
+.sw-table thead tr { background: transparent !important; }
+/* Les icônes décoratives des libellés partent ; la puce de tri reste. */
+.sw-table th .sw-th > svg, .sw-table th > button > svg:first-child { display: none; }
+.sw-table th button { font-family: var(--font-mono) !important; font-size: 10.5px !important; letter-spacing: 0.1em; text-transform: uppercase; }
+.sw-th { display: inline-flex; align-items: center; gap: 8px; }
+.sw-th > svg { flex-shrink: 0; color: var(--ink-faint); }
+.sw-num > .sw-th { justify-content: flex-end; }
+
+/* Barre latérale : l’icône et son libellé rapprochés (case de 32 px au lieu de 40, 3 px d’écart). */
+/* Elle reste à la hauteur de l’écran (19/11) : le compte (avatar) toujours visible en bas, sans défiler. */
+.sw-sidebar { position: sticky; top: 0; height: 100vh; height: 100dvh; box-sizing: border-box; align-self: flex-start; overflow-y: auto; scrollbar-width: none; }
+.sw-sidebar::-webkit-scrollbar { display: none; }
+/* Aperçu : le bandeau Black Friday reste en haut, la barre latérale commence dessous. */
+.apr-bfon .apr-bf { position: sticky; top: 0; z-index: 20; }
+.apr-bfon .sw-sidebar { top: 42px; height: calc(100vh - 42px); height: calc(100dvh - 42px); }
+.sw-side-item { gap: 3px !important; }
+.sw-side-ico { height: 32px !important; }
+.sw-table th svg { width: 13px; height: 13px; }
+
+/* Aperçu d'une app, carte « D'où publient ses comptes » : sur un écran bas (moins de ~840 px), la barre empilée
+   s'efface (hauteurs de CONTENU, sans les marges : 91 px avec la barre, 78 sans) pour que les 3 lignes (dont « N autres pays ») tiennent sans se chevaucher (14/11). */
+.sw-mk-card { container-type: size; }
+@container (max-height: 90px) { .sw-mk-bar { display: none !important; } }
+@container (max-height: 77px) { .sw-mk-rows { gap: 0 !important; } }
+
+/* Bouton de suivi déjà actif (« ✓ Suivie ») : au survol, il dit ce que fait le clic (18/11 : « Suivi » avec une
+   flèche faisait croire à un lien, alors que le clic arrête le suivi). Sans survol (mobile), il garde son état. */
+.sw-follow-stop { display: none; }
+@media (hover: hover) {
+  .sw-follow:hover .sw-follow-now { display: none; }
+  .sw-follow:hover .sw-follow-stop { display: inline; }
+}

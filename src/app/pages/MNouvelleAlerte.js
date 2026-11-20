@@ -3,6 +3,17 @@ import { h as $h } from 'preact';  // $h : jamais masqué par une variable de bo
 import { DCLogic, $t, $l } from '../../runtime.js';
 
 export default class MNouvelleAlerte extends DCLogic {
+  // Clavier ouvert (audit Q72) : sur iPhone, il recouvre le bas de la page sans la réduire ; la feuille remonte de ce qu'il
+  // cache (visualViewport). Chrome Android réduit la page lui-même (interactive-widget=resizes-content, app.html) : 0 ici.
+  componentDidMount() {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!vv) return;
+    this.onVv = () => { const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)); if (kb !== ((this.state || {}).kb || 0)) this.setState({ kb }); };
+    vv.addEventListener('resize', this.onVv);
+    vv.addEventListener('scroll', this.onVv);
+    this.onVv();
+  }
+  componentWillUnmount() { const vv = typeof window !== 'undefined' ? window.visualViewport : null; if (vv && this.onVv) { vv.removeEventListener('resize', this.onVv); vv.removeEventListener('scroll', this.onVv); } }
   renderVals() {
     const vkey = (s) => { const m = String(s).match(/v-(\d+)\.jpg/) || String(s).match(/_blob\/([0-9a-f]{32})/); return m ? m[1] : ''; };
     let HITS = (globalThis.__dcSample?.["MNouvelleAlerte"]?.["HITS"] ?? []);
@@ -43,6 +54,7 @@ export default class MNouvelleAlerte extends DCLogic {
     const demo = pv === undefined && quoi === 'compte' && niche === 'Études' && seuil === 100 && !marche;
     const hits = pv ? (pv.hits || []) : HITS;
     return {
+      kb: ((this.state || {}).kb || 0) + 'px',
       title: R0 ? 'Modifier l’alerte' : 'Nouvelle alerte', cta: R0 ? 'Enregistrer' : 'Créer l’alerte',
       quoi, niche, seuil: String(seuil), marche,
       quois: QL.map((q) => ({ v: q[0], l: q[1] })), niches: [{ v: '', l: 'de n’importe quelle niche' }].concat(NS.map((n) => ({ v: n, l: 'de la niche ' + n }))),
@@ -65,7 +77,7 @@ export default class MNouvelleAlerte extends DCLogic {
     return [
       $h("div", { "class": "sw", "style": "position: fixed; inset: 0; z-index: 70; color: var(--ink); font-family: var(--font-body);" },
         $h("button", { "type": "button", "aria-label": "Fermer", "tabindex": "-1", "onClick": $v.sheet?.close, "style": "position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: default; background: rgba(5,7,12,0.62); touch-action: none; -webkit-tap-highlight-color: transparent;" }),
-        $h("section", { "role": "dialog", "aria-modal": "true", "aria-label": "Nouvelle alerte", "onKeyDown": $v.sheet?.keys, "style": "position: absolute; left: 0; right: 0; bottom: 0; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom)); animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
+        $h("section", { "role": "dialog", "aria-modal": "true", "aria-label": "Nouvelle alerte", "onKeyDown": $v.sheet?.keys, "style": `position: absolute; left: 0; right: 0; bottom: ${$t($v.kb)}; max-height: 88vh; max-height: calc(88dvh - ${$t($v.kb)}); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; border-radius: 28px 28px 0 0; background: var(--surface-raised); border-top: 1px solid var(--line-strong); box-shadow: 0 -30px 80px rgba(0,0,0,0.55); padding: 0 20px max(20px, env(safe-area-inset-bottom)); animation: sw-rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;` },
           $h("div", { "ontouchstart": $v.sheet?.tStart, "ontouchend": $v.sheet?.tEnd, "style": "display: flex; justify-content: center; padding: 10px 0 6px; touch-action: none;" },
             $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 5px; border-radius: 3px; background: var(--line-strong);" })
           ),
