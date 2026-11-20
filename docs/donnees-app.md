@@ -122,8 +122,14 @@ Une vidéo notée introuvable (supprimée, compte privé) n'a pas de fiche.
 ### `formats` — formats repris (FormatsB, MFormats)
 `{ updatedAt, markets, formats: [Format] }` (repris par au moins 3 comptes, actifs sur 21 jours, 150 au plus),
 triés par nombre de comptes puis multiplicateur médian.
-`Format = { id, kind, label, accounts, apps: [{slug, name, icon, page?}], niche, market, maxViews, medX, wins: reprises au-dessus
+`Format = { id, kind, label, title, accounts, apps: [{slug, name, icon, page?}], niche, market, maxViews, medX, wins: reprises au-dessus
 de leur normale, n: reprises, lastPostAt, members: [{ handle, videoId, views, x, publishedAt, cover }] }` (4 membres ici, 30 dans la fiche).
+`title` (maquette C1 du 20/11) : le format nommé par ce qu'on lit dans ses vidéos, pour un format `sound` : le texte à l'écran
+de sa reprise la plus vue qui en a un, parmi toutes (le `hook` du Radar sur la reprise ou son signal, ou le texte lu par l'IA
+sur la miniature quand il est plus complet), espaces resserrés, sans ses guillemets d'entourage, coupé sur un mot vers 90
+caractères avec « … » (`formatTitle`), dans la langue de la vidéo. null pour un format `hook` (son `label` est déjà le
+texte) et pour un son dont aucune reprise n'a de texte lu : l'écran montre alors le libellé (« son de @x » pour un
+« original sound - x »).
 
 ### `format:<id>` — fiche d'un format (FormatFicheA, MFormatFiche)
 Le `Format` complet (`members` jusqu'à 30).

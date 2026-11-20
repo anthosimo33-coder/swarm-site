@@ -298,6 +298,29 @@ export const cleanBio = (bio: string | null) => {
   return out || null;
 };
 
+/** Longueur, en caractères, du nom d'un format tiré de son texte à l'écran (`formatTitle`). */
+export const FORMAT_TITLE = 90;
+/**
+ * Le nom d'un format « par ce qu'on y voit » (maquette C1 du 20/11) : le texte à l'écran d'une reprise, espaces
+ * resserrés, sans les guillemets qui l'entourent (l'écran pose les siens), coupé sur un mot vers FORMAT_TITLE
+ * caractères avec « … » (au milieu d'un mot seulement s'il n'y a pas d'espace assez loin : un texte sans espaces). Coupé
+ * par caractère entier, comme `clip` : un émoji coupé en deux laisse un demi-caractère que Convex refuse. null : rien à lire.
+ */
+export const formatTitle = (text: string | null | undefined, max = FORMAT_TITLE): string | null => {
+  let s = String(text ?? "").replace(/\s+/g, " ").trim();
+  // Les guillemets qui ouvrent le texte, et ceux qui le ferment s'il en avait d'ouvrants (« Il a dit "non" » garde les siens).
+  if (/^["“”«»„]/.test(s)) s = s.replace(/^["“”«»„]+\s*/, "").replace(/\s*["“”«»„]+$/, "");
+  if (!s) return null;
+  const c = Array.from(s);
+  if (c.length <= max) return s;
+  const head = c.slice(0, max).join("");
+  const space = head.lastIndexOf(" ");
+  const cut = space >= head.length * 0.6 ? head.slice(0, space) : c.slice(0, max - 1).join("");
+  // Rien qui pende avant « … » : virgule, deux-points, tiret, ni le « · » qui sépare deux textes d'une même vidéo.
+  const t = cut.replace(/[\s,;:.…·•|\-–—]+$/u, "");
+  return t ? t + "…" : null;
+};
+
 /**
  * Le lien « voir sur la plateforme » venu du Radar, s'il mène bien à TikTok ou Instagram en https ; sinon null (la page
  * vidéo reconstruit alors le lien). Audit S34 (19/11) : l'adresse du signal était posée telle quelle dans href, si bien
@@ -796,8 +819,14 @@ export function buildBoards(
       const appIdsOf = [...new Set(f.appIds.map((id) => canonical(id)?.id).filter(Boolean) as string[])];
       const appsOf = appIdsOf.map(appMini).filter(Boolean);
       const firstApp = appIdsOf.length ? appById.get(appIdsOf[0]) : undefined;
+      // Son nom par ce qu'on y voit (maquette C1, 20/11) : le texte à l'écran de la reprise la plus vue qui en a un,
+      // parmi toutes (avec ou sans image). Un format « hook » est déjà nommé par son texte : null. Lu sur la reprise
+      // elle-même, son signal et la lecture IA, pas sur les vidéos suivies : l'étape globale de la synchro par groupes,
+      // qui écrit les formats, ne les a pas (audit Q63 : elle doit écrire la même page que le calcul tout d'un coup).
+      let title: string | null = null;
+      if (f.kind === "sound") for (const m of sorted) if ((title = formatTitle(screenText(null, m.hook ?? signalByVideo.get(m.videoId)?.hook, m.videoId)))) break;
       return {
-        id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount, apps: appsOf,
+        id: f.id, kind: f.kind, label: f.label, title, accounts: f.accountCount, apps: appsOf,
         niche: firstApp ? nicheOf(firstApp) : "Autres", market: majority(f.members.map((m) => mkOf(m.accountId))),
         maxViews: f.maxViews, medX: roundOrNull(median(xs), 1), wins: xs.filter((x) => x > 1).length, n: f.members.length,
         lastPostAt: f.lastPostAt, firstSeenAt: f.firstSeenAt, members,

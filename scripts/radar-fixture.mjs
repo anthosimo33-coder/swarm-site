@@ -88,6 +88,9 @@ export function fixtureRaw() {
       const t = tracked.find((x) => x.id === v.accountId);
       members.push({ accountId: v.accountId, handle: t.handle, appId: v.appId, videoId: v.videoId, publishedAt: old ? NOW - 60 * DAY : v.publishedAt, views: v.views, multiplier: Math.round(r() * 40) / 10 });
     }
+    // Texte à l'écran des reprises (le nom d'un format « sound », maquette C1 du 20/11) : aucun pour un format sur trois,
+    // sinon sur une reprise sur deux, avec des espaces en trop, et long (à couper) pour un format sur quatre.
+    if (f % 3) members.forEach((m, i) => { if (i % 2) m.hook = `  Texte\n à l'écran ${f}.${i}  ` + (f % 4 ? '' : 'avec une suite assez longue pour dépasser la place qu’a le nom du format dans une carte'); });
     const appIds = [...new Set(members.map((m) => m.appId))];
     formats.push({ id: `fmt-${f}`, kind: f % 5 ? 'hook' : 'sound', key: `k${f}`, label: `Format ${f}`, members, accountCount: new Set(members.map((m) => m.accountId)).size,
       appIds, maxViews: Math.max(...members.map((m) => m.views)), lastPostAt: old ? NOW - 60 * DAY : NOW - DAY, firstSeenAt: NOW - (f % 9) * DAY, lang: 'fr' });
