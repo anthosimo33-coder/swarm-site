@@ -253,10 +253,13 @@ export const SEED_APPS: readonly SeedApp[] = [
  * pris) : le Radar devient un produit vendu, il doit suivre des centaines d'apps ;
  * 15 000 jusqu'au 15/11/2026 : autant d'apps que FarmSpot (~1 700 apps, ~20
  * comptes actifs chacune, budget v10) ; 40 000 jusqu'au déménagement dans Kopycat (20/11/2026) : ~12 300 comptes actifs,
- * dernier relevé à 1,8 jour en médiane. Au-delà de 15 000, les relevés gratuits ne suivent plus (fraîcheur) et le repli
- * payant coûte davantage, pour des comptes de moins en moins vus.
+ * dernier relevé à 1,8 jour en médiane ; 15 000 le 20/11/2026 (13 272 pris, 1 776 apps jamais cherchées).
+ * 25 000 depuis le 20/11/2026 au soir (décision du fondateur) : chercher les réseaux de toutes les apps. Au-delà de
+ * ~11-18 000 comptes, les relevés gratuits ne suivent plus tous (capacité estimée, non mesurée en régime) : les comptes
+ * non pris par la voie gratuite sont payés en « retard » (poste tiktok du budget) ou relus plus tard si le solde est sous
+ * la réserve.
  */
-export const MAX_TRACKED = 15_000;
+export const MAX_TRACKED = 25_000;
 /**
  * Une app qui n'est concurrente d'aucun projet ne prend pas plus de 300 comptes
  * (100 jusqu'au 13/11/2026 : on veut tous les créateurs d'une app, Astra AI en a
@@ -266,7 +269,8 @@ export const MAX_TRACKED = 15_000;
  */
 export const MAX_PER_OTHER_APP = 300;
 // Dans Kopycat, aucune app n'est la concurrente d'un projet : la réserve des concurrentes (2 000 places) n'a plus d'objet.
-export const MAX_OTHER_TOTAL = 15_000;
+// Toutes les apps sont donc « autres » : ce plafond suit MAX_TRACKED (15 000 puis 25 000 le 20/11/2026).
+export const MAX_OTHER_TOTAL = MAX_TRACKED;
 
 /** Ce que l'onglet Comptes suivis montre du réseau d'une app, calculé sur ses comptes et rangé sur l'app. */
 export type AppNet = {
