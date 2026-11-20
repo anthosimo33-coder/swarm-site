@@ -22,6 +22,7 @@ import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
 import { ROUTES } from './routes.js';
 import { createWatcher } from './watcher.js';
+import { APERCU, HOME, SIGN_OUT, isOpen, mayLoadBeforeUser, routeCodeNeeded, routesToWarm } from './plan.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
@@ -50,12 +51,7 @@ const MFormules = lazyScreen(() => Promise.all([import('./pages/MFormules.js'), 
 const MenuCompte = lazyScreen(() => Promise.all([import('./pages/MenuCompte.js'), import('./styles/a-mnu.css')]).then(([m]) => m));
 const Reglages = lazyScreen(() => Promise.all([import('./pages/Reglages.js'), import('./styles/a-reg.css')]).then(([m]) => m));
 
-const HOME = '/app';
-const SIGN_OUT = '/app/deconnexion';
-// L'aperçu : ce qu'un compte sans abonnement peut ouvrir. Accueil mène à Apps ; le reste ouvre les formules.
-const APERCU = '/app/apps';
-const OPEN = [/^\/app\/apps$/, /^\/app\/apps\/[^/]+$/, /^\/app\/videos\/[^/]+$/, /^\/app\/compte$/];
-const isOpen = (pathname) => pathname === SIGN_OUT || pathname.startsWith('/app/payer/') || OPEN.some((re) => re.test(pathname));
+// L'aperçu (ce qu'un compte sans abonnement peut ouvrir, HOME, APERCU, isOpen) : src/app/plan.js.
 // Paiement (Whop, convex/whop.ts) : ces adresses créent le lien de paiement Whop relié au compte et y envoient, sans
 // écran entre les deux. Depuis le site (tarifs) ou un favori, elles mènent ici aussi (après connexion).
 const PAY = '/app/payer/';
@@ -100,8 +96,9 @@ function matchRoute(path) {
 // Démarrage : le code du premier écran se télécharge tout de suite, en même temps que la
 // session se vérifie ; et la connexion aux miniatures (/cover/…) s'ouvre d'avance.
 {
+  // Seulement une adresse ouverte à tous (fiche, vidéo) : Accueil ou Apps dépendent de l'abonnement (audit F8).
   const first = matchRoute(clean(window.location.pathname));
-  if (first) loaderOf(first.route, MOBILE.matches)().catch(() => {});
+  if (first && mayLoadBeforeUser(clean(window.location.pathname))) loaderOf(first.route, MOBILE.matches)().catch(() => {});
   const site = (import.meta.env.VITE_CONVEX_URL || '').replace(/\.cloud\/?$/, '.site');
   if (site.startsWith('https://')) {
     const link = Object.assign(document.createElement('link'), { rel: 'preconnect', href: site });
@@ -371,8 +368,12 @@ function App() {
       return undefined;
     }
     if (!isAuthenticated) return undefined; // le profil (viewer) arrive en parallèle
+    // Audit F8 : une adresse fermée sans abonnement attend de savoir qui est là (pas de code d'Accueil chargé pour un
+    // compte gratuit renvoyé vers l'aperçu) ; et l'aperçu n'attend pas le code d'Apps, qu'il n'affiche pas.
+    if (!known && !mayLoadBeforeUser(pathname)) return undefined;
+    const code = routeCodeNeeded(match.route.path, { known, pro: proRef.current }) ? loaderOf(match.route, mobile)() : Promise.resolve({ default: null });
     let current = true;
-    Promise.all([loaderOf(match.route, mobile)(), match.key ? ready(match.key) : null]).then(
+    Promise.all([code, match.key ? ready(match.key) : null]).then(
       ([module]) => {
         if (!current) return;
         // L'écran d'avant cesse d'écouter ses documents : le watcher pourra fermer ceux que le nouveau ne lit pas.
@@ -389,23 +390,25 @@ function App() {
     return () => {
       current = false;
     };
-  }, [path, isAuthenticated, mobile]);
+  }, [path, isAuthenticated, mobile, known, !!(user && user.pro)]);
 
   // Une fois le premier écran affiché : les autres écrans et les listes se chargent en
   // arrière-plan, la navigation devient instantanée.
-  const warmed = useRef(false);
+  // Sans abonnement, seulement ce qu'il peut ouvrir (audit F8) ; tout le reste quand l'abonnement arrive.
+  const warmed = useRef('');
+  const proNow = !!(user && user.pro);
   useEffect(() => {
-    if (!screen || warmed.current) return undefined;
-    warmed.current = true;
+    if (!screen || !user || warmed.current === 'pro' || warmed.current === (proNow ? 'pro' : 'apercu')) return undefined;
+    warmed.current = proNow ? 'pro' : 'apercu';
     const timer = setTimeout(() => {
       WARM.forEach((key) => board(key));
       SAVED.forEach((key) => savedEntry(key));
-      ROUTES.forEach((route) => loaderOf(route, MOBILE.matches)().catch(() => {}));
+      routesToWarm(ROUTES, proNow).forEach((route) => loaderOf(route, MOBILE.matches)().catch(() => {}));
       // Les écrans secondaires, d'avance mais hors du démarrage (audit F4).
-      [Reglages, MenuCompte, MOBILE.matches ? MFormules : Formules].forEach((l) => l.preload());
+      [Reglages, MenuCompte, ...(proNow ? [] : [MOBILE.matches ? MFormules : Formules])].forEach((l) => l.preload());
     }, 800);
     return () => clearTimeout(timer);
-  }, [screen]);
+  }, [screen, proNow]);
 
   // Arrivée sur un écran : titre de l'onglet, puis en haut ou sur l'ancre demandée.
   useEffect(() => {
@@ -463,6 +466,8 @@ function App() {
     page = apps && !apps.locked && ApercuPage
       ? h(ApercuPage, { key: `${screen.mobile ? 'm' : 'd'}/apercu`, user, data: apps, onPlans, checkout: CHECKOUT })
       : null;
+  } else if (!screen.Page) {
+    page = null; // l'abonnement vient d'arriver sur l'aperçu : le code d'Apps arrive (l'effet de l'adresse le charge)
   } else {
     page = h(screen.Page, {
       key: `${screen.mobile ? 'm' : 'd'}${screen.path}`,
