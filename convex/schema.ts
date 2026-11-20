@@ -21,6 +21,9 @@ export default defineSchema({
     proManual: v.optional(v.boolean()),
     // Plus écrit depuis le 19/11 (l'accord est porté par les CGV, sans écran avant Whop) ; gardé pour les comptes de test.
     consentAt: v.optional(v.number()),
+    // Le prénom choisi dans Réglages › Profil (audit Q36, 19/11). À part de `name`, que Convex Auth réécrit avec le nom
+    // Google à chaque connexion Google : le prénom choisi revenait au nom Google.
+    displayName: v.optional(v.string()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),

@@ -6,6 +6,9 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, internalAction, internalMutation, internalQuery, mutation, query, type ActionCtx, type MutationCtx } from "./_generated/server";
 import { signInKey } from "./authLimits";
+import { passwordVerdict } from "./passwordPolicy";
+
+const PASSWORD = "password";
 
 /**
  * La personne connectée (pour l'app), ou null. `name` vient de Google ; l'inscription par e-mail n'en demande pas.
@@ -18,7 +21,11 @@ export const viewer = query({
     if (userId === null) return null;
     const user = await ctx.db.get(userId);
     if (user === null) return null;
-    return { email: user.email ?? null, name: user.name ?? null, pro: user.pro === true, emailVerified: !!user.emailVerificationTime };
+    // `name` : le prénom choisi (displayName, audit Q36), sinon le nom Google. `password` : le compte a un identifiant « mot
+    // de passe » (Réglages le demande pour fermer le compte, audit S27).
+    const login = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId).eq("provider", PASSWORD)).first();
+    return { email: user.email ?? null, name: user.displayName ?? user.name ?? null, pro: user.pro === true, emailVerified: !!user.emailVerificationTime,
+      password: !!login };
   },
 });
 
@@ -70,14 +77,24 @@ export const migrerProManuel = internalMutation({
 
 // ─── Réglages (19/11) : prénom, appareils connectés, fermeture du compte ───
 
-/** Le prénom affiché dans l'app (Réglages › Profil). Vide : l'app retombe sur l'e-mail. 40 caractères au plus. */
+/**
+ * Le prénom nettoyé : espaces ramenés à un, caractères invisibles de mise en forme retirés (audit Q38 : un U+200B passait
+ * et donnait un prénom vide à l'écran) sauf le liant des émojis composés (U+200D), 40 caractères au plus.
+ */
+export const cleanName = (name: string) =>
+  Array.from(name.replace(/(?!\u200D)\p{Cf}/gu, "").replace(/\s+/g, " ").trim()).slice(0, 40).join("").replace(/^\u200D+|\u200D+$/g, "").trim();
+
+/**
+ * Le prénom affiché dans l'app (Réglages › Profil). Vide : l'app retombe sur l'e-mail. Rangé dans displayName (audit
+ * Q36) : `name` est réécrit par Convex Auth avec le nom Google à chaque connexion Google.
+ */
 export const setName = mutation({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
     const userId = await liveUserId(ctx);
     if (userId === null) throw new Error("Non connecté");
-    const clean = Array.from(name.replace(/\s+/g, " ").trim()).slice(0, 40).join("").trim();
-    await ctx.db.patch(userId, { name: clean || undefined });
+    const clean = cleanName(name);
+    await ctx.db.patch(userId, { displayName: clean || undefined });
     return clean;
   },
 });
@@ -122,35 +139,62 @@ export const signOutOthers = mutation({
   },
 });
 
+/** Une session récente suffit à un compte Google seul pour fermer son compte (audit S27). */
+export const RECENT_LOGIN_MS = 10 * 60_000;
+type DeleteRefusal = "email" | "motdepasse" | "tentatives" | "reconnexion" | "resiliation";
+
+/** Depuis quand la session de cet appareil existe (null si inconnue). */
+export const sessionCreatedAt = internalQuery({
+  args: { sessionId: v.id("authSessions") },
+  handler: async (ctx, { sessionId }) => (await ctx.db.get(sessionId))?._creationTime ?? null,
+});
+
 /**
- * Ferme le compte (Réglages › Profil). Il faut retaper son e-mail ; sinon rien n'est effacé ({ ok: false, reason:
- * "email" }). Audit du 19/11, S2 : l'abonnement Whop est d'abord résilié tout de suite (convex/whop.ts, cancelAllNow) ;
- * avant, le compte était effacé et Whop continuait de prélever une personne sans compte. Si Whop ne confirme pas,
- * rien n'est effacé ({ ok: false, reason: "resiliation" }). Puis ce que la personne garde (`saved`), ses sessions, ses
- * identifiants et le compte. Irréversible. Une action : une mutation ne peut pas appeler Whop.
+ * Ferme le compte (Réglages › Profil). Il faut retaper son e-mail, et prouver qu'on est la personne (audit S27, 19/11 :
+ * l'e-mail, affiché juste au-dessus du champ, suffisait à quiconque tenait une session volée ou un appareil prêté) : son
+ * mot de passe pour un compte « mot de passe » (même limite d'essais que la connexion), une connexion de moins de
+ * 10 minutes pour un compte Google seul. Sinon rien n'est effacé ({ ok: false, reason }).
+ * Audit du 19/11, S2 : l'abonnement Whop est d'abord résilié tout de suite (convex/whop.ts, cancelAllNow) ; avant, le
+ * compte était effacé et Whop continuait de prélever une personne sans compte. Si Whop ne confirme pas, rien n'est
+ * effacé (reason "resiliation"). Puis ce que la personne garde (`saved`), ses sessions, ses identifiants, ses compteurs
+ * d'échecs et le compte. Irréversible. Une action : une mutation ne peut pas appeler Whop.
  */
 export const deleteAccount = action({
-  args: { email: v.string() },
-  handler: async (ctx, { email }): Promise<{ ok: boolean; reason?: "email" | "resiliation" }> => {
+  args: { email: v.string(), password: v.optional(v.string()) },
+  handler: async (ctx, { email, password }): Promise<{ ok: boolean; reason?: DeleteRefusal }> => {
     const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
-    const { email: mine } = await ctx.runQuery(internal.users.credentialsOf, { userId });
+    const { email: mine, login } = await ctx.runQuery(internal.users.credentialsOf, { userId });
     if (!mine || email.trim().toLowerCase() !== mine.trim().toLowerCase()) return { ok: false, reason: "email" };
+    if (login) {
+      if (!password) return { ok: false, reason: "motdepasse" };
+      try {
+        await checkPassword(ctx, login, password);
+      } catch (e) {
+        return { ok: false, reason: e instanceof ConvexError && e.data?.code === "trop_de_tentatives" ? "tentatives" : "motdepasse" };
+      }
+    } else {
+      const sessionId = await getAuthSessionId(ctx);
+      const since: number | null = sessionId ? await ctx.runQuery(internal.users.sessionCreatedAt, { sessionId }) : null;
+      if (since === null || Date.now() - since > RECENT_LOGIN_MS) return { ok: false, reason: "reconnexion" };
+    }
     try {
       await cancelAllNow(ctx, userId);
     } catch (e) {
       console.error(`[compte] fermeture refusée, abonnement non résilié : ${String(e).slice(0, 300)}`);
       return { ok: false, reason: "resiliation" };
     }
-    const erased: boolean = await ctx.runMutation(internal.users.eraseAccount, { userId });
+    // Les compteurs d'échecs liés à ce compte (connexion par e-mail haché, liens de paiement, écritures) partent aussi.
+    const limitKeys = [`checkout:${userId}`, `saved:${userId}`, ...(login ? [await signInKey(login)] : [])];
+    const erased: boolean = await ctx.runMutation(internal.users.eraseAccount, { userId, limitKeys });
     return erased ? { ok: true } : { ok: false, reason: "resiliation" };
   },
 });
 
 /** L'effacement lui-même, une fois l'abonnement résilié ; refusé (false) si une adhésion prélevée est arrivée entre-temps. */
 export const eraseAccount = internalMutation({
-  args: { userId: v.id("users") },
-  handler: async (ctx, { userId }): Promise<boolean> => {
+  args: { userId: v.id("users"), limitKeys: v.optional(v.array(v.string())) },
+  handler: async (ctx, { userId, limitKeys }): Promise<boolean> => {
     const subs = await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect();
     if (subs.some((s) => hasAccess(s) && !s.cancelAtPeriodEnd)) return false;
     for (const row of await ctx.db.query("saved").withIndex("by_user_key", (q) => q.eq("userId", userId)).collect()) {
@@ -166,7 +210,13 @@ export const eraseAccount = internalMutation({
       for (const c of await ctx.db.query("authVerificationCodes").withIndex("accountId", (q) => q.eq("accountId", a._id)).collect()) {
         await ctx.db.delete(c._id);
       }
+      // Le compteur d'échecs de Convex Auth, par identifiant (audit S27 : il restait orphelin).
+      for (const r of await ctx.db.query("authRateLimits").withIndex("identifier", (q) => q.eq("identifier", a._id)).collect()) await ctx.db.delete(r._id);
       await ctx.db.delete(a._id);
+    }
+    for (const key of limitKeys ?? []) {
+      const row = await ctx.db.query("authLimits").withIndex("by_key", (q) => q.eq("key", key)).first();
+      if (row) await ctx.db.delete(row._id);
     }
     await ctx.db.delete(userId);
     return true;
@@ -175,7 +225,6 @@ export const eraseAccount = internalMutation({
 
 // ─── Réglages : mot de passe et e-mail (19/11) ───
 // Erreurs lisibles par le site (ConvexError avec un code), comme à la connexion (convex/auth.ts).
-const PASSWORD = "password";
 const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const failWith = (code: string) => new ConvexError({ code });
 
@@ -208,10 +257,12 @@ export const changePassword = action({
   handler: async (ctx, { current, next }): Promise<number> => {
     const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw failWith("non_connecte");
-    if (next.length < 8 || next.length > 128) throw failWith("mot_de_passe_trop_court");
     if (next === current) throw failWith("mot_de_passe_identique");
     const { login } = await ctx.runQuery(internal.users.credentialsOf, { userId });
     if (!login) throw failWith("compte_sans_mot_de_passe");
+    // Audit S28 : la même règle qu'à l'inscription (trop court, trop long, trop courant).
+    const verdict = passwordVerdict(next, login);
+    if (verdict !== "ok") throw failWith(`mot_de_passe_${verdict}`);
     await checkPassword(ctx, login, current);
     await modifyAccountCredentials(ctx, { provider: PASSWORD, account: { id: login, secret: next } });
     return await ctx.runMutation(internal.users.closeOtherSessions, { userId, keep: (await getAuthSessionId(ctx)) ?? null });
@@ -227,8 +278,9 @@ export const changePassword = action({
 export const resetPassword = internalAction({
   args: { email: v.string(), password: v.string() },
   handler: async (ctx, { email, password }): Promise<{ ok: boolean; raison?: string; sessionsFermees?: number }> => {
-    if (password.length < 8 || password.length > 128) return { ok: false, raison: "8 à 128 caractères" };
     const found: { userId: Id<"users">; login: string } | null = await ctx.runQuery(internal.users.passwordLogin, { email: email.trim().toLowerCase() });
+    const verdict = passwordVerdict(password, email);
+    if (verdict !== "ok") return { ok: false, raison: verdict === "trop_courant" ? "mot de passe trop courant" : "8 à 128 caractères" };
     if (!found) return { ok: false, raison: "aucun compte « mot de passe » avec cet e-mail" };
     await modifyAccountCredentials(ctx, { provider: PASSWORD, account: { id: found.login, secret: password } });
     const closed: number = await ctx.runMutation(internal.users.closeOtherSessions, { userId: found.userId, keep: null });
