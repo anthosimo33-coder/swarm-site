@@ -320,14 +320,14 @@ return {};
             )
           ] : null,
           ($l($v.rows)).map((r) => [
-            $h("div", { "style": "border-radius: 20px; overflow: hidden; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
+            $h("div", { "style": "content-visibility: auto; contain-intrinsic-size: auto 214px; border-radius: 20px; overflow: hidden; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
               $h("button", { "data-sheet-src": "", "type": "button", "onClick": r?.open, "aria-label": `Aperçu de ${$t(r?.n)}`, "style": "width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 10px; border: 0; background: transparent; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
                 $h("span", { "style": "width: 18px; flex-shrink: 0; padding-top: 3px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
                   $t(r?.rank)
                 ),
                 $h("span", { "data-sheet-ico": "", "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;" },
                   (r?.logo) ? [
-                    $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "decoding": "async", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (r?.nologo) ? [
                     $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -396,7 +396,7 @@ return {};
                   $h("span", { "style": "display: flex; gap: 6px; flex-shrink: 0;" },
                     ($l(r?.covs)).map((c) => [
                       $h("a", { "href": $u(c?.href), "class": "sw-video", "aria-label": `Vidéo à ${$t(c?.v)} vues`, "style": "display: block; width: 56px; border-radius: 10px;" },
-                        $h("img", { "class": "sw-cover", "src": $u(c?.src), "alt": "", "loading": "lazy" }),
+                        $h("img", { "class": "sw-cover", "src": $u(c?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                         $h("span", { "class": "sw-video-shade" }),
                         (c?.car) ? [
                           $h("span", { "title": `Carrousel de ${$t(c?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 4px; right: 4px; z-index: 2; height: 18px; padding: 0 5px; border-radius: 999px; background: rgba(5,7,12,0.66); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" },
