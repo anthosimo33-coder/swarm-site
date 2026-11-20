@@ -45,8 +45,22 @@ function flyer(el, from, to) {
   return { c, a };
 }
 
+// La place de la feuille ouverte, gardée : quand l'écran la retire, elle n'a plus de rectangle (nœud détaché).
+function remember(sheet) {
+  if (sheet.getAnimations().some((a) => a.playState === 'running')) return;
+  const r = sheet.getBoundingClientRect();
+  if (r.height > 0) sheet.__rect = { left: r.left, top: r.top, width: r.width, height: r.height };
+}
+function watchSize(sheet) {
+  if (sheet.__ro || typeof ResizeObserver === 'undefined') return;
+  sheet.__ro = new ResizeObserver(() => remember(sheet));
+  sheet.__ro.observe(sheet);
+}
+
 function open(sheet) {
   const veil = veilOf(sheet);
+  { const r0 = sheet.getBoundingClientRect(); sheet.__rect = { left: r0.left, top: r0.top, width: r0.width, height: r0.height }; }
+  watchSize(sheet);
   if (sheet.getAttribute('data-sheet-anim') === 'off') { setupDrag(sheet, veil); setupOpts(sheet); return; }
   if (reduced()) {
     sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 });
@@ -78,18 +92,27 @@ function open(sheet) {
   });
   setupDrag(sheet, veil);
   setupOpts(sheet);
+  setTimeout(() => { if (sheet.isConnected) remember(sheet); }, OPEN + 40);
 }
 
 function close(sheet, veil) {
+  if (sheet.__ro) { sheet.__ro.disconnect(); sheet.__ro = null; }
   if (sheet.hasAttribute('data-sheet-gone') || reduced()) return; // partie au doigt : déjà hors de l'écran
-  const r = sheet.getBoundingClientRect();
+  const r = sheet.__rect;
+  if (!r) return;
   sheet.getAnimations({ subtree: true }).forEach((a) => a.cancel());
   sheet.setAttribute(GHOST, '');
   sheet.setAttribute('aria-hidden', 'true');
   sheet.style.pointerEvents = 'none';
+  // Posée là où elle était, en position fixe (elle pouvait vivre dans un conteneur, en position absolue).
+  Object.assign(sheet.style, { position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px`, right: 'auto', bottom: 'auto', margin: '0', zIndex: '75', maxHeight: 'none' });
   document.body.append(sheet);
   const ghosts = [sheet];
-  if (veil && !veil.isConnected) { veil.setAttribute(GHOST, ''); veil.style.pointerEvents = 'none'; veil.tabIndex = -1; document.body.insertBefore(veil, sheet); ghosts.push(veil); }
+  if (veil && !veil.isConnected) {
+    veil.setAttribute(GHOST, ''); veil.tabIndex = -1;
+    Object.assign(veil.style, { position: 'fixed', inset: '0', width: '100%', height: '100%', zIndex: '74', pointerEvents: 'none' });
+    document.body.insertBefore(veil, sheet); ghosts.push(veil);
+  }
   const from = sheet.style.transform && sheet.style.transform !== 'none' ? sheet.style.transform : 'translateY(0px)';
   const a = sheet.animate([{ transform: from }, { transform: `translateY(${r.height + 24}px)` }], { duration: CLOSE, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' });
   if (ghosts[1]) ghosts[1].animate([{ opacity: getComputedStyle(ghosts[1]).opacity }, { opacity: 0 }], { duration: CLOSE, easing: 'linear', fill: 'forwards' });
@@ -210,7 +233,8 @@ new MutationObserver((records) => {
   for (const rec of records) {
     for (const n of rec.removedNodes) {
       if (n.nodeType !== 1 || n.isConnected || n.hasAttribute(GHOST)) continue;
-      if (n.hasAttribute('data-sheet')) close(n, n.__veil || null);
+      const gone = n.hasAttribute('data-sheet') ? [n] : [...n.querySelectorAll('[data-sheet]')];
+      for (const s of gone) close(s, s.__veil || null);
     }
     for (const n of rec.addedNodes) {
       if (n.nodeType !== 1 || n.hasAttribute(GHOST)) continue;
