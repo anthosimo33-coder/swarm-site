@@ -55,7 +55,8 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_payment", ["paymentId"]).index("by_user", ["userId"]),
   // Événements déjà traités (Whop peut renvoyer le même) et leur résultat, pour le suivi.
-  whopEvents: defineTable({ eventId: v.string(), type: v.string(), at: v.number(), note: v.optional(v.string()) }).index("by_event", ["eventId"]),
+  // state (audit Q27) : « processing » pendant le traitement, « done » une fois traité ; absent (avant le 20/11) = traité.
+  whopEvents: defineTable({ eventId: v.string(), type: v.string(), at: v.number(), note: v.optional(v.string()), state: v.optional(v.string()) }).index("by_event", ["eventId"]),
   // Liens de paiement Whop déjà créés (audit F6) : le même est resservi pendant 1 h, par compte, tarif et site de retour.
   checkoutLinks: defineTable({ userId: v.id("users"), key: v.string(), url: v.string(), at: v.number() }).index("by_user_key", ["userId", "key"]),
   // Limites de l'authentification (convex/authLimits.ts) : passages comptés par fenêtre fixe, une ligne par clé.

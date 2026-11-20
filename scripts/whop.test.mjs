@@ -26,7 +26,7 @@ const PRODUCT = 'prod_WtWqNkTHQMRA9';
 let whop;
 function resetWhop() {
   whop = {
-    calls: [], down: false,
+    calls: [], down: false, failMemberships: false,
     variants: {
       plan_ilOWoZwgoZGwK: { id: 'plan_ilOWoZwgoZGwK', product: { id: PRODUCT }, billing_type: 'renewal', billing_period: 30, renewal_price: 29.99, initial_price: 0, currency: 'eur', visibility: 'visible' },
       plan_ZxcFeAaIiBMk1: { id: 'plan_ZxcFeAaIiBMk1', product: { id: PRODUCT }, billing_type: 'renewal', billing_period: 365, renewal_price: 179.88, initial_price: 0, currency: 'eur', visibility: 'visible' },
@@ -58,6 +58,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (p === '/variants' && method === 'POST') { const v = { id: 'plan_cree' + Object.keys(whop.variants).length, product: { id: body.product_id }, ...body }; whop.variants[v.id] = v; return json(v); }
   if (p === '/checkout_configurations' && method === 'POST') return json({ id: 'ch_1', purchase_url: 'https://whop.com/checkout/' + body.variant_id });
   if ((m = p.match(/^\/memberships\/([^/]+)(\/cancel)?$/))) {
+    if (whop.failMemberships) return new Response('panne', { status: 503 });
     const mem = whop.memberships[m[1]];
     if (!mem) return json({ error: 'introuvable' }, 404);
     if (m[2] && method === 'POST') { if (body?.cancel_at_period_end) mem.cancel_at_period_end = true; else mem.status = 'canceled'; }
@@ -165,6 +166,34 @@ const planOf = (r) => r.url?.split('/').pop() ?? r.code;
     if (r.code === 'TROP_DE_DEMANDES') refused = i + 1;
   }
   ok(refused > 0 && refused <= 11, `F6 : au-delà de 10 liens neufs par heure, TROP_DE_DEMANDES (refus au ${refused || '?'}e)`);
+}
+
+// ─── Q27 : un événement Whop n'est marqué traité qu'une fois traité ───
+const { createHmac } = await import('node:crypto');
+async function deliver(w, id, event) {
+  const ts = String(Math.floor(Date.now() / 1000)), body = JSON.stringify(event);
+  const sig = 'v1,' + createHmac('sha256', Buffer.from('dGVzdA==', 'base64')).update(`${id}.${ts}.${body}`).digest('base64');
+  const req = new Request('https://x.convex.site/whop/webhook', { method: 'POST', body, headers: { 'webhook-id': id, 'webhook-timestamp': ts, 'webhook-signature': sig } });
+  const res = await quiet(() => mods.whop.webhook(w.ctx, req));
+  return { status: res.status, text: await res.text() };
+}
+{
+  resetWhop();
+  const w = await world();
+  whop.memberships.mem_q27 = { id: 'mem_q27', status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: w.userId }, cancel_at_period_end: false };
+  // (a) Un renvoi arrive pendant que le premier traitement tourne encore : Whop doit réessayer, pas recevoir 200.
+  await w.call({ __path: 'whop.claimEvent' }, { eventId: 'evt_a', type: 'membership.went_valid' });
+  const dup = await deliver(w, 'evt_a', { type: 'membership.went_valid', data: { id: 'mem_q27' } });
+  ok(dup.status >= 400 && dup.status !== 401, `Q27 : un doublon pendant le traitement est renvoyé à plus tard (${dup.status} ${dup.text})`);
+  // (b) Paiement reçu mais adhésion illisible : 500, et l'événement reste à traiter.
+  whop.failMemberships = true;
+  const pay = await deliver(w, 'evt_b', { type: 'payment.succeeded', data: { id: 'pay_1', membership_id: 'mem_q27', metadata: { kopycat_user: w.userId }, total: 29.99, currency: 'eur' } });
+  whop.failMemberships = false;
+  ok(pay.status === 500, `Q27 : un paiement dont l'adhésion ne se relit pas répond 500, Whop le renverra (${pay.status} ${pay.text})`);
+  const again = await deliver(w, 'evt_b', { type: 'payment.succeeded', data: { id: 'pay_1', membership_id: 'mem_q27', metadata: { kopycat_user: w.userId }, total: 29.99, currency: 'eur' } });
+  ok(again.status === 200 && (await w.m.db.get(w.userId)).pro === true, `Q27 : le renvoi est traité, l'accès s'ouvre (${again.status})`);
+  const twice = await deliver(w, 'evt_b', { type: 'payment.succeeded', data: { id: 'pay_1' } });
+  ok(twice.status === 200 && /déjà/.test(twice.text), 'Q27 : un événement traité n\'est pas refait');
 }
 
 end();

@@ -39,6 +39,7 @@ async function whopApi(path: string, init: { method?: string; body?: Json } = {}
     method: init.method ?? "GET",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "application/json" },
     body: init.body ? JSON.stringify(init.body) : undefined,
+    signal: AbortSignal.timeout(15_000), // audit Q27 : une API Whop qui traîne ne bloque plus le webhook jusqu'à la coupure
   });
   const text = await res.text();
   let body: any = text;
@@ -457,12 +458,23 @@ async function syncMembership(ctx: ActionCtx, membershipId: string, fallback: Js
 
 // ─── Le webhook : https://<déploiement>.convex.site/whop/webhook ───
 
+/**
+ * Prend un événement à traiter (audit Q27) : « go » s'il est neuf (ou si un traitement est resté coupé plus de 5 min),
+ * « busy » s'il est en cours de traitement (Whop doit le renvoyer plus tard, pas recevoir 200), « done » s'il est traité.
+ */
 export const claimEvent = internalMutation({
   args: { eventId: v.string(), type: v.string() },
-  handler: async (ctx, { eventId, type }) => {
-    if (await ctx.db.query("whopEvents").withIndex("by_event", (q) => q.eq("eventId", eventId)).first()) return false;
-    await ctx.db.insert("whopEvents", { eventId, type, at: Date.now() });
-    return true;
+  handler: async (ctx, { eventId, type }): Promise<"go" | "busy" | "done"> => {
+    const now = Date.now();
+    const row = await ctx.db.query("whopEvents").withIndex("by_event", (q) => q.eq("eventId", eventId)).first();
+    if (!row) {
+      await ctx.db.insert("whopEvents", { eventId, type, at: now, state: "processing" });
+      return "go";
+    }
+    if (row.state !== "processing") return "done";
+    if (now - row.at < 5 * 60_000) return "busy";
+    await ctx.db.patch(row._id, { at: now });
+    return "go";
   },
 });
 export const noteEvent = internalMutation({
@@ -472,7 +484,7 @@ export const noteEvent = internalMutation({
     if (!row) return;
     // Échec : l'événement est rendu, pour que le renvoi de Whop soit traité.
     if (release) await ctx.db.delete(row._id);
-    else await ctx.db.patch(row._id, { note });
+    else await ctx.db.patch(row._id, { note, state: "done" });
   },
 });
 
@@ -522,14 +534,15 @@ async function handleEvent(ctx: ActionCtx, event: Json): Promise<string> {
       membershipId: membershipId ? String(membershipId) : null, total: money(d.total ?? d.final_amount ?? d.amount),
       currency: moneyCurrency(d.total, d.currency), status, createdAt: toMs(d.created_at) ?? Date.now(),
     });
-    // Un paiement réussi rattrape une activation dont l'événement se serait perdu.
-    return membershipId ? `paiement ${d.id} ${status} ; ` + (await syncMembership(ctx, String(membershipId), null).catch((e) => String(e))) : `paiement ${d.id} ${status}`;
+    // Un paiement réussi rattrape une activation dont l'événement se serait perdu. Un échec de la relecture remonte
+    // (réponse 500, Whop renvoie) : avant, il était avalé et l'événement marqué traité (audit Q27).
+    return membershipId ? `paiement ${d.id} ${status} ; ` + (await syncMembership(ctx, String(membershipId), null)) : `paiement ${d.id} ${status}`;
   }
   if (type.startsWith("refund.") || type.startsWith("dispute.")) {
     const paymentId = d.payment_id ?? d.payment?.id ?? null;
     if (paymentId) await ctx.runMutation(internal.whop.markPayment, { paymentId: String(paymentId), status: type.startsWith("refund.") ? "refunded" : "disputed" });
     const membershipId = d.membership_id ?? d.membership?.id ?? d.payment?.membership_id ?? null;
-    return membershipId ? await syncMembership(ctx, String(membershipId), null).catch((e) => String(e)) : `${type} ${paymentId ?? "?"}`;
+    return membershipId ? await syncMembership(ctx, String(membershipId), null) : `${type} ${paymentId ?? "?"}`;
   }
   return `ignoré : ${type}`;
 }
@@ -550,7 +563,9 @@ export const webhook = httpAction(async (ctx, req) => {
   } catch {
     return new Response("corps illisible", { status: 400 });
   }
-  if (!(await ctx.runMutation(internal.whop.claimEvent, { eventId: id, type: String(event.type ?? "") }))) return new Response("déjà traité", { status: 200 });
+  const claim: "go" | "busy" | "done" = await ctx.runMutation(internal.whop.claimEvent, { eventId: id, type: String(event.type ?? "") });
+  if (claim === "done") return new Response("déjà traité", { status: 200 });
+  if (claim === "busy") return new Response("en cours de traitement, à renvoyer", { status: 409 });
   try {
     const note = await handleEvent(ctx, event);
     await ctx.runMutation(internal.whop.noteEvent, { eventId: id, note: note.slice(0, 500), release: false });
