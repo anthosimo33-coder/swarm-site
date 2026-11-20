@@ -30,8 +30,11 @@ export default class MVideo extends DCLogic {
     const fsv = typeof P.saved === 'function' ? P.saved('folders') : null;
     const kept = !!vid0 && Array.isArray(fsv) && fsv.some((x) => (x.items || []).some((i) => i.kind === 'video' && i.id === vid0));
     return { ajItem: vid0 ? { kind: 'video', id: vid0, label: b.vid.hook || b.vid.who || '', cover: (b.v && b.v.src) || null } : null, saveLabel: kept ? 'Dans tes dossiers' : 'Enregistrer dans un dossier',
-      // ← du haut : ferme la visionneuse d'un coup, vers l'écran d'où elle a été ouverte (sinon le lien : fiche de l'app).
-      closeV: (e) => { const n = (window.history.state && window.history.state.viewer) || 0; if (n > 0) { e.preventDefault(); window.history.go(-n); } },
+      // Au pouce (6C), le libellé court ; le lecteur d'écran garde la phrase entière.
+      saveShort: kept ? 'Dans tes dossiers' : 'Enregistrer',
+      // La capsule retour : l'écran d'où la visionneuse a été ouverte (history.state.from, posé par tabbar.js, qui y revient
+      // d'un coup même après plusieurs vidéos enchaînées) ; sinon son lien, la fiche de l'app (ou Apps).
+      backName: (typeof history !== 'undefined' && history.state && history.state.from && history.state.from.name) || '' || b.vid.backName || 'Apps',
       setChartBox: (el) => { this.box = el; } };
   }
 
@@ -42,7 +45,7 @@ export default class MVideo extends DCLogic {
     let nxt = (globalThis.__dcSample?.["MVideo"]?.["nxt"] ?? []);
     nxt = nxt.map((x) => Object.assign({}, x, { href: '/app/videos/' + vkey(x.src) }));
     let au = (globalThis.__dcSample?.["MVideo"]?.["au"] ?? {"av":"","noav":true});
-    let vid = (globalThis.__dcSample?.["MVideo"]?.["vid"] ?? {"embed":"","pos":"","back":"","hook":"","hasApp":true,"appName":"","where":"","mk":"","paid":false,"paidNote":"","views":"","who":"","hasDur":true,"dur":"","url":"","hasX":true,"x":"","story":"","appHref":"","appLink":"","copyText":""});
+    let vid = (globalThis.__dcSample?.["MVideo"]?.["vid"] ?? {"embed":"","pos":"","back":"","backName":"","hook":"","hasApp":true,"appName":"","where":"","mk":"","paid":false,"paidNote":"","views":"","who":"","hasDur":true,"dur":"","url":"","hasX":true,"x":"","story":"","appHref":"","appLink":"","copyText":""});
     // Sur le site : la vidéo (document « video:<id> »), lue comme VideoA ; « Ensuite » = la suite de la liste de lecture de l'app.
     const D = this.props && this.props.data;
     if (D && D.id) {
@@ -79,7 +82,7 @@ export default class MVideo extends DCLogic {
       const KINDL = (k, g) => ({ ambassadeur: g === 'femme' ? 'Ambassadrice' : 'Ambassadeur', carrousel: 'Carrousel', extrait_repris: 'Extrait repris', histoire_messages: 'Histoire en messages', demo_ecran: 'Démo d’écran', motion: 'Motion', ambiance_texte: 'Ambiance + texte' })[k] || '';
       vid = { embed: D.platform === 'instagram' ? 'https://www.instagram.com/reel/' + String(D.id).replace(/^ig:/, '') + '/embed/'
           : /^\d+$/.test(String(D.id)) ? 'https://www.tiktok.com/player/v1/' + D.id + '?autoplay=1&rel=0&description=0&music_info=0&native_context_menu=0' : '',
-        pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app && D.app.page !== false ? '/app/apps/' + D.app.slug : '/app/apps',
+        pos: idx >= 0 ? (idx + 1) + ' sur ' + list.length : 'Vidéo', back: D.app && D.app.page !== false ? '/app/apps/' + D.app.slug : '/app/apps', backName: D.app && D.app.page !== false ? D.app.name : 'Apps',
         hook: D.hook || D.caption || '@' + D.handle, hasApp: !!D.app, appName: D.app ? D.app.name : '',
         // Placement payé : le compte a été payé pour cette vidéo, ce n'est pas un créateur de l'app.
         car: D.carousel ? 'Carrousel · ' + D.carousel + ' photos' : '', kindL: D.kind && D.kind !== 'carrousel' ? KINDL(D.kind) : '', paid: !!D.paid, paidNote: 'Ce compte a été payé pour cette vidéo : elle compte dans les vues de ' + (D.app ? D.app.name : 'l’app') + ', mais il n’est pas compté parmi ses créateurs.',
@@ -152,14 +155,9 @@ export default class MVideo extends DCLogic {
   render() {
     const $v = this.renderVals();
     return [
-      $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(32px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
+      $h("div", { "class": "sw ", "style": "position: relative; width: 100%; min-height: 100vh; padding-bottom: calc(96px + env(safe-area-inset-bottom)); box-sizing: border-box; overflow-x: clip; background: var(--surface); color: var(--ink); font-family: var(--font-body);" },
         $h("header", { "style": "position: sticky; top: 0; z-index: 6; height: 56px; padding: 0 14px 0 20px; display: flex; align-items: center; gap: 4px; background: rgba(8,11,18,0.86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);" },
           $h("span", { "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px;" },
-            $h("a", { "class": "sw-btn sw-btn-icon", "href": $u($v.vid?.back), "onClick": $v.closeV, "aria-label": "Fermer la vidéo", "style": "flex-shrink: 0; width: 44px; height: 44px; margin-left: -10px;" },
-              $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              )
-            ),
             $h("span", { "style": "flex: 1; min-width: 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
               $t($v.vid?.pos)
             )
@@ -274,16 +272,6 @@ export default class MVideo extends DCLogic {
             )
           )
         ] : null,
-        $h("div", { "style": "padding: 16px 20px 0; display: flex; justify-content: center;" },
-          $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.openAj },
-            $t($v.saveLabel),
-            $h("span", { "class": "sw-btn-tile" },
-              $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linejoin": "round" })
-              )
-            )
-          )
-        ),
         $h("div", { "class": "sw-card is-featured", "style": "margin: 18px 20px 0; border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 12px;" },
           $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
             "Pourquoi elle sort du lot"
@@ -397,6 +385,29 @@ export default class MVideo extends DCLogic {
                 $t($v.vid?.appLink)
               )
             ] : null
+          )
+        ),
+        $h("div", { "data-thumb": "", "style": "position: fixed; left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 30; display: flex; align-items: center; gap: 8px; pointer-events: none;" },
+          $h("a", { "data-thumb-back": "", "href": $u($v.vid?.back), "aria-label": `Revenir à ${$t($v.backName)}`, "style": "pointer-events: auto; flex: 0 3 auto; min-width: 50px; height: 50px; box-sizing: border-box; padding: 0 18px 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 25px; background: rgba(22,27,38,0.9); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 36px rgba(0,0,0,0.5); color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
+            $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+              $h("path", { "d": "M15 6l-6 6 6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            ),
+            $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+              $t($v.backName)
+            )
+          ),
+          $h("span", { "aria-hidden": "true", "style": "flex: 1 1 0;" }),
+          $h("span", { "data-thumb-act": "", "style": "pointer-events: auto; flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px;" },
+            $h("button", { "class": "sw-btn sw-btn-primary", "type": "button", "onClick": $v.openAj, "aria-label": $v.saveLabel, "style": "flex: 0 1 auto; min-width: 0; height: 50px; padding: 0 5px 0 18px; gap: 10px; font-size: 15px; text-decoration: none;" },
+              $h("span", { "style": "min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                $t($v.saveShort)
+              ),
+              $h("span", { "class": "sw-btn-tile", "style": "width: 36px; height: 36px;" },
+                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                  $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              )
+            )
           )
         ),
         ($v.pal) ? [
