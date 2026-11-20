@@ -110,9 +110,11 @@ const LISTS = [
       { f: 'abonnés', desk: [t(2, 'filters'), p('Moins de 1 000')], mob: null },
     ], other: { desk: [(v) => v.toggleSort(), p('Abonnés')], mob: [p('Abonnés')] } })),
   { name: 'Formats', path: '/app/formats', key: 'formats', desk: 'Formats', mob: 'MFormats', filters: [
-    { f: 'niche', desk: [p('Foi')], mob: [p('Foi')] },
+    // Niche et marché : les fenêtres de choix (maquette C1 du 20/11), comme sur Apps ; le tri est propre à l'ordinateur.
+    { f: 'niche', desk: [t(1), p('Foi')], mob: [p('Foi')] },
     { f: 'type', desk: [p('Sons')], mob: [p('Sons')] },
-    { f: 'marché', desk: [(v) => v.mkBar.toggle(), p('France')], mob: null },
+    { f: 'marché', desk: [t(0), p('France')], mob: null },
+    { f: 'tri', desk: [(v) => v.sortBtn.toggle(), p('Au-dessus de la normale')], mob: null },
   ], other: { desk: [p('Accroches')], mob: [p('Accroches')] } },
   { name: 'Alertes', path: '/app/alertes', key: 'alerts', desk: 'Alertes', mob: 'MAlertes', filters: [
     { f: 'onglet', desk: [p('Vidéos')], mob: [p('Vidéos')] },

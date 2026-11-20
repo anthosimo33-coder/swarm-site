@@ -207,6 +207,28 @@ const RULES = [
   }],
 ];
 
+// Le nom d'un format par ce qu'on y voit (maquette C1 du 20/11) : un format « sound » porte le texte à l'écran de sa
+// reprise la plus vue qui en a un (title) ; un format « hook » (déjà nommé par son texte) et un son sans texte : null.
+RULES.push(['Formats : title = le texte à l\'écran de la reprise la plus vue qui en a un, null sinon (maquette C1)', (docs, raw) => {
+  const out = [];
+  const sig = new Map(raw.signals.map((s) => [s.videoId, s]));
+  const byId = new Map(raw.formats.map((f) => [f.id, f]));
+  const list = docs.get('formats')?.formats ?? [];
+  const seen = { title: 0, none: 0, cut: 0 };
+  for (const f of list) {
+    const r = byId.get(f.id);
+    if (!('title' in f)) { out.push(`${f.id} : pas de champ title`); continue; }
+    let want = null;
+    if (r.kind === 'sound') for (const m of [...r.members].sort((p, q) => q.views - p.views)) if ((want = models.formatTitle(m.hook ?? sig.get(m.videoId)?.hook))) break;
+    if (f.title !== want) out.push(`${f.id} (${r.kind}) : ${JSON.stringify(f.title)} au lieu de ${JSON.stringify(want)}`);
+    for (const k of [`format:${f.id}`]) if (docs.has(k) && docs.get(k).title !== f.title) out.push(`${k} : ${JSON.stringify(docs.get(k).title)} ≠ ${JSON.stringify(f.title)}`);
+    if (r.kind === 'sound') { if (f.title) seen.title++; else seen.none++; if (f.title?.endsWith('…')) seen.cut++; }
+  }
+  // Sans sons nommés, sans sons muets ou sans nom coupé dans l'export inventé, la règle ne prouverait rien.
+  if (!seen.title || !seen.none || !seen.cut) out.push(`l'export inventé ne couvre pas les cas (sons nommés ${seen.title}, sans texte ${seen.none}, coupés ${seen.cut})`);
+  return out;
+}]);
+
 // Le contrat docs/donnees-app.md nomme chaque champ que la synchro écrit (audit Q47, Q66 : il décrivait des marchés, des
 // pages et des seuils qui n'étaient plus ceux du code).
 RULES.push(['docs/donnees-app.md nomme chaque champ des documents', (docs) => {
@@ -231,7 +253,21 @@ const BIOS = [
 const bioFails = BIOS.filter(([inp, want]) => models.cleanBio(inp) !== want);
 console.log(`${bioFails.length ? 'ÉCHEC' : 'OK   '} Nettoyage des bios (audit S31)${bioFails.length ? ` : ${bioFails.length} — ${bioFails.slice(0, 4).map(([i, w]) => `${JSON.stringify(i)} → ${JSON.stringify(models.cleanBio(i))} au lieu de ${JSON.stringify(w)}`).join(' ; ')}` : ''}`);
 
-let fail = bioFails.length ? 1 : 0;
+// Le nom d'un format tiré de son texte à l'écran (formatTitle, maquette C1) : espaces resserrés, guillemets d'entourage
+// retirés, coupé sur un mot vers 90 caractères avec « … », jamais au milieu d'un émoji.
+const words = 'Quand tu révises la veille de l’exam et que tu te rends compte que tu n’as rien compris au cours de maths';
+const TITLES = [
+  ['  Quand   tu révises\n la veille  ', 'Quand tu révises la veille'], ['“POV: tu révises”', 'POV: tu révises'], ['« Il m’a écrit »', 'Il m’a écrit'],
+  ['Il a dit "non"', 'Il a dit "non"'], ['', null], ['   \n ', null], [null, null], [undefined, null],
+  ['a'.repeat(90), 'a'.repeat(90)], [words, 'Quand tu révises la veille de l’exam et que tu te rends compte que tu n’as rien compris…'],
+  ['x'.repeat(120), 'x'.repeat(89) + '…'], ['😭'.repeat(100), '😭'.repeat(89) + '…'],
+  [`${'mot '.repeat(21)}fin, et encore des mots`, `${'mot '.repeat(21)}fin…`],
+  [`${'mot '.repeat(21)}fin · second texte de la vidéo`, `${'mot '.repeat(21)}fin…`], ['·'.repeat(120), null],
+];
+const titleFails = TITLES.filter(([inp, want]) => models.formatTitle(inp) !== want || (want && Array.from(want).length > 90));
+console.log(`${titleFails.length ? 'ÉCHEC' : 'OK   '} Nom d'un format par son texte à l'écran (formatTitle, maquette C1)${titleFails.length ? ` : ${titleFails.length} — ${titleFails.slice(0, 4).map(([i, w]) => `${JSON.stringify(i)} → ${JSON.stringify(models.formatTitle(i))} au lieu de ${JSON.stringify(w)}`).join(' ; ')}` : ''}`);
+
+let fail = (bioFails.length ? 1 : 0) + (titleFails.length ? 1 : 0);
 const run = async (label, docs, strict, raw) => {
   console.log(`── ${label} : ${docs.size} pages`);
   for (const [name, rule] of RULES) {

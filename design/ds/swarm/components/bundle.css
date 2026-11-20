@@ -360,3 +360,17 @@ body { margin: 0; background: var(--surface); color: var(--ink); font-family: va
 .fl-pv-bar b { font-weight: 600; color: #9FC6FF; }
 .fl-pv-tops { display: flex; flex-wrap: wrap; gap: 8px; }
 .fl-pv-top { height: 40px; padding: 0 12px 0 6px; display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; font-size: 14px; font-weight: 600; background: rgba(255,255,255,0.05); }
+
+/* Formats (FormatsB, maquette C1 du 20/11) : les cartes des formats, leur vignette, la barre des reprises réussies, et les
+   vignettes de la une, moins nombreuses quand la place manque. Seuls transform et opacity bougent. */
+.fm-card { position: relative; min-width: 0; display: flex; gap: 14px; padding: 14px; border-radius: 20px; color: inherit; text-decoration: none; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); }
+.fm-card:hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2); }
+.fm-card:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+.fm-th { position: relative; flex-shrink: 0; width: 84px; height: 112px; border-radius: 12px; overflow: hidden; background: #11151E; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+.fm-th img { transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.fm-card:hover .fm-th img { transform: scale(1.05); }
+.fm-bar { flex: 1 1 auto; min-width: 24px; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.07); }
+.fm-bar i { display: block; height: 100%; border-radius: 3px; background: #5CD394; }
+@media (max-width: 1279px) { .fm-hero-th:nth-child(4) { display: none !important; } }
+@media (max-width: 1139px) { .fm-hero-th:nth-child(3) { display: none !important; } }
+@media (prefers-reduced-motion: reduce) { .fm-th img { transition: none; } }
