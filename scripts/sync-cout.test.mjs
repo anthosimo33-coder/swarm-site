@@ -387,6 +387,43 @@ function memDb() {
   }
 }
 
+// ─── Q60 : une langue « inconnue » se recalcule ; Q56 : tables de suivi élaguées ; F30 : stockage relevé ──────────
+{
+  const now = 1_800_000_000_000, DAY = 86_400_000;
+  ok(typeof sync.langKnown === "function", "Q60 : règle de la langue connue éprouvable");
+  if (sync.langKnown) {
+    const cases = [[["a", "", now - 8 * DAY], false], [["a", "", now - DAY], true], [["a", "fr", now - 90 * DAY], true], [["a", ""], true]];
+    const bad = cases.filter(([row, want]) => sync.langKnown(row, now) !== want).map(([row]) => JSON.stringify(row));
+    ok(!bad.length, `Q60 : langue inconnue depuis plus de 7 jours → recalculée ; connue, ou inconnue récente → gardée${bad.length ? ` ; faux pour ${bad.join(", ")}` : ""}`);
+  }
+  ok(typeof store.purgePage?.handler === "function", "Q56 : ménage des tables de suivi présent (purgePage)");
+  if (store.purgePage) {
+    const m = memDb();
+    await m.ctx.db.insert("boardMeta", { key: "video:1", hash: "h" });
+    await m.ctx.db.insert("boardMeta", { key: "app:y", hash: "h" });
+    for (const [videoId, at] of [["1", now - 30 * DAY], ["2", now - 30 * DAY], ["3", now - DAY], ["6", 0]]) await m.ctx.db.insert("videoAi", { videoId, done: true, tries: 1, at });
+    for (const [key, at] of [["v:4", now - 40 * DAY], ["v:5", now - 10 * DAY], ["a:parti", now - 40 * DAY], ["icon:y", now - 40 * DAY]]) await m.ctx.db.insert("mediaMiss", { key, at });
+    for (const [startedAt, finishedAt] of [[now - 40 * DAY, now - 40 * DAY], [now - DAY, now - DAY], [now - 40 * DAY, undefined]]) await m.ctx.db.insert("syncRuns", { startedAt, ...(finishedAt ? { finishedAt } : {}) });
+    for (const table of ["videoAi", "mediaMiss", "syncRuns"]) await store.purgePage.handler(m.ctx, { table, cursor: null, now });
+    const left = (t, f) => (m.tables[t] ?? []).map(f).sort().join();
+    ok(left("videoAi", (x) => x.videoId) === "1,3", `Q56 : lectures IA : gardées si la vidéo a sa page ou a été lue il y a moins de 7 jours (reste ${left("videoAi", (x) => x.videoId)})`);
+    ok(left("mediaMiss", (x) => x.key) === "icon:y,v:5", `Q56 : échecs de copie : effacés après 30 jours sans page (reste ${left("mediaMiss", (x) => x.key)})`);
+    ok((m.tables.syncRuns ?? []).length === 2, `Q56 : passages finis de plus de 30 jours effacés (reste ${(m.tables.syncRuns ?? []).length})`);
+    // F30 : relevé du stockage, noté dans le compte rendu du passage.
+    const t = actionCtx({ purgePage: { n: 0, dropped: 2, cursor: "", done: true }, mediaFilesPage: { ids: ["m1"], cursor: "", done: true },
+      storagePage: { files: [["m1", 2000, "image/webp", Date.now() - 9 * DAY], ["o1", 1000, "image/webp", Date.now() - 9 * DAY], ["o2", 500, "image/webp", Date.now()], ["j1", 300, "application/json", Date.now() - DAY]], cursor: "", done: true } });
+    t.noted = null;
+    const mut = t.ctx.runMutation;
+    t.ctx.runMutation = async (r, a) => { if (r.__path.endsWith("noteCounts")) t.noted = a.extra; return mut(r, a); };
+    await quiet(() => store.purgeTracking.handler(t.ctx, { runId: "run1" }));
+    const st = t.noted?.storage;
+    ok(st?.files === 4 && st.images === 3 && st.orphanImages === 1 && st.stageFiles === 1 && st.mediaRows === 1 && t.noted?.purged?.videoAi === 2,
+      `F30 : stockage relevé dans syncRuns.counts : fichiers, images, images sans ligne media, fichiers d'étape (${JSON.stringify(st ?? null)})`);
+  }
+  const g = fs.readFileSync(path.join(dir, "radarSync.ts"), "utf8");
+  ok(/runAfter\([^)]*internal\.radarStore\.purgeTracking/.test(g.slice(g.indexOf("export const runGlobal"))) && /dropLangs/.test(g), "Q56 : la fin de passage lance le ménage et efface les langues des comptes sortis de l'export");
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);
