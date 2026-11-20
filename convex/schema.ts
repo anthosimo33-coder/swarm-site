@@ -114,6 +114,7 @@ export default defineSchema({
   // Journal des synchronisations (la dernière sert à l'écran et au suivi).
   // Les vidéos à ne plus montrer (miniature introuvable : supprimée, compte privé), retirées à la
   // lecture des documents sans attendre la synchro (convex/boards.ts). Une seule ligne.
+  // Plus écrite ni lue depuis le 20/11 (audit F2, F14) : gardée au schéma pour son ancien document, effaçable.
   hidden: defineTable({ ids: v.array(v.string()), at: v.number() }),
 
   // Miniatures introuvables (vidéo supprimée, page refusée) : pas de nouvel essai avant 6 h.

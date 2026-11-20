@@ -225,6 +225,18 @@ function memDb() {
   ok(whole === text && (m.tables.boards ?? [])[0]?.parts === parts.length, "Q7 : les morceaux recollés redonnent la page, et leur nombre est rangé");
 }
 
+// ─── F2 (audit du 19/11) : plus personne ne lit « hidden » (boards.get, F14) : plus personne ne l'écrit ───
+{
+  const m = memDb();
+  await store.markMiss.handler(m.ctx, { key: "v:7000000000000000001" });
+  await store.markMisses.handler(m.ctx, { keys: ["v:7000000000000000002", "a:compte"] });
+  await store.saveMedia.handler({ ...m.ctx, storage: { delete: async () => {} } }, { items: [{ key: "v:7000000000000000001", storageId: "s1", url: "https://x" }] });
+  ok(!(m.tables.hidden ?? []).length && !m.read.hidden, `F2 : copie et échecs de miniatures n'écrivent ni ne lisent plus le document unique hidden (${(m.tables.hidden ?? []).length} écrit, ${m.read.hidden ?? 0} o lus)`);
+  ok((m.tables.mediaMiss ?? []).some((x) => x.key === "v:7000000000000000002") && !(m.tables.mediaMiss ?? []).some((x) => x.key === "v:7000000000000000001"), "F2 : les échecs restent notés dans mediaMiss (seule source de « introuvable »)");
+  const readers = fs.readdirSync(dir).filter((f) => f.endsWith(".ts") && f !== "schema.ts" && /query\("hidden"\)/.test(fs.readFileSync(path.join(dir, f), "utf8")));
+  ok(!readers.length, `F2 : aucun module ne lit ni n'écrit hidden (${readers.join(", ") || "aucun"})`);
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);
