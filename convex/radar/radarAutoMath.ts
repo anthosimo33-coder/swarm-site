@@ -363,3 +363,76 @@ export function autoAnswer(raw: unknown, batch: readonly { id: string }[]): Auto
   }
   return out;
 }
+
+// ─── Rattrapage du 20/11/2026 : les apps des classements déjà suivies, les motifs pris dans d'autres mots ──────────
+
+/** Le nom d'une app réduit à ses lettres et chiffres, sans accents : « Disney+ » → « disney », « Turbo AI » → « turboai ». */
+export function appNameKey(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "");
+}
+
+/**
+ * L'app suivie qu'une app des classements EST déjà : même nom (`appNameKey`) et son hashtag parmi les recherches de
+ * l'app suivie, active et pas fondue. Deux apps suivies possibles : aucune (à trancher à la main).
+ *
+ * Le 20/11/2026, 34 apps ajoutées à la main (liste FarmSpot) avaient leur jumelle dans les classements, laissée
+ * « proposée » (nom courant, preuve insuffisante, motif déjà pris) : ses 94 comptes, prouvés par le contrôle des
+ * classements, n'étaient jamais rattachés, et l'app suivie attendait une recherche payante pour les trouver. Le suivi
+ * d'office regardait la jumelle comme une app à CRÉER ; elle n'avait qu'à REJOINDRE l'app suivie.
+ */
+export function storeTwin<
+  A extends { name: string; searches: readonly string[]; status: string; mergedInto?: unknown; store?: { storeId: string } },
+>(c: { kind: string; label: string; store?: { tag?: string; storeId?: string } }, apps: readonly A[]): A | null {
+  const tag = c.store?.tag?.replace(/^#/, "").toLowerCase();
+  const key = appNameKey(c.label);
+  if (c.kind !== "store" || !tag || !key) return null;
+  // Une app suivie qui porte déjà une fiche des classements n'en change pas : deux apps homonymes des classements sous
+  // le même hashtag (RISE le sommeil et RISE la manifestation, 20/11/2026) ne s'y rattachent pas tour à tour.
+  const twins = apps.filter(
+    (a) =>
+      a.mergedInto === undefined &&
+      a.status === "active" &&
+      appNameKey(a.name) === key &&
+      a.searches.some((s) => s.toLowerCase() === `#${tag}`) &&
+      (a.store === undefined || a.store.storeId === c.store?.storeId),
+  );
+  return twins.length === 1 ? twins[0] : null;
+}
+
+/**
+ * Motifs nus pris dans d'autres mots, rejoués sur l'export de prod du 20/11/2026 : « website » citait Bsit,
+ * « restaurant » Staura, « #militarybenefitsapp » Fits, « #usahealth » et « a healthy » AHEALTH, les comptes de
+ * concours « @mises… » l'app de repas mise, « harassment » SSME, « open road » Enroad ; « know the » et « owe you »
+ * feraient de même à la première recherche de Knowt et d'OweYou. Chaque tournure est retirée du texte avant d'y
+ * chercher le motif (`AppRule.not`). Une règle générale (« jamais au milieu d'un mot ») a été écartée : rejouée sur
+ * les 111 927 vidéos qui citent leur app, elle en faisait tomber 9 %, presque toutes justes (#airlearnpartner,
+ * #misepartner, @lyricfluentapp, #trythecourtsidesportsbookapp).
+ */
+export const NOT_FIXES_2011: Readonly<Record<string, readonly string[]>> = {
+  bsit: ["website"],
+  staura: ["restaurant"],
+  fits: ["benefitsapp", "benefits app", "benefits_app", "benefits-app"],
+  ahealth: ["usahealth", "a health", "juliana_healthy"],
+  mise: ["mises", "promise", "premise", "compromise", "demise", "chemise", "remise"],
+  ssme: ["harassment", "assessment", "embarrassment"],
+  enroad: ["openroad", "open road", "open_road", "open-road", "en road"],
+  knowt: ["know the", "know_the", "know-the", "knowthe"],
+  oweyou: ["owe you", "owe_you", "owe-you"],
+};
+
+/** Les tournures à écarter d'une app, sans doublon, dans l'ordre : les siennes puis les nouvelles. */
+export function withNot(current: readonly string[] | undefined, words: readonly string[]): string[] {
+  const out = [...(current ?? [])];
+  for (const w of words) if (!out.includes(w)) out.push(w);
+  return out;
+}
+
+/** Doublons ajoutés à la main sous deux noms (20/11/2026) : le premier, sans compte, est fondu dans le second. */
+export const MERGES_2011: readonly { from: string; into: string }[] = [
+  { from: "hunch", into: "hunchdatingapp" },
+  { from: "digimetrics", into: "digimetrics.ai" },
+];

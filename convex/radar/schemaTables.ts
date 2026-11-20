@@ -132,6 +132,11 @@ export const radarTables = {
     // La reprise des apps des classements « preuve insuffisante » pour l'essai (radarAuto.requeueTrialCandidates).
     trialRequeueCursor: v.optional(v.string()),
     trialRequeueDoneAt: v.optional(v.number()),
+    // La reprise des apps des classements qui sont une app déjà suivie (radarAuto.requeueStoreTwins, 20/11/2026).
+    storeTwinCursor: v.optional(v.string()),
+    storeTwinRequeueDoneAt: v.optional(v.number()),
+    // Le rattrapage du 20/11/2026 (radarAuto.repair2011) : tournures écartées des motifs, doublons fondus.
+    repair2011DoneAt: v.optional(v.number()),
     lastDiscoveryAt: v.optional(v.number()),
     lastCurveAt: v.optional(v.number()),
     lastAccountsAt: v.optional(v.number()),

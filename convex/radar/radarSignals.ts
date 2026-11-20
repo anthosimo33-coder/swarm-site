@@ -241,7 +241,7 @@ export async function moveAccount(
  * les vidéos et les formats qui le désignent encore se lisent sous elle. Rien
  * n'est supprimé.
  */
-async function mergeApp(ctx: MutationCtx, old: Doc<"radarApps">, into: Doc<"radarApps">, rules: Partial<Doc<"radarApps">>, now: number): Promise<void> {
+export async function mergeApp(ctx: MutationCtx, old: Doc<"radarApps">, into: Doc<"radarApps">, rules: Partial<Doc<"radarApps">>, now: number): Promise<void> {
   const accounts = await ctx.db.query("radarTracked").withIndex("by_app", (q) => q.eq("appId", old._id)).take(MERGE_BATCH + 1);
   for (const acc of accounts.slice(0, MERGE_BATCH)) {
     const recent = await ctx.db.query("radarTrackedVideos").withIndex("by_account_published", (q) => q.eq("accountId", acc._id)).order("desc").take(100);
