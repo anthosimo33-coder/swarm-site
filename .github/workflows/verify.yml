@@ -67,5 +67,7 @@ jobs:
         run: npm run test:sources
       - name: Copie des images (npm run test:image)
         run: npm run test:image
+      - name: En-têtes de sécurité et routage local (npm run test:vercel)
+        run: npm run test:vercel
       - name: Écrans sur données de banc (npm run check:data)
         run: npm run check:data
