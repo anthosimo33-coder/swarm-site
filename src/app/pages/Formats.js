@@ -66,6 +66,21 @@ export default class Formats extends DCLogic {
     if (st.limit !== ps.limit && this.moreEl && this.moreIo) { this.moreIo.unobserve(this.moreEl); this.moreIo.observe(this.moreEl); }
   }
 
+  // Filtres sans résultat (maquette V3 « le même geste partout », 20/11) : la phrase, les filtres posés en pastilles, puis
+  // un filtre de moins par ligne, avec ce que la liste donnerait sans lui (ses règles, sur la liste déjà chargée) ; les
+  // plus fructueux d'abord, 3 au plus, un retrait qui donne encore 0 omis. Le même dessin sur Apps et Formats.
+  // groups : [{ key, name (son libellé), frag (dans la phrase), where (à la fin de la phrase), desc (dans le détail d'un
+  // autre retrait, sinon frag ou name), all (le détail sans lui), chips, n (ce qu'on aurait sans lui), drop }].
+  voidVals(noun, groups, unit) {
+    const grp = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+    const and = (xs) => (xs.length > 1 ? xs.slice(0, -1).join(', ') + ' et ' + xs[xs.length - 1] : xs[0] || '');
+    const frags = groups.filter((g) => g.frag).map((g) => g.frag), wheres = groups.filter((g) => g.where).map((g) => g.where);
+    const rows = groups.filter((g) => g.n > 0).sort((p, q) => q.n - p.n).slice(0, 3).map((g) => ({ key: g.key, label: 'Retirer « ' + g.name + ' »',
+      sub: groups.filter((x) => x !== g).map((x) => x.desc || x.frag || x.name).concat([g.all]).join(', '), n: grp(g.n), unit: g.n > 1 ? unit[1] : unit[0], drop: g.drop }));
+    return { title: noun + (frags.length ? ' pour ' + and(frags) : '') + (wheres.length ? ' ' + wheres.join(' ') : ''),
+      chips: groups.reduce((a, g) => a.concat(g.chips), []), rows, hasRows: rows.length > 0 };
+  }
+
   renderVals() {
     const b = this.baseVals();
     return Object.assign({}, b, this.shellVals(), this.extraVals(b));
@@ -102,7 +117,10 @@ export default class Formats extends DCLogic {
     const set = (patch) => this.setF(Object.assign({ open: '', limit: null }, patch));
     // Le tri : par comptes qui le reprennent puis × la normale (l'ordre du document), ou l'inverse.
     const by = sort === 'normale' ? (p, q) => q.medX - p.medX || q.accounts - p.accounts : (p, q) => q.accounts - p.accounts || q.medX - p.medX;
-    const list = all.filter((c) => okN(c, niche) && okT(c, type) && okM(c, market)).sort(by);
+    // Un format passe les filtres f (niche, type, marché) : la règle de la liste, reprise par l'écran vide.
+    const keepF = (c, f) => okN(c, f.niche) && okT(c, f.type) && okM(c, f.market);
+    const cur = { niche, type, market };
+    const list = all.filter((c) => keepF(c, cur)).sort(by);
     // À la une : le premier de la liste filtrée ; la grille : tous les suivants, dessinés par paquets de 30.
     const hero = list[0] || null;
     const rest = list.slice(1);
@@ -144,11 +162,22 @@ export default class Formats extends DCLogic {
     const TIC = { Tout: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', Accroches: 'M5 6h14M12 6v13M9 19h6', Sons: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z' };
     const types = ['Tout', 'Accroches', 'Sons'].map((l) => { const on = l === type;
       return { l, d: TIC[l], on: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', edge: on ? 'var(--accent-edge)' : 'var(--line)', ink: on ? 'var(--ink)' : 'var(--ink-muted)', fw: on ? '600' : '500', ic: on ? 'var(--accent)' : 'var(--ink-faint)', pick: () => set({ type: l }) }; });
+    // Filtres sans résultat (maquette V3 du 20/11) : un filtre de moins, compté sur la liste du document (les mêmes règles).
+    let vz = this.voidVals('', [], []);
+    if (!list.length) {
+      const PREP = (n) => (/^(États-Unis|Pays-Bas|Philippines|Émirats arabes unis|Comores|Maldives|Seychelles|Bahamas)$/.test(n) ? 'aux' : /^[AEÉÈIÎOUYH]/.test(n) && !/^(Honduras|Hongrie)$/.test(n) ? 'en' : /e$/.test(n) && !/^(Mexique|Mozambique|Cambodge|Zimbabwe|Belize)$/.test(n) ? 'en' : 'au');
+      const posed = [];
+      if (market !== 'ALL') posed.push({ key: 'm', name: mLabel, where: PREP(mLabel) + ' ' + mLabel, all: 'tous marchés', chips: [{ label: mLabel, flag: market, ic: false }], patch: { market: 'ALL' } });
+      if (niche !== 'Toutes') posed.push({ key: 'niche', name: niche, frag: niche, all: 'toutes niches', chips: [{ label: niche, flag: false, ic: NIC[niche] || NIC.Autres }], patch: { niche: 'Toutes' } });
+      if (type !== 'Tout') posed.push({ key: 'type', name: type, desc: type.toLowerCase() + ' seulement', all: 'accroches et sons', chips: [{ label: type, flag: false, ic: TIC[type] }], patch: { type: 'Tout' } });
+      posed.forEach((g) => { const f = Object.assign({}, cur, g.patch); g.n = all.filter((c) => keepF(c, f)).length; g.drop = () => set(g.patch); });
+      vz = this.voidVals(type === 'Accroches' ? 'Aucune accroche' : type === 'Sons' ? 'Aucun son' : 'Aucun format', posed, ['format', 'formats']);
+    }
     return {
       types, bar, menu, sortMenu, sortBtn, sortLabel: sort === 'normale' ? 'Au-dessus de la normale' : 'Les plus repris',
       totalTxt: count(list.length),
       eyebrow: sort === 'normale' ? 'Le plus au-dessus de la normale' : 'Le plus repris en ce moment',
-      hasHero: !!hero, hero: hero || b.blank, cards, hasList: list.length > 0, noOther: list.length === 1, empty: list.length === 0,
+      hasHero: !!hero, hero: hero || b.blank, cards, hasList: list.length > 0, noOther: list.length === 1, empty: list.length === 0, vz,
       more: rest.length > limit, setMore: this.setMore,
       closeMenu: () => this.setState({ open: '' }), onMq: (e) => this.setState({ mq: e.target.value }),
       clearMq: () => { if (this.menuInput) { this.menuInput.value = ''; this.menuInput.focus(); } this.setState({ mq: '' }); },
@@ -425,10 +454,60 @@ export default class Formats extends DCLogic {
             )
           ),
           ($v.empty) ? [
-            $h("div", { "style": "margin: 20px 40px 0; padding: 56px 24px; border-radius: 20px; text-align: center; font-size: 15px; color: var(--ink-muted); background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-              "Aucun format pour ces filtres. ",
-              $h("button", { "class": "sw-link", "type": "button", "onClick": $v.clearAll, "style": "border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: 600;" },
-                "Effacer les filtres"
+            $h("div", { "style": "margin: 28px 40px 0;" },
+              $h("section", { "class": "sw-void", "aria-labelledby": "fmv-t" },
+                $h("span", { "class": "sw-void-kick", "data-tone": "amber" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M4 6h16M7 12h10M10 18h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  "Filtres sans résultat"
+                ),
+                $h("h2", { "id": "fmv-t", "class": "sw-void-title" },
+                  $t($v.vz?.title)
+                ),
+                $h("div", { "class": "sw-void-chips" },
+                  ($l($v.vz?.chips)).map((c) => [
+                    $h("span", { "class": "sw-void-chip" },
+                      (c?.flag) ? [
+                        $h("span", { "class": "sw-flag", "data-c": c?.flag, "aria-hidden": "true" })
+                      ] : null,
+                      (c?.ic) ? [
+                        $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": c?.ic, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      ] : null,
+                      $t(c?.label)
+                    )
+                  ])
+                ),
+                ($v.vz?.hasRows) ? [
+                  $h("span", { "class": "sw-void-label" },
+                    "Un filtre de moins :"
+                  ),
+                  $h("div", { "class": "sw-void-rows" },
+                    ($l($v.vz?.rows)).map((r) => [
+                      $h("button", { "type": "button", "class": "sw-void-row", "key": r?.key, "onClick": r?.drop },
+                        $h("span", { "class": "sw-void-txt" },
+                          $h("span", { "class": "sw-void-name" },
+                            $t(r?.label)
+                          ),
+                          $h("span", { "class": "sw-void-sub" },
+                            $t(r?.sub)
+                          )
+                        ),
+                        $h("span", { "class": "sw-void-n" },
+                          $t(r?.n)
+                        ),
+                        $h("span", { "class": "sw-void-unit" },
+                          $t(r?.unit)
+                        )
+                      )
+                    ])
+                  )
+                ] : null,
+                $h("button", { "class": "sw-void-clear", "type": "button", "onClick": $v.clearAll },
+                  "Effacer les filtres"
+                )
               )
             )
           ] : null,

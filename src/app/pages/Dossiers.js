@@ -99,7 +99,24 @@ export default class Dossiers extends DCLogic {
       const app = x.kind === 'app';
       recent.push({ kind: KIND[x.kind], t: x.label, folder: f.name, href: HREF[x.kind] + x.id, src: x.cover || '', full: !app && !!x.cover, isApp: app, logo: app && x.cover ? x.cover : false, nologo: app && !x.cover, blank: x.cover ? '' : 'sw-app-blank' });
     });
+    // Aucun dossier (maquette V3 du 20/11) : le geste montré sur l'app la plus vue sur 30 jours (document « apps », gardé
+    // ouvert toute la session), et « Garder » qui crée en un clic le dossier « Mes idées » avec elle, à la forme
+    // qu'écrit AjoutDossier (saved('folders'), docs/donnees-app.md). Sans liste d'apps : « Créer un dossier », comme avant.
+    const A = loading || all.length ? null : (typeof P.get === 'function' ? P.get('apps') : (this.live() ? null : this.exampleApp()));
+    const top = A && Array.isArray(A.apps) ? A.apps.filter((a) => a && a.slug && a.name).reduce((m, a) => (!m || (a.views30 || 0) > (m.views30 || 0) ? a : m), null) : null;
+    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+    const keepTop = () => {
+      if (!top || this.folders() === undefined) return;
+      const now = Date.now();
+      this.change((fs) => [{ id: now.toString(36) + Math.random().toString(36).slice(2, 6), name: 'Mes idées', createdAt: now,
+        items: [{ kind: 'app', id: top.slug, label: top.name, cover: top.icon || null, at: now }] }].concat(fs));
+    };
+    const vd = { app: !!top, noApp: !top && A !== undefined, folder: 'Mes idées', slot: 'se crée d’un clic sur Garder',
+      name: top ? top.name : '', sub: top ? nf(top.views30 || 0) + ' vues sur 30 jours' : '', href: top ? '/app/apps/' + top.slug : '',
+      logo: (top && top.icon) || false, nologo: !(top && top.icon), blank: top && top.icon ? '' : 'sw-app-blank',
+      cta: top ? 'Garder ' + top.name : '', label: top ? 'Garder ' + top.name + ' dans « Mes idées »' : '', keep: keepTop };
     return {
+      vd,
       folders, recent, hasRecent: recent.length > 0, many: all.length > 1,
       none: !loading && all.length === 0 && !creating, grid: creating || all.length > 0,
       creating, newName, createNew,
@@ -112,6 +129,8 @@ export default class Dossiers extends DCLogic {
       sorts: [['recent', 'Récents'], ['az', 'De A à Z']].map((s) => ({ l: s[1], on: sort === s[0] ? 'true' : 'false', pick: () => this.setState({ sort: s[0] }) }))
     };
   }
+  // Sur le canevas (sans this.props.get) : l'app de l'exemple vide, à la forme du document « apps ».
+  exampleApp() { return { apps: [{ slug: 'higgsfield', name: 'Higgsfield', icon: '', views30: 121.2e6 }] }; }
   // L'exemple du canevas, à la forme de saved('folders') (docs/donnees-app.md).
   example() {
     const H = 3600000, now = Date.now();
@@ -222,20 +241,87 @@ export default class Dossiers extends DCLogic {
             )
           ),
           ($v.none) ? [
-            $h("div", { "class": "sw-empty", "style": "padding: 96px 24px;" },
-              $h("div", { "class": "sw-empty-radar" }),
-              $h("p", { "class": "sw-empty-title" },
-                "Aucun dossier"
-              ),
-              $h("p", { "class": "sw-empty-text" },
-                "Garde des apps, des vidéos, des formats et des créateurs pour les retrouver ici."
-              ),
-              $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.startNew },
-                "Créer un dossier",
-                $h("span", { "class": "sw-btn-tile" },
-                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+            $h("div", { "style": "padding: 44px 32px 64px;" },
+              $h("section", { "class": "sw-void", "aria-labelledby": "dv-t" },
+                $h("span", { "class": "sw-void-kick" },
+                  $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  "Aucun dossier"
+                ),
+                $h("h2", { "id": "dv-t", "class": "sw-void-title" },
+                  "Le signet de chaque fiche range ici"
+                ),
+                ($v.vd?.app) ? [
+                  $h("div", { "class": "sw-void-card", "style": "margin-top: 6px;" },
+                    $h("a", { "class": "sw-void-who", "href": $u($v.vd?.href) },
+                      $h("span", { "class": `sw-app-icon ${$t($v.vd?.blank)}`, "style": "width: 40px; height: 40px; border-radius: 11px;" },
+                        ($v.vd?.logo) ? [
+                          $h("img", { "class": "sw-logo-img", "src": $u($v.vd?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
+                        ] : null,
+                        ($v.vd?.nologo) ? [
+                          $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                            $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                          )
+                        ] : null
+                      ),
+                      $h("span", { "class": "sw-void-txt" },
+                        $h("span", { "class": "sw-void-name" },
+                          $t($v.vd?.name)
+                        ),
+                        $h("span", { "class": "sw-void-sub" },
+                          $t($v.vd?.sub)
+                        )
+                      )
+                    ),
+                    $h("button", { "class": "sw-void-mark", "type": "button", "onClick": $v.vd?.keep, "aria-label": $v.vd?.label, "title": "Garder" },
+                      $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M7 4h10v16l-5-3.5L7 20z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" })
+                      )
+                    )
+                  ),
+                  $h("span", { "class": "sw-void-arrow", "aria-hidden": "true" },
+                    $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": "M7 7l10 10M17 9v8H9", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
                   )
+                ] : null,
+                $h("div", { "class": "sw-void-slot" },
+                  $h("span", { "class": "sw-void-tile" },
+                    $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  ),
+                  $h("span", { "class": "sw-void-txt" },
+                    $h("span", { "class": "sw-void-name" },
+                      $t($v.vd?.folder)
+                    ),
+                    $h("span", { "class": "sw-void-sub" },
+                      $t($v.vd?.slot)
+                    )
+                  )
+                ),
+                $h("div", { "class": "sw-void-foot" },
+                  ($v.vd?.app) ? [
+                    $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.vd?.keep },
+                      $t($v.vd?.cta),
+                      $h("span", { "class": "sw-btn-tile" },
+                        $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      )
+                    )
+                  ] : null,
+                  ($v.vd?.noApp) ? [
+                    $h("button", { "class": "sw-btn sw-btn-primary sw-btn-sm", "type": "button", "onClick": $v.startNew },
+                      "Créer un dossier",
+                      $h("span", { "class": "sw-btn-tile" },
+                        $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                          $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2.4", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                        )
+                      )
+                    )
+                  ] : null
                 )
               )
             )
