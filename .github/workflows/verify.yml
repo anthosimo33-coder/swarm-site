@@ -51,6 +51,8 @@ jobs:
         run: npm run test:apercu
       - name: Mutants du verrou (npm run test:apercu:mutants)
         run: npm run test:apercu:mutants
+      - name: Coût de la synchro (npm run test:sync)
+        run: npm run test:sync
       - name: Routes /cover et /avatar (npm run test:cover)
         run: npm run test:cover
       - name: Documents de la synchro (npm run test:radar)
