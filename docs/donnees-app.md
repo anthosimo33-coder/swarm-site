@@ -21,7 +21,7 @@ en page bascule (rotation d'un iPad, fenêtre redimensionnée), les retrouve. Ch
 `setF({ … })` : l'état, plus l'adresse par `history.replaceState` (sans entrée d'historique ni remontage). Sur le
 canevas (sans `props.query`), l'état seul. Un filtre propre à une version reste dans l'adresse quand l'autre en change un
 autre. Paramètres : `m` (marché), `niche`, `tri`, `periode`, `dates`, `plateforme`, `colonne`, `ordre` (Apps) ; `m`,
-`niche`, `app`, `abonnes`, `abmin`, `abmax`, `type`, `genre`, `tri`, `m`, `actifs` (Créateurs ; `actifs` : téléphone seulement) ; `m`, `niche`, `type`, `tri` (Formats ; `tri` : ordinateur seulement) ; `onglet`,
+`niche`, `app`, `abonnes`, `abmin`, `abmax`, `type`, `genre`, `tri`, `m`, `vue` (Créateurs ; `vue` : téléphone seulement, `liste` ou `cartes`, la vue basculée sur place ; `actifs`, l'ancien filtre du téléphone, n'est plus lu : les actifs d'abord, sur les deux versions) ; `m`, `niche`, `type`, `tri` (Formats ; `tri` : ordinateur seulement) ; `onglet`,
 `miennes`, `alerte` (Alertes ; `alerte` = l'alerte ouverte, `f-<id de format>` ou `v-<id de vidéo>`, écrite quand on la
 choisit ; au téléphone, l'alerte ouverte en plein écran, effacée au retour à la liste). Banc : `npm run test:filtres`.
 
