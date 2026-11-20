@@ -414,7 +414,8 @@ export function freeNote(state: FreeState, outcome: "ok" | FreeWhy, reason?: str
  * Les serveurs sont donc servis moins volontiers. Ce que TikTok leur sert sans arrêt, c'est le contrôle des
  * classements (convex/radarStore) : UNE page à la fois, 0,3 à 0,7 seconde entre deux. La voie gratuite prend ce
  * rythme : un compte après l'autre, une pause avant chaque page, pendant FREE_LANE_MAX_MS au plus.
- * Un compte dont le relevé gratuit n'aboutit pas (refus, page qui manque, liste trouée) part au relevé payant. Ceux
+ * Un compte dont le relevé gratuit n'aboutit pas (refus, page qui manque, liste trouée) part au relevé payant (un
+ * refus ou une page de vidéo illisible au second échec d'affilée seulement, cf `holdMisses`). Ceux
  * qu'elle n'a pas eu le temps de prendre attendent le passage suivant (toutes les 10 minutes), sauf s'ils sont en
  * retard ou que la voie s'est fermée : cf `overflowToPay`.
  * 7 minutes depuis le 16/11/2026 (5 avant) : un premier relevé lit une page par vidéo (une dizaine), la voie ne
@@ -444,6 +445,8 @@ export const LANE_WAIT_FRESH_MS = 20 * 60_000;
 export const LANE_WAIT_MS = 60 * 60_000;
 
 const freshPost = (a: LaneAccount, now: number) => a.lastPostAt !== undefined && now - a.lastPostAt < LANE_FRESH_POST_MS;
+/** Ce qu'un compte dû peut attendre la voie gratuite au-delà de son heure. */
+const laneWait = (a: LaneAccount, now: number): number => (freshPost(a, now) ? LANE_WAIT_FRESH_MS : LANE_WAIT_MS);
 
 /** L'ordre de la voie : d'abord les comptes qui ont publié ces dernières 24 heures, puis les plus en retard. */
 export function laneOrder<A extends LaneAccount>(accounts: readonly A[], now: number): A[] {
@@ -487,7 +490,7 @@ export function firstReadMisses<A>(failed: readonly A[], notReached: readonly A[
  */
 export function overflowToPay<A extends LaneAccount>(notReached: readonly A[], laneOpen: boolean, now: number): { pay: A[]; reason: "coupure" | "retard" } {
   if (!laneOpen) return { pay: [...notReached], reason: "coupure" };
-  return { pay: notReached.filter((a) => now - a.dueAt >= (freshPost(a, now) ? LANE_WAIT_FRESH_MS : LANE_WAIT_MS)), reason: "retard" };
+  return { pay: notReached.filter((a) => now - a.dueAt >= laneWait(a, now)), reason: "retard" };
 }
 
 /** Une pause AVANT chaque page (le rythme auquel les serveurs sont servis). */
@@ -513,7 +516,7 @@ export const NOTHING_TO_READ: readonly FreeWhy[] = ["absent", "private", "empty"
  * Les comptes ratés par la voie gratuite : ceux qui n'ont rien à lire (`NOTHING_TO_READ`) prennent une erreur de
  * relevé, sans crédit (un jour d'attente, en pause à la troisième d'affilée, cf radarNetworkMath.MAX_READ_ERRORS) ;
  * les autres — profil refusé, page de vidéo illisible, liste trouée — passent au payant, qui lit ce que le gratuit
- * n'a pas pu lire.
+ * n'a pas pu lire (les deux premiers attendent d'abord un passage, cf `holdMisses`).
  */
 export function splitMisses<A>(failed: readonly LaneMiss<A>[]): { unreadable: A[]; paid: LaneMiss<A>[] } {
   const unreadable: A[] = [];
@@ -531,6 +534,81 @@ export function missCounts(failed: readonly { why: FreeWhy }[]): Partial<Record<
   for (const m of failed) out[m.why] = (out[m.why] ?? 0) + 1;
   return out;
 }
+
+/*
+ * LE REPLI REPORTÉ D'UN PASSAGE (brique 7, 20/11/2026). Un profil refusé même au second essai de `retrying` (2,5
+ * secondes plus tard), ou la page illisible d'une vidéo inconnue, envoyait le compte au relevé payant dans le passage :
+ * « repli » (69, 680, 747, 6, 5, 11 et 1 crédits du 14 au 20/11 ; les deux gros jours sont surtout les profils sans
+ * rien à lire, repayés à chaque passage jusqu'au 16/11, cf NOTHING_TO_READ), ou « premier » pour un premier relevé.
+ * Or un refus ne dure pas : le 13/11 (cf `retrying`), 80 refus par rafales de 5 à 20 secondes, 78 relus ensuite. Le
+ * compte attend donc le passage suivant, 10 minutes plus tard : il reste dû, et la voie le reprend parmi les premiers
+ * (en retard, cf `laneOrder`). Son échec est retenu sur le compte (`freeMissAt`, effacé par tout relevé réussi,
+ * gratuit ou payant, et par une erreur de relevé) ; le payant ne part qu'au SECOND échec d'affilée. Relu gratuitement
+ * entre-temps : un appel payant évité (radarUsage.saved.repli, cf `heldSpared`).
+ * La qualité ne bouge pas : le compte est relu gratuitement (la même donnée que le payant : mesures du 13/11 et C4,
+ * cf l'en-tête et FIRST_FREE_PER_PASS) ou en payant comme avant — un passage plus tard au plus, et seulement s'il
+ * reste dans la fenêtre où `overflowToPay` laisse un compte attendre la voie : le second regard d'un compte qui a
+ * publié ces 24 heures (à H+18, avant H+24) glisse de 20 minutes au plus, comme pour un compte pas atteint.
+ */
+
+/** Un passage de relevé de comptes toutes les 10 minutes (convex/crons.ts) : l'attente d'un échec retenu. */
+export const PASS_EVERY_MS = 10 * 60_000;
+
+/**
+ * Combien de temps un échec retenu compte comme le premier : deux passages — le suivant, où le compte repasse parmi
+ * les premiers ; celui d'après, si la voie ne l'a pas atteint (coupée par le temps, ou passage sauté parce que le
+ * précédent tournait encore) — plus une demi-période, l'heure d'un passage glissant de quelques secondes. Au-delà,
+ * aucun passage ne l'a relu depuis deux : il a été mis de côté entre-temps (app en pause : un jour ; premier relevé au
+ * palier « survie » : une heure) ou la voie ne l'atteignait plus, et son échec appartient à une autre rafale (elles
+ * durent 5 à 20 secondes) : le nouvel échec est un premier échec, qui attend à son tour. Il n'attend pas sans fin :
+ * sa fenêtre (`laneWait`) court depuis son heure (`dueAt`), que la retenue ne repousse pas.
+ */
+export const FREE_MISS_KEEP_MS = 2 * PASS_EVERY_MS + PASS_EVERY_MS / 2;
+
+/** Les ratés qui attendent un passage : un profil que TikTok n'a pas servi, la page illisible d'une vidéo inconnue. */
+export const MISS_HOLD: readonly FreeWhy[] = ["suspect", "detail"];
+
+/** Un compte dû, et le premier échec gratuit retenu sur lui (`freeMissAt` : l'heure du passage où il a échoué). */
+export type HeldAccount = LaneAccount & { first: boolean; freeMissAt?: number };
+
+/**
+ * Parmi les ratés qui passeraient au payant (`splitMisses`), ceux qui attendent le passage suivant (`hold` : leur
+ * échec est retenu, à l'heure du passage `now`) et ceux qui partent au payant maintenant (`pay`) :
+ *  - une liste trouée (« gap », brique 4) : au payant, comme avant ;
+ *  - un second échec d'affilée (un échec retenu il y a FREE_MISS_KEEP_MS au plus) : au payant, « repli » (ou
+ *    « premier ») ;
+ *  - voie fermée (coupe-circuit) : au payant, comme ce qu'elle n'a pas pris (`overflowToPay`, « coupure ») : TikTok
+ *    ne sert plus les profils aux serveurs (13/11 : 6 refus d'affilée, aucun lu), et le compte, en tête de la voie
+ *    suivante, y serait refusé de nouveau ;
+ *  - un compte qui sortirait de sa fenêtre avant le passage suivant (`overflowToPay` l'y paierait « retard » s'il
+ *    n'était pas atteint), ou qui en est déjà sorti : au payant, comme avant ;
+ *  - pas de budget payant au passage (`canPay` faux) : rien ne serait parti, rien n'est retenu (le compte reste dû de
+ *    toute façon) — sinon sa relecture compterait un appel évité qui ne serait jamais parti ;
+ *  - un PREMIER relevé suit la même règle (sa fenêtre court depuis son entrée ; mesure C4 : gratuit = payant), sauf au
+ *    palier « survie » (`waitFirst`) : il y attend déjà une heure sans rien payer (`firstReadMisses`), rien à éviter.
+ */
+export function holdMisses<A extends HeldAccount>(
+  paid: readonly LaneMiss<A>[],
+  pass: { laneOpen: boolean; canPay: boolean; waitFirst: boolean },
+  now: number,
+): { pay: LaneMiss<A>[]; hold: A[] } {
+  const pay: LaneMiss<A>[] = [];
+  const hold: A[] = [];
+  for (const m of paid) {
+    const a = m.account;
+    const second = a.freeMissAt !== undefined && now - a.freeMissAt <= FREE_MISS_KEEP_MS;
+    const inWindow = now + PASS_EVERY_MS - a.dueAt < laneWait(a, now);
+    if (MISS_HOLD.includes(m.why) && pass.laneOpen && pass.canPay && !(a.first && pass.waitFirst) && !second && inWindow) hold.push(a);
+    else pay.push(m);
+  }
+  return { pay, hold };
+}
+
+/** Le motif du relevé payant d'un compte suivi raté par la voie : « trou » pour une liste trouée, « repli » sinon. */
+export const missReason = (m: { why: FreeWhy }): PaidReason => (m.why === "gap" ? "trou" : "repli");
+
+/** Un compte relu gratuitement qui portait un échec retenu : le relevé payant de cet échec n'est jamais parti. */
+export const heldSpared = (a: { freeMissAt?: number }): number => (a.freeMissAt === undefined ? 0 : 1);
 
 /** Une page du relevé payant (ScrapeCreators), sa dépense déjà comptée. */
 export type PaidPage = { ok: true; videos: SignalInput[]; next: string | null } | { ok: false; noCredits: boolean };

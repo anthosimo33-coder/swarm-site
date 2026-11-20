@@ -18,7 +18,13 @@ import {
   gapGone,
   gapReached,
   FIRST_FREE_PER_PASS,
+  FREE_MISS_KEEP_MS,
+  MISS_HOLD,
+  PASS_EVERY_MS,
   firstReadMisses,
+  heldSpared,
+  holdMisses,
+  missReason,
   laneOrder,
   laneQueue,
   listGap,
@@ -40,6 +46,7 @@ import {
   trialPick,
   trialPlan,
   type FreePage,
+  type FreeWhy,
   type KnownVideo,
   type PaidPage,
 } from "../../convex/radar/radarFreeMath";
@@ -594,6 +601,107 @@ describe("Radar — relevé gratuit : la voie gratuite d'un passage (13/11/2026)
     expect(await freeRead("lea.revise", { page, known: async () => [], newest: async () => ({ videoId: V_HIER, publishedAt: videoIdTime(V_HIER) }) }, NOW)).toMatchObject({ ok: true, pages: 3 });
     // Une liste trouée n'est pas un refus de TikTok : le coupe-circuit ne compte pas.
     expect(freeNote(freeStart(), "gap")).toMatchObject({ on: true, fallback: 1, streak: 0 });
+  });
+});
+
+describe("Radar — relevé gratuit : le repli reporté d'un passage (brique 7, 20/11/2026)", () => {
+  // Le 13/11, 80 profils refusés par rafales de 5 à 20 secondes, 78 relus ensuite : un compte raté attend le passage
+  // suivant (10 minutes) au lieu du relevé payant, qui ne part qu'au second échec d'affilée.
+  const MIN = 60_000;
+  type Acc = { name: string; dueAt: number; lastPostAt?: number; first: boolean; freeMissAt?: number };
+  // Un compte suivi qui a publié il y a 18 heures (son second regard), dû depuis 3 minutes : la voie l'a pris aussitôt.
+  const acc = (name: string, o: Partial<Acc> = {}): Acc => ({ name, dueAt: NOW - 3 * MIN, lastPostAt: NOW - 18 * HOUR, first: false, ...o });
+  const miss = (account: Acc, why: FreeWhy = "suspect") => ({ account, why });
+  const open = { laneOpen: true, canPay: true, waitFirst: false };
+  const names = (r: { hold: Acc[] }) => r.hold.map((a) => a.name);
+  const paid = (r: { pay: { account: Acc; why: FreeWhy }[] }) => r.pay.map((m) => [m.account.name, missReason(m)]);
+
+  it("un passage toutes les 10 minutes ; un échec retenu compte deux passages et demi ; seuls un refus et une page de vidéo illisible attendent", () => {
+    expect([PASS_EVERY_MS, FREE_MISS_KEEP_MS]).toEqual([10 * MIN, 25 * MIN]);
+    expect(MISS_HOLD).toEqual(["suspect", "detail"]);
+  });
+
+  it("premier échec (profil refusé, page de vidéo illisible) : pas payé, retenu ; la liste trouée part au payant comme avant", () => {
+    const troue = { ...miss(acc("troue"), "gap"), newest: { videoId: V_HIER, publishedAt: videoIdTime(V_HIER) } };
+    const r = holdMisses([miss(acc("refuse")), miss(acc("illisible"), "detail"), troue], open, NOW);
+    expect(names(r)).toEqual(["refuse", "illisible"]);
+    expect(paid(r)).toEqual([["troue", "trou"]]);
+    expect(r.pay[0]).toBe(troue);
+  });
+
+  it("second échec d'affilée — retenu au passage d'avant, ou à celui d'avant encore (l'heure glisse de quelques secondes) : payé « repli »", () => {
+    const r = holdMisses(
+      [
+        miss(acc("p-1", { dueAt: NOW - 13 * MIN, freeMissAt: NOW - 10 * MIN })),
+        miss(acc("p-2", { dueAt: NOW - 45 * MIN, lastPostAt: NOW - 72 * HOUR, freeMissAt: NOW - 20 * MIN - 4_000 }), "detail"),
+        miss(acc("bord", { dueAt: NOW - 30 * MIN, lastPostAt: undefined, freeMissAt: NOW - FREE_MISS_KEEP_MS })),
+      ],
+      open,
+      NOW,
+    );
+    expect(r.hold).toEqual([]);
+    expect(paid(r)).toEqual([["p-1", "repli"], ["p-2", "repli"], ["bord", "repli"]]);
+  });
+
+  it("échec retenu périmé (trois passages, ou hier avant une mise en pause) : le nouvel échec compte comme premier, retenu à son tour", () => {
+    const r = holdMisses(
+      [miss(acc("p-3", { dueAt: NOW - 35 * MIN, lastPostAt: NOW - 72 * HOUR, freeMissAt: NOW - 30 * MIN })), miss(acc("hier", { freeMissAt: NOW - 24 * HOUR }), "detail")],
+      open,
+      NOW,
+    );
+    expect(names(r)).toEqual(["p-3", "hier"]);
+    expect(r.pay).toEqual([]);
+  });
+
+  it("deux passages de bout en bout : retenu, puis payé « repli » au second refus — ou compté évité s'il se lit", () => {
+    const a = acc("refuse");
+    expect(names(holdMisses([miss(a)], open, NOW))).toEqual(["refuse"]);
+    // holdFreeMisses pose l'heure du passage ; 10 minutes plus tard, le compte est encore dû, en tête de la voie.
+    const next = { ...a, freeMissAt: NOW };
+    expect(paid(holdMisses([miss(next)], open, NOW + PASS_EVERY_MS))).toEqual([["refuse", "repli"]]);
+    expect([heldSpared(next), heldSpared(a)]).toEqual([1, 0]);
+  });
+
+  it("jamais hors de la fenêtre de overflowToPay : ce qui attend reste dans la sienne au passage suivant, le reste est payé tout de suite", () => {
+    const comptes = [
+      acc("frais-9", { dueAt: NOW - 9 * MIN }),
+      acc("frais-10", { dueAt: NOW - 10 * MIN }),
+      acc("frais-45", { dueAt: NOW - 45 * MIN }),
+      acc("calme-49", { dueAt: NOW - 49 * MIN, lastPostAt: NOW - 72 * HOUR }),
+      acc("calme-50", { dueAt: NOW - 50 * MIN, lastPostAt: NOW - 72 * HOUR }),
+      acc("jamais-publie-49", { dueAt: NOW - 49 * MIN, lastPostAt: undefined }),
+      acc("en-retard-3h", { dueAt: NOW - 3 * HOUR, lastPostAt: NOW - 72 * HOUR }),
+    ];
+    const r = holdMisses(comptes.map((a) => miss(a)), open, NOW);
+    expect(names(r)).toEqual(["frais-9", "calme-49", "jamais-publie-49"]);
+    expect(paid(r).map(([n]) => n)).toEqual(["frais-10", "frais-45", "calme-50", "en-retard-3h"]);
+    // Pas atteint au passage suivant, aucun ne serait encore payé « retard » : ils sont restés dans leur fenêtre.
+    expect(overflowToPay(r.hold, true, NOW + PASS_EVERY_MS).pay).toEqual([]);
+    // Le second regard d'un compte qui a publié il y a 18 heures (dû à H+18) : relu avant H+18 h 20, loin de H+24.
+    expect(r.hold[0].dueAt + LANE_WAIT_FRESH_MS - (r.hold[0].lastPostAt ?? 0)).toBeLessThan(LANE_FRESH_POST_MS);
+  });
+
+  it("coupe-circuit (voie fermée) : tout part au payant tout de suite, comme ce qu'elle n'a pas pris (« coupure »)", () => {
+    const r = holdMisses([miss(acc("a")), miss(acc("b"), "detail")], { ...open, laneOpen: false }, NOW);
+    expect(r.hold).toEqual([]);
+    expect(paid(r)).toEqual([["a", "repli"], ["b", "repli"]]);
+  });
+
+  it("pas de budget payant au passage : rien n'est retenu (rien ne serait parti : pas d'appel évité à compter)", () => {
+    const r = holdMisses([miss(acc("a"))], { ...open, canPay: false }, NOW);
+    expect([r.hold, r.pay.length]).toEqual([[], 1]);
+  });
+
+  it("premier relevé : même règle, sa fenêtre court depuis son entrée ; au palier survie, il attend l'heure habituelle sans rien payer", () => {
+    const neuf = (name: string, o: Partial<Acc> = {}) => acc(name, { first: true, lastPostAt: undefined, dueAt: NOW - 5 * MIN, ...o });
+    const r = holdMisses([miss(neuf("entre")), miss(neuf("deja-rate", { freeMissAt: NOW - 10 * MIN })), miss(neuf("file-2h", { dueAt: NOW - 2 * HOUR }), "detail")], open, NOW);
+    expect(names(r)).toEqual(["entre"]);
+    // Second échec, ou entré il y a deux heures (en dehors de sa fenêtre) : relevé payant « premier », comme avant.
+    expect(firstReadMisses(r.pay.map((m) => m.account.name), [], true, false)).toEqual({ pay: ["deja-rate", "file-2h"], defer: [] });
+    // Palier survie : rien n'est retenu, il attend une heure sans rien payer (firstReadMisses) — un compte suivi, lui, attend.
+    const s = holdMisses([miss(neuf("entre")), miss(acc("suivi"))], { ...open, waitFirst: true }, NOW);
+    expect(names(s)).toEqual(["suivi"]);
+    expect(firstReadMisses(s.pay.map((m) => m.account.name), [], true, true)).toEqual({ pay: [], defer: ["entre"] });
   });
 });
 

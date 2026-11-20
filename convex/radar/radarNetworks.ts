@@ -100,9 +100,12 @@ import {
   FREE_RETRY_MS,
   freeRead,
   firstReadMisses,
+  heldSpared,
+  holdMisses,
   laneAfterCurve,
   laneQueue,
   missCounts,
+  missReason,
   overflowToPay,
   paced,
   paidRead,
@@ -172,8 +175,11 @@ const dueApp = (a: Doc<"radarApps">): DueApp => ({
   tagCounts: a.tagCounts ?? [],
 });
 /** `located` : on connaît déjà le pays d'où le compte publie. `first` : il n'a encore jamais été relevé. */
-/** Un compte dû : `dueAt` (son `nextReadAt`) et `lastPostAt` disent à la voie gratuite s'il peut attendre (radarFreeMath.overflowToPay). */
-type DueAccount = { id: Id<"radarTracked">; handle: string; located: boolean; first: boolean; dueAt: number; lastPostAt?: number };
+/**
+ * Un compte dû : `dueAt` (son `nextReadAt`) et `lastPostAt` disent à la voie gratuite s'il peut attendre
+ * (radarFreeMath.overflowToPay) ; `freeMissAt`, le passage où son relevé gratuit a échoué sans repli payant (holdMisses).
+ */
+type DueAccount = { id: Id<"radarTracked">; handle: string; located: boolean; first: boolean; dueAt: number; lastPostAt?: number; freeMissAt?: number };
 
 export const dueApps = internalQuery({
   args: { now: v.number() },
@@ -353,6 +359,7 @@ export const dueAccounts = internalQuery({
           first: r.readAt === undefined,
           dueAt: r.nextReadAt,
           ...(r.lastPostAt !== undefined ? { lastPostAt: r.lastPostAt } : {}),
+          ...(r.freeMissAt !== undefined ? { freeMissAt: r.freeMissAt } : {}),
         })),
       parked: rows.filter((r) => !active.has(r.appId)).map((r) => r._id),
     };
@@ -367,6 +374,15 @@ export const deferAccounts = internalMutation({
   args: { ids: v.array(v.id("radarTracked")), until: v.number() },
   handler: async (ctx, { ids, until }) => {
     for (const id of ids) await ctx.db.patch(id, { nextReadAt: until });
+    return null;
+  },
+});
+
+/** Retient le premier échec gratuit de ces comptes (radarFreeMath.holdMisses) : ils restent dus, relus au passage suivant. */
+export const holdFreeMisses = internalMutation({
+  args: { ids: v.array(v.id("radarTracked")), at: v.number() },
+  handler: async (ctx, { ids, at }) => {
+    for (const id of ids) await ctx.db.patch(id, { freeMissAt: at });
     return null;
   },
 });
@@ -775,6 +791,8 @@ export const applyAccountRead = internalMutation({
       videosSeen: acc.videosSeen + fresh.length,
       lastPostAt,
       readAt: now,
+      // Relevé (gratuit ou payant) : l'échec gratuit qu'il portait n'est plus (radarFreeMath.holdMisses).
+      freeMissAt: undefined,
       // Calé sur sa dernière publication + 18 h (second regard sur une vidéo neuve), sinon à son rythme.
       nextReadAt: nextReadAtFor(lastPostAt, now, recent.filter((r) => !r.platform && now - r.publishedAt < FRESH_VIDEO_MS).at(-1)?.publishedAt),
       readErrors: 0,
@@ -1014,12 +1032,15 @@ export const e2eRejudgePaused = e2eMutation({
 
 type EarlyAlert = { app: string; handle: string; views: number; hours: number; multiplier: number; hook: string | null };
 
-/** Relevé en échec : un jour d'attente ; 3 de suite (compte supprimé, privé, renommé) et le compte passe en pause. */
+/**
+ * Relevé en échec : un jour d'attente ; 3 de suite (compte supprimé, privé, renommé) et le compte passe en pause.
+ * L'échec gratuit retenu tombe avec (radarFreeMath.holdMisses) : le relevé d'un jour plus tard n'aura rien évité.
+ */
 async function readError(ctx: MutationCtx, accountId: Id<"radarTracked">, now: number): Promise<void> {
   const acc = await ctx.db.get(accountId);
   if (!acc) return;
   const errors = acc.readErrors + 1;
-  await ctx.db.patch(accountId, { readErrors: errors, nextReadAt: now + DAY, ...(errors >= MAX_READ_ERRORS ? { status: "paused" as const } : {}) });
+  await ctx.db.patch(accountId, { readErrors: errors, nextReadAt: now + DAY, freeMissAt: undefined, ...(errors >= MAX_READ_ERRORS ? { status: "paused" as const } : {}) });
 }
 
 export const markReadError = internalMutation({
@@ -1433,6 +1454,9 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
               await ctx.runMutation(internal.radar.radarNetworks.markGapChecked, { accountId: acc.id, videoId: f.gapChecked });
               usage.spare("trou", 1);
             }
+            // Son relevé gratuit avait échoué et attendait celui-ci (radarFreeMath.holdMisses) : relu sans crédit, le
+            // relevé payant de cet échec (« repli » ou « premier ») n'est jamais parti.
+            usage.spare("repli", heldSpared(acc));
           } catch (e) {
             // Lu gratuitement mais pas rangé : il reste dû, relu gratuitement au passage suivant (pas de repli payant :
             // l'écriture échouerait de même).
@@ -1448,10 +1472,14 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     // Un profil supprimé, privé ou vidé n'a rien à lire, en payant non plus : une erreur de relevé, sans crédit.
     const misses = splitMisses(lane.failed);
     if (misses.unreadable.length) await ctx.runMutation(internal.radar.radarNetworks.markReadErrors, { ids: misses.unreadable.map((a) => a.id), now });
+    // Un profil refusé ou une page de vidéo illisible attend le passage suivant, sans crédit : le payant ne part qu'au
+    // second échec d'affilée (radarFreeMath.holdMisses ; voie fermée, hors de sa fenêtre ou sans budget : tout de suite).
+    const held = holdMisses(misses.paid, { laneOpen: free.on, canPay: n > 0, waitFirst }, now);
+    if (held.hold.length) await ctx.runMutation(internal.radar.radarNetworks.holdFreeMisses, { ids: held.hold.map((a) => a.id), at: now });
     // Un premier relevé que la page gratuite n'a pas pu lire : en payant (ou il attend, palier « survie ») ; pas atteint,
     // il attend le passage suivant, sauf voie fermée (cf radarFreeMath.firstReadMisses).
     const firstMiss = firstReadMisses(
-      misses.paid.filter((m) => m.account.first).map((m) => m.account),
+      held.pay.filter((m) => m.account.first).map((m) => m.account),
       lane.notReached.filter((a) => a.first),
       free.on,
       waitFirst,
@@ -1460,9 +1488,9 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     await paid(firstMiss.pay, "premier");
     // Ce que le gratuit n'a pas relevé : en payant (une liste trouée, page après page jusqu'à sa dernière vidéo connue).
     await pooled(
-      misses.paid.filter((m) => !m.account.first),
+      held.pay.filter((m) => !m.account.first),
       ACCOUNT_READ_POOL,
-      (m) => readPaid(m.account, n, m.why === "gap" ? "trou" : "repli", m.why === "gap" ? m.newest : undefined),
+      (m) => readPaid(m.account, n, missReason(m), m.why === "gap" ? m.newest : undefined),
       () => Date.now() - now < ACCOUNT_READ_MAX_MS,
     );
     // Ce qu'il n'a pas eu le temps de prendre attend le passage suivant (10 minutes), sauf retard ou voie fermée.

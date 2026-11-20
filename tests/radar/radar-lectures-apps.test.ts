@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Id } from "../../convex/_generated/dataModel";
-import { applyAccountRead, dueAccounts } from "../../convex/radar/radarNetworks";
+import { applyAccountRead, dueAccounts, holdFreeMisses, markReadError } from "../../convex/radar/radarNetworks";
 import { dueStoreApps } from "../../convex/radar/radarStore";
 import { exportPage } from "../../convex/radar/swarmExportPage";
 import { memoryDb, type MemoryDoc } from "./convex-memory-db";
@@ -156,6 +156,54 @@ describe("relevé d'un compte (applyAccountRead) : les motifs des apps arrivent 
     const calls = [...pass.matchAll(/runMutation\(internal\.radar\.radarNetworks\.applyAccountRead, \{([^}]*)\}/g)].map((m) => m[1]);
     expect(calls.length).toBe(2);
     for (const c of calls) expect(c).toMatch(/\bapps\b/);
+  });
+});
+
+describe("l'échec gratuit retenu (radarFreeMath.holdMisses, brique 7, 20/11/2026)", () => {
+  const MIN = 60_000;
+  const passage = () => {
+    const src = fs.readFileSync(path.join(__dirname, "../../convex/radar/radarNetworks.ts"), "utf8");
+    const start = src.indexOf("async function accountReadsPass");
+    return src.slice(start, src.indexOf("\n}\n", start));
+  };
+
+  it("posé par holdFreeMisses, rendu avec le compte dû (dueAccounts) : la voie sait que c'est son second essai", async () => {
+    const w = monde();
+    const { patches, ctx } = mutationCtx(w.tables);
+    await handler(holdFreeMisses)(ctx, { ids: [w.creatrice._id], at: NOW - 10 * MIN });
+    expect(patches).toEqual([{ id: w.creatrice._id, value: { freeMissAt: NOW - 10 * MIN } }]);
+    w.creatrice.freeMissAt = NOW - 10 * MIN;
+    const r = (await handler(dueAccounts)(mutationCtx(w.tables).ctx, { now: NOW, limit: 600 })) as { due: { handle: string; freeMissAt?: number }[] };
+    expect(r.due.find((d) => d.handle === "creatrice1")?.freeMissAt).toBe(NOW - 10 * MIN);
+    expect(r.due.find((d) => d.handle === "testeuse")).not.toHaveProperty("freeMissAt");
+  });
+
+  it("effacé par tout relevé réussi (applyAccountRead, gratuit ou payant) et par une erreur de relevé", async () => {
+    const w = monde();
+    w.creatrice.freeMissAt = NOW - 10 * MIN;
+    const lu = mutationCtx(w.tables);
+    await handler(applyAccountRead)(lu.ctx, { accountId: w.creatrice._id, videos: [], light: [], now: NOW, apps: rules(w.apps) });
+    const final = lu.patches.filter((p) => p.id === w.creatrice._id && "readAt" in p.value).at(-1)?.value;
+    expect(final && "freeMissAt" in final && final.freeMissAt === undefined).toBe(true);
+    const err = mutationCtx(w.tables);
+    await handler(markReadError)(err.ctx, { accountId: w.creatrice._id, now: NOW });
+    const v = err.patches[0].value;
+    expect([v.readErrors, v.nextReadAt, "freeMissAt" in v, v.freeMissAt]).toEqual([1, NOW + DAY, true, undefined]);
+  });
+
+  it("le passage retient avant de payer, et compte l'appel évité quand le compte retenu se lit gratuitement", () => {
+    const pass = passage();
+    const hold = pass.indexOf("holdMisses(misses.paid");
+    expect(hold).toBeGreaterThan(0);
+    expect(pass.indexOf("runMutation(internal.radar.radarNetworks.holdFreeMisses")).toBeGreaterThan(hold);
+    // Le payant ne reçoit que ce que holdMisses n'a pas retenu (premiers relevés et comptes suivis).
+    expect(pass).toMatch(/firstReadMisses\(\s*held\.pay\.filter/);
+    expect(pass).toMatch(/pooled\(\s*held\.pay\.filter/);
+    expect(pass).not.toMatch(/misses\.paid\.filter/);
+    // Relu gratuitement et rangé : un appel payant évité, après l'écriture du relevé.
+    const rangé = pass.indexOf("runMutation(internal.radar.radarNetworks.applyAccountRead, { accountId: acc.id, videos: f.videos");
+    expect(rangé).toBeGreaterThan(0);
+    expect(pass.indexOf('usage.spare("repli", heldSpared(acc))')).toBeGreaterThan(rangé);
   });
 });
 
