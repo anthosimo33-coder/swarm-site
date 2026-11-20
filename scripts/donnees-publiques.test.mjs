@@ -103,7 +103,7 @@ if (fs.existsSync(dumpFile)) {
   };
   const PARAM = { 'app:': 'slug', 'video:': 'id', 'format:': 'id', 'creator:': 'handle' };
   const user = { prenom: null, email: 'test@exemple.fr', initiale: 'T', pro: true };
-  const real = [];
+  const real = [], crashed = [];
   globalThis.__dcSample = undefined; // comme dans l'app
   for (const n of names) {
     const base = KEY[n] ?? KEY[n.replace(/^M/, '')];
@@ -112,9 +112,11 @@ if (fs.existsSync(dumpFile)) {
     // preview : Alertes le passe toujours à Nouvelle alerte dans l'app (l'exemple n'y sert que sur le canevas).
     const props = { data: key ? boards[key] : undefined, get: (k) => boards[k] ?? null, saved: () => null, save: () => Promise.resolve(), params, query: {}, user, signOut: () => {}, preview: () => null };
     const a = render(mods[n][0], props), b = render(mods[n][1], props);
+    if (a.startsWith('ERREUR')) { crashed.push(n); continue; } // plantait déjà (Alertes avant Q3) : rien à comparer
     if (a !== b) real.push(`${n} (${key ?? 'sans clé'})`);
   }
-  ok(!real.length, `avec de vraies pages : ${names.length - real.length}/${names.length} écrans identiques à ${ref}${real.length ? ' — différents : ' + real.join(', ') : ''}`);
+  const cmp = names.length - crashed.length;
+  ok(!real.length, `avec de vraies pages : ${cmp - real.length}/${cmp} écrans identiques à ${ref}${crashed.length ? ` (${crashed.join(', ')} plantait déjà)` : ''}${real.length ? ' — différents : ' + real.join(', ') : ''}`);
 } else console.log('(pas de .bench-data/dump-dump-s4.json : rendu avec de vraies pages non vérifié)');
 fs.rmSync(old, { recursive: true, force: true });
 end();
