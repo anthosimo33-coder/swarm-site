@@ -10,8 +10,19 @@ recalculé chaque nuit depuis le Radar (`convex/radarSync.ts` → `convex/radarM
 - sur le canevas, `this.props.data` n'existe pas : l'écran garde son exemple.
 
 `this.props.params` porte les paramètres de l'adresse (`{ slug }`, `{ id }`, `{ handle }`), `this.props.query`
-ceux de la requête (`/app/apps?niche=Foi` → `{ niche: 'Foi' }`). Changer de requête remonte l'écran ; sur le
-canevas, la même valeur se lit dans `location.search`.
+ceux de la requête (`/app/apps?niche=Foi` → `{ niche: 'Foi' }` ; une clé répétée donne un tableau,
+`?niche=Foi&niche=Couple` → `{ niche: ['Foi', 'Couple'] }`). Suivre un lien vers une autre requête remonte l'écran ; sur
+le canevas, la même valeur se lit dans `location.search`.
+
+Filtres des listes (audit F25) : Apps, Créateurs (liste et cartes), Formats et Alertes gardent leurs filtres dans la
+requête, avec les mêmes noms sur ordinateur et sur téléphone, pour que l'autre version de l'écran, remontée quand la mise
+en page bascule (rotation d'un iPad, fenêtre redimensionnée), les retrouve. Chaque canevas déclare ses filtres dans
+`filters()` (clé de l'état → paramètre), les lit par `fv(clé)` (l'état, sinon la requête) et les choisit par
+`setF({ … })` : l'état, plus l'adresse par `history.replaceState` (sans entrée d'historique ni remontage). Sur le
+canevas (sans `props.query`), l'état seul. Un filtre propre à une version reste dans l'adresse quand l'autre en change un
+autre. Paramètres : `m` (marché), `niche`, `tri`, `periode`, `dates`, `plateforme`, `colonne`, `ordre` (Apps) ; `m`,
+`niche`, `app`, `abonnes`, `type`, `genre`, `tri`, `actifs` (Créateurs) ; `m`, `niche`, `type` (Formats) ; `onglet`,
+`miennes` (Alertes). Banc : `npm run test:filtres`.
 
 Un écran peut lire un autre document avec `this.props.get(clé)` (undefined tant qu'il charge, null s'il
 n'existe pas), par exemple les créateurs d'un autre marché, une liste d'apps par pays ou l'index de recherche.
