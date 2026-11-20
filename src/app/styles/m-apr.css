@@ -2,6 +2,9 @@
 body{margin:0;background:#05070C}
 a{color:#4C9AFF}
 .mapr-bf,.mapr-strip{appearance:none;border:0;margin:0;width:100%;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+/* Audit Q71 : sous 390 px, le bandeau débordait de son bouton (icône et flèche coupées). Il se resserre ; sous 340 px, il passe sur deux lignes plutôt que de couper. */
+@media (max-width:389px){.mapr-bf{gap:5px !important;padding:0 8px !important;font-size:12px !important}}
+@media (max-width:339px){.mapr-bf{flex-wrap:wrap !important;white-space:normal !important;height:auto !important;min-height:38px;padding:6px 8px !important;row-gap:2px !important}}
 .mapr-strip{text-align:left}
 .mapr-row{scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .mapr-row::-webkit-scrollbar{display:none}

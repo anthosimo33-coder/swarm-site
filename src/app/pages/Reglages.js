@@ -104,11 +104,13 @@ export default class Reglages extends DCLogic {
     const orange = bill === 'y' && bfLeft > 0;
     // Fermer le compte
     const delMatch = !!u.email && String(st.delEmail || '').trim().toLowerCase() === String(u.email).trim().toLowerCase();
+    const delNeedsPw = p.onDelete ? !!u.hasPassword : true;
     const toast = st.toast;
     // Mot de passe et e-mail : messages d’erreur du serveur (convex/users.ts, codes ConvexError).
     const ERR = {
       mot_de_passe_faux: 'Mot de passe actuel incorrect.', trop_de_tentatives: 'Trop d’essais : réessaie dans quelques minutes.',
       mot_de_passe_trop_court: '8 caractères minimum.', mot_de_passe_identique: 'Choisis un mot de passe différent de l’actuel.',
+      mot_de_passe_trop_long: '128 caractères au plus.', mot_de_passe_trop_courant: 'Trop courant : choisis un mot de passe moins facile à deviner.',
       email_invalide: 'Cette adresse n’est pas valide.', email_pris: 'Un compte utilise déjà cette adresse.', email_identique: 'C’est déjà ton adresse.',
       compte_sans_mot_de_passe: 'Ton compte se connecte avec Google : rien à changer ici.'
     };
@@ -127,7 +129,8 @@ export default class Reglages extends DCLogic {
     const start = end ? end - days * 864e5 : null;
     const pct = end ? Math.max(3, Math.min(100, Math.round(((now - start) / (end - start)) * 100))) : 0;
     const pays = (abo && abo.payments ? abo.payments : []).map((y) => ({ date: dd(y.at), label: 'Kopycat Pro', amount: eur(y.total, y.currency),
-      state: y.status === 'refunded' ? 'Remboursé' : y.status === 'disputed' ? 'Contesté' : 'Payé', ink: y.status === 'paid' ? '#5CD394' : 'var(--ink-faint)' }));
+      // Audit Q35 : un paiement en attente (ou tout autre statut) ne s'affiche plus « Payé ».
+      state: ({ refunded: 'Remboursé', disputed: 'Contesté', paid: 'Payé', pending: 'En attente', failed: 'Échoué' })[y.status] || '—', ink: y.status === 'paid' ? '#5CD394' : 'var(--ink-faint)' }));
     const REASONS = ['Trop cher', 'Je n’en ai plus besoin', 'Il me manque quelque chose', 'Autre'];
     const doCancel = (cancel) => {
       if (!p.onCancel || st.subBusy) return;
@@ -142,7 +145,7 @@ export default class Reglages extends DCLogic {
       });
     };
     return {
-      me: { initiale: String(u.initiale || u.nom || u.email || '?').charAt(0).toUpperCase(), nom: u.nom || String(u.email || '').split('@')[0], email: u.email || '', verified: !!u.emailVerified, pro, free: !pro },
+      me: { initiale: (Array.from(String(u.initiale || u.nom || u.email || '?'))[0] || '?').toUpperCase(), nom: u.nom || String(u.email || '').split('@')[0], email: u.email || '', verified: !!u.emailVerified, pro, free: !pro },
       q, onQ: (e) => this.setState({ q: e.target.value }), searching: !!fq, browsing: !fq,
       searchRing: fq ? 'box-shadow: inset 0 0 0 2px var(--accent);' : 'box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);',
       results, resTitle: results.length ? results.length + (results.length > 1 ? ' résultats' : ' résultat') : 'Aucun réglage ne correspond',
@@ -192,7 +195,8 @@ export default class Reglages extends DCLogic {
           say('E-mail changé : tu te connectes maintenant avec ' + email, 7000);
         }, (e) => this.setState({ busy: null, emErr: errOf(e) }));
       },
-      sinceTxt: s && s.since ? 'Session ouverte le ' + dd(s.since) + ' · elle dure 90 jours.' : 'Ta session reste ouverte 90 jours.',
+      // 30 jours : la durée des sessions de Convex Auth (audit Q37 : le texte disait 90).
+      sinceTxt: s && s.since ? 'Session ouverte le ' + dd(s.since) + ' · elle dure 30 jours.' : 'Ta session reste ouverte 30 jours.',
       // 3 appareils au plus (audit S23, convex/auth.ts) : une nouvelle connexion ferme la plus ancienne.
       othersTxt: (others === null ? '…' : others === 0 ? 'Aucun autre appareil n’est connecté.' : others + (others > 1 ? ' autres sessions ouvertes sur ton compte.' : ' autre session ouverte sur ton compte.')) + ' 3 appareils au plus : une nouvelle connexion déconnecte le plus ancien.',
       othersOff: !others || !!st.busy, othersLabel: st.busy === 'out' ? 'Déconnexion…' : 'Déconnecter les autres',
@@ -207,13 +211,14 @@ export default class Reglages extends DCLogic {
       aboSub: pro ? 'Ton abonnement et tes reçus.' : 'Tu es en aperçu : tu vois le top 3 des apps.',
       proSub: pro && !!sub, proNoSub: pro && p.abo !== undefined && !sub, aboLoading: pro && p.abo === undefined,
       subName: yearly ? 'annuel' : 'mensuel',
-      subPill: !sub ? '' : sub.cancelAtPeriodEnd ? 'Résilié' : sub.status === 'past_due' ? 'Paiement en retard' : sub.status === 'trialing' ? 'Essai' : 'Actif',
-      subPillCls: !sub ? '' : sub.cancelAtPeriodEnd ? 'reg-grey' : sub.status === 'past_due' ? 'reg-amber' : 'reg-green',
+      // Audit Q53 : l'état vient de sub.active (le serveur, convex/whop.ts) ; une adhésion terminée ne s'affiche plus « Actif ».
+      subPill: !sub ? '' : !sub.active ? 'Terminé' : sub.cancelAtPeriodEnd ? 'Résilié' : sub.status === 'past_due' ? 'Paiement en retard' : sub.status === 'trialing' ? 'Essai' : 'Actif',
+      subPillCls: !sub ? '' : !sub.active || sub.cancelAtPeriodEnd ? 'reg-grey' : sub.status === 'past_due' ? 'reg-amber' : 'reg-green',
       subPrice: sub && sub.price ? eur(sub.price, sub.currency) + (yearly ? ' par an' : ' par mois') : '',
       manageOn: !!(sub && sub.manageUrl), manageUrl: (sub && sub.manageUrl) || '#',
       periodOn: !!end, periodPct: pct + '%', periodInk: sub && sub.cancelAtPeriodEnd ? 'rgba(255,255,255,0.35)' : 'var(--accent)',
       periodLeft: start ? 'Payé le ' + dd(start) : '',
-      periodRight: !end ? '' : sub.cancelAtPeriodEnd ? 'Accès jusqu’au ' + dd(end) : 'Prochain paiement le ' + dd(end) + (sub.price ? ' · ' + eur(sub.price, sub.currency) : ''),
+      periodRight: !end ? '' : !sub.active ? 'Terminé le ' + dd(end) : sub.cancelAtPeriodEnd ? 'Accès jusqu’au ' + dd(end) : 'Prochain paiement le ' + dd(end) + (sub.price ? ' · ' + eur(sub.price, sub.currency) : ''),
       endTxt: end ? dd(end) : 'la fin de la période',
       pays, recusCount: pays.length ? '' : 'Aucun pour l’instant', recusHelp: pays.length ? 'Émis par Whop. Les factures sont dans « Gérer mon paiement ».' : 'Tes reçus arriveront ici après chaque paiement.',
       canCancel: pro && !!sub && sub.active && !sub.cancelAtPeriodEnd, canResume: pro && !!sub && sub.active && sub.cancelAtPeriodEnd,
@@ -240,15 +245,23 @@ export default class Reglages extends DCLogic {
       // Fermer avec un abonnement en cours : il est résilié chez Whop d'abord, tout de suite (convex/users.ts, deleteAccount).
       delHint: sub && sub.active ? 'Résilie ton abonnement Pro et supprime ton compte, tes dossiers, tes suivis et tes alertes.' : 'Supprime ton compte, tes dossiers, tes suivis et tes alertes.',
       delWarn: sub && sub.active ? 'Ton abonnement Kopycat Pro est résilié tout de suite : l’accès Pro s’arrête et tu n’es plus prélevé. Puis tout est effacé, sans retour possible.' : 'Tout est effacé, sans retour possible.',
+      // Audit S27 : le mot de passe est demandé pour un compte « mot de passe » (sur le canevas, le champ est montré).
       delShown: !!st.del, delClosed: !st.del, delEmail: st.delEmail || '', delErr: st.delErr || '',
-      delOff: !delMatch || st.busy === 'del', delLabel: st.busy === 'del' ? 'Suppression…' : 'Supprimer définitivement',
-      delOpen: () => this.setState({ del: true, delEmail: '', delErr: '' }),
-      delCancel: () => this.setState({ del: false, delEmail: '', delErr: '' }),
+      delNeedsPw: delNeedsPw, delPw: st.delPw || '', delPwAsk: delNeedsPw ? ' et ton mot de passe.' : '',
+      delOff: !delMatch || (delNeedsPw && !st.delPw) || st.busy === 'del', delLabel: st.busy === 'del' ? 'Suppression…' : 'Supprimer définitivement',
+      delOpen: () => this.setState({ del: true, delEmail: '', delPw: '', delErr: '' }),
+      delCancel: () => this.setState({ del: false, delEmail: '', delPw: '', delErr: '' }),
       onDelEmail: (e) => this.setState({ delEmail: e.target.value, delErr: '' }),
+      onDelPw: (e) => this.setState({ delPw: e.target.value, delErr: '' }),
       delGo: () => {
-        if (!delMatch || !p.onDelete) return;
+        if (!delMatch || (delNeedsPw && !st.delPw) || !p.onDelete) return;
         this.setState({ busy: 'del' });
-        p.onDelete(st.delEmail).then((r) => { if (!r || !r.ok) this.setState({ busy: null, delErr: r && r.reason === 'resiliation' ? 'Ton abonnement n’a pas pu être résilié chez Whop : rien n’est effacé. Réessaie dans un instant.' : 'Cet e-mail n’est pas celui du compte.' }); },
+        const DEL_ERR = {
+          resiliation: 'Ton abonnement n’a pas pu être résilié chez Whop : rien n’est effacé. Réessaie dans un instant.',
+          email: 'Cet e-mail n’est pas celui du compte.', motdepasse: 'Mot de passe incorrect.', tentatives: 'Trop d’essais : réessaie dans quelques minutes.',
+          reconnexion: 'Par sécurité, reconnecte-toi puis recommence : ta connexion date de plus de 10 minutes.'
+        };
+        p.onDelete(st.delEmail, delNeedsPw ? st.delPw : undefined).then((r) => { if (!r || !r.ok) this.setState({ busy: null, delPw: '', delErr: DEL_ERR[(r && r.reason) || 'email'] || DEL_ERR.email }); },
           () => this.setState({ busy: null, delErr: 'Pas fait : vérifie ta connexion et réessaie.' }));
       },
       mobile: mob, mobCls: mob ? 'reg-mob ' + (view === 'list' ? 'reg-list' : 'reg-detail') : '',
@@ -533,10 +546,14 @@ export default class Reglages extends DCLogic {
                       $t($v.delWarn), " Pour confirmer, retape ton e-mail : ",
                       $h("b", { "style": "color: #FFFFFF;" },
                         $t($v.me?.email)
-                      )
+                      ),
+                      $t($v.delPwAsk)
                     ),
-                    $h("span", { "style": "display: flex; align-items: center; gap: 10px;" },
+                    $h("span", { "style": "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;" },
                       $h("input", { "class": "reg-in", "style": "flex: 1; width: auto;", "type": "email", "value": $v.delEmail, "onInput": $v.onDelEmail, "placeholder": "Ton e-mail", "aria-label": "Retape ton e-mail", "autocomplete": "off" }),
+                      ($v.delNeedsPw) ? [
+                        $h("input", { "class": "reg-in", "style": "flex: 1; width: auto;", "type": "password", "value": $v.delPw, "onInput": $v.onDelPw, "placeholder": "Ton mot de passe", "aria-label": "Ton mot de passe", "autocomplete": "current-password" })
+                      ] : null,
                       $h("button", { "class": "reg-btn reg-text", "type": "button", "onClick": $v.delCancel },
                         "Annuler"
                       ),

@@ -95,3 +95,5 @@ body{margin:0;background:#05070C}
 .reg-mob .reg-in{width:100%}.reg-mob .reg-row>span[style*='flex-end']{align-items:stretch !important;width:100%}
 .reg-mob .reg-inc{grid-template-columns:1fr}.reg-mob .reg-plan{padding:18px}
 .reg-mob .reg-toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom))}
+.reg-mob .reg-in,.reg-mob .reg-search input{font-size:16px}
+.reg-mob .reg-legal a{display:inline-flex;align-items:center;min-height:44px}

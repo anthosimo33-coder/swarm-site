@@ -20,7 +20,7 @@ export default class Apercu extends DCLogic {
       { slug: 'knowunity', name: 'Knowunity', niche: 'Études', views30: 49600000, weekDelta: -0.39, accounts: 41, videosPerWeek: 101, markets: [['ES', 33]], top: [] }
     ] };
     const u = p.user;
-    const me = { initiale: String((u && (u.initiale || u.prenom || u.email)) || '?').charAt(0).toUpperCase() };
+    const me = { initiale: (Array.from(String((u && (u.initiale || u.prenom || u.email)) || '?'))[0] || '?').toUpperCase() };
     const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n || 0)));
     const int = (n) => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
     const apps = (d.apps || []).slice(0, 3);
