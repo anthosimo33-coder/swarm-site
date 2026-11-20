@@ -102,8 +102,9 @@ const LISTS = [
       { f: 'type de compte', desk: [t(3, 'filters'), p('Carrousel')], mob: [p('Carrousel')] },
       { f: 'genre', desk: [t(4, 'filters'), p('Femmes')], mob: [p('Femmes')] },
       { f: 'tri', desk: [(v) => v.toggleSort(), p('Abonnés')], mob: [p('Abonnés')] },
-      // Les cartes sur ordinateur n'ont pas « actifs » (CreateursB) : le filtre du téléphone y reste dans l'adresse.
-      { f: 'actifs', desk: desk === 'Createurs' ? [(v) => v.toggleActive()] : null, mob: [(v) => v.toggleActive()] },
+      // L'ordinateur n'a plus « actifs » (maquette E1, 20/11 : les actifs d'abord, les autres repliés) : le filtre du
+      // téléphone y reste dans l'adresse.
+      { f: 'actifs', desk: null, mob: [(v) => v.toggleActive()] },
       { f: 'niches', desk: [t(0, 'filters'), p('Foi')], mob: null },
       { f: 'apps', desk: [t(1, 'filters'), p('App 1')], mob: null },
       { f: 'abonnés', desk: [t(2, 'filters'), p('Moins de 1 000')], mob: null },

@@ -90,7 +90,10 @@ for (const [k, val, why] of [
   ['alertRules', [{ id: 'r', quoi: 'video', filtre: { pays: ['FR'] } }], 'une arborescence dans une alerte'],
   ['seen', { alerts: [1, 2] }, 'un « lu » qui n\'est pas une date'],
   ['seen', null, 'null'],
+  ['views', [{ id: 'v', screen: 'createurs', name: 'x', q: 'niche=Foi', at: 1, filtres: { niche: ['Foi'] } }], 'une arborescence dans une vue enregistrée'],
+  ['views', [{ id: 'v', screen: 'createurs', name: 'x', at: 1 }], 'une vue sans sa requête'],
 ]) { const r = await put(k, val); ok(!r.ok && /FORME_INVALIDE/.test(r.err) && !r.rows.length, `forme refusée : ${why} (${r.ok ? 'acceptée' : r.err})`); }
+{ const r = await put('views', [{ id: 'v1', screen: 'createurs', name: 'Études · France', q: 'niche=%C3%89tudes&m=FR', at: 1 }]); ok(r.ok, `vue enregistrée (maquette D2) : acceptée${r.ok ? '' : ` (${r.err})`}`); }
 { const r = await put('alertRules', [{ id: 'r', createdAt: 1, quoi: 'video', niche: null, seuil: 1e6, marche: 'FR', langue: 'es' }]); ok(r.ok, `alerte avec un champ simple de plus : acceptée${r.ok ? '' : ` (${r.err})`}`); }
 { const r = await put('follows', VALUES.follows, { users: {} }); ok(!r.ok && /NON_CONNECTE/.test(r.err) && !r.rows.length, `compte supprimé, session encore ouverte : rien n'est réinséré (audit S27 ; ${r.ok ? 'écrit' : r.err})`); }
 

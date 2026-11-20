@@ -206,7 +206,7 @@ SVG_ATTRS = {a.lower(): a for a in [
     'markerUnits', 'refX', 'refY', 'pathLength', 'baseFrequency', 'numOctaves', 'attributeName', 'repeatCount',
     'keyTimes', 'keySplines', 'calcMode', 'xChannelSelector', 'yChannelSelector']}
 EVENTS = {'onclick': 'onClick', 'oninput': 'onInput', 'onchange': 'onChange', 'onsubmit': 'onSubmit', 'onfocus': 'onFocus', 'onblur': 'onBlur',
-          'onmouseenter': 'onMouseEnter', 'onmouseleave': 'onMouseLeave', 'onkeydown': 'onKeyDown'}
+          'onmouseenter': 'onMouseEnter', 'onmouseleave': 'onMouseLeave', 'onkeydown': 'onKeyDown', 'onpointerdown': 'onPointerDown'}
 
 
 def attr_name(name):
