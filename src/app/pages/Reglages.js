@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/ReglagesA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class Reglages extends DCLogic {
   componentDidMount() {
@@ -722,7 +722,7 @@ export default class Reglages extends DCLogic {
                         $t($v.priceSub)
                       )
                     ),
-                    $h("a", { "class": "reg-cta", "href": $v.ctaHref, "style": $v.ctaStyle },
+                    $h("a", { "class": "reg-cta", "href": $u($v.ctaHref), "style": $v.ctaStyle },
                       $t($v.ctaLabel)
                     )
                   ),
@@ -769,7 +769,7 @@ export default class Reglages extends DCLogic {
                       )
                     ),
                     ($v.manageOn) ? [
-                      $h("a", { "class": "reg-btn", "href": $v.manageUrl, "target": "_blank", "rel": "noopener", "style": "text-decoration: none;" },
+                      $h("a", { "class": "reg-btn", "href": $u($v.manageUrl), "target": "_blank", "rel": "noopener", "style": "text-decoration: none;" },
                         "Gérer mon paiement",
                         $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                           $h("path", { "d": "M7 17L17 7M9 7h8v8", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })

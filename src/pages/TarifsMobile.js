@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/TarifsMobile.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../runtime.js';
+import { DCLogic, $t, $l, $u } from '../runtime.js';
 
 export default class TarifsMobile extends DCLogic {
   componentDidMount() {
@@ -299,7 +299,7 @@ export default class TarifsMobile extends DCLogic {
                       )
                     )
                   ),
-                  $h("a", { "href": $v.payHref, "class": "tap", "style": "position: relative; display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
+                  $h("a", { "href": $u($v.payHref), "class": "tap", "style": "position: relative; display: flex; align-self: center; width: -webkit-fit-content; width: fit-content; margin-left: auto; margin-right: auto; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; text-decoration: none; font-size: 17px; font-weight: 600; white-space: nowrap; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);" },
                     "Passer Pro",
                     $h("span", { "aria-hidden": "true", "style": "width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;" },
                       $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "display: block;" },
@@ -443,7 +443,7 @@ export default class TarifsMobile extends DCLogic {
                     $t(c?.title)
                   ),
                   ($l(c?.links)).map((l) => [
-                    $h("a", { "href": l?.href, "style": "font-size: 15px; text-decoration: none; min-height: 40px; display: flex; align-items: center;" },
+                    $h("a", { "href": $u(l?.href), "style": "font-size: 15px; text-decoration: none; min-height: 40px; display: flex; align-items: center;" },
                       $t(l?.t)
                     )
                   ])
@@ -500,7 +500,7 @@ export default class TarifsMobile extends DCLogic {
               ),
               $h("nav", { "aria-label": "Menu", "style": "display: flex; flex-direction: column; padding: 4px 10px 0;" },
                 ($l($v.mnav)).map((m) => [
-                  $h("a", { "href": m?.href, "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
+                  $h("a", { "href": $u(m?.href), "class": "tap", "onClick": $v.closeMenu, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 0 6px; border-bottom: 1px solid #EEF0F3; text-decoration: none; color: #0E0F12;" },
                     $h("span", { "style": "width: 36px; height: 36px; border-radius: 11px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
                       $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         $h("path", { "d": m?.d, "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })

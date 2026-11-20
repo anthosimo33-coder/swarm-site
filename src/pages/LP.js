@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/LP.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../runtime.js';
+import { DCLogic, $t, $l, $u } from '../runtime.js';
 
 export default class LP extends DCLogic {
   componentDidMount() {
@@ -375,7 +375,7 @@ export default class LP extends DCLogic {
               $h("div", { "style": "position: absolute; top: calc(100% + 12px); left: 50%; width: 700px; max-width: calc(100vw - 48px); transform: translateX(-50%); box-sizing: border-box; border-radius: 24px; padding: 10px; background: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.92); backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%); box-shadow: 0 30px 70px rgba(16,24,40,0.20), inset 0 1px 0 #FFFFFF; display: flex; flex-wrap: wrap; gap: 10px; animation: lp-menuIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;" },
                 $h("div", { "style": "flex: 1 1 320px; display: flex; flex-direction: column; gap: 2px;" },
                   ($l($v.menu)).map((m) => [
-                    $h("a", { "href": m?.href, "class": "mi", "onClick": $v.closeMenu, "style": "display: flex; align-items: flex-start; gap: 14px; padding: 14px; border-radius: 16px; text-decoration: none;" },
+                    $h("a", { "href": $u(m?.href), "class": "mi", "onClick": $v.closeMenu, "style": "display: flex; align-items: flex-start; gap: 14px; padding: 14px; border-radius: 16px; text-decoration: none;" },
                       $h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; background: #EAF2FF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" },
                         $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                           $h("path", { "d": m?.d, "fill": "none", "stroke": $v.blue, "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -566,7 +566,7 @@ export default class LP extends DCLogic {
                       ($l($v.o1)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 46s linear infinite;" },
-                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": $u(b?.icon), "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -575,7 +575,7 @@ export default class LP extends DCLogic {
                       ($l($v.o2)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spin 70s linear infinite;" },
-                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": $u(b?.icon), "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -584,7 +584,7 @@ export default class LP extends DCLogic {
                       ($l($v.o3)).map((b) => [
                         $h("div", { "style": `position: absolute; left: ${$t(b?.x)}; top: ${$t(b?.y)}; transform: translate(-50%, -50%);` },
                           $h("div", { "style": "width: 60px; height: 60px; border-radius: 18px; border: 3px solid #FFFFFF; box-sizing: border-box; overflow: hidden; background: #FFFFFF; box-shadow: 0 10px 24px rgba(16,24,40,0.16); animation: lp-spinRev 96s linear infinite;" },
-                            $h("img", { "loading": "lazy", "decoding": "async", "src": b?.icon, "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
+                            $h("img", { "loading": "lazy", "decoding": "async", "src": $u(b?.icon), "alt": b?.t, "style": "width: 100%; height: 100%; display: block; object-fit: cover;" })
                           )
                         )
                       ])
@@ -709,7 +709,7 @@ export default class LP extends DCLogic {
                         $h("div", { "style": "display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;" },
                           ($l($v.thumbs)).map((t) => [
                             $h("span", { "style": "position: relative; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; background: #111216; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; box-sizing: border-box; color: #FFFFFF; font-size: 9px; font-weight: 700;" },
-                              $h("img", { "loading": "lazy", "decoding": "async", "src": t?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                              $h("img", { "loading": "lazy", "decoding": "async", "src": $u(t?.img), "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                               $h("span", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 45%, rgba(0,0,0,0.7));" }),
                               $h("span", { "style": "position: relative;" },
                                 $t(t?.v)
@@ -798,10 +798,10 @@ export default class LP extends DCLogic {
                 ($l($v.arc)).map((v) => [
                   $h("div", { "style": `position: absolute; left: 50%; top: 50%; width: 236px; height: 420px; margin-left: -118px; margin-top: -210px; animation: lp-arcMove 106s linear infinite; animation-delay: ${$t(v?.delay)};` },
                     $h("div", { "style": `position: relative; width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: #111216; outline: 2px solid rgba(11,111,224,0); outline-offset: 4px; animation: lp-arcRing 106s linear infinite; animation-delay: ${$t(v?.delay)};` },
-                      $h("img", { "loading": "lazy", "decoding": "async", "src": v?.img, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
+                      $h("img", { "loading": "lazy", "decoding": "async", "src": $u(v?.img), "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" }),
                       $h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.30), transparent 28%, transparent 58%, rgba(0,0,0,0.65));" }),
                       $h("span", { "style": "position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.9); color: #111216; border-radius: 999px; padding: 4px 10px 4px 4px; font-size: 12px; font-weight: 600;" },
-                        $h("img", { "loading": "lazy", "decoding": "async", "src": v?.icon, "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
+                        $h("img", { "loading": "lazy", "decoding": "async", "src": $u(v?.icon), "alt": "", "style": "width: 20px; height: 20px; border-radius: 6px; display: block;" }),
                         $t(v?.app)
                       ),
                       $h("div", { "style": "position: absolute; left: 14px; right: 14px; bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #FFFFFF;" },
@@ -1021,7 +1021,7 @@ export default class LP extends DCLogic {
                       $t(c?.title)
                     ),
                     ($l(c?.links)).map((l) => [
-                      $h("a", { "href": l?.href, "style": "font-size: 15px; text-decoration: none; min-height: 28px; display: inline-flex; align-items: center;" },
+                      $h("a", { "href": $u(l?.href), "style": "font-size: 15px; text-decoration: none; min-height: 28px; display: inline-flex; align-items: center;" },
                         $t(l?.t)
                       )
                     ])

@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/AjoutDossier.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class AjoutDossier extends DCLogic {
   componentDidMount() {
@@ -96,7 +96,7 @@ export default class AjoutDossier extends DCLogic {
               ),
               (d?.src) ? [
                 $h("span", { "style": "width: 32px; height: 32px; border-radius: 9px; overflow: hidden; position: relative; flex-shrink: 0;" },
-                  $h("img", { "class": "sw-cover", "src": d?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                  $h("img", { "class": "sw-cover", "src": $u(d?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                 )
               ] : null,
               (d?.nosrc) ? [

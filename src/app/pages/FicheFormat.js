@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/FormatFicheA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import AjoutDossier from './AjoutDossier.js';
 import Palette from './Palette.js';
 
@@ -142,7 +142,7 @@ export default class FicheFormat extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -191,10 +191,10 @@ export default class FicheFormat extends DCLogic {
                   )
                 ]),
                 ($l($v.f?.apps)).map((a) => [
-                  $h("a", { "href": a?.href, "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted); text-decoration: none;" },
+                  $h("a", { "href": $u(a?.href), "style": "display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-muted); text-decoration: none;" },
                     $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 22px; height: 22px; border-radius: 7px;" },
                       (a?.logo) ? [
-                        $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       (a?.nologo) ? [
                         $h("svg", { "width": "11", "height": "11", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -301,9 +301,9 @@ export default class FicheFormat extends DCLogic {
           ),
           $h("div", { "style": "padding: 0 32px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;" },
             ($l($v.reps)).map((v) => [
-              $h("a", { "href": v?.href, "style": "display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit;" },
+              $h("a", { "href": $u(v?.href), "style": "display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit;" },
                 $h("span", { "class": "sw-video", "style": "display: block; border-radius: 20px;" },
-                  $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                  $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                   $h("span", { "class": "sw-video-shade" }),
                   $h("span", { "class": "sw-badge", "style": "position: absolute; top: 12px; left: 12px; height: 24px; font-size: 11px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
                     $t(v?.when)

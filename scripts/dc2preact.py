@@ -137,6 +137,8 @@ APP_LINKS.update({
     'ConnexionA.dc.html': '/app/deconnexion',  # « Se déconnecter » du compte : le routeur déconnecte puis renvoie à l'accueil du site
 })
 
+# Attributs qui portent une adresse : un trou y passe par $u (src/runtime.js).
+URL_ATTRS = {'href', 'src', 'action', 'formaction', 'poster', 'xlink:href'}
 VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
 HOLE = re.compile(r'\{\{\s*([A-Za-z_$][\w$]*(?:\.[\w$]+)*)\s*\}\}')
 
@@ -344,7 +346,12 @@ def gen(node, scope, ind):
             continue
         if name == 'href':
             val = rewrite_links(val, text_of(node), CURRENT['links'])
-        props.append(f'{json.dumps(attr_name(name))}: {value_expr(val, scope)}')
+        expr = value_expr(val, scope)
+        # Une adresse venue des données passe par $u (src/runtime.js, audit S34) : jamais « javascript: » dans la page.
+        if name.lower() in URL_ATTRS and HOLE.search(val):
+            expr = f'$u({expr})'
+            CURRENT['url'] = True
+        props.append(f'{json.dumps(attr_name(name))}: {expr}')
     # App : une image ne se télécharge qu'à l'approche de l'écran (listes de 150 formats, 200 comptes).
     if node.tag == 'img' and CURRENT['links'] is APP_LINKS and 'loading' not in attrs:
         props += ['"loading": "lazy"', '"decoding": "async"']
@@ -717,6 +724,7 @@ def convert(src, name, prefix, group='site'):
     g = GROUPS[group]
     CURRENT['links'] = g['links']
     CURRENT['imports'] = set()
+    CURRENT['url'] = False
     text = (g['src'] / src).read_text()
     CURRENT['file'] = str((g['src'] / src).relative_to(ROOT)) if (g['src'] / src).is_relative_to(ROOT) else src
     CURRENT['text'] = text
@@ -779,7 +787,7 @@ def convert(src, name, prefix, group='site'):
     fonts = missing_fonts(helmet, name, group)
     css_import += ''.join(f"import {c} from './{c}.js';\n" for c in sorted(CURRENT['imports']))
     IMPORTS[name] = sorted(CURRENT['imports'])
-    runtime = 'DCLogic, $t, $l, $fonts' if fonts else 'DCLogic, $t, $l'
+    runtime = 'DCLogic, $t, $l' + (', $u' if CURRENT['url'] else '') + (', $fonts' if fonts else '')
     fonts_call = f"$fonts([{json.dumps(fonts)}]); // polices du canevas absentes de la page HTML (audit Q12)\n" if fonts else ''
     js = f"""// Généré par scripts/dc2preact.py depuis design/{rel} — ne pas modifier à la main.
 import {{ h as $h }} from 'preact';  // $h : jamais masqué par une variable de boucle

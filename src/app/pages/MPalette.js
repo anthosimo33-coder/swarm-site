@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MPalette.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class MPalette extends DCLogic {
   componentDidMount() { if (this.inp) this.inp.focus(); }
@@ -112,11 +112,11 @@ export default class MPalette extends DCLogic {
         ] : null,
         $h("div", { "style": "padding: 0 16px 32px;" },
           ($v.pa) ? [
-            $h("a", { "href": $v.cur?.href, "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u($v.cur?.href), "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
               $h("span", { "style": "display: flex; align-items: center; gap: 12px;" },
                 $h("span", { "class": `sw-app-icon ${$t($v.cur?.blank)}`, "style": "width: 52px; height: 52px; border-radius: 15px;" },
                   ($v.cur?.logo) ? [
-                    $h("img", { "class": "sw-logo-img", "src": $v.cur?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-logo-img", "src": $u($v.cur?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   ($v.cur?.nologo) ? [
                     $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -164,7 +164,7 @@ export default class MPalette extends DCLogic {
                 $h("span", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
                   ($l($v.cur?.covs)).map((v) => [
                     $h("span", { "class": "sw-video", "style": "display: block; border-radius: 12px;" },
-                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                      $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                       $h("span", { "class": "sw-video-shade" }),
                       $h("span", { "style": "position: absolute; left: 7px; bottom: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #FFFFFF;" },
                         $t(v?.v)
@@ -182,11 +182,11 @@ export default class MPalette extends DCLogic {
             )
           ] : null,
           ($v.pc) ? [
-            $h("a", { "href": $v.cc?.href, "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u($v.cc?.href), "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
               $h("span", { "style": "display: flex; align-items: center; gap: 12px;" },
                 $h("span", { "style": "width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   ($v.cc?.av) ? [
-                    $h("img", { "src": $v.cc?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "src": $u($v.cc?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   ($v.cc?.noav) ? [
                     $h("svg", { "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -216,7 +216,7 @@ export default class MPalette extends DCLogic {
                 $h("span", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" },
                   ($l($v.cc?.covs)).map((v) => [
                     $h("span", { "class": "sw-video", "style": "display: block; border-radius: 12px;" },
-                      $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                      $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                       $h("span", { "class": "sw-video-shade" }),
                       $h("span", { "style": "position: absolute; left: 7px; bottom: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #FFFFFF;" },
                         $t(v?.v)
@@ -241,10 +241,10 @@ export default class MPalette extends DCLogic {
               $t($v.gApps)
             ),
             ($l($v.apps)).map((a) => [
-              $h("a", { "href": a?.href, "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+              $h("a", { "href": $u(a?.href), "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
                 $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 40px; height: 40px; border-radius: 12px;" },
                   (a?.logo) ? [
-                    $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (a?.nologo) ? [
                     $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -274,7 +274,7 @@ export default class MPalette extends DCLogic {
               $t($v.gFms)
             ),
             ($l($v.fms)).map((f) => [
-              $h("a", { "href": f?.href, "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+              $h("a", { "href": $u(f?.href), "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
                 $h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--track); color: var(--ink-soft);" },
                   $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": f?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -302,10 +302,10 @@ export default class MPalette extends DCLogic {
               $t($v.gCrs)
             ),
             ($l($v.crs)).map((c) => [
-              $h("a", { "href": c?.href, "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+              $h("a", { "href": $u(c?.href), "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
                 $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   (c?.av) ? [
-                    $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (c?.noav) ? [
                     $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },

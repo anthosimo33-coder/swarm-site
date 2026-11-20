@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MCreateursCartes.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -227,10 +227,10 @@ export default class MCreateursCartes extends DCLogic {
           ),
           $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
             ($l($v.live)).map((c) => [
-              $h("a", { "href": c?.href, "style": "flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 7px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;" },
+              $h("a", { "href": $u(c?.href), "style": "flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 7px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;" },
                 $h("span", { "style": "width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   (c?.av) ? [
-                    $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (c?.noav) ? [
                     $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -260,10 +260,10 @@ export default class MCreateursCartes extends DCLogic {
             ] : null
           ),
           ($l($v.cards)).map((c) => [
-            $h("a", { "href": c?.href, "class": "sw-card", "style": "border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u(c?.href), "class": "sw-card", "style": "border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: inherit;" },
               $h("span", { "class": "m-ph", "style": "position: relative; height: 150px; overflow: hidden; display: block; background: linear-gradient(150deg, #28405E, #0A0C12 58%, #28405E 130%);" },
                 ($l(c?.cov1)).map((v) => [
-                  $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                  $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                   $h("span", { "class": "sw-video-shade" }),
                   $h("span", { "style": "position: absolute; right: 8px; bottom: 8px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #FFFFFF;" },
                     $t(v?.v)
@@ -274,7 +274,7 @@ export default class MCreateursCartes extends DCLogic {
                 $h("span", { "style": "margin-top: -22px;" },
                   $h("span", { "style": "width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 3px var(--surface-raised); position: relative;" },
                     (c?.av) ? [
-                      $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     (c?.noav) ? [
                       $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -290,7 +290,7 @@ export default class MCreateursCartes extends DCLogic {
                 $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-faint);" },
                   $h("span", { "class": `sw-app-icon ${$t(c?.app?.blank)}`, "style": "width: 16px; height: 16px; border-radius: 5px;" },
                     (c?.app?.logo) ? [
-                      $h("img", { "class": "sw-logo-img", "src": c?.app?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "class": "sw-logo-img", "src": $u(c?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     (c?.app?.nologo) ? [
                       $h("svg", { "width": "8", "height": "8", "viewBox": "0 0 24 24", "aria-hidden": "true" },

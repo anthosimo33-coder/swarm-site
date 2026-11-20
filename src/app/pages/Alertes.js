@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/AlertesA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import NouvelleAlerte from './NouvelleAlerte.js';
 import Palette from './Palette.js';
 
@@ -212,7 +212,7 @@ export default class Alertes extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -292,7 +292,7 @@ export default class Alertes extends DCLogic {
                     $t(g?.g)
                   ),
                   ($l(g?.items)).map((a) => [
-                    $h("a", { "href": a?.href, "style": `display: flex; align-items: center; gap: 16px; padding: 14px 18px 14px 14px; border-radius: 18px; background: ${$t(a?.bg)}; text-decoration: none; color: inherit;` },
+                    $h("a", { "href": $u(a?.href), "style": `display: flex; align-items: center; gap: 16px; padding: 14px 18px 14px 14px; border-radius: 18px; background: ${$t(a?.bg)}; text-decoration: none; color: inherit;` },
                       $h("span", { "style": `width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: ${$t(a?.dot)};` }),
                       $h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);" },
                         $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -328,7 +328,7 @@ export default class Alertes extends DCLogic {
                       $h("span", { "style": "display: flex; flex-shrink: 0; gap: 6px; justify-content: flex-end; width: 154px;" },
                         ($l(a?.covs)).map((c) => [
                           $h("span", { "class": "sw-video", "style": "display: block; width: 46px; border-radius: 10px;" },
-                            $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy" })
+                            $h("img", { "class": "sw-cover", "src": $u(c?.src), "alt": "", "loading": "lazy" })
                           )
                         ])
                       )

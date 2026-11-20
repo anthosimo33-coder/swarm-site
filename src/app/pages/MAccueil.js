@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MAccueil.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -127,7 +127,7 @@ export default class MAccueil extends DCLogic {
             ),
             $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
               ($l($v.niches)).map((n) => [
-                $h("a", { "class": "sw-pill", "href": n?.href, "style": "height: 44px; flex-shrink: 0;" },
+                $h("a", { "class": "sw-pill", "href": $u(n?.href), "style": "height: 44px; flex-shrink: 0;" },
                   $t(n?.l)
                 )
               ])
@@ -153,10 +153,10 @@ export default class MAccueil extends DCLogic {
               )
             ] : null,
             ($l($v.look)).map((r) => [
-              $h("a", { "href": r?.href, "style": "display: flex; align-items: center; gap: 14px; padding: 12px 16px; text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);" },
+              $h("a", { "href": $u(r?.href), "style": "display: flex; align-items: center; gap: 14px; padding: 12px 16px; text-decoration: none; color: inherit; border-bottom: 1px solid var(--line);" },
                 $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 44px; height: 44px; border-radius: 12px;" },
                   (r?.logo) ? [
-                    $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (r?.nologo) ? [
                     $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -190,9 +190,9 @@ export default class MAccueil extends DCLogic {
           )
         ),
         ($v.alert?.on) ? [
-          $h("a", { "href": $v.alert?.href, "class": "sw-card is-featured", "style": "margin: 20px 20px 0; border-radius: 22px; padding: 14px; display: flex; gap: 14px; align-items: center; text-decoration: none; color: inherit;" },
+          $h("a", { "href": $u($v.alert?.href), "class": "sw-card is-featured", "style": "margin: 20px 20px 0; border-radius: 22px; padding: 14px; display: flex; gap: 14px; align-items: center; text-decoration: none; color: inherit;" },
             $h("span", { "class": "sw-video", "style": "display: block; width: 64px; border-radius: 12px; flex-shrink: 0;" },
-              $h("img", { "class": "sw-cover", "src": $v.alert?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+              $h("img", { "class": "sw-cover", "src": $u($v.alert?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
               $h("span", { "class": "sw-video-shade" }),
               $h("span", { "style": "position: absolute; left: 6px; bottom: 5px; font-size: 11px; font-weight: 700; color: #FFFFFF;" },
                 $t($v.alert?.views)

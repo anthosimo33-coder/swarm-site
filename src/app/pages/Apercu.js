@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/ApercuA.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class Apercu extends DCLogic {
   componentDidMount() {
@@ -127,7 +127,7 @@ export default class Apercu extends DCLogic {
               "Apps"
             ),
             ($l($v.locked)).map((n) => [
-              $h("a", { "class": "sw-side-item apr-lock", "href": n?.href, "aria-current": "false", "aria-label": `${$t(n?.label)}, avec Kopycat Pro` },
+              $h("a", { "class": "sw-side-item apr-lock", "href": $u(n?.href), "aria-current": "false", "aria-label": `${$t(n?.label)}, avec Kopycat Pro` },
                 $h("span", { "class": "sw-side-ico" },
                   $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -164,10 +164,10 @@ export default class Apercu extends DCLogic {
             ),
             $h("section", { "class": "apr-grid", "aria-label": "Le top 3, ouvert", "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;" },
               ($l($v.top)).map((a) => [
-                $h("a", { "class": "apr-top", "href": a?.href, "aria-label": a?.aria, "style": "display: flex; flex-direction: column; gap: 16px; min-width: 0; color: inherit; text-decoration: none;" },
+                $h("a", { "class": "apr-top", "href": $u(a?.href), "aria-label": a?.aria, "style": "display: flex; flex-direction: column; gap: 16px; min-width: 0; color: inherit; text-decoration: none;" },
                   $h("span", { "class": "apr-cover", "style": "position: relative; display: block; height: 172px; border-radius: 20px; overflow: hidden; background: var(--thumb-navy);" },
                     (a?.cover) ? [
-                      $h("img", { "src": a?.cover, "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "src": $u(a?.cover), "alt": "", "style": "width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     $h("span", { "style": "position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,7,12,0) 35%, rgba(5,7,12,0.88));" }),
                     $h("span", { "class": "mono-label", "style": "position: absolute; left: 16px; top: 14px; color: #FFFFFF;" },
@@ -175,7 +175,7 @@ export default class Apercu extends DCLogic {
                     ),
                     $h("span", { "style": "position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; align-items: center; gap: 10px; min-width: 0;" },
                       (a?.icon) ? [
-                        $h("img", { "src": a?.icon, "alt": "", "style": "flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; object-fit: cover;", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "src": $u(a?.icon), "alt": "", "style": "flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; object-fit: cover;", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       $h("span", { "style": "display: flex; flex-direction: column; min-width: 0;" },
                         $h("span", { "style": "font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
@@ -256,7 +256,7 @@ export default class Apercu extends DCLogic {
                       "Sans engagement"
                     )
                   ),
-                  $h("a", { "href": $v.monthly, "class": "sw-btn sw-btn-primary sw-btn-lg", "style": "text-decoration: none; white-space: nowrap;" },
+                  $h("a", { "href": $u($v.monthly), "class": "sw-btn sw-btn-primary sw-btn-lg", "style": "text-decoration: none; white-space: nowrap;" },
                     "Tout débloquer",
                     $h("span", { "class": "sw-btn-tile" },
                       $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },

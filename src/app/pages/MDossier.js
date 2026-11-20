@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MDossier.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -216,13 +216,13 @@ export default class MDossier extends DCLogic {
             $h("div", { "class": "sw-card", "style": "margin: 0 20px; border-radius: 20px; padding: 0; overflow: hidden;" },
               ($l(g?.items)).map((x) => [
                 $h("div", { "style": `display: flex; align-items: center; gap: 4px; padding: 0 6px 0 14px; border-top: 1px solid ${$t(x?.sep)};` },
-                  $h("a", { "href": x?.href, "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 64px; text-decoration: none; color: inherit;" },
+                  $h("a", { "href": $u(x?.href), "style": "flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 64px; text-decoration: none; color: inherit;" },
                     $h("span", { "style": `position: relative; width: 44px; height: 44px; border-radius: ${$t(x?.rad)}; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(150deg, #28405E, #0A0C12 58%, #28405E 130%); color: #E4E7EC;` },
                       $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                         $h("path", { "d": x?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                       ),
                       (x?.src) ? [
-                        $h("img", { "class": "sw-cover", "src": x?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "class": "sw-cover", "src": $u(x?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                       ] : null
                     ),
                     $h("span", { "style": "min-width: 0; display: flex; flex-direction: column; gap: 3px;" },

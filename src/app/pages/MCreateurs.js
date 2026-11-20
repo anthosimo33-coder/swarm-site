@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MCreateurs.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -226,11 +226,11 @@ export default class MCreateurs extends DCLogic {
             )
           ] : null,
           ($l($v.rows)).map((c) => [
-            $h("a", { "href": c?.href, "style": "display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u(c?.href), "style": "display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
               $h("span", { "style": "display: flex; align-items: center; gap: 12px;" },
                 $h("span", { "style": "width: 46px; height: 46px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   (c?.av) ? [
-                    $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (c?.noav) ? [
                     $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -246,7 +246,7 @@ export default class MCreateurs extends DCLogic {
                   $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-faint);" },
                     $h("span", { "class": `sw-app-icon ${$t(c?.app?.blank)}`, "style": "width: 16px; height: 16px; border-radius: 5px;" },
                       (c?.app?.logo) ? [
-                        $h("img", { "class": "sw-logo-img", "src": c?.app?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "class": "sw-logo-img", "src": $u(c?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       (c?.app?.nologo) ? [
                         $h("svg", { "width": "8", "height": "8", "viewBox": "0 0 24 24", "aria-hidden": "true" },

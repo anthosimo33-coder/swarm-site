@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/Palette.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class Palette extends DCLogic {
   componentDidMount() { if (this.inp) this.inp.focus(); }
@@ -153,10 +153,10 @@ export default class Palette extends DCLogic {
                       $t($v.gApps)
                     ),
                     ($l($v.apps)).map((a) => [
-                      $h("a", { "href": a?.href, "onMouseEnter": a?.hover, "style": `display: flex; align-items: center; gap: 12px; margin: 0 8px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(a?.bg)}; box-shadow: inset 0 0 0 1px ${$t(a?.edge)};` },
+                      $h("a", { "href": $u(a?.href), "onMouseEnter": a?.hover, "style": `display: flex; align-items: center; gap: 12px; margin: 0 8px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(a?.bg)}; box-shadow: inset 0 0 0 1px ${$t(a?.edge)};` },
                         $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 32px; height: 32px; border-radius: 10px;" },
                           (a?.logo) ? [
-                            $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (a?.nologo) ? [
                             $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -183,7 +183,7 @@ export default class Palette extends DCLogic {
                       $t($v.gFms)
                     ),
                     ($l($v.fms)).map((f) => [
-                      $h("a", { "href": f?.href, "onMouseEnter": f?.hover, "style": `display: flex; align-items: center; gap: 12px; margin: 0 8px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(f?.bg)}; box-shadow: inset 0 0 0 1px ${$t(f?.edge)};` },
+                      $h("a", { "href": $u(f?.href), "onMouseEnter": f?.hover, "style": `display: flex; align-items: center; gap: 12px; margin: 0 8px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(f?.bg)}; box-shadow: inset 0 0 0 1px ${$t(f?.edge)};` },
                         $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--track); color: var(--ink-soft);" },
                           $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                             $h("path", { "d": f?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -208,10 +208,10 @@ export default class Palette extends DCLogic {
                       $t($v.gCrs)
                     ),
                     ($l($v.crs)).map((c) => [
-                      $h("a", { "href": c?.href, "onMouseEnter": c?.hover, "style": `display: flex; align-items: center; gap: 12px; margin: 0 8px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(c?.bg)}; box-shadow: inset 0 0 0 1px ${$t(c?.edge)};` },
+                      $h("a", { "href": $u(c?.href), "onMouseEnter": c?.hover, "style": `display: flex; align-items: center; gap: 12px; margin: 0 8px; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(c?.bg)}; box-shadow: inset 0 0 0 1px ${$t(c?.edge)};` },
                         $h("span", { "style": "position: relative; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                           (c?.av) ? [
-                            $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (c?.noav) ? [
                             $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -237,7 +237,7 @@ export default class Palette extends DCLogic {
                     $h("div", { "style": "display: flex; align-items: center; gap: 16px;" },
                       $h("span", { "class": `sw-app-icon ${$t($v.cur?.blank)}`, "style": "width: 64px; height: 64px; border-radius: 18px;" },
                         ($v.cur?.logo) ? [
-                          $h("img", { "class": "sw-logo-img", "src": $v.cur?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                          $h("img", { "class": "sw-logo-img", "src": $u($v.cur?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                         ] : null,
                         ($v.cur?.nologo) ? [
                           $h("svg", { "width": "32", "height": "32", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -281,7 +281,7 @@ export default class Palette extends DCLogic {
                       $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;" },
                         ($l($v.cur?.covs)).map((v) => [
                           $h("span", { "class": "sw-video", "style": "display: block; border-radius: 14px;" },
-                            $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                            $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                             $h("span", { "class": "sw-video-shade" }),
                             $h("span", { "class": "sw-video-foot" },
                               $h("span", { "class": "sw-video-views", "style": "font-size: 17px;" },
@@ -293,7 +293,7 @@ export default class Palette extends DCLogic {
                       )
                     ] : null,
                     $h("div", { "style": "display: flex; justify-content: flex-end;" },
-                      $h("a", { "ref": $v.setGo, "class": "sw-btn sw-btn-primary", "href": $v.cur?.href },
+                      $h("a", { "ref": $v.setGo, "class": "sw-btn sw-btn-primary", "href": $u($v.cur?.href) },
                         "Ouvrir la fiche",
                         $h("span", { "class": "sw-btn-tile" },
                           $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -345,7 +345,7 @@ export default class Palette extends DCLogic {
                       $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;" },
                         ($l($v.cur?.covs)).map((v) => [
                           $h("span", { "class": "sw-video", "style": "display: block; border-radius: 14px;" },
-                            $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                            $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                             $h("span", { "class": "sw-video-shade" }),
                             $h("span", { "class": "sw-video-foot" },
                               $h("span", { "class": "sw-video-views", "style": "font-size: 17px;" },
@@ -360,7 +360,7 @@ export default class Palette extends DCLogic {
                       $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
                         $t($v.cur?.apps)
                       ),
-                      $h("a", { "ref": $v.setGo, "class": "sw-btn sw-btn-primary", "href": $v.cur?.href },
+                      $h("a", { "ref": $v.setGo, "class": "sw-btn sw-btn-primary", "href": $u($v.cur?.href) },
                         "Voir le format",
                         $h("span", { "class": "sw-btn-tile" },
                           $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -374,7 +374,7 @@ export default class Palette extends DCLogic {
                     $h("div", { "style": "display: flex; align-items: center; gap: 16px;" },
                       $h("span", { "style": "position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                         ($v.cur?.av) ? [
-                          $h("img", { "src": $v.cur?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                          $h("img", { "src": $u($v.cur?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                         ] : null,
                         ($v.cur?.noav) ? [
                           $h("svg", { "width": "32", "height": "32", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -414,7 +414,7 @@ export default class Palette extends DCLogic {
                       $h("div", { "style": "display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;" },
                         ($l($v.cur?.covs)).map((v) => [
                           $h("span", { "class": "sw-video", "style": "display: block; border-radius: 14px;" },
-                            $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                            $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                             $h("span", { "class": "sw-video-shade" }),
                             $h("span", { "class": "sw-video-foot" },
                               $h("span", { "class": "sw-video-views", "style": "font-size: 17px;" },
@@ -426,7 +426,7 @@ export default class Palette extends DCLogic {
                       )
                     ] : null,
                     $h("div", { "style": "display: flex; justify-content: flex-end;" },
-                      $h("a", { "ref": $v.setGo, "class": "sw-btn sw-btn-primary", "href": $v.cur?.href },
+                      $h("a", { "ref": $v.setGo, "class": "sw-btn sw-btn-primary", "href": $u($v.cur?.href) },
                         "Voir la fiche",
                         $h("span", { "class": "sw-btn-tile" },
                           $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },

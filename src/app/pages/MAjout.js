@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MAjout.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 
 export default class MAjout extends DCLogic {
   // Clavier ouvert (audit Q72) : sur iPhone, il recouvre le bas de la page sans la réduire ; la feuille remonte de ce qu'il
@@ -91,7 +91,7 @@ export default class MAjout extends DCLogic {
               $h("button", { "type": "button", "role": "checkbox", "aria-checked": d?.on, "onClick": d?.toggle, "style": "display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 8px 2px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font-family: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;" },
                 (d?.src) ? [
                   $h("span", { "style": "width: 42px; height: 42px; border-radius: 12px; overflow: hidden; position: relative; flex-shrink: 0;" },
-                    $h("img", { "class": "sw-cover", "src": d?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-cover", "src": $u(d?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                   )
                 ] : null,
                 (d?.nosrc) ? [

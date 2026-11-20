@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MFiche.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -204,7 +204,7 @@ export default class MFicheApp extends DCLogic {
           $h("div", { "style": "display: flex; align-items: center; gap: 14px;" },
             $h("span", { "class": `sw-app-icon ${$t($v.a?.blank)}`, "style": "width: 68px; height: 68px; border-radius: 18px;" },
               ($v.a?.logo) ? [
-                $h("img", { "class": "sw-logo-img", "src": $v.a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                $h("img", { "class": "sw-logo-img", "src": $u($v.a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
               ] : null,
               ($v.a?.nologo) ? [
                 $h("svg", { "width": "34", "height": "34", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -242,12 +242,12 @@ export default class MFicheApp extends DCLogic {
           ($v.app?.hasLinks) ? [
             $h("div", { "style": "display: flex; gap: 8px;" },
               ($v.app?.hasStore) ? [
-                $h("a", { "class": "sw-pill", "href": $v.app?.store, "target": "_blank", "rel": "noopener", "style": "height: 44px;" },
+                $h("a", { "class": "sw-pill", "href": $u($v.app?.store), "target": "_blank", "rel": "noopener", "style": "height: 44px;" },
                   "App Store"
                 )
               ] : null,
               ($v.app?.hasSite) ? [
-                $h("a", { "class": "sw-pill", "href": $v.app?.site, "target": "_blank", "rel": "noopener", "style": "height: 44px;" },
+                $h("a", { "class": "sw-pill", "href": $u($v.app?.site), "target": "_blank", "rel": "noopener", "style": "height: 44px;" },
                   "Site"
                 )
               ] : null
@@ -282,7 +282,7 @@ export default class MFicheApp extends DCLogic {
         $h("div", { "style": "margin: 18px 20px 0;" },
           $h("div", { "class": "m-tc is-scroll", "role": "tablist" },
             ($l($v.secs)).map((s) => [
-              $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "href": s?.href, "onClick": s?.pick, "style": "flex-shrink: 0; display: inline-flex; gap: 6px; align-items: center; text-decoration: none;" },
+              $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "href": $u(s?.href), "onClick": s?.pick, "style": "flex-shrink: 0; display: inline-flex; gap: 6px; align-items: center; text-decoration: none;" },
                 $h("span", { "class": "m-ic", "data-i": s?.l, "aria-hidden": "true" }),
                 $t(s?.l),
                 $h("span", { "style": "font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);" },
@@ -429,8 +429,8 @@ export default class MFicheApp extends DCLogic {
               )
             ),
             ($v.dash?.hasTop) ? [
-              $h("a", { "href": $v.dash?.top?.href, "aria-label": $v.dash?.top?.aria, "style": "position: relative; display: block; aspect-ratio: 4 / 5; border-radius: 18px; overflow: hidden; background: #0A0C12; text-decoration: none; color: #FFFFFF;" },
-                $h("img", { "src": $v.dash?.top?.cover, "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
+              $h("a", { "href": $u($v.dash?.top?.href), "aria-label": $v.dash?.top?.aria, "style": "position: relative; display: block; aspect-ratio: 4 / 5; border-radius: 18px; overflow: hidden; background: #0A0C12; text-decoration: none; color: #FFFFFF;" },
+                $h("img", { "src": $u($v.dash?.top?.cover), "alt": "", "style": "position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;", "loading": "lazy", "decoding": "async" }),
                 $h("span", { "aria-hidden": "true", "style": "position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.25), transparent 30%, transparent 55%, rgba(0,0,0,0.75));" }),
                 ($v.dash?.top?.x) ? [
                   $h("span", { "style": "position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); font-size: 12px; font-weight: 700;" },
@@ -514,9 +514,9 @@ export default class MFicheApp extends DCLogic {
             ] : null,
             $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
               ($l($v.fv)).map((v) => [
-                $h("a", { "href": v?.href, "style": "flex-shrink: 0; width: 132px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
+                $h("a", { "href": $u(v?.href), "style": "flex-shrink: 0; width: 132px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
                   $h("span", { "class": "sw-video", "style": "display: block; border-radius: 16px;" },
-                    $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                    $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     (v?.car) ? [
                       $h("span", { "aria-hidden": "true", "style": "position: absolute; top: 6px; left: 8px; right: 8px; z-index: 3; display: flex; gap: 3px;" },
@@ -572,7 +572,7 @@ export default class MFicheApp extends DCLogic {
             ),
             $h("div", { "style": "padding: 0 20px; display: flex; flex-direction: column; gap: 8px;" },
               ($l($v.ff)).map((f) => [
-                $h("a", { "href": f?.href, "class": "sw-card", "style": "border-radius: 18px; padding: 14px; display: flex; gap: 12px; align-items: flex-start; text-decoration: none; color: inherit;" },
+                $h("a", { "href": $u(f?.href), "class": "sw-card", "style": "border-radius: 18px; padding: 14px; display: flex; gap: 12px; align-items: flex-start; text-decoration: none; color: inherit;" },
                   $h("span", { "style": "width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);" },
                     $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                       $h("path", { "d": f?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -644,10 +644,10 @@ export default class MFicheApp extends DCLogic {
             $h("div", { "class": "sw-card", "style": "margin: 0 20px; border-radius: 20px; padding: 4px 0;" },
               ($l($v.fc)).map((c) => [
                 (c?.page) ? [
-                  $h("a", { "href": c?.href, "style": "display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+                  $h("a", { "href": $u(c?.href), "style": "display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
                     $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                       (c?.av) ? [
-                        $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       (c?.noav) ? [
                         $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -680,7 +680,7 @@ export default class MFicheApp extends DCLogic {
                   $h("div", { "style": "display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
                     $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                       (c?.av) ? [
-                        $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                        $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                       ] : null,
                       (c?.noav) ? [
                         $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },

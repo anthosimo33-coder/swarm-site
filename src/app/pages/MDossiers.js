@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MDossiers.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -152,12 +152,12 @@ export default class MDossiers extends DCLogic {
             )
           ] : null,
           ($l($v.folders)).map((f) => [
-            $h("a", { "href": f?.href, "class": "sw-card", "style": "border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u(f?.href), "class": "sw-card", "style": "border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: inherit;" },
               (f?.full) ? [
                 $h("span", { "style": "display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; height: 116px; overflow: hidden;" },
                   ($l(f?.mos)).map((m) => [
                     $h("span", { "class": "m-ph", "style": "position: relative; background: linear-gradient(150deg, #28405E, #0A0C12 58%, #28405E 130%); position: relative; overflow: hidden; display: block;" },
-                      $h("img", { "class": "sw-cover", "src": m?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "class": "sw-cover", "src": $u(m?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                     )
                   ])
                 )
@@ -180,7 +180,7 @@ export default class MDossiers extends DCLogic {
                       $h("span", { "style": "margin-left: -6px; border-radius: 8px; box-shadow: 0 0 0 2px var(--surface-raised); display: inline-flex;" },
                         $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 24px; height: 24px; border-radius: 8px;" },
                           (a?.logo) ? [
-                            $h("img", { "class": "sw-logo-img", "src": a?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (a?.nologo) ? [
                             $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -214,9 +214,9 @@ export default class MDossiers extends DCLogic {
             ),
             $h("div", { "style": "display: flex; gap: 10px; overflow-x: auto; padding: 0 20px; scrollbar-width: none; -webkit-overflow-scrolling: touch;" },
               ($l($v.recent)).map((r) => [
-                $h("a", { "href": r?.href, "style": "flex-shrink: 0; width: 112px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
+                $h("a", { "href": $u(r?.href), "style": "flex-shrink: 0; width: 112px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;" },
                   $h("span", { "class": "sw-video", "style": "display: block; border-radius: 14px;" },
-                    $h("img", { "class": "sw-cover", "src": r?.src, "alt": "", "loading": "lazy", "decoding": "async" }),
+                    $h("img", { "class": "sw-cover", "src": $u(r?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
                     $h("span", { "class": "sw-video-shade" }),
                     $h("span", { "class": "sw-badge", "style": "position: absolute; top: 6px; left: 6px; height: 20px; padding: 0 7px; font-size: 10px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
                       $h("span", { "class": "m-ic", "data-i": r?.kind, "aria-hidden": "true", "style": "width: 13px; height: 13px;" }),

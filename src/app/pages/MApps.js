@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/MApps.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import MAjout from './MAjout.js';
 import MPalette from './MPalette.js';
 
@@ -301,7 +301,7 @@ return {};
                 ),
                 $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;" },
                   (r?.logo) ? [
-                    $h("img", { "class": "sw-logo-img", "src": r?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                   ] : null,
                   (r?.nologo) ? [
                     $h("svg", { "width": "23", "height": "23", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -369,8 +369,8 @@ return {};
                   ),
                   $h("span", { "style": "display: flex; gap: 6px; flex-shrink: 0;" },
                     ($l(r?.covs)).map((c) => [
-                      $h("a", { "href": c?.href, "class": "sw-video", "aria-label": `Vidéo à ${$t(c?.v)} vues`, "style": "display: block; width: 56px; border-radius: 10px;" },
-                        $h("img", { "class": "sw-cover", "src": c?.src, "alt": "", "loading": "lazy" }),
+                      $h("a", { "href": $u(c?.href), "class": "sw-video", "aria-label": `Vidéo à ${$t(c?.v)} vues`, "style": "display: block; width: 56px; border-radius: 10px;" },
+                        $h("img", { "class": "sw-cover", "src": $u(c?.src), "alt": "", "loading": "lazy" }),
                         $h("span", { "class": "sw-video-shade" }),
                         (c?.car) ? [
                           $h("span", { "title": `Carrousel de ${$t(c?.car)} photos`, "aria-label": "Carrousel", "style": "position: absolute; top: 4px; right: 4px; z-index: 2; height: 18px; padding: 0 5px; border-radius: 999px; background: rgba(5,7,12,0.66); color: #FFFFFF; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" },
@@ -493,7 +493,7 @@ return {};
             $h("div", { "style": "display: flex; align-items: center; gap: 14px; padding: 2px 0 clamp(8px, 1.4vh, 12px);" },
               $h("span", { "class": `sw-app-icon ${$t($v.pv?.blank)}`, "style": "width: clamp(44px, 7.5vh, 56px); height: clamp(44px, 7.5vh, 56px); border-radius: 16px;" },
                 ($v.pv?.logo) ? [
-                  $h("img", { "class": "sw-logo-img", "src": $v.pv?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                  $h("img", { "class": "sw-logo-img", "src": $u($v.pv?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                 ] : null,
                 ($v.pv?.nologo) ? [
                   $h("svg", { "width": "28", "height": "28", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -622,9 +622,9 @@ return {};
                 ] : null
               ),
               ($v.pv?.hasTop) ? [
-                $h("a", { "href": $v.pv?.top?.href, "aria-label": "Lire sa vidéo la plus vue", "style": "grid-column: 1 / span 2; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: 8px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink);" },
+                $h("a", { "href": $u($v.pv?.top?.href), "aria-label": "Lire sa vidéo la plus vue", "style": "grid-column: 1 / span 2; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge); padding: 8px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink);" },
                   $h("span", { "class": "sw-video", "style": "flex: 0 0 auto; width: clamp(42px, 7vh, 72px); aspect-ratio: 3 / 4; border-radius: 12px;" },
-                    $h("img", { "class": "sw-cover", "src": $v.pv?.top?.cover, "alt": "", "loading": "lazy", "decoding": "async" })
+                    $h("img", { "class": "sw-cover", "src": $u($v.pv?.top?.cover), "alt": "", "loading": "lazy", "decoding": "async" })
                   ),
                   $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px;" },
                     $h("span", { "style": "display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); white-space: nowrap;" },
@@ -741,7 +741,7 @@ return {};
                 ] : null,
                 $t($v.pv?.followLabel)
               ),
-              $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": $v.pv?.href },
+              $h("a", { "class": "sw-btn sw-btn-primary sw-btn-lg", "href": $u($v.pv?.href) },
                 "Ouvrir la fiche",
                 $h("span", { "class": "sw-btn-tile" },
                   $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },

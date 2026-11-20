@@ -1,6 +1,6 @@
 // Généré par scripts/dc2preact.py depuis design/app/CreateursB.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../../runtime.js';
+import { DCLogic, $t, $l, $u } from '../../runtime.js';
 import Palette from './Palette.js';
 
 export default class CreateursCartes extends DCLogic {
@@ -274,7 +274,7 @@ export default class CreateursCartes extends DCLogic {
             "Chercher"
           ),
           ($l($v.sb)).map((n) => [
-            $h("a", { "class": "sw-side-item", "href": n?.href, "aria-current": n?.cur },
+            $h("a", { "class": "sw-side-item", "href": $u(n?.href), "aria-current": n?.cur },
               $h("span", { "class": "sw-side-ico" },
                 $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                   $h("path", { "d": n?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -340,7 +340,7 @@ export default class CreateursCartes extends DCLogic {
                   ),
                   $h("div", { "style": "max-height: min(520px, 62vh); overflow-y: auto; display: flex; flex-direction: column; gap: 2px;" },
                     ($v.mkm?.showAll) ? [
-                      $h("a", { "role": "option", "aria-selected": $v.mkm?.all?.sel, "href": $v.mkm?.all?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t($v.mkm?.all?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t($v.mkm?.all?.fw)};` },
+                      $h("a", { "role": "option", "aria-selected": $v.mkm?.all?.sel, "href": $u($v.mkm?.all?.href), "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t($v.mkm?.all?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t($v.mkm?.all?.fw)};` },
                         $h("svg", { "width": "22", "height": "22", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-muted);" },
                           $h("path", { "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         ),
@@ -360,7 +360,7 @@ export default class CreateursCartes extends DCLogic {
                         "LES PLUS SUIVIS"
                       ),
                       ($l($v.mkm?.top)).map((m) => [
-                        $h("a", { "role": "option", "aria-selected": m?.sel, "href": m?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t(m?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t(m?.fw)};` },
+                        $h("a", { "role": "option", "aria-selected": m?.sel, "href": $u(m?.href), "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; background: ${$t(m?.bg)}; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: ${$t(m?.fw)};` },
                           $h("span", { "class": "sw-flag sw-flag-22", "data-c": m?.c, "aria-hidden": "true" }),
                           $h("span", { "style": "flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                             $t(m?.l)
@@ -383,7 +383,7 @@ export default class CreateursCartes extends DCLogic {
                       ),
                       $h("div", { "style": "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 8px;" },
                         ($l($v.mkm?.rest)).map((m) => [
-                          $h("a", { "role": "option", "aria-selected": m?.sel, "href": m?.href, "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 10px; border-radius: 10px; background: ${$t(m?.bg)}; color: var(--ink-soft); text-decoration: none; font-size: 13px; font-weight: ${$t(m?.fw)}; min-width: 0;` },
+                          $h("a", { "role": "option", "aria-selected": m?.sel, "href": $u(m?.href), "onClick": $v.closeMenu, "style": `display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 10px; border-radius: 10px; background: ${$t(m?.bg)}; color: var(--ink-soft); text-decoration: none; font-size: 13px; font-weight: ${$t(m?.fw)}; min-width: 0;` },
                             $h("span", { "class": "sw-flag", "data-c": m?.c, "aria-hidden": "true" }),
                             $h("span", { "style": "flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                               $t(m?.l)
@@ -476,10 +476,10 @@ export default class CreateursCartes extends DCLogic {
                 "Actifs cette semaine"
               ),
               ($l($v.live)).map((c) => [
-                $h("a", { "href": c?.href, "style": "display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;" },
+                $h("a", { "href": $u(c?.href), "style": "display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: var(--track); border: 1px solid var(--line); text-decoration: none; color: inherit;" },
                   $h("span", { "style": "position: relative; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);" },
                     (c?.av) ? [
-                      $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                      $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                     ] : null,
                     (c?.noav) ? [
                       $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -539,13 +539,13 @@ export default class CreateursCartes extends DCLogic {
                 )
               ] : null,
               $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Affichage" },
-                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": $v.tableHref, "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
+                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "false", "href": $u($v.tableHref), "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
                   $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M4 5h16v14H4zM4 10h16M4 15h16M10 10v9", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
                   "Tableau"
                 ),
-                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "true", "href": $v.cardsHref, "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
+                $h("a", { "class": "sw-tab", "role": "tab", "aria-selected": "true", "href": $u($v.cardsHref), "style": "height: 32px; display: inline-flex; align-items: center; gap: 7px; text-decoration: none;" },
                   $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
@@ -573,9 +573,9 @@ export default class CreateursCartes extends DCLogic {
                 (c?.hasCov) ? [
                   $h("div", { "style": "display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 200px; overflow: hidden; background: var(--ground);" },
                     ($l(c?.cov)).map((v) => [
-                      $h("a", { "href": v?.href, "aria-label": `Vidéo à ${$t(v?.v)} vues`, "style": "position: relative; overflow: hidden; display: block;" },
+                      $h("a", { "href": $u(v?.href), "aria-label": `Vidéo à ${$t(v?.v)} vues`, "style": "position: relative; overflow: hidden; display: block;" },
                         (v?.src) ? [
-                          $h("img", { "class": "sw-cover", "src": v?.src, "alt": "", "loading": "lazy", "decoding": "async" })
+                          $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" })
                         ] : null,
                         $h("span", { "class": "sw-video-shade" }),
                         $h("span", { "style": "position: absolute; right: 10px; bottom: 10px; font-family: var(--font-display); font-size: 15px; font-weight: 700; color: #FFFFFF;" },
@@ -586,14 +586,14 @@ export default class CreateursCartes extends DCLogic {
                   )
                 ] : null,
                 (c?.noCov) ? [
-                  $h("a", { "href": c?.href, "aria-label": `Voir la fiche de ${$t(c?.h)}`, "style": "display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 200px; overflow: hidden; background: var(--ground);" })
+                  $h("a", { "href": $u(c?.href), "aria-label": `Voir la fiche de ${$t(c?.h)}`, "style": "display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; height: 200px; overflow: hidden; background: var(--ground);" })
                 ] : null,
                 $h("div", { "style": "padding: 0 22px 22px; display: flex; flex-direction: column; gap: 14px;" },
                   $h("div", { "style": "position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; margin-top: -30px;" },
                     $h("span", { "style": "position: relative; flex-shrink: 0; display: inline-flex;" },
                       $h("span", { "style": "position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); box-shadow: 0 0 0 4px var(--surface-raised), 0 8px 24px rgba(0,0,0,0.4);" },
                         (c?.av) ? [
-                          $h("img", { "src": c?.av, "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                          $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
                         ] : null,
                         (c?.noav) ? [
                           $h("svg", { "width": "32", "height": "32", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -612,7 +612,7 @@ export default class CreateursCartes extends DCLogic {
                     )
                   ),
                   $h("div", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-                    $h("a", { "href": c?.href, "style": "font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); text-decoration: none;" },
+                    $h("a", { "href": $u(c?.href), "style": "font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); text-decoration: none;" },
                       $t(c?.h)
                     ),
                     $h("span", { "style": "font-size: 13px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
@@ -639,10 +639,10 @@ export default class CreateursCartes extends DCLogic {
                   ),
                   $h("div", { "style": "display: flex; align-items: center; justify-content: space-between; gap: 10px;" },
                     (c?.hasApp) ? [
-                      $h("a", { "href": c?.appHref, "style": "display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;" },
+                      $h("a", { "href": $u(c?.appHref), "style": "display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;" },
                         $h("span", { "class": `sw-app-icon ${$t(c?.app?.blank)}`, "style": "width: 26px; height: 26px; border-radius: 6px;" },
                           (c?.app?.logo) ? [
-                            $h("img", { "class": "sw-logo-img", "src": c?.app?.logo, "alt": "", "loading": "lazy", "decoding": "async" })
+                            $h("img", { "class": "sw-logo-img", "src": $u(c?.app?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
                           ] : null,
                           (c?.app?.nologo) ? [
                             $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -661,7 +661,7 @@ export default class CreateursCartes extends DCLogic {
                       )
                     ] : null,
                     $h("span", { "style": "display: flex; gap: 2px;" },
-                      $h("a", { "class": "sw-btn sw-btn-icon", "href": c?.href, "aria-label": `Voir la fiche de ${$t(c?.h)}`, "style": "width: 38px; height: 38px;" },
+                      $h("a", { "class": "sw-btn sw-btn-icon", "href": $u(c?.href), "aria-label": `Voir la fiche de ${$t(c?.h)}`, "style": "width: 38px; height: 38px;" },
                         $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                           $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                         )
