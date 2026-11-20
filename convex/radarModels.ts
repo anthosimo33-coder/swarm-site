@@ -145,6 +145,8 @@ export const kindOf = (a: RApp, store: string | null): "app" | "saas" | "jeu_mob
   a.kind === "app" || a.kind === "saas" || a.kind === "jeu_mobile" ? a.kind
     : store || a.store?.storeId || a.market?.productKind === "app" ? "app" : a.market?.productKind === "software" || siteOf(a.slug) ? "saas" : null;
 
+/** Apps ouvertes sans abonnement (convex/boards.ts, l'aperçu) : les premières du classement, document « apps:top ». */
+export const PREVIEW_TOP = 3;
 /** Une app n'est listée qu'avec au moins 2 comptes qui la poussent, prouvés (un compte n'entre que prouvé, cf Jarvia #506). */
 export const MIN_APP_ACCOUNTS = 2;
 /** Créateurs par document de liste (~1 Ko chacun ; un document Convex : 1 Mio au plus). */
@@ -663,6 +665,11 @@ export function buildBoards(
     }
   }
   (boards.get("apps") as { marketApps: [string, number][] }).marketApps = MARKETS.map((m) => [m[0], marketApps.get(m[0]) ?? 0]);
+  // L'aperçu sans abonnement (convex/boards.ts) : le top PREVIEW_TOP et ce que son écran montre, dans un petit document.
+  // Audit F1 (19/11) : l'aperçu relisait les 848 Ko de « apps » à chaque appel, pour en rendre 10 Ko.
+  const appsDoc = boards.get("apps") as { markets: unknown; niches: unknown; marketApps: unknown };
+  boards.set("apps:top", { updatedAt: now, markets: appsDoc.markets, niches: appsDoc.niches, marketApps: appsDoc.marketApps,
+    apps: appsBoard.slice(0, PREVIEW_TOP), total: appsBoard.length });
 
   // ── Formats ──
   const accountX = (m: RFormatMember) => {

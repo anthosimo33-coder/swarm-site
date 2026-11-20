@@ -56,21 +56,35 @@ async function read(ctx: QueryCtx, key: string, hidden: Set<string>): Promise<un
  * document vaut LOCKED : verrouillé, distinct de null (absent). Le verrou est ici, pas à l'écran : rien de ce qui est
  * fermé n'arrive au navigateur.
  */
-export const PREVIEW_TOP = 3;
+export const PREVIEW_TOP = 3; // même valeur que PREVIEW_TOP de convex/radarModels.ts (vérifié par scripts/apercu.test.mjs)
 const LOCKED = { locked: true } as const;
 type App = { slug: string; name: string; icon?: unknown; niche?: unknown; views30?: number };
 const appsOf = (d: unknown): App[] => (d && typeof d === "object" && Array.isArray((d as { apps?: unknown }).apps) ? (d as { apps: App[] }).apps : []);
+/** Les seules clés qu'un compte sans abonnement peut lire (avec stats) : toute autre répond LOCKED sans rien lire. */
+const previewable = (key: string) => key === "apps" || key === "search" || key.startsWith("app:") || key.startsWith("video:");
+
+type Top = { updatedAt?: unknown; markets?: unknown; niches?: unknown; marketApps?: unknown; apps: App[]; total: number };
+/**
+ * Le top de l'aperçu : « apps:top », écrit par la synchro (convex/radarModels.ts), quelques Ko. Audit F1 (19/11) : relire
+ * « apps » (848 Ko en 4 morceaux) à chaque appel coûtait 80 fois ce qui était rendu. Tant que la synchro ne l'a pas
+ * écrit (juste après un déploiement), il est tiré de « apps », comme avant.
+ */
+async function topOf(ctx: QueryCtx, hidden: Set<string>): Promise<Top | null> {
+  const d = ((await read(ctx, "apps:top", hidden)) ?? (await read(ctx, "apps", hidden))) as Partial<Top> | null;
+  if (d === null) return null;
+  // Champ par champ : rien d'autre du document n'arrive au navigateur gratuit.
+  return { updatedAt: d.updatedAt, markets: d.markets, niches: d.niches, marketApps: d.marketApps,
+    apps: appsOf(d).slice(0, PREVIEW_TOP), total: typeof d.total === "number" ? d.total : appsOf(d).length };
+}
 
 async function preview(ctx: QueryCtx, key: string, hidden: Set<string>): Promise<unknown> {
   if (key === "stats") return read(ctx, key, hidden);
-  const apps = await read(ctx, "apps", hidden);
-  const top = appsOf(apps).slice(0, PREVIEW_TOP);
-  if (key === "apps") return apps === null ? null : { ...(apps as object), apps: top, total: appsOf(apps).length, preview: true };
-  const open = new Set(top.map((a) => a.slug));
-  if (key === "search") {
-    const s = await read(ctx, key, hidden);
-    return s === null ? null : { apps: appsOf(s).filter((a) => open.has(a.slug)), creators: [], formats: [] };
-  }
+  if (!previewable(key)) return LOCKED;
+  const top = await topOf(ctx, hidden);
+  if (key === "apps") return top === null ? null : { ...top, preview: true };
+  const open = new Set((top?.apps ?? []).map((a) => a.slug));
+  // Recherche : les apps ouvertes seulement, sans relire l'index « search » (389 Ko).
+  if (key === "search") return top === null ? null : { apps: top.apps.map(({ slug, name, icon, niche, views30 }) => ({ slug, name, icon, niche, views30 })), creators: [], formats: [] };
   if (key.startsWith("app:")) return open.has(key.slice("app:".length)) ? read(ctx, key, hidden) : LOCKED;
   if (key.startsWith("video:")) {
     const d = (await read(ctx, key, hidden)) as { app?: { slug?: string } | null } | null;

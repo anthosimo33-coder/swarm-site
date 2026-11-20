@@ -51,7 +51,8 @@ const appRow = (i) => ({ slug: slug(i), name: name(i), niche: i % 2 ? 'Foi' : '�
 const apps = Array.from({ length: 10 }, (_, i) => appRow(i));
 const creator = (h, i) => ({ handle: h, fans: 1000, median: 500, app: { slug: slug(i), name: name(i) }, best: [card(`33300000${i}0`, i)] });
 const DOCS = {
-  apps: { updatedAt: 1, markets: [['FR', 'France', 12]], niches: ['Foi', 'Études'], apps, marketApps: [['FR', 10]] },
+  // `extra` : un champ du document complet qui n'a rien à faire dans l'aperçu.
+  apps: { updatedAt: 1, markets: [['FR', 'France', 12]], niches: ['Foi', 'Études'], apps, marketApps: [['FR', 10]], extra: [name(5)] },
   'app:zz-app-1': { slug: slug(1), name: name(1), videos: [card('2220000010', 1), card(HIDDEN_VIDEO, 1)] },
   'app:zz-app-7': { slug: slug(7), name: name(7), videos: [card('2220000070', 7)] },
   'video:2220000020': { id: '2220000020', handle: 'auteur2', fans: 10, cover: 'https://tiktok.example/x.jpg', app: { slug: slug(2), name: name(2) } },
@@ -69,15 +70,19 @@ const DOCS = {
   'search:creators:2': { creators: [{ handle: 'y', app: name(6) }] },
   stats: { apps: 10, accounts: 25 },
 };
+// Le petit document de l'aperçu, tel que convex/radarModels.ts l'écrit (audit F1).
+DOCS['apps:top'] = { updatedAt: 1, markets: DOCS.apps.markets, niches: DOCS.apps.niches, marketApps: DOCS.apps.marketApps, apps: apps.slice(0, 3), total: 10 };
 const USERS = { pro: { pro: true }, free: {}, nul: { pro: false } };
 
 /**
  * Base simulée. `parts` : clés rangées en morceaux de texte (boardParts), comme les grosses pages de prod ; `missing`
  * : clés en morceaux dont un morceau manque (page en cours de réécriture).
  */
-function db({ parts = new Set(), missing = new Set() } = {}) {
+function db({ parts = new Set(), missing = new Set(), without = new Set() } = {}) {
   const tables = { boards: [], boardParts: [], hidden: [{ ids: [HIDDEN_VIDEO], at: 1 }], users: [] };
+  const reads = [];
   for (const [key, data] of Object.entries(DOCS)) {
+    if (without.has(key)) continue;
     if (!parts.has(key)) { tables.boards.push({ key, data, hash: 'h', updatedAt: 1 }); continue; }
     const text = JSON.stringify(data), n = 3, size = Math.ceil(text.length / n);
     tables.boards.push({ key, data: null, hash: 'h', updatedAt: 1, parts: n });
@@ -85,15 +90,17 @@ function db({ parts = new Set(), missing = new Set() } = {}) {
   }
   const run = (rows) => ({ first: async () => rows[0] ?? null, unique: async () => rows[0] ?? null, collect: async () => rows, take: async (n) => rows.slice(0, n) });
   return {
+    reads,
     get: async (id) => USERS[id] ?? null,
     query: (table) => ({
       withIndex: (_name, f) => {
         const conds = [];
         const q = { eq: (field, val) => (conds.push([field, val]), q) };
         if (f) f(q);
+        reads.push(`${table}${conds.length ? '[' + conds.map((c) => c[1]).join(',') + ']' : ''}`);
         return run((tables[table] ?? []).filter((r) => conds.every(([k, val]) => r[k] === val)).sort((p, q2) => (p.i ?? 0) - (q2.i ?? 0)));
       },
-      ...run(tables[table] ?? []),
+      ...Object.fromEntries(Object.entries(run(tables[table] ?? [])).map(([k, f]) => [k, (...a) => (reads.push(table), f(...a))])),
     }),
   };
 }
@@ -103,6 +110,8 @@ const ok = (cond, msg) => { console.log((cond ? 'OK   ' : 'ÉCHEC') + ' ' + msg)
 const call = async (base, u, key) => {
   try { return await get.handler({ userId: u, db: base }, { key }); } catch (e) { return { __error: String(e).slice(0, 120) }; }
 };
+/** Ce que l'appel a lu en base (tables et clés), hors profil de la personne. */
+const readsOf = async (base, u, key) => { base.reads.length = 0; await call(base, u, key); return base.reads.filter((r) => r !== 'users'); };
 const leak = (x) => { const s = JSON.stringify(x) ?? ''; return (s.match(/zz-app-[3-9]|Nom secret [3-9]/g) ?? [])[0] ?? null; };
 
 // Les clés que l'app demande : les données de chaque écran (src/app/routes.js), le préchauffage (src/app/main.js, WARM),
@@ -113,12 +122,13 @@ ok(routeKeys.length >= 8 && warm.length >= 5, `clés relevées : ${routeKeys.len
 const fill = (k) => k.replace('{slug}', slug(7)).replace('{id}', k.startsWith('format') ? 'f1' : '9990000080').replace('{handle}', 'createur.fr');
 const OPEN = new Set(['apps', 'search', 'stats']);
 const LOCKED_KEYS = [...new Set([...routeKeys.map(fill), ...warm, 'home', 'formats', 'format:f1', 'creators:FR', 'creators:FR:2', 'creators:ALL',
-  'creator:createur.fr', 'alerts', 'apps:FR', 'apps@instagram', 'apps:FR@tiktok', 'search:creators:2', 'app:zz-app-7', 'video:9990000080'])].filter((k) => !OPEN.has(k));
+  'creator:createur.fr', 'alerts', 'apps:FR', 'apps@instagram', 'apps:FR@tiktok', 'search:creators:2', 'app:zz-app-7', 'video:9990000080', 'apps:top'])].filter((k) => !OPEN.has(k));
 const FREE_FIELDS = ['updatedAt', 'markets', 'niches', 'marketApps', 'apps', 'total', 'preview'];
 
-for (const layout of ['simple', 'en morceaux']) {
-  // « en morceaux » : les pages lourdes rangées comme en prod (apps, recherche, listes, une fiche du top 3).
-  const base = db(layout === 'simple' ? {} : { parts: new Set(['apps', 'search', 'creators:FR', 'app:zz-app-1', 'home']) });
+for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
+  // « en morceaux » : les pages lourdes rangées comme en prod (apps, recherche, listes, une fiche du top 3). « sans
+  // apps:top » : juste après un déploiement, avant que la synchro ait écrit le document de l'aperçu.
+  const base = db(layout === 'simple' ? {} : layout === 'en morceaux' ? { parts: new Set(['apps', 'search', 'creators:FR', 'app:zz-app-1', 'home']) } : { without: new Set(['apps:top']) });
   const g = (u, key) => call(base, u, key);
   console.log(`── pages ${layout}`);
   const pa = await g('pro', 'apps');
@@ -160,6 +170,19 @@ for (const layout of ['simple', 'en morceaux']) {
     const leaks = seen.map(([k, r]) => [k, leak(r)]).filter(([, l]) => l);
     ok(!leaks.length, `${u} : aucune app hors du top 3 dans les ${seen.length} réponses${leaks.length ? ` (${leaks.map(([k, l]) => `${k} → ${l}`).join(' ; ')})` : ''}`);
     ok(seen.every(([, r]) => !r?.__error), `${u} : aucune erreur${seen.filter(([, r]) => r?.__error).map(([k, r]) => ` (${k} : ${r.__error})`).join('')}`);
+    // Audit F1 : une clé verrouillée ne lit aucune page ; l'aperçu ne relit ni « apps » (848 Ko) ni « search » (389 Ko).
+    const lockedReads = [];
+    // Une fiche d'app ou de vidéo hors du top ne lit que le top (et la vidéo, pour savoir de quelle app elle est).
+    const allowed = (k, x) => x === 'boards[apps:top]' || (layout === 'sans apps:top' && x === 'boards[apps]') || (k.startsWith('video:') && x === `boards[${k}]`);
+    for (const k of LOCKED_KEYS) {
+      const r = (await readsOf(base, u, k)).filter((x) => /^board/.test(x) && !((k.startsWith('app:') || k.startsWith('video:')) && allowed(k, x)));
+      if (r.length) lockedReads.push(`${k} → ${r.join(' ')}`);
+    }
+    ok(!lockedReads.length, `${u} : clés verrouillées sans lecture de page${lockedReads.length ? ` (${lockedReads.slice(0, 3).join(' ; ')})` : ''}`);
+    if (layout !== 'sans apps:top') for (const k of ['apps', 'search', 'app:zz-app-1', 'video:2220000020']) {
+      const r = await readsOf(base, u, k);
+      ok(!r.some((x) => /^board(s|Parts)\[(apps|search)\]$/.test(x)), `${u} : ${k} sans relire apps ni search (${r.join(' ')})`);
+    }
   }
   ok((await g(null, 'apps')) === null && (await g(null, 'stats')) === null, 'pas connecté : rien');
 }
@@ -171,5 +194,7 @@ for (const layout of ['simple', 'en morceaux']) {
   ok((await call(base, 'free', 'app:zz-app-1')) === null, 'gratuit : page à un morceau manquant → absente');
   ok((await call(base, 'pro', 'apps'))?.apps?.length === 10, 'Pro : les autres pages en morceaux se recollent');
 }
+const topOf = (f) => readFileSync(path.join(root, f), 'utf8').match(/PREVIEW_TOP = (\d+)/)?.[1];
+ok(topOf('convex/boards.ts') === topOf('convex/radarModels.ts'), `PREVIEW_TOP identique dans boards.ts et radarModels.ts (${topOf('convex/boards.ts')}, ${topOf('convex/radarModels.ts')})`);
 console.log(fail ? `${fail} échec(s)` : 'tout passe');
 process.exit(fail ? 1 : 0);

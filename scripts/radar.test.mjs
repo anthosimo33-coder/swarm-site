@@ -1,0 +1,40 @@
+// Banc des documents que la synchro écrit (convex/radarModels.ts, buildBoards), sur un export inventé
+// (scripts/radar-fixture.mjs) : ce que les écrans lisent doit tenir ses promesses (liens qui mènent à une fiche, aperçu…).
+// Usage : npm run test:radar   [autre radarModels.ts]
+//         REEL=~/dev/swarm-site/.bench-data node scripts/radar.test.mjs   (en plus, compte les problèmes sur l'export réel)
+import { boardsOf, fixtureRaw, loadModels, realRaw } from './radar-fixture.mjs';
+
+const models = await loadModels(process.argv[2]);
+const DAY = 86_400_000;
+
+/** Chaque règle rend la liste de ses manquements (vide : tenue). */
+const RULES = [
+  ['apps:top = les premières apps de « apps », et leur nombre (audit F1)', (docs) => {
+    const apps = docs.get('apps'), top = docs.get('apps:top'), out = [];
+    if (!top) return ['apps:top absent'];
+    const n = models.PREVIEW_TOP ?? 3;
+    if (JSON.stringify(top.apps.map((a) => a.slug)) !== JSON.stringify(apps.apps.slice(0, n).map((a) => a.slug))) out.push(`top ${top.apps.map((a) => a.slug)} ≠ ${apps.apps.slice(0, n).map((a) => a.slug)}`);
+    if (top.total !== apps.apps.length) out.push(`total ${top.total} ≠ ${apps.apps.length}`);
+    for (const k of ['markets', 'niches', 'marketApps']) if (JSON.stringify(top[k]) !== JSON.stringify(apps[k])) out.push(`${k} différent de « apps »`);
+    if (JSON.stringify(top).length > 60_000) out.push(`apps:top pèse ${JSON.stringify(top).length} car.`);
+    return out;
+  }],
+];
+
+let fail = 0;
+const run = (label, docs, strict) => {
+  console.log(`── ${label} : ${docs.size} pages`);
+  for (const [name, rule] of RULES) {
+    const bad = rule(docs);
+    const okk = !bad.length;
+    console.log(`${okk ? 'OK   ' : strict ? 'ÉCHEC' : 'RELEVÉ'} ${name}${okk ? '' : ` : ${bad.length} — ${bad.slice(0, 4).join(' ; ')}`}`);
+    if (!okk && strict) fail++;
+  }
+};
+run('export inventé', boardsOf(models, fixtureRaw()), true);
+if (process.env.REEL) {
+  const { raw, store } = realRaw(process.env.REEL.replace(/^~/, process.env.HOME));
+  run(`export réel (${process.env.REEL})`, boardsOf(models, raw, store), false);
+}
+console.log(fail ? `${fail} échec(s)` : 'tout passe');
+process.exit(fail ? 1 : 0);
