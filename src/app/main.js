@@ -23,6 +23,7 @@ import { client, mount } from '../auth.js';
 import { ROUTES } from './routes.js';
 import { createWatcher } from './watcher.js';
 import { APERCU, HOME, SIGN_OUT, isOpen, mayLoadBeforeUser, routeCodeNeeded, routesToWarm } from './plan.js';
+import { scrollMemory } from './scroll.js';
 import '../styles/ds/tokens.css';
 import '../styles/ds/bundle.css';
 import './app.css';
@@ -67,6 +68,8 @@ const SUITE = 'kopycat.suite'; // l'achat commencé avant de se connecter
 // Sous 860 px, l'écran mobile de l'adresse (artboard M* du canevas), sinon le desktop.
 const MOBILE = window.matchMedia('(max-width: 860px)');
 const loaderOf = (route, mobile) => (mobile && route.loadMobile) || route.load;
+// Position de défilement retenue avant chaque navigation, rendue au retour arrière (audit F13).
+const scroll = scrollMemory(window);
 const clean = (path) => (path.length > 1 ? path.replace(/\/+$/, '') : path);
 /** L'adresse affichée : chemin + requête (« /app/apps?niche=Foi »), sans l'ancre. */
 const here = () => clean(window.location.pathname) + window.location.search;
@@ -229,6 +232,7 @@ function App() {
         event.preventDefault();
         if (clean(url.pathname) !== HOME) setPlans(true);
         else if (here() !== APERCU) {
+          scroll.remember();
           window.history.pushState(null, '', APERCU);
           setPath(APERCU);
         }
@@ -245,10 +249,11 @@ function App() {
       const VIDEOS = HOME + '/videos/';
       const depth = url.pathname.startsWith(VIDEOS)
         ? (window.location.pathname.startsWith(VIDEOS) ? ((window.history.state && window.history.state.viewer) || 0) + 1 : 1) : 0;
+      scroll.remember();
       window.history.pushState(depth ? { viewer: depth } : null, '', next + url.hash);
       setPath(next);
     };
-    const onPop = () => setPath(here());
+    const onPop = () => { scroll.popped(); setPath(here()); };
     // ⌘K / Ctrl+K : chaque écran a un déclencheur [data-cmdk] qui ouvre la recherche.
     const onKey = (event) => {
       if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'k') {
@@ -327,7 +332,7 @@ function App() {
     if (!toPlan) return;
     if (!MOBILE.matches) { setSettings('abo'); return; }
     setPlanMobile(true);
-    if (window.location.pathname !== '/app/compte') { window.history.pushState(null, '', '/app/compte'); setPath('/app/compte'); }
+    if (window.location.pathname !== '/app/compte') { scroll.remember(); window.history.pushState(null, '', '/app/compte'); setPath('/app/compte'); }
   }, [toPlan]);
   // Les sessions ouvertes (Réglages › Sécurité), lues quand le panneau du compte ou les réglages sont ouverts
   // (dès le panneau : les réglages s'ouvrent ensuite sans attendre).
@@ -410,15 +415,14 @@ function App() {
     return () => clearTimeout(timer);
   }, [screen, proNow]);
 
-  // Arrivée sur un écran : titre de l'onglet, puis en haut ou sur l'ancre demandée.
+  // Arrivée sur un écran : titre de l'onglet, puis la position retenue (retour arrière), l'ancre demandée, ou le haut.
   useEffect(() => {
     if (!screen) return;
     const d = screen.key ? board(screen.key).value : null;
     document.title = `${(d && (d.name || (d.handle && `@${d.handle}`) || d.label)) || screen.route.title} · Kopycat`;
     const id = decodeURIComponent(window.location.hash.slice(1));
     const target = id && document.getElementById(id);
-    if (target) target.scrollIntoView();
-    else window.scrollTo(0, 0);
+    scroll.arrive(target);
   }, [screen]);
 
   // Les documents lus par l'écran : on le redessine quand ils changent.
@@ -504,7 +508,7 @@ function App() {
     }),
   };
   if (onSettingsScreen) {
-    const toApp = () => { window.history.pushState(null, '', HOME); setPath(HOME); };
+    const toApp = () => { scroll.remember(); window.history.pushState(null, '', HOME); setPath(HOME); };
     const Settings = Reglages(loaded);
     page = Settings ? h(Settings, { key: planMobile ? 'm/reglages/abo' : 'm/reglages', ...settingsProps, mobile: true, onClose: toApp, ...(planMobile ? { section: 'abo', view: 'detail' } : {}) }) : null;
   }

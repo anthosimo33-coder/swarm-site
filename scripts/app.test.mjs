@@ -76,4 +76,32 @@ const has = (f) => fs.existsSync(app(f));
   ok(/routeCodeNeeded\(/.test(main) && /routesToWarm\(/.test(main) && /mayLoadBeforeUser\(/.test(main), 'F8 : src/app/main.js applique ces règles');
 }
 
+// ─── F13 : retour arrière, la liste revient à sa position ───
+{
+  ok(has('scroll.js'), 'F13 : module src/app/scroll.js présent');
+  if (has('scroll.js')) {
+    const { scrollMemory } = await import(app('scroll.js'));
+    // Une fenêtre et un historique simulés : pile d'entrées avec leur état.
+    const stack = [{ state: null }]; let at = 0;
+    const win = {
+      scrollY: 0, scrolled: [],
+      history: { scrollRestoration: 'auto', get state() { return stack[at].state; }, replaceState(st) { stack[at].state = st; }, pushState(st) { stack.splice(at + 1); stack.push({ state: st }); at++; }, back() { at--; } },
+      scrollTo(_x, y) { this.scrollY = y; this.scrolled.push(y); },
+      requestAnimationFrame: (f) => f(),
+    };
+    const mem = scrollMemory(win);
+    ok(win.history.scrollRestoration === 'manual', 'F13 : le navigateur ne rejoue plus sa propre position (elle s\'appliquait à l\'ancien écran)');
+    win.scrollY = 611;
+    mem.remember(); win.history.pushState({ viewer: 1 }); // clic vers une vidéo
+    mem.arrive(null);
+    ok(win.scrollY === 0, 'F13 : un nouvel écran arrive en haut');
+    win.history.back(); mem.popped(); // retour arrière
+    mem.arrive(null);
+    ok(win.scrollY === 611, `F13 : au retour, la liste revient à sa position (${win.scrollY})`);
+    mem.arrive(null);
+    ok(win.scrollY === 0, 'F13 : un écran rendu sans retour arrière n\'est pas replacé');
+  }
+  ok(/scrollMemory\(/.test(main) && /\.remember\(\)/.test(main) && /\.popped\(\)/.test(main) && /\.arrive\(/.test(main), 'F13 : src/app/main.js retient la position avant chaque navigation et la rend au retour');
+}
+
 end();
