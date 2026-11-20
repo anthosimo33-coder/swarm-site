@@ -128,7 +128,9 @@ const fill = (k) => k.replace('{slug}', slug(7)).replace('{id}', k.startsWith('f
 const OPEN = new Set(['apps', 'search', 'stats']);
 const LOCKED_KEYS = [...new Set([...routeKeys.map(fill), ...warm, 'home', 'formats', 'format:f1', 'creators:FR', 'creators:FR:2', 'creators:ALL',
   'creator:createur.fr', 'alerts', 'apps:FR', 'apps@instagram', 'apps:FR@tiktok', 'search:creators:2', 'app:zz-app-7', 'video:9990000080', 'apps:top', 'apps:merged', 'app:ancien-slug-7'])].filter((k) => !OPEN.has(k));
-const FREE_FIELDS = ['updatedAt', 'markets', 'niches', 'marketApps', 'apps', 'total', 'preview'];
+// Audit S29 : ni les marchés (pays, nombre de créateurs suivis), ni les apps par pays, ni les niches de la base payante.
+// apps:top les porte encore tant que la synchro ne l'a pas réécrit (DOCS ci-dessus) : boards.ts doit les retirer.
+const FREE_FIELDS = ['updatedAt', 'apps', 'total', 'preview'];
 
 for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
   // « en morceaux » : les pages lourdes rangées comme en prod (apps, recherche, listes, une fiche du top 3). « sans
@@ -168,7 +170,7 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
     const a = await gf('apps');
     ok(a?.apps?.length === 3 && a.apps.map((x) => x.slug).join() === [0, 1, 2].map(slug).join(), `${u} : apps = top 3 (${a?.apps?.length})`);
     ok(a?.total === 10 && a?.preview === true, `${u} : total = 10 apps suivies, marqué aperçu`);
-    ok(a && Object.keys(a).every((k) => FREE_FIELDS.includes(k)), `${u} : document apps limité à ${FREE_FIELDS.join(', ')} (${a && Object.keys(a).join(', ')})`);
+    ok(a && Object.keys(a).sort().join() === [...FREE_FIELDS].sort().join(), `${u} : document apps limité à ${FREE_FIELDS.join(', ')} (${a && Object.keys(a).join(', ')})`);
     ok(a?.apps?.[0]?.top?.[0]?.cover?.startsWith(`${SITE}/cover/`), `${u} : miniatures de l'aperçu réécrites`);
     ok((await gf('app:zz-app-1'))?.slug === slug(1), `${u} : fiche du top 3 ouverte`);
     ok((await gf('app:ancien-slug-1'))?.slug === slug(1), `${u} : ancien slug d'une app du top 3 → sa fiche`);
