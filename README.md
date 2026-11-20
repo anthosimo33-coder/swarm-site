@@ -1,6 +1,6 @@
-# Swarm — site vitrine
+# Kopycat
 
-Landing page et page tarifs de Swarm (nom provisoire) : les apps et les formats qui explosent en ce moment sur TikTok, Instagram et YouTube Shorts, sur n'importe quel marché, et les créateurs derrière.
+Kopycat (ex-Swarm) : les apps et les formats qui explosent en ce moment sur TikTok et Instagram, sur n'importe quel marché, et les créateurs derrière, à partir du Radar de Jarvia. Landing, tarifs, comptes, abonnement payant et l'app.
 
 - `/` : la landing page
 - `/tarifs` : la page tarifs (un seul plan, Pro)
@@ -11,7 +11,7 @@ Chaque page existe en version desktop et en version mobile. La version mobile s'
 
 ## D'où vient le code
 
-Les pages sont dessinées sur le canevas de design (artboards `LP`, `LPMobile`, `Tarifs`, `TarifsMobile`, `Connexion`, `Inscription`). Connexion et Inscription utilisent le design system Swarm (`src/styles/ds/`, copie de `design/ds/swarm/`). Leurs sources sont copiées dans `design/*.dc.html`, puis converties en composants Preact par `scripts/dc2preact.py` :
+Les pages sont dessinées sur le canevas de design (artboards `LP`, `LPMobile`, `Tarifs`, `TarifsMobile`, `Connexion`, `Inscription`). Connexion, Inscription et l'app utilisent le design system (`src/styles/ds/`, copie identique de `design/ds/swarm/`, vérifiée par `npm run test:sources`) : une règle de dessin d'un écran va dans le système de design ou dans le canevas, pas dans le site. Leurs sources sont copiées dans `design/*.dc.html`, puis converties en composants Preact par `scripts/dc2preact.py` :
 
 | Source | Composant | CSS |
 | --- | --- | --- |
@@ -30,6 +30,8 @@ npm run check   # rend chaque page et signale les trous vides
 npm run build
 ```
 
+`npm run verify` lance le typage du backend et tous les bancs (verrou de l'aperçu, documents de la synchro, écrans sur données de banc, copie des images, en-têtes, appels du front…). La même chose tourne en CI (`.github/workflows/verify.yml`) à chaque push et pull request, avec la régénération sans écart ; `main` est protégée : un commit n'y va qu'avec ce job vert, donc par une pull request.
+
 Les images (logos des apps, couvertures des vidéos) sont envoyées sur le canevas et servies sous `/_blob/<id>`. Le site sert les mêmes fichiers depuis `public/media/`, et `design/media.json` fait le lien entre les deux.
 
 Ce que fait la conversion :
@@ -46,13 +48,17 @@ Le backend est un projet Convex à part, « swarm » (dossier `convex/`), sans l
 - production : `useful-owl-794` (adresse publique dans `.env.production`).
 
 Ce que fait le backend :
-- `convex/auth.ts` : e-mail + mot de passe (8 caractères minimum, e-mail ramené en minuscules) et Google. Le fournisseur mot de passe est écrit sur l'API publique de Convex Auth pour que les erreurs (identifiants incorrects, compte déjà existant, trop de tentatives) arrivent au site sous forme de codes (`convex/authErrors.ts`) : Convex masque en production le message des erreurs ordinaires. Une inscription avec un e-mail déjà pris ET le bon mot de passe connecte la personne.
+- `convex/auth.ts` : e-mail + mot de passe (8 à 128 caractères, e-mail ramené en minuscules) et Google. Le fournisseur mot de passe est écrit sur l'API publique de Convex Auth pour que les erreurs (identifiants incorrects, compte déjà existant, trop de tentatives) arrivent au site sous forme de codes (`convex/authErrors.ts`) : Convex masque en production le message des erreurs ordinaires. Une inscription sur une adresse déjà inscrite répond « compte existant » sans tester le mot de passe ; les inscriptions sont limitées en nombre (`convex/authLimits.ts`).
 - Google ne s'allume que si `AUTH_GOOGLE_ID` et `AUTH_GOOGLE_SECRET` sont posées sur le déploiement ; sans elles, le bouton affiche un message.
-- `convex/users.ts` : `viewer`, la personne connectée (e-mail, et nom quand Google le donne).
+- `convex/users.ts` : `viewer` (la personne connectée), et ce que font les Réglages : prénom, mot de passe, e-mail, sessions ouvertes, « Déconnecter les autres », fermeture du compte (qui résilie d'abord l'abonnement Whop). `convex/session.ts` : une session fermée perd l'accès tout de suite, sans attendre l'expiration du jeton (1 h).
 
 Côté site, `src/auth.js` fait le pont : les formulaires générés reçoivent `auth` par leurs props. Sur le canevas, il manque et une note de maquette s'affiche.
 
-Parcours : inscription ou connexion réussie → `/app` ; déjà connecté sur `/connexion` ou `/inscription` → `/app` ; `/app/…` sans session → `/connexion` ; `/app/deconnexion` → déconnexion puis `/`. Aucun paiement n'est demandé.
+Parcours : inscription ou connexion réussie → `/app` ; déjà connecté sur `/connexion` ou `/inscription` → `/app` ; `/app/…` sans session → `/connexion` ; `/app/deconnexion` → déconnexion puis `/` ; `/app/payer/mensuel` ou `/app/payer/annuel` → page de paiement Whop (voir « Paiement »).
+
+### Paiement (Whop)
+
+`convex/whop.ts` : « Passer Pro » appelle `whop.checkout`, qui crée chez Whop un paiement pour la formule choisie, l'id du compte Kopycat en `metadata.kopycat_user` (un compte déjà Pro est renvoyé vers Réglages › Formule). Whop appelle `POST /whop/webhook` (`convex/http.ts`) : signature vérifiée, chaque événement traité une fois, adhésion rangée dans `subscriptions`, paiement dans `whopPayments`, puis `users.pro` recalculé (vrai tant qu'une adhésion est active, en essai ou en retard de paiement). Réglages › Formule lit `whop.mine` et résilie ou reprend par `whop.setCancel`. À la main : `npx convex run users:setPro '{"email":"…","pro":true}'` (plus `--prod` en production) ; un événement Whop sur ce compte le recalcule. Détail : `docs/donnees-app.md`, « Abonnement ».
 
 Clés de signature des sessions : `node scripts/setup-auth-env.mjs` (dev) ou `node scripts/setup-auth-env.mjs --prod https://swarm-site-one.vercel.app`. Les valeurs ne sont jamais affichées ; relancer change les clés et déconnecte tout le monde.
 
@@ -63,25 +69,27 @@ Clés de signature des sessions : `node scripts/setup-auth-env.mjs` (dev) ou `no
 3. URI de redirection autorisés : `https://useful-owl-794.eu-west-1.convex.site/api/auth/callback/google` (prod) et `https://blessed-hedgehog-69.eu-west-1.convex.site/api/auth/callback/google` (dev).
 4. Poser les deux valeurs sur le déploiement (tableau de bord Convex → Settings → Environment Variables, ou `npx convex env set --prod AUTH_GOOGLE_ID …` puis `AUTH_GOOGLE_SECRET`, et sans `--prod` pour le dev).
 
-### Déployer le backend
+### Backend : le déployer
 
-Vercel construit le site avec `scripts/vercel-build.mjs`. Si `CONVEX_DEPLOY_KEY` (clé de déploiement de production, tableau de bord Convex → Settings) est réglée dans Vercel, pour l'environnement Production seulement, chaque push sur `main` déploie aussi le backend. Sans elle, le backend se déploie à la main depuis ce dossier, avant de pousser un site qui en dépend : `npx convex deploy --env-file .env.local` (cible : la production du projet « swarm »).
+Vercel construit le site avec `scripts/vercel-build.mjs` (qui renvoie à cette section). Si `CONVEX_DEPLOY_KEY` (clé de déploiement de production, tableau de bord Convex → Settings) est réglée dans Vercel, pour l'environnement Production seulement, chaque push sur `main` déploie aussi le backend. Sans elle, le backend se déploie à la main depuis ce dossier, avant de pousser un site qui en dépend : `npx convex deploy --env-file .env.local` (cible : la production du projet « swarm »).
 
 ## L'app
 
 Les écrans retenus sur le canevas de l'app (https://claude.ai/artifact/FLjy3nFCy6GKVLEnokWv3u) sont copiés dans `design/app/`, leurs images dans `public/media/app/` (`design/app/media.json` fait le lien avec les `/_blob/…` du canevas). `npm run gen` les convertit dans `src/app/pages/` et écrit `src/app/routes.js` depuis les tables de `scripts/dc2preact.py` :
 - `APP_PAGES` : les 13 écrans routés (artboard → adresse → titre de l'onglet) ;
-- `APP_COMPONENTS` : les composants que les écrans importent par `<dc-import name="…">` (palette de recherche, ajout à un dossier, nouvelle alerte). Leurs props `on-close` deviennent `onClose`.
+- `APP_COMPONENTS` : les composants que les écrans importent par `<dc-import name="…">` (palette de recherche, ajout à un dossier, nouvelle alerte, en version ordinateur et téléphone), et ceux que `src/app/main.js` monte lui-même : l'aperçu sans abonnement (`ApercuA`, `MApercuApps`), la fenêtre des formules (`FormulesA`, `MFormules`), le panneau du compte (`MenuCompteA`) et les Réglages (`ReglagesA`). Leurs props `on-close` deviennent `onClose`.
+
+Les canevas de l'app portent des données d'exemple tirées du vrai Radar pour se dessiner sans données : la conversion les retire des écrans générés et les range dans `design/app/samples/<Écran>.js`, que seul `scripts/check.mjs` charge ; elle échoue s'il en reste dans `src/app/pages`, et `scripts/check-public.mjs` fait de même sur le build.
 
 La conversion fait aussi : liens `X.dc.html#ancre` → adresse + ancre ; `onChange` d'un champ texte → `onInput` (à chaque frappe, comme sur le canevas) ; échec si un lien vise un artboard sans adresse.
 
-`app.html` + `src/app/main.js` : une seule page (Vercel réécrit `/app/…` vers `/app`). La session n'est vérifiée qu'une fois ; les liens internes changent d'écran sans recharger ; chaque écran se charge à la demande avec son CSS et celui de ses composants ; ⌘K / Ctrl+K clique le déclencheur `[data-cmdk]` de l'écran (la palette) ; une ancre dans l'adresse fait défiler jusqu'à elle. Les écrans reçoivent `user` ({ prenom, email, initiale }) et `signOut` par leurs props.
+`app.html` + `src/app/main.js` : une seule page (Vercel réécrit `/app/…` vers `/app`). La session n'est vérifiée qu'une fois ; les liens internes changent d'écran sans recharger ; chaque écran se charge à la demande avec son CSS et celui de ses composants ; ⌘K / Ctrl+K clique le déclencheur `[data-cmdk]` de l'écran (la palette) ; une ancre dans l'adresse fait défiler jusqu'à elle. Les écrans reçoivent par leurs props `user` ({ prenom, nom, email, initiale, pro, emailVerified }), `signOut`, `onPlans` (ouvre la fenêtre des formules), `params` et `query` (l'adresse), `data` (leur document), `get` (un autre document), `saved` et `save` (ce que la personne garde).
 
 Données : le vrai Radar, recalculé chaque nuit (cron 1 h 30 UTC, `convex/radarSync.ts` lit l'export de Jarvia et écrit un document par écran dans `boards`). Contrat complet, liens et formes : `docs/donnees-app.md`. Une fiche absente du Radar mène à une page « introuvable », jamais à l'exemple du canevas. Ce que la personne fait est gardé dans son compte (`convex/saved.ts`) : apps/comptes/formats suivis, dossiers, règles d'alerte, déjà lu.
 
 Vérifier un écran sur les vraies données, sans navigateur : exporter le dev (`npx convex export --path x.zip`, puis `boards/documents.jsonl` → `[[clé, document], …]`) et `BOARDS=boards.json node scripts/render-data.mjs <Composant> <clé>` (variables `SAVED`, `PARAMS`, `QUERY` en tête du script).
 
-Mobile (sous 860 px) : les artboards `design/app/M*` (`APP_MOBILE_PAGES`). Tant qu'ils ne sont pas tous branchés, on génère et on commite sans eux : `SWARM_SANS_MOBILE=1 npm run gen` (les téléphones reçoivent alors les écrans desktop).
+Mobile (sous 860 px) : les artboards `design/app/M*` (`APP_MOBILE_PAGES`), tous branchés.
 
 ## Lancer en local
 
@@ -91,17 +99,18 @@ npx convex dev   # dans un autre terminal : pousse convex/ sur le dev et écrit 
 npm run dev
 ```
 
+En local, les adresses suivent `vercel.json` (lu par `vite.config.js`) : `/app/…` sert l'app, `/compte` redirige, les pages s'ouvrent sans `.html`. `npm run build && npm run preview` sert en plus les en-têtes de `vercel.json`, CSP comprise : ce que la prod refuserait se voit dans la console.
+
 ## Déploiement
 
-Vercel, projet relié à ce dépôt : chaque push sur `main` déploie en production. La config est dans `vercel.json` (`cleanUrls` sert `tarifs.html` sur `/tarifs`).
+Vercel, projet relié à ce dépôt : chaque push sur `main` déploie le site en production. La config est dans `vercel.json` : `cleanUrls` (sert `tarifs.html` sur `/tarifs`), réécriture de `/app/…`, cache des fichiers, en-têtes de sécurité (CSP, frame-ancestors, nosniff, Referrer-Policy, Permissions-Policy). Une page qui charge une nouvelle origine (police, image, lecteur) doit l'ajouter à la CSP : `npm run test:vercel` le signale.
 
 ## Reste à brancher
 
-- La vidéo motion sous le hero (l'encart 16:9 l'attend).
 - « Mot de passe oublié » : il faut un service d'envoi d'e-mails (le lien affiche pour l'instant que la réinitialisation n'est pas ouverte).
-- La version mobile de l'app (artboards `M*` en cours de branchement).
 - L'envoi des alertes (e-mail, notification) : les règles filtrent l'écran Alertes, rien n'est envoyé.
-- Le paiement et les pages légales (`#cgv`, `#confidentialite`, `#mentions`, `#contact`).
-- Les avis : emplacements entre crochets, à remplacer par de vrais avis.
-- Les couvertures de vidéos montrent des créateurs tiers et les logos sont des marques : à valider (droit à l'image, usage des marques) avant d'en faire de la publicité.
-- Les chiffres affichés (+1 000 apps, +100 000 comptes, TikTok + Instagram + YouTube Shorts) doivent être vrais au lancement.
+
+## À vérifier avant d'en faire la publicité
+
+- Les couvertures de vidéos montrent des créateurs tiers et les logos sont des marques : droit à l'image, usage des marques.
+- Les avis et les chiffres affichés sur la landing et les tarifs doivent être vrais (audit du 19/11).

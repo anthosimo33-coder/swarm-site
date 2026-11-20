@@ -139,6 +139,16 @@ const RULES = [
   }],
 ];
 
+// Le contrat docs/donnees-app.md nomme chaque champ que la synchro écrit (audit Q47, Q66 : il décrivait des marchés, des
+// pages et des seuils qui n'étaient plus ceux du code).
+RULES.push(['docs/donnees-app.md nomme chaque champ des documents', (docs) => {
+  const doc = readFileSync(new URL('../docs/donnees-app.md', import.meta.url), 'utf8');
+  const keys = new Set();
+  const walk = (x) => { if (Array.isArray(x)) return x.forEach(walk); if (!x || typeof x !== 'object') return; for (const [k, v] of Object.entries(x)) { keys.add(k); walk(v); } };
+  for (const d of docs.values()) walk(d);
+  return [...keys].filter((k) => !new RegExp(`\\b${k}\\b`).test(doc)).map((k) => `champ « ${k} » absent du contrat`);
+}]);
+
 // Nettoyage des bios (audit S31) : ce qui doit partir, et ce qui doit rester.
 const BIOS = [
   ['📧 lea.b@gmail.com | Paris', 'Paris'], ['snap: lea.b | insta @lea_b', null], ['linktr.ee/leab 💕', '💕'], ['contact: lea (at) gmail (dot) com', null],

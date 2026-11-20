@@ -1,4 +1,4 @@
-# Les données de l'app (Radar → Swarm)
+# Les données de l'app (Radar → Kopycat)
 
 Chaque écran de l'app lit **un document** déjà calculé, rangé dans la table `boards` de Convex et
 recalculé chaque nuit depuis le Radar (`convex/radarSync.ts` → `convex/radarModels.ts`). Le routeur
@@ -14,10 +14,20 @@ ceux de la requête (`/app/apps?niche=Foi` → `{ niche: 'Foi' }`). Changer de r
 canevas, la même valeur se lit dans `location.search`.
 
 Un écran peut lire un autre document avec `this.props.get(clé)` (undefined tant qu'il charge, null s'il
-n'existe pas), par exemple les créateurs d'un autre marché ou l'index de recherche.
+n'existe pas), par exemple les créateurs d'un autre marché, une liste d'apps par pays ou l'index de recherche.
 
 Nombres bruts (vues, multiplicateurs, dates en millisecondes) : la mise en forme est faite par l'écran.
 Une miniature (`cover`) ou une icône (`icon`) peut être `null` ou ne pas se charger : l'écran garde un repli.
+
+Ce contrat suit `convex/radarModels.ts` (la source qui fait foi) et `convex/boards.ts` (ce qui est ajouté ou retiré à la
+lecture). Les bancs `npm run test:radar` et `npm run check:data` vérifient les documents et leur rendu.
+
+## Ce que boards.get ajoute à la lecture
+
+- `cover` d'une vidéo : l'adresse `/cover/<id>?v=…&s=…` du backend, signée (`convex/coverSign.ts`), qui sert la copie
+  rangée par Kopycat ; jamais le lien signé de TikTok, qui expire ;
+- `avatar` sur tout objet qui a un `handle` et des `fans` (créateur, auteur d'une vidéo) : `/avatar/<handle>?v=…&s=…` ;
+- compte sans abonnement : voir « L'aperçu » plus bas.
 
 ## Liens
 
@@ -34,86 +44,134 @@ Mobile : mêmes règles avec `MFiche`, `MVideo`, `MFormatFiche`, `MCreateurFiche
 
 Une requête suit l'écran : `'MApps.dc.html?niche=' + nom` → `/app/apps?niche=<nom>`.
 Chaque vidéo citée par un document (vignette, reprise d'un format, alerte) a sa page `video:<id>`.
+Une app ou un format cité sans fiche porte `page: false` (app en pause, fusion sans suite, format hors des 150 premiers) :
+l'écran le nomme sans lien. Un ancien slug d'app fusionnée mène à la fiche de l'app qui l'a reprise (`apps:merged`).
 
 ## Marchés
 
-Le marché d'un compte est la langue de ses vidéos : `FR` France, `US` anglophones, `MX` Amérique latine,
-`ES` Espagne, `BR` Brésil et Portugal, `XX` autres langues (pas de drapeau pour `XX`).
+Un marché est un **pays** (code ISO à deux lettres, un drapeau), jamais une langue ni un groupe de pays (décision du
+14/11). Le pays d'un compte : celui que le Radar relève, sinon celui de création de ses vidéos, sinon celui lu par
+Kopycat sur la page publique d'une de ses vidéos, sinon celui de son app quand ses autres comptes y sont presque tous.
+`XX` : pays inconnu. Tous les pays où il y a au moins un créateur sont proposés (une liste avec recherche, plus
+d'onglets ni de seuil).
+
+`markets` : `[[code, libellé, nombre de créateurs]]`, du plus fourni au moins fourni.
+`otherLang` : la langue d'un compte quand ce n'en est pas une de son pays (« France · en espagnol »), sinon absent ou null.
 
 ## Une vidéo en vignette (`VideoCard`)
 
-`{ id, platform: 'tiktok'|'instagram', handle, app: slug|null, views, x: multiplicateur|null, publishedAt, cover, hook }`
+`{ id, platform: 'tiktok'|'instagram', handle, app: slug|null, views, x: multiplicateur|null, publishedAt, cover, hook,
+paid?: placement payé, otherLang?, carousel?: nombre de photos, kind?: type de contenu lu par l'IA }`
 
 ## Les documents
 
 ### `apps` — classement (AppsA, MApps)
-`{ updatedAt, markets: [[code, libellé]], niches: [nom], apps: [App] }`, apps triées par `views30`.
-`App = { slug, name, niche, kind: 'app'|'saas'|null, icon, accounts, videosPerWeek, views30, views30Ig, views7, views7Ig, weeks: [6 nombres, du plus ancien au plus récent], weekDelta: ratio|null, bestX, top10Share: ratio|null, markets: [[code, %]], trackedSince, isNew, released: ms|null, videoCount, store: URL App Store|null, top: [VideoCard ×3] }`
+`{ updatedAt, markets, niches: [nom], apps: [App], marketApps: [[code, nombre d'apps actives dans ce pays]] }`, apps triées par `views30`.
+`App = { slug, name, niche, icon, kind: 'app'|'saas'|'jeu_mobile'|null, accounts, videosPerWeek, dayEnd, days: [vues par jour ×42],
+daysIg, views30, views30Ig, views7, views7Ig, weeks: [6 nombres, du plus ancien au plus récent], weekDelta: ratio|null, bestX,
+top10Share: ratio|null, videoCount, placements, top: [VideoCard ×3], markets: [[code, %]], trackedSince, isNew, store: URL App Store|null }`
 
-Règles (15/11/2026, lot 2 du dig Radar → Swarm) :
+Règles :
 - une app n'est listée qu'avec au moins 2 comptes prouvés (`MIN_APP_ACCOUNTS`) ; sa fiche `app:<slug>` existe quand même ;
-- `accounts`, vues, top, meilleure vidéo et marchés ne comptent que les comptes prouvés (`proof.by` non null) et les vidéos qui citent l'app (`cites` non faux, règle du Radar) ;
-- `niche` : la niche de la fiche du Radar (16 niches), sinon la table `NICHES` de Swarm, sinon « Autres » ;
-- `kind` : `app` (fiche App Store, campagne d'app), `saas` (logiciel ou site web), null si on ne sait pas ;
+- vues, top, meilleure vidéo et marchés ne comptent que les vidéos qui citent l'app (`cites` non faux) **et** dont le
+  compte la pousse : actif et prouvé (`proof.by` non null). Les vidéos d'un compte mis en pause dans le Radar ne comptent
+  plus (audit Q65, 19/11) ;
+- `accounts` : ses créateurs, comptes actifs et prouvés hors placements payés ; `placements` : comptes en placement payé
+  dont des vidéos comptent dans ses vues ;
+- `markets` : part de ses vues 30 j par pays de ses comptes, 100 pile, `XX` en dernier ;
+- `niche` : la niche de la fiche du Radar (16 niches), sinon la table `NICHES` de Kopycat, sinon « Autres » ;
 - `isNew` : sortie sur l'App Store il y a 60 jours au plus, sinon réseau dont la première vidéo a 30 jours au plus.
+
+### `apps:<pays>`, `apps@<plateforme>`, `apps:<pays>@<plateforme>` — classement filtré (AppsA, MApps)
+Par pays des comptes et/ou plateforme (`tiktok`, `instagram`) : `{ updatedAt, market: code|'ALL', platform: …|'ALL', niches,
+apps: [App recalculée sur ces vidéos + share: part du pays dans les vues de l'app|null] }`.
+
+### `apps:top` — l'aperçu (ApercuA, MApercuApps)
+`{ updatedAt, apps: [App + standing: { rank, of, share, niche }] ×3, total: nombre d'apps listées }`. `standing` : son rang
+réel, dans sa niche si elle en compte au moins 2, sinon parmi toutes.
+
+### `apps:merged` — apps fusionnées
+`{ updatedAt, merged: [[ancien slug, slug de l'app qui l'a reprise]] }`, lu par `boards.get` et `saved.get`.
 
 ### `app:<slug>` — fiche d'une app (FicheA, MFiche)
 L'`App` ci-dessus, plus `videos: [VideoCard ×12]` (les plus vues sur 30 j, ordre du lecteur),
-`formats: [{ id, kind: 'hook'|'sound', label, accounts, medX, maxViews }]`,
-`creators: [{ handle, fans, median, posts7d, market, page: a-t-il une fiche ?, proof }]`.
+`formats: [{ id, kind: 'hook'|'sound', label, accounts, medX, maxViews, page? }] ×8`,
+`creators: [{ handle, fans, median, posts7d, market, page: a-t-il une fiche ? }] ×6` (les 6 que l'écran montre).
 
 ### `video:<id>` — lecteur (VideoA, MVideo)
-`{ id, platform, url, handle, fans, normal: vues médianes du compte, app: {slug, name, icon, niche}|null, market, region,
-publishedAt, durationSec, views, x, likes, comments, shares, saves, snapshots: [{at, views}], hook, caption,
-transcript, music, cover, playlist: [id…] }` — `playlist` = les vidéos de l'app (même ordre que `app:<slug>`.videos).
+`{ id, platform, url, handle, fans, normal: vues médianes du compte, paid, app: {slug, name, icon, niche, page?}|null, market,
+region, otherLang, carousel, kind, publishedAt, durationSec, views, x, likes, comments, shares, saves, snapshots: [{at, views}] ×12,
+hook, caption, transcript, music, cover, playlist: [id…] }` — `playlist` = les vidéos de l'app (même ordre que
+`app:<slug>`.videos). `url` mène toujours à tiktok.com ou instagram.com en https (sinon reconstruite, audit S34).
+Une vidéo notée introuvable (supprimée, compte privé) n'a pas de fiche.
 
 ### `formats` — formats repris (FormatsB, MFormats)
-`{ updatedAt, markets, formats: [Format] }` (repris par au moins 3 comptes, actifs sur 21 jours),
+`{ updatedAt, markets, formats: [Format] }` (repris par au moins 3 comptes, actifs sur 21 jours, 150 au plus),
 triés par nombre de comptes puis multiplicateur médian.
-`Format = { id, kind, label, accounts, apps: [{slug, name, icon}], niche, market, maxViews, medX, wins: reprises au-dessus de leur normale, n: reprises, lastPostAt, firstSeenAt, members: [{ handle, videoId, views, x, publishedAt, cover }] }` (4 membres ici, 30 dans la fiche).
+`Format = { id, kind, label, accounts, apps: [{slug, name, icon, page?}], niche, market, maxViews, medX, wins: reprises au-dessus
+de leur normale, n: reprises, lastPostAt, members: [{ handle, videoId, views, x, publishedAt, cover }] }` (4 membres ici, 30 dans la fiche).
 
 ### `format:<id>` — fiche d'un format (FormatFicheA, MFormatFiche)
 Le `Format` complet (`members` jusqu'à 30).
 
-### `creators:<marché>` — créateurs (CreateursA/B, MCreateurs…)
-Marché `FR`, `US`, `MX`, `ES`, `BR`, `XX` ou `ALL`. `{ updatedAt, market, total, creators: [Creator] }` (200 au plus, triés par vues médianes).
-`Creator = { handle, bio, fans, median, posts7d, lastPostAt, market, app: {slug, name, icon, niche}|null, proof, igHandle, best: [VideoCard ×3] }`
+### `creators:<pays>` — créateurs (CreateursA/B, MCreateurs, MCreateursCartes)
+Pays (code ISO) ou `ALL`. Tous les créateurs du pays, par pages de 500 (`CREATOR_PAGE`) :
+`creators:<pays>` = `{ updatedAt, market, markets, total, pages, creators: [Creator] }` (la 1re page),
+`creators:<pays>:2`, `:3`… = `{ updatedAt, market, page, creators }`. Ordre : les comptes actifs d'abord, puis ceux qui
+n'ont rien publié depuis plus de 30 jours, chaque groupe par vues médianes.
+`Creator = { handle, bio, fans, median, posts7d, lastPostAt, market, otherLang, kind, gender, app: {slug, name, icon, niche, page?}|null, best: [VideoCard ×3] }`
 
-`proof = { by: 'handle'|'bio'|'videos'|'seed'|'manual', cites, of }|null` : ce qui relie le compte à son app (son pseudo, sa bio,
-`cites` de ses `of` dernières vidéos, ou choisi par l'équipe). Un compte que plus rien ne prouve (`by` null) n'apparaît nulle part.
-Les onglets de marché (`markets`) ne gardent que les marchés d'au moins 10 créateurs ; les autres restent sur chaque créateur et dans `ALL`.
+- `bio` : sans e-mail, téléphone, pseudo d'un autre réseau, lien vers une page de liens ou une messagerie, lieu ni âge
+  (`cleanBio`, audit S31) ;
+- ce qui relie un compte à son app (la preuve du Radar) et son compte Instagram ne sortent jamais du Radar ;
+- un compte que plus rien ne prouve (`proof.by` null) et un compte en placement payé n'apparaissent pas.
 
 ### `creator:<handle>` — fiche d'un créateur (CreateurFicheA, MCreateurFiche)
-Le `Creator`, plus `videos: [VideoCard ×15]` (les plus récentes) et `formats: [{ id, kind, label, accounts }]`.
+Le `Creator`, plus `videos: [VideoCard ×15]` (les plus récentes) et `formats: [{ id, kind, label, accounts, page? }] ×10`.
 
 ### `alerts` — alertes (AlertesA, MAlertes)
-`{ updatedAt, videos: [VideoCard + { app: {slug, name, icon}|null, market, region }] (40 vidéos de la semaine, triées par multiplicateur), formats: [Format] (devenus des formats cette semaine) }`
+`{ updatedAt, videos: [{ id, platform, handle, app: {slug, name, icon, page?}|null, views, x, publishedAt, cover, hook, market, region, paid? }]
+(40 vidéos de la semaine, triées par multiplicateur), formats: [Format, 3 membres] (devenus des formats cette semaine, 20 au plus) }`
 
 ### `home` — accueil (Main, MAccueil)
-`{ updatedAt, niches: [nom], apps: [{slug, name, icon, views7, weekDelta, bestX}] ×4, videos: [carte d'alerte] ×4, formats: [{id, kind, label, accounts, medX}] ×3 }`
+`{ updatedAt, niches: [nom] ×6, apps: [{slug, name, icon, views7, weekDelta, bestX}] ×4, videos: [carte d'alerte] ×4 }`.
+Les formats de l'accueil viennent du document `formats`.
 
 ### `stats` — ce que le Radar suit (pages publiques, « Relevé le … »)
-`{ updatedAt, at: ms du passage, apps: apps listées, accounts: comptes prouvés, markets: onglets de marché }` — réécrit à chaque
-synchronisation. Lisible sans compte par `stats.get` (convex/stats.ts), arrondi vers le bas par `src/stats.js`.
+`{ updatedAt, at: ms du passage, apps: apps listées, accounts: créateurs (comptes prouvés, hors placements), markets: pays }`
+— réécrit à chaque synchronisation. Lisible sans compte par `stats.get` (convex/stats.ts), arrondi vers le bas par `src/stats.js`.
 
-### `search` — recherche ⌘K (Palette)
-`{ apps: [{slug, name, icon, niche, views30}], creators: [{handle, app, fans, median}], formats: [{id, kind, label, accounts}] }`
+### `search` — recherche ⌘K (Palette, MPalette)
+`{ updatedAt, apps: [{slug, name, icon, niche, views30}], creators: [{handle, app: nom|null, fans, median}] ×4 000, creatorPages,
+formats: [{id, kind, label, accounts}] ×150 }` ; les créateurs suivants dans `search:creators:2`, `:3`… (`{ updatedAt, creators }`).
 
 ## L'aperçu (compte sans abonnement)
-Un compte dont `users.pro` n'est pas `true` reçoit de `boards.get` (19/11) :
-- `apps` : le top 3 du classement seulement (mêmes champs), plus `total` (nombre d'apps suivies) et `preview: true` ;
-- `app:<slug>` et `video:<id>` : le document si l'app est dans ce top 3, sinon `{ locked: true }` ;
+Un compte dont `users.pro` n'est pas `true` reçoit de `boards.get` :
+- `apps` : `{ updatedAt, apps, total, preview: true }` tirés d'`apps:top`, rien d'autre (ni marchés, ni apps par pays,
+  ni niches : audit S29) ;
+- `app:<slug>` et `video:<id>` : le document si l'app est dans ce top 3 (ou un ancien slug d'une de ces apps), sinon
+  `{ locked: true }`, même pour une vidéo inconnue ou introuvable ;
 - `search` : les apps du top 3, aucun créateur ni format ;
 - `stats` : inchangé ;
-- tout le reste : `{ locked: true }` (verrouillé, distinct de `null` = absent).
+- tout le reste : `{ locked: true }` (verrouillé, distinct de `null` = absent), sans rien lire.
 
 À l'écran (`src/app/main.js`) : Apps devient l'aperçu (`ApercuA`, `MApercuApps`) ; Accueil y mène ; tout écran fermé ouvre
-la fenêtre des formules (`FormulesA`, `MFormules`). Passer un compte en Pro : `npx convex run users:setPro
-'{"email":"…","pro":true}'` (plus `--prod` en production). Test du verrou : `npm run test:apercu`.
+la fenêtre des formules (`FormulesA`, `MFormules`). Test du verrou : `npm run test:apercu` (et ses mutants).
+
+## Abonnement (Whop)
+`users.pro` ouvre tout Kopycat. Il est tenu par Whop (`convex/whop.ts`) :
+- « Passer Pro » appelle `whop.checkout` (action, compte connecté et pas déjà Pro), qui crée chez Whop un paiement pour la
+  formule choisie, avec l'id du compte Kopycat en `metadata.kopycat_user`, et renvoie l'adresse de la page de paiement ;
+- Whop appelle `POST /whop/webhook` (convex/http.ts) ; la signature est vérifiée, chaque événement n'est traité qu'une fois.
+  L'adhésion est rangée dans `subscriptions`, le paiement dans `whopPayments`, puis `users.pro` est recalculé : vrai tant qu'une
+  adhésion du compte est `active`, `trialing` ou `past_due` ;
+- Réglages › Formule lit `whop.mine` (adhésion, reçus) et résilie ou reprend par `whop.setCancel`.
+À la main (essai, geste commercial) : `npx convex run users:setPro '{"email":"…","pro":true}'` (plus `--prod` en
+production) ; un événement Whop sur ce compte le recalcule ensuite.
 
 ## Ce que la personne garde (`saved`)
 
-Propre à chaque compte, enregistré chez Swarm (`convex/saved.ts`) et gardé d'un écran et d'une visite à l'autre.
+Propre à chaque compte, enregistré chez Kopycat (`convex/saved.ts`) et gardé d'un écran et d'une visite à l'autre.
 `this.props.saved(clé)` : la valeur (undefined tant qu'elle charge, null si rien encore) ;
 `this.props.save(clé, valeur)` : remplace la valeur entière, visible aussitôt à l'écran.
 Sur le canevas, ces props n'existent pas : l'écran garde un état local, comme avant.
@@ -122,8 +180,10 @@ Sur le canevas, ces props n'existent pas : l'écran garde un état local, comme 
 | --- | --- |
 | `follows` | `{ apps: [slug], creators: [handle], formats: [id] }` — ce que la personne suit (cloche, « Suivre ») |
 | `folders` | `[{ id, name, createdAt, items: [{ kind: 'app'\|'video'\|'format'\|'creator', id, label, cover, at }] }]` |
-| `alertRules` | `[{ id, createdAt, quoi: 'compte'\|'video'\|'format', niche: nom\|null, seuil: nombre, marche: 'FR'\|'US'\|'MX'\|'ES'\|'BR'\|'XX'\|null }]` — « montre-moi quand un compte / une vidéo / un format de <niche> fait <seuil>× sa normale (<marché>) » ; aucune alerte n'est envoyée, elles filtrent l'écran Alertes |
+| `alertRules` | `[{ id, createdAt, quoi: 'compte'\|'video'\|'format', niche: nom\|null, seuil: nombre, marche: code pays\|null }]` — « montre-moi quand un compte / une vidéo / un format de <niche> fait <seuil>× sa normale (<pays>) » ; aucune alerte n'est envoyée, elles filtrent l'écran Alertes |
 | `seen` | `{ alerts: date en ms }` — « Tout marquer comme lu » |
 
-Une valeur pèse au plus 256 Ko. Les identifiants (`id` d'un dossier, d'une règle) sont créés par l'écran
-(par ex. `Date.now().toString(36)`).
+Une valeur pèse au plus 256 Ko, comptés comme Convex les compte. Sa forme est vérifiée : champs connus du bon type,
+quelques champs simples de plus permis (texte court, nombre, oui/non, null), jamais une arborescence (`FORME_INVALIDE`).
+Les identifiants (`id` d'un dossier, d'une règle) sont créés par l'écran (par ex. `Date.now().toString(36)`). Une app
+gardée sous l'ancien slug d'une app fusionnée revient sous le nouveau (`apps:merged`).
