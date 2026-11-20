@@ -89,13 +89,13 @@ const appPages = pages('src/app/pages');
 
 // ─── Constats bas ────────────────────────────────────────────────────────────────────────────────────────────────
 /** Lance du Python avec scripts/dc2preact.py importé comme module `d` (DC2PREACT : une autre version). */
-const dc2 = (code, env = {}) => {
+const dc2 = (code, env = {}, input = '') => {
   const file = process.env.DC2PREACT ? path.resolve(process.env.DC2PREACT) : path.join(root, 'scripts/dc2preact.py');
   const r = spawnSync('python3', ['-c', `import importlib.util, sys, json
 spec = importlib.util.spec_from_file_location('dc2preact', ${JSON.stringify(file)})
 d = importlib.util.module_from_spec(spec); spec.loader.exec_module(d)
 d.ROOT = __import__('pathlib').Path(${JSON.stringify(root)})
-${code}`], { encoding: 'utf8', cwd: root, env: { ...process.env, ...env } });
+${code}`], { encoding: 'utf8', cwd: root, env: { ...process.env, ...env }, input });
   return { out: r.stdout.trim(), err: (r.stderr || '').trim(), status: r.status };
 };
 
@@ -107,6 +107,48 @@ ${code}`], { encoding: 'utf8', cwd: root, env: { ...process.env, ...env } });
   const canvases = fs.readdirSync(path.join(root, 'design/app')).filter((f) => f.endsWith('.dc.html')).map((f) => fs.readFileSync(path.join(root, 'design/app', f), 'utf8')).join('\n');
   const dead = (v?.links ?? []).filter((k) => !fs.existsSync(path.join(root, 'design/app', k)) && !canvases.includes(k));
   ok(v && !dead.length, `Q33, F22 : chaque correspondance de lien vise un canevas existant ou cité (${dead.join(', ') || 'aucune morte'})`);
+}
+
+// ─── Q43 : un canevas que la conversion rendrait faux arrête la génération, avec le fichier ───
+{
+  const canvas = (tpl, script = 'class Component extends DCLogic {\n  renderVals() { return { x: 1, go: () => {}, a: [1] }; }\n}', helmet = '') =>
+    `<x-dc><helmet>${helmet}</helmet>${tpl}</x-dc>\n<script type="text/x-dc" data-dc-script>\n${script}\n</script>`;
+  const CASES = [
+    ['code avant la classe', canvas('<div>{{x}}</div>', 'const K = 3;\nclass Component extends DCLogic {\n  renderVals() { return { x: K }; }\n}'), 'err'],
+    ['code après la classe', canvas('<div>{{x}}</div>', 'class Component extends DCLogic {\n  renderVals() { return { x: f() }; }\n}\nfunction f() { return 1; }'), 'err'],
+    ['trou {{a[0]}}', canvas('<span>/ {{a[0]}}</span>'), 'err'],
+    ['condition {{!x}}', canvas('<sc-if value="{{!x}}"><b>oui</b></sc-if>'), 'err'],
+    ['gestionnaire « {{go}}» précédé d\'une espace', canvas('<button onClick=" {{go}}">ok</button>'), 'err'],
+    ['<div/> hors SVG', canvas('<section><div class="sc"/><span>après</span></section>'), 'err'],
+    ['balise jamais fermée', canvas('<section><div>texte</div>'), 'err'],
+    ['<style> à attribut inconnu', canvas('<div>x</div>', undefined, '<style data-x="1">.b{color:red}</style>'), 'err'],
+    ['regex avec accolade dans la classe', canvas('<div>{{x}}</div>', 'class Component extends DCLogic {\n  renderVals() { const r = /[}]/; return { x: r.test("}") ? 1 : 0 }; }\n}'), 'ok'],
+    ['SVG auto-fermant', canvas('<svg viewBox="0 0 2 2"><path d="M0 0"/></svg>'), 'ok'],
+    ['<style media>', canvas('<div class="b">x</div>', undefined, '<style media="(max-width: 600px)">.b{color:red}</style>'), 'ok', (o) => /@media \(max-width: 600px\)\{\.b\{color:red\}\}/.test(o.css)],
+    ['keyframes : renommés dans les animations seulement', canvas('<p style="animation: pulse 2s infinite">Tape pulse 2s pour lancer</p><i style="animation: {{anim}}"></i>',
+      'class Component extends DCLogic {\n  renderVals() { return { anim: \'pulse 1s\', msg: \'Tape pulse 2s pour lancer\' }; }\n}', '<style>@keyframes pulse{to{opacity:0}}.x{animation:pulse 3s}</style>'), 'ok',
+      (o) => /@keyframes t-pulse/.test(o.css) && /animation:t-pulse 3s/.test(o.css) && /animation: t-pulse 2s/.test(o.js) && /"Tape pulse 2s pour lancer"/.test(o.js) && /anim: 't-pulse 1s'/.test(o.js) && /'Tape pulse 2s pour lancer'/.test(o.js)],
+  ];
+  const r = dc2(`import tempfile, pathlib, shutil, atexit, contextlib
+tmp = pathlib.Path(tempfile.mkdtemp(dir=d.ROOT, prefix='.q43-'))
+atexit.register(shutil.rmtree, tmp, True)
+for k in ('src', 'pages', 'styles'):
+    (tmp / k).mkdir()
+d.GROUPS['site'].update({'src': tmp / 'src', 'pages': tmp / 'pages', 'styles': tmp / 'styles'})
+out = []
+for i, text in enumerate(json.loads(sys.stdin.read())):
+    (tmp / 'src' / f'T{i}.dc.html').write_text(text)
+    try:
+        with contextlib.redirect_stdout(sys.stderr):
+            d.convert(f'T{i}.dc.html', 'T', 't')
+        out.append({'r': 'ok', 'js': (tmp / 'pages' / 'T.js').read_text(), 'css': (tmp / 'styles' / 't.css').read_text()})
+    except BaseException as e:
+        out.append({'r': 'err', 'msg': str(e)})
+print(json.dumps(out))`, {}, JSON.stringify(CASES.map((c) => c[1])));
+  const got = r.status === 0 ? JSON.parse(r.out) : [];
+  const bad = CASES.map((c, i) => [c, got[i]]).filter(([[, , want, check], g]) => !g || g.r !== want || (want === 'ok' && check && !check(g)) || (want === 'err' && !/T\d+\.dc\.html/.test(g.msg)))
+    .map(([[name, , want], g]) => `${name} : ${g ? g.r : r.err.split('\n').pop()}${g?.r === 'err' && want === 'ok' ? ` (${g.msg.slice(0, 80)})` : ''}`);
+  ok(got.length === CASES.length && !bad.length, `Q43 : ${CASES.filter((c) => c[2] === 'err').length} canevas piégés arrêtent la génération avec leur fichier, ${CASES.filter((c) => c[2] === 'ok').length} canevas valides passent${bad.length ? ' ; faux : ' + bad.join(' ; ') : ''}`);
 }
 
 end();
