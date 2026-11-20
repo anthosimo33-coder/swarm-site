@@ -342,6 +342,16 @@ export const getStage = internalQuery({
   },
 });
 
+/** Des fichiers d'étape rangés, notés aussitôt (audit Q55) : effacés avec l'étape même si elle est coupée avant de finir. */
+export const stageAdd = internalMutation({
+  args: { id: v.id("syncRuns"), files: v.array(v.id("_storage")) },
+  handler: async (ctx, { id, files }) => {
+    const r = await ctx.db.get(id);
+    if (!r?.stage) return;
+    await ctx.db.patch(id, { stage: { ...r.stage, extra: [...(r.stage.extra ?? []), ...files] }, beatAt: Date.now() });
+  },
+});
+
 /** Une étape de groupe finie : le fichier de ce qu'elle transmet. */
 export const groupDone = internalMutation({
   args: { id: v.id("syncRuns"), i: v.number(), out: v.id("_storage"), tail: v.id("_storage"), written: v.number() },
@@ -375,8 +385,8 @@ export const staleStages = internalQuery({
     const runs = await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(30);
     const now = Date.now();
     return runs.filter((r) => r._id !== keep && r.stage && !r.cleaned && !runAlive(r, now)).map((r) => {
-      const st = r.stage as { globals?: Record<string, string[]>; outs?: (string | null)[]; tails?: (string | null)[] };
-      return { id: r._id, ids: [...Object.values(st.globals ?? {}).flat(), ...[...(st.outs ?? []), ...(st.tails ?? [])].filter((x): x is string => !!x)] };
+      const st = r.stage as { globals?: Record<string, string[]>; outs?: (string | null)[]; tails?: (string | null)[]; extra?: string[] };
+      return { id: r._id, ids: [...new Set([...Object.values(st.globals ?? {}).flat(), ...[...(st.outs ?? []), ...(st.tails ?? []), ...(st.extra ?? [])].filter((x): x is string => !!x)])] };
     });
   },
 });
@@ -386,8 +396,8 @@ export const stageCleaned = internalMutation({
   handler: async (ctx, { id }) => {
     // Les listes d'apps par groupe ne servent plus : seul un résumé reste (les passages sont relus 20 par 20).
     const r = await ctx.db.get(id);
-    const st = (r?.stage ?? {}) as { groups?: unknown[]; retries?: unknown; writtenBy?: unknown; heapPrep?: unknown };
-    await ctx.db.patch(id, { cleaned: true, stage: { groups: st.groups?.length ?? 0, retries: st.retries ?? null, writtenBy: st.writtenBy ?? null, heapPrep: st.heapPrep ?? null } });
+    const st = (r?.stage ?? {}) as { groups?: unknown[]; retries?: unknown; writtenBy?: unknown; heapPrep?: unknown; rssPrep?: unknown };
+    await ctx.db.patch(id, { cleaned: true, stage: { groups: st.groups?.length ?? 0, retries: st.retries ?? null, writtenBy: st.writtenBy ?? null, heapPrep: st.heapPrep ?? null, rssPrep: st.rssPrep ?? null } });
   },
 });
 

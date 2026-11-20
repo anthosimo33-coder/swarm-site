@@ -338,6 +338,55 @@ function memDb() {
   ok(res.copied === 0 && gone.includes("f-v:7000000000000000005"), `Q62 : lot refusé par saveMedia : fichier effacé, rien compté copié (${res.copied} copiées, effacés : ${gone.join() || "aucun"})`);
 }
 
+// ─── Préparation : fichiers d'étape (Q55), échéance (Q68), mémoire (Q70) ─────────────────────────────────────────
+{
+  const realFetch = globalThis.fetch, realNow = Date.now, realMem = process.memoryUsage;
+  const exportPage = async () => new Response(JSON.stringify({ rows: [], cursor: "", done: true }), { status: 200, headers: { "content-type": "application/json" } });
+  /** La préparation (run) sur un export vide : ce qu'elle range, efface, note et termine. */
+  const prep = async ({ storeFails = 0, minutesPerExport = 0, heapMo = 100 } = {}) => {
+    let clock = 1_800_000_000_000, stored = 0;
+    Date.now = () => clock;
+    globalThis.fetch = async () => { clock += minutesPerExport * 60_000; return exportPage(); };
+    process.memoryUsage = () => ({ rss: (heapMo + 80) * 1e6, heapUsed: heapMo * 1e6, external: 0, arrayBuffers: 0, heapTotal: 0 });
+    const t = actionCtx({ startRun: "run1", staleStages: [], appStorePage: { items: [], cursor: "", done: true } });
+    t.args = [];
+    const mut = t.ctx.runMutation;
+    t.ctx.runMutation = async (r, a) => { t.args.push([r.__path.split(".").pop(), a]); return mut(r, a); };
+    const deleted = [];
+    t.ctx.storage.store = async () => { stored++; if (storeFails && stored === storeFails) throw new Error("stockage indisponible"); return "f" + stored; };
+    t.ctx.storage.delete = async (id) => { deleted.push(id); };
+    try { await quiet(() => sync.run.handler(t.ctx, {})); } catch { /* l'erreur remonte, comme en vrai */ }
+    Date.now = realNow; globalThis.fetch = realFetch; process.memoryUsage = realMem;
+    const stages = t.args.filter(([fn]) => fn === "setStage").map(([, a]) => a.stage);
+    const end = t.args.find(([fn]) => fn === "endRun")?.[1];
+    return { t, deleted, stages, end, noted: t.args.filter(([fn]) => fn === "stageAdd").flatMap(([, a]) => a.files) };
+  };
+  const q55 = await prep({ storeFails: 3 });
+  ok(q55.deleted.sort().join() === "f1,f2", `Q55 : préparation qui échoue au 3e fichier : les 2 déjà rangés sont effacés (${q55.deleted.join() || "aucun"})`);
+  const ok55 = await prep();
+  ok(ok55.noted.length >= 5 && ok55.stages.length >= 2 && ok55.stages[0].globals && ok55.stages.at(-1).groups, `Q55 : l'étape est enregistrée avant les fichiers, chacun noté dès qu'il est rangé (${ok55.noted.length} notés, ${ok55.stages.length} enregistrements)`);
+  const q68 = await prep({ minutesPerExport: 3 });
+  ok(q68.end?.ok === false && /temps/.test(q68.end?.error ?? "") && !q68.stages.some((x) => x.groups && Array.isArray(x.groups) && x.outs && x.globals?.apps?.length), `Q68 : une préparation trop lente échoue proprement avant la coupure (${q68.end ? `${q68.end.ok} ${q68.end.error}` : "pas de fin notée"})`);
+  const first = await prep({ heapMo: 300 }), second = await prep({ heapMo: 50 });
+  const heapOf = (r) => r.stages.at(-1)?.heapPrep;
+  ok(heapOf(first) === 300 && heapOf(second) === 50 && second.stages.at(-1)?.rssPrep === 130, `Q70 : pic de tas remis à zéro à chaque étape, RSS noté (1er ${heapOf(first)}, 2e ${heapOf(second)} Mo, RSS ${second.stages.at(-1)?.rssPrep})`);
+  const src = fs.readFileSync(path.join(dir, "radarSync.ts"), "utf8");
+  ok(/memStopMo/.test(src) && /rssMaxMo/.test(src), "Q70 : le seuil d'arrêt et le pic de RSS sont notés dans syncRuns.counts");
+  // Écriture des pages : arrêtée à 6 min, pour laisser 3 min au reste de l'étape avant la coupure de 10 min.
+  ok(typeof sync.writePages === "function", "Q68 : writePages éprouvable");
+  if (sync.writePages) {
+    let clock = 1_800_000_000_000;
+    Date.now = () => (clock += 2_000); // 2 s par page
+    const boards = new Map(Array.from({ length: 1000 }, (_, i) => [`video:${i}`, { i }]));
+    const w = actionCtx({ boardHashes: (a) => a.keys.map(() => null), saveBoards: (a) => a.items.length });
+    const start = clock;
+    const res = await quiet(() => sync.writePages(w.ctx, boards, new Map(), 1, start));
+    const minutes = (clock - start) / 60_000;
+    Date.now = realNow;
+    ok(res.stopped === "temps écoulé" && minutes <= 6.2, `Q68 : l'écriture des pages s'arrête à 6 min (${minutes.toFixed(1)} min, ${res.written} écrites)`);
+  }
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);
