@@ -80,7 +80,7 @@ const RULES = [
     const out = [];
     const byId = new Map(raw.apps.map((a) => [a.id, a]));
     const canon = (a) => { for (let i = 0; a && a.mergedInto && i < 5; i++) a = byId.get(a.mergedInto) ?? a; return a; };
-    const map = docs.get('apps:merged')?.merged ?? {};
+    const map = Object.fromEntries(docs.get('apps:merged')?.merged ?? []);
     for (const a of raw.apps) {
       if (!a.mergedInto) continue;
       const c = canon(a);

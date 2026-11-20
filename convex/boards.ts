@@ -41,9 +41,13 @@ function withCovers(data: unknown): unknown {
  * filtrées par la synchro (radarModels.ts, `missing`), et une miniature cassée entre deux passages est masquée par
  * l'écran (src/app/main.js, `is-broken`).
  */
-async function read(ctx: QueryCtx, key: string): Promise<unknown> {
+async function read(ctx: QueryCtx, key: string, followed = false): Promise<unknown> {
   const row = await ctx.db.query("boards").withIndex("by_key", (q) => q.eq("key", key)).first();
-  if (!row) return null;
+  if (!row) {
+    // Une app fusionnée : sa fiche est celle de l'app qui l'a reprise (audit Q25 ; un seul saut).
+    const to = key.startsWith("app:") && !followed ? await mergedInto(ctx, key.slice("app:".length)) : null;
+    return to ? read(ctx, `app:${to}`, true) : null;
+  }
   if (key.startsWith("video:")) {
     const miss = await ctx.db.query("mediaMiss").withIndex("by_key", (q) => q.eq("key", `v:${key.slice("video:".length)}`)).first();
     if (miss) return null; // fiche « introuvable »
@@ -55,6 +59,15 @@ async function read(ctx: QueryCtx, key: string): Promise<unknown> {
     return withCovers(JSON.parse(parts.map((p) => p.text).join("")));
   }
   return withCovers(row.data);
+}
+
+/**
+ * L'app qui a repris une app fusionnée, d'après « apps:merged » (convex/radarModels.ts, audit Q25), ou null. Un lien
+ * gardé (dossier, adresse notée) vers l'ancien slug mène ainsi à la bonne fiche au lieu de « fiche absente ».
+ */
+async function mergedInto(ctx: QueryCtx, slug: string): Promise<string | null> {
+  const d = (await read(ctx, "apps:merged", true)) as { merged?: [string, string][] } | null;
+  return d?.merged?.find(([from]) => from === slug)?.[1] ?? null;
 }
 
 /**
@@ -92,7 +105,11 @@ async function preview(ctx: QueryCtx, key: string): Promise<unknown> {
   const open = new Set((top?.apps ?? []).map((a) => a.slug));
   // Recherche : les apps ouvertes seulement, sans relire l'index « search » (389 Ko).
   if (key === "search") return top === null ? null : { apps: top.apps.map(({ slug, name, icon, niche, views30 }) => ({ slug, name, icon, niche, views30 })), creators: [], formats: [] };
-  if (key.startsWith("app:")) return open.has(key.slice("app:".length)) ? read(ctx, key) : LOCKED;
+  if (key.startsWith("app:")) {
+    const slug = key.slice("app:".length);
+    const to = open.has(slug) ? slug : await mergedInto(ctx, slug); // l'ancien slug d'une app du top
+    return to && open.has(to) ? read(ctx, `app:${to}`) : LOCKED;
+  }
   if (key.startsWith("video:")) {
     const d = (await read(ctx, key)) as { app?: { slug?: string } | null } | null;
     // Inconnue ou introuvable : la même réponse qu'une vidéo fermée (audit S15 : null disait qu'elle n'existe pas).

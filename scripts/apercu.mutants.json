@@ -98,5 +98,10 @@
 "M20 clé non listée lue avant le verrou",
 "if (!previewable(key)) return LOCKED;",
 "if (!previewable(key)) return (await read(ctx, key, hidden)) === null ? null : LOCKED;"
+],
+[
+"M21 ancien slug d'une app fusionnée : verrou du top contourné",
+"return to && open.has(to) ? read(ctx, `app:${to}`) : LOCKED;",
+"return to ? read(ctx, `app:${to}`) : LOCKED;"
 ]
 ]

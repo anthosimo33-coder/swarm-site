@@ -689,6 +689,16 @@ export function buildBoards(
     const sum = pool.reduce((n, x) => n + (x.views30 || 0), 0);
     return { rank: pool.indexOf(r) + 1, of: pool.length, share: sum ? round((r.views30 || 0) / sum, 4) : 0, niche: pool === niche ? r.niche : "" };
   };
+  // Les apps fusionnées : ancien slug → slug de l'app qui les a reprises (active, avec sa fiche). Audit Q25 (19/11) : une
+  // app suivie ou gardée dans un dossier disparaissait à sa fusion (Accueil « 3 apps suivies » pour 4, lien du dossier
+  // vers « fiche absente »). Lu par boards.get (app:<ancien> → la fiche de la nouvelle) et saved.get (suivis, dossiers).
+  // Paires [ancien, nouveau] : une valeur Convex a au plus 1 024 champs, mais 8 192 éléments.
+  const merged: [string, string][] = [];
+  for (const a of raw.apps) {
+    const to = a.mergedInto ? canonical(a.id) : null;
+    if (to && to.slug !== a.slug && !to.mergedInto && to.status === "active") merged.push([a.slug, to.slug]);
+  }
+  boards.set("apps:merged", { updatedAt: now, merged: merged.sort((p, q) => (p[0] < q[0] ? -1 : 1)) });
   boards.set("apps:top", { updatedAt: now, markets: appsDoc.markets, niches: appsDoc.niches, marketApps: appsDoc.marketApps,
     apps: appsBoard.slice(0, PREVIEW_TOP).map((r) => ({ ...r, standing: standingOf(r) })), total: appsBoard.length });
 

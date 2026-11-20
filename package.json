@@ -13,7 +13,8 @@
     "test:cache": "node scripts/cache.test.mjs",
     "test:apercu:mutants": "node scripts/apercu.mutants.mjs",
     "test:radar": "node scripts/radar.test.mjs",
-    "test:cover": "node scripts/cover.test.mjs"
+    "test:cover": "node scripts/cover.test.mjs",
+    "test:saved": "node scripts/saved.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",

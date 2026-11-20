@@ -74,6 +74,8 @@ const DOCS = {
   stats: { apps: 10, accounts: 25 },
 };
 // Le petit document de l'aperçu, tel que convex/radarModels.ts l'écrit (audit F1).
+// Deux apps fusionnées (audit Q25) : l'ancien slug d'une app du top, et celui d'une app fermée.
+DOCS['apps:merged'] = { updatedAt: 1, merged: [['ancien-slug-1', slug(1)], ['ancien-slug-7', slug(7)]] };
 DOCS['apps:top'] = { updatedAt: 1, markets: DOCS.apps.markets, niches: DOCS.apps.niches, marketApps: DOCS.apps.marketApps, apps: apps.slice(0, 3), total: 10 };
 const USERS = { pro: { pro: true }, free: {}, nul: { pro: false } };
 
@@ -125,7 +127,7 @@ ok(routeKeys.length >= 8 && warm.length >= 5, `clés relevées : ${routeKeys.len
 const fill = (k) => k.replace('{slug}', slug(7)).replace('{id}', k.startsWith('format') ? 'f1' : '9990000080').replace('{handle}', 'createur.fr');
 const OPEN = new Set(['apps', 'search', 'stats']);
 const LOCKED_KEYS = [...new Set([...routeKeys.map(fill), ...warm, 'home', 'formats', 'format:f1', 'creators:FR', 'creators:FR:2', 'creators:ALL',
-  'creator:createur.fr', 'alerts', 'apps:FR', 'apps@instagram', 'apps:FR@tiktok', 'search:creators:2', 'app:zz-app-7', 'video:9990000080', 'apps:top'])].filter((k) => !OPEN.has(k));
+  'creator:createur.fr', 'alerts', 'apps:FR', 'apps@instagram', 'apps:FR@tiktok', 'search:creators:2', 'app:zz-app-7', 'video:9990000080', 'apps:top', 'apps:merged', 'app:ancien-slug-7'])].filter((k) => !OPEN.has(k));
 const FREE_FIELDS = ['updatedAt', 'markets', 'niches', 'marketApps', 'apps', 'total', 'preview'];
 
 for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
@@ -138,6 +140,8 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
   ok(pa?.apps?.length === 10, 'Pro : les 10 apps');
   ok((await g('pro', 'app:zz-app-7'))?.slug === slug(7), 'Pro : fiche hors top 3 ouverte');
   ok((await g('pro', 'formats'))?.formats?.length === 1, 'Pro : Formats ouvert');
+  ok((await g('pro', 'app:ancien-slug-7'))?.slug === slug(7), 'Pro : l\'ancien slug d\'une app fusionnée mène à sa nouvelle fiche');
+  ok((await g('pro', 'app:jamais-vue')) === null, 'Pro : slug inconnu → absent');
   ok((await g('pro', 'creators:FR'))?.creators?.length === 1, 'Pro : Créateurs ouvert');
   // Vidéo introuvable (mediaMiss) : sa fiche est absente, pour tout le monde. La liste globale hidden n'est jamais lue
   // (audit F14 : une seule vidéo notée relançait toutes les requêtes ouvertes).
@@ -167,6 +171,7 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
     ok(a && Object.keys(a).every((k) => FREE_FIELDS.includes(k)), `${u} : document apps limité à ${FREE_FIELDS.join(', ')} (${a && Object.keys(a).join(', ')})`);
     ok(a?.apps?.[0]?.top?.[0]?.cover?.startsWith(`${SITE}/cover/`), `${u} : miniatures de l'aperçu réécrites`);
     ok((await gf('app:zz-app-1'))?.slug === slug(1), `${u} : fiche du top 3 ouverte`);
+    ok((await gf('app:ancien-slug-1'))?.slug === slug(1), `${u} : ancien slug d'une app du top 3 → sa fiche`);
     ok((await gf('video:2220000020'))?.id === '2220000020', `${u} : vidéo d'une app du top 3 ouverte`);
     // Audit S15 : une vidéo inconnue ou introuvable répond comme une vidéo fermée (null disait qu'elle n'existe pas).
     for (const k of [`video:${HIDDEN_VIDEO}`, 'video:1234567890123', 'app:zz-inconnue']) { const r = await gf(k); ok(r?.locked === true && Object.keys(r).length === 1, `${u} : ${k} répond comme une fiche fermée (${JSON.stringify(r)})`); }
@@ -183,7 +188,7 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
     // Audit F1 : une clé verrouillée ne lit aucune page ; l'aperçu ne relit ni « apps » (848 Ko) ni « search » (389 Ko).
     const lockedReads = [];
     // Une fiche d'app ou de vidéo hors du top ne lit que le top (et la vidéo, pour savoir de quelle app elle est).
-    const allowed = (k, x) => x === 'boards[apps:top]' || (layout === 'sans apps:top' && x === 'boards[apps]') || (k.startsWith('video:') && x === `boards[${k}]`);
+    const allowed = (k, x) => x === 'boards[apps:top]' || x === 'boards[apps:merged]' || (layout === 'sans apps:top' && x === 'boards[apps]') || (k.startsWith('video:') && x === `boards[${k}]`);
     for (const k of LOCKED_KEYS) {
       const r = (await readsOf(base, u, k)).filter((x) => /^board/.test(x) && !((k.startsWith('app:') || k.startsWith('video:')) && allowed(k, x)));
       if (r.length) lockedReads.push(`${k} → ${r.join(' ')}`);
