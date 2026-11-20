@@ -545,6 +545,9 @@ export const radarTables = {
     // Appels payants ÉVITÉS par une page publique de TikTok, par brique (radarSignalsMath.SavedKey) : au moins un
     // crédit chacun. C'est ce qui prouve, sur les serveurs, ce que le banc n'a mesuré que du poste.
     saved: v.optional(v.record(v.string(), v.number())),
+    // Une brique en « mesure » : la page publique ET le payant lus côte à côte, en VIDÉOS par verdict (courbe :
+    // egal, proche, ecart, repli, panne ; cf radarFreeMath.CurveMeasure), facturé ou non. La preuve avant une bascule.
+    measured: v.optional(v.record(v.string(), v.number())),
   })
     .index("by_month", ["month"])
     .index("by_day_poste", ["day", "poste"]),

@@ -25,8 +25,10 @@
  * fournisseur les relève sans erreur (TikTok ne sert pas leur page d'intégration) et 9 listes vides → 3,5 % des
  * comptes restent au relevé payant. Un profil « absent » n'est donc PAS un compte disparu.
  */
-import { cleanText, langBucket, mentionLabel, type SignalInput } from "./radarSignalsMath";
+import { CURVE_COUNTS, CURVE_PAGES_PER_PASS, cleanText, langBucket, mentionLabel, type CurveCounts, type SignalInput } from "./radarSignalsMath";
 import { cutJson } from "./radarStoreMath";
+import { isTikTokVideoId, reasonOf, type UnavailableReason } from "./radarAvailabilityMath";
+import { parseTikTokPublicPage } from "./tiktokPublicPage";
 
 const HOUR = 3_600_000;
 
@@ -520,13 +522,15 @@ export async function paidRead(
  * Déroule la voie gratuite : chaque compte est relevé à son tour tant qu'elle est ouverte (`alive` : le temps
  * imparti) et que le coupe-circuit n'a pas sauté. Rend l'état du passage, les comptes dont le relevé gratuit n'a pas
  * abouti (`failed`, au relevé payant) et ceux qu'elle n'a pas eu le temps de prendre (`notReached`, cf `overflowToPay`).
+ * `start` : l'état laissé par les pages lues avant elle dans la même file (la courbe, cf laneAfterCurve).
  */
 export async function runFreeLane<A>(
   accounts: readonly A[],
   read: (account: A) => Promise<{ ok: true } | { ok: false; why: FreeWhy; reason?: string; newest?: NewestKnown }>,
   alive: () => boolean,
+  start: FreeState = freeStart(),
 ): Promise<{ state: FreeState; failed: LaneMiss<A>[]; notReached: A[] }> {
-  let state = freeStart();
+  let state = start;
   const failed: LaneMiss<A>[] = [];
   const notReached: A[] = [];
   for (const account of accounts) {
@@ -566,3 +570,264 @@ export function trialPick(handle: string): boolean {
 export const trialPlan = (listed: readonly FreeListed[], now: number): FreeListed[] =>
   listed.filter((v) => now - v.publishedAt < TRIAL_WINDOW_MS).slice(0, TRIAL_DETAIL_MAX);
 
+
+// ─── La courbe des vues sur la page publique (20/11/2026) ────────────────────
+
+/**
+ * LA COURBE SUR LA PAGE PUBLIQUE D'UNE VIDÉO — EN MESURE. Le relevé de courbe (H+6, H+24, H+48) paie /v2/tiktok/video,
+ * 1 crédit, pour six nombres : vues, j'aime, commentaires, partages, enregistrements et abonnés du compte (applyCurve ne
+ * lit rien d'autre). La page publique de la vidéo les porte ; elle est lue par `parseTikTokPublicPage` (le lecteur de
+ * fetchTikTokPublicStats, convex/radar/tiktokPublicPage) plutôt que par `parseFreeVideo` :
+ *  - l'id servi doit être l'id demandé : la courbe écrit par signal, les compteurs d'une autre vidéo y entreraient sans
+ *    bruit — parseFreeVideo prend l'id qu'on lui sert ;
+ *  - un compteur absent est `null`, pas 0 : parseFreeVideo écrirait 0 j'aime sur une vidéo qui en a 5 000 ; ici il
+ *    renvoie au payant ;
+ *  - un refus garde son motif (radarAvailabilityMath.reasonOf) : supprimée, compte privé, réservée à son autrice ou à
+ *    ses amis → « partie » (CURVE_GONE) ; hors de sa région, en vérification, motif inconnu → payant (le fournisseur la
+ *    lit peut-être d'ailleurs), là où parseFreeVideo dit « gone » à tout refus.
+ * La page est demandée par la voie (fetchEmbedPage : ses en-têtes, sa pause, son second essai) : une seule file, un
+ * seul client vu de TikTok, un seul coupe-circuit (laneAfterCurve). Les en-têtes d'un navigateur
+ * (fetchTikTokPublicStats) ne changent pas les nombres : 4 vidéos relues AUSSITÔT (moins d'une seconde) avec les deux,
+ * 4 sur 4 identiques, enregistrements exacts compris (20/11/2026 18 h, du poste, scripts/radar-bancs/courbe.ts
+ * --navigateur 4). Un premier banc, qui relisait des minutes plus tard, en avait 3 sur 4 : la 4e est la plus vue
+ * (12,8 millions), dont les enregistrements, exacts, ont gagné 11 en 22 minutes entre les deux bancs — la croissance
+ * entre les deux lectures, probablement (ses nombres « navigateur » n'avaient pas été gardés).
+ *
+ * POURQUOI EN MESURE (CURVE_FREE = false) : la page ARRONDIT ses compteurs dès 10 000 — à la centaine sous le million,
+ * à la centaine de milliers au-dessus (16 805 vues servies « 16 800 », 12,8 millions « 12 800 000 », 1,1 million de
+ * j'aime « 1 100 000 », 106 100 abonnés), `statsV2` comme `stats` ; seuls les enregistrements restent exacts. Banc du
+ * 20/11/2026 (scripts/radar-bancs/courbe.ts, du poste, 24 pages, aucun refus) : 20 vidéos de la courbe, 18 lues et 2
+ * refusées « hors de leur région » (au payant) ; arrondis au-delà de 10 000 : vues 18 sur 18, j'aime 8 sur 8, partages
+ * 4 sur 4, commentaires 1 sur 1, abonnés 4 sur 4 ; enregistrements exacts (3 au-delà de 10 000, aucun arrondi).
+ * Depuis les serveurs, même constat : le relevé des vues de Jarvia, lu sur cette page (13-19/11), a 23 vues sur 23
+ * au-delà de 10 000 multiples de 100 ; la mesure C4 (14-15/11), 27 pages vidéo sur 28 au-delà de 10 000 qui ne donnent
+ * pas plus que la liste arrondie, quand le payant, lu 5 à 8 minutes PLUS TÔT, donnait plus (10 037 contre 10 000). Or
+ * toute vidéo de la courbe a plus de 10 000 vues (KEEP_MIN_VIEWS ; de 12 398 à 7,5 millions, médiane 120 564, sur les
+ * 70 de la prod) : la page ne vaut pas le payant.
+ * Le code de la bascule est là et testé. Tant que CURVE_FREE est faux, chaque vidéo due est lue sur sa page PUIS au
+ * payant, le payant est rangé comme avant, et l'accord des deux est compté EN VIDÉOS dans radarUsage.measured du poste
+ * « curve », même quand le payant n'a rien facturé (cf CurveMeasure) : egal, proche, ecart (écrit au journal), repli,
+ * panne. Basculer — et accepter des courbes arrondies à la centaine, à la centaine de milliers au-delà du million — se
+ * décidera sur ces nombres, servis aux serveurs. À la bascule, aligner aussi le poste « curve » de l'écran du budget :
+ * son curseur va jusqu'à 400 vidéos/jour et sa projection compte 3 crédits par vidéo, quand la courbe relevée sur la
+ * page n'en admet que CURVE_ADMISSIONS_MAX (radarSignalsMath.curveAdmissionsLeft) et ne paie que ses replis.
+ */
+export const CURVE_FREE = false;
+
+/**
+ * Pages de la courbe refusées d'affilée (non servies, ou servies sans données lisibles) qui arrêtent ses pages pour le
+ * passage. Le reste part au payant tout de suite plutôt qu'au passage suivant : un relevé de H+6 reste à l'heure, la
+ * qualité ne dépend pas de la page, et ces refus sont rares. La série continue dans la voie qui suit (laneAfterCurve).
+ */
+export const CURVE_BREAKER = 5;
+
+/**
+ * Les refus qui mettent la vidéo hors d'atteinte de tout lecteur anonyme : supprimée, compte privé, réservée. La page
+ * ne fait PAS sortir la vidéo de la courbe : le relevé payant confirme, comme avant. Il ne coûte rien quand la vidéo est
+ * vraiment partie — le fournisseur ne facture pas un appel en échec (scGet : `credits_charged`, 0 ; en prod, poste
+ * curve : 19 appels, 1 erreur, 18 crédits le 10/11 ; 4, 1, 3 le 11/11) — et une sortie de courbe est définitive alors
+ * qu'un compte peut redevenir public (radarAvailability relit chaque jour). Une vidéo « partie » n'évite donc aucun
+ * crédit : elle n'entre pas dans saved.curve ; elle sert la mesure (la page dit-elle « partie » quand le payant le dit ?).
+ */
+export const CURVE_GONE: readonly UnavailableReason[] = ["removed", "private", "restricted"];
+
+/**
+ * Ce que dit la page d'une vidéo de la courbe : ses six nombres (`read`), qu'elle n'est plus là (`gone`), ou qu'il faut
+ * le relevé payant (`paid` ; `refused` : TikTok n'a pas servi la page, ou l'a servie sans données — compte pour le
+ * coupe-circuit).
+ */
+export type CurveVerdict = { kind: "read"; counts: CurveCounts } | { kind: "gone"; why: UnavailableReason } | { kind: "paid"; refused: boolean; why: string };
+
+export function curveVerdict(page: FreePage, videoId: string): CurveVerdict {
+  if (!page.ok) return { kind: "paid", refused: page.kind === "suspect", why: page.kind === "absent" ? "page absente" : (page.reason ?? "page refusée") };
+  const r = parseTikTokPublicPage(page.text, videoId);
+  if (r.kind === "unreadable") return { kind: "paid", refused: true, why: r.reason };
+  if (r.kind === "refused") {
+    const why = reasonOf(r.statusCode, r.statusMsg);
+    return CURVE_GONE.includes(why) ? { kind: "gone", why } : { kind: "paid", refused: false, why: `refusée par TikTok (${why})` };
+  }
+  const s = r.stats;
+  const read: Record<keyof CurveCounts, number | null> = {
+    authorFans: s.author?.followers ?? null,
+    views: s.views,
+    likes: s.likes,
+    comments: s.comments,
+    shares: s.shares,
+    saves: s.saves,
+  };
+  const missing = CURVE_COUNTS.filter((k) => read[k] === null);
+  if (missing.length) return { kind: "paid", refused: false, why: `page sans ${missing.join(", ")}` };
+  return { kind: "read", counts: read as CurveCounts };
+}
+
+/** Une vidéo de la courbe à relever : son identifiant et le pseudo de son auteur (l'adresse de sa page). */
+export type CurveDue = { videoId: string; handle: string };
+export type CurveRead<D> = { due: D; verdict: CurveVerdict };
+
+/**
+ * Les pages de la courbe d'un passage, une après l'autre, avec la page de la voie (`page` : pause avant chacune, second
+ * essai d'une page refusée). `max` vidéos au plus (CURVE_PAGES_PER_PASS) ; le temps de la voie écoulé (`alive`), les
+ * suivantes restent dues (`notReached`). Après CURVE_BREAKER refus d'affilée, plus aucune page : les suivantes partent
+ * au payant (verdict `paid`, sans page). `streak` : les pages refusées d'affilée à la fin, que la voie reprend.
+ */
+export async function readCurvePages<D extends CurveDue>(
+  due: readonly D[],
+  page: (url: string) => Promise<FreePage>,
+  alive: () => boolean,
+  max = CURVE_PAGES_PER_PASS,
+): Promise<{ reads: CurveRead<D>[]; pages: number; streak: number; stopped: string | null; notReached: D[] }> {
+  const reads: CurveRead<D>[] = [];
+  const notReached: D[] = [];
+  let pages = 0;
+  let streak = 0;
+  let stopped: string | null = null;
+  for (const d of due) {
+    if (reads.length >= max || !alive()) {
+      notReached.push(d);
+      continue;
+    }
+    if (stopped) {
+      reads.push({ due: d, verdict: { kind: "paid", refused: false, why: "coupe-circuit" } });
+      continue;
+    }
+    // Un identifiant qui n'est pas celui d'une vidéo TikTok n'a pas de page à lire (cf radarAvailabilityMath).
+    if (!isTikTokVideoId(d.videoId)) {
+      reads.push({ due: d, verdict: { kind: "paid", refused: false, why: "pas une vidéo TikTok" } });
+      continue;
+    }
+    pages++;
+    const verdict = curveVerdict(await page(freeVideoUrl(d.handle, d.videoId)), d.videoId);
+    reads.push({ due: d, verdict });
+    if (verdict.kind === "paid" && verdict.refused) {
+      streak++;
+      if (streak >= CURVE_BREAKER) stopped = `${CURVE_BREAKER} pages de la courbe refusées d'affilée (${verdict.why})`;
+    } else streak = 0;
+  }
+  return { reads, pages, streak, stopped, notReached };
+}
+
+/**
+ * La voie gratuite après les pages de la courbe (revue du 20/11/2026) : la même file, vue de TikTok, donc la même série
+ * de refus. La voie reprend celle de la courbe, au plus au bord de son coupe-circuit : après 5 pages de courbe
+ * refusées (10 requêtes avec leurs seconds essais), un seul profil refusé la ferme — 6 pages refusées d'affilée au plus
+ * par passage, 12 requêtes, comme avant la courbe (FREE_BREAKER). Sans cela, la voie repartait de zéro : jusqu'à 11
+ * pages refusées d'affilée, 22 requêtes, toutes les 10 minutes. Un profil servi remet la série à zéro, comme avant.
+ */
+export const laneAfterCurve = (curveStreak: number): FreeState => ({ ...freeStart(), streak: Math.max(0, Math.min(curveStreak, FREE_BREAKER - 1)) });
+
+/** L'arrondi de la page publique : exacte sous 10 000, à la centaine sous le million, à la centaine de milliers au-dessus. */
+export const pageStep = (n: number): number => (n >= 1_000_000 ? 100_000 : n >= 10_000 ? 100 : 1);
+/** L'arrondi de la page, compteur par compteur : les enregistrements sont servis exacts (banc du 20/11/2026 : 97 186, 50 760, 30 485). */
+export const curveStep = (k: keyof CurveCounts, n: number): number => (k === "saves" ? 1 : pageStep(n));
+/** Ce qu'une vidéo de la courbe gagne au plus entre la page et le relevé payant, lu APRÈS elle, à quelques secondes d'écart. */
+export const CURVE_DRIFT = 0.005;
+
+export type CurveMatch = "egal" | "proche" | "ecart";
+
+/**
+ * La page et le relevé payant d'une même vidéo, au même moment (le payant : `null` si la vidéo n'est plus là). Proche :
+ * chaque écart tient dans l'arrondi de la page (aucun pour les enregistrements), plus, dans le sens du temps seulement
+ * (le payant est lu après la page), CURVE_DRIFT pour ce que la vidéo a gagné entre les deux lectures.
+ */
+export function curveMatch(page: CurveVerdict, paid: CurveCounts | null): CurveMatch {
+  if (page.kind === "gone") return paid === null ? "egal" : "ecart";
+  if (page.kind !== "read" || paid === null) return "ecart";
+  const diffs = CURVE_COUNTS.map((k) => ({ grown: paid[k] - page.counts[k], step: curveStep(k, paid[k]), b: paid[k] }));
+  if (diffs.every((x) => x.grown === 0)) return "egal";
+  return diffs.every((x) => x.grown >= -x.step && x.grown <= x.step + CURVE_DRIFT * x.b) ? "proche" : "ecart";
+}
+
+/**
+ * Un relevé payant de courbe, sa dépense comptée ; `counts: null` : la vidéo n'est plus là. En échec, `refused` : le
+ * fournisseur a répondu qu'il ne sert pas cette vidéo (cf scRefused) — la vidéo est partie pour lui aussi ; sinon,
+ * c'est une panne (réseau, délai, erreur du fournisseur) qui ne dit rien de la vidéo.
+ */
+export type CurvePaid = { ok: true; counts: CurveCounts | null; credits: number } | { ok: false; credits: number; noCredits: boolean; refused: boolean };
+
+/**
+ * Le fournisseur a-t-il refusé la vidéo elle-même ? Une réponse 4xx (scrapeCreatorsApi.scGet : « HTTP 404 … »), hors
+ * crédits épuisés (402) et trop de demandes (429). Un délai, une erreur réseau, une 5xx : une panne.
+ */
+export const scRefused = (error: string): boolean => /^HTTP 4\d\d\b/.test(error) && !/^HTTP (402|429)\b/.test(error);
+
+/** Pourquoi un relevé payant de courbe est parti (radarUsage.reasons du poste « curve », en crédits) : la mesure (cf CURVE_FREE), repli ; retard : runCurve. */
+export type CurveReason = CurveMatch | "repli" | "retard";
+/**
+ * La mesure côte à côte, EN VIDÉOS (radarUsage.measured du poste « curve »), facturée ou non : egal / proche / ecart
+ * (la page contre le payant, cf curveMatch ; « partie » des deux côtés : egal), repli (la page n'aurait pas suffi : le
+ * payant serait parti de toute façon), panne (le payant n'a rien dit : pas de mesure).
+ */
+export type CurveMeasure = CurveMatch | "repli" | "panne";
+
+export type CurveTally<D> = {
+  /** Relevés gratuits rangés (la page seule, CURVE_FREE). Les appels évités en sont une part : cf curveSaved. */
+  free: number;
+  /** Relevés payants partis (échecs compris). */
+  paid: number;
+  credits: number;
+  errors: number;
+  /** Dues, sans relevé ce passage (plus de part payante, plus de crédits) : elles le restent. */
+  waiting: D[];
+  reasons: Partial<Record<CurveReason, number>>;
+  measured: Partial<Record<CurveMeasure, number>>;
+  gaps: { due: D; page: CurveVerdict; paid: CurveCounts | null }[];
+};
+export const curveTally = <D>(): CurveTally<D> => ({ free: 0, paid: 0, credits: 0, errors: 0, waiting: [], reasons: {}, measured: {}, gaps: [] });
+
+/**
+ * Les appels payants qu'un passage a ÉVITÉS (radarUsage.saved.curve, revue du 20/11/2026) : sans la page, il en aurait
+ * payé au plus `paidLeft` (sa part payante) ; il en a payé `paid`. Un relevé gratuit au-delà — solde sous la réserve,
+ * poste coupé par palier, plafond du mois : la part est à 0 — n'évite rien, l'ancien chemin ne relevait rien du tout.
+ * Juste aussi pour un passage tombé en route : ce qu'il a rangé contre ce qu'il a payé.
+ */
+export const curveSaved = (t: Pick<CurveTally<unknown>, "free" | "paid">, paidLeft: number): number => Math.max(0, Math.min(t.free, paidLeft - t.paid));
+
+/**
+ * Range ce que les pages ont dit. `free` (CURVE_FREE) : une page lue est rangée, sans crédit ; le reste — vidéo
+ * « partie » (le payant confirme, cf CURVE_GONE), page illisible, refusée, compteur absent — part au payant, `paidLeft`
+ * relevés au plus. En mesure (`free` faux), tout part au payant. Un relevé payant est rangé comme avant : la vidéo
+ * introuvable, ou en panne, sort de la courbe ; plus de crédits, elle reste due, et les suivantes avec. La mesure est
+ * comptée à chaque relevé payant (en vidéos), qu'il ait été facturé ou non. `out` reçoit les comptes au fil de l'eau
+ * (l'appelant écrit la dépense même si une écriture tombe).
+ */
+export async function settleCurve<D>(
+  reads: readonly CurveRead<D>[],
+  io: { paid: (d: D) => Promise<CurvePaid>; apply: (d: D, counts: CurveCounts | null) => Promise<void> },
+  opts: { free: boolean; paidLeft: number },
+  out: CurveTally<D> = curveTally<D>(),
+): Promise<CurveTally<D>> {
+  let left = Math.max(0, opts.paidLeft);
+  const measure = (k: CurveMeasure) => (out.measured[k] = (out.measured[k] ?? 0) + 1);
+  for (const { due, verdict } of reads) {
+    if (opts.free && verdict.kind === "read") {
+      await io.apply(due, verdict.counts);
+      out.free++;
+      continue;
+    }
+    if (left <= 0) {
+      out.waiting.push(due);
+      continue;
+    }
+    left--;
+    out.paid++;
+    const r = await io.paid(due);
+    out.credits += r.credits;
+    if (!r.ok) out.errors++;
+    if (!r.ok && r.noCredits) {
+      left = 0;
+      out.waiting.push(due);
+      continue;
+    }
+    // Le payant en panne ne dit rien de la vidéo : pas de mesure. Refusée par le fournisseur : partie pour lui aussi.
+    const counts = r.ok ? r.counts : null;
+    const panne = !r.ok && !r.refused;
+    const match = verdict.kind === "paid" || panne ? null : curveMatch(verdict, counts);
+    measure(verdict.kind === "paid" ? "repli" : (match ?? "panne"));
+    const reason: CurveReason = match ?? "repli";
+    if (r.credits > 0) out.reasons[reason] = (out.reasons[reason] ?? 0) + r.credits;
+    if (match === "ecart") out.gaps.push({ due, page: verdict, paid: counts });
+    // Au pire un relevé manqué, jamais une boucle qui repaie la même vidéo (comme avant).
+    await io.apply(due, counts);
+  }
+  return out;
+}

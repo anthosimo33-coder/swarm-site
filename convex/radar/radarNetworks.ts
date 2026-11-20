@@ -92,7 +92,7 @@ import { LANG_BY_HAND, OFF_TOPIC_BY_HAND } from "./radarSeedAccounts";
 import { screenLang } from "./radarTextLang";
 import { isEarlyHit, isTextOnShot } from "./radarDisplay";
 import { networkSearchOutcome, networkSearchOutcomeValidator, networkSearchPhase, networkSearchValidator } from "./radarNetworkSearch";
-import { RETENTION_DAYS, allowance, budgetState, catchUpAllowance, cleanText, keepSignal, needsBalanceProbe, ratioOf, addSnapshot, tierDefers, type SavedKey } from "./radarSignalsMath";
+import { ACCOUNT_LEASE_MS, RETENTION_DAYS, allowance, budgetState, catchUpAllowance, cleanText, keepSignal, needsBalanceProbe, ratioOf, addSnapshot, tierDefers, type SavedKey } from "./radarSignalsMath";
 import {
   FREE_LANE_MAX_MS,
   PASS_MAX_MS,
@@ -100,6 +100,7 @@ import {
   FREE_RETRY_MS,
   freeRead,
   firstReadMisses,
+  laneAfterCurve,
   laneQueue,
   missCounts,
   overflowToPay,
@@ -122,6 +123,7 @@ import { MARKET_CURRENCY } from "./radarMarketMath";
 import {
   appRef,
   attachAccount,
+  curveInLane,
   ensureSettings,
   ensureSeedApps,
   moveAccount,
@@ -1227,8 +1229,6 @@ export const runNetworkSearch = internalAction({
   },
 });
 
-/** Durée du verrou d'un passage de relevé : une tâche est coupée à 10 minutes, le verrou tombe peu après. */
-const ACCOUNT_LEASE_MS = 10 * 60_000 + 30_000;
 /** La dépense d'un passage est écrite au fil de l'eau, par tranches de ce nombre de crédits. */
 const USAGE_FLUSH_CREDITS = 50;
 
@@ -1402,6 +1402,15 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
   const waitFirst = tierDefers(b.tier).firstReads;
   const paid = (list: readonly DueAccount[], reason: PaidReason): Promise<number> =>
     pooled(list, ACCOUNT_READ_POOL, (acc) => readPaid(acc, n, reason), () => Date.now() - now < ACCOUNT_READ_MAX_MS);
+  // La courbe des vues d'abord, dans la file et le temps de la voie (20/11/2026, radarSignals.curveInLane) : la voie
+  // reprend sa série de pages refusées (un seul coupe-circuit, radarFreeMath.laneAfterCurve). Ses relevés payants et ses
+  // écritures suivent PENDANT la voie, à côté : attendus à la fin du passage, ils ne retardent pas les relevés payants
+  // des comptes (bornés par ACCOUNT_READ_MAX_MS).
+  const curve = await curveInLane(ctx, freePage, st, b, now, () => Date.now() - now < FREE_LANE_MAX_MS).catch((e: unknown) => {
+    console.error(`[radar] courbe dans la voie : ${e instanceof Error ? e.message : String(e)}`);
+    return { rest: async (): Promise<void> => undefined, streak: 0, stopped: null };
+  });
+  const curveDone = curve.rest().catch((e: unknown) => console.error(`[radar] courbe dans la voie : ${e instanceof Error ? e.message : String(e)}`));
   try {
     // Les deux voies avancent en même temps. La voie gratuite prend d'abord les comptes qui ont publié ces dernières
     // 24 heures (leur second regard), puis les plus en retard.
@@ -1423,6 +1432,7 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
           return { ok: true as const };
         },
         () => Date.now() - now < FREE_LANE_MAX_MS,
+        laneAfterCurve(curve.streak),
       ),
     ]);
     const free = lane.state;
@@ -1463,7 +1473,8 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
       ok: free.ok,
       fallback: free.fallback,
       why: missCounts(lane.failed),
-      stopped: free.stopped,
+      // L'arrêt des pages de la courbe se voit à l'écran comme celui de la voie (la même file).
+      stopped: free.stopped ?? curve.stopped,
       waiting: lane.notReached.length - over.pay.length,
       now: Date.now(),
     });
@@ -1472,6 +1483,7 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     const calls = free.ok + paidCalls;
     return { calls, credits: usage.spent.credits, errors: usage.spent.errors };
   } finally {
+    await curveDone;
     // Même si le passage tombe, ce qu'il a payé est compté.
     await usage.flush().catch(failed);
   }
