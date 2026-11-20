@@ -128,4 +128,23 @@ const planOf = (r) => r.url?.split('/').pop() ?? r.code;
   ok(!!linked && (await v.m.db.get(v.userId)).pro === true && (await v.call({ __path: 'whop.sansCompte' }, {})).length === 0, `Q29 : rattaché à la main par e-mail, le compte passe Pro (${JSON.stringify(linked)})`);
 }
 
+// ─── S6 : l'adresse de retour de Whop n'accepte que le site de Kopycat ───
+{
+  resetWhop();
+  process.env.SITE_URL = 'https://kopycat.example';
+  const back = async (origin) => {
+    whop.calls = [];
+    await checkout(await world(), 'mensuel', NOV25, origin);
+    return whop.calls.find((c) => c.path === '/checkout_configurations')?.body?.redirect_url ?? null;
+  };
+  ok((await back('https://kopycat-paiement.example')) === 'https://kopycat.example/app?paiement=ok', `S6 : un site tiers en https est remplacé par SITE_URL (${await back('https://kopycat-paiement.example')})`);
+  ok((await back('https://swarm-site-one.vercel.app')) === 'https://swarm-site-one.vercel.app/app?paiement=ok', 'S6 : le domaine Vercel du site est gardé');
+  ok((await back('http://localhost:5173')) === 'https://kopycat.example/app?paiement=ok', 'S6 : localhost refusé en prod');
+  ok((await back('https://swarm-site-abc123-anthosimo33-coders-projects.vercel.app')) === 'https://kopycat.example/app?paiement=ok', 'S6 : une préversion Vercel refusée en prod');
+  process.env.SWARM_DEV_ORIGINS = '1';
+  ok((await back('http://localhost:5173')) === 'http://localhost:5173/app?paiement=ok' && (await back('https://swarm-site-abc123-anthosimo33-coders-projects.vercel.app')) === 'https://swarm-site-abc123-anthosimo33-coders-projects.vercel.app/app?paiement=ok', 'S6 : localhost et préversions du projet acceptés sur le dev (SWARM_DEV_ORIGINS=1)');
+  ok((await back('https://swarm-site-abc.evil.vercel.app')) === 'https://kopycat.example/app?paiement=ok', 'S6 : même sur le dev, une préversion d\'un autre projet est refusée');
+  delete process.env.SWARM_DEV_ORIGINS; delete process.env.SITE_URL;
+}
+
 end();

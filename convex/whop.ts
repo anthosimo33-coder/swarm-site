@@ -212,6 +212,20 @@ export const tarifs = internalAction({
 // ─── Payer : le lien de paiement Whop, relié au compte ───
 
 /**
+ * L'adresse où Whop renvoie après paiement (audit S6) : seulement le site de Kopycat. Avant, tout hôte https passait :
+ * un vrai lien Whop de Kopycat pouvait renvoyer la personne qui paie vers une page d'hameçonnage. En prod : SITE_URL et
+ * le domaine Vercel du site. Sur le dev (SWARM_DEV_ORIGINS=1) : aussi localhost et les préversions de CE projet Vercel.
+ * Toute autre origine : SITE_URL.
+ */
+export function returnSite(origin: string): string {
+  const site = (process.env.SITE_URL || "https://swarm-site-one.vercel.app").replace(/\/+$/, "");
+  if (origin === site || origin === "https://swarm-site-one.vercel.app") return origin;
+  if (process.env.SWARM_DEV_ORIGINS === "1"
+    && (/^http:\/\/localhost(:\d{2,5})?$/.test(origin) || /^https:\/\/swarm-site-[a-z0-9-]+-anthosimo33-coders-projects\.vercel\.app$/.test(origin))) return origin;
+  return site;
+}
+
+/**
  * Déjà Pro ? `users.pro` (paiement reçu, ou posé à la main) ou une adhésion qui donne accès (audit du 19/11, S3 : un
  * compte Pro pouvait repayer, deux adhésions prélevées dont une seule visible et résiliable dans Réglages).
  */
@@ -236,8 +250,7 @@ export const checkout = action({
     if (userId === null) throw new Error("Non connecté");
     if (await ctx.runQuery(internal.whop.alreadyPro, { userId })) throw new ConvexError({ code: "DEJA_ABONNE" });
     const variant = await variantFor(formule, Date.now());
-    // Retour sur le site d'où l'on vient (prod, préversion Vercel, local) ; sinon l'adresse du site.
-    const site = /^https:\/\/[a-z0-9.-]+$/i.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin) ? origin : (process.env.SITE_URL || "https://swarm-site-one.vercel.app");
+    const site = returnSite(origin);
     const conf = await whopApi("/checkout_configurations", {
       method: "POST",
       body: { account_id: ACCOUNT, variant_id: variant.id, metadata: { kopycat_user: userId }, redirect_url: `${site}/app?paiement=ok` },
