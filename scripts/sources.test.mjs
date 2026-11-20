@@ -127,7 +127,8 @@ for (const f of walk(root, (x) => /\.(ts|js|mjs)$/.test(x) && !/(^|\/)(dist|\.be
   if (r === HOME || r === 'scripts/sources.test.mjs' || PENDING.has(r)) continue;
   const s = fs.readFileSync(f, 'utf8');
   if (/\\d\{6,25\}/.test(s)) copies.push(`${r} (id de vidéo)`);
-  if (/A-Za-z0-9\._\]\{2,30\}/.test(s)) copies.push(`${r} (pseudo)`);
+  // La forme qui valide un pseudo (ancrée) ; un motif qui cherche « @pseudo » dans du texte livré (check-public) n'en est pas une.
+  if (/\^\[A-Za-z0-9\._\]\{2,30\}\$/.test(s)) copies.push(`${r} (pseudo)`);
 }
 ok(!copies.length, `formes d'id de vidéo et de pseudo écrites seulement dans ${HOME}${copies.length ? ` ; copies : ${copies.join(', ')}` : ''}`);
 
