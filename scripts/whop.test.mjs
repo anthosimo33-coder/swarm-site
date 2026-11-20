@@ -275,4 +275,15 @@ async function paidWorld(mem, pay) {
   ok(!back.code && (await w.m.db.get(w.userId)).pro === true, `Q5 : setPro null rend la main à Whop (adhésion active : Pro) (${back.code ?? 'ok'})`);
 }
 
+// ─── Q28 : formule et prix déduits du tarif quand l'adhésion ne les porte pas ───
+{
+  resetWhop();
+  const w = await world();
+  // Adhésion v1 sans billing_period_days ni renewal_price : seul le tarif est connu.
+  whop.memberships.mem_q28 = { id: 'mem_q28', status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ZxcFeAaIiBMk1' }, metadata: { kopycat_user: w.userId }, cancel_at_period_end: false };
+  await deliver(w, 'evt_q28', { type: 'membership.went_valid', data: { id: 'mem_q28' } });
+  const mine = await mods.whop.mine.handler(w.ctx, {});
+  ok(mine?.sub?.formule === 'annuel' && Number(mine?.sub?.price) === 179.88 && mine?.sub?.currency === 'eur', `Q28 : abonnement annuel affiché « annuel », 179,88 € (${JSON.stringify(mine?.sub && { formule: mine.sub.formule, price: mine.sub.price, currency: mine.sub.currency })})`);
+}
+
 end();

@@ -480,15 +480,22 @@ async function syncMembership(ctx: ActionCtx, membershipId: string, fallback: Js
     if (known && ACCESS.has(String(m.status ?? ""))) throw e;
   }
   if (!m) return `adhésion ${membershipId} introuvable`;
+  // Audit Q28 : la période et le prix se lisent sur l'adhésion s'ils y sont, sinon sur le tarif fixé (PLANS). Avant,
+  // une adhésion annuelle sans ces champs s'affichait « mensuel », sans prix, avec une période de 30 jours.
+  const variantId: string | null = m.variant_id ?? m.plan_id ?? m.plan?.id ?? m.variant?.id ?? null;
+  const plan = variantId ? KNOWN_PLANS.get(variantId) : undefined;
+  if (typeof m.billing_period_days !== "number" || m.renewal_price == null) {
+    console.log(`[whop] adhésion ${membershipId} sans période ou prix ; champs : ${Object.keys(m).join(", ")}`);
+  }
   return await ctx.runMutation(internal.whop.saveMembership, {
     membershipId,
     userKey: m.metadata?.kopycat_user ? String(m.metadata.kopycat_user) : null,
-    variantId: m.variant_id ?? m.plan_id ?? m.plan?.id ?? m.variant?.id ?? null,
+    variantId,
     productId: m.product_id ?? m.product?.id ?? null,
     status: String(m.status ?? "unresolved"),
-    periodDays: typeof m.billing_period_days === "number" ? m.billing_period_days : null,
-    price: money(m.renewal_price),
-    currency: moneyCurrency(m.renewal_price, m.currency),
+    periodDays: typeof m.billing_period_days === "number" ? m.billing_period_days : plan?.days ?? null,
+    price: money(m.renewal_price) ?? (plan ? plan.price.toFixed(2) : null),
+    currency: moneyCurrency(m.renewal_price, m.currency) ?? (plan ? "eur" : null),
     periodEnd: toMs(m.current_period_end ?? m.renewal_period_end ?? m.expires_at),
     cancelAtPeriodEnd: m.cancel_at_period_end === true,
     manageUrl: typeof m.manage_url === "string" ? m.manage_url : null,
