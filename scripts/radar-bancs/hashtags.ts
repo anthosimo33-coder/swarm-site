@@ -18,7 +18,8 @@
  *
  * Résultat du 20/11/2026 (586 pages, aucun refus) : 28 absents, 20 complets, 452 trop grands — et un complet qui
  * ne l'était pas (#facelessclone : une 6e vidéo en ligne porte le hashtag), d'où « complete » en mesure ; cf l'en-tête
- * de radarNetworkMath.TAG_ROUTINE_SKIP.
+ * de radarNetworkMath.TAG_ROUTINE_SKIP. Ses pages sont rejouées, sans en relire aucune, par hashtags-rejeu.ts.
+ * NE PAS RELANCER sans le fondateur : le robots.txt de TikTok interdit le site aux agents d'IA (20/11, 19 h 35).
  *
  * Relancer :
  *   npx esbuild scripts/radar-bancs/hashtags.ts --bundle --platform=node --format=esm --outfile=<scratch>/hashtags.mjs
@@ -189,7 +190,8 @@ for (const r of rows.filter((x) => x.check.why === "complete" || (x.check.why ==
 }
 
 // ─── Absent : aucune vidéo connue ne porte le hashtag ; relu, il reste absent ─────────────────────────────────────
-const absentRows = rows.filter((r) => r.check.why === "absent");
+// Par la page : depuis la revue du 20/11, un absent jamais payé paie (`unconfirmed`, radarNetworkMath.hashtagGate).
+const absentRows = rows.filter((r) => r.status === "absent");
 const absentKnown = absentRows.flatMap((r) => [...(byTag.get(r.tag)?.values() ?? [])].map((k) => ({ tag: r.tag, ...k })));
 const reread: Record<string, number> = {};
 for (const r of absentRows) {

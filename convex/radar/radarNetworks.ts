@@ -542,9 +542,21 @@ export const finishNetworkSearch = internalMutation({
     error: v.optional(v.string()),
     searched: v.boolean(),
     deep: v.optional(v.boolean()),
-    // Ses hashtags payés avec succès, et leur compteur lu juste avant (radarNetworkMath.paidTags).
+    // Ses hashtags payés avec succès : leur compteur lu juste avant, les vidéos rendues (radarNetworkMath.paidTags).
     tags: v.optional(
-      v.array(v.object({ tag: v.string(), videos: v.number(), same: v.boolean(), found: v.boolean(), updated: v.boolean(), complete: v.boolean(), out: v.boolean() })),
+      v.array(
+        v.object({
+          tag: v.string(),
+          videos: v.optional(v.number()),
+          paid: v.number(),
+          absent: v.boolean(),
+          same: v.boolean(),
+          found: v.boolean(),
+          updated: v.boolean(),
+          complete: v.boolean(),
+          out: v.boolean(),
+        }),
+      ),
     ),
   },
   handler: async (ctx, { appId, now, outcome, error, searched, deep, tags }): Promise<void> => {
@@ -1085,7 +1097,9 @@ export const runNetworkSearch = internalAction({
       const run = tagRunStart(passes);
       if (!tagGuardRead(tagGuard, Date.now() - now, NETWORK_MAX_MS)) return run;
       try {
-        const noted = tagGuardNote(tagGuard, await checkHashtag(tag, app.rule, { deep: app.deep, last: app.tagCounts.find((t) => t.tag === tag)?.videos }, tagIo));
+        // Son compteur et ce qu'a rendu sa dernière recherche payée réussie (« absent » ne saute que si elle était vide).
+        const past = app.tagCounts.find((t) => t.tag === tag);
+        const noted = tagGuardNote(tagGuard, await checkHashtag(tag, app.rule, { deep: app.deep, last: past?.videos, paid: past?.paid }, tagIo));
         tagGuard = noted.guard;
         run.check = noted.check;
       } catch (e) {

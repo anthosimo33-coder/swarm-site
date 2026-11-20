@@ -20,6 +20,7 @@ import {
   videoPageAuthor,
   type AppRule,
   type TagCheck,
+  type TagCount,
   type TagGuard,
   type TagRun,
   type TagSkip,
@@ -109,14 +110,23 @@ describe("Radar — tri des hashtags : la décision", () => {
   const big = list(1_755, [item(1, "ana", "mi sueldo en #wallbit"), item(2, "luz", "#fyp")]);
   const three = list(3, [item(1, "ana", "mi sueldo en #wallbit"), item(2, "luz", "#fyp #finanzas"), item(3, "wallbit.oficial", "hola")]);
 
-  it("absent (HTTP 400/404) : le hashtag n'existe pas, la recherche payante ne rendrait rien", () => {
-    expect(hashtagGate("absent", WALLBIT, { deep: false })).toEqual({ pay: false, why: "absent", read: [], same: false });
-    expect(hashtagGate("absent", WALLBIT, { deep: false, last: 0 })).toMatchObject({ pay: false, why: "absent" });
+  it("absent (HTTP 400/404), et sa dernière recherche payée complète n'a rendu aucune vidéo : le vide dure, on ne paie pas", () => {
+    expect(hashtagGate("absent", WALLBIT, { deep: false, paid: 0 })).toEqual({ pay: false, why: "absent", read: [], same: false });
+    expect(hashtagGate("absent", WALLBIT, { deep: false, last: 0, paid: 0 })).toMatchObject({ pay: false, why: "absent" });
+  });
+
+  it("absent, jamais payé (ou payé avec des vidéos) : le payant n'a pas constaté le vide, on paie (13/11 : « absent » servi aux serveurs pour 67 profils qui existaient)", () => {
+    expect(hashtagGate("absent", WALLBIT, { deep: false })).toEqual({ pay: true, why: "unconfirmed", read: [], same: false });
+    // Sa page était absente à sa dernière recherche : pas de compteur, mais ce que la recherche a rendu.
+    expect(hashtagGate("absent", WALLBIT, { deep: false, paid: 12 })).toEqual({ pay: true, why: "unconfirmed", read: [], same: false });
+    expect(hashtagGate("absent", WALLBIT, { deep: false, last: 0 }, ACTIVE)).toMatchObject({ pay: true, why: "unconfirmed" });
   });
 
   it("absent, alors qu'il avait des vidéos à sa dernière recherche payée : la page contredit ce qu'on a payé, on paie", () => {
     expect(hashtagGate("absent", WALLBIT, { deep: false, last: 40 })).toEqual({ pay: true, why: "history", read: [], same: false });
     expect(hashtagGate("absent", WALLBIT, { deep: true, last: 40 }, ACTIVE).pay).toBe(true);
+    // Même si la recherche payée d'alors n'avait rien rendu : la page avait un compteur, elle contredit ce qu'on a vu.
+    expect(hashtagGate("absent", WALLBIT, { deep: false, last: 40, paid: 0 })).toMatchObject({ pay: true, why: "history" });
   });
 
   it("complet : MESURE — décidé, ses vidéos qui citent l'app notées (pour la mesure), et payé", () => {
@@ -173,7 +183,8 @@ describe("Radar — tri des hashtags : la décision", () => {
 
   it("recherche complète : la règle du compteur ne s'applique pas ; absent, si (et complet, une fois actif)", () => {
     expect(hashtagGate(big, WALLBIT, { deep: true, last: 1_755 }, ACTIVE)).toEqual({ pay: true, why: "large", read: [], same: false });
-    expect(hashtagGate("absent", WALLBIT, { deep: true }).pay).toBe(false);
+    expect(hashtagGate("absent", WALLBIT, { deep: true, paid: 0 }).pay).toBe(false);
+    expect(hashtagGate("absent", WALLBIT, { deep: true }).pay).toBe(true);
     expect(hashtagGate(list(1, [item(1, "ana", "#wallbit")]), WALLBIT, { deep: true }).pay).toBe(true);
     expect(hashtagGate(list(1, [item(1, "ana", "#wallbit")]), WALLBIT, { deep: true }, ACTIVE).pay).toBe(false);
   });
@@ -184,11 +195,16 @@ describe("Radar — tri des hashtags : de la page aux vidéos", () => {
   const three = tagPage("3", [item(1, "ana", "mi sueldo en #wallbit"), item(2, "luz", "#fyp"), item(3, "sol", "#wallbit app")]);
   const pagesOf3 = { [TAG]: ok(three), [freeVideoUrl("ana", ID(1))]: ok(videoPage(ID(1), "ana", "mi sueldo en #wallbit")), [freeVideoUrl("sol", ID(3))]: ok(videoPage(ID(3), "sol", "#wallbit app")) };
 
-  it("absent : une page lue, rien à ranger, aucun crédit — et c'est une réponse « rien »", async () => {
+  it("absent, payé vide la dernière fois : une page lue, rien à ranger, aucun crédit — et c'est une réponse « rien »", async () => {
     const t = tiktok({ [TAG]: { kind: "absent" } });
-    const c = await checkHashtag("wallbit", WALLBIT, { deep: false }, t.io);
+    const c = await checkHashtag("wallbit", WALLBIT, { deep: false, paid: 0 }, t.io);
     expect(c).toMatchObject({ pay: false, why: "absent", videos: [], pages: 1, refused: false, nothing: true });
     expect(c.count).toBeUndefined();
+  });
+
+  it("absent, jamais payé : une page lue, et on paie — c'est quand même une réponse « rien » pour le coupe-circuit", async () => {
+    const c = await checkHashtag("wallbit", WALLBIT, { deep: false }, tiktok({ [TAG]: { kind: "absent" } }).io);
+    expect(c).toMatchObject({ pay: true, why: "unconfirmed", videos: [], pages: 1, refused: false, nothing: true });
   });
 
   it("complet en MESURE : la page du hashtag seule, aucune page vidéo (la recherche payée les rend)", async () => {
@@ -334,16 +350,22 @@ describe("Radar — tri des hashtags : la garde du passage", () => {
   });
 
   it("de bout en bout : TikTok sert 404 à toutes les pages de hashtag, rien n'est sauté au-delà du coupe-circuit", async () => {
-    let g = tagGuardStart();
-    const skipped: string[] = [];
-    for (const tag of ["a1", "b2", "c3", "d4", "e5", "f6"]) {
-      if (!tagGuardRead(g, 0, 1)) continue;
-      const n = tagGuardNote(g, await checkHashtag(tag, WALLBIT, { deep: false }, { page: async () => ({ kind: "absent" }) }, ACTIVE));
-      g = n.guard;
-      if (!n.check.pay) skipped.push(tag);
+    // Des hashtags tous payés vides la dernière fois (le pire cas) ; jamais payés, aucun n'est sauté.
+    for (const [paid, expected] of [
+      [0, ["a1", "b2"]],
+      [undefined, []],
+    ] as const) {
+      let g = tagGuardStart();
+      const skipped: string[] = [];
+      for (const tag of ["a1", "b2", "c3", "d4", "e5", "f6"]) {
+        if (!tagGuardRead(g, 0, 1)) continue;
+        const n = tagGuardNote(g, await checkHashtag(tag, WALLBIT, { deep: false, paid }, { page: async () => ({ kind: "absent" }) }, ACTIVE));
+        g = n.guard;
+        if (!n.check.pay) skipped.push(tag);
+      }
+      expect(skipped).toEqual(expected);
+      expect(g.pages).toBe(TAG_NOTHING_BREAKER);
     }
-    expect(skipped).toEqual(["a1", "b2"]);
-    expect(g.pages).toBe(TAG_NOTHING_BREAKER);
   });
 });
 
@@ -409,18 +431,34 @@ describe("Radar — tri des hashtags : les passes de la recherche", () => {
     expect(r3.out).toBe(false);
   });
 
-  it("le compteur n'est retenu qu'après une recherche payée réussie (toutes ses passes) et lue", () => {
+  it("une recherche payée réussie (toutes ses passes) est retenue — son compteur s'il a été lu, et les vidéos rendues, page absente comprise", () => {
     const runs = new Map([
-      ["ok", { ...run({ pay: true, count: 40, same: true }, 2, 2, true), updated: true }],
-      ["complet", { ...run({ pay: true, why: "complete", count: 3 }, 2, 2), out: true }],
-      ["moitie", run({ pay: true, count: 40 }, 2, 1)],
-      ["illisible", run({ pay: true }, 2, 2)],
-      ["saute", run({ pay: false, why: "absent" }, 2, 0)],
+      ["ok", { ...run({ pay: true, count: 40, same: true }, 2, 2, true), updated: true, returned: 57 }],
+      ["complet", { ...run({ pay: true, why: "complete", count: 3 }, 2, 2), out: true, returned: 4 }],
+      ["moitie", { ...run({ pay: true, count: 40 }, 2, 1), returned: 30 }],
+      ["illisible", { ...run({ pay: true, why: "suspect", refused: true }, 2, 2), returned: 9 }],
+      ["absent", run({ pay: true, why: "unconfirmed", nothing: true }, 2, 2)],
+      ["vide", run({ pay: true, why: "complete", count: 0, nothing: true }, 2, 2)],
+      ["pas-lu", { ...run(null, 2, 2), returned: 61 }],
+      ["saute", run({ pay: false, why: "absent", nothing: true }, 2, 0)],
     ]);
+    const no = { same: false, found: false, updated: false, complete: false, out: false };
     expect(paidTags(runs)).toEqual([
-      { tag: "ok", videos: 40, same: true, found: true, updated: true, complete: false, out: false },
-      { tag: "complet", videos: 3, same: false, found: false, updated: false, complete: true, out: true },
+      { tag: "ok", videos: 40, paid: 57, absent: false, same: true, found: true, updated: true, complete: false, out: false },
+      { tag: "complet", videos: 3, paid: 4, absent: false, ...no, complete: true, out: true },
+      { tag: "illisible", paid: 9, absent: false, ...no },
+      { tag: "absent", paid: 0, absent: true, ...no },
+      // Un compteur à 0 servi en 200 est un compteur : pas une page absente.
+      { tag: "vide", videos: 0, paid: 0, absent: false, ...no, complete: true },
+      { tag: "pas-lu", paid: 61, absent: false, ...no },
     ]);
+  });
+
+  it("une page payée : toutes ses vidéos comptent dans ce que la recherche a rendu, qu'elles citent l'app ou non", () => {
+    const r = run({ pay: true, why: "unconfirmed", nothing: true });
+    notePaidPage(r, { attached: 0, signals: 0, updated: 0 }, [paidVideo(1, "ana", "#fyp"), paidVideo(2, "luz", "#wallbit")], WALLBIT);
+    notePaidPage(r, { attached: 0, signals: 0, updated: 0 }, [], WALLBIT);
+    expect(r.returned).toBe(2);
   });
 
   it("la mesure s'additionne d'une recherche à l'autre ; un hashtag qui n'est plus cherché est oublié", () => {
@@ -432,6 +470,8 @@ describe("Radar — tri des hashtags : les passes de la recherche", () => {
     const p = (tag: string, videos: number, o: Partial<{ same: boolean; found: boolean; updated: boolean; complete: boolean; out: boolean }>) => ({
       tag,
       videos,
+      paid: 30,
+      absent: false,
       same: false,
       found: false,
       updated: false,
@@ -441,10 +481,103 @@ describe("Radar — tri des hashtags : les passes de la recherche", () => {
     });
     const paid = [p("wallbit", 1_755, { same: true, updated: true }), p("wallbitapp", 12, { found: true }), p("petit", 3, { complete: true, same: true, out: true })];
     expect(noteTagCounts(prev, paid, ["wallbit", "#wallbit", "#wallbitapp", "#petit"], 9)).toEqual([
-      { tag: "wallbit", videos: 1_755, at: 9, same: 3, sameFound: 1, sameUpdated: 1 },
-      { tag: "petit", videos: 3, at: 9, same: 1, complete: 5, completeOut: 1 },
-      { tag: "wallbitapp", videos: 12, at: 9 },
+      { tag: "wallbit", videos: 1_755, paid: 30, at: 9, same: 3, sameFound: 1, sameUpdated: 1 },
+      { tag: "petit", videos: 3, paid: 30, at: 9, same: 1, complete: 5, completeOut: 1 },
+      { tag: "wallbitapp", videos: 12, paid: 30, at: 9 },
     ]);
+  });
+
+  it("page absente : son compteur d'avant est effacé, ce qu'a rendu la recherche retenu ; page illisible ou pas lue : le dernier compteur reste", () => {
+    const prev = [
+      { tag: "banni", videos: 40, paid: 80, at: 1 },
+      { tag: "illisible", videos: 40, paid: 80, at: 1 },
+      { tag: "faux404", paid: 0, at: 1, absent: 1 },
+    ];
+    const p = (tag: string, paid: number, absent: boolean) => ({ tag, paid, absent, same: false, found: false, updated: false, complete: false, out: false });
+    expect(noteTagCounts(prev, [p("banni", 0, true), p("illisible", 50, false), p("faux404", 7, true)], ["#banni", "#illisible", "#faux404"], 9)).toEqual([
+      { tag: "banni", paid: 0, at: 9, absent: 1 },
+      { tag: "illisible", videos: 40, paid: 50, at: 9 },
+      // Payé sur une page absente, et la recherche a rendu des vidéos : la preuve serveur que « absent » mentait.
+      { tag: "faux404", paid: 7, at: 9, absent: 2, absentVideos: 1 },
+    ]);
+  });
+});
+
+describe("Radar — tri des hashtags : « absent » ne dispense de payer qu'après une recherche payée vide (revue du 20/11/2026)", () => {
+  const TAG = tagEmbedUrl("wallbit");
+  const SEARCHES = ["wallbit app", "#wallbit"];
+  /**
+   * Une recherche de l'app, comme runNetworkSearch : le tri lit la page du hashtag une fois ; chaque passe sautée est
+   * une économie comptée (usage.spare("hashtag", 1)), chaque passe payée rend `returned` vidéos ; puis l'app retient ses
+   * hashtags payés (finishNetworkSearch → noteTagCounts).
+   */
+  async function search(prev: TagCount[] | undefined, page: PageFetch, returned: number, at: number) {
+    const past = prev?.find((t) => t.tag === "wallbit");
+    const passes = networkPasses(SEARCHES);
+    const tags = new Map<string, TagRun>();
+    let guard = tagGuardStart();
+    let spared = 0;
+    let paidPasses = 0;
+    for (const pass of passes) {
+      if (pass.kind === "hashtag" && !tags.has(pass.value)) {
+        const run = tagRunStart(passes.filter((p) => p.kind === "hashtag" && p.value === pass.value).length);
+        const noted = tagGuardNote(guard, await checkHashtag(pass.value, WALLBIT, { deep: false, last: past?.videos, paid: past?.paid }, tiktok({ [TAG]: page }).io));
+        guard = noted.guard;
+        run.check = noted.check;
+        tags.set(pass.value, run);
+      }
+      if (passSkip(pass, tags)) {
+        spared++;
+        continue;
+      }
+      paidPasses++;
+      const tag = pass.kind === "hashtag" ? tags.get(pass.value) : undefined;
+      if (!tag) continue;
+      const videos = Array.from({ length: returned }, (_, n) => ({ videoId: ID(n), authorHandle: `c${n}`, caption: "#wallbit" }));
+      notePaidPage(tag, { attached: 0, signals: 0, updated: 0 }, videos, WALLBIT);
+      notePaidPass(tag, { stopped: false, failed: false });
+    }
+    const paid = paidTags(tags);
+    return { spared, paidPasses, check: tags.get("wallbit")!.check!, counts: paid.length ? noteTagCounts(prev, paid, SEARCHES, at) : prev };
+  }
+  const absent: PageFetch = { kind: "absent" };
+
+  it("absent jamais payé : on paie (ses deux passes), et l'app retient ce que la recherche a rendu — zéro vidéo, page absente", async () => {
+    const s = await search(undefined, absent, 0, 1);
+    expect(s.check).toMatchObject({ pay: true, why: "unconfirmed", nothing: true });
+    expect(s).toMatchObject({ spared: 0, paidPasses: 4 });
+    expect(s.counts).toEqual([{ tag: "wallbit", paid: 0, at: 1, absent: 1 }]);
+  });
+
+  it("absent après une recherche payée vide : ses deux passes sautées, deux économies comptées ; les mots-clés paient", async () => {
+    const first = await search(undefined, absent, 0, 1);
+    const s = await search(first.counts, absent, 0, 2);
+    expect(s.check).toMatchObject({ pay: false, why: "absent" });
+    expect(s).toMatchObject({ spared: 2, paidPasses: 2 });
+    // Rien de payé pour lui : la dernière recherche payée reste celle qui a constaté le vide.
+    expect(s.counts).toEqual(first.counts);
+  });
+
+  it("absent après une recherche payée qui a rendu des vidéos : on paie, à chaque fois, et la contradiction est comptée", async () => {
+    const first = await search(undefined, absent, 5, 1);
+    expect(first.counts).toEqual([{ tag: "wallbit", paid: 10, at: 1, absent: 1, absentVideos: 1 }]);
+    const s = await search(first.counts, absent, 5, 2);
+    expect(s.check).toMatchObject({ pay: true, why: "unconfirmed" });
+    expect(s).toMatchObject({ spared: 0, paidPasses: 4 });
+    expect(s.counts).toEqual([{ tag: "wallbit", paid: 10, at: 2, absent: 2, absentVideos: 2 }]);
+  });
+
+  it("page absente à la recherche payée (avant : rien de retenu) : payé vide, c'est retenu, et la suivante saute", async () => {
+    // Il avait 40 vidéos : la page « absent » contredit ce qu'on a payé (history), on paie ; la recherche ne rend rien (banni).
+    const s1 = await search([{ tag: "wallbit", videos: 40, paid: 80, at: 0 }], absent, 0, 1);
+    expect(s1.check).toMatchObject({ pay: true, why: "history" });
+    expect(s1.counts).toEqual([{ tag: "wallbit", paid: 0, at: 1, absent: 1 }]);
+    const s2 = await search(s1.counts, absent, 0, 2);
+    expect(s2).toMatchObject({ spared: 2, paidPasses: 2 });
+    // Le vide ne dure plus (la page a un compteur) : on paie, comme avant.
+    const s3 = await search(s2.counts, ok(tagPage("3", [item(0, "c0", "#wallbit"), item(1, "c1", "#wallbit"), item(2, "luz", "#fyp")])), 2, 3);
+    expect(s3).toMatchObject({ spared: 0, paidPasses: 4 });
+    expect(s3.counts).toEqual([{ tag: "wallbit", videos: 3, paid: 4, at: 3, absent: 1, complete: 1 }]);
   });
 });
 
