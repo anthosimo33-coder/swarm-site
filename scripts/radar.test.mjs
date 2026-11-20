@@ -40,22 +40,73 @@ const RULES = [
     }
     return out;
   }],
+  ['Un format cité par une fiche d\'app ou de créateur a sa fiche, ou est marqué page:false (audit Q22)', (docs) => {
+    const out = [];
+    for (const [k, d] of docs) {
+      if (!/^(app|creator):/.test(k)) continue;
+      for (const f of d.formats ?? []) {
+        if (f.page !== false && !docs.has(`format:${f.id}`)) out.push(`${k} → format:${f.id}`);
+        if (f.page === false && docs.has(`format:${f.id}`)) out.push(`${k} → format:${f.id} marqué sans fiche alors qu'il en a une`);
+      }
+    }
+    return out;
+  }],
+  ['Une app citée sans fiche (en pause) est marquée page:false, jamais un lien mort (audit Q23)', (docs) => {
+    const out = [];
+    const check = (k, a) => { if (a && typeof a === 'object' && a.slug && a.page !== false && !docs.has(`app:${a.slug}`)) out.push(`${k} → app:${a.slug}`); };
+    for (const [k, d] of docs) {
+      if (/^(creator|video):/.test(k)) check(k, d.app);
+      if (/^format:/.test(k)) for (const a of d.apps ?? []) check(k, a);
+      if (/^creators:/.test(k)) for (const c of d.creators ?? []) check(k, c.app);
+      if (k === 'formats' || k === 'alerts') for (const f of d.formats ?? []) for (const a of f.apps ?? []) check(k, a);
+      if (k === 'alerts' || k === 'home') for (const v of d.videos ?? []) check(k, v.app);
+    }
+    return out;
+  }],
+  ['Créateurs : un compte muet depuis plus de QUIET_DAYS jours ne passe jamais devant un compte actif (audit Q24)', (docs) => {
+    const out = [], quiet = (models.QUIET_DAYS ?? 30) * DAY, NOW = 1794780000000;
+    for (const [k, d] of docs) {
+      if (!/^creators:[A-Z]+$/.test(k)) continue;
+      const list = d.creators ?? [];
+      const firstActive = list.findIndex((c) => c.lastPostAt && NOW - c.lastPostAt <= quiet);
+      const lastQuiet = list.map((c) => !c.lastPostAt || NOW - c.lastPostAt > quiet).lastIndexOf(true);
+      const before = list.slice(0, Math.max(0, list.findLastIndex((c) => c.lastPostAt && NOW - c.lastPostAt <= quiet))).filter((c) => !c.lastPostAt || NOW - c.lastPostAt > quiet);
+      if (before.length) out.push(`${k} : ${before.length} muets devant des actifs (1er : @${before[0].handle}, rang ${list.indexOf(before[0]) + 1})`);
+      void firstActive; void lastQuiet;
+    }
+    return out;
+  }],
+  ['Une app fusionnée a sa correspondance ancien slug → nouveau (audit Q25)', (docs, raw) => {
+    const out = [];
+    const byId = new Map(raw.apps.map((a) => [a.id, a]));
+    const canon = (a) => { for (let i = 0; a && a.mergedInto && i < 5; i++) a = byId.get(a.mergedInto) ?? a; return a; };
+    const map = docs.get('apps:merged')?.merged ?? {};
+    for (const a of raw.apps) {
+      if (!a.mergedInto) continue;
+      const c = canon(a);
+      if (!c || c.mergedInto || c.status !== 'active' || c.slug === a.slug) continue;
+      if (map[a.slug] !== c.slug) out.push(`${a.slug} → ${map[a.slug] ?? '(rien)'} au lieu de ${c.slug}`);
+    }
+    for (const [from, to] of Object.entries(map)) if (!docs.has(`app:${to}`)) out.push(`${from} → ${to}, sans fiche`);
+    return out;
+  }],
 ];
 
 let fail = 0;
-const run = async (label, docs, strict) => {
+const run = async (label, docs, strict, raw) => {
   console.log(`── ${label} : ${docs.size} pages`);
   for (const [name, rule] of RULES) {
-    const bad = await rule(docs);
+    const bad = await rule(docs, raw);
     const okk = !bad.length;
     console.log(`${okk ? 'OK   ' : strict ? 'ÉCHEC' : 'RELEVÉ'} ${name}${okk ? '' : ` : ${bad.length} — ${bad.slice(0, 4).join(' ; ')}`}`);
     if (!okk && strict) fail++;
   }
 };
-await run('export inventé', boardsOf(models, fixtureRaw()), true);
+const fixture = fixtureRaw();
+await run('export inventé', boardsOf(models, fixture), true, fixture);
 if (process.env.REEL) {
   const { raw, store } = realRaw(process.env.REEL.replace(/^~/, process.env.HOME));
-  await run(`export réel (${process.env.REEL})`, boardsOf(models, raw, store), false);
+  await run(`export réel (${process.env.REEL})`, boardsOf(models, raw, store), false, raw);
 }
 console.log(fail ? `${fail} échec(s)` : 'tout passe');
 process.exit(fail ? 1 : 0);

@@ -149,6 +149,8 @@ export const kindOf = (a: RApp, store: string | null): "app" | "saas" | "jeu_mob
 export const PREVIEW_TOP = 3;
 /** Une app n'est listée qu'avec au moins 2 comptes qui la poussent, prouvés (un compte n'entre que prouvé, cf Jarvia #506). */
 export const MIN_APP_ACCOUNTS = 2;
+/** Formats qui ont leur fiche (`format:<id>`, avec la page de leurs 30 premières reprises) : les premiers de la liste. */
+export const FORMAT_PAGES = 150;
 /** Créateurs par document de liste (~1 Ko chacun ; un document Convex : 1 Mio au plus). */
 export const CREATOR_PAGE = 500;
 /** Créateurs par document de l'index de recherche (« search », « search:creators:2 »…). */
@@ -715,7 +717,12 @@ export function buildBoards(
     .filter((f) => f.members.length > 0) // un format sans aucune reprise montrable n'apparaît pas
     .sort((p, q) => q.accounts - p.accounts || (q.medX ?? 0) - (p.medX ?? 0));
   // Chaque reprise montrée mène à sa vidéo : elle a sa page dans le lecteur.
-  const shown = formatRows.slice(0, 150);
+  const shown = formatRows.slice(0, FORMAT_PAGES);
+  // Les formats qui ont leur fiche. Une fiche d'app ou de créateur cite aussi les autres, marqués page:false : l'écran
+  // les montre sans lien. Audit Q22 (19/11) : 45 % des formats des fiches app et 70 % de ceux des fiches créateur
+  // menaient à « Cette fiche n'est plus dans le Radar ».
+  const hasPage = new Set(shown.map((f) => f.id));
+  const pageFlag = (id: string) => (hasPage.has(id) ? {} : { page: false as const });
   for (const f of shown) for (const m of f.members.slice(0, 30)) {
     if (usedVideos.has(m.videoId)) continue;
     // Une reprise suivie a sa page dans le groupe qui la suit ; une reprise que personne ne suit, à l'étape globale.
@@ -782,7 +789,7 @@ export function buildBoards(
       return {
         updatedAt: now, ...plainOf.get(c.handle)!,
         videos: vids.map(card),
-        formats: fmts.slice(0, 10).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount })),
+        formats: fmts.slice(0, 10).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accountCount, ...pageFlag(f.id) })),
       };
     });
   }
@@ -797,7 +804,7 @@ export function buildBoards(
       .sort((p, q) => (q.medianViews ?? 0) - (p.medianViews ?? 0))
       .slice(0, 10)
       .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle) }));
-    const appFormats = formatRows.filter((f) => f.apps.some((x) => x?.slug === a.slug)).slice(0, 8).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX, maxViews: f.maxViews }));
+    const appFormats = formatRows.filter((f) => f.apps.some((x) => x?.slug === a.slug)).slice(0, 8).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX, maxViews: f.maxViews, ...pageFlag(f.id) }));
     const { _top12, _accs, ...row } = r;
     boards.set(`app:${a.slug}`, { updatedAt: now, ...row, videos: _top12.map(card), formats: appFormats, creators: appCreators });
   }
@@ -843,7 +850,7 @@ export function buildBoards(
       updatedAt: now,
       apps: appsBoard.map((a) => ({ slug: a.slug, name: a.name, icon: a.icon, niche: a.niche, views30: a.views30 })),
       creators: index.slice(0, SEARCH_CREATORS), creatorPages: parts,
-      formats: formatRows.slice(0, 150).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts })),
+      formats: formatRows.slice(0, FORMAT_PAGES).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts })),
     });
     for (let i = 2; i <= parts; i++) boards.set(`search:creators:${i}`, { updatedAt: now, creators: index.slice((i - 1) * SEARCH_CREATORS, i * SEARCH_CREATORS) });
   }

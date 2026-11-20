@@ -204,7 +204,7 @@ class Component extends DCLogic {
       fv = DV.filter((v) => (vf === 'sans' ? !v.paid : vf === 'seuls' ? !!v.paid : true)).slice(0, 6)
         .map((v) => ({ src: v.cover || '', v: nf(v.views), h: '@' + v.handle, age: ago(v.publishedAt), href: 'MVideo.dc.html?v=' + v.id, paid: !!v.paid, car: v.carousel ? String(v.carousel) : '', bTop: v.carousel ? '17px' : '8px', segs: Array.from({ length: Math.min(+(v.carousel || 0), 12) }, (_, j) => ({ bg: j === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.34)' })) }));
       ff = (D.formats || []).slice(0, 4).map((f) => ({ ico: f.kind === 'sound' ? SON : TXT, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
-        m: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', o: nf(f.maxViews || 0) + ' vues au mieux', href: 'MFormatFiche.dc.html?f=' + f.id }));
+        m: f.accounts + ' comptes', x: f.medX ? xf(f.medX) + ' en médiane' : '', o: nf(f.maxViews || 0) + ' vues au mieux', href: f.page === false ? null : 'MFormatFiche.dc.html?f=' + f.id }));
       fm = (D.markets || []).map(([c, p], i) => ({ c, l: ML[c] || c, v: nf((D.views30 || 0) * p / 100), p: p + '\u202f%', w: p + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
       fc = (D.creators || []).slice(0, 6).map((c) => ({ av: c.avatar || '', noav: true, h: '@' + c.handle, mk: c.market || '',
         s: nf(c.fans || 0) + ' abonnés' + (c.median ? ' · ' + nf(c.median) + ' vues médianes' : ''), page: !!c.page, nopage: !c.page, href: 'MCreateurFiche.dc.html?h=' + c.handle }));

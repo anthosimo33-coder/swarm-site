@@ -249,7 +249,7 @@ class Component extends DCLogic {
       }
       const ic = { texte: 'M5 6h14M12 6v12M8 18h8', son: 'M9 18V6l10-2v12M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM19 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z' };
       fmts = (D.formats || []).map((f) => ({ icon: f.kind === 'sound' ? ic.son : ic.texte, t: f.kind === 'sound' ? 'Son « ' + f.label + ' »' : '« ' + f.label + ' »',
-        meta: 'Repris par ' + f.accounts + ' comptes', href: 'FormatFicheA.dc.html?f=' + f.id }));
+        meta: 'Repris par ' + f.accounts + ' comptes', href: f.page === false ? null : 'FormatFicheA.dc.html?f=' + f.id }));
     }
     vids = vids.map((v) => Object.assign({ href: 'VideoA.dc.html' }, v));
     const TIL = { 'Abonnés': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Vues médianes': 'M3 3v18h18M7 15l4-4 3 3 5-6', 'Rythme': 'M3 12h4l3-8 4 16 3-8h4', 'Meilleure vidéo': 'M13 2L4 14h7l-1 8 9-12h-7z' };
