@@ -10,7 +10,8 @@
     "check": "node scripts/check.mjs",
     "test:apercu": "node scripts/apercu.test.mjs",
     "test:sync": "node scripts/sync-cout.test.mjs",
-    "test:cache": "node scripts/cache.test.mjs"
+    "test:cache": "node scripts/cache.test.mjs",
+    "test:apercu:mutants": "node scripts/apercu.mutants.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",

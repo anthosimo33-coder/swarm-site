@@ -1,0 +1,19 @@
+[
+  ["M1 apps : liste complète glissée dans un autre champ", "apps: top, total: appsOf(apps).length, preview: true", "apps: top, all: appsOf(apps), total: appsOf(apps).length, preview: true"],
+  ["M2 vidéo masquée servie (garde hidden de read retirée)", "if (key.startsWith(\"video:\") && hidden.has(key.slice(\"video:\".length))) return null;", ""],
+  ["M3 page en morceaux tronquée servie (garde parts retirée)", "if (parts.length !== row.parts) return null;", ""],
+  ["M4 withCovers neutralisée", "if (!site) return data;", "return data;"],
+  ["M5 vidéos masquées gardées dans les listes", "x.filter((y) => !gone(y))", "x"],
+  ["M6 apps:FR / apps@instagram ouverts sans abonnement", "if (key.startsWith(\"app:\")) return", "if (key.startsWith(\"apps:\") || key.startsWith(\"apps@\")) return read(ctx, key, hidden);\n  if (key.startsWith(\"app:\")) return"],
+  ["M7 format:<id> et creator:<handle> ouverts", "if (key.startsWith(\"app:\")) return", "if (key.startsWith(\"format:\") || key.startsWith(\"creator:\")) return read(ctx, key, hidden);\n  if (key.startsWith(\"app:\")) return"],
+  ["M8 alerts ouvert", "if (key.startsWith(\"app:\")) return", "if (key === \"alerts\") return read(ctx, key, hidden);\n  if (key.startsWith(\"app:\")) return"],
+  ["M9 search:creators:N ouvert", "if (key.startsWith(\"app:\")) return", "if (key.startsWith(\"search:\")) return read(ctx, key, hidden);\n  if (key.startsWith(\"app:\")) return"],
+  ["M10 recherche : créateurs gardés", "creators: [], formats: []", "creators: (s as any).creators, formats: []"],
+  ["M11 Pro si pro !== false", "?.pro === true)", "?.pro !== false)"],
+  ["M12 garde de connexion retirée", "if (userId === null) return null;\n    const hidden", "const hidden"],
+  ["M13 top 4 au lieu de 3", "PREVIEW_TOP = 3", "PREVIEW_TOP = 4"],
+  ["M14 apps : niches remplacées par toutes les apps", "{ ...(apps as object), apps: top", "{ ...(apps as object), niches: appsOf(apps), apps: top"],
+  ["M15 creators:<pays>:N ouvert", "if (key.startsWith(\"app:\")) return", "if (key.startsWith(\"creators:\")) return read(ctx, key, hidden);\n  if (key.startsWith(\"app:\")) return"],
+  ["M16 home ouvert", "if (key.startsWith(\"app:\")) return", "if (key === \"home\") return read(ctx, key, hidden);\n  if (key.startsWith(\"app:\")) return"],
+  ["M17 vidéo hors top 3 ouverte", "return d.app?.slug && open.has(d.app.slug) ? d : LOCKED;", "return d;"]
+]
