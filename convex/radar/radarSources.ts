@@ -335,7 +335,7 @@ export const runTranscripts = internalAction({
     if (pass.free.stopped) console.warn(`[radar] transcriptions : voie gratuite fermée, ${pass.free.stopped}`);
     // Ce que TikTok sert aux serveurs : tous les textes gratuits (saved ne compte que ceux qui remplacent un appel payant).
     const f = pass.free;
-    if (f.pages > 0) console.log(`[radar] transcriptions : ${f.pages} pages, ${f.texts} textes par les sous-titres natifs (${pass.saved} à la place du payant), ${f.checked} sans piste, ${f.gone} supprimées, ${f.missed} manquées`);
+    if (f.pages > 0) console.log(`[radar] transcriptions : ${f.pages} pages, ${f.texts} textes par les sous-titres natifs (${pass.saved} à la place du payant), ${f.checked} sans piste (dont ${f.held} en langue non prouvée), ${f.gone} supprimées, ${f.missed} manquées`);
     const { calls, credits, errors, creditsRemaining, lastError } = pass.paid;
     await ctx.runMutation(internal.radar.radarSignals.recordRun, {
       poste: "transcript",

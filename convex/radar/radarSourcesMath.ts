@@ -262,11 +262,16 @@ export function transcriptQueue<R>(ranked: readonly TranscriptRanked<R>[], free:
  * LÉGENDE (« en » sur une vidéo parlée en espagnol, relevé le 20/11).
  * Le transcript payant (`/v1/tiktok/video/transcript`) rend ces sous-titres natifs quand ils existent, l'IA sinon.
  *
- * Banc du 20/11/2026, côte à côte (scripts/radar-bancs/transcriptions.ts) : 40 vidéos transcrites en payant les 14 et
- * 15/11, relues par la voie gratuite (67 pages). 27 portent une piste ASR : 26 rendent MOT POUR MOT le texte rangé par
- * le payant ; la 27e est parlée en malais, et le payant avait rangé, mot pour mot, sa piste de traduction anglaise
- * (MT, vérifié) — la voie gratuite rend ce qui est dit. 9 n'ont aucune piste et 3 une traduction seule : le payant les
- * transcrit, comme avant. 1 est supprimée depuis. Une étude du même jour en trouvait 20 sur 39, dont 19 identiques.
+ * Bancs du 20/11/2026, côte à côte (scripts/radar-bancs/transcriptions.ts, du poste) : 40 vidéos transcrites en payant
+ * les 14 et 15/11 (67 pages), puis 200 tirées à graine fixe parmi les 260 plus récentes encore en ligne (303 pages).
+ * Sur les 200 : 103 portent une piste ASR dans la langue parlée ; 101 rendent AU CARACTÈRE PRÈS le texte rangé par le
+ * payant (15 langues) ; les 2 autres sont parlées en malais — le payant avait rangé la traduction anglaise (MT), ou une
+ * transcription par l'IA plus juste que la piste ASR (« senarai » et non « sejarah »), comme au premier banc (1 sur
+ * 1) : le malais n'est pas pris (TRANSCRIPT_FREE_LANGS). 52 n'ont aucune piste, 32 une piste « MT » seule, 4 sont
+ * refusées (région, vérification) : le payant les transcrit, comme avant. 9 sont supprimées depuis. Les 32 « MT »
+ * seules portent toutes une piste dans la langue parlée de Version « 8:… » : des sous-titres d'origine repris par le
+ * créateur (claInfo.captionInfos : isOriginalCaption, isAutoGen faux), pas une traduction ; lues à part (mode « mt »),
+ * 29 sur 31 rendent le texte payant (écarts : malais, filipino). Non prises : à prouver par leur propre banc.
  * Mesuré du poste : ce que TikTok sert aux serveurs Convex, `radarUsage.saved.transcript` le dira.
  */
 export type SubtitleTrack = { lang: string; source: string; url: string };
@@ -309,6 +314,21 @@ export function asrTrack(subs: { tracks: readonly SubtitleTrack[]; spoken?: stri
 }
 
 /**
+ * Les langues (code de base de la piste ASR) où la voie gratuite est PROUVÉE neutre : aux deux bancs du 20/11/2026,
+ * chaque texte gratuit dans l'une d'elles est identique au caractère au texte payant (au moins un cas, aucun écart ;
+ * 101 sur 101 au banc de 200 : eng 39, spa 11, fra 10, por 7, ita 6, vie 6, ron 5, ces 4, deu 4, ind 3, tha 2, rus,
+ * hun, kor, nld 1). Le malais (« msa ») : 3 écarts sur 3 — le payant y rangeait la traduction anglaise ou le texte
+ * de son IA, plus juste que la piste ASR de TikTok.
+ */
+export const TRANSCRIPT_FREE_LANGS: readonly string[] = ["ces", "deu", "eng", "fra", "hun", "ind", "ita", "kor", "nld", "por", "ron", "rus", "spa", "tha", "vie"];
+/**
+ * Mode mesure (« qualité avant crédits ») : faux, une piste ASR dans une autre langue (le malais, écart prouvé ; une
+ * langue jamais vue au banc) n'est pas prise — la décision est comptée (`free.held`), la vidéo marquée sans que son
+ * WebVTT soit lu, et le payant la transcrit comme avant. Vrai seulement après un banc qui les prouve.
+ */
+export const TRANSCRIPT_FREE_ANY_LANG = false;
+
+/**
  * Les répliques d'un WebVTT, dans l'ordre (les lignes de chaque bloc horodaté, jointes ; balises retirées) ; `null`
  * si ce n'est pas un WebVTT (page d'erreur, corps vide). L'en-tête, les blocs NOTE ou STYLE et les identifiants de
  * réplique ne sont pas du texte dit.
@@ -348,7 +368,8 @@ export const SUBS_GONE: readonly UnavailableReason[] = ["removed", "private", "r
  * Ce que la page publique a donné pour une vidéo :
  *  text : sa piste ASR, mise en forme · gone : supprimée ou plus publique (TikTok le dit) — rien à transcrire ·
  *  checked : page lue, rien à prendre (pas de piste ASR, traduction seule, piste vide ; page servie sans vidéo ;
- *    ou TikTok ne nous la sert pas : région, vérification, page absente) — le payant la prendra · miss : page ou
+ *    ou TikTok ne nous la sert pas : région, vérification, page absente ; `held` : la piste ASR est dans une langue
+ *    que le banc n'a pas prouvée, TRANSCRIPT_FREE_LANGS) — le payant la prendra · miss : page ou
  *    WebVTT qui manque (`refused` : refusé ou servi sans ses données, compté pour le coupe-circuit) — le payant tout
  *    de suite, la voie gratuite la relira au passage suivant.
  * Une page servie AVEC ses données mais sans vidéo (« page sans vidéo ») n'est pas un refus : TikTok répond, et la
@@ -357,7 +378,7 @@ export const SUBS_GONE: readonly UnavailableReason[] = ["removed", "private", "r
 export type FreeSubs =
   | { kind: "text"; text: string; lang: string }
   | { kind: "gone" }
-  | { kind: "checked"; why: string }
+  | { kind: "checked"; why: string; held?: string }
   | { kind: "miss"; refused: boolean; reason: string };
 
 /**
@@ -376,6 +397,7 @@ export async function freeTranscript(url: string, page: (url: string) => Promise
     const why = subs.tracks.length === 0 ? "aucune piste" : subs.tracks.some((t) => t.source === "ASR") ? "piste ASR d'une autre langue" : "traduction seule";
     return { kind: "checked", why };
   }
+  if (!TRANSCRIPT_FREE_ANY_LANG && !TRANSCRIPT_FREE_LANGS.includes(baseLang(track.lang))) return { kind: "checked", why: "langue non prouvée", held: track.lang };
   const v = await page(track.url);
   if (!v.ok) return { kind: "miss", refused: v.kind === "suspect", reason: `WebVTT ${v.kind === "absent" ? "absent" : (v.reason ?? "refusé")}` };
   const cues = webvttCues(v.text);
@@ -400,7 +422,8 @@ export type TranscriptIo<S> = {
 };
 
 export type TranscriptPass = {
-  free: { pages: number; texts: number; gone: number; checked: number; missed: number; stopped: string | null };
+  /** `held` : parmi `checked`, les pistes ASR laissées au payant faute de banc dans leur langue (mode mesure). */
+  free: { pages: number; texts: number; gone: number; checked: number; held: number; missed: number; stopped: string | null };
   paid: { calls: number; credits: number; errors: number; creditsRemaining?: number; lastError?: string };
   /**
    * Appels payants évités (radarUsage.saved.transcript) : les vidéos transcrites par leur page publique parmi les
@@ -437,7 +460,7 @@ export async function transcriptPass<S extends { url: string; checked: boolean }
   io: TranscriptIo<S>,
   limits: { pages: number; paid: number },
 ): Promise<TranscriptPass> {
-  const free: TranscriptPass["free"] = { pages: 0, texts: 0, gone: 0, checked: 0, missed: 0, stopped: null };
+  const free: TranscriptPass["free"] = { pages: 0, texts: 0, gone: 0, checked: 0, held: 0, missed: 0, stopped: null };
   // Ce que le payant aurait pris à ce passage sans la voie gratuite : la tête de la file, dans sa limite.
   const head = new Set(due.slice(0, Math.max(0, limits.paid)));
   let saved = 0;
@@ -462,6 +485,7 @@ export async function transcriptPass<S extends { url: string; checked: boolean }
     tried.add(s);
     if (r.kind === "checked") {
       free.checked++;
+      if (r.held) free.held++;
       await io.apply(s, "checked");
     } else {
       free.missed++;

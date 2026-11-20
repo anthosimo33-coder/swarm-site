@@ -6,6 +6,8 @@ import { internal } from "../../convex/_generated/api";
 import { parseFreeVideo, type FreePage } from "../../convex/radar/radarFreeMath";
 import { dueTranscripts, runTranscripts } from "../../convex/radar/radarSources";
 import {
+  TRANSCRIPT_FREE_ANY_LANG,
+  TRANSCRIPT_FREE_LANGS,
   TRANSCRIPT_FREE_PAGES,
   asrTrack,
   freeTranscript,
@@ -188,6 +190,20 @@ describe("une vidéo par sa page publique", () => {
     expect(await freeTranscript("v1", tiktok({ v1: page([track("eng-US", "ASR")], "eng-US"), [vttUrl("eng-US")]: "WEBVTT\n\n" }).page)).toEqual({ kind: "checked", why: "piste vide" });
   });
 
+  it("mode mesure : une piste ASR hors des langues prouvées au banc (malais, langue jamais vue) est laissée au payant, sans WebVTT lu", async () => {
+    // Banc du 20/11/2026 (200 vidéos) : 101 textes identiques au payant en 15 langues, 2 écarts sur 2 en malais.
+    expect(TRANSCRIPT_FREE_ANY_LANG).toBe(false);
+    expect(TRANSCRIPT_FREE_LANGS).not.toContain("msa");
+    for (const lang of ["msa-MY", "jpn-JP"]) {
+      const tt = tiktok({ v1: page([track(lang, "ASR"), track("eng-US", "MT")], lang), [vttUrl(lang)]: VTT });
+      expect(await freeTranscript("v1", tt.page)).toEqual({ kind: "checked", why: "langue non prouvée", held: lang });
+      expect(tt.read).toEqual(["v1"]);
+    }
+    // La même langue de base qu'une langue prouvée passe (« spa-MX » pour « spa »).
+    const mx = tiktok({ v1: page([track("spa-MX", "ASR")], "spa-MX"), [vttUrl("spa-MX")]: VTT });
+    expect(await freeTranscript("v1", mx.page)).toEqual({ kind: "text", text: PAID_TEXT, lang: "spa-MX" });
+  });
+
   it("supprimée ou privée : rien à transcrire ; bloquée hors de sa région ou page absente : le payant essaiera", async () => {
     expect(await freeTranscript("v1", tiktok({ v1: refused(10204, "item doesn't exist") }).page)).toEqual({ kind: "gone" });
     expect(await freeTranscript("v1", tiktok({ v1: refused(10222, "author_secret") }).page)).toEqual({ kind: "gone" });
@@ -242,7 +258,7 @@ describe("un passage de transcriptions", () => {
     const r = await transcriptPass([sig("a"), sig("b")], p.io, { pages: 40, paid: 5 });
     expect(p.applied).toEqual([["a", "hello"], ["b", "bonjour"]]);
     expect(p.paid).toEqual([]);
-    expect(r).toEqual({ free: { pages: 2, texts: 2, gone: 0, checked: 0, missed: 0, stopped: null }, paid: { calls: 0, credits: 0, errors: 0 }, saved: 2 });
+    expect(r).toEqual({ free: { pages: 2, texts: 2, gone: 0, checked: 0, held: 0, missed: 0, stopped: null }, paid: { calls: 0, credits: 0, errors: 0 }, saved: 2 });
   });
 
   it("repli : sans piste ASR (marquée), page refusée ou WebVTT manquant → le payant, dans l'ordre de la file et sa limite", async () => {
@@ -251,10 +267,19 @@ describe("un passage de transcriptions", () => {
     const r = await transcriptPass([sig("a"), sig("b"), sig("c"), sig("d"), sig("e", true)], p.io, { pages: 40, paid: 3 });
     expect(p.applied).toEqual([["a", "checked"], ["d", "bonjour"], ["a", "payé:a"], ["b", "payé:b"], ["c", "payé:c"]]);
     expect(p.paid).toEqual(["a", "b", "c"]);
-    expect(r.free).toEqual({ pages: 4, texts: 1, gone: 0, checked: 1, missed: 2, stopped: null });
+    expect(r.free).toEqual({ pages: 4, texts: 1, gone: 0, checked: 1, held: 0, missed: 2, stopped: null });
     expect(r.paid).toEqual({ calls: 3, credits: 3, errors: 0, creditsRemaining: 997 });
     // d n'est pas parmi les 3 premières de la file : sans la voie gratuite, le payant ne l'aurait pas prise ce passage.
     expect(r.saved).toBe(0);
+  });
+
+  it("langue non prouvée : marquée et comptée (held), le payant la transcrit comme avant, rien d'évité", async () => {
+    const p = passage({ a: ASR_PAGE("msa-MY"), b: ASR_PAGE(), [vttUrl("msa-MY")]: vtt("kalau universiti"), [vttUrl("eng-US")]: vtt("hi") });
+    const r = await transcriptPass([sig("a"), sig("b")], p.io, { pages: 40, paid: 2 });
+    expect(p.read).toEqual(["a", "b", vttUrl("eng-US")]);
+    expect(p.applied).toEqual([["a", "checked"], ["b", "hi"], ["a", "payé:a"]]);
+    expect(r.free).toEqual({ pages: 2, texts: 1, gone: 0, checked: 1, held: 1, missed: 0, stopped: null });
+    expect(r.saved).toBe(1);
   });
 
   it("saved : un texte gratuit ne compte que s'il remplace un appel que le payant aurait fait à ce passage", async () => {
@@ -317,14 +342,14 @@ describe("un passage de transcriptions", () => {
     expect(p.applied).toEqual([["a", "hi"], ["b", "checked"]]);
     expect(p.paid).toEqual([]);
     // Rien n'aurait été payé : le texte est de la couverture, pas un crédit évité.
-    expect(r).toEqual({ free: { pages: 3, texts: 1, gone: 0, checked: 1, missed: 1, stopped: null }, paid: { calls: 0, credits: 0, errors: 0 }, saved: 0 });
+    expect(r).toEqual({ free: { pages: 3, texts: 1, gone: 0, checked: 1, held: 0, missed: 1, stopped: null }, paid: { calls: 0, credits: 0, errors: 0 }, saved: 0 });
   });
 
   it("une page servie sans vidéo ne compte pas pour le coupe-circuit", async () => {
     // r1… r5 : refusées (HTTP 429, deux fois) ; n : servie sans vidéo, entre la 4e et la 5e.
     const p = passage({ n: NO_VIDEO });
     const r = await transcriptPass(["r1", "r2", "r3", "r4", "n", "r5"].map((id) => sig(id)), p.io, { pages: 40, paid: 0 });
-    expect(r.free).toEqual({ pages: 6, texts: 0, gone: 0, checked: 1, missed: 5, stopped: null });
+    expect(r.free).toEqual({ pages: 6, texts: 0, gone: 0, checked: 1, held: 0, missed: 5, stopped: null });
     expect(p.applied).toEqual([["n", "checked"]]);
   });
 
@@ -343,7 +368,7 @@ describe("un passage de transcriptions", () => {
     };
     const first = await pass();
     expect(first.read).toEqual(ids);
-    expect(first.r.free).toEqual({ pages: 7, texts: 2, gone: 0, checked: 5, missed: 0, stopped: null });
+    expect(first.r.free).toEqual({ pages: 7, texts: 2, gone: 0, checked: 5, held: 0, missed: 0, stopped: null });
     // Au passage suivant, rien n'est relu : elles attendent le payant.
     const second = await pass();
     expect(second.read).toEqual([]);

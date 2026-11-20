@@ -238,7 +238,7 @@ async function compare(rows: readonly Row[], apps: readonly TranscriptApp[], pag
       res.picked = asrTrack(subs)?.lang ?? null;
     }
     if (free.kind === "text") Object.assign(res, { asr: free.lang }, judge(r, free.text, apps));
-    else if (free.kind === "checked") res.why = free.why;
+    else if (free.kind === "checked") Object.assign(res, { why: free.why }, free.held ? { held: free.held } : {});
     else if (free.kind === "miss") Object.assign(res, { reason: free.reason, refused: free.refused });
     results.push(res);
     console.log(JSON.stringify({ ...res, free: undefined, paid: undefined, gap: undefined }));
@@ -246,7 +246,7 @@ async function compare(rows: readonly Row[], apps: readonly TranscriptApp[], pag
   return { results, stopped };
 }
 
-const MAIN_WHY = ["aucune piste", "traduction seule", "piste ASR d'une autre langue"];
+const MAIN_WHY = ["aucune piste", "traduction seule", "piste ASR d'une autre langue", "langue non prouvée"];
 
 const worst = (texts: readonly Result[], n: number) =>
   texts
@@ -276,6 +276,8 @@ function summarize(results: readonly Result[], extra: Result): Result {
     mtSeule: why("traduction seule"),
     asrAutreLangue: why("piste ASR d'une autre langue"),
     sansPiste: why("aucune piste"),
+    // Pistes ASR que la brique laisse au payant (mode mesure, TRANSCRIPT_FREE_LANGS) : la décision, comptée.
+    langueNonProuvee: results.filter((x) => x.held).map((x) => ({ videoId: x.videoId, held: x.held })),
     autresVerifiees: otherWhy,
     supprimees: of("gone").length,
     manquees: of("miss").map((x) => ({ videoId: x.videoId, reason: x.reason })),
