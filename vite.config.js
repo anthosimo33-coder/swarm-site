@@ -96,8 +96,30 @@ const variantPreload = {
   },
 };
 
+/**
+ * Le cadre de l'app (app.html, maquette 1A du 20/11) : les feuilles de style de la page passent dans le <body>, juste
+ * avant l'app, après le cadre dessiné en styles en ligne. Dans le <head>, elles retenaient la première image tant
+ * qu'elles n'étaient pas arrivées (mesuré en 3G, cache vide : écran noir 1,9 s) ; le cadre s'affiche maintenant dès que
+ * la page arrive. Le code de l'app attend toujours ces feuilles avant de tourner (une feuille en attente retient les
+ * scripts) : rien ne s'affiche sans ses styles.
+ */
+const frameFirst = {
+  name: 'app-frame-first',
+  apply: 'build',
+  transformIndexHtml: {
+    order: 'post',
+    handler(html, ctx) {
+      if (!ctx.filename.endsWith('/app.html')) return html;
+      const sheets = [];
+      const rest = html.replace(/\n?[ \t]*<link\b[^>]*\brel="stylesheet"[^>]*>/g, (tag) => { sheets.push(tag.trim()); return ''; });
+      if (!sheets.length || !rest.includes('<div id="app">')) return html;
+      return rest.replace('<div id="app">', `${sheets.join('\n    ')}\n    <div id="app">`);
+    },
+  },
+};
+
 export default defineConfig({
-  plugins: [local, variantPreload],
+  plugins: [local, variantPreload, frameFirst],
   // Convex et Convex Auth sont écrits pour React : Preact les fait tourner via preact/compat.
   resolve: {
     alias: {
