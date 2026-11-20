@@ -21,8 +21,9 @@ export default class Formules extends DCLogic {
   }
   renderVals() {
     // La fenêtre des formules (19/11) : ouverte par « J’en profite » (bandeau, carte) et par un onglet verrouillé.
-    // Annuel = l’offre Black Friday (−50 %), Mensuel = « Tout débloquer ». Après le 30/11 minuit, le haut Black
-    // Friday disparaît et les deux formules restent (mêmes prix que la page Tarifs).
+    // Annuel = l’offre Black Friday (−50 %), Mensuel = « Tout débloquer ». Après le 30/11 minuit (audit Q1, décision du
+    // 20/11) : le haut Black Friday, le −50 % et le prix barré disparaissent, l’annuel repasse à 29,99 € / mois, facturé
+    // 359,88 € par an (mêmes prix que la page Tarifs ; le serveur choisit le tarif Whop par date, convex/whop.ts).
     const p = this.props || {};
     const st = this.state || {};
     const close = () => { if (p.onClose) p.onClose(); };
@@ -34,6 +35,8 @@ export default class Formules extends DCLogic {
     const checkout = p.checkout || {};
     return {
       bfOn: bfLeft > 0, tiles,
+      annualPrice: bfLeft > 0 ? '14,99 €' : '29,99 €',
+      annualBilled: bfLeft > 0 ? 'Facturé 179,88 € par an' : 'Facturé 359,88 € par an',
       bfAria: dd + ' jours, ' + hh + ' heures, ' + mm + ' minutes',
       titleId: bfLeft > 0 ? 'for-sous-titre' : 'for-titre',
       annualCta: bfLeft > 0 ? 'J’en profite' : 'Choisir l’annuel',
@@ -98,19 +101,23 @@ export default class Formules extends DCLogic {
                       "Annuel"
                     ),
                     $h("span", { "style": "font-size: 13px; color: var(--ink-muted);" },
-                      "Facturé 179,88 € par an"
+                      $t($v.annualBilled)
                     )
                   ),
-                  $h("span", { "style": "height: 26px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; background: #FF6A1F; color: #FFFFFF; font-size: 12px; font-weight: 700;" },
-                    "−50 %"
-                  )
+                  ($v.bfOn) ? [
+                    $h("span", { "style": "height: 26px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; background: #FF6A1F; color: #FFFFFF; font-size: 12px; font-weight: 700;" },
+                      "−50 %"
+                    )
+                  ] : null
                 ),
                 $h("div", { "style": "display: flex; align-items: baseline; gap: 8px;" },
-                  $h("span", { "style": "font-size: 16px; color: var(--ink-faint); text-decoration: line-through; font-variant-numeric: tabular-nums;" },
-                    "29,99 €"
-                  ),
+                  ($v.bfOn) ? [
+                    $h("span", { "style": "font-size: 16px; color: var(--ink-faint); text-decoration: line-through; font-variant-numeric: tabular-nums;" },
+                      "29,99 €"
+                    )
+                  ] : null,
                   $h("span", { "style": "font-family: var(--font-display); font-size: 44px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums;" },
-                    "14,99 €"
+                    $t($v.annualPrice)
                   ),
                   $h("span", { "style": "font-size: 14px; color: var(--ink-muted);" },
                     "/ mois"

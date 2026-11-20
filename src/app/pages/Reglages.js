@@ -227,9 +227,12 @@ export default class Reglages extends DCLogic {
       bfOn: bfLeft > 0, bfTime,
       billM: bill === 'm' ? 'true' : 'false', billY: bill === 'y' ? 'true' : 'false',
       pickM: () => this.setState({ bill: 'm' }), pickY: () => this.setState({ bill: 'y' }),
-      price: bill === 'y' ? '14,99 €' : '29,99 €',
-      priceSub: bill === 'y' ? '179,88 € aujourd’hui, puis chaque année. Annulable en un clic.' : '29,99 € aujourd’hui, puis chaque mois. Sans engagement.',
-      ctaLabel: bill === 'y' ? 'Passer Pro · 179,88 €' : 'Passer Pro · 29,99 €',
+      // Après le 30/11 minuit (audit Q1, décision du 20/11) : l’annuel à 29,99 € / mois, facturé 359,88 € par an, sans
+      // réduction ni prix barré (le serveur choisit le tarif Whop par date, convex/whop.ts).
+      strikeOn: bill === 'y' && bfLeft > 0,
+      price: bill === 'y' ? (bfLeft > 0 ? '14,99 €' : '29,99 €') : '29,99 €',
+      priceSub: bill === 'y' ? (bfLeft > 0 ? '179,88 €' : '359,88 €') + ' aujourd’hui, puis chaque année. Annulable en un clic.' : '29,99 € aujourd’hui, puis chaque mois. Sans engagement.',
+      ctaLabel: bill === 'y' ? 'Passer Pro · ' + (bfLeft > 0 ? '179,88 €' : '359,88 €') : 'Passer Pro · 29,99 €',
       ctaHref: (bill === 'y' ? checkout.annuel : checkout.mensuel) || '/tarifs',
       ctaStyle: orange ? 'background: linear-gradient(180deg, #FF9A4D, #FF641A); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 22px rgba(255,106,31,0.3);' : 'background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: 0 8px 22px rgba(11,111,224,0.3);',
       inc: ['Les ' + String(total).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' apps et leur classement', 'Les formats qui explosent', 'Les créateurs derrière chaque app', 'Tous les marchés', 'Les alertes « vidéo qui explose »', 'Tes dossiers, sans limite'],
@@ -674,16 +677,18 @@ export default class Reglages extends DCLogic {
                       ),
                       $h("button", { "type": "button", "role": "radio", "aria-checked": $v.billY, "onClick": $v.pickY },
                         "Annuel",
-                        $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FF9C57;" },
-                          "−50 %"
-                        )
+                        ($v.bfOn) ? [
+                          $h("span", { "style": "font-size: 11px; font-weight: 700; color: #FF9C57;" },
+                            "−50 %"
+                          )
+                        ] : null
                       )
                     )
                   ),
                   $h("span", { "style": "display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;" },
                     $h("span", { "style": "display: flex; flex-direction: column; gap: 6px;" },
                       $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
-                        ($v.billY) ? [
+                        ($v.strikeOn) ? [
                           $h("span", { "style": "font-size: 16px; color: var(--ink-faint); text-decoration: line-through;" },
                             "29,99 €"
                           )

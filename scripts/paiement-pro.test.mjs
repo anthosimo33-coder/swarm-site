@@ -19,7 +19,7 @@ process.env.WHOP_API_KEY = "test";
 let links = 0;
 const json = (x) => new Response(JSON.stringify(x), { status: 200, headers: { "content-type": "application/json" } });
 globalThis.fetch = async (url, init = {}) => {
-  if (/\/variants\?/.test(url)) return json({ data: [{ id: "plan_m", billing_period: 30, visibility: "visible", billing_type: "renewal" }, { id: "plan_y", billing_period: 365, visibility: "visible", billing_type: "renewal" }] });
+  if (/\/variants\?/.test(url)) return json({ data: [{ id: "plan_m", billing_period: 30, renewal_price: 29.99, visibility: "visible", billing_type: "renewal" }, { id: "plan_bf", billing_period: 365, renewal_price: 179.88, visibility: "visible", billing_type: "renewal" }, { id: "plan_y", billing_period: 365, renewal_price: 359.88, visibility: "hidden", billing_type: "renewal" }] });
   if (/\/checkout_configurations$/.test(url) && init.method === "POST") { links++; return json({ purchase_url: "https://whop.com/checkout/plan_x" }); }
   return new Response("?", { status: 404 });
 };

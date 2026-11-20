@@ -65,7 +65,19 @@ const moneyCurrency = (m: any, fallback: any): string | null => (m && typeof m =
 
 // ─── Les tarifs (variants) du produit Kopycat Pro ───
 
-type Variant = { id: string; billing_period?: number | null; billing_type?: string; visibility?: string; renewal_price?: number; currency?: string; tax_type?: string; product?: { id?: string } };
+type Variant = { id: string; title?: string | null; billing_period?: number | null; billing_type?: string; visibility?: string; renewal_price?: number; initial_price?: number; currency?: string; tax_type?: string; product?: { id?: string } };
+
+/**
+ * Black Friday (audit du 19/11, Q1 ; décision du 20/11) : l'annuel à 179,88 € jusqu'au 30/11 à minuit (Paris), puis au
+ * prix normal, 359,88 € (12 × 29,99 €). La date est la même que celle des canevas (bfLeft dans design/…) ; le tarif
+ * Whop est choisi ici, par la date du serveur, jamais d'après le client. Avant, le premier tarif annuel visible était
+ * pris : l'annuel serait resté vendu 179,88 € après la fin annoncée.
+ */
+export const BF_END = Date.parse("2026-12-01T00:00:00+01:00");
+export const PRICES = { mensuel: 29.99, annuelBlackFriday: 179.88, annuel: 359.88 };
+export const priceFor = (formule: "mensuel" | "annuel", now: number) =>
+  formule === "mensuel" ? PRICES.mensuel : now < BF_END ? PRICES.annuelBlackFriday : PRICES.annuel;
+const cents = (x: unknown) => Math.round(Number(x) * 100);
 
 async function listVariants(): Promise<Variant[]> {
   const pick = (b: any): Variant[] => (Array.isArray(b) ? b : Array.isArray(b?.data) ? b.data : []);
@@ -74,18 +86,77 @@ async function listVariants(): Promise<Variant[]> {
   return list;
 }
 
-async function variantFor(formule: "mensuel" | "annuel"): Promise<Variant> {
-  const ok = (await listVariants()).filter((x) => (x.visibility ?? "visible") === "visible" && (x.billing_type ?? "renewal") === "renewal");
-  const found = ok.find((x) => (formule === "annuel" ? (x.billing_period ?? 0) >= 360 : (x.billing_period ?? 0) > 0 && (x.billing_period ?? 0) <= 31));
-  if (!found) throw new Error(`Aucun tarif ${formule} visible sur le produit Kopycat Pro`);
-  return found;
+const periodOk = (formule: "mensuel" | "annuel", x: Variant) =>
+  formule === "annuel" ? (x.billing_period ?? 0) >= 360 : (x.billing_period ?? 0) > 0 && (x.billing_period ?? 0) <= 31;
+
+/**
+ * Le tarif Whop de la formule, au prix affiché à cette date (priceFor) : un tarif à un autre prix n'est jamais pris
+ * (audit Q14 / Q26). Visible d'abord ; un tarif masqué au bon prix sert aussi (bascule du 1/12 pas encore passée).
+ * Aucun : ConvexError TARIF_INDISPONIBLE, plutôt que de vendre à un prix qui n'est pas celui affiché.
+ */
+async function variantFor(formule: "mensuel" | "annuel", now: number): Promise<Variant> {
+  const want = cents(priceFor(formule, now));
+  const ok = (await listVariants())
+    .filter((x) => (x.billing_type ?? "renewal") === "renewal" && (x.visibility ?? "visible") !== "archived" && periodOk(formule, x) && cents(x.renewal_price) === want)
+    .sort((a, b) => Number((b.visibility ?? "visible") === "visible") - Number((a.visibility ?? "visible") === "visible"));
+  if (!ok.length) {
+    console.error(`[whop] aucun tarif ${formule} à ${want / 100} € sur le produit Kopycat Pro`);
+    throw new ConvexError({ code: "TARIF_INDISPONIBLE" });
+  }
+  return ok[0];
 }
+
+/**
+ * Crée sur Whop le tarif annuel au prix normal (359,88 €), MASQUÉ jusqu'au 1/12 (sinon achetable sur la page Whop pendant
+ * le Black Friday), et planifie la bascule de minuit (finBlackFriday). Copie la forme du tarif Black Friday (taxe, devise,
+ * prix initial). Sans `apply` : rend seulement ce qui serait envoyé. Rien de créé deux fois : un tarif annuel à 359,88 €
+ * existant est rendu tel quel. Lancer une fois : `npx convex run --prod whop:creerAnnuelNormal '{"apply": true}'`.
+ */
+export const creerAnnuelNormal = internalAction({
+  args: { apply: v.optional(v.boolean()) },
+  handler: async (ctx, { apply }): Promise<Json> => {
+    const all = await listVariants();
+    const annual = (price: number) => all.find((x) => (x.billing_type ?? "renewal") === "renewal" && periodOk("annuel", x) && cents(x.renewal_price) === cents(price) && x.visibility !== "archived");
+    const existing = annual(PRICES.annuel);
+    if (existing) return { deja: existing.id, visibilite: existing.visibility ?? null };
+    const bf = annual(PRICES.annuelBlackFriday);
+    if (!bf) throw new Error("tarif annuel Black Friday introuvable : rien à copier");
+    const initial = cents(bf.initial_price) === cents(bf.renewal_price) ? PRICES.annuel : bf.initial_price ?? 0;
+    const body: Json = {
+      account_id: ACCOUNT, product_id: PRODUCT, billing_type: "renewal", billing_period: 365, renewal_price: PRICES.annuel,
+      initial_price: initial, currency: bf.currency ?? "eur", visibility: "hidden",
+      ...(bf.tax_type ? { tax_type: bf.tax_type } : {}), ...(bf.title ? { title: bf.title } : {}),
+    };
+    if (!apply) return { envoi: body, copieDe: { id: bf.id, renewal_price: bf.renewal_price, initial_price: bf.initial_price ?? null, tax_type: bf.tax_type ?? null, title: bf.title ?? null } };
+    const created = await whopApi("/variants", { method: "POST", body });
+    if (Date.now() < BF_END) await ctx.scheduler.runAt(BF_END, internal.whop.finBlackFriday, {});
+    return { cree: created?.id ?? null, bascule: Date.now() < BF_END ? new Date(BF_END).toISOString() : "date passée : lancer whop:finBlackFriday" };
+  },
+});
+
+/** Minuit le 1/12 (Paris) : le tarif annuel Black Friday est masqué sur Whop, l'annuel au prix normal devient visible. */
+export const finBlackFriday = internalAction({
+  args: {},
+  handler: async (): Promise<string[]> => {
+    if (Date.now() < BF_END) return ["Black Friday pas fini : rien à faire"];
+    const done: string[] = [];
+    for (const x of await listVariants()) {
+      if ((x.billing_type ?? "renewal") !== "renewal" || !periodOk("annuel", x)) continue;
+      const to = cents(x.renewal_price) === cents(PRICES.annuelBlackFriday) ? "hidden" : cents(x.renewal_price) === cents(PRICES.annuel) ? "visible" : null;
+      if (!to || (x.visibility ?? "visible") === to) continue;
+      await whopApi(`/variants/${x.id}`, { method: "PATCH", body: { visibility: to } });
+      done.push(`${x.id} (${x.renewal_price} €) → ${to}`);
+    }
+    console.log(`[whop] fin du Black Friday : ${done.join(", ") || "rien à changer"}`);
+    return done;
+  },
+});
 
 /** Diagnostic (terminal) : les tarifs vus par l'API, sans secret. `npx convex run whop:tarifs [--prod]`. */
 export const tarifs = internalAction({
   args: {},
   handler: async () =>
-    (await listVariants()).map((x) => ({ id: x.id, prix: x.renewal_price, devise: x.currency, jours: x.billing_period, visibilite: x.visibility, taxe: x.tax_type })),
+    (await listVariants()).map((x) => ({ id: x.id, prix: x.renewal_price, initial: x.initial_price ?? null, devise: x.currency, jours: x.billing_period, visibilite: x.visibility, taxe: x.tax_type, titre: x.title ?? null })),
 });
 
 // ─── Payer : le lien de paiement Whop, relié au compte ───
@@ -114,7 +185,7 @@ export const checkout = action({
     const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
     if (await ctx.runQuery(internal.whop.alreadyPro, { userId })) throw new ConvexError({ code: "DEJA_ABONNE" });
-    const variant = await variantFor(formule);
+    const variant = await variantFor(formule, Date.now());
     // Retour sur le site d'où l'on vient (prod, préversion Vercel, local) ; sinon l'adresse du site.
     const site = /^https:\/\/[a-z0-9.-]+$/i.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin) ? origin : (process.env.SITE_URL || "https://swarm-site-one.vercel.app");
     const conf = await whopApi("/checkout_configurations", {

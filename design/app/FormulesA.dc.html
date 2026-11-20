@@ -38,8 +38,8 @@ body{margin:0;background:#05070C}
 <div style="display: flex; flex-direction: column; gap: 4px;"><span id="{{titleId}}" style="font-size: 18px; font-weight: 700; letter-spacing: -0.01em;">Choisis ta formule</span><span style="font-size: 14px; color: var(--ink-muted);">Un seul plan, tout Kopycat. Tu changes quand tu veux.</span></div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch;">
 <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-radius: 20px; background: linear-gradient(180deg, rgba(255,106,31,0.14), rgba(255,106,31,0.03) 75%); box-shadow: inset 0 0 0 1px rgba(255,138,76,0.5);">
-<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;"><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 16px; font-weight: 700;">Annuel</span><span style="font-size: 13px; color: var(--ink-muted);">Facturé 179,88 € par an</span></span><span style="height: 26px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; background: #FF6A1F; color: #FFFFFF; font-size: 12px; font-weight: 700;">−50 %</span></div>
-<div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 16px; color: var(--ink-faint); text-decoration: line-through; font-variant-numeric: tabular-nums;">29,99 €</span><span style="font-family: var(--font-display); font-size: 44px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums;">14,99 €</span><span style="font-size: 14px; color: var(--ink-muted);">/ mois</span></div>
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;"><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 16px; font-weight: 700;">Annuel</span><span style="font-size: 13px; color: var(--ink-muted);">{{annualBilled}}</span></span><sc-if value="{{bfOn}}" hint-placeholder-val="{{true}}"><span style="height: 26px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; background: #FF6A1F; color: #FFFFFF; font-size: 12px; font-weight: 700;">−50 %</span></sc-if></div>
+<div style="display: flex; align-items: baseline; gap: 8px;"><sc-if value="{{bfOn}}" hint-placeholder-val="{{true}}"><span style="font-size: 16px; color: var(--ink-faint); text-decoration: line-through; font-variant-numeric: tabular-nums;">29,99 €</span></sc-if><span style="font-family: var(--font-display); font-size: 44px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums;">{{annualPrice}}</span><span style="font-size: 14px; color: var(--ink-muted);">/ mois</span></div>
 <a class="for-cta" href="{{annual}}" style="margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 14px; background: linear-gradient(180deg, #FF9A4D, #FF641A); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 10px 28px rgba(255,106,31,0.3); color: #FFFFFF; font-size: 15px; font-weight: 700; text-decoration: none;">{{annualCta}}<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
 </div>
 <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-radius: 20px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);">
@@ -73,8 +73,9 @@ class Component extends DCLogic {
   }
   renderVals() {
     // La fenêtre des formules (19/11) : ouverte par « J’en profite » (bandeau, carte) et par un onglet verrouillé.
-    // Annuel = l’offre Black Friday (−50 %), Mensuel = « Tout débloquer ». Après le 30/11 minuit, le haut Black
-    // Friday disparaît et les deux formules restent (mêmes prix que la page Tarifs).
+    // Annuel = l’offre Black Friday (−50 %), Mensuel = « Tout débloquer ». Après le 30/11 minuit (audit Q1, décision du
+    // 20/11) : le haut Black Friday, le −50 % et le prix barré disparaissent, l’annuel repasse à 29,99 € / mois, facturé
+    // 359,88 € par an (mêmes prix que la page Tarifs ; le serveur choisit le tarif Whop par date, convex/whop.ts).
     const p = this.props || {};
     const st = this.state || {};
     const close = () => { if (p.onClose) p.onClose(); };
@@ -86,6 +87,8 @@ class Component extends DCLogic {
     const checkout = p.checkout || {};
     return {
       bfOn: bfLeft > 0, tiles,
+      annualPrice: bfLeft > 0 ? '14,99 €' : '29,99 €',
+      annualBilled: bfLeft > 0 ? 'Facturé 179,88 € par an' : 'Facturé 359,88 € par an',
       bfAria: dd + ' jours, ' + hh + ' heures, ' + mm + ' minutes',
       titleId: bfLeft > 0 ? 'for-sous-titre' : 'for-titre',
       annualCta: bfLeft > 0 ? 'J’en profite' : 'Choisir l’annuel',
