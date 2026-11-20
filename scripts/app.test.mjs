@@ -104,4 +104,38 @@ const has = (f) => fs.existsSync(app(f));
   ok(/scrollMemory\(/.test(main) && /\.remember\(\)/.test(main) && /\.popped\(\)/.test(main) && /\.arrive\(/.test(main), 'F13 : src/app/main.js retient la position avant chaque navigation et la rend au retour');
 }
 
+// ─── Constats « basse » (phase 2) ───
+{
+  const plan = await import(app('plan.js'));
+  const { ROUTES } = await import(app('routes.js'));
+  // Q31 : une adresse au %-encodage invalide ne fait plus planter le routeur (page blanche).
+  let threw = null, m = null;
+  try { m = plan.routeMatcher?.(ROUTES)('/app/apps/%E0'); } catch (e) { threw = e; }
+  ok(!!plan.routeMatcher && !threw && m?.params?.slug === '%E0', `Q31 : /app/apps/%E0 ne lève pas, la fiche est simplement introuvable (${threw ? threw.name : m?.key})`);
+  ok(!/decodeURIComponent\(/.test(main) && typeof plan.safeDecode === 'function' && plan.safeDecode('%E0') === '%E0' && plan.safeDecode('a%20b') === 'a b',
+    'Q31 : main.js ne décode plus rien sans protection (ancre, vidéo survolée comprises)');
+  // F26 : barre de chargement, puis « connexion perdue » au-delà du délai.
+  const lv = plan.loadingView;
+  ok(!!lv && plan.LOAD_TIMEOUT_MS === 15000 && lv({ loading: '/app/apps/x', stalled: null, path: '/app/apps/x', screenPath: '/app/apps' }) === 'progress'
+    && lv({ loading: '/app/apps/x', stalled: '/app/apps/x', path: '/app/apps/x', screenPath: '/app/apps' }) === 'stalled'
+    && lv({ loading: null, stalled: null, path: '/app/apps', screenPath: '/app/apps' }) === null
+    && lv({ loading: '/app/a', stalled: '/app/a', path: '/app/b', screenPath: '/app' }) === null,
+    'F26 : en cours → barre ; au-delà de 15 s → « connexion perdue » ; rien une fois l\'écran arrivé ou parti ailleurs');
+  ok(/loadingView\(/.test(main) && /LOAD_TIMEOUT_MS/.test(main) && /app-progress/.test(main) && /\.app-progress\b[^{]*\{[^}]*animation:[^}]*\.15s/.test(fs.readFileSync(app('app.css'), 'utf8')),
+    'F26 : main.js applique la règle ; la barre ne paraît qu\'après 150 ms');
+  // F29 : une fiche qui sort du top 3 pendant qu'on la lit ne nous éjecte pas.
+  const pv = plan.previewView;
+  if (pv) {
+    const open = { slug: 'a' }, locked = { locked: true };
+    const a1 = { locked: false, open: null };
+    const r1 = pv(a1, open), r2 = pv(a1, locked);
+    const a2 = { locked: true, open: null };
+    const r3 = pv(a2, locked);
+    ok(!r1.eject && r2.data === open && !r2.eject && r3.eject, 'F29 : sortie du top 3 en pleine lecture → la dernière valeur reste ; verrouillée dès l\'arrivée → retour à Apps');
+  } else ok(false, 'F29 : plan.previewView absente');
+  ok(/previewView\(/.test(main), 'F29 : main.js l\'applique');
+  // Q38 : l'initiale envoyée aux écrans est un caractère entier.
+  ok(/initiale: \(Array\.from\(/.test(main) && !/initiale:[^\n]*charAt\(0\)/.test(main), 'Q38 : l\'initiale de main.js n\'est plus une moitié d\'émoji');
+}
+
 end();
