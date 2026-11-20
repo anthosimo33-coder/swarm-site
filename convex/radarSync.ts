@@ -18,7 +18,8 @@ const STORE_RULE = 6; // 6 : à plusieurs candidates, titre exact ou nette avanc
 /**
  * Synchronisation quotidienne du Radar (cron, convex/crons.ts, et lui seul : les lectures de fond ne la relancent plus
  * depuis le 20/11), en étapes (voir « Synchro par groupes d'apps » plus bas) :
- *  1. `run` lit l'export de Jarvia (clé JARVIA_EXPORT_SECRET) : apps, comptes, formats, signaux, et les fiches App Store ;
+ *  1. `run` lit l'export du Radar (ses tables, RADAR_LOCAL=1 ; sinon celui de Jarvia, clé JARVIA_EXPORT_SECRET) : apps, comptes,
+ *     formats, signaux, et les fiches App Store ;
  *  2. `runGroup`, un par groupe d'apps : ses vidéos, puis ses fiches d'app, de créateur et ses pages vidéo ;
  *  3. `runGlobal` : les pages communes, puis le ménage (pages et images que plus rien ne cite) et les files de vérification.
  * Les images manquantes sont copiées ensuite (copyMedia, qui se relance jusqu'au bout de la liste). Lancer à la main :
@@ -121,15 +122,35 @@ function slimRow(table: string, row: Record<string, unknown>, k: Slim): unknown 
   return row;
 }
 
-async function fetchTable(base: string, secret: string, table: (typeof TABLES)[number], k: Slim, only?: { apps: string[]; keep: (r: Record<string, unknown>) => boolean }) {
-  const rows: unknown[] = [];
-  let cursor: string | null = null;
-  const apps = only ? `&apps=${only.apps.map(encodeURIComponent).join(",")}` : "";
-  for (let page = 0; page < 3000; page++) {
-    const url = `${base}/swarm/export?table=${table}${apps}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`;
+type ExportPage = { rows: Record<string, unknown>[]; cursor: string; done: boolean };
+/** Une page de l'export du Radar : table, curseur (null = la première), apps (tracked et trackedVideos seulement). */
+type ExportSource = (table: (typeof TABLES)[number], cursor: string | null, apps?: string[]) => Promise<ExportPage>;
+
+/**
+ * D'où la synchro lit le Radar. Avec RADAR_LOCAL=1 (déménagement du Radar dans Kopycat, 20/11/2026) : ses propres
+ * tables (convex/radar/exportLocal), les mêmes pages qu'avant ; sinon l'export de Jarvia, sur HTTP.
+ */
+function exportSource(ctx: ActionCtx): ExportSource {
+  if (process.env.RADAR_LOCAL === "1") {
+    return (table, cursor, apps) => ctx.runQuery(internal.radar.exportLocal.page, { table, cursor, ...(apps ? { apps } : {}) }) as Promise<ExportPage>;
+  }
+  const base = process.env.JARVIA_EXPORT_URL ?? DEFAULT_EXPORT_URL;
+  const secret = process.env.JARVIA_EXPORT_SECRET;
+  if (!secret) throw new Error("JARVIA_EXPORT_SECRET absente");
+  return async (table, cursor, apps) => {
+    const only = apps ? `&apps=${apps.map(encodeURIComponent).join(",")}` : "";
+    const url = `${base}/swarm/export?table=${table}${only}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(90_000) });
     if (!res.ok) throw new Error(`export ${table} : HTTP ${res.status}`);
-    const body = (await res.json()) as { rows: Record<string, unknown>[]; cursor: string; done: boolean };
+    return (await res.json()) as ExportPage;
+  };
+}
+
+async function fetchTable(src: ExportSource, table: (typeof TABLES)[number], k: Slim, only?: { apps: string[]; keep: (r: Record<string, unknown>) => boolean }) {
+  const rows: unknown[] = [];
+  let cursor: string | null = null;
+  for (let page = 0; page < 3000; page++) {
+    const body = await src(table, cursor, only?.apps);
     for (const r of body.rows) if (!only || only.keep(r)) rows.push(slimRow(table, r, k));
     if (body.done) return rows;
     cursor = body.cursor;
@@ -141,12 +162,12 @@ async function fetchTable(base: string, secret: string, table: (typeof TABLES)[n
  * Les vidéos d'un groupe d'apps : par le filtre `apps` de l'export (Jarvia #532, 100 apps par demande, une page ne lit
  * qu'une app) ; un export qui ne connaît pas encore ce filtre rend toute la table, une seule fois, triée ici.
  */
-async function fetchGroupVideos(base: string, secret: string, k: Slim, ids: string[], keep: (r: Record<string, unknown>) => boolean) {
+async function fetchGroupVideos(src: ExportSource, k: Slim, ids: string[], keep: (r: Record<string, unknown>) => boolean) {
   const rows: unknown[] = [];
   for (let i = 0; i < ids.length; i += 100) {
     const part = ids.slice(i, i + 100), want = new Set(part);
     let foreign = false;
-    const got = await fetchTable(base, secret, "trackedVideos", k, { apps: part, keep: (r) => { if (!want.has(String(r.appId))) foreign = true; return keep(r); } });
+    const got = await fetchTable(src, "trackedVideos", k, { apps: part, keep: (r) => { if (!want.has(String(r.appId))) foreign = true; return keep(r); } });
     rows.push(...got);
     if (foreign) return rows; // filtre ignoré : la table entière est déjà lue (et triée)
   }
@@ -558,9 +579,7 @@ export const run = internalAction({
     // La préparation n'a pas de reprise : au-delà de STEP_DEADLINE_MS, elle échoue proprement au lieu d'être coupée (Q68).
     const deadline = (where: string) => { if (Date.now() - runStart > STEP_DEADLINE_MS) throw new Error(`préparation : temps écoulé (${where})`); };
     try {
-      const base = process.env.JARVIA_EXPORT_URL ?? DEFAULT_EXPORT_URL;
-      const secret = process.env.JARVIA_EXPORT_SECRET;
-      if (!secret) throw new Error("JARVIA_EXPORT_SECRET absente");
+      const src = exportSource(ctx);
       // Les fichiers des passages d'avant (finis, ratés, coupés) : effacés.
       for (const r of await ctx.runQuery(internal.radarStore.staleStages, { keep: runId })) {
         await stageDrop(ctx, r.ids as Id<"_storage">[]);
@@ -572,7 +591,7 @@ export const run = internalAction({
       const pool = new Map<string, string>();
       const slim: Slim = { intern: (x) => { const y = pool.get(x); if (y) return y; pool.set(x, x); return x; }, now };
       const raw = {} as Omit<Raw, "trackedVideos">;
-      for (const t of ["apps", "tracked", "formats", "signals"] as const) { (raw as Record<string, unknown>)[t] = await fetchTable(base, secret, t, slim); gc(); MEMLOG('export ' + t); deadline("export " + t); }
+      for (const t of ["apps", "tracked", "formats", "signals"] as const) { (raw as Record<string, unknown>)[t] = await fetchTable(src, t, slim); gc(); MEMLOG('export ' + t); deadline("export " + t); }
       pool.clear();
       // Essai sur le dev seulement : des comptes marqués « placement payé » à la main (variable SWARM_TEST_PLACEMENT,
       // pseudos séparés par des virgules), tant que l'export du Radar n'envoie pas encore `placement`.
@@ -691,8 +710,7 @@ export const runGroup = internalAction({
     try {
       gc();
       MEMLOG(`groupe ${i + 1}/${st.groups.length} départ`);
-      const base = process.env.JARVIA_EXPORT_URL ?? DEFAULT_EXPORT_URL;
-      const secret = process.env.JARVIA_EXPORT_SECRET ?? "";
+      const src = exportSource(ctx);
       const set = new Set(st.groups[i]);
       // Les formats d'abord : leurs reprises et les signaux récents servent à toutes les étapes (choix des formats montrés,
       // alertes) ; les autres signaux, seulement ceux des vidéos du groupe.
@@ -702,7 +720,7 @@ export const runGroup = internalAction({
       const canon = canonicalOf(apps);
       const pool = new Map<string, string>();
       const slim: Slim = { intern: (x) => { const y = pool.get(x); if (y) return y; pool.set(x, x); return x; }, now: st.now };
-      const trackedVideos = (await fetchGroupVideos(base, secret, slim, st.fetch[i], (r) => set.has(canon(r.appId as string)))) as RVideo[];
+      const trackedVideos = (await fetchGroupVideos(src, slim, st.fetch[i], (r) => set.has(canon(r.appId as string)))) as RVideo[];
       pool.clear();
       MEMLOG(`groupe ${i + 1} : ${trackedVideos.length} vidéos`);
       const own = new Set(trackedVideos.map((v) => v.videoId));

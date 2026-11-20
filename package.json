@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/seo.mjs && node scripts/prerender.mjs",
     "preview": "vite preview",
-    "verify": "tsc --noEmit -p convex && npm run check && npm run test:apercu && npm run test:apercu:mutants && npm run test:quota && npm run test:sync && npm run test:cover && npm run test:radar && npm run test:saved && npm run test:imports && npm run test:cache && npm run test:sources && npm run test:image && npm run test:vercel && npm run check:data && npm run test:auth && npm run test:compte && npm run test:paiement && npm run test:public && npm run test:ecrans && npm run test:bf && npm run test:whop && npm run test:comptes && npm run test:app && npm run test:filtres && npm run test:generation",
+    "verify": "tsc --noEmit -p convex && npm run check && npm run test:apercu && npm run test:apercu:mutants && npm run test:quota && npm run test:sync && npm run test:cover && npm run test:radar && npm run test:saved && npm run test:imports && npm run test:cache && npm run test:sources && npm run test:image && npm run test:vercel && npm run check:data && npm run test:auth && npm run test:compte && npm run test:paiement && npm run test:public && npm run test:ecrans && npm run test:bf && npm run test:whop && npm run test:comptes && npm run test:app && npm run test:filtres && npm run test:generation && npm run test:moteur",
     "check:data": "node scripts/check-data.mjs",
     "test:apercu:mutants": "node scripts/apercu.mutants.mjs",
     "test:cover": "node scripts/cover.test.mjs",
@@ -32,7 +32,8 @@
     "test:comptes": "node scripts/comptes.test.mjs",
     "test:app": "node scripts/app.test.mjs",
     "test:filtres": "node scripts/filtres.test.mjs",
-    "test:generation": "node scripts/generation.test.mjs"
+    "test:generation": "node scripts/generation.test.mjs",
+    "test:moteur": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",
@@ -49,6 +50,7 @@
     "@types/node": "^22.20.5",
     "preact-render-to-string": "^6.8.3",
     "typescript": "^5.9.3",
-    "vite": "^7.3.8"
+    "vite": "^7.3.8",
+    "vitest": "^3.2.4"
   }
 }
