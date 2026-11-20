@@ -83,18 +83,20 @@ const appsOf = (d: unknown): App[] => (d && typeof d === "object" && Array.isArr
 /** Les seules clés qu'un compte sans abonnement peut lire (avec stats) : toute autre répond LOCKED sans rien lire. */
 const previewable = (key: string) => key === "apps" || key === "search" || key.startsWith("app:") || key.startsWith("video:");
 
-type Top = { updatedAt?: unknown; markets?: unknown; niches?: unknown; marketApps?: unknown; apps: App[]; total: number };
+type Top = { updatedAt?: unknown; apps: App[]; total: number };
 /**
  * Le top de l'aperçu : « apps:top », écrit par la synchro (convex/radarModels.ts), quelques Ko. Audit F1 (19/11) : relire
  * « apps » (848 Ko en 4 morceaux) à chaque appel coûtait 80 fois ce qui était rendu. Tant que la synchro ne l'a pas
  * écrit (juste après un déploiement), il est tiré de « apps », comme avant.
+ * Audit S29 (19/11) : seuls la date, le top et le nombre d'apps sortent. Les marchés (pays et nombre de créateurs
+ * suivis), les apps par pays et les niches de la base payante partaient aussi au navigateur gratuit, qu'aucun écran
+ * de l'aperçu ne lit.
  */
 async function topOf(ctx: QueryCtx): Promise<Top | null> {
   const d = ((await read(ctx, "apps:top")) ?? (await read(ctx, "apps"))) as Partial<Top> | null;
   if (d === null) return null;
   // Champ par champ : rien d'autre du document n'arrive au navigateur gratuit.
-  return { updatedAt: d.updatedAt, markets: d.markets, niches: d.niches, marketApps: d.marketApps,
-    apps: appsOf(d).slice(0, PREVIEW_TOP), total: typeof d.total === "number" ? d.total : appsOf(d).length };
+  return { updatedAt: d.updatedAt, apps: appsOf(d).slice(0, PREVIEW_TOP), total: typeof d.total === "number" ? d.total : appsOf(d).length };
 }
 
 async function preview(ctx: QueryCtx, key: string): Promise<unknown> {

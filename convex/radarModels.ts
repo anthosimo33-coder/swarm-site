@@ -153,6 +153,11 @@ export const MIN_APP_ACCOUNTS = 2;
 export const QUIET_DAYS = 30;
 /** Formats qui ont leur fiche (`format:<id>`, avec la page de leurs 30 premières reprises) : les premiers de la liste. */
 export const FORMAT_PAGES = 150;
+/**
+ * Créateurs montrés par la fiche d'une app (FicheA, MFiche : les 6 premiers). Audit S29 (19/11) : la fiche en portait 10
+ * (pseudo, abonnés, médiane, pays), dont 4 qu'aucun écran ne montre, y compris aux comptes gratuits pour le top 3.
+ */
+export const APP_CREATORS = 6;
 /** Créateurs par document de liste (~1 Ko chacun ; un document Convex : 1 Mio au plus). */
 export const CREATOR_PAGE = 500;
 /** Créateurs par document de l'index de recherche (« search », « search:creators:2 »…). */
@@ -678,8 +683,8 @@ export function buildBoards(
   }
   (boards.get("apps") as { marketApps: [string, number][] }).marketApps = MARKETS.map((m) => [m[0], marketApps.get(m[0]) ?? 0]);
   // L'aperçu sans abonnement (convex/boards.ts) : le top PREVIEW_TOP et ce que son écran montre, dans un petit document.
-  // Audit F1 (19/11) : l'aperçu relisait les 848 Ko de « apps » à chaque appel, pour en rendre 10 Ko.
-  const appsDoc = boards.get("apps") as { markets: unknown; niches: unknown; marketApps: unknown };
+  // Audit F1 (19/11) : l'aperçu relisait les 848 Ko de « apps » à chaque appel, pour en rendre 10 Ko. Audit S29 : ni les
+  // marchés, ni les apps par pays, ni les niches de la base payante, qu'aucun écran de l'aperçu ne lit.
   // Son rang réel (audit Q15) : la fiche d'app le calculait sur get('apps'), réduit au top 3 dans l'aperçu (« N°2 sur 3
   // apps du Radar, 24 % » pour une app N°1 de sa niche de 13 avec 42 %). Même règle que la fiche (FicheA, MFiche) : dans
   // sa niche s'il y en a une (hors « Autres ») et qu'elle compte au moins 2 apps listées, sinon parmi toutes.
@@ -699,8 +704,7 @@ export function buildBoards(
     if (to && to.slug !== a.slug && !to.mergedInto && to.status === "active") merged.push([a.slug, to.slug]);
   }
   boards.set("apps:merged", { updatedAt: now, merged: merged.sort((p, q) => (p[0] < q[0] ? -1 : 1)) });
-  boards.set("apps:top", { updatedAt: now, markets: appsDoc.markets, niches: appsDoc.niches, marketApps: appsDoc.marketApps,
-    apps: appsBoard.slice(0, PREVIEW_TOP).map((r) => ({ ...r, standing: standingOf(r) })), total: appsBoard.length });
+  boards.set("apps:top", { updatedAt: now, apps: appsBoard.slice(0, PREVIEW_TOP).map((r) => ({ ...r, standing: standingOf(r) })), total: appsBoard.length });
 
   // ── Formats ──
   const accountX = (m: RFormatMember) => {
@@ -826,7 +830,7 @@ export function buildBoards(
     const appCreators = r._accs
       .filter((t) => (t.medianViews ?? 0) > 0)
       .sort((p, q) => (q.medianViews ?? 0) - (p.medianViews ?? 0))
-      .slice(0, 10)
+      .slice(0, APP_CREATORS)
       .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle) }));
     const appFormats = formatRows.filter((f) => f.apps.some((x) => x?.slug === a.slug)).slice(0, 8).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX, maxViews: f.maxViews, ...pageFlag(f.id) }));
     const { _top12, _accs, ...row } = r;

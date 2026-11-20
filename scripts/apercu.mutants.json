@@ -103,5 +103,10 @@
 "M21 ancien slug d'une app fusionnée : verrou du top contourné",
 "return to && open.has(to) ? read(ctx, `app:${to}`) : LOCKED;",
 "return to ? read(ctx, `app:${to}`) : LOCKED;"
+],
+[
+"M22 aperçu : marchés de la base payante rendus (audit S29)",
+"return { updatedAt: d.updatedAt, apps:",
+"return { updatedAt: d.updatedAt, markets: (d as { markets?: unknown }).markets, apps:"
 ]
 ]

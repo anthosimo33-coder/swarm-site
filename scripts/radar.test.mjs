@@ -4,6 +4,7 @@
 //         REEL=~/dev/swarm-site/.bench-data node scripts/radar.test.mjs   (en plus, compte les problèmes sur l'export réel)
 import { h } from 'preact';
 import { renderToString } from 'preact-render-to-string';
+import { readFileSync } from 'node:fs';
 import { boardsOf, fixtureRaw, loadModels, realRaw } from './radar-fixture.mjs';
 
 const models = await loadModels(process.argv[2]);
@@ -17,7 +18,8 @@ const RULES = [
     const n = models.PREVIEW_TOP ?? 3;
     if (JSON.stringify(top.apps.map((a) => a.slug)) !== JSON.stringify(apps.apps.slice(0, n).map((a) => a.slug))) out.push(`top ${top.apps.map((a) => a.slug)} ≠ ${apps.apps.slice(0, n).map((a) => a.slug)}`);
     if (top.total !== apps.apps.length) out.push(`total ${top.total} ≠ ${apps.apps.length}`);
-    for (const k of ['markets', 'niches', 'marketApps']) if (JSON.stringify(top[k]) !== JSON.stringify(apps[k])) out.push(`${k} différent de « apps »`);
+    // Audit S29 : rien d'autre (ni marchés, ni apps par pays, ni niches de la base payante).
+    if (Object.keys(top).sort().join() !== 'apps,total,updatedAt') out.push(`champs de apps:top : ${Object.keys(top).join(', ')}`);
     if (JSON.stringify(top).length > 60_000) out.push(`apps:top pèse ${JSON.stringify(top).length} car.`);
     return out;
   }],
@@ -38,6 +40,13 @@ const RULES = [
         if (/absent/.test(pro)) out.push(`${page} ${a.slug} : ${pro}`);
       }
     }
+    return out;
+  }],
+  ['Fiche d\'app : pas plus de créateurs que l\'écran n\'en montre (6, FicheA et MFiche ; audit S29)', (docs) => {
+    const out = [];
+    const shown = Math.min(...['FicheA', 'MFiche'].map((f) => Number(readFileSync(new URL(`../design/app/${f}.dc.html`, import.meta.url), 'utf8').match(/D\.creators(?: \|\| \[\]\))?\.slice\(0, (\d+)\)/)?.[1] ?? 0)));
+    if (!shown) out.push('nombre de créateurs montrés introuvable dans FicheA ou MFiche');
+    for (const [k, d] of docs) if (/^app:/.test(k) && (d.creators ?? []).length > shown) out.push(`${k} : ${d.creators.length} créateurs pour ${shown} montrés`);
     return out;
   }],
   ['Un format cité par une fiche d\'app ou de créateur a sa fiche, ou est marqué page:false (audit Q22)', (docs) => {
