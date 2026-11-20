@@ -110,10 +110,11 @@ const LISTS = [
       { f: 'abonnés', desk: [t(2, 'filters'), p('Moins de 1 000')], mob: null },
     ], other: { desk: [(v) => v.toggleSort(), p('Abonnés')], mob: [p('Abonnés')] } })),
   { name: 'Formats', path: '/app/formats', key: 'formats', desk: 'Formats', mob: 'MFormats', filters: [
-    // Niche et marché : les fenêtres de choix (maquette C1 du 20/11), comme sur Apps ; le tri est propre à l'ordinateur.
+    // Niche et marché : les fenêtres de choix (maquette C1 du 20/11), comme sur Apps ; au téléphone, les feuilles du bas
+    // (maquette T2, 20/11). Le tri est propre à l'ordinateur.
     { f: 'niche', desk: [t(1), p('Foi')], mob: [p('Foi')] },
     { f: 'type', desk: [p('Sons')], mob: [p('Sons')] },
-    { f: 'marché', desk: [t(0), p('France')], mob: null },
+    { f: 'marché', desk: [t(0), p('France')], mob: [p('France')] },
     { f: 'tri', desk: [(v) => v.sortBtn.toggle(), p('Au-dessus de la normale')], mob: null },
   ], other: { desk: [p('Accroches')], mob: [p('Accroches')] } },
   { name: 'Alertes', path: '/app/alertes', key: 'alerts', desk: 'Alertes', mob: 'MAlertes', filters: [
@@ -283,6 +284,46 @@ for (const L of LISTS) {
     } catch (e) {
       ok(false, `${C.name} · écran vide : ${e.message}`);
     }
+  }
+}
+
+// ─── Alertes au téléphone : l'alerte ouverte en plein écran (maquette T1, 20/11), la même que celle de l'ordinateur ───
+{
+  const Desk = await page('Alertes'), Mob = await page('MAlertes');
+  at('/app/alertes', '');
+  const m = mount(Mob, propsOf('alerts', {}));
+  const v0 = m.renderVals();
+  const rows = v0.groups.flatMap((g) => g.items);
+  ok(!v0.d.on && loc.search === '', 'Alertes (téléphone) : à l\'arrivée, la liste, aucune alerte ouverte, rien dans l\'adresse');
+  const one = rows[1];
+  one.pick();
+  const v1 = m.renderVals();
+  ok(v1.d.on && v1.d.key === one.key && new URLSearchParams(loc.search).get('alerte') === one.key && v1.d.pos === '2 sur ' + rows.length,
+    `Alertes (téléphone) : toucher une alerte l'ouvre en plein écran, « 2 sur ${rows.length} », et l'adresse la porte (${loc.search})`);
+  ok(mount(Desk, propsOf('alerts', queryOf(loc.search))).renderVals().d.key === one.key, 'Alertes : l\'ordinateur, monté avec cette adresse, ouvre la même alerte');
+  v1.d.next();
+  ok(m.renderVals().d.key === rows[2].key && new URLSearchParams(loc.search).get('alerte') === rows[2].key, 'Alertes (téléphone) : la flèche (ou le balayage) passe à l\'alerte suivante, l\'adresse suit');
+  m.renderVals().d.prev();
+  ok(m.renderVals().d.key === one.key, 'Alertes (téléphone) : le balayage inverse revient à la précédente');
+  m.renderVals().closeD();
+  ok(!m.renderVals().d.on && !new URLSearchParams(loc.search).has('alerte'), 'Alertes (téléphone) : « ‹ Alertes » revient à la liste et efface l\'alerte de l\'adresse');
+  // Une alerte choisie sur ordinateur : le téléphone l'ouvre après la bascule.
+  at('/app/alertes', '?alerte=' + encodeURIComponent(rows[3].key));
+  ok(mount(Mob, propsOf('alerts', queryOf(loc.search))).renderVals().d.key === rows[3].key, 'Alertes : l\'alerte choisie sur ordinateur s\'ouvre au téléphone après la bascule');
+  // Lue comme sur ordinateur : la même empreinte dans seen.alertsRead.
+  at('/app/alertes', '');
+  const writes = [];
+  const props = { ...propsOf('alerts', {}), save: (k, val) => { writes.push([k, val]); return Promise.resolve(); } };
+  const r = mount(Mob, props);
+  const fresh = r.renderVals().groups.flatMap((g) => g.items).find((a) => a.dot === 'true');
+  if (!fresh) ok(false, 'Alertes (téléphone) : le banc n\'a aucune alerte non lue');
+  else {
+    fresh.pick(); r.renderVals(); r.settle(); clearTimeout(r.flushT); r.flush();
+    const seen = (writes.find((w) => w[0] === 'seen') || [])[1];
+    const fp = Desk.prototype.fp.call(null, fresh.key);
+    ok(!!seen && String(seen.alertsRead || '').split(' ').includes(fp) && seen.alerts === SAVED.seen.alerts,
+      `Alertes (téléphone) : ouverte, l'alerte est marquée lue dans seen.alertsRead avec l'empreinte de l'ordinateur (${fp}), « Tout marquer comme lu » gardé`);
+    ok(r.renderVals().groups.flatMap((g) => g.items).find((a) => a.key === fresh.key).dot === 'false', 'Alertes (téléphone) : sa ligne perd son point bleu');
   }
 }
 
