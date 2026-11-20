@@ -18,6 +18,8 @@ import { h, Fragment } from 'preact';
 import './morph.js';
 // Bascules liquides : onglets, rail, lignes d'Apps (voir le fichier).
 import './liquid.js';
+// Fenêtres de choix (Marché, Niche, Plateforme) : dépli, survol liquide, options qui glissent (voir le fichier).
+import './choice.js';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';
