@@ -63,5 +63,7 @@ jobs:
         run: npm run test:imports
       - name: En-têtes de cache (npm run test:cache)
         run: npm run test:cache
+      - name: Appels du front et formes d'id (npm run test:sources)
+        run: npm run test:sources
       - name: Écrans sur données de banc (npm run check:data)
         run: npm run check:data
