@@ -238,6 +238,54 @@ for (const L of LISTS) {
     `Alertes : un onglet qui n'a pas l'alerte ouverte l'efface de l'adresse et ouvre une des siennes (${loc.search}, ${vt.d.key})`);
 }
 
+// ─── Filtres sans résultat (maquette V3 « le même geste partout », 20/11) ───
+// L'écran vide des listes propose « un filtre de moins » : chaque ligne annonce combien la liste montrera sans ce filtre.
+// Ici, chaque ligne est cliquée sur un écran neuf et la liste obtenue est comptée : le nombre annoncé est le bon (Apps :
+// sans pays ni plateforme, la liste d'un autre document est estimée sur celle de tous les pays, un minimum). Les lignes
+// vont de la plus fructueuse à la moins, 3 au plus, et un retrait qui donne encore 0 n'en a pas.
+{
+  const digits = (s) => Number(String(s).replace(/\D/g, ''));
+  const clone = (k) => JSON.parse(JSON.stringify(docs.get(k)));
+  // Créateurs : cinq comptes hors de « Foi » deviennent des hommes (trois à 100 k abonnés et plus), et deux de « Foi » passent
+  // 100 k : chaque filtre a un retrait qui rend des comptes, sauf « 100 k et plus » sur la grille (Foi et Hommes : aucun).
+  const cr = clone('creators:FR');
+  cr.creators.filter((c) => !(c.app && c.app.niche === 'Foi')).slice(0, 5).forEach((c, i) => { c.gender = 'homme'; if (i < 3) c.fans = 150000; });
+  cr.creators.filter((c) => c.app && c.app.niche === 'Foi' && c.gender !== 'homme').slice(0, 2).forEach((c) => { c.fans = 120000; });
+  // Formats : plus aucun format de « Foi » en France ; sans le type, la liste reste vide (ce retrait n'a pas de ligne).
+  const fm = clone('formats');
+  fm.formats = fm.formats.filter((f) => !(f.market === 'FR' && f.niche === 'Foi'));
+  const crCount = (c) => { c.renderVals().filters[4].toggle(); return digits(c.renderVals().menu.count); };
+  const CASES = [
+    { name: 'Apps', page: 'Apps', path: '/app/apps', key: 'apps', q: '?m=FR&niche=Foi&plateforme=instagram', count: (c) => c.renderVals().total, exact: ['niche', 'new'] },
+    { name: 'Apps (Nouvelles)', page: 'Apps', path: '/app/apps', key: 'apps', q: '?m=FR&niche=%C3%89tudes&tri=nouvelles', count: (c) => c.renderVals().total, exact: ['niche', 'new'] },
+    { name: 'Créateurs', page: 'Createurs', path: '/app/createurs', key: 'creators:FR', data: cr, q: '?niche=Foi&genre=homme', count: crCount, min: 2 },
+    { name: 'Créateurs (cartes)', page: 'CreateursCartes', path: '/app/createurs/cartes', key: 'creators:FR', data: cr, q: '?niche=Foi&abmin=100000&genre=homme', count: crCount, min: 2, omitted: 1 },
+    { name: 'Formats', page: 'Formats', path: '/app/formats', key: 'formats', data: fm, q: '?m=FR&niche=Foi&type=Sons', count: (c) => digits(c.renderVals().totalTxt), min: 2, omitted: 1 },
+  ];
+  for (const C of CASES) {
+    const Page = await page(C.page);
+    const fresh = () => { at(C.path, C.q); return mount(Page, { ...propsOf(C.key, queryOf(loc.search)), ...(C.data ? { data: C.data } : {}) }); };
+    try {
+      const v = fresh().renderVals();
+      const rows = v.vz.rows;
+      ok(v.empty && /^Aucun/.test(v.vz.title) && v.vz.chips.length >= 2, `${C.name} · écran vide : « ${v.vz.title} », ${v.vz.chips.length} pastilles (${C.q})`);
+      const ns = rows.map((r) => digits(r.n));
+      ok(rows.length >= (C.min || 1) && rows.length <= 3 && ns.every((n, i) => n > 0 && (i === 0 || ns[i - 1] >= n)),
+        `${C.name} · un filtre de moins : ${rows.length} lignes, les plus fructueuses d'abord, aucune à 0 (${rows.map((r) => r.label + ' ' + r.n).join(' ; ')})`);
+      if (C.omitted) ok(v.vz.chips.length - rows.length >= C.omitted, `${C.name} · le retrait qui donne encore 0 n'a pas de ligne`);
+      rows.forEach((r, i) => {
+        const c = fresh();
+        c.renderVals().vz.rows[i].drop();
+        const got = C.count(c), said = digits(r.n);
+        const exact = !C.exact || C.exact.indexOf(r.key) >= 0;
+        ok(exact ? got === said : got >= said && got > 0, `${C.name} · ${r.label} : ${said} annoncés, ${got} dans la liste après le clic (${loc.search})`);
+      });
+    } catch (e) {
+      ok(false, `${C.name} · écran vide : ${e.message}`);
+    }
+  }
+}
+
 // ─── Le routeur ───
 {
   const q = queryOf('?m=FR&niche=Foi&niche=Couple&__proto__=x');

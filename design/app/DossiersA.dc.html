@@ -35,7 +35,14 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 <div style="display: flex; align-items: center; gap: 12px;"><sc-if value="{{many}}" hint-placeholder-val="{{true}}"><div class="sw-tabs" role="tablist" aria-label="Tri"><sc-for list="{{sorts}}" as="s" hint-placeholder-count="2"><button class="sw-tab" role="tab" aria-selected="{{s.on}}" onClick="{{s.pick}}" style="height: 32px;">{{s.l}}</button></sc-for></div></sc-if><button class="sw-btn sw-btn-primary" type="button" onClick="{{startNew}}">Nouveau dossier<span class="sw-btn-tile"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></div>
 </header>
 
-<sc-if value="{{none}}" hint-placeholder-val="{{false}}"><div class="sw-empty" style="padding: 96px 24px;"><div class="sw-empty-radar"></div><p class="sw-empty-title">Aucun dossier</p><p class="sw-empty-text">Garde des apps, des vidéos, des formats et des créateurs pour les retrouver ici.</p><button class="sw-btn sw-btn-primary sw-btn-sm" type="button" onClick="{{startNew}}">Créer un dossier<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></div></sc-if>
+<sc-if value="{{none}}" hint-placeholder-val="{{false}}"><div style="padding: 44px 32px 64px;"><section class="sw-void" aria-labelledby="dv-t">
+<span class="sw-void-kick"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Aucun dossier</span>
+<h2 id="dv-t" class="sw-void-title">Le signet de chaque fiche range ici</h2>
+<sc-if value="{{vd.app}}" hint-placeholder-val="{{true}}"><div class="sw-void-card" style="margin-top: 6px;"><a class="sw-void-who" href="{{vd.href}}"><span class="sw-app-icon {{vd.blank}}" style="width: 40px; height: 40px; border-radius: 11px;"><sc-if value="{{vd.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{vd.logo}}" alt=""></sc-if><sc-if value="{{vd.nologo}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span><span class="sw-void-txt"><span class="sw-void-name">{{vd.name}}</span><span class="sw-void-sub">{{vd.sub}}</span></span></a><button class="sw-void-mark" type="button" onClick="{{vd.keep}}" aria-label="{{vd.label}}" title="Garder"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-3.5L7 20z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg></button></div>
+<span class="sw-void-arrow" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 9v8H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if>
+<div class="sw-void-slot"><span class="sw-void-tile"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="sw-void-txt"><span class="sw-void-name">{{vd.folder}}</span><span class="sw-void-sub">{{vd.slot}}</span></span></div>
+<div class="sw-void-foot"><sc-if value="{{vd.app}}" hint-placeholder-val="{{true}}"><button class="sw-btn sw-btn-primary sw-btn-sm" type="button" onClick="{{vd.keep}}">{{vd.cta}}<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></sc-if><sc-if value="{{vd.noApp}}" hint-placeholder-val="{{false}}"><button class="sw-btn sw-btn-primary sw-btn-sm" type="button" onClick="{{startNew}}">Créer un dossier<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></sc-if></div>
+</section></div></sc-if>
 
 <sc-if value="{{grid}}" hint-placeholder-val="{{true}}"><div style="padding: 28px 32px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
 <sc-if value="{{creating}}" hint-placeholder-val="{{false}}"><div class="sw-card is-featured" style="border-radius: 26px; padding: 22px; display: flex; flex-direction: column; justify-content: center; gap: 14px; min-height: 330px; box-sizing: border-box;"><label class="sw-label" for="nd-nom">Nom du dossier</label><input ref="{{setNew}}" class="sw-input" id="nd-nom" type="text" value="{{newName}}" onChange="{{onNew}}" onKeyDown="{{newKeys}}" maxlength="60" placeholder="Une idée d’app, une niche, un marché" autocomplete="off"><div style="display: flex; justify-content: flex-end; align-items: center; gap: 14px;"><button class="sw-link-quiet" type="button" onClick="{{cancelNew}}" style="border: 0; background: transparent; cursor: pointer; font: inherit; font-size: 14px;">Annuler</button><button class="sw-btn sw-btn-primary sw-btn-sm" type="button" onClick="{{createNew}}">Créer<span class="sw-btn-tile"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></div></div></sc-if>
@@ -159,7 +166,24 @@ class Component extends DCLogic {
       const app = x.kind === 'app';
       recent.push({ kind: KIND[x.kind], t: x.label, folder: f.name, href: HREF[x.kind] + x.id, src: x.cover || '', full: !app && !!x.cover, isApp: app, logo: app && x.cover ? x.cover : false, nologo: app && !x.cover, blank: x.cover ? '' : 'sw-app-blank' });
     });
+    // Aucun dossier (maquette V3 du 20/11) : le geste montré sur l'app la plus vue sur 30 jours (document « apps », gardé
+    // ouvert toute la session), et « Garder » qui crée en un clic le dossier « Mes idées » avec elle, à la forme
+    // qu'écrit AjoutDossier (saved('folders'), docs/donnees-app.md). Sans liste d'apps : « Créer un dossier », comme avant.
+    const A = loading || all.length ? null : (typeof P.get === 'function' ? P.get('apps') : (this.live() ? null : this.exampleApp()));
+    const top = A && Array.isArray(A.apps) ? A.apps.filter((a) => a && a.slug && a.name).reduce((m, a) => (!m || (a.views30 || 0) > (m.views30 || 0) ? a : m), null) : null;
+    const nf = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' k' : String(Math.round(n)));
+    const keepTop = () => {
+      if (!top || this.folders() === undefined) return;
+      const now = Date.now();
+      this.change((fs) => [{ id: now.toString(36) + Math.random().toString(36).slice(2, 6), name: 'Mes idées', createdAt: now,
+        items: [{ kind: 'app', id: top.slug, label: top.name, cover: top.icon || null, at: now }] }].concat(fs));
+    };
+    const vd = { app: !!top, noApp: !top && A !== undefined, folder: 'Mes idées', slot: 'se crée d’un clic sur Garder',
+      name: top ? top.name : '', sub: top ? nf(top.views30 || 0) + ' vues sur 30 jours' : '', href: top ? 'FicheA.dc.html?app=' + top.slug : '',
+      logo: (top && top.icon) || false, nologo: !(top && top.icon), blank: top && top.icon ? '' : 'sw-app-blank',
+      cta: top ? 'Garder ' + top.name : '', label: top ? 'Garder ' + top.name + ' dans « Mes idées »' : '', keep: keepTop };
     return {
+      vd,
       folders, recent, hasRecent: recent.length > 0, many: all.length > 1,
       none: !loading && all.length === 0 && !creating, grid: creating || all.length > 0,
       creating, newName, createNew,
@@ -172,6 +196,8 @@ class Component extends DCLogic {
       sorts: [['recent', 'Récents'], ['az', 'De A à Z']].map((s) => ({ l: s[1], on: sort === s[0] ? 'true' : 'false', pick: () => this.setState({ sort: s[0] }) }))
     };
   }
+  // Sur le canevas (sans this.props.get) : l'app de l'exemple vide, à la forme du document « apps ».
+  exampleApp() { return { apps: [{ slug: 'higgsfield', name: 'Higgsfield', icon: '', views30: 121.2e6 }] }; }
   // L'exemple du canevas, à la forme de saved('folders') (docs/donnees-app.md).
   example() {
     const H = 3600000, now = Date.now();
