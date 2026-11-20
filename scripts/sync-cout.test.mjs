@@ -424,6 +424,53 @@ function memDb() {
   ok(/runAfter\([^)]*internal\.radarStore\.purgeTracking/.test(g.slice(g.indexOf("export const runGlobal"))) && /dropLangs/.test(g), "Q56 : la fin de passage lance le ménage et efface les langues des comptes sortis de l'export");
 }
 
+// ─── Q69 : lecture IA, client borné, résultats rangés au fil de l'eau, erreurs passagères sans essai compté ─────────
+{
+  // Le SDK Anthropic remplacé : options du client relevées, réponses écrites par le test.
+  const FAKE = `
+class APIError extends Error { constructor(status, m) { super(m ?? "api " + status); this.status = status; } }
+class RateLimitError extends APIError { constructor() { super(429, "trop d'appels"); } }
+class APIConnectionError extends APIError { constructor() { super(undefined, "réseau"); } }
+export default class Anthropic {
+  constructor(o) { globalThis.__aiOpts = o; this.messages = { parse: (a) => globalThis.__aiParse(a) }; }
+  static APIError = APIError; static RateLimitError = RateLimitError; static APIConnectionError = APIConnectionError;
+}
+globalThis.__sdk = { APIError, RateLimitError };
+export const jsonSchemaOutputFormat = (x) => x;`;
+  const out = path.join(tmp, "radarAi-q69.mjs");
+  await build({
+    entryPoints: [path.join(dir, "radarAi.ts")], bundle: true, platform: "node", format: "esm", target: "node20", outfile: out, logLevel: "error", nodePaths: [path.join(root, "node_modules")],
+    plugins: [{ name: "stubs", setup(b) {
+      b.onResolve({ filter: /^@anthropic-ai\/sdk/ }, () => ({ path: "sdk", namespace: "sdk" }));
+      b.onLoad({ filter: /.*/, namespace: "sdk" }, () => ({ contents: FAKE, loader: "js" }));
+      b.onResolve({ filter: /(_generated\/(server|api)|\/imageCopy)$/ }, () => ({ path: "stub", namespace: "stub" }));
+      b.onLoad({ filter: /.*/, namespace: "stub" }, () => ({ contents: STUB, loader: "js" }));
+    } }],
+  });
+  const ai2 = await import(out);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(new Uint8Array(2000), { status: 200, headers: { "content-type": "image/jpeg" } });
+  const ids = Array.from({ length: 30 }, (_, i) => String(7300000000000000000n + BigInt(i)));
+  let calls = 0;
+  globalThis.__aiParse = async () => {
+    const i = calls++;
+    if (i % 3 === 0) throw new globalThis.__sdk.RateLimitError();
+    if (i % 3 === 1) throw new globalThis.__sdk.APIError(529);
+    return { usage: { input_tokens: 1, output_tokens: 1 }, stop_reason: "end_turn", parsed_output: { type: "autre", text: "x" } };
+  };
+  const t = actionCtx({ takeLease: true, claimVideoAi: ids, coverLookup: { url: "https://img.example/c.jpg", handle: null }, aiLeft: false });
+  t.saves = [];
+  const mut = t.ctx.runMutation;
+  t.ctx.runMutation = async (r, a) => { if (r.__path.endsWith("saveVideoAi")) t.saves.push(a.items); return mut(r, a); };
+  await quiet(() => ai2.fillVideos.handler(t.ctx, {}));
+  globalThis.fetch = realFetch;
+  const items = t.saves.flat();
+  const retried = items.filter((x) => x.retry).length, okN = items.filter((x) => x.ok).length;
+  ok(globalThis.__aiOpts?.timeout === 60_000 && globalThis.__aiOpts?.maxRetries === 1, `Q69 : client Anthropic à 60 s et une reprise (${JSON.stringify(globalThis.__aiOpts ?? {})})`);
+  ok(t.saves.length >= 2 && t.saves.every((b) => b.length <= 25), `Q69 : résultats rangés par paquets de 25 au plus, au fil de l'eau (${t.saves.map((b) => b.length).join(" + ")})`);
+  ok(items.length === 30 && retried === 20 && okN === 10, `Q69 : 429 et 529 repris sans essai compté (${retried} reprises, ${okN} lues, ${items.length - retried - okN} essais comptés)`);
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);
