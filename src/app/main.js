@@ -23,6 +23,8 @@ import './liquid.js';
 import './choice.js';
 // Alertes, boîte de réception : cadre de la ligne choisie, détail en cascade, barres (voir le fichier).
 import './inbox.js';
+// Fiches : la barre des sections collée en haut, qui suit la section lue et y mène (voir le fichier).
+import './sections.js';
 // Téléphone : feuilles du bas au doigt, barre flottante, balayer d'un onglet à l'autre, tirer pour chercher (voir les fichiers).
 import './sheet.js';
 import './tabbar.js';

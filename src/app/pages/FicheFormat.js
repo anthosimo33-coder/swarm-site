@@ -112,7 +112,12 @@ export default class FicheFormat extends DCLogic {
       ].filter(Boolean);
     }
     const TIL = { 'Repris par': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Réussite': 'M5 12l5 5 9-10', '× la normale': 'M3 3v18h18M7 15l4-4 3 3 5-6', 'Meilleure reprise': 'M13 2L4 14h7l-1 8 9-12h-7z' };
-    return { nav, f, tiles: tiles.map((t) => Object.assign({}, t, { ic: TIL[t.l] || '' })), tileN: tiles.length || 1, reps, common, repsTitle };
+    // La barre des sections, collée en haut au défilement (src/app/sections.js) : les reprises, puis ce qu'elles ont en
+    // commun (s'il y a quelque chose à en dire). La grille du bas a autant de colonnes que de cartes : pas de trou.
+    const tabs = [['#ff-reps', 'Reprises', reps.length, 'M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4']]
+      .concat(common.length ? [['#ff-com', 'En commun', common.length, 'M5 12l5 5 9-10']] : [])
+      .map((t) => ({ href: t[0], l: t[1], n: String(t[2]), d: t[3] }));
+    return { nav, f, tiles: tiles.map((t) => Object.assign({}, t, { ic: TIL[t.l] || '' })), tileN: tiles.length || 1, reps, common, repsTitle, tabs, comN: common.length, hasCom: common.length > 0, noCom: !common.length };
   }
 
   render() {
@@ -233,7 +238,7 @@ export default class FicheFormat extends DCLogic {
                 )
               ] : null
             ),
-            $h("div", { "style": "position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 14px;" },
+            $h("div", { "class": "ff-act", "style": "position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 14px;" },
               $h("button", { "class": "sw-btn sw-btn-primary sw-btn-lg", "type": "button", "onClick": $v.copyHook },
                 $t($v.copyLabel),
                 $h("span", { "class": "sw-btn-tile" },
@@ -288,62 +293,89 @@ export default class FicheFormat extends DCLogic {
               )
             ])
           ),
-          $h("div", { "style": "padding: 36px 32px 14px; display: flex; align-items: baseline; justify-content: space-between;" },
-            $h("h2", { "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px; font-size: 20px;" },
-              $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
-                $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-              ),
-              $t($v.repsTitle)
-            ),
-            $h("span", { "style": "font-size: 13px; color: var(--ink-faint);" },
-              "Triées par vues"
+          $h("div", { "class": "fi-bar", "data-fi-bar": "true", "style": "margin: 18px 0 0;" },
+            $h("nav", { "class": "fi-tabs", "aria-label": "Sections de la fiche" },
+              ($l($v.tabs)).map((t) => [
+                $h("a", { "class": "fi-tab", "data-fi-tab": "true", "href": $u(t?.href) },
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": t?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  ),
+                  $t(t?.l),
+                  $h("b", null,
+                    $t(t?.n)
+                  )
+                )
+              ])
             )
           ),
-          $h("div", { "style": "padding: 0 32px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;" },
-            ($l($v.reps)).map((v) => [
-              $h("a", { "href": $u(v?.href), "style": "display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit;" },
-                $h("span", { "class": "sw-video", "style": "display: block; border-radius: 20px;" },
-                  $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
-                  $h("span", { "class": "sw-video-shade" }),
-                  $h("span", { "class": "sw-badge", "style": "position: absolute; top: 12px; left: 12px; height: 24px; font-size: 11px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
-                    $t(v?.when)
+          $h("section", { "id": "ff-reps", "class": "fi-sec", "tabindex": "-1", "aria-labelledby": "ff-reps-t" },
+            $h("div", { "style": "padding: 10px 32px 14px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px;" },
+              $h("h2", { "id": "ff-reps-t", "class": "sw-card-title", "style": "display: flex; align-items: center; gap: 9px; font-size: 20px;" },
+                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                  $h("path", { "d": "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                ),
+                $t($v.repsTitle)
+              ),
+              $h("span", { "style": "font-size: 13px; color: var(--ink-faint); white-space: nowrap;" },
+                "Triées par vues"
+              )
+            ),
+            $h("div", { "style": "padding: 0 32px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;" },
+              ($l($v.reps)).map((v) => [
+                $h("a", { "href": $u(v?.href), "style": "display: flex; flex-direction: column; gap: 10px; min-width: 0; text-decoration: none; color: inherit;" },
+                  $h("span", { "class": "sw-video", "style": "display: block; border-radius: 20px;" },
+                    $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy", "decoding": "async" }),
+                    $h("span", { "class": "sw-video-shade" }),
+                    $h("span", { "class": "sw-badge", "style": "position: absolute; top: 12px; left: 12px; height: 24px; font-size: 11px; background: rgba(5,7,12,0.55); color: #FFFFFF;" },
+                      $t(v?.when)
+                    ),
+                    $h("span", { "class": "sw-video-foot" },
+                      $h("span", { "class": "sw-video-views", "style": "font-size: 26px;" },
+                        $t(v?.v)
+                      )
+                    )
                   ),
-                  $h("span", { "class": "sw-video-foot" },
-                    $h("span", { "class": "sw-video-views", "style": "font-size: 26px;" },
-                      $t(v?.v)
+                  $h("span", { "style": "display: flex; justify-content: space-between; gap: 8px; font-size: 13px; min-width: 0;" },
+                    $h("span", { "style": "color: var(--ink-soft); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                      $t(v?.h)
+                    ),
+                    $h("span", { "style": "color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" },
+                      $t(v?.app)
                     )
                   )
-                ),
-                $h("span", { "style": "display: flex; justify-content: space-between; font-size: 13px;" },
-                  $h("span", { "style": "color: var(--ink-soft); font-weight: 600;" },
-                    $t(v?.h)
-                  ),
-                  $h("span", { "style": "color: var(--ink-faint);" },
-                    $t(v?.app)
-                  )
                 )
-              )
-            ])
+              ])
+            )
           ),
-          $h("div", { "style": "padding: 36px 32px 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;" },
-            ($l($v.common)).map((c) => [
-              $h("div", { "class": "sw-card", "style": "padding: 22px 24px; border-radius: 20px; display: flex; gap: 16px; align-items: flex-start;" },
-                $h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);" },
-                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                    $h("path", { "d": c?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+          ($v.hasCom) ? [
+            $h("section", { "id": "ff-com", "class": "fi-sec", "tabindex": "-1", "aria-labelledby": "ff-com-t", "style": "padding: 36px 32px 56px;" },
+              $h("h2", { "id": "ff-com-t", "class": "sw-card-title", "style": "margin-bottom: 14px;" },
+                "Ce que les reprises ont en commun"
+              ),
+              $h("div", { "style": `display: grid; grid-template-columns: repeat(${$t($v.comN)}, minmax(0, 1fr)); gap: 16px;` },
+                ($l($v.common)).map((c) => [
+                  $h("div", { "class": "sw-card", "style": "padding: 22px 24px; border-radius: 20px; display: flex; gap: 16px; align-items: flex-start;" },
+                    $h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent);" },
+                      $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": c?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      )
+                    ),
+                    $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
+                      $h("span", { "style": "font-size: 16px; font-weight: 700; letter-spacing: -0.01em;" },
+                        $t(c?.t)
+                      ),
+                      $h("span", { "style": "font-size: 14px; line-height: 1.5; color: var(--ink-muted);" },
+                        $t(c?.s)
+                      )
+                    )
                   )
-                ),
-                $h("span", { "style": "display: flex; flex-direction: column; gap: 4px;" },
-                  $h("span", { "style": "font-size: 16px; font-weight: 700; letter-spacing: -0.01em;" },
-                    $t(c?.t)
-                  ),
-                  $h("span", { "style": "font-size: 14px; line-height: 1.5; color: var(--ink-muted);" },
-                    $t(c?.s)
-                  )
-                )
+                ])
               )
-            ])
-          )
+            )
+          ] : null,
+          ($v.noCom) ? [
+            $h("div", { "aria-hidden": "true", "style": "height: 48px;" })
+          ] : null
         ),
         ($v.pal) ? [
           $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },

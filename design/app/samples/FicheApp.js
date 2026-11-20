@@ -18,7 +18,7 @@ export default {
       ['B', '@belajarbersamaespi', 'student tips, productivity, & tech', 'ID', '6,5 k', '2,0 M', '855', 'var(--thumb-amber)']
     ],
   "av": {"@belajarbersamaespi": "/media/app/av-belajarbersamaespi.jpg", "@ira.belajaryuk": "/media/app/av-ira.belajaryuk.jpg", "@learnwithjoel1": "/media/app/av-learnwithjoel1.jpg", "@studyclubbyinda": "/media/app/av-studyclubbyinda.jpg", "@studywithruney": "/media/app/av-studywithruney.jpg"},
-  "app": { icon: "/media/app/app-astra-ai.jpg", name: 'Astra AI', niche: 'Études', kind: 'App mobile', delta: '+6 % cette semaine', since: '06/11',
+  "app": { icon: "/media/app/app-astra-ai.jpg", name: 'Astra AI', niche: 'Études', nicheHref: '/app/apps?niche=' + encodeURIComponent('Études'), kind: 'App mobile', delta: '+6 % cette semaine', since: '06/11',
       store: 'https://apps.apple.com/fr/app/astra-ai-r%C3%A9vision-examens/id6751030141', play: 'https://play.google.com/store/search?q=Astra%20AI&c=apps',
       v30: '57,7 M', ig: 'dont 2,8 M sur Instagram', week: '18,4 M', wd: "+6 % face à la semaine d'avant",
       acc: '269', ppw: '1 360', best: '2 333×', top10: '43 % des vues', vidsHref: '/app/videos', crLabel: 'Tous les créateurs' },

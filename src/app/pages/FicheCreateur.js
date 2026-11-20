@@ -44,11 +44,11 @@ export default class FicheCreateur extends DCLogic {
     };
     // Ce que « Ajouter à un dossier » range : le compte, avec une de ses miniatures.
     const cover = D ? (((D.best || []).concat(D.videos || []).filter((v) => v.cover)[0] || {}).cover || null) : (b.z.av || null);
-    // Onglets : Vidéos et Formats repris toujours (avec leur nombre), Apps poussées s'il y a une app.
+    // La barre des sections, collée en haut au défilement (src/app/sections.js) : Vidéos et Formats repris toujours (avec
+    // leur nombre), Apps poussées s'il y a une app. Chaque onglet mène à sa section ; plus rien n'est caché.
     const hasApp = !!(b.z.app && b.z.app.name);
-    const tab = st.tab === 'fmts' || (st.tab === 'apps' && hasApp) ? st.tab : 'vids';
-    const tabs = [['vids', 'Vidéos · ' + b.vids.length], ['fmts', 'Formats repris · ' + b.fmts.length]].concat(hasApp ? [['apps', 'Apps poussées · 1']] : [])
-      .map((t) => ({ l: t[1], d: ({ 'vids': 'M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4', 'fmts': 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5', 'apps': 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' })[t[0]], on: tab === t[0] ? 'true' : 'false', bg: tab === t[0] ? 'rgba(255,255,255,0.10)' : 'transparent', ink: tab === t[0] ? 'var(--ink)' : 'var(--ink-muted)', fw: tab === t[0] ? '600' : '500', ic: tab === t[0] ? 'var(--accent)' : 'var(--ink-faint)', pick: () => this.setState({ tab: t[0] }) }));
+    const tabs = [['#fc-vid', 'Vidéos', b.vids.length], ['#fc-fmt', 'Formats repris', b.fmts.length]].concat(hasApp ? [['#fc-app', 'Apps poussées', 1]] : [])
+      .map((t) => ({ href: t[0], l: t[1], n: String(t[2]), d: ({ '#fc-vid': 'M3 4h18v16H3zM7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4', '#fc-fmt': 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5', '#fc-app': 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' })[t[0]] }));
     return Object.assign({ followOn: f ? 'true' : 'false', toggleFollow, ajItem: { kind: 'creator', id: handle, label: '@' + handle, cover } }, { followAria: f ? 'Ne plus suivre ce compte' : 'Suivre ce compte', followInk: f ? 'var(--accent)' : 'var(--ink-muted)', followYes: f, followNo: !f,
       vids: (st.sort === 'vues') ? (b.vids || []).slice().sort((x, y) => y.raw - x.raw) : b.vids,
       sorts: [['recent', 'Récentes'], ['vues', 'Les plus vues']].map((s) => ({ l: s[1], on: (st.sort || 'recent') === s[0] ? 'true' : 'false', pick: () => this.setState({ sort: s[0] }) })),
@@ -65,7 +65,7 @@ export default class FicheCreateur extends DCLogic {
           plat: v.ig ? 'Instagram' : '', carN: v.car ? String(v.car) : '', carT: v.car ? 'Carrousel de ' + v.car + ' photos' : '',
           segs: Array.from({ length: Math.min(v.car || 0, 12) }, (_, j) => ({ bg: j === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.34)' })), bTop: v.car ? '20px' : '10px',
           url: v.url || z.tt, urlLabel: v.ig ? 'Instagram' : 'TikTok',
-          av: z.av || '', noav: !z.av, ini: String(z.h || '').replace(/^@/, '').charAt(0).toUpperCase(), h: z.h, flag: z.flag || '', mk: z.mk || '',
+          av: z.av || '', noav: !z.av, ini: String(z.h || '').replace(/^@/, '').charAt(0).toUpperCase(), h: z.h, flag: z.flag || '', mk: z.mk || '', noSrc: v.src ? 'false' : 'true',
           appName: app.name || '', appIcon: app.logo || '', appBlank: app.logo ? '' : 'sw-app-blank', appLine: app.name ? app.name + (app.niche ? ' · ' + app.niche : '') : '',
           ago: v.ago || v.date || '', st: typeof v.xr === 'number' ? (up ? 'AU-DESSUS DE SA NORMALE' : 'SOUS SA NORMALE') : '', stInk: up ? '#4C9AFF' : '#8A93A3',
           t: v.t || '', tShown: v.t || 'Pas d’accroche lue sur cette vidéo.', tInk: v.t ? 'var(--ink-soft)' : 'var(--ink-faint)',
@@ -79,8 +79,8 @@ export default class FicheCreateur extends DCLogic {
           item: { kind: 'video', id: v.id || '', label: z.h, cover: v.src || null } };
       }),
       closeAjV: () => this.setState({ ajV: null }),
-      tabs, tabV: tab === 'vids', tabF: tab === 'fmts', tabA: tab === 'apps',
-      showSort: tab === 'vids' && b.vids.length > 1, ins: tab === 'vids' ? b.ins : null,
+      tabs, hasApp,
+      showSort: b.vids.length > 1, ins: b.ins,
       noVids: !b.vids.length, noFmts: !b.fmts.length,
       fmts: b.fmts.map((x, i) => Object.assign({}, x, { bt: i ? '1px solid var(--line)' : '0' })),
       tileN: Math.max(1, b.tiles.length) });
@@ -128,12 +128,15 @@ export default class FicheCreateur extends DCLogic {
       // Rythme : le compte, complété par ses vidéos de la liste (une vidéo Instagram n'est pas dans posts7d).
       const last = Math.max(D.lastPostAt || 0, ...V.map((v) => v.publishedAt));
       const n7 = Math.max(D.posts7d || 0, V.filter((v) => v.publishedAt >= ref - 7 * DAY).length);
+      // posts7d plafonne à 30 (le Radar lit les 30 dernières vidéos d'un compte) : à 30, « au moins » (7C, règle de l'Accueil).
+      const cap = (D.posts7d || 0) >= 30;
       // Meilleure vidéo : la plus vue de ses vidéos connues (la liste, et ses meilleures des 30 j).
       const top = V.concat(D.best || []).reduce((m, v) => (!m || v.views > m.views ? v : m), null);
       tiles = [
         typeof D.fans === 'number' ? { l: 'Abonnés', v: big(D.fans), s: ' ', ink } : null,
         D.median ? { l: 'Vues médianes', v: big(D.median), s: 'sa normale', ink } : null,
-        typeof D.posts7d === 'number' || V.length ? { l: 'Rythme', v: plural(n7, 'vidéo') + ' en 7 j', s: last ? 'dernière ' + ago(last) : ' ', ink } : null,
+        typeof D.posts7d === 'number' || V.length ? { l: 'Rythme', v: (cap ? 'au moins ' + n7 + ' vidéos' : plural(n7, 'vidéo')) + ' en 7 j', s: last ? 'dernière ' + ago(last) : ' ', ink,
+          tip: cap ? 'Le Radar lit les 30 dernières vidéos d’un compte : au-delà, on sait seulement qu’il en a publié 30 ou plus.' : '' } : null,
         top ? { l: 'Meilleure vidéo', v: nf(top.views), s: typeof top.x === 'number' ? xf(top.x) + ' sa normale' : ' ', ink: 'var(--accent)' } : null
       ].filter(Boolean);
       const isX = (v) => typeof v.x === 'number';
@@ -162,7 +165,7 @@ export default class FicheCreateur extends DCLogic {
     }
     vids = vids.map((v) => Object.assign({ href: '/app/videos' }, v));
     const TIL = { 'Abonnés': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c1-4 4-6 7-6s6 2 7 6M16 3.5a4 4 0 0 1 0 7.5M22 21c-.6-2.6-2-4.4-4-5.3', 'Vues médianes': 'M3 3v18h18M7 15l4-4 3 3 5-6', 'Rythme': 'M3 12h4l3-8 4 16 3-8h4', 'Meilleure vidéo': 'M13 2L4 14h7l-1 8 9-12h-7z' };
-    return { nav, z, tiles: tiles.map((t) => Object.assign({}, t, { ic: TIL[t.l] || '' })), vids, ins, fmts };
+    return { nav, z, tiles: tiles.map((t) => Object.assign({ tip: '' }, t, { ic: TIL[t.l] || '' })), vids, ins, fmts };
   }
 
   render() {
@@ -330,7 +333,7 @@ export default class FicheCreateur extends DCLogic {
           ),
           $h("div", { "style": `margin: 16px 32px 0; display: grid; grid-template-columns: repeat(${$t($v.tileN)}, minmax(0, 1fr)); gap: 12px;` },
             ($l($v.tiles)).map((t) => [
-              $h("div", { "class": "sw-card", "style": "padding: 18px 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 6px;" },
+              $h("div", { "class": "sw-card", "style": "padding: 18px 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0;" },
                 $h("span", { "class": "sw-tile-label", "style": "display: inline-flex; align-items: center; gap: 7px;" },
                   $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
                     $h("path", { "d": t?.ic, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -338,7 +341,13 @@ export default class FicheCreateur extends DCLogic {
                   $t(t?.l)
                 ),
                 $h("span", { "class": "sw-tile-value", "style": `color: ${$t(t?.ink)};` },
-                  $t(t?.v)
+                  $t(t?.v),
+                  (t?.tip) ? [
+                    " ",
+                    $h("span", { "class": "fi-tip", "tabindex": "0", "role": "note", "aria-label": t?.tip, "data-tip": t?.tip },
+                      "i"
+                    )
+                  ] : null
                 ),
                 $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
                   $t(t?.s)
@@ -346,44 +355,52 @@ export default class FicheCreateur extends DCLogic {
               )
             ])
           ),
-          $h("div", { "style": "margin: 28px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;" },
-            $h("div", { "role": "tablist", "aria-label": "Contenu", "style": "display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
-              ($l($v.tabs)).map((tb) => [
-                $h("button", { "type": "button", "role": "tab", "aria-selected": tb?.on, "onClick": tb?.pick, "style": `display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: ${$t(tb?.bg)}; color: ${$t(tb?.ink)}; font: inherit; font-size: 14px; font-weight: ${$t(tb?.fw)}; cursor: pointer;` },
-                  $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": `flex-shrink: 0; color: ${$t(tb?.ic)};` },
-                    $h("path", { "d": tb?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+          $h("div", { "class": "fi-bar", "data-fi-bar": "true", "style": "margin: 18px 0 0;" },
+            $h("nav", { "class": "fi-tabs", "aria-label": "Sections de la fiche" },
+              ($l($v.tabs)).map((t) => [
+                $h("a", { "class": "fi-tab", "data-fi-tab": "true", "href": $u(t?.href) },
+                  $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                    $h("path", { "d": t?.d, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
                   ),
-                  $t(tb?.l)
+                  $t(t?.l),
+                  $h("b", null,
+                    $t(t?.n)
+                  )
                 )
               ])
-            ),
-            ($v.showSort) ? [
-              $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Tri" },
-                ($l($v.sorts)).map((s) => [
-                  $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick, "style": "height: 30px;" },
-                    $t(s?.l)
-                  )
-                ])
-              )
-            ] : null
-          ),
-          ($v.ins) ? [
-            $h("div", { "style": "margin: 16px 32px 0; padding: 14px 18px; border-radius: 16px; display: flex; align-items: center; gap: 14px; background: linear-gradient(90deg, var(--accent-soft), transparent 70%); border: 1px solid var(--accent-edge);" },
-              $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--blue-600); color: #FFFFFF;" },
-                $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                  $h("path", { "d": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                )
-              ),
-              $h("span", { "style": "font-size: 14px; color: var(--ink-soft);" },
-                $h("span", { "style": "font-weight: 700; color: var(--ink);" },
-                  $t($v.ins?.b)
-                ),
-                $t($v.ins?.r)
-              )
             )
-          ] : null,
-          ($v.tabV) ? [
-            $h("div", { "style": "padding: 16px 32px 48px; display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: 16px;" },
+          ),
+          $h("section", { "id": "fc-vid", "class": "fi-sec", "tabindex": "-1", "aria-labelledby": "fc-vid-t" },
+            $h("div", { "style": "margin: 10px 32px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;" },
+              $h("h2", { "id": "fc-vid-t", "class": "sw-card-title" },
+                "Ses vidéos"
+              ),
+              ($v.showSort) ? [
+                $h("div", { "class": "sw-tabs", "role": "tablist", "aria-label": "Tri" },
+                  ($l($v.sorts)).map((s) => [
+                    $h("button", { "class": "sw-tab", "role": "tab", "aria-selected": s?.on, "onClick": s?.pick, "style": "height: 30px;" },
+                      $t(s?.l)
+                    )
+                  ])
+                )
+              ] : null
+            ),
+            ($v.ins) ? [
+              $h("div", { "style": "margin: 16px 32px 0; padding: 14px 18px; border-radius: 16px; display: flex; align-items: center; gap: 14px; background: linear-gradient(90deg, var(--accent-soft), transparent 70%); border: 1px solid var(--accent-edge);" },
+                $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--blue-600); color: #FFFFFF;" },
+                  $h("svg", { "width": "17", "height": "17", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                  )
+                ),
+                $h("span", { "style": "font-size: 14px; color: var(--ink-soft);" },
+                  $h("span", { "style": "font-weight: 700; color: var(--ink);" },
+                    $t($v.ins?.b)
+                  ),
+                  $t($v.ins?.r)
+                )
+              )
+            ] : null,
+            $h("div", { "style": "padding: 16px 32px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: 16px;" },
               ($l($v.cards)).map((v) => [
                 $h("article", { "style": "position: relative; display: flex; flex-direction: column; min-width: 0; border-radius: 18px; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px var(--card-edge);" },
                   $h("header", { "style": "display: flex; align-items: center; gap: 10px; padding: 12px 12px 10px;" },
@@ -432,7 +449,18 @@ export default class FicheCreateur extends DCLogic {
                       ] : null
                     )
                   ),
-                  $h("a", { "href": $u(v?.href), "class": "sw-video", "aria-label": `Voir la vidéo, ${$t(v?.v)} vues`, "style": "display: block; margin: 0 12px; aspect-ratio: 4 / 5; border-radius: 14px;" },
+                  $h("a", { "href": $u(v?.href), "class": "sw-video fc-th", "aria-label": `Voir la vidéo, ${$t(v?.v)} vues`, "style": "display: block; margin: 0 12px; aspect-ratio: 4 / 5; border-radius: 14px;" },
+                    $h("span", { "class": "fc-ph", "data-none": v?.noSrc, "aria-hidden": "true" },
+                      $h("span", { "class": "fc-ph-av" },
+                        $t(v?.ini),
+                        (v?.av) ? [
+                          $h("img", { "src": $u(v?.av), "alt": "", "loading": "lazy", "decoding": "async" })
+                        ] : null
+                      ),
+                      $h("span", { "class": "fc-ph-t" },
+                        "Miniature indisponible"
+                      )
+                    ),
                     (v?.src) ? [
                       $h("img", { "class": "sw-cover", "src": $u(v?.src), "alt": "", "loading": "lazy" })
                     ] : null,
@@ -515,44 +543,48 @@ export default class FicheCreateur extends DCLogic {
                 )
               ] : null
             )
-          ] : null,
-          ($v.tabF) ? [
-            $h("div", { "style": "padding: 16px 32px 48px;" },
-              $h("section", { "class": "sw-card", "style": "padding: 8px 24px; display: flex; flex-direction: column;" },
-                ($l($v.fmts)).map((f) => [
-                  $h("a", { "href": $u(f?.href), "style": `text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: ${$t(f?.bt)};` },
-                    $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; background: var(--track); color: var(--ink-muted); display: inline-flex; align-items: center; justify-content: center;" },
-                      $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                        $h("path", { "d": f?.icon, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                      )
+          ),
+          $h("section", { "id": "fc-fmt", "class": "fi-sec", "tabindex": "-1", "aria-labelledby": "fc-fmt-t", "style": "padding: 36px 32px 0;" },
+            $h("h2", { "id": "fc-fmt-t", "class": "sw-card-title", "style": "margin-bottom: 14px;" },
+              "Formats repris"
+            ),
+            $h("div", { "class": "sw-card", "style": "padding: 8px 24px; display: flex; flex-direction: column;" },
+              ($l($v.fmts)).map((f) => [
+                $h("a", { "href": $u(f?.href), "style": `text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: ${$t(f?.bt)};` },
+                  $h("span", { "style": "width: 32px; height: 32px; border-radius: 10px; background: var(--track); color: var(--ink-muted); display: inline-flex; align-items: center; justify-content: center;" },
+                    $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": f?.icon, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  ),
+                  $h("span", { "style": "display: flex; flex-direction: column; gap: 3px; min-width: 0;" },
+                    $h("span", { "style": "font-size: 14px; font-weight: 600; line-height: 1.4;" },
+                      $t(f?.t)
                     ),
-                    $h("span", { "style": "display: flex; flex-direction: column; gap: 3px; min-width: 0;" },
-                      $h("span", { "style": "font-size: 14px; font-weight: 600; line-height: 1.4;" },
-                        $t(f?.t)
-                      ),
-                      $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
-                        $t(f?.meta)
-                      )
-                    ),
-                    $h("span", { "class": "sw-more", "style": "color: var(--accent);" },
-                      "Voir le format",
-                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                        $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
-                      )
+                    $h("span", { "style": "font-size: 12px; color: var(--ink-faint);" },
+                      $t(f?.meta)
+                    )
+                  ),
+                  $h("span", { "class": "sw-more", "style": "color: var(--accent);" },
+                    "Voir le format",
+                    $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
                     )
                   )
-                ]),
-                ($v.noFmts) ? [
-                  $h("p", { "style": "margin: 14px 0; font-size: 15px; color: var(--ink-muted);" },
-                    "Aucun format repris pour l’instant."
-                  )
-                ] : null
-              )
+                )
+              ]),
+              ($v.noFmts) ? [
+                $h("p", { "style": "margin: 14px 0; font-size: 15px; color: var(--ink-muted);" },
+                  "Aucun format repris pour l’instant."
+                )
+              ] : null
             )
-          ] : null,
-          ($v.tabA) ? [
-            $h("div", { "style": "padding: 16px 32px 48px;" },
-              $h("section", { "class": "sw-card", "style": "padding: 8px 24px; display: flex; flex-direction: column;" },
+          ),
+          ($v.hasApp) ? [
+            $h("section", { "id": "fc-app", "class": "fi-sec", "tabindex": "-1", "aria-labelledby": "fc-app-t", "style": "padding: 36px 32px 0;" },
+              $h("h2", { "id": "fc-app-t", "class": "sw-card-title", "style": "margin-bottom: 14px;" },
+                "Apps poussées"
+              ),
+              $h("div", { "class": "sw-card", "style": "padding: 8px 24px; display: flex; flex-direction: column;" },
                 $h("a", { "href": $u($v.z?.app?.href), "style": "text-decoration: none; color: inherit; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0;" },
                   $h("span", { "class": `sw-app-icon ${$t($v.z?.app?.blank)}`, "style": "width: 32px; height: 32px; border-radius: 10px;" },
                     ($v.z?.app?.logo) ? [
@@ -581,7 +613,8 @@ export default class FicheCreateur extends DCLogic {
                 )
               )
             )
-          ] : null
+          ] : null,
+          $h("div", { "aria-hidden": "true", "style": "height: 56px;" })
         ),
         ($v.pal) ? [
           $h("div", { "style": "position: fixed; inset: 0; z-index: 60;" },
