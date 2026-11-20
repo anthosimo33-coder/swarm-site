@@ -8,7 +8,7 @@ import type { Id } from "./_generated/dataModel";
 import type { FunctionReference } from "convex/server";
 import { internalAction, type ActionCtx } from "./_generated/server";
 import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
-import { COVER_ID } from "./coverSign";
+import { COVER_ID, signedPage } from "./coverSign";
 import { backgroundOff, TIKTOK_LEASE } from "./background";
 import { APP_STORE_ID, buildBoards, iconKey, siteOf, type GroupOut, type Part, type RApp, type Raw, type RFormat, type RSignal, type RTracked, type RVideo } from "./radarModels";
 
@@ -436,9 +436,12 @@ const canonicalOf = (apps: RApp[]) => {
  */
 export async function writePages(ctx: ActionCtx, boards: Map<string, unknown>, lazy: Map<string, () => unknown>, now: number, runStart: number) {
   const keys: string[] = [];
+  // Les adresses des miniatures et des photos, signées ici une fois pour toutes (audit F28) : boards.get rend la page
+  // sans la recopier. Elles comptent dans l'empreinte : une nouvelle clé ou version réécrit les pages au passage suivant.
+  const site = process.env.CONVEX_SITE_URL;
   function* pages(): Generator<[string, unknown]> {
-    for (const [k, d] of boards) { boards.delete(k); keys.push(k); yield [k, d]; }
-    for (const [k, f] of lazy) { lazy.delete(k); keys.push(k); yield [k, f()]; }
+    for (const [k, d] of boards) { boards.delete(k); keys.push(k); yield [k, signedPage(d, site)]; }
+    for (const [k, f] of lazy) { lazy.delete(k); keys.push(k); yield [k, signedPage(f(), site)]; }
   }
   let written = 0, sent = 0, seen = 0;
   let stopped: "" | "mémoire pleine" | "temps écoulé" = "";

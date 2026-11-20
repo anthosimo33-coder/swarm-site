@@ -471,6 +471,22 @@ export const jsonSchemaOutputFormat = (x) => x;`;
   ok(items.length === 30 && retried === 20 && okN === 10, `Q69 : 429 et 529 repris sans essai compté (${retried} reprises, ${okN} lues, ${items.length - retried - okN} essais comptés)`);
 }
 
+// ─── F28 : la synchro écrit les adresses signées des miniatures et des photos, et marque la page ──────────────────
+{
+  process.env.COVER_SECRET = "secret-de-banc";
+  const saved = [];
+  const w = actionCtx({ boardHashes: (a) => a.keys.map(() => null), saveBoards: (a) => { saved.push(...a.items); return a.items.length; } });
+  const page = { id: "7000000000000000001", handle: "auteur", fans: 12, cover: "https://p16.tiktokcdn.com/signee.jpg", videos: [{ id: "7000000000000000002", cover: null }] };
+  const stats = { apps: 3, accounts: 9 };
+  if (sync.writePages) await quiet(() => sync.writePages(w.ctx, new Map([["video:7000000000000000001", page], ["stats", stats]]), new Map(), 1, Date.now()));
+  const v = saved.find((x) => x.key === "video:7000000000000000001")?.data, st = saved.find((x) => x.key === "stats")?.data;
+  ok(/^https:\/\/test\.convex\.site\/cover\/7000000000000000001\?v=\d+&s=[0-9a-f]{24}$/.test(v?.cover ?? "") && /\/avatar\/auteur\?v=\d+&s=/.test(v?.avatar ?? "")
+    && /\/cover\/7000000000000000002\?/.test(v?.videos?.[0]?.cover ?? "") && typeof v?._signed === "string",
+    `F28 : la synchro écrit les adresses signées et marque la page (${v?.cover} ; ${v?._signed})`);
+  ok(st && !("_signed" in st) && st.apps === 3, "F28 : une page sans image n'est pas marquée");
+  delete process.env.COVER_SECRET;
+}
+
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(fail ? `${fail} échec(s)` : "tout passe");
 process.exit(fail ? 1 : 0);

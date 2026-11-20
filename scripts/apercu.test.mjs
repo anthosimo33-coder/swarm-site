@@ -39,6 +39,10 @@ const SITE = 'https://x.convex.site';
 process.env.CONVEX_SITE_URL = SITE;
 process.env.COVER_SECRET = 'secret-de-banc'; // adresses /cover et /avatar signées (convex/coverSign.ts)
 const { get } = await import(pathToFileURL(out).href);
+// Les adresses écrites par la synchro (convex/coverSign.ts, audit F28) : pour fabriquer des pages déjà signées.
+const signOut = path.join(dir, 'coverSign.mjs');
+await build({ entryPoints: [path.join(root, 'convex/coverSign.ts')], bundle: true, format: 'esm', platform: 'node', outfile: signOut, logLevel: 'error' });
+const sign = await import(pathToFileURL(signOut).href);
 rmSync(dir, { recursive: true, force: true });
 
 // ─── Les données ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -204,6 +208,21 @@ for (const layout of ['simple', 'en morceaux', 'sans apps:top']) {
   }
   ok((await g(null, 'apps')) === null && (await g(null, 'stats')) === null, 'pas connecté : rien');
 }
+
+// Audit F28 : une page signée par la synchro (marque en cours) est rendue telle quelle, sans recopie de l'arbre ; une page
+// pas encore réécrite, ou signée avec une autre clé, est signée à la lecture, comme avant.
+if (typeof sign.signedPage === 'function') {
+  const raw = { id: '2220000030', handle: 'auteur3', fans: 10, cover: 'https://tiktok.example/x.jpg', app: { slug: slug(1), name: name(1) }, playlist: ['2220000030', '2220000031'] };
+  const signed = sign.signedPage(raw, SITE);
+  const stale = { ...signed, _signed: '3.2.vieillemarque', cover: `${SITE}/cover/2220000031?v=3&s=000000000000000000000000`, id: '2220000031' };
+  DOCS['video:2220000030'] = signed; DOCS['video:2220000031'] = stale;
+  const base = db();
+  const a = await call(base, 'pro', 'video:2220000030'), b = await call(base, 'pro', 'video:2220000031');
+  delete DOCS['video:2220000030']; delete DOCS['video:2220000031'];
+  ok(a && !('_signed' in a) && a.cover === signed.cover && a.avatar === signed.avatar && /\/cover\/2220000030\?v=\d+&s=[0-9a-f]{24}$/.test(a.cover ?? ''), `F28 : page signée par la synchro rendue avec ses adresses, sans la marque (${a?.cover})`);
+  ok(a && a.playlist === signed.playlist && a.app === signed.app, 'F28 : page signée rendue sans recopie de son arbre (mêmes objets que la page rangée)');
+  ok(b && !('_signed' in b) && b.cover !== stale.cover && /\/cover\/2220000031\?v=\d+&s=[0-9a-f]{24}$/.test(b.cover ?? '') && b.cover === sign.coverUrl(SITE, '2220000031'), `F28 : page signée avec une autre clé : re-signée à la lecture (${b?.cover})`);
+} else ok(false, 'F28 : coverSign.signedPage absente (la synchro ne signe pas les pages)');
 
 // Page en cours de réécriture (un morceau manque) : jamais une page tronquée, jamais une erreur.
 {

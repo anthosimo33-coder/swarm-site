@@ -138,3 +138,49 @@ export function avatarSigned(handle: string, v: string | null, s: string | null)
   const want = v === String(AVATAR_VERSION) && HANDLE.test(handle) ? sig(`avatar:${handle}:${AVATAR_VERSION}`) : null;
   return want !== null && same(want, s);
 }
+
+// ─── Adresses écrites dans les pages ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * La marque des pages dont les adresses sont signées avec la clé et les versions en cours ; null sans secret. Rangée
+ * par la synchro dans chaque page qui porte des images (champ SIGNED) : boards.get rend alors la page telle quelle.
+ */
+export const SIGNED = "_signed";
+export function signMark(): string | null {
+  const s = sig(`marque:${COVER_VERSION}:${AVATAR_VERSION}`);
+  return s ? `${COVER_VERSION}.${AVATAR_VERSION}.${s.slice(0, 12)}` : null;
+}
+
+/**
+ * Les adresses d'images d'une page : toute miniature passe par /cover/<id> (la copie rangée, sinon copiée à la première
+ * vue, et recopiée si elle est inutilisable), jamais un lien TikTok signé qui expire ; un compte (pseudo + abonnés) reçoit
+ * sa photo de profil par /avatar/<handle>. Chaque adresse est signée (audit S5, S15). Rend une copie, et si la page porte
+ * des images. Audit F28 (19/11) : boards.get recopiait ainsi tout l'arbre de chaque page à CHAQUE exécution (1 749 objets
+ * et 4 337 tableaux pour « apps ») ; c'est désormais la synchro qui l'écrit, une fois (radarSync.ts, writePages).
+ */
+export function signMedia(data: unknown, site: string): { data: unknown; media: boolean } {
+  let media = false;
+  const fix = (x: unknown): unknown => {
+    if (Array.isArray(x)) return x.map(fix);
+    if (!x || typeof x !== "object") return x;
+    const o: Record<string, unknown> = {};
+    for (const [k, val] of Object.entries(x)) o[k] = typeof val === "object" ? fix(val) : val;
+    // Un compte (créateur, auteur d'une vidéo) : sa photo de profil, servie par /avatar/<handle>.
+    if (typeof o.handle === "string" && "fans" in o && HANDLE.test(o.handle)) { media = true; const a = avatarUrl(site, o.handle); if (a) o.avatar = a; }
+    if ("cover" in o) {
+      const id = (o.videoId ?? o.id) as unknown;
+      // Sans secret de signature, aucune adresse plutôt qu'une adresse que /cover refuserait.
+      if (typeof id === "string" && COVER_ID.test(id)) { media = true; o.cover = coverUrl(site, id); }
+    }
+    return o;
+  };
+  return { data: fix(data), media };
+}
+
+/** Une page telle que la synchro la range : adresses signées, et la marque si elle porte des images. */
+export function signedPage(data: unknown, site: string | null | undefined): unknown {
+  const mark = signMark();
+  if (!site || !mark || !data || typeof data !== "object" || Array.isArray(data)) return data;
+  const r = signMedia(data, site);
+  return r.media ? { ...(r.data as Record<string, unknown>), [SIGNED]: mark } : r.data;
+}
