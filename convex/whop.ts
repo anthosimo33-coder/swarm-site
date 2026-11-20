@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { liveUserId, liveUserIdInAction } from "./session";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
@@ -91,14 +91,29 @@ export const tarifs = internalAction({
 // ─── Payer : le lien de paiement Whop, relié au compte ───
 
 /**
+ * Déjà Pro ? `users.pro` (paiement reçu, ou posé à la main) ou une adhésion qui donne accès (audit du 19/11, S3 : un
+ * compte Pro pouvait repayer, deux adhésions prélevées dont une seule visible et résiliable dans Réglages).
+ */
+export const alreadyPro = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    if ((await ctx.db.get(userId))?.pro === true) return true;
+    return (await ctx.db.query("subscriptions").withIndex("by_user", (q) => q.eq("userId", userId)).collect()).some((s) => ACCESS.has(s.status));
+  },
+});
+
+/**
  * Crée le lien de paiement Whop de la formule choisie et rend l'adresse vers laquelle envoyer la personne. Pas d'écran
  * d'accord avant Whop (choix de l'user, 19/11) : la renonciation au délai de rétractation au paiement est dans les CGV.
+ * Refusé à un compte déjà Pro (ConvexError DEJA_ABONNE) : le site l'envoie vers Réglages › Formule (src/app/main.js).
+ * Ne voit que les adhésions déjà reçues par webhook : deux paiements ouverts avant le premier webhook restent possibles.
  */
 export const checkout = action({
   args: { formule: v.union(v.literal("mensuel"), v.literal("annuel")), origin: v.string() },
   handler: async (ctx, { formule, origin }): Promise<{ url: string }> => {
     const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw new Error("Non connecté");
+    if (await ctx.runQuery(internal.whop.alreadyPro, { userId })) throw new ConvexError({ code: "DEJA_ABONNE" });
     const variant = await variantFor(formule);
     // Retour sur le site d'où l'on vient (prod, préversion Vercel, local) ; sinon l'adresse du site.
     const site = /^https:\/\/[a-z0-9.-]+$/i.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin) ? origin : (process.env.SITE_URL || "https://swarm-site-one.vercel.app");

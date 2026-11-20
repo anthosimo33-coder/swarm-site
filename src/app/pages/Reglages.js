@@ -51,7 +51,7 @@ export default class Reglages extends DCLogic {
     const u = p.user || { nom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A', pro: false, emailVerified: true };
     const pro = !!u.pro;
     const mob = !!p.mobile;
-    const view = mob ? (st.view || 'list') : 'detail';
+    const view = mob ? (st.view || p.view || 'list') : 'detail'; // p.view : ouvert sur une rubrique (src/app/main.js)
     const sec = st.sec || p.section || 'profil';
     const fold = (s) => Array.from(String(s)).map((c) => c.normalize('NFD').charAt(0).toLowerCase()).join('');
     // Ce qu’on peut chercher : le réglage, sa rubrique, et les mots qu’on taperait pour le trouver.
