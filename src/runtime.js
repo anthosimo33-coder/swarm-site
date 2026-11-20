@@ -45,9 +45,15 @@ export const $u = (x) => {
   return '#';
 };
 
-// Monte la version mobile sous 860 px, la version desktop au-dessus,
-// et bascule si la fenêtre change de taille.
-const QUERY = '(max-width: 860px)';
+// La mise en page mobile : sous 860 px de large, ou sur un écran tactile de moins de 500 px de haut. Audit F25 (19/11) :
+// sur la seule largeur, un téléphone en paysage (iPhone Plus ou Pro Max : 932 px) recevait l'interface faite pour la
+// souris. Une tablette en portrait (820, 834 px) reste mobile, en paysage (1180 px, plus de 500 px de haut) ordinateur.
+// La même condition sert au routeur de l'app (src/app/main.js), à sa feuille (src/app/app.css) et au pré-rendu
+// (scripts/prerender.mjs).
+export const MOBILE_QUERY = '(max-width: 860px), (pointer: coarse) and (max-height: 500px)';
+
+// Monte la version mobile ou desktop selon MOBILE_QUERY, et bascule si l'écran change (rotation, fenêtre).
+const QUERY = MOBILE_QUERY;
 
 export class Responsive extends Component {
   constructor(props) {
