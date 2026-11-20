@@ -3,6 +3,7 @@
 import { promises as dns } from "node:dns";
 import { isIP } from "node:net";
 import type { Id } from "./_generated/dataModel";
+import { PAGE_UA, tiktokPage, userPageUrl, videoPageUrl } from "./tiktokPage";
 import type { ActionCtx } from "./_generated/server";
 
 /**
@@ -26,7 +27,7 @@ const COVER_WIDTH = 480;
 const ICON_SIZE = 256;
 /** Photo de profil : affichée en 36 à 120 px. */
 const AVATAR_SIZE = 240;
-const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+const UA = PAGE_UA;
 /**
  * Un serveur qui ne répond plus ne doit pas bloquer la synchro (une action Convex : 10 min au plus,
  * coupée sans rien écrire — 14/11, 10 h 09) : 15 s par appel, lecture du corps comprise.
@@ -262,31 +263,16 @@ export async function siteIcon(domain: string): Promise<string | null> {
  * 12 vidéos ratées par la lecture IA, 11 existaient, lues une à une sans souci).
  */
 export async function tiktokCoverState(handle: string, id: string): Promise<{ url?: string; gone?: boolean; blank?: boolean }> {
-  try {
-    const res = await get(`https://www.tiktok.com/@${encodeURIComponent(handle || "tiktok")}/video/${id}`, {
-      headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
-    });
-    if (!res?.ok) return {};
-    const html = await res.text();
-    const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
-    if (m) {
-      try {
-        const detail = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.video-detail"];
-        if (detail && typeof detail.statusCode === "number" && detail.statusCode !== 0) return { gone: true };
-        const video = detail?.itemInfo?.itemStruct?.video;
-        const url = video?.cover || video?.originCover || video?.dynamicCover;
-        if (typeof url === "string" && url.startsWith("https://")) return { url };
-        // La vidéo existe, mais TikTok ne lui donne pas (encore) de miniature (16/11 : cover, originCover, dynamicCover vides).
-        if (detail?.statusCode === 0 && video) return { blank: true };
-      } catch {
-        // données illisibles : on essaie la recherche simple ci-dessous
-      }
-    }
-    const r = html.match(/"cover":"(https:[^"]+)"/);
-    return r ? { url: JSON.parse(`"${r[1]}"`) as string } : {};
-  } catch {
-    return {};
-  }
+  const page = await tiktokPage(videoPageUrl(id, handle), "webapp.video-detail", get);
+  if (page.gone) return { gone: true };
+  const video = page.detail?.itemInfo?.itemStruct?.video;
+  const url = video?.cover || video?.originCover || video?.dynamicCover;
+  if (typeof url === "string" && url.startsWith("https://")) return { url };
+  // La vidéo existe, mais TikTok ne lui donne pas (encore) de miniature (16/11 : cover, originCover, dynamicCover vides).
+  if (page.detail?.statusCode === 0 && video) return { blank: true };
+  // Données illisibles : la recherche simple dans la page.
+  const r = page.html?.match(/"cover":"(https:[^"]+)"/);
+  try { return r ? { url: JSON.parse(`"${r[1]}"`) as string } : {}; } catch { return {}; }
 }
 
 /**
@@ -294,23 +280,12 @@ export async function tiktokCoverState(handle: string, id: string): Promise<{ ur
  * n'existe pas ou plus), `blank` (pas de photo), sinon pas de réponse.
  */
 export async function tiktokAvatarState(handle: string): Promise<{ url?: string; gone?: boolean; blank?: boolean }> {
-  try {
-    const res = await get(`https://www.tiktok.com/@${encodeURIComponent(handle)}`, {
-      headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
-    });
-    if (!res?.ok) return {};
-    const html = await res.text();
-    const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
-    if (!m) return {};
-    const detail = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.user-detail"];
-    if (detail && typeof detail.statusCode === "number" && detail.statusCode !== 0) return { gone: true };
-    const user = detail?.userInfo?.user;
-    const url = user?.avatarMedium || user?.avatarLarger || user?.avatarThumb;
-    if (typeof url === "string" && url.startsWith("https://")) return { url };
-    return user ? { blank: true } : {};
-  } catch {
-    return {};
-  }
+  const page = await tiktokPage(userPageUrl(handle), "webapp.user-detail", get);
+  if (page.gone) return { gone: true };
+  const user = page.detail?.userInfo?.user;
+  const url = user?.avatarMedium || user?.avatarLarger || user?.avatarThumb;
+  if (typeof url === "string" && url.startsWith("https://")) return { url };
+  return user ? { blank: true } : {};
 }
 
 /** La miniature d'un reel Instagram, lue sur sa page d'intégration publique (sans connexion). */

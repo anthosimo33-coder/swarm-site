@@ -3,6 +3,7 @@
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 import { backgroundOff } from "./background";
+import { tiktokPage, videoPageUrl } from "./tiktokPage";
 
 /**
  * Le pays des comptes que le Radar ne situe pas (14/11 : 33 % des comptes, surtout des anglophones et des
@@ -10,7 +11,6 @@ import { backgroundOff } from "./background";
  * vidéo (`locationCreated`) — la même information que le Radar range sur les vidéos qu'il relève. Une vidéo par
  * essai, la suivante à l'essai d'après (3 au plus). La synchro de nuit les reprend dans le marché de chaque compte.
  */
-const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 const BATCH = 150;
 // 2 pages TikTok à la fois, comme la lecture IA et les carrousels (16/11 : à 6, des vagues de refus passagers).
 const PARALLEL = 2;
@@ -24,24 +24,13 @@ type Facts = { country: string | null; slideshow: boolean; images: number };
  * pas ou plus ; `unread`, la page répond mais sans la vidéo lisible ; rien, pas de réponse (refus, délai, page vide).
  */
 export async function videoFactsState(id: string): Promise<{ facts?: Facts; gone?: boolean; unread?: boolean }> {
-  try {
-    const res = await fetch(`https://www.tiktok.com/@tiktok/video/${id}`, {
-      headers: { "User-Agent": UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" }, signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) return {};
-    const html = await res.text();
-    const m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
-    if (!m) return {};
-    const detail = JSON.parse(m[1])?.__DEFAULT_SCOPE__?.["webapp.video-detail"];
-    if (detail && typeof detail.statusCode === "number" && detail.statusCode !== 0) return { gone: true };
-    const item = detail?.itemInfo?.itemStruct;
-    if (!item?.id) return detail ? { unread: true } : {};
-    const c = String(item.locationCreated ?? "").toUpperCase();
-    const images = Array.isArray(item.imagePost?.images) ? item.imagePost.images.length : 0;
-    return { facts: { country: /^[A-Z]{2}$/.test(c) ? c : null, slideshow: !!item.imagePost, images } };
-  } catch {
-    return {};
-  }
+  const page = await tiktokPage(videoPageUrl(id), "webapp.video-detail");
+  if (page.gone) return { gone: true };
+  const item = page.detail?.itemInfo?.itemStruct;
+  if (!item?.id) return page.detail ? { unread: true } : {};
+  const c = String(item.locationCreated ?? "").toUpperCase();
+  const images = Array.isArray(item.imagePost?.images) ? item.imagePost.images.length : 0;
+  return { facts: { country: /^[A-Z]{2}$/.test(c) ? c : null, slideshow: !!item.imagePost, images } };
 }
 
 export const fill = internalAction({

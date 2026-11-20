@@ -25,6 +25,15 @@ await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node
     b.onLoad({ filter: /.*/, namespace: 'fake' }, () => ({ contents: 'export const promises = { lookup: (h, o) => globalThis.__fakeLookup(h, o) }; export default { promises };', loader: 'js' }));
   } }] });
 const mod = await import(pathToFileURL(out).href);
+// radarRegions.ts (pays et carrousels des vidéos), Convex remplacé, pour la lecture commune des pages TikTok (audit Q51).
+const regionsOut = path.join(dir, 'radarRegions.mjs');
+const convexDir = path.dirname(entry);
+await build({ entryPoints: [path.join(convexDir, 'radarRegions.ts')], bundle: true, format: 'esm', platform: 'node', outfile: regionsOut, logLevel: 'error',
+  plugins: [{ name: 'stubs', setup(b) {
+    b.onResolve({ filter: /_generated\/(api|server)$/ }, () => ({ path: 'stub', namespace: 'stub' }));
+    b.onLoad({ filter: /.*/, namespace: 'stub' }, () => ({ contents: 'export const internal = {}; export const internalAction = (c) => c;', loader: 'js' }));
+  } }] });
+const regions = await import(pathToFileURL(regionsOut).href);
 rmSync(dir, { recursive: true, force: true });
 
 // ─── Faux réseau ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -86,5 +95,46 @@ for (const [src, why] of [['http://img.example/ok.png', 'http://'], ['https://12
 { fetched.length = 0; const u = await mod.siteIcon('svgseul.example'); ok(u === 'https://svgseul.example/favicon.ico', `site à icône SVG seule : /favicon.ico à la place (${u})`); }
 { pulled = 0; const u = await mod.siteIcon('enorme.example'); ok(pulled <= 600_000, `page d'accueil énorme : lecture coupée vers 200 Ko (plus ce que le flux a mis en réserve) (${pulled} octets lus ; ${u})`); }
 ok(!('tiktokCover' in mod) && !('tiktokAvatar' in mod), 'tiktokCover et tiktokAvatar, jamais appelés, retirés (audit Q52)');
+
+// ─── Q51 : la page publique TikTok lue d'une seule façon ─────────────────────────────────────────────────────────
+{
+  const page = (scope) => `<html><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({ __DEFAULT_SCOPE__: scope })}</script></html>`;
+  const VID = { 'webapp.video-detail': { statusCode: 0, itemInfo: { itemStruct: { id: '7000000000000000001', locationCreated: 'fr', imagePost: { images: [{}, {}, {}] }, video: { cover: 'https://p16.tiktokcdn.com/c.jpg' } } } } };
+  const PAGES = {
+    'https://www.tiktok.com/@h/video/7000000000000000001': page(VID), 'https://www.tiktok.com/@tiktok/video/7000000000000000001': page(VID),
+    'https://www.tiktok.com/@h/video/7000000000000000002': page({ 'webapp.video-detail': { statusCode: 10204 } }),
+    'https://www.tiktok.com/@tiktok/video/7000000000000000002': page({ 'webapp.video-detail': { statusCode: 10204 } }),
+    'https://www.tiktok.com/@h/video/7000000000000000003': page({ 'webapp.video-detail': { statusCode: 0, itemInfo: { itemStruct: { id: '7000000000000000003', video: {} } } } }),
+    'https://www.tiktok.com/@h/video/7000000000000000004': '<html>pas de données {"cover":"https:\\u002F\\u002Fp16.tiktokcdn.com\\u002Fsecours.jpg"}</html>',
+    'https://www.tiktok.com/@tiktok/video/7000000000000000004': '<html>page de contrôle</html>',
+    'https://www.tiktok.com/@compte': page({ 'webapp.user-detail': { statusCode: 0, userInfo: { user: { avatarMedium: 'https://p16.tiktokcdn.com/a.jpg' } } } }),
+    'https://www.tiktok.com/@parti': page({ 'webapp.user-detail': { statusCode: 10221 } }),
+    'https://www.tiktok.com/@sansphoto': page({ 'webapp.user-detail': { statusCode: 0, userInfo: { user: {} } } }),
+  };
+  const uas = new Set();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => { uas.add(init.headers?.['User-Agent'] ?? new Headers(init.headers).get('user-agent')); const html = PAGES[String(url)]; return html ? new Response(html, { headers: { 'content-type': 'text/html' } }) : new Response('', { status: 503 }); };
+  const got = {
+    cover: await mod.tiktokCoverState('h', '7000000000000000001'), coverGone: await mod.tiktokCoverState('h', '7000000000000000002'),
+    coverBlank: await mod.tiktokCoverState('h', '7000000000000000003'), coverRepli: await mod.tiktokCoverState('h', '7000000000000000004'),
+    coverMuet: await mod.tiktokCoverState('h', '7000000000000000009'),
+    avatar: await mod.tiktokAvatarState('compte'), avatarGone: await mod.tiktokAvatarState('parti'), avatarBlank: await mod.tiktokAvatarState('sansphoto'),
+    facts: await regions.videoFactsState('7000000000000000001'), factsGone: await regions.videoFactsState('7000000000000000002'),
+    factsUnread: await regions.videoFactsState('7000000000000000004'), factsMuet: await regions.videoFactsState('7000000000000000009'),
+  };
+  globalThis.fetch = realFetch;
+  const want = {
+    cover: { url: 'https://p16.tiktokcdn.com/c.jpg' }, coverGone: { gone: true }, coverBlank: { blank: true }, coverRepli: { url: 'https://p16.tiktokcdn.com/secours.jpg' }, coverMuet: {},
+    avatar: { url: 'https://p16.tiktokcdn.com/a.jpg' }, avatarGone: { gone: true }, avatarBlank: { blank: true },
+    facts: { facts: { country: 'FR', slideshow: true, images: 3 } }, factsGone: { gone: true }, factsUnread: {}, factsMuet: {},
+  };
+  const bad = Object.keys(want).filter((k) => JSON.stringify(got[k]) !== JSON.stringify(want[k])).map((k) => `${k} : ${JSON.stringify(got[k])}`);
+  ok(!bad.length, `pages TikTok : miniature, photo de profil, pays et carrousel lus comme avant (vidéo, disparue, sans miniature, repli, sans réponse)${bad.length ? ' ; ' + bad.join(' ; ') : ''}`);
+  ok(uas.size === 1, `un seul User-Agent pour toutes les pages (${uas.size})`);
+  const fs2 = await import('node:fs');
+  const copies = fs2.readdirSync(convexDir).filter((f) => f.endsWith('.ts') && f !== 'tiktokPage.ts')
+    .filter((f) => /__UNIVERSAL_DATA_FOR_REHYDRATION__|AppleWebKit\/605/.test(fs2.readFileSync(path.join(convexDir, f), 'utf8')));
+  ok(!copies.length, `lecture des données de page et User-Agent écrits seulement dans convex/tiktokPage.ts (audit Q51)${copies.length ? ` ; copies : ${copies.join(', ')}` : ''}`);
+}
 console.log(fail ? `${fail} échec(s)` : 'tout passe');
 process.exit(fail ? 1 : 0);

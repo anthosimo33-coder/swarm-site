@@ -32,6 +32,7 @@ import type * as saved from "../saved.js";
 import type * as session from "../session.js";
 import type * as stats from "../stats.js";
 import type * as textLang from "../textLang.js";
+import type * as tiktokPage from "../tiktokPage.js";
 import type * as users from "../users.js";
 import type * as whop from "../whop.js";
 
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   session: typeof session;
   stats: typeof stats;
   textLang: typeof textLang;
+  tiktokPage: typeof tiktokPage;
   users: typeof users;
   whop: typeof whop;
 }>;
