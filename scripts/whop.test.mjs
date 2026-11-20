@@ -196,4 +196,34 @@ async function deliver(w, id, event) {
   ok(twice.status === 200 && /déjà/.test(twice.text), 'Q27 : un événement traité n\'est pas refait');
 }
 
+// ─── S9 : un instantané périmé n'écrase plus le bon état ; une réconciliation quotidienne rattrape le reste ───
+{
+  resetWhop();
+  const w = await world();
+  const save = (status, updatedAt) => w.call({ __path: 'whop.saveMembership' }, { membershipId: 'mem_s9', userKey: w.userId, variantId: 'plan_ilOWoZwgoZGwK', productId: PRODUCT, status, periodDays: 30, price: '29.99', currency: 'eur', periodEnd: Date.now() + 864e5, cancelAtPeriodEnd: false, manageUrl: null, whopUpdatedAt: updatedAt });
+  await save('active', 1000);
+  await save('expired', 3000);
+  await quiet(() => save('active', 2000)); // le went_valid lent arrive après le went_invalid
+  ok((await w.m.db.get(w.userId)).pro !== true, 'S9 : un instantané plus ancien que celui rangé est ignoré (pas de Pro rouvert)');
+  // Whop en panne : le repli sur la charge de l'événement ne rend jamais l'accès à une adhésion rangée sans accès.
+  whop.memberships.mem_s9 = { id: 'mem_s9', status: 'expired', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: w.userId } };
+  whop.failMemberships = true;
+  const old = await deliver(w, 'evt_s9', { type: 'membership.went_valid', data: { id: 'mem_s9', status: 'active', metadata: { kopycat_user: w.userId } } });
+  ok(old.status === 500 && (await w.m.db.get(w.userId)).pro !== true, `S9 : Whop en panne, un ancien went_valid rejoué ne rouvre pas l'accès (${old.status})`);
+  // … mais une première activation n'est pas perdue.
+  const v = await world();
+  const first = await deliver(v, 'evt_s9b', { type: 'membership.went_valid', data: { id: 'mem_neuve', status: 'active', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: v.userId } } });
+  whop.failMemberships = false;
+  ok(first.status === 200 && (await v.m.db.get(v.userId)).pro === true, `S9 : Whop en panne, une première activation passe sur la charge de l'événement (${first.status})`);
+  // Réconciliation : une adhésion rangée active que Whop dit expirée.
+  const r = await world();
+  await r.call({ __path: 'whop.saveMembership' }, { membershipId: 'mem_rec', userKey: r.userId, variantId: 'plan_ilOWoZwgoZGwK', productId: PRODUCT, status: 'active', periodDays: 30, price: '29.99', currency: 'eur', periodEnd: Date.now() - 864e5, cancelAtPeriodEnd: false, manageUrl: null });
+  whop.memberships.mem_rec = { id: 'mem_rec', status: 'expired', product: { id: PRODUCT }, plan: { id: 'plan_ilOWoZwgoZGwK' }, metadata: { kopycat_user: r.userId } };
+  const has = typeof mods.whop.reconcile?.handler === 'function';
+  if (has) await quiet(() => mods.whop.reconcile.handler(r.ctx, {}));
+  ok(has && (await r.m.db.get(r.userId)).pro !== true, 'S9 : la réconciliation relit chez Whop et coupe l\'accès d\'une adhésion expirée');
+  const jobs = mods.crons?.default?.jobs ?? [];
+  ok(jobs.some((j) => j.ref?.__path === 'whop.reconcile'), `S9 : réconciliation planifiée chaque jour (${jobs.map((j) => j.ref?.__path).join(', ')})`);
+}
+
 end();

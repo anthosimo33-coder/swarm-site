@@ -43,6 +43,8 @@ export default defineSchema({
     cancelAtPeriodEnd: v.boolean(),
     manageUrl: v.union(v.string(), v.null()),
     updatedAt: v.number(),
+    // Date de l'adhésion chez Whop (updated_at) : un instantané plus ancien n'écrase pas le rangé (audit S9).
+    whopUpdatedAt: v.optional(v.number()),
   }).index("by_user", ["userId"]).index("by_membership", ["membershipId"]),
   // Les paiements reçus (reçus des Réglages), remboursements compris.
   whopPayments: defineTable({

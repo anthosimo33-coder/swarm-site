@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { liveUserId, liveUserIdInAction } from "./session";
+import { backgroundOff } from "./background";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
@@ -353,6 +354,7 @@ export const saveMembership = internalMutation({
     periodEnd: v.union(v.number(), v.null()),
     cancelAtPeriodEnd: v.boolean(),
     manageUrl: v.union(v.string(), v.null()),
+    whopUpdatedAt: v.optional(v.union(v.number(), v.null())),
   },
   handler: async (ctx, a): Promise<string> => {
     // Audit Q26 : seule une adhésion au produit Kopycat Pro, à l'un de ses tarifs, donne l'accès. Un champ absent (forme
@@ -362,13 +364,17 @@ export const saveMembership = internalMutation({
       return `adhésion ${a.membershipId} : produit ou tarif étranger, ignorée`;
     }
     const old = await ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", a.membershipId)).first();
+    // Audit S9 : un instantané plus ancien que celui rangé (relecture lente, renvoi tardif) n'écrase rien.
+    if (old?.whopUpdatedAt && a.whopUpdatedAt && a.whopUpdatedAt < old.whopUpdatedAt) {
+      return `adhésion ${a.membershipId} : instantané du ${new Date(a.whopUpdatedAt).toISOString()} plus ancien que le rangé, ignoré`;
+    }
     const fromKey = a.userKey ? ctx.db.normalizeId("users", a.userKey) : null;
     const userId = (fromKey && (await ctx.db.get(fromKey)) ? fromKey : null) ?? old?.userId ?? null;
     const row = {
       userId, membershipId: a.membershipId, variantId: a.variantId ?? old?.variantId ?? null, status: a.status,
       periodDays: a.periodDays ?? old?.periodDays ?? null, price: a.price ?? old?.price ?? null, currency: a.currency ?? old?.currency ?? null,
       periodEnd: a.periodEnd ?? old?.periodEnd ?? null, cancelAtPeriodEnd: a.cancelAtPeriodEnd, manageUrl: a.manageUrl ?? old?.manageUrl ?? null,
-      updatedAt: Date.now(),
+      updatedAt: Date.now(), ...(a.whopUpdatedAt ? { whopUpdatedAt: a.whopUpdatedAt } : {}),
     };
     if (old) await ctx.db.patch(old._id, row);
     else await ctx.db.insert("subscriptions", row);
@@ -432,13 +438,25 @@ export const markPayment = internalMutation({
   },
 });
 
-/** Relit l'adhésion chez Whop (source de vérité) ; à défaut, se contente de ce que l'événement a apporté. */
+/** L'adhésion rangée, ou null. */
+export const subByMembership = internalQuery({
+  args: { membershipId: v.string() },
+  handler: async (ctx, { membershipId }) => ctx.db.query("subscriptions").withIndex("by_membership", (q) => q.eq("membershipId", membershipId)).first(),
+});
+
+/**
+ * Relit l'adhésion chez Whop (source de vérité). Si Whop ne répond pas, la charge de l'événement ne sert que si elle
+ * retire l'accès, ou si l'adhésion n'est pas encore rangée (une première activation n'est pas perdue). Sinon l'erreur
+ * remonte : réponse 500, Whop renvoie. Avant (audit S9), un vieux went_valid rejoué pendant une panne rouvrait l'accès.
+ */
 async function syncMembership(ctx: ActionCtx, membershipId: string, fallback: Json | null): Promise<string> {
   let m: Json | null = fallback;
   try {
     m = await whopApi(`/memberships/${membershipId}`);
   } catch (e) {
     if (!m) throw e;
+    const known = await ctx.runQuery(internal.whop.subByMembership, { membershipId });
+    if (known && ACCESS.has(String(m.status ?? ""))) throw e;
   }
   if (!m) return `adhésion ${membershipId} introuvable`;
   return await ctx.runMutation(internal.whop.saveMembership, {
@@ -453,8 +471,35 @@ async function syncMembership(ctx: ActionCtx, membershipId: string, fallback: Js
     periodEnd: toMs(m.current_period_end ?? m.renewal_period_end ?? m.expires_at),
     cancelAtPeriodEnd: m.cancel_at_period_end === true,
     manageUrl: typeof m.manage_url === "string" ? m.manage_url : null,
+    whopUpdatedAt: toMs(m.updated_at),
   });
 }
+
+/** Les adhésions rangées avec accès, à relire chez Whop (500 au plus). */
+export const toReconcile = internalQuery({
+  args: {},
+  handler: async (ctx) =>
+    (await ctx.db.query("subscriptions").order("desc").take(2000)).filter((s) => ACCESS.has(s.status)).slice(0, 500).map((s) => s.membershipId),
+});
+
+/**
+ * Réconciliation quotidienne (audit S9, Q27) : chaque adhésion rangée avec accès est relue chez Whop. Une adhésion
+ * terminée n'émet plus d'événement : sans cette relecture, un état faux (événement perdu, instantané périmé) restait
+ * Pro à vie. Cron dans convex/crons.ts.
+ */
+export const reconcile = internalAction({
+  args: {},
+  handler: async (ctx): Promise<string[]> => {
+    if (!process.env.WHOP_API_KEY || backgroundOff()) return [];
+    const ids: string[] = await ctx.runQuery(internal.whop.toReconcile, {});
+    const notes: string[] = [];
+    for (const id of ids) {
+      try { notes.push(await syncMembership(ctx, id, null)); } catch (e) { notes.push(`${id} : ${String(e).slice(0, 200)}`); }
+    }
+    console.log(`[whop] réconciliation : ${notes.join(" ; ") || "aucune adhésion avec accès"}`);
+    return notes;
+  },
+});
 
 // ─── Le webhook : https://<déploiement>.convex.site/whop/webhook ───
 
