@@ -3,6 +3,7 @@ import { NAMING_QUERIES } from "../../convex/radar/radarNamingMath";
 import { productHashtags, hashtagCandidates } from "../../convex/radar/radarNetworkMath";
 import {
   SC_PRICE_PER_CREDIT,
+  addCounts,
   addSnapshot,
   allowance,
   budgetState,
@@ -777,3 +778,11 @@ describe("produits web (lot 5 du dig, 14/11/2026)", () => {
   });
 });
 
+describe("compteurs par clé (radarUsage.reasons et radarUsage.saved)", () => {
+  it("additionne clé par clé, garde les clés déjà là et ignore les zéros", () => {
+    expect(addCounts({ repli: 2 }, { repli: 3, trou: 1 })).toEqual({ repli: 5, trou: 1 });
+    expect(addCounts(undefined, { hashtag: 2, trou: 0 })).toEqual({ hashtag: 2 });
+    expect(addCounts({ curve: 4 }, undefined)).toEqual({ curve: 4 });
+    expect(addCounts(undefined, undefined)).toEqual({});
+  });
+});

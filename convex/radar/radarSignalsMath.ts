@@ -437,6 +437,21 @@ export const plannedUsd = (s: BudgetSettings) => POSTE_KEYS.reduce((sum, k) => s
 /** `usd` : la dépense d'un poste en dollars (l'analyse IA), hors crédits. */
 export type UsageRow = { poste: string; credits: number; day?: string; usd?: number };
 
+/**
+ * Les appels payants qu'une page publique de TikTok a rendus inutiles, comptés par brique dans `radarUsage.saved`
+ * (au moins un crédit chacun) : hashtag (recherche de réseau évitée), trou (relevé « trou » évité : la vidéo est
+ * supprimée), transcript (sous-titres natifs), curve (relevé de courbe), repli (profil ou vidéo relus au passage
+ * suivant). Un banc mesuré du poste ne dit pas ce que TikTok sert aux serveurs : ce compteur, lui, le dit.
+ */
+export type SavedKey = "hashtag" | "trou" | "transcript" | "curve" | "repli";
+
+/** Ajoute des compteurs par clé à d'autres (motifs de dépense, appels évités) ; les clés à zéro ou moins sont ignorées. */
+export function addCounts(base: Readonly<Record<string, number>> | undefined, more: Readonly<Record<string, number>> | undefined): Record<string, number> {
+  const out: Record<string, number> = { ...(base ?? {}) };
+  for (const [k, c] of Object.entries(more ?? {})) if (c > 0) out[k] = (out[k] ?? 0) + c;
+  return out;
+}
+
 export type BudgetState = {
   spentCredits: number;
   spentUsd: number;
