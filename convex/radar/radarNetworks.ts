@@ -125,6 +125,7 @@ import {
 import { fetchEmbedPage, storePauseMs, storeUrl } from "./radarStoreMath";
 import { linkCandidate } from "./radarFiche";
 import { REJECTED_KEEP_MS, accountProof } from "./radarVetMath";
+import { fromStoredCursor } from "./radarCursorMath";
 import { MARKET_CURRENCY } from "./radarMarketMath";
 import {
   appRef,
@@ -870,10 +871,13 @@ export const rejudgePaused = internalMutation({
     // Les apps de départ d'abord : une app ajoutée au code doit exister avant qu'on y range ses comptes.
     await ensureSeedApps(ctx);
     const s = await ensureSettings(ctx);
-    const page = await ctx.db
-      .query("radarTracked")
-      .withIndex("by_paused", (q) => q.eq("pausedReason", "offTopic"))
-      .paginate({ cursor: s.rejudgeCursor ?? null, numItems: REJUDGE_BATCH });
+    // Un curseur illisible (recopié d'un autre déploiement) : le parcours repart du début (cf radarCursorMath).
+    const { result: page } = await fromStoredCursor(s.rejudgeCursor ?? null, (c) =>
+      ctx.db
+        .query("radarTracked")
+        .withIndex("by_paused", (q) => q.eq("pausedReason", "offTopic"))
+        .paginate({ cursor: c, numItems: REJUDGE_BATCH }),
+    );
     const r = await rejudgeAccounts(ctx, page.page);
     // La page suivante au prochain passage ; à la fin, on reprend du début.
     await ctx.db.patch(s._id, { rejudgeCursor: page.isDone ? undefined : page.continueCursor });

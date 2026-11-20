@@ -226,6 +226,7 @@ export const runAutoFollow = internalAction({
     await ctx.runMutation(internal.radar.radarAuto.requeueTrialCandidates, {});
     await ctx.runMutation(internal.radar.radarAuto.requeueStoreTwins, {});
     await ctx.runMutation(internal.radar.radarAuto.repair2011, {});
+    await ctx.runMutation(internal.radar.radarAuto.resetCopiedCursors, {});
     const batch: AutoToJudge[] = await ctx.runQuery(internal.radar.radarAuto.autoToJudge, {});
     let verdicts: AutoVerdict[] = [];
     let usd = 0;
@@ -560,6 +561,20 @@ export const repair2011 = internalMutation({
     }
     await ctx.db.patch(s._id, { repair2011DoneAt: now });
     return report;
+  },
+});
+
+/**
+ * UNE fois : les curseurs de parcours recopiés de Jarvia au déménagement (`judgeCursor`, `rejudgeCursor`) sont remis à
+ * zéro ; le jugement des comptes et le rejugement des comptes en pause repartent du début (cf radarCursorMath).
+ */
+export const resetCopiedCursors = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<boolean> => {
+    const s = await ensureSettings(ctx);
+    if (s.cursorsReset2011At !== undefined) return false;
+    await ctx.db.patch(s._id, { judgeCursor: undefined, rejudgeCursor: undefined, cursorsReset2011At: Date.now() });
+    return true;
   },
 });
 
