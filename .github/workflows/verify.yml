@@ -65,5 +65,7 @@ jobs:
         run: npm run test:cache
       - name: Appels du front et formes d'id (npm run test:sources)
         run: npm run test:sources
+      - name: Copie des images (npm run test:image)
+        run: npm run test:image
       - name: Écrans sur données de banc (npm run check:data)
         run: npm run check:data
