@@ -244,6 +244,31 @@ describe("fixtures publiques : le contrôle structurel", () => {
   });
 });
 
+describe("fixtures publiques : chaque commit d'une branche", () => {
+  // Corrigé le 21/11/2026 : seule la pointe était contrôlée. Une PR publie l'arbre de chacun de ses commits
+  // (refs/pull/N/head, gardé même après un squash dans main) : des commits intermédiaires gardaient les fixtures d'avant
+  // la ré-anonymisation.
+  it("un commit intermédiaire en défaut est nommé, même corrigé à la pointe ; le script sort à 1 sans afficher la valeur", () => {
+    const repo = world({ "convex/radar/a.ts": "export const a = 1;\n", "tests/radar/fixtures/x.json": { a: 1 } });
+    const git = (...a: string[]) => execFileSync("git", ["-c", "user.name=banc", "-c", "user.email=banc@example.invalid", "-c", "commit.gpgsign=false", ...a], { cwd: repo, encoding: "utf8" }).trim();
+    git("init", "-q");
+    git("add", "-A");
+    git("commit", "-qm", "base");
+    const base = git("rev-parse", "HEAD");
+    fs.writeFileSync(path.join(repo, "tests/radar/fixtures/x.json"), JSON.stringify({ u: "https://p16-sign.tiktokcdn-eu.com/obj/cle-temoin~tplv.heic" }));
+    git("commit", "-qam", "une fixture réelle");
+    const bad = git("rev-parse", "HEAD");
+    fs.writeFileSync(path.join(repo, "tests/radar/fixtures/x.json"), JSON.stringify({ a: 2 }));
+    git("commit", "-qam", "corrigée à la pointe");
+    expect(publiques.scanCommits(`${base}..HEAD`, repo).map((b: { commit: string; found: Finding[] }) => [b.commit, b.found.map((f) => f.kind).includes("cdn")])).toEqual([[bad, true]]);
+    const cli = spawnSync(process.execPath, [SCRIPT, "--commits", `${base}..HEAD`], { cwd: repo, encoding: "utf8" });
+    expect(cli.status).toBe(1);
+    expect(cli.stdout).toMatch(new RegExp(`^${bad.slice(0, 7)} : \\d+ manquement\\(s\\) \\(cdn[^\\n]*\\)\\n$`));
+    expect(cli.stdout + cli.stderr).not.toContain("cle-temoin");
+    expect(spawnSync(process.execPath, [SCRIPT, "--commits", `${bad}..HEAD`], { cwd: repo, encoding: "utf8" }).status).toBe(0);
+  });
+});
+
 describe("fixtures publiques : les pseudos cités par le code du Radar", () => {
   // Corrigé le 21/11/2026 : une mention n'était refusée que de forme réelle (un chiffre, un point ou un souligné), sans
   // fin en .app ; une chaîne entière, qu'avec un chiffre. Le contrôle ne reconnaissait que 865 des 8 000 pseudos de

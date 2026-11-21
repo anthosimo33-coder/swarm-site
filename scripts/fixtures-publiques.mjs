@@ -53,11 +53,15 @@
 // Usage : node scripts/fixtures-publiques.mjs [dossier]                         contrôle
 //         node scripts/fixtures-publiques.mjs --anonymise <fichier.json…>       anonymise sur place, en un passage
 //         node scripts/fixtures-publiques.mjs --contre <brut…> [--depuis <rév>] [--diff <a..b>] [--sans-fixtures]
+//         node scripts/fixtures-publiques.mjs --commits [<a..b>]                  le contrôle sur l'arbre de chaque commit
+//           (origin/main..HEAD par défaut, dans le dépôt du dossier courant) : AVANT de pousser une branche — une PR
+//           publie chaque commit (refs/pull/N/head), même après un squash dans main.
 // Lancé par tests/radar/fixtures-publiques.test.ts (npm run test:moteur) ; la contre-épreuve y tourne quand
 // FIXTURES_BRUTS nomme les bruts (chemins séparés par « : »).
 import { execFileSync } from 'node:child_process';
 import { createHmac, randomBytes } from 'node:crypto';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
@@ -1312,6 +1316,33 @@ export function readRaws(paths) {
 
 const describe = (f) => `${f.file} ${f.at} : ${f.kind}`;
 
+/**
+ * LE CONTRÔLE DE CHAQUE COMMIT (21/11/2026) : une branche poussée publie l'arbre de chacun de ses commits, pas seulement
+ * sa pointe (une PR les garde sous refs/pull/N/head, même après un squash dans main). Chaque commit de `range` (dans le
+ * dépôt `repo`) est extrait dans un dossier temporaire et passé au contrôle de CE script (`scanFixtures`, `scanCode`) :
+ * `{ commit, found }` pour chaque commit en défaut, jamais la valeur trouvée. Corrigé le 21/11/2026 : seule la pointe
+ * était contrôlée, et 175a444 à 74051f4 gardaient les fixtures d'avant la ré-anonymisation (175 et 371 manquements).
+ */
+export function scanCommits(range = 'origin/main..HEAD', repo = process.cwd()) {
+  const git = (...a) => execFileSync('git', a, { cwd: repo, encoding: 'utf8', maxBuffer: 1 << 30 });
+  const out = [];
+  for (const commit of git('rev-list', '--reverse', range).split('\n').filter(Boolean)) {
+    const dir = mkdtempSync(join(tmpdir(), 'fixtures-publiques-commit-'));
+    try {
+      const tar = execFileSync('git', ['archive', commit], { cwd: repo, maxBuffer: 1 << 30 });
+      execFileSync('tar', ['-x', '-C', dir], { input: tar, maxBuffer: 1 << 30 });
+      const fixtures = join(dir, 'tests', 'radar', 'fixtures') + sep;
+      let found = [];
+      try { statSync(fixtures); found = scanFixtures(fixtures, { vocab: vocabulary(dir) }); } catch { /* pas de fixtures dans ce commit */ }
+      found = [...found, ...scanCode(dir)];
+      if (found.length) out.push({ commit, found });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+  return out;
+}
+
 if (process.argv[1] === SELF) {
   const args = process.argv.slice(2);
   if (args[0] === '--anonymise') {
@@ -1324,6 +1355,15 @@ if (process.argv[1] === SELF) {
 `));
     // Rien du tirage n'est dit ni gardé (la table des dates comprise).
     console.error(`${paths.length} réponse(s) anonymisée(s) en un passage.`);
+  } else if (args[0] === '--commits') {
+    const range = args[1] ?? 'origin/main..HEAD';
+    const bad = scanCommits(range);
+    for (const b of bad) {
+      const kinds = [...new Set(b.found.map((f) => f.kind))].join(', ');
+      console.log(`${b.commit.slice(0, 7)} : ${b.found.length} manquement(s) (${kinds})`);
+    }
+    console.error(`${bad.length} commit(s) en défaut dans ${range}.`);
+    process.exit(bad.length ? 1 : 0);
   } else if (args[0] === '--contre') {
     const opt = (name) => {
       const i = args.indexOf(name);
