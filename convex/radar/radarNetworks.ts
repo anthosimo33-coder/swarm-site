@@ -1357,6 +1357,10 @@ export const runNetworkSearch = internalAction({
          * (clé refusée, solde à sec : rien n'est dit de ses appels).
          */
         let appThRefused = false;
+        // Les passes ainsi sautées (cf ci-dessus) : aucune n'est allée au bout, aucune n'est « payée » (notePaidPass).
+        // Corrigé le 21/11/2026 : une passe de hashtag sautée sans appel comptait comme payée au bout ; ses deux passes
+        // sautées, le hashtag était enregistré « payé, 0 vidéo » (tagCounts), et la brique #24 le croyait absent.
+        let appPrevented = 0;
         const counted = (r: { spend: Spend; creditsRemaining?: number } & ({ ok: true } | { ok: false; error: string; noCredits: boolean; transient: boolean; thFailed: boolean })): boolean => {
           gate.spend(r.spend);
           usage.book.add(r.spend);
@@ -1371,6 +1375,7 @@ export const runNetworkSearch = internalAction({
           }
           if (prevented && appThRefused) {
             truncated = true;
+            appPrevented++;
             return false;
           }
           usage.book.calls++;
@@ -1411,6 +1416,7 @@ export const runNetworkSearch = internalAction({
               continue;
             }
             const failuresBefore = appFailures;
+            const preventedBefore = appPrevented;
             // PUIS LE FOURNISSEUR (radarProviders.passProvider).
             const { region: thRegion } = routed[i];
             let provider = servedBy(i);
@@ -1533,8 +1539,9 @@ export const runNetworkSearch = internalAction({
               }
             }
             // Une passe payée ne compte que si elle est allée au bout (radarNetworkMath.notePaidPass) : une passe coupée
-            // après sa page servie en repli ne l'est pas (son compteur de vidéos rendues serait faux).
-            if (tag) notePaidPass(tag, { stopped: stop || passCut, failed: appFailures > failuresBefore });
+            // après sa page servie en repli ne l'est pas (son compteur de vidéos rendues serait faux), ni une passe que le
+            // coupe-circuit a empêchée de partir (aucun appel : rien n'est mesuré, ce n'est pas un « 0 vidéo »).
+            if (tag) notePaidPass(tag, { stopped: stop || passCut || appPrevented > preventedBefore, failed: appFailures > failuresBefore });
             if (stop) break;
           }
         } catch (e) {

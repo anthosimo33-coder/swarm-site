@@ -413,6 +413,35 @@ describe("Fusion — le tri des hashtags passe AVANT le choix du fournisseur (ru
     expect(fin).toMatchObject({ outcome: "done" });
     expect(fin.tags).toBeUndefined();
   });
+
+  // Le coupe-circuit de TikHub saute sur les refus des mots-clés de l'app, porte de repli fermée : les passes du hashtag
+  // destinées à TikHub sont empêchées de partir, sans aucun appel. Corrigé le 21/11/2026 : chacune comptait comme une
+  // passe payée allée au bout (notePaidPass), le hashtag était enregistré « payé, 0 vidéo » (tagCounts) — un état non
+  // mesuré rangé comme nul, sur lequel la brique #24 sautait ensuite ses deux passes (« absent ») pendant 21 jours.
+  // Trois mots-clés chez TikHub avant le hashtag : sous `network`, seule leur passe FR y part.
+  const breakerCases: [string, string, string[], number][] = [
+    ["network-all : ses deux passes chez TikHub", "network-all", ["focus town", "focus app"], 0],
+    ["network : la passe sans région chez TikHub, la passe FR payée chez ScrapeCreators", "network", ["focus town", "focus app", "focustown app"], 1],
+  ];
+  for (const [nom, radar, keywords, scTagPasses] of breakerCases) {
+    it(`coupe-circuit sauté sur les mots-clés, porte de repli fermée (${nom}) : le hashtag jamais payé n'est pas enregistré « payé vide »`, async () => {
+      setEnv(radar);
+      const net = thAndSc({ [TH_ROUTES.search]: [500, synth().refus500] });
+      const app = focus([], { searches: [...keywords, "#focustown"] });
+      const { f, done } = run([app], jobStateFor({ fallbacksToday: 100 }), [404, ""], net);
+      await done;
+      // Aucun appel n'est parti pour les passes du hashtag chez TikHub (ni son identifiant, ni sa liste).
+      expect(thHits(net, TH_ROUTES.hashtagSearch)).toHaveLength(0);
+      expect(thHits(net, TH_ROUTES.hashtagVideos)).toHaveLength(0);
+      expect(new Set(scHits(net).filter((c) => new URL(c.url).pathname === "/v1/tiktok/search/hashtag").map((c) => new URL(c.url).searchParams.get("region"))).size).toBe(scTagPasses);
+      const fin = f.named("radar/radarNetworks:finishNetworkSearch").map((c) => c.args);
+      // Ses refus sont conclus (le coupe-circuit ne garde dues que les apps qu'il a empêchées de partir).
+      expect(fin.map((a) => a.searched)).toEqual([true]);
+      // Rien n'est retenu de ce hashtag : ni « payé », ni « 0 vidéo ».
+      expect(fin[0].tags).toBeUndefined();
+      expect(saved(f)).toEqual({});
+    });
+  }
 });
 
 // ─── Le trou mesuré chez TikHub (#26, brique 4) ──────────────────────────────────────────────────────────────────
