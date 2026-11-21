@@ -80,6 +80,7 @@ import type * as radarSync from "../radarSync.js";
 import type * as saved from "../saved.js";
 import type * as session from "../session.js";
 import type * as stats from "../stats.js";
+import type * as syncCadence from "../syncCadence.js";
 import type * as textLang from "../textLang.js";
 import type * as tiktokPage from "../tiktokPage.js";
 import type * as users from "../users.js";
@@ -164,6 +165,7 @@ declare const fullApi: ApiFromModules<{
   saved: typeof saved;
   session: typeof session;
   stats: typeof stats;
+  syncCadence: typeof syncCadence;
   textLang: typeof textLang;
   tiktokPage: typeof tiktokPage;
   users: typeof users;
