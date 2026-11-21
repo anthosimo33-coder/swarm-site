@@ -193,6 +193,17 @@ describe("fixtures publiques : le contrôle structurel", () => {
     expect(kinds(scanCode(dir, ["convex/radar", "tests/radar"], ["convex/radar"]))).toEqual([`convex${path.sep}radar${path.sep}a.ts identifiant`, `convex${path.sep}radar${path.sep}a.ts pseudo`, `tests${path.sep}radar${path.sep}d.test.ts identifiant`]);
     expect(scanCode(dir, ["convex/radar"], ["convex/radar"]).filter((f: Finding) => f.file.endsWith("a.ts")).map((f: Finding) => f.at)).toEqual(["ligne 1", "ligne 1", "ligne 2"]);
   });
+
+  // Corrigé le 21/11/2026 : un gabarit fait des 14 premiers chiffres d'une vidéo réelle complétés par un rang
+  // passait — seuls 17 à 20 chiffres d'un tenant étaient jugés —, et une valeur de requête d'adresse de partage aussi.
+  it("le code : un identifiant composé (le début d'un identifiant de forme réelle suivi d'un « ${…} ») et une valeur de partage écrite en clair refusés ; la forme synthétique passe", () => {
+    const dir = world({
+      "tests/radar/a.test.ts": `const u = (i: number) => \`https://www.tiktok.com/@auteur_17/video/${VIDEO_ID.slice(0, 14)}\${i}\`;\n`,
+      "tests/radar/b.test.ts": `const s = "https://www.tiktok.com/@auteur_01/video/1?u_code=${"kq3vtemo1n" + "x8w2"}&source=h5_m";\n`,
+      "tests/radar/c.test.ts": "const u = (i: number) => `https://www.tiktok.com/@auteur_17/video/7709774559000000${i}`; const p = `?u_code=${code}&_d=temoin_d`;\n",
+    });
+    expect(kinds(scanCode(dir, ["tests/radar"], []))).toEqual([`tests${path.sep}radar${path.sep}a.test.ts identifiant`, `tests${path.sep}radar${path.sep}b.test.ts identifiant`]);
+  });
 });
 
 describe("fixtures publiques : l'anonymiseur", () => {
@@ -334,6 +345,29 @@ describe("fixtures publiques : la contre-épreuve (locale)", () => {
       { file: "tests/radar/y.test.ts", at: "ligne 9", kind: "identifiant" },
     ]);
     expect(JSON.stringify(found)).not.toContain("nadia");
+  });
+
+  // Corrigé le 21/11/2026 : un u_code réel (code de partage d'un compte) coupé en deux, et les 14 premiers chiffres d'un
+  // identifiant de vidéo réel complétés par un rang, passaient : seules les valeurs entières étaient comparées, et les
+  // valeurs de requête d'une adresse de partage n'étaient jamais relevées.
+  it("le morceau d'une valeur réelle (le début d'un u_code, les premiers chiffres d'un identifiant) est reconnu, comme les valeurs de requête d'une adresse de partage", () => {
+    const U_CODE = "kq3vtemo1n" + "x8w2";
+    const D = "temoin2026" + "1121abc";
+    const r = realValues([{ aweme_list: [{ aweme_id: VIDEO_ID_2, share_url: `https://www.tiktok.com/@maria.lopez_94/video/${VIDEO_ID_2}?u_code=${U_CODE}&_d=${D}&share_item_id=${VIDEO_ID_2}&source=h5_m` }] }]);
+    const lines = [
+      { file: "tests/radar/a.test.ts", line: 1, text: `const u = \`?u_code=\${"${U_CODE.slice(0, 10)}" + "${U_CODE.slice(10)}"}\`;` },
+      { file: "tests/radar/b.test.ts", line: 2, text: `const v = (i: number) => \`/video/${VIDEO_ID_2.slice(0, 14)}\${i}\`;` },
+      { file: "tests/radar/c.test.ts", line: 3, text: `const d = "${D}";` },
+      // Synthétiques : « 7709 » suivi de zéros et d'un rang, un mot du code.
+      { file: "tests/radar/d.test.ts", line: 4, text: "const w = (i: number) => `/video/7709774559000000${i}`; const k = \"share_item_id\";" },
+    ];
+    expect(crossCheck(r, { fixtures: false, lines, pub: none })).toEqual([
+      { file: "tests/radar/a.test.ts", at: "ligne 1", kind: "identifiant" },
+      { file: "tests/radar/b.test.ts", at: "ligne 2", kind: "identifiant" },
+      { file: "tests/radar/c.test.ts", at: "ligne 3", kind: "identifiant" },
+    ]);
+    const dir = world({ "sc/a.json": { share_url: `https://www.tiktok.com/@auteur_01/video/1?u_code=${U_CODE}` }, "b.json": { id: `${VIDEO_ID_2.slice(0, 13)}7` } });
+    expect(kinds(crossCheck(r, { dir, pub: none }))).toEqual(["b.json identifiant", "sc/a.json identifiant"]);
   });
 
   it("ce que main publie déjà n'est pas compté (un mot courant qui est aussi un pseudo)", () => {

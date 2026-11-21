@@ -351,6 +351,18 @@ const REAL_SEC = /MS4wLjABAAAA[A-Za-z0-9_-]{20,}/;
 /** Un long nombre écrit dans le code : 17 à 20 chiffres d'un tenant (ni la suite d'une décimale, ni le morceau d'un plus long). */
 const LONG_NUMBER = /(?<![\d.])\d{17,20}(?!\d)/g;
 /**
+ * Le début d'un identifiant que le code complète (12 à 16 chiffres suivis d'un « ${ », un rang ou un suffixe) : il porte
+ * la date et une partie des bits bas d'une vidéo. Synthétique seulement avec sa suite de zéros (`synthNumber`). Corrigé
+ * le 21/11/2026 : un gabarit de 14 chiffres réels passait (LONG_NUMBER en veut 17 d'un tenant).
+ */
+const COMPOSED_ID = /(?<![\d.])(\d{12,16})\$\{/g;
+/**
+ * Une valeur de requête d'adresse de partage écrite en clair (u_code, _d, share_item_id…) : le code de partage d'un
+ * compte, un jeton, un identifiant. Une forme synthétique porte « temoin », une suite de six zéros ou n'a pas de chiffre.
+ */
+const SHARE_QUERY = /[?&](?:u_code|_d|share_item_id|share_link_id|sec_user_id|user_id|item_id)=([A-Za-z0-9_-]{8,})/g;
+const syntheticToken = (t) => !/\d/.test(t) || /temoin/i.test(t) || synthNumber(t.replace(/\D/g, '')) || /0{6}/.test(t);
+/**
  * Un pseudo de forme réelle : minuscules et chiffres, au moins un point ou un souligné entre eux, au moins un chiffre
  * (« lina.rousseau_88 ») — ni synthétique, ni témoin (« temoin » dans le pseudo).
  */
@@ -389,7 +401,8 @@ export function scanCode(root = ROOT, scope = SCOPE, radarCode = RADAR_CODE) {
         const at = `ligne ${i + 1}`;
         if (urlsIn(line).some(longMediaUrl)) out.push({ file: rel, at, kind: 'cdn' });
         if (REAL_SEC.test(line)) out.push({ file: rel, at, kind: 'sec_uid' });
-        if ([...line.matchAll(LONG_NUMBER)].some((m) => !synthNumber(m[0]))) out.push({ file: rel, at, kind: 'identifiant' });
+        if ([...line.matchAll(LONG_NUMBER)].some((m) => !synthNumber(m[0])) || [...line.matchAll(COMPOSED_ID)].some((m) => !/0{6}/.test(m[1])) || [...line.matchAll(SHARE_QUERY)].some((m) => !syntheticToken(m[1])))
+          out.push({ file: rel, at, kind: 'identifiant' });
         const marked = [...line.matchAll(/<m\b[^>]*>([^<]*)<\/m>/g)].some((m) => [...m[1].matchAll(/@([^\s@<&]+)/g)].some((h) => !syntheticLabel(h[1])));
         const cited = radar && ([...line.matchAll(/(?<![\w@/.-])@([a-z0-9._]{3,30})(?![\w/-])/g)].some((m) => handleShaped(m[1].replace(/[._]+$/, '')) && !declared.has(m[1].replace(/[._]+$/, ''))) || [...line.matchAll(/(["'`])([a-z0-9._]{4,30})\1/g)].some((m) => handleShaped(m[2]) && !declared.has(m[2])));
         if (marked || cited) out.push({ file: rel, at, kind: 'pseudo' });
@@ -806,10 +819,13 @@ export function realValues(raws) {
     for (const m of String(v).matchAll(/@([\p{L}\p{N}_.]+)/gu)) name(m[1]);
   };
   const url = (v) => {
-    for (const m of String(v).matchAll(/tiktok\.com\/@([^/?#"\s]+)(?:\/video\/(\d+))?/g)) {
+    for (const m of String(v).matchAll(/tiktok\.com\/@([^/?#"\s]+)(?:\/(?:video|photo)\/(\d+))?/g)) {
       name(decodeURIComponent(m[1]));
       if (m[2]) ids.add(m[2]);
     }
+    // Les valeurs de requête d'une adresse de partage (u_code, _d, share_item_id…) : le code de partage d'un compte, un
+    // jeton daté, un identifiant. Corrigé le 21/11/2026 : jamais relevées, un u_code réel passait.
+    for (const u of urlsIn(String(v))) for (const m of u.rest.matchAll(/[?&][A-Za-z_][A-Za-z0-9_]*=([A-Za-z0-9_-]{8,})/g)) if (/\d/.test(m[1])) ids.add(m[1]);
   };
   const walk = (o) => {
     if (Array.isArray(o)) return o.forEach(walk);
@@ -844,7 +860,40 @@ export function realValues(raws) {
     }
   };
   for (const r of raws) walk(r);
-  return { names, ids, texts, times, stats };
+  return { names, ids, texts, times, stats, prefixes: idPrefixes(ids) };
+}
+
+/**
+ * LES MORCEAUX D'UNE VALEUR RÉELLE (21/11/2026) : les débuts d'un identifiant opaque, assez longs pour ne pas tomber
+ * juste par hasard — 12 chiffres au moins d'un identifiant numérique (vidéo, son, compte : sa date à la seconde et une
+ * partie de ses bits bas), 10 caractères au moins d'un code mêlé de lettres et de chiffres (u_code, jeton, sec_uid au-delà
+ * de son préfixe public). Un témoin coupé en deux (`"…" + "…"`), un gabarit `${préfixe}${i}` les portent sans porter la
+ * valeur entière.
+ */
+export const ID_PREFIX_DIGITS = 12;
+export const ID_PREFIX_MIXED = 10;
+const SEC_PREFIX = 'MS4wLjABAAAA';
+function idPrefixes(ids) {
+  const out = new Set();
+  for (const id of ids) {
+    const digits = /^\d+$/.test(id);
+    if (!digits && !/\d/.test(id)) continue;
+    const from = digits ? ID_PREFIX_DIGITS : id.startsWith(SEC_PREFIX) ? SEC_PREFIX.length + 8 : ID_PREFIX_MIXED;
+    for (let n = from; n <= id.length; n++) out.add(digits ? id.slice(0, n) : id.slice(0, n).toLowerCase());
+  }
+  return out;
+}
+/**
+ * Une chaîne qui commence comme un identifiant réel, sur `ID_PREFIX_DIGITS` chiffres ou `ID_PREFIX_MIXED` caractères au
+ * moins (cf `idPrefixes`) : le morceau d'un témoin coupé, ou un identifiant composé de ce morceau et d'un rang. Jamais une
+ * forme synthétique (une suite de six zéros).
+ */
+function realPiece(t, real) {
+  if (!real.prefixes?.size || synthNumber(t)) return false;
+  const digits = /^\d+$/.test(t);
+  const v = digits ? t : t.toLowerCase();
+  for (let n = Math.min(v.length, 64); n >= (digits ? ID_PREFIX_DIGITS : ID_PREFIX_MIXED); n--) if (real.prefixes.has(v.slice(0, n))) return true;
+  return false;
 }
 
 /**
@@ -912,7 +961,7 @@ function matches(s, real, strict, pub) {
   }
   // Un nombre de moins de 9 chiffres (un décalage d'octets, un compteur) qui égale l'un des identifiants courts des bruts
   // (des hashtags anciens, publics) : un hasard, pas une identité.
-  for (const m of s.matchAll(/[A-Za-z0-9_-]{6,}/g)) if (real.ids.has(m[0]) && !/^\d{1,8}$/.test(m[0]) && !pub.words.has(m[0].toLowerCase())) kinds.add('identifiant');
+  for (const m of s.matchAll(/[A-Za-z0-9_-]{6,}/g)) if ((real.ids.has(m[0]) || realPiece(m[0], real)) && !/^\d{1,8}$/.test(m[0]) && !pub.words.has(m[0].toLowerCase())) kinds.add('identifiant');
   return kinds;
 }
 
@@ -986,7 +1035,7 @@ export function crossCheck(real, { dir = FIXTURES, fixtures = true, lines = [], 
     for (const [at, s] of strings(doc)) for (const kind of matches(s, real, true, pub)) push({ file: rel, at, kind });
     if (typeof doc === 'object') numbersOf(doc, real, rel, push);
     // Un nombre écrit tel quel (un identifiant de 19 chiffres) : JSON.parse l'arrondit, le texte le garde.
-    for (const m of text.matchAll(/(?<!\d)\d{9,}(?!\d)/g)) if (real.ids.has(m[0]) && !pub.words.has(m[0])) push({ file: rel, at: `caractère ${m.index}`, kind: 'identifiant' });
+    for (const m of text.matchAll(/(?<!\d)\d{9,}(?!\d)/g)) if ((real.ids.has(m[0]) || realPiece(m[0], real)) && !pub.words.has(m[0])) push({ file: rel, at: `caractère ${m.index}`, kind: 'identifiant' });
   }
   for (const l of lines) {
     // Une ligne d'une fixture est une donnée (comparée comme les fixtures) ; une ligne de code, ses chaînes entières.
