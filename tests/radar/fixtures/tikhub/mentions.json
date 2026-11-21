@@ -1,0 +1,378 @@
+{
+ "_fixture": "Réponses réelles du banc du 20/11/2026, réduites aux champs lus (plus content_desc et original_client_text.markup_text), anonymisées (scripts/fixtures-publiques.mjs --anonymise, ré-anonymisées en un passage le 21/11/2026) : auteurs, identifiants des vidéos et des comptes mentionnés inventés ; libellés des mentions inventés (alphabet de l'OTAN, lettres mathématiques, gardés tels quels) ; légendes, hashtags et noms mentionnés réécrits en mots de remplissage de largeurs tirées, emoji remplacés par d'autres de même largeur UTF-16 ; dates déplacées par une table secrète et monotone, sans écart commun ; compteurs tirés loin des vrais. Les positions de text_extra (en unités UTF-16, comme TikTok) suivent la réécriture : celles qui ne tombaient pas juste sur leur mention n'y tombent toujours pas, du même nombre de caractères.",
+ "thRecherche": {
+  "_": "TikHub, recherche par mot-clé (th-reseau-page-200.json) : six mentions, une par ligne. Lue aux positions, la 5e (@jet) rendait « @Ju » (le début de la 6e).",
+  "aweme_info": {
+   "aweme_id": "7710108316621342024",
+   "desc": "Autenim Proiden IDestlaboruml Utaliq! ERuntmoll madminimv…  Ee s ncididunt r dexercitationul or risni or reeu ab data itame eser? S’et dmin. Mq or mv udex labo, labore duntutlab ab ata s’ar umdo ariatur ELitseddo llit aut borumlo 🦊  @Alpha  @BravoCharlie  @𝓞𝓪𝓴 🪁  @Fox Golf Hotel  @jet  @Juliett  #reprehende #ritinvoluptatevelitessecil #fugiatnul #luptateve #itinvo ",
+   "content_desc": "[\"Autenim Proiden IDestlaboruml Utaliq!\",\"ERuntmoll madminimv… \",\"Ee s ncididunt r dexercitationul or risni or reeu ab data itame eser? S’et dmin. Mq or mv udex labo, labore duntutlab ab ata s’ar umdo ariatur ELitseddo llit aut borumlo 🦊 \",\"@Alpha \",\"@BravoCharlie \",\"@𝓞𝓪𝓴 🪁 \",\"@Fox Golf Hotel \",\"@jet \",\"@Juliett \",\"#reprehende #ritinvoluptatevelitessecil #fugiatnul #luptateve #itinvo \"]",
+   "desc_language": "en",
+   "region": "CH",
+   "create_time": 1795149489,
+   "statistics": {
+    "play_count": 773,
+    "digg_count": 219,
+    "comment_count": 17,
+    "share_count": 15,
+    "collect_count": 26
+   },
+   "author": {
+    "uid": "9100000000000000031",
+    "unique_id": "auteur_100",
+    "follower_count": 15150,
+    "nickname": "Auteur",
+    "signature": ""
+   },
+   "text_extra": [
+    {
+     "end": 240,
+     "start": 234,
+     "tag_id": "1",
+     "type": 0,
+     "user_id": "9200000000000000001"
+    },
+    {
+     "end": 255,
+     "start": 242,
+     "tag_id": "3",
+     "type": 0,
+     "user_id": "9200000000000000002"
+    },
+    {
+     "end": 267,
+     "start": 257,
+     "tag_id": "5",
+     "type": 0,
+     "user_id": "9200000000000000003"
+    },
+    {
+     "end": 284,
+     "start": 269,
+     "tag_id": "7",
+     "type": 0,
+     "user_id": "9200000000000000004"
+    },
+    {
+     "end": 290,
+     "start": 286,
+     "tag_id": "9",
+     "type": 0,
+     "user_id": "9200000000000000005"
+    },
+    {
+     "end": 300,
+     "start": 292,
+     "tag_id": "11",
+     "type": 0,
+     "user_id": "9200000000000000006"
+    },
+    {
+     "end": 313,
+     "hashtag_id": "7081474955895899119",
+     "hashtag_name": "reprehende",
+     "is_commerce": false,
+     "start": 302,
+     "tag_id": "13",
+     "type": 1
+    },
+    {
+     "end": 341,
+     "hashtag_id": "7699672357840880626",
+     "hashtag_name": "ritinvoluptatevelitessecil",
+     "is_commerce": false,
+     "start": 314,
+     "tag_id": "15",
+     "type": 1
+    },
+    {
+     "end": 352,
+     "hashtag_id": "1000",
+     "hashtag_name": "fugiatnul",
+     "is_commerce": false,
+     "start": 342,
+     "tag_id": "17",
+     "type": 1
+    },
+    {
+     "end": 363,
+     "hashtag_id": "1001",
+     "hashtag_name": "luptateve",
+     "is_commerce": false,
+     "start": 353,
+     "tag_id": "19",
+     "type": 1
+    },
+    {
+     "end": 371,
+     "hashtag_id": "80733",
+     "hashtag_name": "itinvo",
+     "is_commerce": false,
+     "start": 364,
+     "tag_id": "21",
+     "type": 1
+    }
+   ],
+   "original_client_text": {
+    "markup_text": "Autenim Proiden IDestlaboruml Utaliq!<br>ERuntmoll madminimv… <br>Ee s ncididunt r dexercitationul or risni or reeu ab data itame eser? S’et dmin. Mq or mv udex labo, labore duntutlab ab ata s’ar umdo ariatur ELitseddo llit aut borumlo 🦊 <br><m id=\"1\">@Alpha</m> <br><m id=\"3\">@BravoCharlie</m> <br><m id=\"5\">@𝓞𝓪𝓴 🪁</m> <br><m id=\"7\">@Fox Golf Hotel</m> <br><m id=\"9\">@jet</m> <br><m id=\"11\">@Juliett</m> <br><h id=\"13\">#reprehende</h> <h id=\"15\">#ritinvoluptatevelitessecil</h> <h id=\"17\">#fugiatnul</h> <h id=\"19\">#luptateve</h> <h id=\"21\">#itinvo</h> "
+   }
+  }
+ },
+ "paire": {
+  "_": "La même vidéo, au même instant, chez ScrapeCreators (043-sc-disc-FR.json) et chez TikHub (044-th-disc-FR.json) : une mention en lettres mathématiques, lue aux positions avec le début du hashtag qui la suit, chez les deux.",
+  "sc": {
+   "aweme_id": "7709895337783067928",
+   "desc": "Or ore fugi @𝙺𝚒𝚕𝚘𝚜’ #dminimven #iofficia #pidat #nculpaquioffici #urs ",
+   "content_desc": "",
+   "desc_language": "sv",
+   "region": "FR",
+   "create_time": 1795099898,
+   "statistics": {
+    "play_count": 20092,
+    "digg_count": 2751,
+    "comment_count": 23,
+    "share_count": 157,
+    "collect_count": 167
+   },
+   "author": {
+    "uid": "9100000000000000032",
+    "unique_id": "auteur_101",
+    "follower_count": 1545,
+    "nickname": "Auteur",
+    "signature": ""
+   },
+   "text_extra": [
+    {
+     "end": 24,
+     "start": 12,
+     "tag_id": "1",
+     "type": 0,
+     "user_id": "9200000000000000007"
+    },
+    {
+     "end": 35,
+     "hashtag_id": "1609272706204673",
+     "hashtag_name": "dminimven",
+     "is_commerce": false,
+     "start": 25,
+     "tag_id": "56",
+     "type": 1,
+     "user_id": ""
+    },
+    {
+     "end": 45,
+     "hashtag_id": "1002",
+     "hashtag_name": "iofficia",
+     "is_commerce": false,
+     "start": 36,
+     "tag_id": "69",
+     "type": 1,
+     "user_id": ""
+    },
+    {
+     "end": 52,
+     "hashtag_id": "1662787998712844",
+     "hashtag_name": "pidat",
+     "is_commerce": false,
+     "start": 46,
+     "tag_id": "88",
+     "type": 1,
+     "user_id": ""
+    },
+    {
+     "end": 69,
+     "hashtag_id": "7567103386181436438",
+     "hashtag_name": "nculpaquioffici",
+     "is_commerce": false,
+     "start": 53,
+     "tag_id": "113",
+     "type": 1,
+     "user_id": ""
+    },
+    {
+     "end": 74,
+     "hashtag_id": "1003",
+     "hashtag_name": "urs",
+     "is_commerce": false,
+     "start": 70,
+     "tag_id": "217",
+     "type": 1,
+     "user_id": ""
+    }
+   ],
+   "original_client_text": {
+    "markup_text": "Or ore fugi <m id=\"1\">@𝙺𝚒𝚕𝚘𝚜’</m> <h id=\"56\">#dminimven</h> <h id=\"69\">#iofficia</h> <h id=\"88\">#pidat</h> <h id=\"113\">#nculpaquioffici</h> <h id=\"217\">#urs</h> "
+   }
+  },
+  "th": {
+   "aweme_id": "7709895337783067928",
+   "desc": "Or ore fugi @𝙺𝚒𝚕𝚘𝚜’ #dminimven #iofficia #pidat #nculpaquioffici #urs ",
+   "content_desc": "",
+   "desc_language": "sv",
+   "region": "FR",
+   "create_time": 1795099898,
+   "statistics": {
+    "play_count": 20094,
+    "digg_count": 2751,
+    "comment_count": 23,
+    "share_count": 157,
+    "collect_count": 167
+   },
+   "author": {
+    "uid": "9100000000000000032",
+    "unique_id": "auteur_101",
+    "follower_count": 1545,
+    "nickname": "Auteur",
+    "signature": ""
+   },
+   "text_extra": [
+    {
+     "end": 24,
+     "start": 12,
+     "tag_id": "1",
+     "type": 0,
+     "user_id": "9200000000000000007"
+    },
+    {
+     "end": 35,
+     "hashtag_id": "1609272706204673",
+     "hashtag_name": "dminimven",
+     "is_commerce": false,
+     "start": 25,
+     "tag_id": "56",
+     "type": 1,
+     "user_id": ""
+    },
+    {
+     "end": 45,
+     "hashtag_id": "1002",
+     "hashtag_name": "iofficia",
+     "is_commerce": false,
+     "start": 36,
+     "tag_id": "69",
+     "type": 1,
+     "user_id": ""
+    },
+    {
+     "end": 52,
+     "hashtag_id": "1662787998712844",
+     "hashtag_name": "pidat",
+     "is_commerce": false,
+     "start": 46,
+     "tag_id": "88",
+     "type": 1,
+     "user_id": ""
+    },
+    {
+     "end": 69,
+     "hashtag_id": "7567103386181436438",
+     "hashtag_name": "nculpaquioffici",
+     "is_commerce": false,
+     "start": 53,
+     "tag_id": "113",
+     "type": 1,
+     "user_id": ""
+    },
+    {
+     "end": 74,
+     "hashtag_id": "1003",
+     "hashtag_name": "urs",
+     "is_commerce": false,
+     "start": 70,
+     "tag_id": "217",
+     "type": 1,
+     "user_id": ""
+    }
+   ],
+   "original_client_text": {
+    "markup_text": "Or ore fugi <m id=\"1\">@𝙺𝚒𝚕𝚘𝚜’</m> <h id=\"56\">#dminimven</h> <h id=\"69\">#iofficia</h> <h id=\"88\">#pidat</h> <h id=\"113\">#nculpaquioffici</h> <h id=\"217\">#urs</h> "
+   }
+  }
+ },
+ "scProfil": {
+  "_": "ScrapeCreators, relevé de profil (007-sc-profile-*.json) : légende intacte, la 2e mention après une ligne vide. Lue aux positions : la 1re déborde d'un caractère, la 2e en perd un.",
+  "aweme_id": "7618084909977961512",
+  "desc": "AMetco ini @TinvoluptAt. 🇵🇷 tdui onproid ugia eruntmoll cin lup 🪁🐢\n\nExerc “Mo Untinc p mv AQuioffi FUgiatn” dolore iamq cin @EStlaBorum \n\nITam mo lpaqu: ll00ureXCEPT00 \n\n#estlaborum #lita #litess #acommodocons #utenimadminim ",
+  "content_desc": "[\"AMetco ini @TinvoluptAt. 🇵🇷 tdui onproid ugia eruntmoll cin lup 🪁🐢\",\"\",\"Exerc “Mo Untinc p mv AQuioffi FUgiatn” dolore iamq cin @EStlaBorum \",\"\",\"ITam mo lpaqu: ll00ureXCEPT00 \",\"\",\"#estlaborum #lita #litess #acommodocons #utenimadminim \"]",
+  "desc_language": "en",
+  "region": "KH",
+  "create_time": 1773723621,
+  "statistics": {
+   "play_count": 3938363,
+   "digg_count": 184888,
+   "comment_count": 1558,
+   "share_count": 1915,
+   "collect_count": 13058
+  },
+  "author": {
+   "uid": "9100000000000000033",
+   "unique_id": "auteur_102",
+   "follower_count": 323329,
+   "nickname": "Auteur",
+   "signature": ""
+  },
+  "text_extra": [
+   {
+    "start": 11,
+    "end": 29,
+    "user_id": "9200000000000000008",
+    "type": 0,
+    "tag_id": "13"
+   },
+   {
+    "start": 127,
+    "end": 137,
+    "user_id": "9200000000000000009",
+    "type": 0,
+    "tag_id": "279"
+   },
+   {
+    "start": 171,
+    "end": 181,
+    "type": 1,
+    "hashtag_name": "estlaborum",
+    "hashtag_id": "1696632341005338",
+    "is_commerce": false,
+    "tag_id": "304"
+   },
+   {
+    "start": 182,
+    "end": 189,
+    "type": 1,
+    "hashtag_name": "lita",
+    "hashtag_id": "21854",
+    "is_commerce": false,
+    "tag_id": "323"
+   },
+   {
+    "start": 189,
+    "end": 196,
+    "type": 1,
+    "hashtag_name": "litess",
+    "hashtag_id": "32241",
+    "is_commerce": false,
+    "tag_id": "348"
+   },
+   {
+    "start": 197,
+    "end": 210,
+    "type": 1,
+    "hashtag_name": "acommodocons",
+    "hashtag_id": "5236",
+    "is_commerce": false,
+    "tag_id": "379"
+   },
+   {
+    "start": 211,
+    "end": 224,
+    "type": 1,
+    "hashtag_name": "utenimadminim",
+    "hashtag_id": "1004",
+    "is_commerce": false,
+    "tag_id": "416"
+   }
+  ],
+  "original_client_text": {
+   "markup_text": "AMetco ini <m id=\"13\">@TinvoluptAt. 🇵🇷</m> tdui onproid ugia eruntmoll cin lup 🪁🐢<br><br>Exerc “Mo Untinc p mv AQuioffi FUgiatn” dolore iamq cin <m id=\"279\">@EStlaBorum</m> <br><br>ITam mo lpaqu: ll00ureXCEPT00 <br><br><h id=\"304\">#estlaborum</h> <h id=\"323\">#lita</h> <h id=\"348\">#litess</h> <h id=\"379\">#acommodocons</h> <h id=\"416\">#utenimadminim</h> "
+  }
+ }
+}

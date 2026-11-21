@@ -116,6 +116,26 @@ export const radarTables = {
     curveAdmitted: v.number(), // vidéos admises dans la courbe ce jour-là
     creditsRemaining: v.optional(v.number()), // solde ScrapeCreators au dernier appel
     creditsSeenAt: v.optional(v.number()),
+    // Le solde TikHub (bascule du 20/11/2026), lu gratuitement (`get_user_info`) : payé et crédit gratuit en dollars,
+    // l'heure de la lecture, et ce que le Radar a dépensé chez TikHub depuis (le solde estimé en est une borne basse).
+    thBalanceUsd: v.optional(v.number()),
+    thFreeUsd: v.optional(v.number()),
+    thSeenAt: v.optional(v.number()),
+    thSpentSinceUsd: v.optional(v.number()),
+    // Les lots de dépense TikHub qui font `thSpentSinceUsd`, avec l'heure de leur écriture (radarSignalsMath.SpentLot) :
+    // un solde plus frais garde ceux écrits depuis sa lecture (20/11/2026). Absent : écrit avant ce suivi.
+    thSpentLots: v.optional(v.array(v.object({ at: v.number(), usd: v.number() }))),
+    // Le dernier refus « solde insuffisant » (HTTP 402) : quand, sur quelle route ; la dernière erreur TikHub.
+    thDryAt: v.optional(v.number()),
+    thDryRoute: v.optional(v.string()),
+    thLastError: v.optional(v.string()),
+    // La porte de repli (radarProviders.FALLBACK_SC_PER_DAY) : les replis chez ScrapeCreators pris ce jour-là (Paris),
+    // tous passages, AVANT l'appel (radarSignals.claimFallback) — les passages en parallèle se partagent le quota.
+    thFallbackDay: v.optional(v.string()),
+    thFallbackClaims: v.optional(v.number()),
+    // Les tarifs des routes TikHub du Radar (`get_all_endpoints_info`), relus au plus une fois par jour.
+    thPrices: v.optional(v.array(v.object({ route: v.string(), usd: v.number(), free: v.boolean() }))),
+    thPricesAt: v.optional(v.number()),
     lowCreditsAlertDay: v.optional(v.string()), // jour (Paris) de la dernière alerte « moins de 3 jours de crédits »
     reserveAlertDay: v.optional(v.string()), // jour (Paris) de la dernière alerte « réserve atteinte »
     economieAlertDay: v.optional(v.string()), // jour (Paris) de la dernière alerte « palier économie » (radarSignalsMath.creditTier)
@@ -265,7 +285,10 @@ export const radarTables = {
     createdAt: v.number(),
   })
     .index("by_slug", ["slug"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    // Les apps qui ont des comptes (ou pas encore de compteur) : celles que le compteur des places lit
+    // (radarSignals.trackedCounts, 20/11/2026).
+    .index("by_tracked_count", ["trackedCount"]),
   radarTracked: defineTable({
     platform: v.literal("tiktok"),
     handle: v.string(),
@@ -546,18 +569,36 @@ export const radarTables = {
     calls: v.number(),
     errors: v.number(),
     usd: v.optional(v.number()), // dépense en dollars (l'analyse IA), hors crédits
-    // Crédits par motif (relevés de comptes : premier, repli, trou, retard, coupure, sonde ; cf radarFreeMath.PaidReason).
+    // Unités par motif (relevés de comptes : premier, repli, trou, retard, coupure, sonde ; cf radarFreeMath.PaidReason).
     reasons: v.optional(v.record(v.string(), v.number())),
+    // La dépense TikHub du poste (bascule du 20/11/2026, convex/radar/radarProviders) : appels facturés, leurs dollars,
+    // appels coupés par le délai (facturation inconnue, comptés au prix plein), appels repassés par ScrapeCreators
+    // faute de TikHub (déjà comptés dans `credits`). Absents : aucun appel TikHub.
+    thCalls: v.optional(v.number()),
+    thUsd: v.optional(v.number()),
+    thUnknown: v.optional(v.number()),
+    thFallbacks: v.optional(v.number()),
     // Appels payants ÉVITÉS par une page publique de TikTok, par brique (radarSignalsMath.SavedKey) : au moins un
-    // crédit chacun. C'est ce qui prouve, sur les serveurs, ce que le banc n'a mesuré que du poste.
+    // appel payant chacun, chez le fournisseur qui l'aurait servi (un crédit ScrapeCreators ou un appel TikHub, la même
+    // unité du budget). C'est ce qui prouve, sur les serveurs, ce que le banc n'a mesuré que du poste.
     saved: v.optional(v.record(v.string(), v.number())),
     // Une brique en « mesure » : la page publique ET le payant lus côte à côte, par verdict, facturé ou non. Courbe :
-    // egal, proche, ecart, repli, panne, en VIDÉOS (radarFreeMath.CurveMeasure) ; trou : trou-egal, trou-ecart,
+    // egal, proche, ecart (six compteurs), egal-sans-abonnes, proche-sans-abonnes, ecart-sans-abonnes (cinq : payant
+    // servi par TikHub, abonnés non mesurés), repli, panne, en VIDÉOS (radarFreeMath.CurveMeasure) ; trou : trou-egal, trou-ecart,
     // trou-manque:<page>, trou-paye:<page>, trou-panne, en comptes (radarFreeMath.GapMeasure). La preuve avant une bascule.
     measured: v.optional(v.record(v.string(), v.number())),
   })
     .index("by_month", ["month"])
     .index("by_day_poste", ["day", "poste"]),
+  // L'identifiant TikHub d'un hashtag (`fetch_hashtag_search_result`), cherché une fois puis gardé : il est stable.
+  // `tag` : le hashtag en forme normale, minuscules (tikhubApi.hashtagKey). Sans `cid` : aucun nom exact chez TikHub,
+  // retenté au bout de 7 jours (radarNetworks.HASHTAG_MISS_KEEP_MS).
+  radarHashtagIds: defineTable({
+    tag: v.string(),
+    cid: v.optional(v.string()),
+    name: v.optional(v.string()),
+    at: v.number(),
+  }).index("by_tag", ["tag"]),
 
   // ─── Garde-fou ANTI-FLOOD des notifications ────────────────────────────────
   // Une fenêtre de groupage OUVERTE, par (projet, type d'événement). Table de

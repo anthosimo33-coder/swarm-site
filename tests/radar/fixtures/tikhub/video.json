@@ -1,0 +1,81 @@
+{
+ "_fixture": "Réponse TikHub réelle du banc du 20/11/2026 (th-video-200.json), tronquée et anonymisée (scripts/fixtures-publiques.mjs --anonymise : auteurs et identifiants inventés, légendes, textes incrustés, titres et hashtags réécrits en mots de remplissage, largeurs tirées et emoji remplacés, dates déplacées par une table secrète et monotone, sans écart commun, durées et compteurs tirés loin des vrais ; ré-anonymisée en un passage le 21/11/2026).",
+ "code": 200,
+ "router": "/api/v1/tiktok/app/v3/fetch_one_video_by_share_url",
+ "data": {
+  "status_code": 0,
+  "status_msg": "",
+  "aweme_detail": {
+   "aweme_id": "7709816632507368725",
+   "desc": "#naaliquaut #ididunt #o #pta8 ",
+   "desc_language": "un",
+   "region": "VN",
+   "create_time": 1795081576,
+   "is_top": 0,
+   "statistics": {
+    "play_count": 62630,
+    "digg_count": 9245,
+    "comment_count": 38,
+    "share_count": 2036,
+    "collect_count": 744
+   },
+   "video": {
+    "duration": 18295,
+    "cover": {
+     "url_list": [
+      "https://example.invalid/media/couverture-20~tplv-tiktokx-cropcenter-q:300:400:q70.heic"
+     ]
+    }
+   },
+   "author": {
+    "uid": "9100000000000000013",
+    "unique_id": "auteur_17",
+    "follower_count": 0,
+    "nickname": "Auteur",
+    "signature": "bio de auteur_17"
+   },
+   "interaction_stickers": [
+    {
+     "type": 18,
+     "text_info": "\"LAm n amq idat tsunti um , on euf ta \nlpaq idat l dolo olo bor lam . LAm n r \nidat , udex pt euf olori ude idat ioffic \nnt ntin ici . LAm n enia idat, enia pt et \nscin par seru ingeli lpaq lli bor idat\""
+    }
+   ],
+   "music": {
+    "id": 7010846572355257000,
+    "id_str": "7010846572355257322",
+    "title": "original sound - auteur_18",
+    "owner_handle": "auteur_18"
+   },
+   "text_extra": [
+    {
+     "type": 1,
+     "user_id": "",
+     "start": 0,
+     "end": 11,
+     "hashtag_name": "naaliquaut"
+    },
+    {
+     "type": 1,
+     "user_id": "",
+     "start": 12,
+     "end": 20,
+     "hashtag_name": "ididunt"
+    },
+    {
+     "type": 1,
+     "user_id": "",
+     "start": 21,
+     "end": 23,
+     "hashtag_name": "o"
+    },
+    {
+     "type": 1,
+     "user_id": "",
+     "start": 24,
+     "end": 29,
+     "hashtag_name": "pta8"
+    }
+   ]
+  }
+ }
+}

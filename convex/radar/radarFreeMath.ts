@@ -190,7 +190,7 @@ export type LightVideo = { videoId: string; views: number; coverUrl?: string };
  *
  * « Moins de 48 heures » se juge sur la date de PUBLICATION quand on la connaît. La liste ne donne que la date lue
  * dans l'identifiant, qui est celle du TÉLÉVERSEMENT : une vidéo programmée la porte des jours avant de sortir
- * (14/11/2026 : @catsen191, 9 vidéos téléversées le 12, publiées du 12 au 14), et passait pour vieille dès sa sortie.
+ * (14/11/2026 : un compte suivi, 9 vidéos téléversées le 12, publiées du 12 au 14), et passait pour vieille dès sa sortie.
  */
 export function freePlan(listed: readonly FreeListed[], known: readonly KnownVideo[], now: number, wantRegion = false): { detail: FreeListed[]; light: LightVideo[] } {
   const have = new Map(known.map((k) => [k.videoId, k]));
@@ -367,14 +367,15 @@ export type GapSeen = { page: GapPage; listed: string[]; at: number };
  *    manque, par genre de page (servie, hors-region, autre-code, illisible, refusee, absente : cf `GapPage`) — beaucoup
  *    de trou-manque:absente diraient que les serveurs reçoivent un 404 pour une vidéo partie, par exemple ;
  *  trou-paye:<page> : la page ne concluait pas, et le payant a retrouvé la vidéo ou rapporté plus : payer était utile ;
- *  trou-panne : le payant n'a pas conclu (première page refusée, plus de crédits, GAP_PAGES lues sans passer sa date).
+ *  trou-panne : le payant n'a pas conclu (première page refusée, ou non servie — TikHub en panne ou à sec, sans repli :
+ *    `skip`, cf paidRead —, plus de crédits, GAP_PAGES lues sans passer sa date), quel que soit le fournisseur.
  * Une vidéo publiée après le début du passage (`at`) ne compte pas : la liste ne pouvait pas l'avoir.
  */
 export type GapMeasure = "trou-egal" | "trou-ecart" | `trou-manque:${Exclude<GapPage, "partie">}` | `trou-paye:${Exclude<GapPage, "partie">}` | "trou-panne";
 
 export function gapMeasure(
   seen: GapSeen,
-  paid: { outcome: "read" | "error" | "stop"; videos: readonly { videoId: string; publishedAt: number }[]; reached: { done: boolean; found: boolean } },
+  paid: { outcome: "read" | "error" | "stop" | "skip"; videos: readonly { videoId: string; publishedAt: number }[]; reached: { done: boolean; found: boolean } },
   newest: NewestKnown,
 ): GapMeasure {
   if (paid.outcome !== "read" || !paid.reached.done) return "trou-panne";
@@ -847,8 +848,12 @@ export function missPlan<A extends HeldAccount>(
   };
 }
 
-/** Une page du relevé payant (ScrapeCreators), sa dépense déjà comptée. */
-export type PaidPage = { ok: true; videos: SignalInput[]; next: string | null } | { ok: false; noCredits: boolean };
+/**
+ * Une page du relevé payant (ScrapeCreators ou TikHub), sa dépense déjà comptée. `transient` (TikHub seul, 20/11/2026) :
+ * le fournisseur n'a pas pu servir (panne, à sec, délai) et rien ne l'a remplacé — la page ne dit RIEN du compte.
+ * ScrapeCreators ne la produit jamais.
+ */
+export type PaidPage = { ok: true; videos: SignalInput[]; next: string | null } | { ok: false; noCredits: boolean; transient?: true };
 
 /**
  * Le relevé payant d'un compte : une page ; une liste trouée (`gap`), page après page — GAP_PAGES au plus, tant que
@@ -857,13 +862,15 @@ export type PaidPage = { ok: true; videos: SignalInput[]; next: string | null } 
  *  read : des vidéos à ranger · stop : plus de crédits (ce qui est lu reste à ranger) ·
  *  error : rien à ranger — première page refusée, ou servie SANS vidéo. Ce second cas (profil supprimé, privé,
  *  vidé : ScrapeCreators répond sans erreur, et facture) ne laissait aucune trace : le compte restait dû et repartait
- *  en payant à chaque passage (16/11/2026). C'est une erreur de relevé, comme un refus.
+ *  en payant à chaque passage (16/11/2026). C'est une erreur de relevé, comme un refus ·
+ *  skip : la première page n'a pas été servie, sans que le compte y soit pour rien (TikHub en panne ou à sec, sans
+ *  repli : `transient`) — rien à écrire, le compte reste dû, sans erreur de relevé (20/11/2026).
  */
 export async function paidRead(
   page: (cursor?: string) => Promise<PaidPage>,
   more: () => boolean,
   gap?: NewestKnown,
-): Promise<{ outcome: "read" | "error" | "stop"; videos: SignalInput[]; reached: { done: boolean; found: boolean } }> {
+): Promise<{ outcome: "read" | "error" | "stop" | "skip"; videos: SignalInput[]; reached: { done: boolean; found: boolean } }> {
   const seen = new Set<string>();
   const videos: SignalInput[] = [];
   let reached = { done: false, found: false };
@@ -874,7 +881,7 @@ export async function paidRead(
     if (!r.ok) {
       if (r.noCredits) return { outcome: "stop", videos, reached };
       // Une page suivante qui échoue : ce qui est déjà lu est rangé.
-      if (i === 0) return { outcome: "error", videos, reached };
+      if (i === 0) return { outcome: r.transient ? "skip" : "error", videos, reached };
       break;
     }
     if (i === 0 && r.videos.length === 0) return { outcome: "error", videos, reached };
@@ -980,7 +987,7 @@ export const trialPlan = (listed: readonly FreeListed[], now: number): FreeListe
  * Le code de la bascule est là et testé. Tant que CURVE_FREE est faux, chaque vidéo due est lue sur sa page PUIS au
  * payant, le payant est rangé comme avant, et l'accord des deux est compté EN VIDÉOS dans radarUsage.measured du poste
  * « curve », même quand le payant n'a rien facturé (cf CurveMeasure) : egal, proche, ecart (écrit au journal), repli,
- * panne. Basculer — et accepter des courbes arrondies à la centaine, à la centaine de milliers au-delà du million — se
+ * panne — et, payant servi par TikHub (abonnés non mesurés), les trois premiers « -sans-abonnes », à part. Basculer — et accepter des courbes arrondies à la centaine, à la centaine de milliers au-delà du million — se
  * décidera sur ces nombres, servis aux serveurs. À la bascule, aligner aussi le poste « curve » de l'écran du budget :
  * son curseur va jusqu'à 400 vidéos/jour et sa projection compte 3 crédits par vidéo, quand la courbe relevée sur la
  * page n'en admet que CURVE_ADMISSIONS_MAX (radarSignalsMath.curveAdmissionsLeft) et ne paie que ses replis.
@@ -1101,11 +1108,16 @@ export type CurveMatch = "egal" | "proche" | "ecart";
  * La page et le relevé payant d'une même vidéo, au même moment (le payant : `null` si la vidéo n'est plus là). Proche :
  * chaque écart tient dans l'arrondi de la page (aucun pour les enregistrements), plus, dans le sens du temps seulement
  * (le payant est lu après la page), CURVE_DRIFT pour ce que la vidéo a gagné entre les deux lectures.
+ * `fansUnknown` (fusion avec la bascule TikHub, 20/11/2026) : le payant ne mesure pas les abonnés de l'auteur — le
+ * détail d'une vidéo chez TikHub les rend toujours à 0, radarProviders. Non mesurés n'est pas nuls : la comparaison
+ * porte alors sur les cinq compteurs de la vidéo, sans les abonnés. Sinon chaque relevé servi par TikHub serait un
+ * « ecart » (la page dit 5 000 abonnés, le payant 0), et la mesure qui doit décider de la bascule ne dirait plus rien.
  */
-export function curveMatch(page: CurveVerdict, paid: CurveCounts | null): CurveMatch {
+export function curveMatch(page: CurveVerdict, paid: CurveCounts | null, fansUnknown = false): CurveMatch {
   if (page.kind === "gone") return paid === null ? "egal" : "ecart";
   if (page.kind !== "read" || paid === null) return "ecart";
-  const diffs = CURVE_COUNTS.map((k) => ({ grown: paid[k] - page.counts[k], step: curveStep(k, paid[k]), b: paid[k] }));
+  const keys = fansUnknown ? CURVE_COUNTS.filter((k) => k !== "authorFans") : CURVE_COUNTS;
+  const diffs = keys.map((k) => ({ grown: paid[k] - page.counts[k], step: curveStep(k, paid[k]), b: paid[k] }));
   if (diffs.every((x) => x.grown === 0)) return "egal";
   return diffs.every((x) => x.grown >= -x.step && x.grown <= x.step + CURVE_DRIFT * x.b) ? "proche" : "ecart";
 }
@@ -1113,9 +1125,11 @@ export function curveMatch(page: CurveVerdict, paid: CurveCounts | null): CurveM
 /**
  * Un relevé payant de courbe, sa dépense comptée ; `counts: null` : la vidéo n'est plus là. En échec, `refused` : le
  * fournisseur a répondu qu'il ne sert pas cette vidéo (cf scRefused) — la vidéo est partie pour lui aussi ; sinon,
- * c'est une panne (réseau, délai, erreur du fournisseur) qui ne dit rien de la vidéo.
+ * c'est une panne (réseau, délai, erreur du fournisseur) qui ne dit rien de la vidéo. `credits` : sa dépense en unités
+ * du budget (un crédit ScrapeCreators ou un appel TikHub, radarSignalsMath.thUnits). `fansUnknown` : le fournisseur
+ * ne mesure pas les abonnés de l'auteur (TikHub : toujours 0) — cf curveMatch, radarSignals.applyCurve.
  */
-export type CurvePaid = { ok: true; counts: CurveCounts | null; credits: number } | { ok: false; credits: number; noCredits: boolean; refused: boolean };
+export type CurvePaid = { ok: true; counts: CurveCounts | null; credits: number; fansUnknown?: true } | { ok: false; credits: number; noCredits: boolean; refused: boolean };
 
 /**
  * Le fournisseur a-t-il refusé la vidéo elle-même ? Une réponse 4xx (scrapeCreatorsApi.scGet : « HTTP 404 … »), hors
@@ -1123,14 +1137,24 @@ export type CurvePaid = { ok: true; counts: CurveCounts | null; credits: number 
  */
 export const scRefused = (error: string): boolean => /^HTTP 4\d\d\b/.test(error) && !/^HTTP (402|429)\b/.test(error);
 
+/**
+ * Le verdict d'une page lue contre un payant qui ne mesure pas les abonnés de l'auteur (TikHub, `fansUnknown`) : cinq
+ * compteurs comparés, pas six. Rangé À PART (21/11/2026) : sous egal / proche / ecart, avec les mesures à six compteurs
+ * de ScrapeCreators, il mêlait deux définitions dans les nombres qui doivent décider CURVE_FREE — une page aux abonnés en
+ * retard (98 000 contre 106 123) y comptait comme un accord, quand ScrapeCreators l'aurait dite « ecart ». Non mesuré
+ * n'est ni nul ni égal : les abonnés de la page, que la bascule rangerait, n'y sont pas vérifiés.
+ */
+export type CurveMatchNoFans = `${CurveMatch}-sans-abonnes`;
+export const noFansMatch = (m: CurveMatch): CurveMatchNoFans => `${m}-sans-abonnes`;
 /** Pourquoi un relevé payant de courbe est parti (radarUsage.reasons du poste « curve », en crédits) : la mesure (cf CURVE_FREE), repli ; retard : runCurve. */
-export type CurveReason = CurveMatch | "repli" | "retard";
+export type CurveReason = CurveMatch | CurveMatchNoFans | "repli" | "retard";
 /**
  * La mesure côte à côte, EN VIDÉOS (radarUsage.measured du poste « curve »), facturée ou non : egal / proche / ecart
- * (la page contre le payant, cf curveMatch ; « partie » des deux côtés : egal), repli (la page n'aurait pas suffi : le
- * payant serait parti de toute façon), panne (le payant n'a rien dit : pas de mesure).
+ * (la page contre le payant, les six compteurs, cf curveMatch ; « partie » des deux côtés : egal), les mêmes
+ * `…-sans-abonnes` quand le payant ne mesure pas les abonnés (cinq compteurs, cf CurveMatchNoFans), repli (la page
+ * n'aurait pas suffi : le payant serait parti de toute façon), panne (le payant n'a rien dit : pas de mesure).
  */
-export type CurveMeasure = CurveMatch | "repli" | "panne";
+export type CurveMeasure = CurveMatch | CurveMatchNoFans | "repli" | "panne";
 
 export type CurveTally<D> = {
   /** Relevés gratuits rangés (la page seule, CURVE_FREE). Les appels évités en sont une part : cf curveSaved. */
@@ -1161,12 +1185,14 @@ export const curveSaved = (t: Pick<CurveTally<unknown>, "free" | "paid">, paidLe
  * relevés au plus. En mesure (`free` faux), tout part au payant. Un relevé payant est rangé comme avant : la vidéo
  * introuvable, ou en panne, sort de la courbe ; plus de crédits, elle reste due, et les suivantes avec. La mesure est
  * comptée à chaque relevé payant (en vidéos), qu'il ait été facturé ou non. `out` reçoit les comptes au fil de l'eau
- * (l'appelant écrit la dépense même si une écriture tombe).
+ * (l'appelant écrit la dépense même si une écriture tombe). `more` (bascule TikHub) : un relevé payant peut-il encore
+ * partir — la part du passage chez son fournisseur, sa porte de repli, son échéance (radarProviders.canCall) ; sinon,
+ * comme sans part, les suivantes restent dues. Sans `more`, la part `paidLeft` seule, comme avant.
  */
 export async function settleCurve<D>(
   reads: readonly CurveRead<D>[],
-  io: { paid: (d: D) => Promise<CurvePaid>; apply: (d: D, counts: CurveCounts | null) => Promise<void> },
-  opts: { free: boolean; paidLeft: number },
+  io: { paid: (d: D) => Promise<CurvePaid>; apply: (d: D, counts: CurveCounts | null, fansUnknown?: true) => Promise<void> },
+  opts: { free: boolean; paidLeft: number; more?: () => boolean },
   out: CurveTally<D> = curveTally<D>(),
 ): Promise<CurveTally<D>> {
   let left = Math.max(0, opts.paidLeft);
@@ -1177,7 +1203,7 @@ export async function settleCurve<D>(
       out.free++;
       continue;
     }
-    if (left <= 0) {
+    if (left <= 0 || (opts.more && !opts.more())) {
       out.waiting.push(due);
       continue;
     }
@@ -1193,14 +1219,19 @@ export async function settleCurve<D>(
     }
     // Le payant en panne ne dit rien de la vidéo : pas de mesure. Refusée par le fournisseur : partie pour lui aussi.
     const counts = r.ok ? r.counts : null;
+    const fansUnknown = r.ok ? r.fansUnknown : undefined;
     const panne = !r.ok && !r.refused;
-    const match = verdict.kind === "paid" || panne ? null : curveMatch(verdict, counts);
-    measure(verdict.kind === "paid" ? "repli" : (match ?? "panne"));
-    const reason: CurveReason = match ?? "repli";
+    const match = verdict.kind === "paid" || panne ? null : curveMatch(verdict, counts, fansUnknown === true);
+    // Une page lue contre un payant sans abonnés : cinq compteurs, une autre mesure, rangée à part (cf CurveMatchNoFans).
+    // Une vidéo « partie » ne compare aucun compteur : la même mesure chez l'un et l'autre fournisseur.
+    const key = match && fansUnknown === true && verdict.kind === "read" ? noFansMatch(match) : match;
+    measure(verdict.kind === "paid" ? "repli" : (key ?? "panne"));
+    const reason: CurveReason = key ?? "repli";
     if (r.credits > 0) out.reasons[reason] = (out.reasons[reason] ?? 0) + r.credits;
     if (match === "ecart") out.gaps.push({ due, page: verdict, paid: counts });
     // Au pire un relevé manqué, jamais une boucle qui repaie la même vidéo (comme avant).
-    await io.apply(due, counts);
+    if (fansUnknown && counts) await io.apply(due, counts, fansUnknown);
+    else await io.apply(due, counts);
   }
   return out;
 }

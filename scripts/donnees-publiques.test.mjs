@@ -22,12 +22,12 @@ const tricky = `
   renderVals() {
     const re = /["'@]/g, half = 10 / 2; // une regex avec des guillemets, une division
     const tpl = \`\${half}'s "@x" \`;
-    let A = [["Rizz App", "/media/app/app-rizz.jpg", "@rizz.app", "7705368869250075925"]];
+    let A = [["Rizz App", "/media/app/app-rizz.jpg", "@rizz.app", "7705368867454855063"]];
     const D = this.props.data;
     if (D) A = D.apps;
     const item = this.props.item || { label: 'Astra AI', cover: '/media/app/app-astra-ai.jpg' };
-    const id = D ? D.id : '7705929733220994337';
-    const keep = '/media/v-7705876324832791821.jpg';
+    const id = D ? D.id : '7705929730054170541';
+    const keep = '/media/v-7705876322135844765.jpg';
     return { A, item, id, re, tpl, keep };
   }`;
 const py = spawnSync('python3', ['-c', `
@@ -39,7 +39,7 @@ print(json.dumps({'body': body, 'samples': samples}))`], { input: tricky, encodi
 const res = py.status === 0 ? JSON.parse(py.stdout) : null;
 ok(!!res, `dc2preact.strip_samples existe et passe le code piégé${res ? '' : ' : ' + (py.stderr || '').trim().split('\n').pop()}`);
 if (res) {
-  ok(!/Rizz|astra-ai|7705929733220994337|7705368869250075925/.test(res.body), 'exemples retirés : littéral déclaré, objet en ligne, chaîne d\'un ternaire');
+  ok(!/Rizz|astra-ai|7705929730054170541|7705368867454855063/.test(res.body), 'exemples retirés : littéral déclaré, objet en ligne, chaîne d\'un ternaire');
   ok(res.body.includes(`/["'@]/g`) && res.body.includes('10 / 2') && res.body.includes(`\`\${half}'s "@x" \``), 'regex, division et gabarit intacts');
   // Le corps retiré se calcule : sans exemples, valeurs vides ; avec les exemples, les valeurs d'avant.
   const run = (sample, props) => {

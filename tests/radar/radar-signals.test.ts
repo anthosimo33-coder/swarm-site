@@ -63,24 +63,24 @@ const NOW = Date.UTC(2026, 10, 6, 13, 0);
 
 /** Une vidéo telle que la renvoie `/v1/tiktok/search/keyword?trim=true` (06/11/2026, champs utiles). */
 const ARPEGE = {
-  aweme_id: "7704722574420266272",
+  aweme_id: "7704722573661054838",
   desc: "Voici toutes les applications qu’il faut installer dans son téléphone pour la survie telle que Pocketpal,Kiwix",
   desc_language: "fr",
   region: "FR",
   statistics: { play_count: 168_850, digg_count: 6_018, comment_count: 216, share_count: 5_521, collect_count: 8_280 },
   video: { duration: 136_648, cover: { url_list: ["https://p16.tiktokcdn.com/cover.jpeg?x-expires=1"] } },
-  author: { unique_id: "arpegesauvage", uid: "7681242475235296278", follower_count: 1_801 },
+  author: { unique_id: "arpegesauvage", uid: "7681242472785127262", follower_count: 1_801 },
   create_time: 1_793_895_521,
   is_ad: false,
-  url: "https://www.tiktok.com/@arpegesauvage/video/7704722574420266272",
+  url: "https://www.tiktok.com/@arpegesauvage/video/7704722573661054838",
 };
 
 describe("parseScVideo", () => {
   it("lit une vidéo de recherche allégée, champ par champ", () => {
     expect(parseScVideo(ARPEGE)).toEqual({
-      videoId: "7704722574420266272",
-      url: "https://www.tiktok.com/@arpegesauvage/video/7704722574420266272",
-      authorId: "7681242475235296278",
+      videoId: "7704722573661054838",
+      url: "https://www.tiktok.com/@arpegesauvage/video/7704722573661054838",
+      authorId: "7681242472785127262",
       authorHandle: "arpegesauvage",
       authorFans: 1_801,
       caption: ARPEGE.desc,
@@ -102,8 +102,8 @@ describe("parseScVideo", () => {
     const { url: _u, ...sansLien } = ARPEGE;
     void _u;
     const v = parseScVideo({ aweme_info: sansLien });
-    expect(v?.videoId).toBe("7704722574420266272");
-    expect(v?.url).toBe("https://www.tiktok.com/@arpegesauvage/video/7704722574420266272");
+    expect(v?.videoId).toBe("7704722573661054838");
+    expect(v?.url).toBe("https://www.tiktok.com/@arpegesauvage/video/7704722573661054838");
   });
 
   it("refuse une vidéo sans id, sans pseudo ou sans date", () => {

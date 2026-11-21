@@ -30,7 +30,8 @@ import {
   type NicheAnswer,
   type NicheToJudge,
 } from "./radarFicheMath";
-import { allowanceUsd, budgetState } from "./radarSignalsMath";
+import { allowanceUsd } from "./radarSignalsMath";
+import { jobBudget } from "./radarProviders";
 import { scKeyPresent } from "./scrapeCreatorsApi";
 
 /** Sous ce reste d'enveloppe, on n'appelle pas (un appel coûte moins d'un cent). */
@@ -177,7 +178,7 @@ export const runFiches = internalAction({
     const sync: { linked: number; lost: number } = await ctx.runMutation(internal.radar.radarFiche.syncFiches, { now });
     if (!process.env.ANTHROPIC_API_KEY) return { ...sync, judged: 0, usd: 0, note: "no-ai-key" };
     const st = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    if (allowanceUsd(st.budget, budgetState(st.budget, st.usage, st.balance), "ai") < MIN_ALLOWANCE_USD) return { ...sync, judged: 0, usd: 0, note: "budget" };
+    if (allowanceUsd(st.budget, jobBudget(st), "ai") < MIN_ALLOWANCE_USD) return { ...sync, judged: 0, usd: 0, note: "budget" };
     const batch: NicheToJudge[] = await ctx.runQuery(internal.radar.radarFiche.ficheWork, { now, limit: NICHE_BATCH });
     if (batch.length === 0) return { ...sync, judged: 0, usd: 0, note: "rien" };
 

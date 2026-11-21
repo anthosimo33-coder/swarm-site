@@ -930,34 +930,34 @@ describe("places dans le réseau", () => {
 });
 
 /** Deux vidéos réelles de @giovanna.vocaai (réponse non allégée du 06/11/2026), réduites aux champs lus. */
-const VOCA_1 = {"aweme_id": "7636813100406050056", "desc": "@Voca AI vivendo e aprendendo novos vocabularios ne \n\n#vocaai #inglesfacil #speakingenglish #inglesparatodos #studyenglish ", "create_time": 1778084116, "region": "BR", "desc_language": "pt", "author": {"uid": "7623781099194041352", "unique_id": "giovanna.vocaai", "nickname": "giovanna.vocaai", "follower_count": 6629, "signature": "🗣️ Voca AI Ambassador"}, "music": {"id": 7636813180069334000, "id_str": "7636813180069333767", "title": "original sound - giovanna.vocaai", "owner_handle": "giovanna.vocaai", "is_original_sound": true}, "statistics": {"play_count": 1114008, "digg_count": 58067, "comment_count": 272, "share_count": 1360, "collect_count": 4910}, "text_extra": [{"start": 0, "end": 8, "type": 0, "user_id": "7504863753483240490"}, {"start": 53, "end": 60, "type": 1, "hashtag_name": "vocaai"}], "interaction_stickers": [{"type": 18, "text_info": "Consegui fazer a IA me xingar 🥲"}, {"type": 20}], "video": {"duration": 38634}};
-const VOCA_2 = {"aweme_id": "7704431333652712711", "desc": "Ainda bem que tenho a @Voca AI pra me salvar @giovanna.vocaai #vocaai #inglesparatodos ", "create_time": 1793827722, "region": "BR", "desc_language": "pt", "author": {"uid": "7623781099194041352", "unique_id": "giovanna.vocaai", "follower_count": 6629, "signature": "🗣️ Voca AI Ambassador"}, "music": {"id": 7255694393607212000, "id_str": "7255694393607211822", "title": "original sound - soundcentral21", "owner_handle": "soundcentral21", "is_original_sound": true}, "statistics": {"play_count": 635, "digg_count": 45, "comment_count": 6, "share_count": 1, "collect_count": 6}, "text_extra": [{"start": 22, "end": 30, "type": 0, "user_id": "7504863753483240490"}, {"start": 45, "end": 61, "type": 0, "user_id": "7623781099194041352"}], "interaction_stickers": [{"type": 18, "text_info": "Pov: você achou que estava preparada para a imigração 🤡🫣🇺🇸"}], "video": {"duration": 39900}};
+const VOCA_1 = {"aweme_id": "7636813097692309310", "desc": "@Voca AI vivendo e aprendendo novos vocabularios ne \n\n#vocaai #inglesfacil #speakingenglish #inglesparatodos #studyenglish ", "create_time": 1778084116, "region": "BR", "desc_language": "pt", "author": {"uid": "7623781097469388592", "unique_id": "giovanna.vocaai", "nickname": "giovanna.vocaai", "follower_count": 6629, "signature": "🗣️ Voca AI Ambassador"}, "music": {"id": 7636813179296688000, "id_str": "7636813179296687945", "title": "original sound - giovanna.vocaai", "owner_handle": "giovanna.vocaai", "is_original_sound": true}, "statistics": {"play_count": 1114008, "digg_count": 58067, "comment_count": 272, "share_count": 1360, "collect_count": 4910}, "text_extra": [{"start": 0, "end": 8, "type": 0, "user_id": "7504863752374724388"}, {"start": 53, "end": 60, "type": 1, "hashtag_name": "vocaai"}], "interaction_stickers": [{"type": 18, "text_info": "Consegui fazer a IA me xingar 🥲"}, {"type": 20}], "video": {"duration": 38634}};
+const VOCA_2 = {"aweme_id": "7704431331928713057", "desc": "Ainda bem que tenho a @Voca AI pra me salvar @giovanna.vocaai #vocaai #inglesparatodos ", "create_time": 1793827722, "region": "BR", "desc_language": "pt", "author": {"uid": "7623781097469388592", "unique_id": "giovanna.vocaai", "follower_count": 6629, "signature": "🗣️ Voca AI Ambassador"}, "music": {"id": 7255694390088182000, "id_str": "7255694390088181522", "title": "original sound - soundcentral21", "owner_handle": "soundcentral21", "is_original_sound": true}, "statistics": {"play_count": 635, "digg_count": 45, "comment_count": 6, "share_count": 1, "collect_count": 6}, "text_extra": [{"start": 22, "end": 30, "type": 0, "user_id": "7504863752374724388"}, {"start": 45, "end": 61, "type": 0, "user_id": "7623781097469388592"}], "interaction_stickers": [{"type": 18, "text_info": "Pov: você achou que estava preparada para a imigração 🤡🫣🇺🇸"}], "video": {"duration": 39900}};
 
 describe("lecture d'une réponse non allégée", () => {
   it("le hook (texte à l'écran), le son par son id EXACT, les mentions et la bio", () => {
     const v = parseScVideo(VOCA_1)!;
     expect(v.hook).toBe("Consegui fazer a IA me xingar 🥲");
     // `music.id` est un nombre qui a perdu sa précision : seul `id_str` est juste.
-    expect(v.musicId).toBe("7636813180069333767");
+    expect(v.musicId).toBe("7636813179296687945");
     expect(v.musicTitle).toBe("original sound - giovanna.vocaai");
     expect(v.musicOwner).toBe("giovanna.vocaai");
-    expect(v.mentions).toEqual([{ id: "7504863753483240490", label: "@Voca AI" }]);
+    expect(v.mentions).toEqual([{ id: "7504863752374724388", label: "@Voca AI" }]);
     expect(v.authorBio).toBe("🗣️ Voca AI Ambassador");
   });
   it("une mention au milieu de la légende, et jamais le compte lui-même", () => {
     const v = parseScVideo(VOCA_2)!;
-    expect(v.mentions).toEqual([{ id: "7504863753483240490", label: "@Voca AI" }]);
+    expect(v.mentions).toEqual([{ id: "7504863752374724388", label: "@Voca AI" }]);
     expect(v.musicOwner).toBe("soundcentral21");
   });
   it("une mention après un emoji : TikTok compte en caractères, pas en unités UTF-16 (« @Voca A », 09/11/2026)", () => {
     // La légende réelle de @daiana.vocaai : « @ » est le 9e caractère, la 10e unité UTF-16.
-    const unEmoji = { ...VOCA_2, desc: "Nossa 🫪 @Voca AI #aprenderingles #vocaai", text_extra: [{ start: 8, end: 16, type: 0, user_id: "7504863753483240490" }] };
-    expect(parseScVideo(unEmoji)!.mentions).toEqual([{ id: "7504863753483240490", label: "@Voca AI" }]);
+    const unEmoji = { ...VOCA_2, desc: "Nossa 🫪 @Voca AI #aprenderingles #vocaai", text_extra: [{ start: 8, end: 16, type: 0, user_id: "7504863752374724388" }] };
+    expect(parseScVideo(unEmoji)!.mentions).toEqual([{ id: "7504863752374724388", label: "@Voca AI" }]);
     // Lue en UTF-16, c'était « @Voca A » : le nom proposé comme une app nouvelle.
     expect(unEmoji.desc.slice(8, 16).trim()).toBe("@Voca A");
     // Deux emojis avant : la mention était perdue (la coupe commençait au milieu d'un emoji).
-    const deux = { ...VOCA_2, desc: "DIOS MÍO 😱😱 @What Brandon Thinks #whatsapp", text_extra: [{ start: 12, end: 32, type: 0, user_id: "7647235265945928726" }] };
-    expect(parseScVideo(deux)!.mentions).toEqual([{ id: "7647235265945928726", label: "@What Brandon Thinks" }]);
+    const deux = { ...VOCA_2, desc: "DIOS MÍO 😱😱 @What Brandon Thinks #whatsapp", text_extra: [{ start: 12, end: 32, type: 0, user_id: "7647235265332782930" }] };
+    expect(parseScVideo(deux)!.mentions).toEqual([{ id: "7647235265332782930", label: "@What Brandon Thinks" }]);
     // Collée à l'emoji, sans espace (@WRizz).
     expect(mentionLabel("POV: you only get one shot 🎯@WRizz #rizz", 28, 34)).toBe("@WRizz");
     // Des positions en UTF-16 restent lues ; ce qui n'est pas une mention ne l'est pas.
@@ -997,7 +997,7 @@ describe("formats et apps repérées", () => {
   it("ce qu'un compte cite : ses mentions (pas lui-même), les domaines de ses légendes et de sa bio", () => {
     const v = parseScVideo(VOCA_2)!;
     expect(candidatesOf({ ...v, authorBio: "Embaixador 👇 🔗creators.stalkie.io" })).toEqual([
-      { key: "@7504863753483240490", kind: "mention", label: "@Voca AI" },
+      { key: "@7504863752374724388", kind: "mention", label: "@Voca AI" },
       { key: "stalkie.io", kind: "domain", label: "stalkie.io" },
     ]);
     expect(patternsOfCandidate({ kind: "domain", label: "stalkie.io" })).toEqual(["stalkie.io", "stalkie"]);

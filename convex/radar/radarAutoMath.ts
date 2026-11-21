@@ -169,7 +169,7 @@ export function broadenedRule(app: { name: string; strong: readonly string[]; se
 
 /**
  * Les @mentions et les sites que citent deux comptes ou plus (286 mentions et 32 sites le 15/11/2026) : des
- * personnes et des marques (@Rohat, @valorant, @H&M), mais aussi des apps qu'on ne suit pas (Learna, HealthMeter,
+ * personnes et des marques (un créateur, @valorant, @H&M), mais aussi des apps qu'on ne suit pas (Learna, HealthMeter,
  * faithmode.app, tented.ai). Claude Haiku dit ce que c'est et le nom du produit ; seuls une app, un logiciel ou un
  * jeu mobile entrent, à l'essai.
  */
@@ -376,6 +376,17 @@ export function appNameKey(name: string): string {
 }
 
 /**
+ * Ce qui permet à une app repérée d'être une app suivie (storeTwin) : une app des classements, son hashtag sans « # »
+ * et la clé de son nom. Sans elle, storeTwin rend null quelles que soient les apps : le suivi d'office ne lit pas les
+ * apps suivies pour cette app repérée (radarAuto.autoFollowCore, 20/11/2026, facture Convex).
+ */
+export function storeTwinKey(c: { kind: string; label: string; store?: { tag?: string } }): { tag: string; key: string } | null {
+  const tag = c.store?.tag?.replace(/^#/, "").toLowerCase();
+  const key = appNameKey(c.label);
+  return c.kind === "store" && tag && key ? { tag, key } : null;
+}
+
+/**
  * L'app suivie qu'une app des classements EST déjà : même nom (`appNameKey`) et son hashtag parmi les recherches de
  * l'app suivie, active et pas fondue. Deux apps suivies possibles : aucune (à trancher à la main).
  *
@@ -387,9 +398,9 @@ export function appNameKey(name: string): string {
 export function storeTwin<
   A extends { name: string; searches: readonly string[]; status: string; mergedInto?: unknown; store?: { storeId: string } },
 >(c: { kind: string; label: string; store?: { tag?: string; storeId?: string } }, apps: readonly A[]): A | null {
-  const tag = c.store?.tag?.replace(/^#/, "").toLowerCase();
-  const key = appNameKey(c.label);
-  if (c.kind !== "store" || !tag || !key) return null;
+  const k = storeTwinKey(c);
+  if (!k) return null;
+  const { tag, key } = k;
   // Une app suivie qui porte déjà une fiche des classements n'en change pas : deux apps homonymes des classements sous
   // le même hashtag (RISE le sommeil et RISE la manifestation, 20/11/2026) ne s'y rattachent pas tour à tour.
   const twins = apps.filter(

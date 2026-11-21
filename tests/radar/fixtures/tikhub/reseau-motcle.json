@@ -1,0 +1,195 @@
+{
+ "_fixture": "Réponse TikHub réelle du banc du 20/11/2026 (th-reseau-motcle-200.json), tronquée et anonymisée (scripts/fixtures-publiques.mjs --anonymise : auteurs et identifiants inventés, légendes, textes incrustés, titres et hashtags réécrits en mots de remplissage, largeurs tirées et emoji remplacés, dates déplacées par une table secrète et monotone, sans écart commun, durées et compteurs tirés loin des vrais ; ré-anonymisée en un passage le 21/11/2026). has_more 0 avec cursor 30 ; la 1re vidéo a un auteur à follower_count 0.",
+ "code": 200,
+ "router": "/api/v1/tiktok/app/v3/fetch_video_search_result",
+ "data": {
+  "status_code": 0,
+  "has_more": 0,
+  "cursor": 30,
+  "aweme_list": [],
+  "search_item_list": [
+   {
+    "type": null,
+    "aweme_info": {
+     "aweme_id": "7707975289833260236",
+     "desc": "T llum’a uioffic T epre ugia!? #iquipexeaco #ionullamc #sintocc ",
+     "desc_language": "en",
+     "region": "GB",
+     "create_time": 1794652857,
+     "is_top": 0,
+     "statistics": {
+      "play_count": 717,
+      "digg_count": 0,
+      "comment_count": 0,
+      "share_count": 1,
+      "collect_count": 0
+     },
+     "video": {
+      "duration": 11628,
+      "cover": {
+       "url_list": [
+        "https://example.invalid/media/couverture-14~tplv-tiktokx-origin.image"
+       ]
+      }
+     },
+     "author": {
+      "uid": "9100000000000000006",
+      "unique_id": "auteur_06",
+      "follower_count": 0,
+      "nickname": "Auteur",
+      "signature": ""
+     },
+     "interaction_stickers": [
+      {
+       "type": 18,
+       "text_info": "T utlabor’a con riti ugia 🍋‍🫧🍋‍🫧"
+      }
+     ],
+     "music": {
+      "id": 7072665269302199000,
+      "id_str": "7072665269302199282",
+      "title": "Nvoluptate llit adipi equatdui(4992622)"
+     },
+     "text_extra": [
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 31,
+       "end": 43,
+       "hashtag_name": "iquipexeaco"
+      },
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 44,
+       "end": 54,
+       "hashtag_name": "ionullamc"
+      },
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 55,
+       "end": 63,
+       "hashtag_name": "sintocc"
+      }
+     ]
+    }
+   },
+   {
+    "type": null,
+    "aweme_info": {
+     "aweme_id": "7694111259955823712",
+     "desc": "Udexerc mo liquip nsec OnseQuatdu: Duis lite pari ",
+     "desc_language": "en",
+     "region": "US",
+     "create_time": 1791906881,
+     "is_top": 0,
+     "statistics": {
+      "play_count": 24084,
+      "digg_count": 400,
+      "comment_count": 6,
+      "share_count": 28,
+      "collect_count": 122
+     },
+     "video": {
+      "duration": 35938,
+      "cover": {
+       "url_list": [
+        "https://example.invalid/media/couverture-15~tplv-tiktokx-origin.image"
+       ]
+      }
+     },
+     "author": {
+      "uid": "9100000000000000007",
+      "unique_id": "auteur_07",
+      "follower_count": 3434789,
+      "nickname": "Auteur",
+      "signature": ""
+     },
+     "music": {
+      "id": 7694111418869614000,
+      "id_str": "7694111418869613668",
+      "title": "son original - auteur_07",
+      "owner_handle": "auteur_07"
+     }
+    }
+   },
+   {
+    "type": null,
+    "aweme_info": {
+     "aweme_id": "7706714227305612436",
+     "desc": "Eri emporincididunt ur dipiscin ??🎈🐢️‍♻️ stlab  #imides #euf #cingelitsed #iquipexeaco #aquioffi ",
+     "desc_language": "fr",
+     "region": "FR",
+     "create_time": 1794359240,
+     "is_top": 0,
+     "statistics": {
+      "play_count": 1587,
+      "digg_count": 101,
+      "comment_count": 0,
+      "share_count": 6,
+      "collect_count": 10
+     },
+     "video": {
+      "duration": 12039,
+      "cover": {
+       "url_list": [
+        "https://example.invalid/media/couverture-16~tplv-tiktokx-origin.image"
+       ]
+      }
+     },
+     "author": {
+      "uid": "9100000000000000008",
+      "unique_id": "auteur_08",
+      "follower_count": 37,
+      "nickname": "Auteur",
+      "signature": ""
+     },
+     "interaction_stickers": [
+      {
+       "type": 18,
+       "text_info": "PRE: upid offici fu nge ffi laboreetd de s mve pariaturex son eetd incu dol quipex s quaut "
+      }
+     ],
+     "music": {
+      "id": 7207653643284121000,
+      "id_str": "7207653643284120573",
+      "title": "NCulpa"
+     },
+     "text_extra": [
+      {
+       "type": 1,
+       "start": 50,
+       "end": 57,
+       "hashtag_name": "imides"
+      },
+      {
+       "type": 1,
+       "start": 58,
+       "end": 62,
+       "hashtag_name": "euf"
+      },
+      {
+       "type": 1,
+       "start": 63,
+       "end": 75,
+       "hashtag_name": "cingelitsed"
+      },
+      {
+       "type": 1,
+       "start": 76,
+       "end": 88,
+       "hashtag_name": "iquipexeaco"
+      },
+      {
+       "type": 1,
+       "start": 89,
+       "end": 98,
+       "hashtag_name": "aquioffi"
+      }
+     ]
+    }
+   }
+  ]
+ }
+}

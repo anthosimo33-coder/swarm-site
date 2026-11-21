@@ -1,0 +1,10 @@
+{
+ "_fixture": "SYNTHÉTIQUES, fabriquées le 20/11/2026 d'après la forme mesurée au banc (aucun appel payant n'était permis pour les capturer) : à remplacer par des captures réelles avant d'activer le poste tiktok.",
+ "solde": { "code": 200, "router": "/api/v1/tikhub/user/get_user_info", "api_key_data": { "api_key_name": "exemple", "api_key_status": 1 }, "user_data": { "email": "personne@example.invalid", "balance": 5.4, "free_credit": 0.021, "email_verified": true, "account_disabled": false, "is_active": true } },
+ "refus402": { "detail": { "code": 402, "message": "Insufficient balance. Please recharge your account." } },
+ "refus401": { "detail": { "code": 401, "message": "Invalid API key." } },
+ "refus429": { "detail": { "code": 429, "message": "Too many requests." } },
+ "refus500": { "detail": { "code": 500, "message": "Internal server error." } },
+ "upstream": { "code": 200, "router": "/api/v1/tiktok/app/v3/fetch_user_post_videos", "data": { "status_code": 2053, "status_msg": "This account is private." } },
+ "videoSupprimee": { "code": 200, "router": "/api/v1/tiktok/app/v3/fetch_one_video_by_share_url", "data": { "status_code": 0, "status_msg": "" } }
+}

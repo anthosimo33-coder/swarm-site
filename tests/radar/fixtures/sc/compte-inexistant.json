@@ -1,0 +1,10 @@
+{
+ "_fixture": "Réponse ScrapeCreators réelle du banc du 20/11/2026 (sc-compte-inexistant-404.json), tronquée et anonymisée.",
+ "success": false,
+ "credits_remaining": 1520,
+ "credits_charged": 0,
+ "account_deactivated": true,
+ "message": "ELitessec catcupidatatnonp",
+ "error": "not_found",
+ "errorStatus": 404
+}

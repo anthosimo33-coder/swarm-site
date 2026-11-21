@@ -1,0 +1,164 @@
+{
+ "_fixture": "Réponse TikHub réelle du banc du 20/11/2026 (la paire du banc pair-th-*.json : le même compte au même instant que sc/profil.json), tronquée et anonymisée (scripts/fixtures-publiques.mjs --anonymise : auteurs et identifiants inventés, légendes, textes incrustés, titres et hashtags réécrits en mots de remplissage, largeurs tirées et emoji remplacés, dates déplacées par une table secrète et monotone, sans écart commun, durées et compteurs tirés loin des vrais ; ré-anonymisée en un passage le 21/11/2026).",
+ "code": 200,
+ "router": "/api/v1/tiktok/app/v3/fetch_user_post_videos",
+ "data": {
+  "status_code": 0,
+  "max_cursor": 1795095718701,
+  "min_cursor": 1795152313533,
+  "has_more": 1,
+  "status_msg": "",
+  "aweme_list": [
+   {
+    "aweme_id": "7710120441314018683",
+    "desc": "DOlor or LITE iu 🐢 Qua mv madmi ffici cin mv \"EStlaBorum\"nsec 🍋 Edd ur \"7989275\", et labore ritinv utlabore⛄! Emagna't mlore tcupid ipis ni ametconsec, ecillu lorema, llit elitsedd tetu siu r piscingel lpaqu eiusm XEaco ecteturad hend et ni roident dminim od proi untinc. Ni ametconsec sseci t't r teiru tenimadmi...mq redolo't r oremipsum sint cin aut riat. NOnpro ni ecillu lorema llit ametconsec caeca con borisn ni, od ugia labo? #EStlaBorum#isauteirure #EStlaBorum",
+    "desc_language": "en",
+    "region": "US",
+    "create_time": 1795152313,
+    "is_top": 0,
+    "statistics": {
+     "play_count": 5,
+     "digg_count": 0,
+     "comment_count": 0,
+     "share_count": 0,
+     "collect_count": 0
+    },
+    "video": {
+     "duration": 419207,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-01~tplv-tiktokx-cropcenter-q:300:400:q70.heic"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000001",
+     "unique_id": "auteur_01",
+     "follower_count": 26450,
+     "nickname": "Auteur",
+     "signature": "bio de auteur_01"
+    },
+    "music": {
+     "id": 7710120471378789000,
+     "id_str": "7710120471378789762",
+     "title": "original sound - auteur_01",
+     "owner_handle": "auteur_01"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "start": 447,
+      "end": 459,
+      "hashtag_name": "isauteirure"
+     },
+     {
+      "type": 1,
+      "start": 460,
+      "end": 471,
+      "hashtag_name": "estlaborum"
+     }
+    ]
+   },
+   {
+    "aweme_id": "7710118237995795813",
+    "desc": "DOlor or LITE iu 🐢 Qua mv madmi ffici cin mv \"EStlaBorum\"nsec 🍋 Edd ur \"7989275\", et labore ritinv utlabore⛄! Emagna't mlore tcupid ipis ni ametconsec, ecillu lorema, llit elitsedd tetu siu r piscingel lpaqu eiusm XEaco ecteturad hend et ni roident dminim od proi untinc. Ni ametconsec sseci t't r teiru tenimadmi...mq redolo't r oremipsum sint cin aut riat. NOnpro ni ecillu lorema llit ametconsec caeca con borisn ni, od ugia labo? #EStlaBorum#isauteirure #EStlaBorum",
+    "desc_language": "en",
+    "region": "US",
+    "create_time": 1795151809,
+    "is_top": 0,
+    "statistics": {
+     "play_count": 19,
+     "digg_count": 1,
+     "comment_count": 0,
+     "share_count": 0,
+     "collect_count": 0
+    },
+    "video": {
+     "duration": 836623,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-02~tplv-tiktokx-cropcenter-q:300:400:q70.heic"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000001",
+     "unique_id": "auteur_01",
+     "follower_count": 26450,
+     "nickname": "Auteur",
+     "signature": "bio de auteur_01"
+    },
+    "music": {
+     "id": 7710118328190109000,
+     "id_str": "7710118328190109036",
+     "title": "original sound - auteur_01",
+     "owner_handle": "auteur_01"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "start": 447,
+      "end": 459,
+      "hashtag_name": "isauteirure"
+     },
+     {
+      "type": 1,
+      "start": 460,
+      "end": 471,
+      "hashtag_name": "estlaborum"
+     }
+    ]
+   },
+   {
+    "aweme_id": "7710116021792671059",
+    "desc": "DOlor or LITE iu 🐢 Qua mv madmi ffici cin mv \"EStlaBorum\"nsec 🍋 Edd ur \"7989275\", et labore ritinv utlabore⛄! Emagna't mlore tcupid ipis ni ametconsec, ecillu lorema, llit elitsedd tetu siu r piscingel lpaqu eiusm XEaco ecteturad hend et ni roident dminim od proi untinc. Ni ametconsec sseci t't r teiru tenimadmi...mq redolo't r oremipsum sint cin aut riat. NOnpro ni ecillu lorema llit ametconsec caeca con borisn ni, od ugia labo? #EStlaBorum#isauteirure #EStlaBorum",
+    "desc_language": "en",
+    "region": "US",
+    "create_time": 1795151297,
+    "is_top": 0,
+    "statistics": {
+     "play_count": 51,
+     "digg_count": 2,
+     "comment_count": 0,
+     "share_count": 0,
+     "collect_count": 0
+    },
+    "video": {
+     "duration": 772642,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-03~tplv-tiktokx-cropcenter-q:300:400:q70.heic"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000001",
+     "unique_id": "auteur_01",
+     "follower_count": 26450,
+     "nickname": "Auteur",
+     "signature": "bio de auteur_01"
+    },
+    "music": {
+     "id": 7710116060447376000,
+     "id_str": "7710116060447376728",
+     "title": "original sound - auteur_01",
+     "owner_handle": "auteur_01"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "start": 447,
+      "end": 459,
+      "hashtag_name": "isauteirure"
+     },
+     {
+      "type": 1,
+      "start": 460,
+      "end": 471,
+      "hashtag_name": "estlaborum"
+     }
+    ]
+   }
+  ]
+ }
+}

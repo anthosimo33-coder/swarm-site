@@ -14,6 +14,36 @@ export const SC_PRICE_PER_CREDIT = 47 / 25_000;
 export const SC_CURRENCY = "USD";
 export const SC_PACK_CREDITS = 25_000;
 
+/**
+ * LES DEUX FOURNISSEURS (20/11/2026). Les postes TikTok du Radar peuvent passer chez TikHub (convex/radar/radarProviders,
+ * réglage RADAR_TIKHUB) : 0,001 $ l'appel (`endpoint_cost` des routes du Radar, lu le 20/11/2026), contre 0,00188 $ le
+ * crédit ScrapeCreators. Instagram et les transcriptions restent chez ScrapeCreators.
+ */
+export type Provider = "sc" | "tikhub";
+export const PROVIDERS: readonly Provider[] = ["sc", "tikhub"];
+/** Prix d'un appel TikHub quand le tarif de la route n'a pas été lu (`get_all_endpoints_info`) : 20/11/2026. */
+export const TH_PRICE_USD = 0.001;
+/** Dollars TikHub laissés en compte, que le Radar ne dépense jamais (à confirmer par le fondateur ; 0 au 20/11/2026). */
+export const TH_RESERVE_USD = 0;
+/**
+ * LE PLAFOND TIKHUB DU JOUR (choix du fondateur, 21/11/2026) : 5 $ par jour (Paris), tous postes, appels à facturation
+ * inconnue au prix plein — surchargé par la variable `RADAR_TIKHUB_USD_PER_DAY` (radarProviders.thDayCapUsd). TikHub n'a
+ * pas de recharge automatique et le Radar ne connaît que son solde : sans plafond, un rattrapage du réseau ou une boucle
+ * viderait le compte en une journée. Atteint, plus rien ne part chez TikHub jusqu'au lendemain : ce qui reste dû
+ * attend, seule la porte de repli (radarProviders.FALLBACK_SC_PER_DAY) passe chez ScrapeCreators ; le palier TikHub,
+ * qui dit combien de jours son solde tient, ne bouge pas. Une borne à quelques appels près : un passage juge chaque
+ * appel sur la dépense déjà comptée (les relevés menés de front, radarNetworks.ACCOUNT_READ_POOL, partent avant de la
+ * voir), et sur la dépense du jour écrite par les autres passages à son ouverture — quelques centimes au plus.
+ */
+export const TH_DAY_CAP_USD = 5;
+/**
+ * UNE UNITÉ DU BUDGET = un appel au prix de base de TikHub, un millième de dollar (un crédit ScrapeCreators vaut une
+ * unité). Les quantités des postes restent des nombres d'appels : 5,4 $ de solde TikHub font 5 400 unités.
+ */
+export const thUnits = (usd: number): number => Math.floor(usd * 1000 + 1e-9);
+/** Le prix d'une unité chez ce fournisseur. */
+export const priceOf = (p: Provider): number => (p === "tikhub" ? TH_PRICE_USD : SC_PRICE_PER_CREDIT);
+
 /** Un mois de budget compte 30 jours (les postes se règlent « par jour »). */
 export const DAYS_PER_MONTH = 30;
 
@@ -181,13 +211,12 @@ export function parseScVideo(raw: unknown, fallbackLang?: string): SignalInput |
 }
 
 /**
- * Le libellé d'une mention, lu dans la légende aux positions que donne TikTok.
- * TikTok compte en CARACTÈRES, JavaScript en unités UTF-16 : un emoji vaut 1
- * pour l'un, 2 pour l'autre. Lue en UTF-16, « Nossa 🫪 @Voca AI » (positions 8
- * à 16) donnait « @Voca A » : l'app déjà suivie n'était pas reconnue et le
- * Radar la proposait comme une app nouvelle — « Voca A » et « What Brandon
- * Think » ont été suivies ainsi le 09/11/2026 ; avec deux emojis, la mention
- * était perdue. On lit en caractères ; si ce n'est pas une mention, en UTF-16.
+ * Le libellé d'une mention, lu dans la légende aux positions que donne TikTok — le repli quand la vidéo n'a pas de
+ * balisage (cf `markupMentions`). TikTok compte tantôt en CARACTÈRES, JavaScript en unités UTF-16 : un emoji vaut 1
+ * pour l'un, 2 pour l'autre. Lue en UTF-16, « Nossa 🫪 @Voca AI » (positions 8 à 16) donnait « @Voca A » : l'app déjà
+ * suivie n'était pas reconnue et le Radar la proposait comme une app nouvelle — « Voca A » et « What Brandon Think »
+ * ont été suivies ainsi le 09/11/2026 ; avec deux emojis, la mention était perdue. On lit en caractères ; si ce n'est
+ * pas une mention, en UTF-16.
  */
 export function mentionLabel(caption: string, start: number, end: number): string | null {
   for (const cut of [Array.from(caption).slice(start, end).join(""), caption.slice(start, end)]) {
@@ -197,10 +226,48 @@ export function mentionLabel(caption: string, start: number, end: number): strin
   return null;
 }
 
+/** Les entités du balisage de TikTok (`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;`, `&#x27;`…), décodées en une passe. */
+const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+function decodeEntities(s: string): string {
+  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, name: string) => {
+    if (name[0] !== "#") return ENTITIES[name.toLowerCase()] ?? whole;
+    const code = name[1] === "x" || name[1] === "X" ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
+    return Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
+  });
+}
+
+/**
+ * Le libellé de chaque mention tel que TikTok le balise dans la légende (`original_client_text.markup_text` :
+ * « … sur <m id="9889">@auteur_01</m><br><br>… »), par identifiant de balise (`text_extra[].tag_id`). Corrigé le
+ * 20/11/2026 : le libellé se lisait aux positions de `text_extra`, qui ne tombent juste sur aucune légende de façon
+ * sûre — TikHub (comme la recherche TikTok chez ScrapeCreators) remplace chaque suite de retours à la ligne par une
+ * espace, ScrapeCreators rend les relevés de profil intacts, et les positions comptent tantôt en caractères, tantôt en
+ * unités UTF-16. Sur le banc du 20/11/2026, 6 libellés sur 113 mentions balisées étaient faux (le début d'un autre
+ * mot, un libellé tronqué d'une lettre, un pseudo suivi de « #for », un autre compte que celui mentionné) ; une mention
+ * placée après une ligne vide pouvait être perdue. Le balisage est identique chez les deux fournisseurs (172 vidéos communes sur 172) : la
+ * bascule ne change plus les mentions. Une balise qui contient une autre balise n'est pas prise (repli aux positions).
+ */
+function markupMentions(v: Record<string, unknown>): Map<string, string> {
+  const out = new Map<string, string>();
+  const markup = obj(v.original_client_text)?.markup_text;
+  if (typeof markup !== "string") return out;
+  for (const m of markup.matchAll(/<m id="([^"]*)">([^<]*)<\/m>/g)) out.set(m[1], decodeEntities(m[2]));
+  return out;
+}
+
+/** Le libellé balisé d'une mention, s'il en est un (il commence par « @ »). */
+function markedLabel(marks: ReadonlyMap<string, string>, tagId: unknown): string | null {
+  const key = typeof tagId === "string" ? tagId : typeof tagId === "number" ? String(tagId) : undefined;
+  const raw = key !== undefined ? marks.get(key) : undefined;
+  if (raw === undefined) return null;
+  const label = cleanText(raw).trim();
+  return label.startsWith("@") ? label : null;
+}
+
 /**
  * Hook, son et mentions d'une vidéo non allégée. Le hook = les textes incrustés
  * (autocollants de type 18) ; une mention = `text_extra` de type 0, son libellé
- * lu dans la légende à ses positions (`@Voca AI`).
+ * lu dans le balisage de la légende (`markupMentions`), sinon à ses positions (`@Voca AI`).
  */
 function readExtras(v: Record<string, unknown>, caption: string, authorUid: string | undefined) {
   const texts = (Array.isArray(v.interaction_stickers) ? v.interaction_stickers : [])
@@ -215,11 +282,12 @@ function readExtras(v: Record<string, unknown>, caption: string, authorUid: stri
   const musicTitle = title ? cleanText(title, 120) : undefined;
   const musicOwner = str(music?.owner_handle);
   const mentions: { id: string; label: string }[] = [];
+  const marks = markupMentions(v);
   for (const t of Array.isArray(v.text_extra) ? v.text_extra : []) {
     const e = obj(t);
     const id = str(e?.user_id);
     if (e?.type !== 0 || !id || id === authorUid || mentions.some((m) => m.id === id)) continue;
-    const label = mentionLabel(caption, num(e.start), num(e.end));
+    const label = markedLabel(marks, e.tag_id) ?? mentionLabel(caption, num(e.start), num(e.end));
     if (label && label.length >= 3) mentions.push({ id, label: cleanText(label, 60) });
   }
   return {
@@ -345,6 +413,12 @@ const CAP_KEPT_FROM = 10;
 export const CAP_MAX_USD = 2_000;
 
 export const POSTE_KEYS = POSTES.map((p) => p.key);
+
+/**
+ * Le poste peut-il puiser dans le crédit GRATUIT de TikHub ? La route des relevés de profil (`fetch_user_post_videos`,
+ * le poste « tiktok ») le refuse (allow_free_credit = 0, lu le 20/11/2026) ; les autres routes du Radar l'acceptent.
+ */
+export const TH_FREE_OK: Readonly<Record<PosteKey, boolean>> = { search: true, curve: true, tiktok: false, network: true, insta: true, transcript: true, ads: true, ai: true };
 export const isPosteKey = (k: string): k is PosteKey => (POSTE_KEYS as string[]).includes(k);
 export const posteDef = (k: PosteKey) => POSTES.find((p) => p.key === k)!;
 
@@ -418,12 +492,22 @@ export function normalizeBudget(
 
 const posteOf = (s: BudgetSettings, k: PosteKey) => s.postes.find((p) => p.key === k)!;
 
-/** Enveloppe du mois d'un poste, en dollars (0 s'il est éteint). */
+/** Enveloppe du mois d'un poste, en dollars (0 s'il est éteint), au prix de ScrapeCreators (ce que l'écran affiche). */
 export function envelopeUsd(s: BudgetSettings, k: PosteKey): number {
+  return envelopeUsdAt(s, k, "sc");
+}
+
+/**
+ * Enveloppe du mois d'un poste au prix du fournisseur qui le sert (bascule TikHub du 20/11/2026). Les quantités
+ * restent des NOMBRES D'APPELS (une unité, cf `thUnits`) : un poste servi par TikHub garde sa quantité, à 0,001 $
+ * l'appel au lieu de 0,00188 $. Un poste mixte (le réseau : des passes chez l'un, des passes chez l'autre ; la
+ * recherche : découverte chez TikHub, tournures chez ScrapeCreators) est approché au prix du fournisseur réglé.
+ */
+export function envelopeUsdAt(s: BudgetSettings, k: PosteKey, provider: Provider): number {
   const p = posteOf(s, k);
   if (!p.on) return 0;
   const def = posteDef(k);
-  return def.dollars ? p.qty : def.monthlyCredits(p.qty) * SC_PRICE_PER_CREDIT;
+  return def.dollars ? p.qty : def.monthlyCredits(p.qty) * priceOf(provider);
 }
 
 export const envelopeCredits = (s: BudgetSettings, k: PosteKey) => {
@@ -434,12 +518,25 @@ export const envelopeCredits = (s: BudgetSettings, k: PosteKey) => {
 /** Total prévu du mois, en dollars. */
 export const plannedUsd = (s: BudgetSettings) => POSTE_KEYS.reduce((sum, k) => sum + envelopeUsd(s, k), 0);
 
-/** `usd` : la dépense d'un poste en dollars (l'analyse IA), hors crédits. */
-export type UsageRow = { poste: string; credits: number; day?: string; usd?: number };
+/**
+ * `usd` : la dépense d'un poste en dollars (l'analyse IA), hors crédits. Depuis le 20/11/2026, la dépense TikHub d'un
+ * poste : `thCalls` appels facturés, `thUsd` dollars facturés (le prix de chaque route), `thUnknown` appels coupés
+ * par le délai dont la facturation est inconnue — comptés au prix plein (`TH_PRICE_USD`), la borne haute.
+ * `credits` reste en crédits ScrapeCreators seuls.
+ */
+export type UsageRow = { poste: string; credits: number; day?: string; usd?: number; thCalls?: number; thUsd?: number; thUnknown?: number; thFallbacks?: number };
+
+/** Les unités d'une ligne d'usage : crédits ScrapeCreators + appels TikHub (facturés ou inconnus). Cf `thUnits`. */
+export const usageUnits = (u: Pick<UsageRow, "credits" | "thCalls" | "thUnknown">): number => u.credits + (u.thCalls ?? 0) + (u.thUnknown ?? 0);
+
+/** Les dollars TikHub d'une ligne d'usage (les appels à facturation inconnue au prix plein). */
+const thUsageUsd = (u: Pick<UsageRow, "thUsd" | "thUnknown">): number => (u.thUsd ?? 0) + (u.thUnknown ?? 0) * TH_PRICE_USD;
+const hasTh = (u: Pick<UsageRow, "thCalls" | "thUsd" | "thUnknown">): boolean => u.thCalls !== undefined || u.thUsd !== undefined || u.thUnknown !== undefined;
 
 /**
  * Les appels payants qu'une page publique de TikTok a rendus inutiles, comptés par brique dans `radarUsage.saved`
- * (au moins un crédit chacun) : hashtag (recherche de réseau évitée), trou (relevé « trou » évité : la vidéo est
+ * (au moins un appel payant chacun, chez le fournisseur qui l'aurait servi : un crédit ScrapeCreators ou un appel
+ * TikHub, la même unité du budget) : hashtag (recherche de réseau évitée), trou (relevé « trou » évité : la vidéo est
  * supprimée), transcript (sous-titres natifs), curve (relevé de courbe), repli (profil ou vidéo relus au passage
  * suivant). Un banc mesuré du poste ne dit pas ce que TikTok sert aux serveurs : ce compteur, lui, le dit.
  */
@@ -455,7 +552,8 @@ export function addCounts(base: Readonly<Record<string, number>> | undefined, mo
 export type BudgetState = {
   spentCredits: number;
   spentUsd: number;
-  byPoste: Record<PosteKey, { credits: number; usd: number; envelopeUsd: number }>;
+  /** `credits` : crédits ScrapeCreators seuls ; `units` : crédits + appels TikHub (cf `usageUnits`) ; `usd` : les deux. */
+  byPoste: Record<PosteKey, { credits: number; usd: number; envelopeUsd: number; units: number }>;
   /** Dépense déjà faite + reste des enveloppes des postes encore ouverts. */
   projectedUsd: number;
   /** Postes coupés pour tenir le plafond. */
@@ -477,6 +575,17 @@ export type BudgetState = {
   /** Le palier du solde (cf `creditTier`) et les jours de crédits qu'il reste avant la réserve (`null` : inconnu). */
   tier: CreditTier;
   daysLeft: number | null;
+  /** Les coupures du plafond seules (80 % puis 100 %), sans celles des paliers de solde (`cut` les réunit). */
+  capCut: PosteKey[];
+  /** Le fournisseur qui sert chaque poste (ScrapeCreators sans bascule) : son palier et son solde jugent le poste. */
+  providers: Record<PosteKey, Provider>;
+  /**
+   * Le solde TikHub, EN UNITÉS (cf `thUnits`) : `paidLeft` le payé seul (la route des relevés de profil refuse le
+   * crédit gratuit), `allLeft` payé + gratuit ; tous deux moins ce qui a été dépensé depuis la dernière lecture (une
+   * borne basse, recalée à chaque lecture gratuite). `null` : jamais lu. `tier` : son palier, calculé sur `paidLeft`.
+   * `dayLeft` : ce que le plafond du jour laisse encore, en unités (cf TH_DAY_CAP_USD) ; `null` : pas de plafond posé.
+   */
+  th: { paidLeft: number | null; allLeft: number | null; tier: CreditTier; daysLeft: number | null; stale: boolean; dayLeft: number | null };
 };
 
 /**
@@ -540,27 +649,88 @@ export const needsBalanceProbe = (state: Pick<BudgetState, "reserveReached" | "b
 export type Balance = { remaining: number; seenAt: number; now: number; perDay?: number | null };
 
 /**
+ * Le solde TikHub lu (radarSettings, `get_user_info`, gratuit) : `paidUsd` le solde payé, `freeUsd` le crédit gratuit,
+ * lus à `seenAt` ; `spentSinceUsd` ce que le Radar a dépensé chez TikHub depuis ; `perDay` la dépense moyenne des
+ * derniers jours complets, en unités, des postes que TikHub sert (cf `thPerDay`).
+ */
+export type ThBalance = { paidUsd: number; freeUsd: number; seenAt: number; spentSinceUsd: number; now: number; perDay?: number | null };
+
+/**
+ * Les options d'un budget à deux fournisseurs : qui sert chaque poste, le solde TikHub, et son plafond du jour (`thDay` :
+ * le jour de Paris et le plafond en dollars, cf TH_DAY_CAP_USD). Sans elles : ScrapeCreators seul.
+ */
+export type BudgetOpts = { providers?: Partial<Record<PosteKey, Provider>>; th?: ThBalance | null; thDay?: { today: string; capUsd: number } };
+
+/** Le solde TikHub est relu (gratuitement) en tête de passage quand la dernière lecture a plus d'une minute. */
+export const TH_BALANCE_STALE_MS = 60_000;
+
+/**
+ * LA DÉPENSE TIKHUB DEPUIS LE SOLDE LU (radarSettings.thSpentLots, 20/11/2026). Chaque lot de dépense écrit (recordRun)
+ * est gardé avec l'heure de son écriture (`at`), tant qu'il peut contenir de la dépense faite APRÈS la lecture rangée :
+ * un lot écrit avant une lecture ne contient que de la dépense faite avant elle, que le solde lu compte déjà. Quand un
+ * passage range un solde plus frais (lu à `read.at`), on garde les lots écrits depuis (ceux des autres passages, en
+ * entier : une borne haute de leur dépense après la lecture) et on y ajoute ce que CE passage a dépensé après sa lecture
+ * (`read.afterUsd`, la part de son lot). Corrigé le 20/11/2026 : la dépense « depuis » repartait de la seule dépense du
+ * passage qui écrivait le solde, et celle que les passages en parallèle avaient écrite après la lecture disparaissait —
+ * le solde estimé (/admin, paliers, part de chaque passage) n'était plus la borne basse annoncée.
+ */
+export type SpentLot = { at: number; usd: number };
+/** Au plus tant de lots gardés : au-delà, les deux plus anciens se fondent, à l'heure du plus récent (jamais oublié trop tôt). */
+export const TH_SPENT_LOTS_MAX = 32;
+
+/** Les lots après l'écriture d'un passage : `lot`, sa dépense TikHub en dollars ; `read`, le solde plus frais qu'il range. */
+export function nextSpentLots(prev: readonly SpentLot[], writtenAt: number, lot: number, read?: { at: number; afterUsd: number }): SpentLot[] {
+  const out = read ? prev.filter((l) => l.at >= read.at) : [...prev];
+  const mine = read ? Math.max(0, Math.min(read.afterUsd, lot)) : lot;
+  if (mine > 0) out.push({ at: writtenAt, usd: mine });
+  while (out.length > TH_SPENT_LOTS_MAX) {
+    const [a, b] = out.splice(0, 2);
+    out.unshift({ at: Math.max(a.at, b.at), usd: a.usd + b.usd });
+  }
+  return out;
+}
+
+/** La dépense TikHub depuis le solde lu, en dollars : la somme des lots. */
+export const spentOf = (lots: readonly SpentLot[]): number => lots.reduce((sum, l) => sum + l.usd, 0);
+
+/**
  * L'état du budget du mois. Chaque poste a son enveloppe ; au plafond, tout
  * s'arrête. Entre 80 % et 100 %, si la projection du mois dépasse le plafond, on
  * coupe dans l'ORDRE DE COUPURE jusqu'à ce qu'elle repasse dessous. `balance` : le
  * solde réel du compte, qui borne tout (sous la réserve, rien ne part).
+ *
+ * Deux fournisseurs depuis le 20/11/2026 (`opts`) : chaque poste se juge sur le palier et le solde du fournisseur qui
+ * le sert (`providers`), son enveloppe se compte à son prix ; le plafond en dollars reste commun. Sans `opts` ni ligne
+ * d'usage TikHub, le résultat est celui d'avant, au bit près (tests/radar/radar-budget-golden.test.ts).
  */
-export function budgetState(s: BudgetSettings, monthUsage: readonly UsageRow[], balance?: Balance | null): BudgetState {
+export function budgetState(s: BudgetSettings, monthUsage: readonly UsageRow[], balance?: Balance | null, opts?: BudgetOpts): BudgetState {
+  const providers = {} as Record<PosteKey, Provider>;
+  for (const k of POSTE_KEYS) providers[k] = opts?.providers?.[k] ?? "sc";
   const byPoste = {} as BudgetState["byPoste"];
-  for (const k of POSTE_KEYS) byPoste[k] = { credits: 0, usd: 0, envelopeUsd: envelopeUsd(s, k) };
+  for (const k of POSTE_KEYS) byPoste[k] = { credits: 0, usd: 0, envelopeUsd: envelopeUsdAt(s, k, providers[k]), units: 0 };
   let spentCredits = 0;
   let dollars = 0;
   for (const u of monthUsage) {
     spentCredits += u.credits;
     dollars += u.usd ?? 0;
+    if (hasTh(u)) dollars += thUsageUsd(u);
     if (isPosteKey(u.poste)) {
       byPoste[u.poste].credits += u.credits;
+      byPoste[u.poste].units += usageUnits(u);
       byPoste[u.poste].usd += u.usd ?? 0;
+      if (hasTh(u)) byPoste[u.poste].usd += thUsageUsd(u);
     }
   }
   for (const k of POSTE_KEYS) byPoste[k].usd += byPoste[k].credits * SC_PRICE_PER_CREDIT;
   const spentUsd = spentCredits * SC_PRICE_PER_CREDIT + dollars;
-  const remainingOf = (k: PosteKey) => Math.max(0, byPoste[k].envelopeUsd - byPoste[k].usd);
+  // Le reste du mois d'un poste : ses UNITÉS restantes (quantité du mois moins unités dépensées, chez l'un ou l'autre
+  // fournisseur) au prix de celui qui le sert ; un poste en dollars (l'analyse IA) : son enveloppe moins sa dépense.
+  // Corrigé le 20/11/2026 : c'était l'enveloppe moins la dépense en dollars, deux prix mêlés — un poste basculé chez
+  // TikHub en cours de mois (enveloppe au prix TikHub, crédits ScrapeCreators déjà payés au leur) tombait à 0 alors
+  // qu'il lui restait des milliers d'appels, et la projection passait sous le plafond à tort. Sans TikHub, c'est au bit
+  // près l'ancien calcul (enveloppe − crédits × prix du crédit, cf tests/radar/radar-budget-golden.test.ts).
+  const remainingOf = (k: PosteKey) =>
+    posteDef(k).dollars ? Math.max(0, byPoste[k].envelopeUsd - byPoste[k].usd) : Math.max(0, byPoste[k].envelopeUsd - byPoste[k].units * priceOf(providers[k]));
   const capReached = spentUsd >= s.capUsd;
   const over80 = spentUsd >= s.capUsd * 0.8;
   const open = POSTES.filter((d) => d.live && posteOf(s, d.key).on).map((d) => d.key);
@@ -577,9 +747,15 @@ export function budgetState(s: BudgetSettings, monthUsage: readonly UsageRow[], 
       projectedUsd -= remainingOf(k);
     }
   }
+  const capCut = [...cut];
   const balanceLeft = balance ? Math.max(0, Math.floor(balance.remaining - CREDIT_RESERVE)) : null;
   const { tier, daysLeft } = creditTier(balanceLeft, balance?.perDay);
-  for (const k of TIER_CUT[tier]) if (open.includes(k) && !cut.includes(k)) cut.push(k);
+  const th = thState(opts?.th, thDayLeft(monthUsage, opts?.thDay));
+  // Chaque poste est coupé par le palier du fournisseur qui le sert (dans l'ordre des paliers, comme avant la bascule).
+  const tierOfProvider: Record<Provider, CreditTier> = { sc: tier, tikhub: th.tier };
+  for (const p of PROVIDERS) {
+    for (const k of TIER_CUT[tierOfProvider[p]]) if (providers[k] === p && open.includes(k) && !cut.includes(k)) cut.push(k);
+  }
   return {
     spentCredits,
     spentUsd,
@@ -593,8 +769,31 @@ export function budgetState(s: BudgetSettings, monthUsage: readonly UsageRow[], 
     balanceStale: !!balance && balance.now - balance.seenAt >= BALANCE_PROBE_MS,
     tier,
     daysLeft,
+    capCut,
+    providers,
+    th,
   };
 }
+
+/** Ce que le plafond TikHub du jour laisse encore, en unités : le plafond moins la dépense TikHub écrite aujourd'hui, tous postes. */
+function thDayLeft(monthUsage: readonly UsageRow[], day: BudgetOpts["thDay"]): number | null {
+  if (!day) return null;
+  const spent = monthUsage.reduce((sum, u) => (u.day === day.today && hasTh(u) ? sum + thUsageUsd(u) : sum), 0);
+  return Math.max(0, thUnits(day.capUsd - spent));
+}
+
+/** Le solde TikHub en unités, son palier et le reste de son plafond du jour (cf `BudgetState.th`). */
+function thState(th: ThBalance | null | undefined, dayLeft: number | null): BudgetState["th"] {
+  if (!th) return { paidLeft: null, allLeft: null, tier: "normal", daysLeft: null, stale: false, dayLeft };
+  const since = Math.max(0, th.spentSinceUsd);
+  const paidLeft = Math.max(0, thUnits(th.paidUsd - since - TH_RESERVE_USD));
+  const allLeft = Math.max(0, thUnits(th.paidUsd + th.freeUsd - since - TH_RESERVE_USD));
+  const { tier, daysLeft } = creditTier(paidLeft, th.perDay);
+  return { paidLeft, allLeft, tier, daysLeft, stale: th.now - th.seenAt >= TH_BALANCE_STALE_MS, dayLeft };
+}
+
+/** Le palier du fournisseur `p` (ScrapeCreators : celui du solde de toujours). */
+export const tierOf = (state: Pick<BudgetState, "tier" | "th">, p: Provider): CreditTier => (p === "sc" ? state.tier : state.th.tier);
 
 /**
  * Jours de crédits qu'il reste au rythme des derniers jours : `remaining` ÷ la dépense moyenne des jours COMPLETS les
@@ -605,13 +804,85 @@ export function daysOfCredits(remaining: number, usage: readonly UsageRow[], tod
   return perDay !== null && perDay > 0 ? remaining / perDay : null;
 }
 
-/** La dépense moyenne par jour des jours COMPLETS les plus récents (3 au plus, aujourd'hui exclu) ; `null` sans aucun. */
-export function recentPerDay(usage: readonly UsageRow[], today: string, days = 3): number | null {
+/**
+ * La dépense moyenne par jour des jours COMPLETS les plus récents (3 au plus, aujourd'hui exclu) ; `null` sans aucun.
+ * `pick` : ce qu'on compte d'une ligne — les crédits ScrapeCreators (le palier de son solde), ou les unités des postes
+ * que TikHub sert (`thPerDay`, le palier du solde TikHub).
+ */
+export function recentPerDay(usage: readonly UsageRow[], today: string, days = 3, pick: (u: UsageRow) => number = (u) => u.credits): number | null {
   const byDay = new Map<string, number>();
-  for (const u of usage) if (u.day && u.day < today) byDay.set(u.day, (byDay.get(u.day) ?? 0) + u.credits);
+  for (const u of usage) if (u.day && u.day < today) byDay.set(u.day, (byDay.get(u.day) ?? 0) + pick(u));
   const recent = [...byDay].sort((a, b) => b[0].localeCompare(a[0])).slice(0, days);
   if (recent.length === 0) return null;
   return recent.reduce((sum, [, c]) => sum + c, 0) / recent.length;
+}
+
+/**
+ * Les postes que TikHub ne sert JAMAIS en entier, même réglés chez lui (radarProviders.posteProviders, passProvider) : le
+ * réseau (ses passes par date ; sous `network`, aussi le hashtag FR et le mot-clé sans région) et la recherche (les
+ * tournures, radarNaming, comptées au poste « search », restent chez ScrapeCreators).
+ */
+export const MIXED_POSTES: readonly PosteKey[] = ["network", "search"];
+/** Une ligne d'usage écrite par un passage basculé : dépense ou replis TikHub. */
+const servedByTh = (u: UsageRow): boolean => hasTh(u) || u.thFallbacks !== undefined;
+
+/**
+ * Le rythme du solde TikHub : la dépense moyenne par jour, EN UNITÉS, des postes que TikHub sert (`providers`), sur les
+ * jours complets les plus récents (cf `recentPerDay`) — quel que soit le fournisseur qui les a servis ce jour-là : un
+ * crédit ScrapeCreators et un appel TikHub lisent la même page (banc du 20/11/2026), et le budget compte déjà les deux
+ * dans la même quantité du poste (`usageUnits`). Un poste mixte (MIXED_POSTES) ne compte en entier que les jours sans
+ * champ TikHub (avant la bascule : une borne haute, qui fait baisser le palier un peu plus tôt, jamais plus tard) ; une
+ * ligne qui porte des champs TikHub dit la part de TikHub ce jour-là : ses appels, et ses replis (des appels qui lui
+ * étaient destinés), pas les crédits que ScrapeCreators sert de toute façon (passes par date, tournures). `null` quand
+ * aucun poste n'est chez TikHub (rien à juger), ou sans aucun jour complet.
+ * Corrigé le 20/11/2026 : on comptait les seuls appels TikHub de chaque jour. Un jour d'avant la bascule (aucun champ
+ * TikHub) comptait pour 0 — un zéro fabriqué, « non mesuré » devenu « nul » — et le jour de la bascule pour ses seules
+ * heures chez TikHub : le lendemain, 167 appels par jour au lieu de ~1 000, 9 jours de solde au lieu de 1,5, le palier
+ * « normal » au lieu d'« economie » ; de même pendant 3 jours après chaque réactivation de RADAR_TIKHUB.
+ * Corrigé le 21/11/2026 : le réseau comptait en entier les jours basculés, crédits ScrapeCreators de ses passes par
+ * date compris.
+ */
+export function thPerDay(usage: readonly UsageRow[], today: string, providers: Partial<Record<PosteKey, Provider>>, days = 3): number | null {
+  const served = (poste: string) => isPosteKey(poste) && providers[poste] === "tikhub";
+  if (!POSTE_KEYS.some(served)) return null;
+  const share = (u: UsageRow): number => {
+    if (!served(u.poste)) return 0;
+    if (MIXED_POSTES.includes(u.poste as PosteKey) && servedByTh(u)) return (u.thCalls ?? 0) + (u.thUnknown ?? 0) + (u.thFallbacks ?? 0);
+    return usageUnits(u);
+  };
+  return recentPerDay(usage, today, days, share);
+}
+
+/**
+ * Le rythme du solde ScrapeCreators, le pendant de `thPerDay` : la dépense moyenne par jour, EN UNITÉS, de ce que
+ * ScrapeCreators sert sous le réglage en cours (`providers`), sur les jours complets les plus récents (cf `recentPerDay`).
+ *  - Un poste qu'il sert en entier compte toutes ses unités, quel que soit le fournisseur qui les a servies ce jour-là
+ *    (au retour en arrière, les appels TikHub d'hier sont ce qu'il servira).
+ *  - Un poste mixte réglé chez TikHub (MIXED_POSTES : réseau, recherche) compte ses crédits : exactement la part de
+ *    ScrapeCreators une ligne qui porte des champs TikHub, replis compris (ils sont servis par lui) ; une ligne d'avant
+ *    la bascule, en entier (ses crédits sont toutes ses unités) — une borne haute.
+ *  - Un poste que TikHub sert EN ENTIER (relevés, courbe : réglés chez lui, hors MIXED_POSTES) ne compte que ce que
+ *    ScrapeCreators lui a réellement servi les jours où il passait chez TikHub (replis, sonde : les `credits` d'une
+ *    ligne qui porte de la dépense ou des replis TikHub). Un jour d'avant la bascule ne mesure pas ce que
+ *    ScrapeCreators lui servirait sous ce réglage : il n'y compte pas. Hypothèse assumée : sans échec de TikHub, aucun
+ *    repli — et les replis sont bornés (100 par jour, tous postes) et n'ont lieu qu'au palier « normal ».
+ * Sans réglage ni ligne TikHub : les crédits, exactement le rythme d'avant le 20/11/2026.
+ * Corrigé le 20/11/2026 : on additionnait les crédits de chaque ligne. Basculer les relevés chez TikHub (81 % de la
+ * dépense) laissait le rythme à ~1 150 par jour pendant 3 jours pour ~220 dépensés chez ScrapeCreators (palier
+ * « survie » à tort : transcriptions, tournures, routine du réseau et porte de repli coupées) ; revenir en arrière
+ * (RADAR_TIKHUB retiré) le laissait à ~205 pour ~1 150 (palier « normal » à tort : la réserve, que partagent les
+ * relevés de la paie de Jarvia, n'était plus protégée par les paliers).
+ * Corrigé le 21/11/2026 : un poste mixte comptait en entier, appels TikHub compris — un jour de rattrapage du réseau
+ * chez TikHub (10 500 appels, ~300 crédits ScrapeCreators) faisait passer ScrapeCreators en « economie » : tournures,
+ * transcriptions payantes et pubs coupées, porte de repli fermée, recherches complètes du réseau reportées.
+ */
+export function scPerDay(usage: readonly UsageRow[], today: string, providers: Partial<Record<PosteKey, Provider>>, days = 3): number | null {
+  const share = (u: UsageRow): number => {
+    if (!isPosteKey(u.poste) || providers[u.poste] !== "tikhub") return usageUnits(u);
+    if (MIXED_POSTES.includes(u.poste)) return u.credits;
+    return servedByTh(u) ? u.credits : 0;
+  };
+  return recentPerDay(usage, today, days, share);
 }
 
 /** Sous ce nombre de jours de crédits, Telegram prévient (une fois par jour). */
@@ -640,11 +911,41 @@ export function creditAlert(
 }
 
 /**
- * Crédits qu'un poste a le droit de dépenser MAINTENANT : la part d'un passage
- * (jour ÷ passages), bornée par le reste du jour, le reste de l'enveloppe du
- * mois, le plafond et le SOLDE réel moins la réserve ; 0 si le poste est éteint,
- * non branché, coupé, ou le plafond atteint (sous la réserve, seule la sonde de
- * la tâche des relevés part, cf `needsBalanceProbe`).
+ * Ce qu'un poste a le droit de dépenser MAINTENANT, par morceaux (20/11/2026, deux fournisseurs) :
+ *  - `units` : la part d'un passage (jour ÷ passages), bornée par le reste du jour et le reste de l'enveloppe du mois,
+ *    EN UNITÉS (crédits ScrapeCreators et appels TikHub se partagent la même quantité du poste) ;
+ *  - `capUsd` : le reste du plafond, en dollars (commun aux deux fournisseurs) ;
+ *  - `open` : le poste peut-il partir chez ce fournisseur (branché, allumé, plafond non atteint, ni coupé par le
+ *    plafond, ni par le palier du solde de CE fournisseur) ;
+ *  - `balance` : ce que le solde de ce fournisseur permet encore, en unités (`Infinity` : jamais lu) ; chez TikHub,
+ *    borné aussi par le reste de son plafond du jour (TH_DAY_CAP_USD).
+ * `todayUnits` : les unités déjà dépensées aujourd'hui par le poste (cf radarSignals.todayCredits).
+ */
+export type AllowanceParts = { units: number; capUsd: number; open: Record<Provider, boolean>; balance: Record<Provider, number> };
+
+export function allowanceParts(s: BudgetSettings, state: BudgetState, k: PosteKey, todayUnits: number, runsPerDay: number): AllowanceParts {
+  const def = posteDef(k);
+  const p = posteOf(s, k);
+  const alive = def.live && p.on && !state.capReached && !state.capCut.includes(k);
+  const perDay = def.monthlyCredits(p.qty) / DAYS_PER_MONTH;
+  const leftToday = Math.max(0, Math.floor(perDay - todayUnits));
+  const leftMonth = Math.max(0, Math.floor(def.monthlyCredits(p.qty) - state.byPoste[k].units));
+  return {
+    units: Math.min(Math.ceil(perDay / Math.max(1, runsPerDay)), leftToday, leftMonth),
+    capUsd: s.capUsd - state.spentUsd,
+    open: { sc: alive && !TIER_CUT[state.tier].includes(k), tikhub: alive && !TIER_CUT[state.th.tier].includes(k) },
+    balance: { sc: state.balanceLeft ?? Infinity, tikhub: Math.min((TH_FREE_OK[k] ? state.th.allLeft : state.th.paidLeft) ?? Infinity, state.th.dayLeft ?? Infinity) },
+  };
+}
+
+/** Ce que le reste du plafond paie chez ce fournisseur, en unités. */
+export const capUnits = (capUsd: number, provider: Provider): number => Math.max(0, Math.floor(capUsd / priceOf(provider)));
+
+/**
+ * Crédits (unités) qu'un poste a le droit de dépenser MAINTENANT chez `provider` (ScrapeCreators par défaut) : la
+ * part d'un passage (jour ÷ passages), bornée par le reste du jour, le reste de l'enveloppe du mois, le plafond et
+ * le SOLDE réel de ce fournisseur moins sa réserve ; 0 si le poste est éteint, non branché, coupé, ou le plafond
+ * atteint (sous la réserve, seule la sonde de la tâche des relevés part, cf `needsBalanceProbe`).
  */
 export function allowance(
   s: BudgetSettings,
@@ -652,16 +953,17 @@ export function allowance(
   k: PosteKey,
   todayCredits: number,
   runsPerDay: number,
+  provider: Provider = "sc",
 ): number {
-  const def = posteDef(k);
+  const a = allowanceParts(s, state, k, todayCredits, runsPerDay);
+  if (!a.open[provider]) return 0;
+  return Math.min(a.units, capUnits(a.capUsd, provider), a.balance[provider]);
+}
+
+/** Ce qui reste de l'enveloppe du mois d'un poste, en unités (la part d'un rattrapage, cf `catchUpAllowance`). */
+export function monthLeftUnits(s: BudgetSettings, state: BudgetState, k: PosteKey): number {
   const p = posteOf(s, k);
-  if (!def.live || !p.on || state.capReached || state.cut.includes(k)) return 0;
-  const perDay = def.monthlyCredits(p.qty) / DAYS_PER_MONTH;
-  const leftToday = Math.max(0, Math.floor(perDay - todayCredits));
-  const leftMonth = Math.max(0, Math.floor(def.monthlyCredits(p.qty) - state.byPoste[k].credits));
-  const leftCap = Math.max(0, Math.floor((s.capUsd - state.spentUsd) / SC_PRICE_PER_CREDIT));
-  const leftBalance = state.balanceLeft ?? Infinity;
-  return Math.min(Math.ceil(perDay / Math.max(1, runsPerDay)), leftToday, leftMonth, leftCap, leftBalance);
+  return Math.max(0, Math.floor(posteDef(k).monthlyCredits(p.qty) - state.byPoste[k].units));
 }
 
 /**
@@ -669,13 +971,12 @@ export function allowance(
  * jour — 171 apps attendaient (~25 crédits l'app), 3 à 4 jours au rythme du jour. L'enveloppe du mois, le plafond et le
  * solde bornent toujours : la dépense totale ne change pas, elle est avancée.
  */
-export function catchUpAllowance(s: BudgetSettings, state: BudgetState, k: PosteKey): number {
+export function catchUpAllowance(s: BudgetSettings, state: BudgetState, k: PosteKey, provider: Provider = "sc"): number {
   const def = posteDef(k);
   const p = posteOf(s, k);
-  if (!def.live || !p.on || state.capReached || state.cut.includes(k)) return 0;
-  const leftMonth = Math.max(0, Math.floor(def.monthlyCredits(p.qty) - state.byPoste[k].credits));
-  const leftCap = Math.max(0, Math.floor((s.capUsd - state.spentUsd) / SC_PRICE_PER_CREDIT));
-  return Math.min(leftMonth, leftCap, state.balanceLeft ?? Infinity);
+  const a = allowanceParts(s, state, k, 0, 1);
+  if (!def.live || !p.on || !a.open[provider]) return 0;
+  return Math.min(monthLeftUnits(s, state, k), capUnits(a.capUsd, provider), a.balance[provider]);
 }
 
 /**

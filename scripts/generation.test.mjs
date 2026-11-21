@@ -13,7 +13,14 @@ const appPages = pages('src/app/pages');
 
 // ─── Q11 : un lien de canevas sans paramètre ne mène plus à une fiche d'exemple réelle ───
 {
-  const hits = appPages.filter(([, s]) => /\/app\/apps\/astraai|\/app\/createurs\/zinedine\.gsbb|\/app\/videos\/7705929733220994337/.test(s)).map(([f]) => f);
+  // La vidéo d'exemple est lue dans le canevas, jamais écrite ici (dépôt public : scripts/fixtures-publiques.mjs refuse un
+  // identifiant réel dans scripts/). Corrigé le 21/11/2026 : un identifiant synthétique, absent du canevas, rendait Q11
+  // aveugle au lien vers la vraie vidéo d'exemple.
+  const canvas = fs.readFileSync(path.join(root, 'design/app/VideoA.dc.html'), 'utf8');
+  const sample = (canvas.match(/live \? '' : '(\d{15,20})'/) || [])[1];
+  ok(!!sample, 'Q11 : la vidéo d\'exemple du canevas est trouvée (design/app/VideoA.dc.html)');
+  const linksSample = (s) => /\/app\/apps\/astraai|\/app\/createurs\/zinedine\.gsbb/.test(s) || (!!sample && s.includes(`/app/videos/${sample}`));
+  const hits = appPages.filter(([, s]) => linksSample(s)).map(([f]) => f);
   ok(!hits.length, `Q11 : aucun écran ne renvoie vers Astra AI, zinedine.gsbb ou une vidéo d'exemple (${hits.join(', ') || 'aucun'})`);
 }
 
