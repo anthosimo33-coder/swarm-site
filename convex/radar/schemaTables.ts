@@ -583,7 +583,8 @@ export const radarTables = {
     // unité du budget). C'est ce qui prouve, sur les serveurs, ce que le banc n'a mesuré que du poste.
     saved: v.optional(v.record(v.string(), v.number())),
     // Une brique en « mesure » : la page publique ET le payant lus côte à côte, par verdict, facturé ou non. Courbe :
-    // egal, proche, ecart, repli, panne, en VIDÉOS (radarFreeMath.CurveMeasure) ; trou : trou-egal, trou-ecart,
+    // egal, proche, ecart (six compteurs), egal-sans-abonnes, proche-sans-abonnes, ecart-sans-abonnes (cinq : payant
+    // servi par TikHub, abonnés non mesurés), repli, panne, en VIDÉOS (radarFreeMath.CurveMeasure) ; trou : trou-egal, trou-ecart,
     // trou-manque:<page>, trou-paye:<page>, trou-panne, en comptes (radarFreeMath.GapMeasure). La preuve avant une bascule.
     measured: v.optional(v.record(v.string(), v.number())),
   })

@@ -76,7 +76,7 @@ import {
   type Provider,
   type SignalInput,
 } from "./radarSignalsMath";
-import { CURVE_FREE, curveSaved, curveTally, readCurvePages, scRefused, settleCurve, type CurveReason, type FreePage } from "./radarFreeMath";
+import { CURVE_FREE, curveSaved, curveTally, noFansMatch, readCurvePages, scRefused, settleCurve, type CurveMatch, type CurveReason, type FreePage } from "./radarFreeMath";
 import { keptFirst } from "./radarCreatorsMath";
 import { scKeyPresent, scSearchKeyword, scVideoInfo } from "./scrapeCreatorsApi";
 import { TH_ROUTES, thKeyPresent, thSearchKeyword, thVideoInfo, type ThPrices } from "./tikhubApi";
@@ -1344,6 +1344,9 @@ export async function curveInLane(
     } finally {
       const m = tally.measured;
       if (m.egal || m.proche || m.ecart) console.log(`[radar] courbe, mesure de la page : ${m.egal ?? 0} égales, ${m.proche ?? 0} proches, ${m.ecart ?? 0} écarts`);
+      const nf = (k: CurveMatch) => m[noFansMatch(k)] ?? 0;
+      if (nf("egal") || nf("proche") || nf("ecart"))
+        console.log(`[radar] courbe, mesure de la page sans les abonnés (payant TikHub) : ${nf("egal")} égales, ${nf("proche")} proches, ${nf("ecart")} écarts`);
       for (const g of tally.gaps) console.warn(`[radar] courbe, écart page/payant sur ${g.due.videoId} : ${JSON.stringify({ page: g.page, payant: g.paid })}`);
       // Les appels évités : les relevés gratuits qui tiennent dans la part payante du passage (radarFreeMath.curveSaved).
       const spared = curveSaved(tally, paidLeft);

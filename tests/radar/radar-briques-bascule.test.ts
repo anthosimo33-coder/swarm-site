@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RESERVE_MISS_WAIT_MS } from "../../convex/radar/radarFreeMath";
+import { RESERVE_MISS_WAIT_MS, noFansMatch, type CurveMatch } from "../../convex/radar/radarFreeMath";
 import type { CtxCall } from "./action-ctx";
 import { NOW, SC_KEY, SCENARIOS, TH_KEY, comparable, runScenario, type FetchCall } from "./briques-banc";
 
@@ -15,7 +15,8 @@ import { NOW, SC_KEY, SCENARIOS, TH_KEY, comparable, runScenario, type FetchCall
  *  - BASCULE ABSENTE (sans réglage, réglage sans clé, clé sans réglage) : les mêmes appels, les mêmes écritures, les
  *    mêmes saved et measured, à l'identique ;
  *  - BASCULE POSÉE : la porte gratuite d'abord, puis le fournisseur — les mêmes pages publiques lues, les mêmes ratés
- *    retenus, les mêmes appels évités (saved) et la même mesure (measured) que main ; ce que la brique laisse au payant
+ *    retenus, les mêmes appels évités (saved) et la même mesure (measured) que main — celle de la courbe rangée sans
+ *    les abonnés quand TikHub sert le payant (radarFreeMath.CurveMatchNoFans) ; ce que la brique laisse au payant
  *    part chez TikHub ; ce qu'elle décide de ne pas payer n'est payé nulle part ; la réserve de ScrapeCreators ne bloque
  *    pas un poste que TikHub sert (le passage sous la réserve est celui d'un solde large, plus la sonde) ; les
  *    transcriptions, qui restent chez ScrapeCreators, sont celles de main à l'identique.
@@ -76,6 +77,13 @@ function tally(r: Comparable, field: "saved" | "measured" | "reasons", poste: st
   }
   return out;
 }
+/**
+ * La mesure de la courbe telle qu'elle doit se lire quand TikHub sert le payant (radarFreeMath.CurveMatchNoFans) : les
+ * mêmes verdicts que main sur une page lue, rangés à part — cinq compteurs comparés, les abonnés non mesurés. Vrai ici
+ * parce que les six compteurs du banc sont égaux : cinq le sont aussi.
+ */
+const noFans = (t: Record<string, number>): Record<string, number> =>
+  Object.fromEntries(Object.entries(t).map(([k, n]) => [["egal", "proche", "ecart"].includes(k) ? noFansMatch(k as CurveMatch) : k, n]));
 /** Les comptes relevés en payant (handle chez ScrapeCreators, unique_id chez TikHub), triés. */
 const paidHandles = (r: Comparable, keep: (url: string) => boolean) =>
   fetchesOf(r)
@@ -172,7 +180,11 @@ describe("bascule posée : une brique évite toujours le payant ; la réserve de
     const main = ref("releves:solde-large");
     expect(urls(got, isFree)).toEqual(urls(main, isFree));
     for (const name of ["radarNetworks:holdFreeMisses", "radarNetworks:markGapChecked", "radarNetworks:deferAccounts", "radarNetworks:noteFreeRun"]) expect(args(got, name)).toEqual(args(main, name));
-    for (const poste of ["tiktok", "curve"]) for (const field of ["saved", "measured", "reasons"] as const) expect(tally(got, field, poste), `${poste} ${field}`).toEqual(tally(main, field, poste));
+    for (const field of ["saved", "measured", "reasons"] as const) expect(tally(got, field, "tiktok"), `tiktok ${field}`).toEqual(tally(main, field, "tiktok"));
+    // La courbe : les mêmes relevés évités et la même mesure, celle-ci rangée sans les abonnés (TikHub ne les mesure pas).
+    expect(tally(got, "saved", "curve")).toEqual(tally(main, "saved", "curve"));
+    expect(tally(main, "measured", "curve")).toEqual({ egal: 1, repli: 1 });
+    for (const field of ["measured", "reasons"] as const) expect(tally(got, field, "curve"), `curve ${field}`).toEqual(noFans(tally(main, field, "curve")));
     // Ce que les briques laissent au payant : les mêmes comptes et les mêmes vidéos que main, chez TikHub.
     expect(urls(got, isSc)).toEqual([]);
     expect(paidHandles(got, isThPaid)).toEqual(paidHandles(main, isSc));
@@ -191,8 +203,9 @@ describe("bascule posée : une brique évite toujours le payant ; la réserve de
     expect(args(got, "radarNetworks:holdFreeMisses")).toEqual(args(large, "radarNetworks:holdFreeMisses"));
     expect(args(got, "radarNetworks:markGapChecked")).toEqual(args(large, "radarNetworks:markGapChecked"));
     expect(Number(args(got, "radarSignals:dueCurve")[0]?.limit)).toBeGreaterThan(0);
-    for (const field of ["saved", "measured"] as const) for (const poste of ["tiktok", "curve"]) expect(tally(got, field, poste), `${poste} ${field}`).toEqual(tally(large, field, poste));
-    expect(tally(got, "reasons", "curve")).toEqual(tally(large, "reasons", "curve"));
+    for (const field of ["saved", "measured"] as const) expect(tally(got, field, "tiktok"), `tiktok ${field}`).toEqual(tally(large, field, "tiktok"));
+    expect(tally(got, "saved", "curve")).toEqual(tally(large, "saved", "curve"));
+    for (const field of ["measured", "reasons"] as const) expect(tally(got, field, "curve"), `curve ${field}`).toEqual(noFans(tally(large, field, "curve")));
     expect(tally(got, "reasons", "tiktok")).toEqual({ ...tally(large, "reasons", "tiktok"), sonde: 1 });
     expect(paidHandles(got, isThPaid)).toEqual(paidHandles(large, isSc));
     expect(paidVideos(got, isThPaid)).toEqual(paidVideos(large, isSc));

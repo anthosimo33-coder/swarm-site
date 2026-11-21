@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { claimFallback, curveInLane, runCurve, type JobState } from "../../convex/radar/radarSignals";
 import { DEFAULT_BUDGET, budgetState, type BudgetState } from "../../convex/radar/radarSignalsMath";
-import { RESERVE_MISS_WAIT_MS, curveMatch, type CurveCounts, type FreePage } from "../../convex/radar/radarFreeMath";
+import { RESERVE_MISS_WAIT_MS, curveMatch, settleCurve, type CurveCounts, type CurvePaid, type FreePage } from "../../convex/radar/radarFreeMath";
 import { jobBudget, reserveFor, tikhubJobs } from "../../convex/radar/radarProviders";
 import { runAccountReads, runNetworkSearch } from "../../convex/radar/radarNetworks";
 import { runTranscripts } from "../../convex/radar/radarSources";
@@ -169,16 +169,36 @@ describe("Fusion — la courbe dans la voie paie chez le fournisseur réglé (cu
     expect(applied).toEqual([{ id: "radarSignals_0", video: TH_COUNTS, now: NOW, fansUnknown: true }]);
   });
 
-  it("la mesure côte à côte ne compte pas les abonnés à 0 de TikHub comme un écart : non mesurés, pas nuls", async () => {
+  it("la mesure côte à côte ne compte pas les abonnés à 0 de TikHub comme un écart : non mesurés, pas nuls — et rangée à part", async () => {
     setEnv("curve");
     const { rec } = await lane(jobStateFor(), [TH_VIDEO], [curvePage()]);
-    // Les cinq compteurs de la vidéo sont ceux de la page, au même instant : « egal ».
-    expect(rec[0].measured).toEqual({ egal: 1 });
-    expect(rec[0].reasons).toEqual({ egal: 1 });
+    // Les cinq compteurs de la vidéo sont ceux de la page, au même instant : « egal », sans les abonnés.
+    expect(rec[0].measured).toEqual({ "egal-sans-abonnes": 1 });
+    expect(rec[0].reasons).toEqual({ "egal-sans-abonnes": 1 });
     // La règle elle-même : sans le drapeau, les 5 000 abonnés de la page contre les 0 de TikHub font un écart.
     const page = { kind: "read" as const, counts: { ...TH_COUNTS, authorFans: 5_000 } };
     expect(curveMatch(page, TH_COUNTS)).toBe("ecart");
     expect(curveMatch(page, TH_COUNTS, true)).toBe("egal");
+  });
+
+  // Les nombres de radarUsage.measured doivent décider la bascule CURVE_FREE : chaque clé garde UNE définition. Un relevé
+  // servi par TikHub ne compare que cinq compteurs (ses abonnés ne sont pas mesurés) : il est rangé à part
+  // (`…-sans-abonnes`). Corrigé le 21/11/2026 : il tombait sous egal/proche/ecart, avec les mesures à six compteurs de
+  // ScrapeCreators — une page aux abonnés en retard y comptait comme un accord, sans trace d'écart.
+  it("une page aux abonnés en retard : « ecart » chez ScrapeCreators ; chez TikHub, une mesure à part, jamais un « egal »", async () => {
+    const counts: CurveCounts = { authorFans: 106_123, views: 50_000, likes: 4_200, comments: 310, shares: 120, saves: 900 };
+    const page = { kind: "read" as const, counts: { ...counts, authorFans: 98_000 } };
+    const due = { videoId: TH_VIDEO, handle: "auteur_17" };
+    const settle = (paid: CurvePaid) => settleCurve([{ due, verdict: page }], { paid: async () => paid, apply: async () => undefined }, { free: false, paidLeft: 5 });
+    const sc = await settle({ ok: true, counts, credits: 1 });
+    expect(sc.measured).toEqual({ ecart: 1 });
+    expect(sc.gaps).toHaveLength(1);
+    const th = await settle({ ok: true, counts: { ...counts, authorFans: 0 }, credits: 1, fansUnknown: true });
+    expect(th.measured).toEqual({ "egal-sans-abonnes": 1 });
+    expect(th.reasons).toEqual({ "egal-sans-abonnes": 1 });
+    // Une vidéo partie pour la page et pour TikHub : rien de compté sans les abonnés, la mesure est la même partout.
+    const gone = await settleCurve([{ due, verdict: { kind: "gone", why: "private" } }], { paid: async () => ({ ok: true, counts: null, credits: 1 }), apply: async () => undefined }, { free: false, paidLeft: 5 });
+    expect(gone.measured).toEqual({ egal: 1 });
   });
 
   it("ScrapeCreators sous la réserve, TikHub ouvert : la voie prend la courbe et la paie chez TikHub (la réserve de ScrapeCreators ne la bloque pas)", async () => {
@@ -188,7 +208,7 @@ describe("Fusion — la courbe dans la voie paie chez le fournisseur réglé (cu
     expect(due).toHaveLength(1);
     expect(Number(due[0].args.limit)).toBeGreaterThan(0);
     expect(thHits(net, TH_ROUTES.video)).toHaveLength(1);
-    expect(rec[0]).toMatchObject({ credits: 0, thCalls: 1, measured: { egal: 1 } });
+    expect(rec[0]).toMatchObject({ credits: 0, thCalls: 1, measured: { "egal-sans-abonnes": 1 } });
   });
 
   // Comme runCurve (radar-tikhub-jobs, « le coupe-circuit ne garde dues que les vidéos qu'il a empêché de partir ») :
@@ -218,7 +238,7 @@ describe("Fusion — la courbe dans la voie paie chez le fournisseur réglé (cu
       ["radarSignals_1", "relevé"],
       ["radarSignals_0", null],
     ]);
-    expect(rec[0]).toMatchObject({ errors: 1, measured: { panne: 1, egal: 1 } });
+    expect(rec[0]).toMatchObject({ errors: 1, measured: { panne: 1, "egal-sans-abonnes": 1 } });
   });
 
   it("la part de la voie est celle de TikHub : un millième de dollar, porte de repli fermée — une vidéo prise, relevée chez TikHub, aucune chez ScrapeCreators", async () => {
@@ -231,7 +251,7 @@ describe("Fusion — la courbe dans la voie paie chez le fournisseur réglé (cu
     expect(thHits(net, TH_ROUTES.video)).toHaveLength(1);
     expect(scHits(net)).toHaveLength(0);
     expect(applied.map((a) => a.id)).toEqual(["radarSignals_0"]);
-    expect(rec[0]).toMatchObject({ calls: 1, errors: 0, thCalls: 1, measured: { egal: 1 } });
+    expect(rec[0]).toMatchObject({ calls: 1, errors: 0, thCalls: 1, measured: { "egal-sans-abonnes": 1 } });
     expect(rec[0].lastError).toBeUndefined();
   });
 

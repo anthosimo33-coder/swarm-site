@@ -987,7 +987,7 @@ export const trialPlan = (listed: readonly FreeListed[], now: number): FreeListe
  * Le code de la bascule est là et testé. Tant que CURVE_FREE est faux, chaque vidéo due est lue sur sa page PUIS au
  * payant, le payant est rangé comme avant, et l'accord des deux est compté EN VIDÉOS dans radarUsage.measured du poste
  * « curve », même quand le payant n'a rien facturé (cf CurveMeasure) : egal, proche, ecart (écrit au journal), repli,
- * panne. Basculer — et accepter des courbes arrondies à la centaine, à la centaine de milliers au-delà du million — se
+ * panne — et, payant servi par TikHub (abonnés non mesurés), les trois premiers « -sans-abonnes », à part. Basculer — et accepter des courbes arrondies à la centaine, à la centaine de milliers au-delà du million — se
  * décidera sur ces nombres, servis aux serveurs. À la bascule, aligner aussi le poste « curve » de l'écran du budget :
  * son curseur va jusqu'à 400 vidéos/jour et sa projection compte 3 crédits par vidéo, quand la courbe relevée sur la
  * page n'en admet que CURVE_ADMISSIONS_MAX (radarSignalsMath.curveAdmissionsLeft) et ne paie que ses replis.
@@ -1137,14 +1137,24 @@ export type CurvePaid = { ok: true; counts: CurveCounts | null; credits: number;
  */
 export const scRefused = (error: string): boolean => /^HTTP 4\d\d\b/.test(error) && !/^HTTP (402|429)\b/.test(error);
 
+/**
+ * Le verdict d'une page lue contre un payant qui ne mesure pas les abonnés de l'auteur (TikHub, `fansUnknown`) : cinq
+ * compteurs comparés, pas six. Rangé À PART (21/11/2026) : sous egal / proche / ecart, avec les mesures à six compteurs
+ * de ScrapeCreators, il mêlait deux définitions dans les nombres qui doivent décider CURVE_FREE — une page aux abonnés en
+ * retard (98 000 contre 106 123) y comptait comme un accord, quand ScrapeCreators l'aurait dite « ecart ». Non mesuré
+ * n'est ni nul ni égal : les abonnés de la page, que la bascule rangerait, n'y sont pas vérifiés.
+ */
+export type CurveMatchNoFans = `${CurveMatch}-sans-abonnes`;
+export const noFansMatch = (m: CurveMatch): CurveMatchNoFans => `${m}-sans-abonnes`;
 /** Pourquoi un relevé payant de courbe est parti (radarUsage.reasons du poste « curve », en crédits) : la mesure (cf CURVE_FREE), repli ; retard : runCurve. */
-export type CurveReason = CurveMatch | "repli" | "retard";
+export type CurveReason = CurveMatch | CurveMatchNoFans | "repli" | "retard";
 /**
  * La mesure côte à côte, EN VIDÉOS (radarUsage.measured du poste « curve »), facturée ou non : egal / proche / ecart
- * (la page contre le payant, cf curveMatch ; « partie » des deux côtés : egal), repli (la page n'aurait pas suffi : le
- * payant serait parti de toute façon), panne (le payant n'a rien dit : pas de mesure).
+ * (la page contre le payant, les six compteurs, cf curveMatch ; « partie » des deux côtés : egal), les mêmes
+ * `…-sans-abonnes` quand le payant ne mesure pas les abonnés (cinq compteurs, cf CurveMatchNoFans), repli (la page
+ * n'aurait pas suffi : le payant serait parti de toute façon), panne (le payant n'a rien dit : pas de mesure).
  */
-export type CurveMeasure = CurveMatch | "repli" | "panne";
+export type CurveMeasure = CurveMatch | CurveMatchNoFans | "repli" | "panne";
 
 export type CurveTally<D> = {
   /** Relevés gratuits rangés (la page seule, CURVE_FREE). Les appels évités en sont une part : cf curveSaved. */
@@ -1212,8 +1222,11 @@ export async function settleCurve<D>(
     const fansUnknown = r.ok ? r.fansUnknown : undefined;
     const panne = !r.ok && !r.refused;
     const match = verdict.kind === "paid" || panne ? null : curveMatch(verdict, counts, fansUnknown === true);
-    measure(verdict.kind === "paid" ? "repli" : (match ?? "panne"));
-    const reason: CurveReason = match ?? "repli";
+    // Une page lue contre un payant sans abonnés : cinq compteurs, une autre mesure, rangée à part (cf CurveMatchNoFans).
+    // Une vidéo « partie » ne compare aucun compteur : la même mesure chez l'un et l'autre fournisseur.
+    const key = match && fansUnknown === true && verdict.kind === "read" ? noFansMatch(match) : match;
+    measure(verdict.kind === "paid" ? "repli" : (key ?? "panne"));
+    const reason: CurveReason = key ?? "repli";
     if (r.credits > 0) out.reasons[reason] = (out.reasons[reason] ?? 0) + r.credits;
     if (match === "ecart") out.gaps.push({ due, page: verdict, paid: counts });
     // Au pire un relevé manqué, jamais une boucle qui repaie la même vidéo (comme avant).
