@@ -9,21 +9,31 @@
 //      · toutes les fixtures (tests/radar/fixtures, enregistrements des bancs compris) : aucun hôte hors de
 //        `FIXTURE_HOSTS`, aucun hôte de média (`isMediaHost`) ; et LE MONDE CLOS (21/11/2026) : chaque mot de chaque
 //        chaîne (clés hors schéma comprises, adresses décodées) est un mot que le code, les tests et les scripts du
-//        Radar écrivent eux-mêmes (`vocabulary`), un mot de remplissage ou protégé, ou de forme synthétique ; chaque
-//        nombre de 15 chiffres ou plus est de forme synthétique (`synthNumber`). Un enregistrement de banc ne porte que
-//        ce que ses entrées portent ; refait sur des réponses réelles, ses pseudos, identifiants et textes y sont
-//        inconnus. Corrigé le 21/11/2026 : pseudos, uid, identifiants, textes et dates n'étaient jugés que dans les
-//        sous-dossiers — un enregistrement refait sur des réponses réelles débarrassées de leurs CDN passait la CI ;
+//        Radar écrivent eux-mêmes (`vocabulary`), un mot de remplissage ou protégé, de forme synthétique, ou un mot que
+//        le code COMPOSE (`codeShapes` : un morceau de gabarit et un numéro, l'identifiant d'un document, des morceaux
+//        que le code nomme comme identifiants) — jamais des morceaux du vocabulaire mis bout à bout ; chaque nombre de
+//        15 chiffres ou plus est de forme synthétique (`synthNumber`). Les enregistrements des bancs (racine), en plus :
+//        un texte est du remplissage ou un texte que le code écrit (`codeText`), un pseudo est synthétique ou écrit par
+//        le code (`rootFindings`). Un enregistrement de banc ne porte que ce que ses entrées portent ; refait sur des
+//        réponses réelles, ses pseudos, identifiants et textes y sont inconnus — à un reste mesuré près, sur l'export des
+//        comptes suivis : 89 des 7 931 pseudos réels (un mot que le code écrit tel quel, un mot du remplissage, des
+//        morceaux qu'il nomme), 84 des 13 932 légendes réelles distinctes (des mots courts, des chaînes du code mises
+//        bout à bout). Corrigé le 21/11/2026 : pseudos, uid, identifiants, textes et dates n'étaient jugés que dans les
+//        sous-dossiers — un enregistrement refait sur des réponses réelles débarrassées de leurs CDN passait la CI ; et
+//        des morceaux du vocabulaire, commentaires compris, composaient 829 de ces pseudos et 657 de ces légendes ;
 //      · réponses enregistrées (sous-dossiers : sc/, tikhub/), en plus : pseudos, noms, uid, sec_uid, identifiants de
 //        vidéo, de son et de hashtag de forme synthétique (`SYNTH`), textes (`TEXT_KEYS`) faits des seuls mots de
 //        remplissage (`FILLER`) ou protégés (`PROTECTED`) ;
 //      · code et tests du Radar (`SCOPE`) : aucune adresse de média réelle (un chemin signé : `longMediaUrl`), aucun
 //        sec_uid réel, aucun identifiant de vidéo, de son ou de compte de forme réelle (17 à 20 chiffres,
-//        `synthNumber`), aucune mention balisée de TikHub (`<m id=…>@…</m>`) d'un pseudo non synthétique ; et dans le
-//        code du Radar et ses bancs (`RADAR_CODE`), aucun pseudo de forme réelle (`handleShaped`) que les comptes de
-//        départ et les verdicts relus ne déclarent pas (`PUBLIC_HANDLE_SOURCES`). Corrigé le 21/11/2026 : seuls les
-//        chemins signés et les sec_uid y étaient cherchés. Les légendes du code, et les pseudos des tests, ne se jugent
-//        pas sur leur forme : la contre-épreuve les compare.
+//        `synthNumber`, ni leur début complété par un gabarit), aucune valeur de requête d'adresse de partage en clair,
+//        aucune mention balisée de TikHub (`<m id=…>@…</m>`) d'un pseudo non synthétique ; et dans le code du Radar et
+//        ses bancs (`RADAR_CODE`), aucune MENTION (« @… », de toute forme) ni chaîne entière de la forme d'un pseudo
+//        (`handleShaped`, sans chiffre exigé) que les comptes de départ et les verdicts relus ne déclarent pas
+//        (`PUBLIC_HANDLE_SOURCES`), hors marques et motifs publics cités (`CITED_PUBLIC`), mots du code et sites.
+//        Corrigé le 21/11/2026 : seuls les chemins signés et les sec_uid y étaient cherchés, puis seuls les pseudos à
+//        chiffre et point ou souligné, sans fin en .app (10,8 % des pseudos réels). Les légendes du code, et les
+//        pseudos des tests, ne se jugent pas sur leur forme : la contre-épreuve les compare.
 //  - L'ANONYMISEUR (--anonymise) : réécrit des réponses enregistrées sous cette forme, avec un tirage neuf à chaque
 //    passage (jamais gardé), PAR DÉFAUT (21/11/2026) : une valeur sous une clé qu'il ne connaît pas est réécrite comme
 //    un texte (mots hors du vocabulaire du code remplacés, longs nombres inventés, dates déplacées) — une liste fermée
@@ -50,6 +60,7 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const SELF = fileURLToPath(import.meta.url);
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -113,9 +124,11 @@ export const SYNTH = {
  * Les clés connues des réponses. Le contrôle et l'anonymiseur n'en dépendent plus pour être sûrs (le monde clos, la
  * réécriture par défaut) : elles disent la forme attendue. Ajoutées le 21/11/2026, relevées dans les réponses du banc :
  * handle, nick_name, search_user_name, mixed_author, author (d'un son), share_title, share_desc, share_desc_info,
- * search_user_desc, poi_name, city_name, ins_id (un pseudo Instagram), mid, song_id, cid, impr_id, logid.
+ * search_user_desc, poi_name, city_name, ins_id (un pseudo Instagram), mid, song_id, cid, impr_id, logid ; le
+ * 21/11/2026 encore, relevées dans les réponses brutes : ig_username, userUniqueId (des pseudos), keyword, word,
+ * search_cha_name (le terme cherché : un texte).
  */
-export const HANDLE_KEYS = ['unique_id', 'owner_handle', 'uniqueId', 'username', 'authorUniqueId', 'author_unique_id', 'handle', 'ins_id'];
+export const HANDLE_KEYS = ['unique_id', 'owner_handle', 'uniqueId', 'username', 'authorUniqueId', 'author_unique_id', 'handle', 'ins_id', 'ig_username', 'userUniqueId'];
 export const NAME_KEYS = ['nickname', 'full_name', 'author_name', 'authorName', 'owner_nickname', 'nick_name', 'search_user_name', 'mixed_author', 'author'];
 export const UID_KEYS = ['uid', 'user_id', 'author_id', 'authorId', 'owner_id'];
 export const SEC_KEYS = ['sec_uid', 'secUid', 'author_sec_uid'];
@@ -137,7 +150,7 @@ export const synthNumber = (id) => synthId(id) || SYNTH.uid.test(id) || /0{6}/.t
 /** Les champs de texte libre d'une réponse (légendes, texte incrusté, titres de sons, hashtags, partages, lieux). */
 export const TEXT_KEYS = [
   'desc', 'content_desc', 'markup_text', 'text_info', 'title', 'hashtag_name', 'cha_name', 'caption', 'text',
-  'share_title', 'share_desc', 'share_desc_info', 'search_user_desc', 'poi_name', 'city_name',
+  'share_title', 'share_desc', 'share_desc_info', 'search_user_desc', 'poi_name', 'city_name', 'keyword', 'word', 'search_cha_name',
 ];
 
 /**
@@ -207,7 +220,8 @@ export const wordsOf = (s) => (readable(String(s)).normalize('NFKC').toLowerCase
 
 /**
  * LE VOCABULAIRE DU CODE : les mots que le code, les tests et les scripts du Radar écrivent eux-mêmes (`scope`, hors
- * fixtures) — eux-mêmes contrôlés (`scanCode`), et ce que les enregistrements des bancs peuvent reproduire.
+ * fixtures) — eux-mêmes contrôlés (`scanCode`), et ce que les enregistrements des bancs peuvent reproduire. Il porte
+ * aussi les FORMES que le code compose (`shapes`, cf `codeShapes`) : un mot composé n'est connu que par elles.
  */
 export function vocabulary(root = ROOT, scope = SCOPE) {
   const out = new Set();
@@ -223,29 +237,155 @@ export function vocabulary(root = ROOT, scope = SCOPE) {
       }
     }
   }
+  out.shapes = codeShapes(root, scope);
   return out;
 }
 
-/** Un mot fait de morceaux de remplissage ou protégés, et de chiffres (moins de 15 d'un tenant). */
-const fillerish = (w) => (w.match(/\p{L}[\p{L}\p{M}]*|\d+/gu) ?? []).every((p) => (/^\d+$/.test(p) ? p.length < 15 || synthNumber(p) : fillerWord(p)));
-/** Un mot que le code écrit, suivi d'un numéro (« nouveau1 », « remise1164 », un identifiant d'un banc suivi de son rang) ou précédé d'un court préfixe (« id » + « lumiq »). */
-const templated = (w, vocab) => (/\d{1,4}$/.test(w) && vocab.has(w.replace(/\d{1,4}$/, ''))) || (/^[a-z]{1,2}[a-z]{4,}$/.test(w) && [1, 2].some((n) => vocab.has(w.slice(n))));
-/** Les identifiants de documents de la base en mémoire des tests (« radarApps_c49eb5fd », « radarTracked_w00001 »). */
-const MEMORY_ID = /^(?:[0-9a-f]{8}|w\d{5})$/;
+const CODE_FILE = /\.(?:[cm]?[jt]s|tsx)$/;
+/**
+ * LES FORMES QUE LE CODE COMPOSE (21/11/2026), lues dans l'arbre syntaxique (TypeScript) du code, des tests et des
+ * scripts du Radar :
+ *  - `frags` : les morceaux de texte qu'un gabarit colle à une valeur (`jugee${i}`, `${slug}_fan${i}`, `site${i}.com`,
+ *    `uid_${h}` : « jugee », « _fan », « site », « .com », « uid_ ») — au moins deux caractères, dont une lettre ou un
+ *    chiffre : un séparateur seul (le « _ » de `${table}_${id}`) ne compose rien ;
+ *  - `idents` : les identifiants du code (noms de variables, de fonctions, de champs), et leurs morceaux (« status_msg »,
+ *    « fetchOneVideo » : status, msg, fetch, one, video) — jamais une chaîne ni un commentaire, qui citent des pseudos ;
+ *  - `tables` : les tables de la base (`nom: defineTable(` : « radarapps », pour les identifiants de documents des bancs
+ *    `radarApps_…`) ;
+ *  - `texts` : les textes que le code écrit — chaque chaîne, chaque morceau de gabarit, en suite de mots (`wordsOf`).
+ */
+export function codeShapes(root = ROOT, scope = SCOPE) {
+  const frags = new Set();
+  const heads = new Set();
+  const idents = new Set();
+  const tables = new Set();
+  const texts = new Set();
+  let textMax = 1;
+  const text = (t) => {
+    const w = wordsOf(t);
+    if (!w.length) return;
+    texts.add(w.join(' '));
+    textMax = Math.max(textMax, w.length);
+  };
+  const keep = (f, head) => {
+    const x = f.normalize('NFKC').toLowerCase();
+    if (x.length < 2 || !/[\p{L}\p{N}]/u.test(x)) return;
+    frags.add(x);
+    if (head) heads.add(x);
+  };
+  const visit = (node) => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) text(node.text);
+    if (ts.isTemplateExpression(node)) {
+      const parts = [node.head.text, ...node.templateSpans.map((sp) => sp.literal.text)];
+      parts.forEach(text);
+      parts.forEach((p, k) => {
+        // Devant un « ${ » ; en tête de mot (après une espace, ou au début du gabarit), c'est un préfixe (`id${slug}`).
+        if (k < parts.length - 1) {
+          const m = p.match(/[\p{L}\p{N}_.]*$/u)[0];
+          keep(m, m.length === p.length ? k === 0 : !/[\p{L}\p{N}_.]/u.test(p[p.length - m.length - 1]));
+        }
+        if (k > 0) keep(p.match(/^[\p{L}\p{N}_.]*/u)[0], false);
+      });
+    } else if (ts.isIdentifier(node) || ts.isPrivateIdentifier(node)) {
+      const t = node.text.replace(/^#/, '');
+      idents.add(t.toLowerCase());
+      for (const p of t.split(/_|(?<=[a-z0-9])(?=[A-Z])/)) if (p) idents.add(p.toLowerCase());
+    }
+    ts.forEachChild(node, visit);
+  };
+  for (const d of scope) {
+    let all;
+    try { all = files(join(root, d)); } catch { continue; }
+    for (const f of all.filter((x) => CODE_FILE.test(x) && !isFixture(x) && !x.includes(`${sep}node_modules${sep}`))) {
+      const kind = /\.tsx$/.test(f) ? ts.ScriptKind.TSX : /\.[cm]?ts$/.test(f) ? ts.ScriptKind.TS : ts.ScriptKind.JS;
+      visit(ts.createSourceFile(f, readFileSync(f, 'utf8'), ts.ScriptTarget.Latest, false, kind));
+    }
+  }
+  for (const f of ['convex/schema.ts', 'convex/radar/schemaTables.ts']) {
+    let text;
+    try { text = readFileSync(join(root, f), 'utf8'); } catch { continue; }
+    for (const m of text.matchAll(/^\s*([A-Za-z]\w*):\s*defineTable\(/gm)) tables.add(m[1].toLowerCase());
+  }
+  return { frags, heads, idents, tables, texts, textMax };
+}
 
 /**
- * Un mot connu du monde clos : court (moins de 4 caractères), du vocabulaire du code, de remplissage ou protégé, de
- * forme synthétique, ou fait de tels morceaux (séparés par des points ou des soulignés). Un nombre de 15 chiffres ou
- * plus doit être de forme synthétique (`synthNumber`) ou écrit par le code.
+ * Un mot fait de morceaux de remplissage ou protégés, et de chiffres (moins de 15 d'un tenant). Mêlé de chiffres, chaque
+ * morceau de lettres est un morceau du remplissage quelle que soit sa longueur (corrigé le 21/11/2026 : moins de 4
+ * lettres suffisaient, un prénom court suivi d'une année passait).
  */
-export function knownWord(w, vocab) {
-  if (w.length < 4 || vocab.has(w) || templated(w, vocab)) return true;
+const fillerStrict = (p) => {
+  const lower = p.toLowerCase();
+  if (PROTECTED.has(lower) || PROTECTED.has(p)) return true;
+  const plain = [...lower].map((c) => (isAsciiLower(c) ? c : unastral(c))).join('');
+  return plain.length === [...lower].length && FILLER.includes(plain);
+};
+const fillerish = (w) => {
+  const pieces = w.match(/\p{L}[\p{L}\p{M}]*|\d+/gu) ?? [];
+  const mixed = pieces.some((p) => /^\d+$/.test(p)) && pieces.some((p) => !/^\d+$/.test(p));
+  return pieces.every((p) => (/^\d+$/.test(p) ? p.length < 15 || synthNumber(p) : mixed ? fillerStrict(p) : fillerWord(p)));
+};
+/** Les identifiants de documents de la base en mémoire des tests (« radarApps_c49eb5fd », « radarTracked_w00001 »). */
+const MEMORY_ID = /^(?:[0-9a-f]{8}|w\d{5})$/;
+/** Un nom de fichier à numéro (« 800.jpeg », une couverture à sa taille) : un nombre et une extension de média ou de données. */
+const NUMBERED_FILE = /^\d+\.(?:jpe?g|heic|png|webp|gif|mp4|mp3|webm|json|jsonl|txt)$/;
+
+/**
+ * Un mot qui n'est pas composé : court (moins de 4 caractères), écrit tel quel par le code, de remplissage ou
+ * protégé, de forme synthétique, un nombre (15 chiffres ou plus : de forme synthétique) ou un nom de fichier à numéro.
+ */
+function atomWord(w, vocab) {
+  if (w.length < 4 || vocab.has(w)) return true;
   if (/^\d+$/.test(w)) return w.length < 15 || synthNumber(w);
   if (/^\d+(?:\.\d+)?e?$/.test(w)) return true; // un nombre à virgule (un calcul), « 4.99e-05 » compris
   // Le préfixe public de tout sec_uid, et les marques des formes inventées (« synthetique », « temoin »).
-  if (SYNTH.handle.test(w) || fillerish(w) || w === 'ms4wljabaaaa' || /^(?:synthetique|temoin)[a-z0-9]*$/.test(w)) return true;
-  const parts = w.split(/[._]/).filter(Boolean);
-  return parts.length > 1 && parts.every((p) => p.length < 4 || vocab.has(p) || templated(p, vocab) || MEMORY_ID.test(p) || fillerish(p) || (/^\d+$/.test(p) && (p.length < 15 || synthNumber(p))));
+  return SYNTH.handle.test(w) || fillerish(w) || w === 'ms4wljabaaaa' || /^(?:synthetique|temoin)[a-z0-9]*$/.test(w) || NUMBERED_FILE.test(w);
+}
+
+/**
+ * Un mot que le code compose (cf `codeShapes`) : un morceau de gabarit collé à un numéro ou à un mot connu, devant,
+ * derrière ou entre deux (« jugee6 », « site16.com », « jugee6_fan12 », « uid_nouveau1 ») ; l'identifiant d'un document
+ * d'une table (« radarapps_b54cda26 », « radartracked_compte_mort ») ; ou des morceaux joints par des points ou des
+ * soulignés que le code nomme tous comme identifiants (« status_msg », « fetch_one_video », « not_found »).
+ * Corrigé le 21/11/2026 : un mot du vocabulaire suivi d'au plus 4 chiffres, ou fait de morceaux du vocabulaire joints
+ * par des points ou des soulignés, était connu — 829 des 7 931 pseudos réels de l'export des comptes suivis, absents de
+ * main, passaient (un prénom et un mot joints d'un point ou d'un souligné, un prénom suivi d'une année : formes
+ * inventées au test, toutes admises). Le vocabulaire porte les mots des commentaires et des titres de tests : ses
+ * morceaux composent presque tout pseudo ; les gabarits et les identifiants, eux, ne composent que ce que le code écrit.
+ */
+function composedWord(w, vocab, depth = 0) {
+  const sh = vocab.shapes;
+  if (!sh || depth > 4) return false;
+  const piece = (x) => x === '' || /^\d{1,6}$/.test(x) || atomWord(x, vocab) || composedWord(x, vocab, depth + 1);
+  const doc = w.match(/^([a-z][a-z0-9]*)_(.+)$/);
+  if (doc && sh.tables.has(doc[1]) && (MEMORY_ID.test(doc[2]) || piece(doc[2]))) return true;
+  const parts = w.split(/[._]/);
+  if (parts.length > 1 && parts.every((p) => p !== '' && ((/^\d+$/.test(p) && p.length < 15) || sh.idents.has(p)))) return true;
+  // Un morceau court (2 ou 3 caractères : « id », « app », « st ») ne compose qu'avec un numéro, ou, préfixe en tête de
+  // mot (`id${slug}`), devant un mot que le code écrit tel quel : collé à n'importe quel mot, il en composerait trop
+  // (193 des pseudos réels de l'export).
+  const digitsOnly = (x) => /^\d{0,6}$/.test(x);
+  for (const f of sh.frags) {
+    if (f.length >= w.length) continue;
+    for (let at = w.indexOf(f); at >= 0; at = w.indexOf(f, at + 1)) {
+      const left = w.slice(0, at);
+      const right = w.slice(at + f.length);
+      const ok =
+        f.length >= 4
+          ? piece(left) && piece(right)
+          : (digitsOnly(left) && digitsOnly(right)) || (at === 0 && sh.heads.has(f) && right.length >= 4 && vocab.has(right));
+      if (ok) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Un mot connu du monde clos : un mot qui n'est pas composé (`atomWord`), ou un mot que le code compose
+ * (`composedWord`). Un nombre de 15 chiffres ou plus doit être de forme synthétique (`synthNumber`) ou écrit par le code.
+ */
+export function knownWord(w, vocab) {
+  return atomWord(w, vocab) || composedWord(w, vocab);
 }
 /** Une chaîne qui est un document JSON : ses chaînes sont lues une à une (cf `strings`), pas son texte échappé. */
 const isJsonDoc = (s) => {
@@ -255,6 +395,56 @@ const isJsonDoc = (s) => {
 };
 /** Une clé de schéma (lettres, chiffres et soulignés, une lettre d'abord) : le nom d'un champ, jamais une valeur. */
 const SCHEMA_KEY = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
+
+/**
+ * Un texte que le code écrit (cf `codeShapes`) : une suite de textes du code mis bout à bout (une chaîne entière, un
+ * morceau de gabarit), et de mots seuls qu'un gabarit y colle — un nombre, un mot de remplissage ou protégé, un pseudo
+ * synthétique, un mot que le code compose (« lien sur monsite.io » + « lumiq » + « vidéo » + « 12 »). Rejoué le
+ * 21/11/2026 sur les 13 932 légendes réelles distinctes des exports : 84 passent (0,6 %), 27 avec deux mots de quatre
+ * lettres ou plus ; les mots seuls du vocabulaire en laissaient passer 657.
+ */
+export function codeText(s, vocab) {
+  const sh = vocab.shapes;
+  const w = wordsOf(s);
+  if (!sh) return false;
+  const single = (x) => /^\d+$/.test(x) || fillerWord(x) || SYNTH.handle.test(x) || sh.texts.has(x) || composedWord(x, vocab);
+  const ok = new Array(w.length + 1).fill(false);
+  ok[0] = true;
+  for (let i = 0; i < w.length; i++) {
+    if (!ok[i]) continue;
+    if (single(w[i])) ok[i + 1] = true;
+    for (let j = i + 2; j <= Math.min(w.length, i + sh.textMax); j++) if (!ok[j] && sh.texts.has(w.slice(i, j).join(' '))) ok[j] = true;
+  }
+  return ok[w.length];
+}
+
+/** Les clés de texte et de pseudo d'un enregistrement de banc (les entrées des tâches : arguments, réponses servies). */
+const ROOT_TEXT_KEYS = [...TEXT_KEYS, 'hook', 'musicTitle', 'bio', 'authorBio', ...BIO_KEYS, 'texts', 'transcript', 'transcription'];
+const ROOT_HANDLE_KEYS = [...HANDLE_KEYS, 'authorHandle', 'accountHandle', 'handles', 'authors', 'musicOwner'];
+
+/**
+ * LES PSEUDOS ET LES TEXTES D'UN ENREGISTREMENT DE BANC (racine des fixtures, 21/11/2026) : un banc ne porte que ce que
+ * ses entrées portent — les réponses enregistrées (remplissage, formes synthétiques) et ce que le code et les tests
+ * écrivent. Un texte (légende, bio, texte incrusté…) est du remplissage, ou un texte que le code écrit (`codeText`) ; un
+ * pseudo est synthétique, court, protégé, écrit tel quel par le code, ou composé par lui. Corrigé le 21/11/2026 : seul le
+ * monde clos, mot à mot, les jugeait — un banc refait sur des comptes réels, avec leurs légendes, passait dès que chaque
+ * mot figurait quelque part dans un commentaire ou un titre de test.
+ */
+function rootFindings(doc, rel, vocab, push) {
+  for (const [at, s, key] of strings(doc)) {
+    if (key === undefined || key === '{clé}' || key.startsWith('_') || !s) continue;
+    if (ROOT_TEXT_KEYS.includes(key) && /\p{L}/u.test(s) && !isJsonDoc(s)) {
+      const m = key === 'title' || key === 'musicTitle' ? s.match(SOUND) : null;
+      const t = m ? m[2] : s;
+      const filler = (t.match(LETTERS) ?? []).every((x) => fillerWord(x));
+      if (!filler && !codeText(t, vocab) && !(m && SYNTH.handle.test(t))) push({ file: rel, at, kind: 'texte' });
+    }
+    if (ROOT_HANDLE_KEYS.includes(key) && /\p{L}/u.test(s)) {
+      const h = s.normalize('NFKC').toLowerCase().replace(/^@/, '');
+      if (!(h.length < 4 || SYNTH.handle.test(h) || PROTECTED.has(h) || vocab.shapes?.texts.has(h) || composedWord(h, vocab))) push({ file: rel, at, kind: 'pseudo' });
+    }
+  }
+}
 
 // ─── Le contrôle ─────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -340,8 +530,9 @@ export function scanFixtures(dir = FIXTURES, { vocab = vocabulary() } = {}) {
     closedWorldFindings(doc, rel, vocab, push);
     // Un nombre écrit tel quel (un identifiant de 19 chiffres) : JSON.parse l'arrondit, le texte le garde.
     // (Un « %22 » d'une adresse encodée n'est pas le début d'un nombre : remplacé, à la même place.)
-    for (const m of text.replace(/%[0-9A-Fa-f]{2}/g, '%__').matchAll(/(?<![\d.])\d{15,}(?![\d.])/g)) if (!synthNumber(m[0]) && !vocab.has(m[0]) && !templated(m[0], vocab)) push({ file: rel, at: `caractère ${m.index}`, kind: 'identifiant' });
+    for (const m of text.replace(/%[0-9A-Fa-f]{2}/g, '%__').matchAll(/(?<![\d.])\d{15,}(?![\d.])/g)) if (!synthNumber(m[0]) && !vocab.has(m[0]) && !composedWord(m[0], vocab)) push({ file: rel, at: `caractère ${m.index}`, kind: 'identifiant' });
     if (rel.includes(sep) && typeof doc === 'object') recordedFindings(doc, rel, push);
+    else if (typeof doc === 'object') rootFindings(doc, rel, vocab, push);
   }
   return out;
 }
@@ -363,11 +554,48 @@ const COMPOSED_ID = /(?<![\d.])(\d{12,16})\$\{/g;
 const SHARE_QUERY = /[?&](?:u_code|_d|share_item_id|share_link_id|sec_user_id|user_id|item_id)=([A-Za-z0-9_-]{8,})/g;
 const syntheticToken = (t) => !/\d/.test(t) || /temoin/i.test(t) || synthNumber(t.replace(/\D/g, '')) || /0{6}/.test(t);
 /**
- * Un pseudo de forme réelle : minuscules et chiffres, au moins un point ou un souligné entre eux, au moins un chiffre
- * (« lina.rousseau_88 ») — ni synthétique, ni témoin (« temoin » dans le pseudo).
+ * Un pseudo de forme réelle : minuscules et chiffres, au moins un point ou un souligné entre eux (« lina.rousseau_88 »,
+ * « pervenche.soir », « zebrevide.app ») — ni synthétique, ni témoin (« temoin » dans le pseudo), ni un fichier (une
+ * extension de code, de données ou de média), ni un site (un domaine de pays, .com, .io…, un raccourcisseur de lien).
+ * Corrigé le 21/11/2026 : il fallait aussi un chiffre, et une fin en .app ou .co passait — 865 des 8 000 pseudos de
+ * l'export des comptes suivis étaient reconnus (10,8 %).
  */
 export const handleShaped = (h) =>
-  /^[a-z][a-z0-9]*(?:[._][a-z0-9]+)+$/.test(h) && /\d/.test(h) && !SYNTH.handle.test(h) && !h.includes('temoin') && !/\.(?:com|net|org|io|us|eu|fr|co|app|json|[cm]?[jt]sx?|md|png|jpe?g|heic|webp|mp4)$/.test(h);
+  /^[a-z][a-z0-9]*(?:[._][a-z0-9]+)+$/.test(h) && !SYNTH.handle.test(h) && !h.includes('temoin') && !/\.(?:json|jsonl|[cm]?[jt]sx?|md|txt|csv|png|jpe?g|heic|webp|gif|mp4|mp3)$/.test(h);
+/** Un site plutôt qu'un pseudo (une chaîne entière) : un domaine de pays ou générique. Une MENTION (« @x.app ») reste un pseudo. */
+const SITE = /\.(?:[a-z]{2}|com|net|org|io|app|bio|store|health|link|page|site|shop|online)$/;
+/**
+ * LES CHAÎNES DU CODE DU RADAR QUI CITENT UN COMPTE PUBLIC, hors des comptes de départ et des verdicts relus : des marques
+ * et des apps (des entreprises, pas des personnes) citées « @… », un pseudo pris pour motif d'exclusion (NOT_FIXES) — et
+ * des chaînes de la forme d'un pseudo qui n'en sont pas (motifs de texte, champs d'API, motifs de verdict). Toutes déjà
+ * publiées sur main, à leur place dans le code : chacune y est encore écrite (tests/radar/fixtures-publiques.test.ts),
+ * la liste ne nomme rien que le code ne publie déjà. Une citation nouvelle d'un compte n'y entre que par une décision.
+ */
+export const CITED_PUBLIC = new Set([
+  'valorant', 'mises', 'lyricfluentapp', 'wingai', 'wingai_app', 'leaked', 'juliana_healthy',
+  'benefits_app', 'know_the', 'friend_see', 'videos_minoritaires', 'total_impressions',
+]);
+/**
+ * Les mots que le code du Radar écrit HORS de ses chaînes : ses commentaires et ses identifiants (TypeScript), et leurs
+ * morceaux. Une chaîne de la forme d'un pseudo dont chaque morceau de 4 lettres ou plus en est un (« status_code »,
+ * « mot_cle ») n'est pas un pseudo cité : un pseudo réel porte un prénom, un mot que le code n'écrit nulle part ailleurs.
+ */
+function proseWords(root, radarCode) {
+  const out = new Set();
+  for (const d of radarCode) {
+    let all;
+    try { all = files(join(root, d)); } catch { continue; }
+    for (const f of all.filter((x) => CODE_FILE.test(x) && !isFixture(x) && !x.includes(`${sep}node_modules${sep}`))) {
+      const sc = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, readFileSync(f, 'utf8'));
+      for (let k = sc.scan(); k !== ts.SyntaxKind.EndOfFileToken; k = sc.scan()) {
+        if (k !== ts.SyntaxKind.SingleLineCommentTrivia && k !== ts.SyntaxKind.MultiLineCommentTrivia && k !== ts.SyntaxKind.Identifier) continue;
+        // Une mention dans un commentaire est une citation, pas de la prose : ses mots n'y entrent pas.
+        for (const w of wordsOf(sc.getTokenText().replace(/@[\p{L}\p{N}_.]+/gu, ' '))) for (const p of [w, ...w.split(/[._]/)]) if (p) out.add(p);
+      }
+    }
+  }
+  return out;
+}
 /** Un libellé de mention que le contrôle accepte : synthétique, protégé (alphabet de l'OTAN, lettres mathématiques), témoin. */
 const syntheticLabel = (l) => !/\p{L}/u.test(l) || SYNTH.handle.test(l) || PROTECTED.has(l) || PROTECTED.has(l.toLowerCase()) || l.includes('temoin');
 
@@ -391,6 +619,30 @@ function publicHandles(root) {
 export function scanCode(root = ROOT, scope = SCOPE, radarCode = RADAR_CODE) {
   const out = [];
   const declared = publicHandles(root);
+  const idents = codeShapes(root, scope).idents;
+  const prose = proseWords(root, radarCode);
+  /** Un pseudo cité que rien ne déclare : ni départ ni verdict relu, ni public cité, ni synthétique, ni un mot du code. */
+  const undeclared = (h) => !declared.has(h) && !CITED_PUBLIC.has(h) && !syntheticLabel(h) && !idents.has(h);
+  /**
+   * Une MENTION (« @… », toute forme, casse comprise) : un compte. Corrigé le 21/11/2026 : seule une mention de forme
+   * réelle (chiffre, point ou souligné) l'était, sans fin en .app — « @pervenche.soir », « @zebrevide.app » passaient.
+   * Une chaîne qui n'est QUE la mention (« "@suno" », un motif d'app) est jugée comme une chaîne (ci-dessous).
+   */
+  const mentioned = (line) =>
+    [...line.matchAll(/(?<![\w@/.-])@([A-Za-z0-9._]{2,30})(?![\w/-])/g)].some((m) => {
+      if (/["'`]$/.test(line.slice(0, m.index)) && /^["'`]/.test(line.slice(m.index + m[0].length))) return false;
+      const h = m[1].toLowerCase().replace(/[._]+$/, '');
+      return h.length >= 3 && undeclared(h);
+    });
+  /** Une chaîne entière de la forme d'un pseudo (« @ » de tête permis), hors site, dont un morceau n'est ni un identifiant ni un mot du code. */
+  const quoted = (line) =>
+    [...line.matchAll(/(["'`])@?([A-Za-z0-9._]{4,30})\1/g)].some((m) => {
+      const h = m[2].toLowerCase();
+      if (!handleShaped(h) || SITE.test(h) || !undeclared(h)) return false;
+      const parts = h.split(/[._]/);
+      if (parts.every((p) => (/^\d+$/.test(p) && p.length < 15) || idents.has(p))) return false;
+      return !parts.every((p) => p.length < 4 || /^\d+$/.test(p) || prose.has(p));
+    });
   for (const d of scope) {
     let all;
     try { all = files(join(root, d)); } catch { continue; }
@@ -404,7 +656,7 @@ export function scanCode(root = ROOT, scope = SCOPE, radarCode = RADAR_CODE) {
         if ([...line.matchAll(LONG_NUMBER)].some((m) => !synthNumber(m[0])) || [...line.matchAll(COMPOSED_ID)].some((m) => !/0{6}/.test(m[1])) || [...line.matchAll(SHARE_QUERY)].some((m) => !syntheticToken(m[1])))
           out.push({ file: rel, at, kind: 'identifiant' });
         const marked = [...line.matchAll(/<m\b[^>]*>([^<]*)<\/m>/g)].some((m) => [...m[1].matchAll(/@([^\s@<&]+)/g)].some((h) => !syntheticLabel(h[1])));
-        const cited = radar && ([...line.matchAll(/(?<![\w@/.-])@([a-z0-9._]{3,30})(?![\w/-])/g)].some((m) => handleShaped(m[1].replace(/[._]+$/, '')) && !declared.has(m[1].replace(/[._]+$/, ''))) || [...line.matchAll(/(["'`])([a-z0-9._]{4,30})\1/g)].some((m) => handleShaped(m[2]) && !declared.has(m[2])));
+        const cited = radar && (mentioned(line) || quoted(line));
         if (marked || cited) out.push({ file: rel, at, kind: 'pseudo' });
       });
     }
@@ -657,7 +909,7 @@ export function anonymizer({ seed = randomBytes(32), vocab = vocabulary(ROOT, ['
    * distingue pas du remplissage — il est réécrit.
    */
   const keepable = (w) =>
-    w.length < 4 || vocab.has(w) || PROTECTED.has(w) || SYNTH.handle.test(w) || w === 'ms4wljabaaaa' || /^(?:synthetique|temoin)[a-z0-9]*$/.test(w) || (/[._]/.test(w) && w.split(/[._]/).filter(Boolean).every((p) => p.length < 4 || vocab.has(p)));
+    w.length < 4 || vocab.has(w) || PROTECTED.has(w) || SYNTH.handle.test(w) || w === 'ms4wljabaaaa' || /^(?:synthetique|temoin)[a-z0-9]*$/.test(w) || NUMBERED_FILE.test(w) || composedWord(w, vocab);
   const generic = (s) => {
     if (/^\d{12,20}$/.test(s)) return idOf(s);
     // Une chaîne qui est un document JSON (« extra », « log_pb ») : réécrite comme un document, clés connues comprises.

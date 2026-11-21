@@ -5,7 +5,7 @@ import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import * as publiques from "../../scripts/fixtures-publiques.mjs";
 
-const { FIXTURES, ROOT, addedLines, anonymizer, crossCheck, isMediaHost, publicValues, readRaws, realValues, scanCode, scanFixtures, vocabulary } = publiques;
+const { FIXTURES, ROOT, addedLines, anonymizer, crossCheck, isMediaHost, knownWord, publicValues, readRaws, realValues, scanCode, scanFixtures, vocabulary } = publiques;
 
 /**
  * LES FIXTURES DU RADAR SONT PUBLIQUES (20/11/2026). Le dépôt est public : une réponse réelle de ScrapeCreators ou de
@@ -40,6 +40,12 @@ const VIDEO_ID_2 = "77099014" + "62406432060";
 const SOUND_ID = "73099014" + "62406439999";
 const UID = "69123456" + "78901234567";
 const UID_2 = "69123456" + "78901234999";
+
+/** Des pseudos inventés aux formes des pseudos réels (un prénom et un mot, un numéro, une année), construits pièce à pièce. */
+const PRENOM_MOT = ["emma", "lifestyle"].join(".");
+const PRENOM_NUMERO = ["marine", "77"].join("_");
+const PRENOM_ANNEE = "leo" + "2009";
+const PRENOM_ADJECTIF = ["jade", "officiel"].join("_");
 
 /** Une vidéo synthétique sous la forme des réponses enregistrées (identifiants inventés, textes de remplissage). */
 const synthVideo = (o: Record<string, unknown> = {}) => ({
@@ -148,7 +154,39 @@ describe("fixtures publiques : le contrôle structurel", () => {
     expect(scan(undefined)).toEqual([]);
     // Refait sur des réponses réelles : un pseudo, un identifiant et une légende que rien dans le dépôt n'écrit.
     write([{ name: "relevés", fetches: [fetch("lina.rousseau_88")], ctx: [{ args: { caption: "probé una receta nueva con mi abuela", videoId: VIDEO_ID } }] }]);
-    expect(kinds(scan(undefined))).toEqual(["taches.json identifiant", "taches.json inconnu"]);
+    expect(kinds(scan(undefined))).toEqual(["taches.json identifiant", "taches.json inconnu", "taches.json texte"]);
+  });
+
+  // Corrigé le 21/11/2026 : un mot du vocabulaire suivi d'au plus 4 chiffres, ou fait de morceaux du vocabulaire joints
+  // par des points ou des soulignés, était connu ; et une légende dont chaque mot figurait quelque part dans le code
+  // (commentaires, titres de tests) passait. Rejoué sur l'export des comptes suivis : 829 des 7 931 pseudos réels hors
+  // de main passaient, 89 désormais ; 657 des 13 932 légendes réelles distinctes, 84 désormais.
+  it("LE MONDE CLOS, formes composées : un pseudo n'est composé que par les gabarits du code (morceaux de gabarit, tables, identifiants), plus par les mots de ses commentaires", () => {
+    const vocab = vocabulary();
+    for (const w of [PRENOM_MOT, PRENOM_NUMERO, PRENOM_ANNEE, PRENOM_ADJECTIF]) expect([w, knownWord(w, vocab)]).toEqual([w, false]);
+    // Ce que les gabarits du code composent, tables et identifiants compris (enregistrements des bancs).
+    for (const w of ["jugee6", "jugee6_fan12", "site16.com", "uid_nouveau1", "radarapps_b54cda26", "radartracked_compte_mort", "idlumiq", "status_msg", "800.jpeg"]) expect([w, knownWord(w, vocab)]).toEqual([w, true]);
+  });
+
+  it("LE MONDE CLOS, enregistrement de banc (racine) : un pseudo ni synthétique ni écrit par le code, une légende que le code n'écrit pas, refusés — même faits de mots que le code nomme", () => {
+    const root = world({
+      // Le code du monde : un commentaire qui porte les mots d'une légende réelle, un gabarit de légende, un gabarit de pseudo.
+      "convex/radar/x.ts": [
+        "// la meilleure app pour réviser tes cours, le style de vie d'une créatrice : des mots du code",
+        `export const legende = (app: string, i: number) => \`lien sur monsite.io \${app} vidéo \${i}\`;`,
+        `export const pseudo = (slug: string, i: number) => \`\${slug}_fan\${i}\`;`,
+        `export const MOTS = ["${PRENOM_MOT.split(".")[0]}", "${PRENOM_MOT.split(".")[1]}"]; export const APP = "lumio";`,
+      ].join("\n"),
+    });
+    const vocab = vocabulary(root, ["convex/radar"]);
+    fs.mkdirSync(path.join(root, "tests/radar/fixtures"), { recursive: true });
+    const put = (args: Record<string, unknown>) => {
+      fs.writeFileSync(path.join(root, "tests/radar/fixtures/banc.json"), JSON.stringify([{ name: "x", ctx: [JSON.stringify({ args })] }], null, 1));
+      return kinds(scanFixtures(path.join(root, "tests/radar/fixtures"), { vocab }));
+    };
+    expect(put({ caption: "lien sur monsite.io lumio vidéo 12", authorHandle: "lumio_fan3", desc: "Lorem ipsum dolor" })).toEqual([]);
+    expect(put({ caption: "la meilleure app pour réviser tes cours" })).toEqual(["banc.json texte"]);
+    expect(put({ authorHandle: PRENOM_MOT })).toEqual(["banc.json inconnu", "banc.json pseudo"]);
   });
 
   // Corrigé le 21/11/2026 : le contrôle structurel et l'anonymiseur travaillaient sur des listes fermées de clés.
@@ -203,6 +241,36 @@ describe("fixtures publiques : le contrôle structurel", () => {
       "tests/radar/c.test.ts": "const u = (i: number) => `https://www.tiktok.com/@auteur_17/video/7709774559000000${i}`; const p = `?u_code=${code}&_d=temoin_d`;\n",
     });
     expect(kinds(scanCode(dir, ["tests/radar"], []))).toEqual([`tests${path.sep}radar${path.sep}a.test.ts identifiant`, `tests${path.sep}radar${path.sep}b.test.ts identifiant`]);
+  });
+});
+
+describe("fixtures publiques : les pseudos cités par le code du Radar", () => {
+  // Corrigé le 21/11/2026 : une mention n'était refusée que de forme réelle (un chiffre, un point ou un souligné), sans
+  // fin en .app ; une chaîne entière, qu'avec un chiffre. Le contrôle ne reconnaissait que 865 des 8 000 pseudos de
+  // l'export des comptes suivis.
+  const MENTION_POINT = ["pervenche", "soir"].join(".");
+  const MENTION_APP = ["zebrevide", "app"].join(".");
+  it("une mention de toute forme (point, .app, casse), une chaîne entière de la forme d'un pseudo sans chiffre, refusées ; un motif d'app, un champ, un site, une marque citée, un mot du code passent", () => {
+    const dir = world({
+      "convex/radar/a.ts": `// relevé sur @${MENTION_POINT} et @${MENTION_APP} le 20/11\nexport const X = "${PRENOM_MOT}";\n// vu chez @Prenom${"Nom"}\n`,
+      "convex/radar/b.ts":
+        '// les @mentions, la marque @valorant\nexport const motifs = ["@suno", "status_code", "linktr.ee", "amazon.de"];\nconst mentions = { status_code: 0 };\n',
+      "scripts/radar-bancs/c.ts": `// le banc lit @${MENTION_POINT}\n`,
+    });
+    expect(scanCode(dir, ["convex/radar", "scripts/radar-bancs"], ["convex/radar", "scripts/radar-bancs"]).map((f: Finding) => `${f.file} ${f.at} ${f.kind}`)).toEqual([
+      `convex${path.sep}radar${path.sep}a.ts ligne 1 pseudo`,
+      `convex${path.sep}radar${path.sep}a.ts ligne 2 pseudo`,
+      `convex${path.sep}radar${path.sep}a.ts ligne 3 pseudo`,
+      `scripts${path.sep}radar-bancs${path.sep}c.ts ligne 1 pseudo`,
+    ]);
+  });
+
+  it("la liste des comptes publics cités ne nomme rien que le code du Radar n'écrive encore", () => {
+    const code = publiques.RADAR_CODE.flatMap((d: string) => {
+      const walk = (p: string): string[] => (fs.statSync(p).isDirectory() ? fs.readdirSync(p).flatMap((f) => walk(path.join(p, f))) : [p]);
+      return walk(path.join(ROOT, d)).map((f) => fs.readFileSync(f, "utf8").toLowerCase());
+    }).join("\n");
+    for (const h of publiques.CITED_PUBLIC) expect([h, code.includes(h)]).toEqual([h, true]);
   });
 });
 
@@ -306,6 +374,20 @@ describe("fixtures publiques : l'anonymiseur", () => {
       expect([w, out.includes(w)]).toEqual([w, false]);
     // Un mot du vocabulaire du code est gardé.
     expect(out).toContain('"code":"success"');
+  });
+
+  // Corrigé le 21/11/2026 : un mot unique fait de mots du vocabulaire de convex/radar était gardé tel quel sous une clé
+  // inconnue — les réponses réelles rangent des pseudos sous ig_username, userUniqueId, keyword, word, search_cha_name.
+  it("PAR DÉFAUT, un pseudo sous une clé qu'aucune liste ne connaît est réécrit ; avant réécriture, le contrôle le refuse", () => {
+    const doc = () => ({ aweme_detail: { ...synthVideo(), share_meta: { ig_username: PRENOM_MOT, keyword: PRENOM_NUMERO, userUniqueId: PRENOM_ADJECTIF, word: PRENOM_ANNEE } } });
+    expect(kinds(scanFixtures(world({ "tikhub/brut.json": doc() })))).toContain("tikhub/brut.json inconnu");
+    const out = anonymizer().rewrite(doc());
+    const meta = out.aweme_detail.share_meta;
+    for (const [k, w] of [["ig_username", PRENOM_MOT], ["keyword", PRENOM_NUMERO], ["userUniqueId", PRENOM_ADJECTIF], ["word", PRENOM_ANNEE]]) expect([k, meta[k] === w]).toEqual([k, false]);
+    for (const w of [PRENOM_MOT, PRENOM_NUMERO, PRENOM_ADJECTIF, PRENOM_ANNEE]) expect(JSON.stringify(out)).not.toContain(w);
+    // Un pseudo Instagram ou un identifiant de pseudo : réécrits en pseudos synthétiques, comme unique_id.
+    expect([meta.ig_username, meta.userUniqueId].every((h: string) => publiques.SYNTH.handle.test(h))).toBe(true);
+    expect(scanFixtures(world({ "tikhub/x.json": out }))).toEqual([]);
   });
 
   it("aucune correspondance fixe : deux passages ne réécrivent pas pareil (rien ne permet de rejouer l'anonymisation sur une vidéo devinée)", () => {
