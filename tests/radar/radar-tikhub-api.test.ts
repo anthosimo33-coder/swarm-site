@@ -313,6 +313,22 @@ describe("statuts, clé, facturation", () => {
     expect(r).toMatchObject({ ok: false, kind: "unknown", spend: { th: 0, usd: 0, unknown: 1 } });
   });
 
+  // Convex refuse une chaîne qui porte une moitié de caractère (radarSignalsMath.cleanText, vu en prod le 07/11/2026) :
+  // l'erreur part dans thLastError, lastError et recordRun — refusée, c'est la dépense du passage qui n'est plus écrite.
+  it("une erreur coupée à 200 caractères ne garde jamais une moitié d'emoji : ni le corps d'un 5xx, ni le refus de TikTok", async () => {
+    const lone = /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
+    const atCut = (prefix: string) => "x".repeat(199 - prefix.length) + "😭 suite";
+    const down = await status(502, atCut(`HTTP 502 ${route} : `));
+    const up = await status(200, { data: { status_code: 5, status_msg: atCut(`HTTP 200 ${route} : status_code 5 `) } });
+    for (const r of [down, up]) {
+      expect(r.ok).toBe(false);
+      const error = !r.ok ? r.error : "";
+      expect(error.length).toBeLessThanOrEqual(200);
+      expect(lone.test(error)).toBe(false);
+    }
+    expect(up).toMatchObject({ kind: "upstream", spend: { th: 1 } });
+  });
+
   it("corps non JSON en 200 : rendu tel quel (sans liste), facturé", async () => {
     const r = await thProfilePage("x", undefined, { fetchImpl: fakeFetch(() => ({ status: 200, body: "pas du json" })).impl });
     expect(r).toEqual({ ok: true, value: { videos: [], next: null }, spend: { th: 1, usd: 0.001, unknown: 0 } });

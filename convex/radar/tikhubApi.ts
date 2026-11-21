@@ -16,7 +16,7 @@
  * le solde se lit à part (`thBalance`, gratuit). Un appel coupé par le délai a une facturation INCONNUE : il est
  * compté à part (`spend.unknown`), au prix plein.
  */
-import { TH_PRICE_USD, parseScVideo, type SignalInput } from "./radarSignalsMath";
+import { TH_PRICE_USD, cleanText, parseScVideo, type SignalInput } from "./radarSignalsMath";
 import { profileNextCursor } from "./scrapeCreatorsApi";
 
 const BASE = "https://api.tikhub.io";
@@ -67,9 +67,14 @@ const obj = (x: unknown): Record<string, unknown> | null => (x !== null && typeo
 const list = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
 const more = (x: unknown): boolean => x === true || x === 1;
 
-/** Un texte sans la clé (au cas où une erreur réseau la recopierait), coupé à 200 caractères. */
+/**
+ * Un texte sans la clé (au cas où une erreur réseau la recopierait), coupé à 200 caractères sans moitié d'emoji
+ * (radarSignalsMath.cleanText). Corrigé le 21/11/2026 : coupé par `slice`, un emoji à cheval sur la coupe laissait une
+ * moitié que Convex refuse — l'erreur rangée (thLastError, lastError) faisait échouer recordRun, et la dépense du
+ * passage, que lit le plafond du jour, n'était plus écrite.
+ */
 function masked(text: string, key: string): string {
-  return (key ? text.split(key).join("***") : text).slice(0, 200);
+  return cleanText(key ? text.split(key).join("***") : text, 200);
 }
 
 /** Le prix d'un appel facturé de cette route : son tarif lu, sinon le prix de base. */
