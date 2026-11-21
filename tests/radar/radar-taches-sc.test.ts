@@ -23,7 +23,9 @@ import { fakeActionCtx, handlerOf, type CtxCall } from "./action-ctx";
  * Depuis le 20/11/2026, aussi ce que la bascule a réécrit sans qu'un banc le joue : la porte de budget du réseau (sa part
  * du jour épuisée au milieu d'une app ; la part relue avant l'app suivante, une dépense déjà faite comprise) et les
  * paliers « économie » et « survie » (apps du réseau reportées, une app sans recherche comprise ; premiers relevés qui
- * attendent ; découverte coupée).
+ * attendent ; découverte coupée). Depuis le 21/11/2026 : les refus de ScrapeCreators (REFUS_CASES), et ScrapeCreators à
+ * sec pendant les relevés et la courbe, filet et voie, avec le rattrapage du réseau quand la part du jour est dépensée
+ * (DRY_CASES) — enregistrés sur main de même.
  * Les appels menés de front (8 relevés à la fois) sont comparés comme un ensemble : leur ordre dépend du hasard des
  * réponses, pas du code.
  */
@@ -117,8 +119,12 @@ const APPS: App[] = [
 const TIER_APPS: App[] = [...APPS, app("profonde", ["profonde app"], { deep: true }), app("vide", [], { deep: true })];
 /** Deux apps de routine (jamais le rattrapage du mois) : la part du jour borne le passage. */
 const ROUTINE_APPS: App[] = [app("glowup", ["glowup", "#glowup"]), app("second", ["second app"])];
+/** Deux apps jamais cherchées et une de routine : la part du jour dépensée, seules les premières passent (rattrapage). */
+const CATCH_UP_APPS: App[] = [app("lumio", ["lumio app", "#lumio"], { never: true }), app("novo", ["novo app"], { never: true }), app("glowup", ["glowup"])];
+/** ScrapeCreators à sec : chaque appel à cette adresse rend 402. */
+const dry = (p: string) => (u: URL): [number, Record<string, unknown>] | undefined => (u.pathname === p ? [402, { message: "plus de crédits" }] : undefined);
 
-type CaseOpts = { seenAgoMs?: number; budget?: Budget; apps?: App[]; spentToday?: (jobStateCalls: number) => Usage[]; fail?: ScFail };
+type CaseOpts = { seenAgoMs?: number; budget?: Budget; apps?: App[]; spentToday?: (jobStateCalls: number) => Usage[]; fail?: ScFail; accounts?: string[] };
 function answers(remaining: number, o: CaseOpts = {}) {
   let attachCalls = 0;
   let jobStateCalls = 0;
@@ -142,7 +148,7 @@ function answers(remaining: number, o: CaseOpts = {}) {
     "radar/radarNetworks:releaseAccountsLease": () => false,
     "radar/radarNetworks:appRules": () => [],
     "radar/radarNetworks:dueAccounts": () => ({
-      due: [...["a1", "a2", "a3", "a4", "a5", "a6", "compte_mort", "a8"].map((h) => account(h)), account("n1", true), account("n2", true)],
+      due: [...(o.accounts ?? ["a1", "a2", "a3", "a4", "a5", "a6", "compte_mort", "a8"]).map((h) => account(h)), account("n1", true), account("n2", true)],
       parked: ["radarTracked_gare"],
     }),
     "radar/radarNetworks:probeAccount": () => account("sonde"),
@@ -234,6 +240,28 @@ const REFUS_CASES: Case[] = [
   ["runAccountReads:depense-du-jour", runAccountReads, 40_000, { spentToday: () => NEAR_DAY }],
   ["runCurve:depense-du-jour", runCurve, 40_000, { spentToday: () => NEAR_DAY }],
   ["runDiscovery:depense-du-jour", runDiscovery, 40_000, { spentToday: () => NEAR_DAY }],
+];
+
+/**
+ * LES 402 DES RELEVÉS ET DE LA COURBE, LE RATTRAPAGE DU RÉSEAU (21/11/2026), enregistrés sur main 2191a8b comme
+ * REFUS_CASES : la bascule a réécrit autour de l'aiguilleur la fermeture de page des relevés (`noCredits`, `halted`), les
+ * deux boucles de la courbe (filet et voie) et la porte du rattrapage (`catchUp0`, `gateFor` d'une app jamais
+ * cherchée) — et aucun scénario ne les jouait au moment où ils comptent : un relevé ou une vidéo à sec (402), une app
+ * jamais cherchée quand la part du jour est dépensée. Des mutants de ces lignes (402 lu comme une erreur, `stop`
+ * ignoré, `break` du filet retiré, rattrapage à 0 ou sans le reste du mois) laissaient tout vert.
+ */
+const DRY_FILE = path.join(__dirname, "fixtures/taches-sc-a-sec-2191a8b.json");
+const DRY_CASES: Case[] = [
+  // Relevés : ScrapeCreators à sec à chaque relevé payant — le premier 402 arrête le passage, aucun compte en erreur.
+  // Douze comptes dus : plus que les 8 relevés menés de front (ACCOUNT_READ_POOL), un 402 doit empêcher les suivants.
+  ["runAccountReads:sc-402", runAccountReads, 40_000, { fail: dry("/v3/tiktok/profile/videos"), accounts: Array.from({ length: 12 }, (_, i) => `a${i + 1}`) }],
+  // Courbe dans la voie des relevés : à sec — la vidéo reste due, rien n'est payé après le premier 402.
+  ["runAccountReads:courbe-402", runAccountReads, 40_000, { fail: dry("/v2/tiktok/video") }],
+  // Courbe (filet) : à sec dès la première vidéo — le filet s'arrête, les vidéos restent dues.
+  ["runCurve:sc-402", runCurve, 40_000, { fail: dry("/v2/tiktok/video") }],
+  // Réseau : la part du jour dépensée (100 crédits sur 100), deux apps jamais cherchées dues — elles passent sur le reste
+  // du mois ; l'app de routine attend la part du lendemain.
+  ["runNetworkSearch:rattrapage", runNetworkSearch, 40_000, { budget: networkAt(3_000), apps: CATCH_UP_APPS, spentToday: () => [{ poste: "network", credits: 100, day: "2026-11-20" }] }],
 ];
 
 async function runAll(cases: Case[] = CASES): Promise<Run[]> {
@@ -375,6 +403,35 @@ describe("bascule absente : les cinq tâches font ce que fait main (2191a8b)", (
     expect(fetchesOf("runDiscovery:depense-du-jour")).toHaveLength(5);
   });
 
+  it("sans réglage TikHub, ScrapeCreators à sec pendant les relevés et la courbe, rattrapage du réseau sur le reste du mois : comme main (2191a8b)", async () => {
+    const runs = comparable(await runAll(DRY_CASES));
+    if (process.env.GOLDEN_WRITE === "1") {
+      fs.writeFileSync(DRY_FILE, `${JSON.stringify(runs, null, 1)}\n`);
+      return;
+    }
+    expect(runs).toEqual(JSON.parse(fs.readFileSync(DRY_FILE, "utf8")));
+    // Chaque scénario passe par son chemin : sans quoi une égalité avec main ne prouverait rien.
+    const of = (name: string) => runs.find((r) => r.name === name)!;
+    const ctxOf = (name: string) => of(name).ctx.map((x) => JSON.parse(x) as CtxCall);
+    const named = (name: string, fn: string) => ctxOf(name).filter((c) => c.name === `radar/${fn}`);
+    const scPaths = (name: string) => of(name).fetches.map((x) => new URL((JSON.parse(x) as FetchCall).url)).filter((u) => u.hostname === "api.scrapecreators.com").map((u) => u.pathname);
+    // Relevés à sec : les 402 des relevés déjà partis, puis le passage s'arrête — tous les comptes dus (12 et 2 premiers
+    // relevés) ne partent pas, aucun compte en erreur de relevé, aucun relevé rangé.
+    const profiles = scPaths("runAccountReads:sc-402").filter((p) => p === "/v3/tiktok/profile/videos").length;
+    expect(profiles).toBeGreaterThan(0);
+    expect(profiles).toBeLessThan(14);
+    expect(named("runAccountReads:sc-402", "radarNetworks:markReadError")).toEqual([]);
+    expect(named("runAccountReads:sc-402", "radarNetworks:applyAccountRead")).toEqual([]);
+    // La courbe à sec : un seul relevé payant tenté, aucune vidéo sortie de la courbe (filet et voie).
+    for (const name of ["runAccountReads:courbe-402", "runCurve:sc-402"]) {
+      expect([name, scPaths(name).filter((p) => p === "/v2/tiktok/video").length]).toEqual([name, 1]);
+      expect([name, named(name, "radarSignals:applyCurve").filter((c) => c.args.video === null).length]).toEqual([name, 0]);
+    }
+    // Le rattrapage : les deux apps jamais cherchées sont cherchées en entier, l'app de routine n'est pas commencée.
+    expect(named("runNetworkSearch:rattrapage", "radarNetworks:finishNetworkSearch").map((c) => `${String(c.args.appId)} ${String(c.args.outcome)}`)).toEqual(["radarApps_lumio done", "radarApps_novo done"]);
+    expect(named("runNetworkSearch:rattrapage", "radarNetworks:startNetworkSearch").map((c) => String(c.args.appId)).sort()).toEqual(["radarApps_lumio", "radarApps_novo"]);
+  });
+
   // Le levier L6 (cf `withoutL6`) : les motifs lus une fois, à la première recherche servie, et passés à chacune.
   it("découverte : les motifs des apps actives lus une fois par passage et passés à chaque recherche", async () => {
     const run = (await runAll()).find((r) => r.name === "runDiscovery")!;
@@ -411,6 +468,7 @@ describe("bascule absente : les cinq tâches font ce que fait main (2191a8b)", (
     process.env.RADAR_TIKHUB = "all,search,network-all";
     expect(comparable(await runAll())).toEqual(JSON.parse(fs.readFileSync(FILE, "utf8")));
     expect(comparable(await runAll(REFUS_CASES))).toEqual(JSON.parse(fs.readFileSync(REFUS_FILE, "utf8")));
+    expect(comparable(await runAll(DRY_CASES))).toEqual(JSON.parse(fs.readFileSync(DRY_FILE, "utf8")));
   });
 
   it("clé TikHub posée, RADAR_TIKHUB absent : identique, et aucun appel à TikHub (solde compris)", async () => {
@@ -419,7 +477,9 @@ describe("bascule absente : les cinq tâches font ce que fait main (2191a8b)", (
     expect(comparable(runs)).toEqual(JSON.parse(fs.readFileSync(FILE, "utf8")));
     const refus = await runAll(REFUS_CASES);
     expect(comparable(refus)).toEqual(JSON.parse(fs.readFileSync(REFUS_FILE, "utf8")));
-    runs.push(...refus);
+    const aSec = await runAll(DRY_CASES);
+    expect(comparable(aSec)).toEqual(JSON.parse(fs.readFileSync(DRY_FILE, "utf8")));
+    runs.push(...refus, ...aSec);
     for (const r of runs) for (const f of r.fetches) expect(f.url).not.toContain("api.tikhub.io");
     // Aucun argument de recordRun ne porte de champ TikHub.
     for (const r of runs) for (const c of r.ctx.filter((x) => x.name === "radar/radarSignals:recordRun")) expect(Object.keys(c.args).filter((k) => k.startsWith("th"))).toEqual([]);
