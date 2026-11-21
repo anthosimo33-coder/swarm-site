@@ -1,0 +1,37 @@
+{
+ "_fixture": "Réponse ScrapeCreators réelle du banc du 20/11/2026 (sc-video-200.json), tronquée et anonymisée (scripts/fixtures-publiques.mjs --anonymise : auteurs et identifiants inventés, légendes, textes incrustés, titres et hashtags réécrits en mots de remplissage, largeurs tirées et emoji remplacés, dates déplacées par une table secrète et monotone, sans écart commun, durées et compteurs tirés loin des vrais ; ré-anonymisée en un passage le 21/11/2026).",
+ "success": true,
+ "credits_remaining": 1544,
+ "credits_charged": 1,
+ "aweme_detail": {
+  "aweme_id": "7709931604486915388",
+  "desc": "Ullapa fu oru laparia nder sm uatdui idunt ri s inculpaqui🦊 \n\n#cididuntutlab #urexcepteursin #ipsumd #laborisnisiu #elitseddoeiusmod ",
+  "desc_language": "es",
+  "region": "ES",
+  "create_time": 1795108343,
+  "is_ad": false,
+  "statistics": {
+   "play_count": 22864,
+   "digg_count": 901,
+   "comment_count": 20,
+   "share_count": 126,
+   "collect_count": 318
+  },
+  "video": {
+   "duration": 15237,
+   "cover": {
+    "url_list": [
+     "https://example.invalid/media/couverture-07~tplv-tiktokx-cropcenter-q:300:400:q70.heic"
+    ]
+   }
+  },
+  "author": {
+   "uid": "9100000000000000014",
+   "unique_id": "auteur_19",
+   "follower_count": 7435,
+   "nickname": "Auteur",
+   "signature": "bio de auteur_19"
+  },
+  "url": "https://www.tiktok.com/@auteur_19/video/7709931604486915388"
+ }
+}

@@ -112,7 +112,7 @@ export const SEED_APPS: readonly SeedApp[] = [
   { slug: "whatbrandonthinks", name: "What Brandon Thinks", rivalOf: BLUSH, strong: ["whatbrandonthinks"], searches: ["whatbrandonthinks", "what brandon thinks whatsapp", "#whatbrandonthinks"], formerSlugs: ["whatbrandonthink"] },
   { slug: "thecringe", name: "The Cringe", rivalOf: BLUSH, strong: ["thecringeapp"], weak: ["thecringe"], context: CHAT_CONTEXT, searches: ["thecringe", "the cringe app whatsapp", "#thecringe"] },
   // WRizz et Wing AI soufflent la réponse à un texto : ajoutées à la main le 09/11/2026, concurrentes de
-  // BLUSH depuis le 10/11. « wrizz » seul se lit dans « W rizz », « new rizz » et @shadowrizzler70 (43 des
+  // BLUSH depuis le 10/11. « wrizz » seul se lit dans « W rizz », « new rizz » et le pseudo d'un « rizzler » (43 des
   // 311 vidéos qui le contenaient) : il faut l'arobase, le dièse ou le site. Placée AVANT Rizz App, dont
   // les motifs sont dans « wrizz.app » et « #wrizzapp ».
   { slug: "wrizz", name: "WRizz", rivalOf: BLUSH, strong: ["@wrizz", "#wrizz", "wrizzapp", "wrizz.app", "wrizzz.app"], searches: ["wrizz", "wrizz app", "#wrizz"] },
@@ -617,7 +617,7 @@ export type AccountVerdict<T> = { kind: "keep" } | { kind: "move"; to: T; cited:
  *    Flert Now qui met #rizzapp sous chaque vidéo cite Rizz App plus souvent
  *    que la sienne sans en faire partie (rejoué sur la prod : il reste). Entre
  *    deux apps qui passent ce seuil, celle que le TEXTE des vidéos cite
- *    l'emporte sur celle que seul le pseudo évoque : @rizz_master4 écrit
+ *    l'emporte sur celle que seul le pseudo évoque : un compte au pseudo de Rizz Master écrit
  *    « using wrizz app » sous chaque vidéo, c'est un compte WRizz, pas Rizz
  *    Master (10/11/2026) ;
  *  - sinon, aucune vidéo lue (9 au moins) ne cite la sienne → `offTopic` ;
@@ -841,7 +841,7 @@ export const networkRefreshMs = (rival: boolean) => (rival ? 3 : 7) * DAY;
  * d'un compte suivi, ne les porte), 20 complets (0 à 9 vidéos), 452 trop grands. Une mesure du poste ne dit pas ce
  * que TikTok sert aux serveurs Convex (13/11) : d'où les gardes de « absent », et radarUsage.saved dira le vrai gain.
  * « complete » N'EST PAS prouvé neutre : #facelessclone comptait 5 vidéos et en listait 5, mais une 6e, en ligne, porte
- * le hashtag (7706653284764765461) — la page ou son compteur était en retard. La recherche payée du 15/11 avait
+ * le hashtag — la page ou son compteur était en retard. La recherche payée du 15/11 avait
  * rattaché son auteur ; la règle l'aurait perdu s'il n'avait pas déjà été suivi (43 des 57 auteurs lus au banc ne
  * l'étaient pas). La liste n'est pas le hashtag : 9 des 29 hashtags à 10 vidéos ou moins en listaient moins que leur
  * compteur. Et 9 des 20 complets viennent d'apps jamais cherchées, sans résultat payé à leur opposer. « same » : 41

@@ -1,0 +1,254 @@
+{
+ "_fixture": "Réponse TikHub réelle du banc du 20/11/2026 (th-reseau-hashtag-200.json), tronquée et anonymisée (scripts/fixtures-publiques.mjs --anonymise : auteurs et identifiants inventés, légendes, textes incrustés, titres et hashtags réécrits en mots de remplissage, largeurs tirées et emoji remplacés, dates déplacées par une table secrète et monotone, sans écart commun, durées et compteurs tirés loin des vrais ; ré-anonymisée en un passage le 21/11/2026).",
+ "code": 200,
+ "router": "/api/v1/tiktok/app/v3/fetch_hashtag_video_list",
+ "data": {
+  "status_code": 0,
+  "has_more": 1,
+  "cursor": 20,
+  "status_msg": "",
+  "aweme_list": [
+   {
+    "aweme_id": "7707120883399132357",
+    "desc": "commo | conse t #isnis #focustown #rincidi #focus #commodoconsequa ",
+    "desc_language": "en",
+    "region": "DE",
+    "create_time": 1794453929,
+    "is_top": 0,
+    "statistics": {
+     "play_count": 5046,
+     "digg_count": 345,
+     "comment_count": 23,
+     "share_count": 12,
+     "collect_count": 53
+    },
+    "video": {
+     "duration": 7618,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-11~tplv-tiktokx-origin.image"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000012",
+     "unique_id": "auteur_13",
+     "follower_count": 0,
+     "nickname": "Auteur",
+     "signature": "bio de auteur_13"
+    },
+    "interaction_stickers": [
+     {
+      "type": 18,
+      "text_info": "nu T aecat rincidi 4 exerci et illumdolor lup ur mo liqu cin focustown 🎈"
+     }
+    ],
+    "music": {
+     "id": 7235505681564960000,
+     "id_str": "7235505681564959756",
+     "title": "original sound - auteur_14",
+     "owner_handle": "auteur_14"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 16,
+      "end": 22,
+      "hashtag_name": "isnis"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 23,
+      "end": 33,
+      "hashtag_name": "focustown"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 34,
+      "end": 42,
+      "hashtag_name": "rincidi"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 43,
+      "end": 49,
+      "hashtag_name": "focus"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 50,
+      "end": 66,
+      "hashtag_name": "commodoconsequa"
+     }
+    ]
+   },
+   {
+    "aweme_id": "7684718054810321985",
+    "desc": "commo | deser tdu #isnis #focustown #ONullaMco #ntoccaecatcu #rincidi ",
+    "desc_language": "en",
+    "region": "DE",
+    "create_time": 1789237854,
+    "is_top": 0,
+    "statistics": {
+     "play_count": 501461,
+     "digg_count": 38412,
+     "comment_count": 637,
+     "share_count": 3998,
+     "collect_count": 9723
+    },
+    "video": {
+     "duration": 5835,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-12~tplv-tiktokx-origin.image"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000012",
+     "unique_id": "auteur_13",
+     "follower_count": 0,
+     "nickname": "Auteur",
+     "signature": "bio de auteur_13"
+    },
+    "interaction_stickers": [
+     {
+      "type": 18,
+      "text_info": "od redolo‘t r itan turad T llum tmol nvoluptat ipis eprehend??! 🎈"
+     },
+     {
+      "type": 18,
+      "text_info": "mv psumdolors ecil"
+     }
+    ],
+    "music": {
+     "id": 7649018308120806000,
+     "id_str": "7649018308120806446",
+     "title": "original sound - auteur_15",
+     "owner_handle": "auteur_15"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 18,
+      "end": 24,
+      "hashtag_name": "isnis"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 25,
+      "end": 35,
+      "hashtag_name": "focustown"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 36,
+      "end": 46,
+      "hashtag_name": "onullamco"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 47,
+      "end": 60,
+      "hashtag_name": "ntoccaecatcu"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 61,
+      "end": 69,
+      "hashtag_name": "rincidi"
+     }
+    ]
+   },
+   {
+    "aweme_id": "7704489679059420286",
+    "desc": "commo | uradi ut #isnis #focustown #rincidi #focus #commodoconsequa ",
+    "desc_language": "en",
+    "region": "DE",
+    "create_time": 1793841297,
+    "is_top": 0,
+    "statistics": {
+     "play_count": 28375,
+     "digg_count": 2304,
+     "comment_count": 129,
+     "share_count": 238,
+     "collect_count": 470
+    },
+    "video": {
+     "duration": 19086,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-13~tplv-tiktokx-origin.image"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000012",
+     "unique_id": "auteur_13",
+     "follower_count": 0,
+     "nickname": "Auteur",
+     "signature": "bio de auteur_13"
+    },
+    "interaction_stickers": [
+     {
+      "type": 18,
+      "text_info": "rincidi ipis aco or r nvoluptat dolorin 🦊"
+     }
+    ],
+    "music": {
+     "id": 7361364810501457000,
+     "id_str": "7361364810501456910",
+     "title": "odtem tnul teiru t eeufug iatur uatd tocc",
+     "owner_handle": "auteur_16"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 17,
+      "end": 23,
+      "hashtag_name": "isnis"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 24,
+      "end": 34,
+      "hashtag_name": "focustown"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 35,
+      "end": 43,
+      "hashtag_name": "rincidi"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 44,
+      "end": 50,
+      "hashtag_name": "focus"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 51,
+      "end": 67,
+      "hashtag_name": "commodoconsequa"
+     }
+    ]
+   }
+  ]
+ }
+}

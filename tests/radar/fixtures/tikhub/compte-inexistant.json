@@ -1,0 +1,9 @@
+{
+ "_fixture": "Réponse TikHub réelle du banc du 20/11/2026 (th-compte-inexistant-200.json), tronquée et anonymisée.",
+ "code": 200,
+ "router": "/api/v1/tiktok/app/v3/fetch_user_post_videos",
+ "data": {
+  "status_code": 0,
+  "status_msg": "REp ursin rexcept"
+ }
+}

@@ -196,20 +196,26 @@ describe("l'échec gratuit retenu (radarFreeMath.holdMisses, brique 7, 20/11/202
   it("le passage retient avant de payer, et compte l'appel évité quand le compte retenu se lit gratuitement", () => {
     const pass = passage();
     // Le plan des ratés (radarFreeMath.missPlan, testé à part) reçoit la VRAIE part payante du passage — `n`, pas une
-    // part supposée — et les comptes pas atteints (premiers relevés retenus au passage d'avant).
-    const plan = pass.indexOf("const plan = missPlan(misses.paid, lane.notReached, { laneOpen: free.on, n, waitFirst, reserveReached: b.reserveReached }, now);");
+    // part supposée — et les comptes pas atteints (premiers relevés retenus au passage d'avant). Depuis la fusion avec
+    // la bascule TikHub, `n` est la part chez le fournisseur qui sert les relevés (radarProviders.passLimit) et la
+    // réserve celle de ce fournisseur (radarProviders.reserveFor, testé à part).
+    expect(pass).toMatch(/const n = passLimit\(gate, provider, router\);/);
+    const plan = pass.indexOf("const plan = missPlan(misses.paid, lane.notReached, { laneOpen: free.on, n, waitFirst, reserveReached }, now);");
     expect(plan).toBeGreaterThan(0);
     const hold = pass.indexOf("if (plan.hold.length) await ctx.runMutation(internal.radar.radarNetworks.holdFreeMisses, { ids: plan.hold.map((a) => a.id), at: now });");
     expect(hold).toBeGreaterThan(plan);
     // La part des retenus n'est dépensée nulle part : `limit` borne tout payant qui suit (premiers, ratés, débordement).
     const limit = pass.indexOf("limit = plan.limit;");
     expect(limit).toBeGreaterThan(plan);
-    expect(pass).toMatch(/const paid = \(list: readonly DueAccount\[\], reason: PaidReason\): Promise<number> =>\s*pooled\(list, ACCOUNT_READ_POOL, \(acc\) => readPaid\(acc, limit, reason\)/);
+    // (`more`, la borne de chaque relevé payant, lit `limit` au moment de l'appel ; chez TikHub, en plus, sa part et la
+    // porte de repli.)
+    expect(pass).toMatch(/let limit = n;\s*(?:\/\/[^\n]*\s*)*const more = \(\) => paidCalls < limit && \(!router\.on \|\| canCall\(gate, provider, router\)\);/);
+    expect(pass).toMatch(/const paid = \(list: readonly DueAccount\[\], reason: PaidReason\): Promise<number> =>\s*pooled\(list, ACCOUNT_READ_POOL, \(acc\) => readPaid\(acc, reason, \{ more \}\)/);
     const premier = pass.indexOf('await paid(plan.firstPay, "premier");');
     expect(premier).toBeGreaterThan(limit);
     // Les comptes suivis ratés : leur vidéo à retrouver quel que soit le motif (un trou vérifié puis une page illisible
     // reprend le trou, revue du 20/11) et ce que sa page a dit (la mesure).
-    expect(pass).toMatch(/pooled\(\s*plan\.missPay,\s*ACCOUNT_READ_POOL,\s*\(m\) => readPaid\(m\.account, limit, missReason\(m\), m\.newest, m\.seen\)/);
+    expect(pass).toMatch(/pooled\(\s*plan\.missPay,\s*ACCOUNT_READ_POOL,\s*\(m\) => readPaid\(m\.account, missReason\(m\), \{ more \}, m\.newest, m\.seen\)/);
     expect(pass).toMatch(/const over = overflowToPay\(\s*lane\.notReached\.filter\(\(a\) => !a\.first\),\s*free\.on,\s*Date\.now\(\),\s*\);\s*await paid\(over\.pay, over\.reason\);/);
     expect(pass).not.toMatch(/holdMisses\(|reserveMisses\(|firstReadMisses\(/);
     // Relu gratuitement et rangé : les appels payants évités (l'échec retenu, ou le trou vérifié en bascule), après
@@ -218,7 +224,7 @@ describe("l'échec gratuit retenu (radarFreeMath.holdMisses, brique 7, 20/11/202
     expect(rangé).toBeGreaterThan(0);
     const marque = pass.indexOf("if (f.gapChecked) await ctx.runMutation(internal.radar.radarNetworks.markGapChecked, { accountId: acc.id, videoId: f.gapChecked });");
     expect(marque).toBeGreaterThan(rangé);
-    expect(pass.indexOf("for (const [key, calls] of Object.entries(freeReadSaved(f, acc)) as [SavedKey, number][]) usage.spare(key, calls);")).toBeGreaterThan(marque);
+    expect(pass.indexOf("for (const [key, calls] of Object.entries(freeReadSaved(f, acc)) as [SavedKey, number][]) usage.book.spare(key, calls);")).toBeGreaterThan(marque);
   });
 
   it("brique 4 en mesure : la page du trou n'est lue que si un payant peut partir, et l'accord est compté après le payant", () => {
@@ -228,7 +234,7 @@ describe("l'échec gratuit retenu (radarFreeMath.holdMisses, brique 7, 20/11/202
     expect(pass).toMatch(/const gapPage = \(\) => gapPages-- > 0;\s*const f = await freeRead\(acc\.handle, \{ page: freePage, known, newest, gapPage \}, now, undefined, !acc\.located\);/);
     // La mesure : après le relevé payant d'un trou dont la page a été lue, avant toute écriture.
     const read = pass.indexOf("const { outcome, videos: all, reached } = read;");
-    const measure = pass.indexOf("if (gap && seen) usage.measure(gapMeasure(seen, read, gap));");
+    const measure = pass.indexOf("if (gap && seen) usage.book.measure(gapMeasure(seen, read, gap));");
     expect(read).toBeGreaterThan(0);
     expect(measure).toBeGreaterThan(read);
     expect(pass.indexOf('if (outcome === "error") await ctx.runMutation(internal.radar.radarNetworks.markReadError')).toBeGreaterThan(measure);
@@ -288,8 +294,10 @@ describe("sous la réserve, le raté attend la sonde (radarFreeMath.reserveMisse
   it("le passage repousse sous la réserve seulement, avant le payant, sans toucher ce que la voie n'a pas atteint ni la sonde", () => {
     const pass = passage();
     const hold = pass.indexOf("runMutation(internal.radar.radarNetworks.holdFreeMisses");
-    // La réserve vient de l'état du budget du passage (missPlan → reserveMisses, testé à part).
-    const reserve = pass.indexOf("reserveReached: b.reserveReached }, now);");
+    // La réserve vient de l'état du budget du passage (missPlan → reserveMisses, testé à part), chez le fournisseur qui
+    // sert les relevés (radarProviders.reserveFor, testé à part : sans TikHub, `b.reserveReached` au bit près).
+    const reserve = pass.indexOf("const reserveReached = reserveFor(b, provider, router, gate);");
+    expect(pass.indexOf("{ laneOpen: free.on, n, waitFirst, reserveReached }, now);")).toBeGreaterThan(reserve);
     const defer = pass.indexOf(
       "\n    if (plan.reserveDefer.length) await ctx.runMutation(internal.radar.radarNetworks.deferAccounts, { ids: plan.reserveDefer.map((a) => a.id), until: now + RESERVE_MISS_WAIT_MS });\n",
     );
@@ -304,9 +312,10 @@ describe("sous la réserve, le raté attend la sonde (radarFreeMath.reserveMisse
     expect(pass).toMatch(/missPlan\(misses\.paid, lane\.notReached,/);
     expect(pass).toMatch(/overflowToPay\(\s*lane\.notReached\.filter\(\(a\) => !a\.first\)/);
     // La sonde part toujours, après, telle quelle : le premier compte dû du passage (repoussé ou non) ou le plus ancien.
-    const probe = pass.indexOf("if (needsBalanceProbe(b) && paidCalls === 0) {");
+    // (Ses relevés chez ScrapeCreators seulement : c'est son solde, cf la bascule TikHub.)
+    const probe = pass.indexOf("if (needsBalanceProbe(b) && scPaidCalls === 0) {");
     expect(probe).toBeGreaterThan(defer);
-    expect(pass).toMatch(/const probe: DueAccount \| null = due\[0\] \?\? \(await ctx\.runQuery\(internal\.radar\.radarNetworks\.probeAccount, \{\}\)\);\s*if \(probe\) await readPaid\(probe, 1, "sonde"\);/);
+    expect(pass).toMatch(/const probe: DueAccount \| null = due\[0\] \?\? \(await ctx\.runQuery\(internal\.radar\.radarNetworks\.probeAccount, \{\}\)\);\s*if \(probe\) await readPaid\(probe, "sonde", \{ more: \(\) => scPaidCalls < 1, forceSc: true \}\);/);
     // Rien de nouveau dans radarSettings : noteFreeRun garde ses champs.
     expect(pass).toMatch(/noteFreeRun, \{\s*ok: free\.ok,\s*fallback: free\.fallback,\s*why: missCounts\(lane\.failed\),\s*(?:\/\/[^\n]*\s*)?stopped: free\.stopped \?\? curve\.stopped,\s*waiting: lane\.notReached\.length - over\.pay\.length,\s*now: Date\.now\(\),\s*\}/);
   });

@@ -3,6 +3,10 @@
  * nomment un produit (« le site c'est… ») sont cherchées dans tout TikTok, les plus récentes d'abord, sans seuil
  * de vues. Un site cité par de petits comptes entre dans les apps repérées ; une vidéo qui cite une app suivie
  * rattache son compte. Payé sur le poste « recherche » du budget (16 crédits par passage).
+ *
+ * Reste chez ScrapeCreators quand la découverte passe chez TikHub (20/11/2026) : au banc, le tri « plus récentes » de
+ * TikHub rendait 1 vidéo contre 30 en FR. La part du jour du poste se partage en unités avec la découverte ; la coupure
+ * et le solde sont ceux de ScrapeCreators (son palier), quel que soit le fournisseur de la découverte.
  */
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
@@ -10,11 +14,12 @@ import { internalAction, internalMutation, type MutationCtx } from "../_generate
 import type { Id } from "../_generated/dataModel";
 import { e2eMutation } from "./functions";
 import { dayKeyParis } from "./dateFr";
-import { activeApps, attachAccount, noteCandidates, refreshAppNet, signalInput, type JobState, type RunResult, type TrackedCounter } from "./radarSignals";
-import { allowance, budgetState } from "./radarSignalsMath";
+import { activeApps, attachAccount, noteCandidates, refreshAppNet, signalInput, todayCredits, type JobState, type RunResult, type TrackedCounter } from "./radarSignals";
+import { allowance } from "./radarSignalsMath";
 import { findApp } from "./radarNetworkMath";
 import { isSmallAccount, mergeKnown, NAMING_PER_RUN, NAMING_QUERIES, namingText } from "./radarNamingMath";
 import { scKeyPresent, scSearchRecent } from "./scrapeCreatorsApi";
+import { jobBudget, NO_SPEND, PassBook } from "./radarProviders";
 import type { Infer } from "convex/values";
 
 type Video = Infer<typeof signalInput>;
@@ -67,10 +72,11 @@ export const runNaming = internalAction({
     const now = Date.now();
     if (!scKeyPresent()) return { skipped: "no-key" };
     const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    const spent = st.usage.filter((u) => u.poste === "search" && u.day === dayKeyParis(now)).reduce((sum, u) => sum + u.credits, 0);
-    // Ce qui reste du jour sur le poste « recherche », au plus une page par tournure.
-    const n = Math.min(NAMING_PER_RUN, allowance(st.budget, budgetState(st.budget, st.usage, st.balance), "search", spent, 1));
-    let credits = 0;
+    // Les unités du jour du poste « recherche » : crédits ScrapeCreators et appels TikHub de la découverte.
+    const spent = todayCredits(st, "search");
+    // Ce qui reste du jour sur le poste « recherche », au plus une page par tournure — jugé chez ScrapeCreators.
+    const n = Math.min(NAMING_PER_RUN, allowance(st.budget, jobBudget(st), "search", spent, 1, "sc"));
+    const book = new PassBook();
     let calls = 0;
     let errors = 0;
     let creditsRemaining: number | undefined;
@@ -78,7 +84,7 @@ export const runNaming = internalAction({
     for (const q of NAMING_QUERIES.slice(0, Math.max(0, n))) {
       const r = await scSearchRecent(q.query, q.region, q.lang);
       calls++;
-      credits += r.credits;
+      book.add({ ...NO_SPEND, sc: r.credits });
       if (!r.ok) {
         errors++;
         lastError = r.error;
@@ -90,14 +96,14 @@ export const runNaming = internalAction({
     }
     await ctx.runMutation(internal.radar.radarSignals.recordRun, {
       poste: "search",
-      credits,
+      credits: book.credits,
       calls,
       errors,
       now,
       ...(creditsRemaining !== undefined ? { creditsRemaining } : {}),
       ...(lastError ? { lastError } : {}),
     });
-    return { calls, credits, errors };
+    return { calls, credits: book.credits, errors };
   },
 });
 

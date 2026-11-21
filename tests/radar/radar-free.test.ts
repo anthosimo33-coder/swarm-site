@@ -99,16 +99,16 @@ const video = (id: string, o: Record<string, unknown> = {}, stats: Record<string
     id,
     desc: "pq j’apprends ça que mtn 😭 @Koro AI #argent",
     createTime: String(Math.floor(videoIdTime(id) / 1000)),
-    author: { id: "7276822206176609312", uniqueId: "lea.revise", signature: "Bio lue sur la page vidéo" },
+    author: { id: "7276822206095566620", uniqueId: "lea.revise", signature: "Bio lue sur la page vidéo" },
     authorStats: { followerCount: 1_700 },
     stats: { diggCount: 91, shareCount: 12, commentCount: 3, playCount: 8_410, collectCount: "9", ...stats },
-    music: { id: "7706838535877200673", title: "son original", authorName: "lea.revise" },
+    music: { id: "7706838532249102259", title: "son original", authorName: "lea.revise" },
     stickersOnItem: [{ stickerText: ["Le nom du site\nc'est koro.ai"], stickerType: 4 }, { stickerText: ["  "] }, { stickerText: ["Enregistre"] }],
     textExtra: [
       // Positions en CARACTÈRES, comme TikTok les donne (l'emoji compte pour un).
       { start: 27, end: 35, userId: "9001", userUniqueId: "koroai", type: 0 },
       { start: 36, end: 43, hashtagName: "argent", type: 1 },
-      { start: 27, end: 35, userId: "7276822206176609312", type: 0 },
+      { start: 27, end: 35, userId: "7276822206095566620", type: 0 },
     ],
     video: { duration: "65", cover: "https://p16.tiktokcdn.com/cover.jpeg?x-expires=1" },
     textLanguage: "fr",
@@ -137,8 +137,8 @@ describe("Radar — relevé gratuit : le profil", () => {
 
   it("la date d'une vidéo se lit dans son identifiant", () => {
     // Une vraie vidéo relevée le 12/11/2026 : publiée à 1 794 483 773 s d'après TikTok, 15 s après la date de son identifiant.
-    expect(videoIdTime("7707249055482547470")).toBe(1_794_483_758_000);
-    expect(Math.abs(videoIdTime("7707249055482547470") - 1_794_483_773_000)).toBeLessThan(60_000);
+    expect(videoIdTime("7707249053813188538")).toBe(1_794_483_758_000);
+    expect(Math.abs(videoIdTime("7707249053813188538") - 1_794_483_773_000)).toBeLessThan(60_000);
     expect(videoIdTime("pas un identifiant")).toBe(0);
   });
 
@@ -155,7 +155,7 @@ describe("Radar — relevé gratuit : la page d'une vidéo", () => {
     expect(parseFreeVideo(video(V_NEUVE), "lea.revise")).toEqual({
       videoId: V_NEUVE,
       url: `https://www.tiktok.com/@lea.revise/video/${V_NEUVE}`,
-      authorId: "7276822206176609312",
+      authorId: "7276822206095566620",
       authorHandle: "lea.revise",
       authorFans: 1_700,
       caption: "pq j’apprends ça que mtn 😭 @Koro AI #argent",
@@ -173,7 +173,7 @@ describe("Radar — relevé gratuit : la page d'une vidéo", () => {
       saves: 9,
       // Chaque bloc de texte sur une ligne, les blocs vides écartés.
       hook: "Le nom du site c'est koro.ai · Enregistre",
-      musicId: "7706838535877200673",
+      musicId: "7706838532249102259",
       musicTitle: "son original",
       musicOwner: "lea.revise",
       // Le compte mentionné (pas un hashtag, pas l'auteur lui-même), son libellé lu dans la légende.
@@ -562,7 +562,7 @@ describe("Radar — relevé gratuit : le relevé d'un compte, de bout en bout", 
       [V_HIER, 1_840, "J'utilise : shortfy.io", 1_200],
     ]);
     // La vidéo inconnue prend le texte à l'écran et le son de sa page ; la vidéo déjà rangée garde les siens.
-    expect([r.videos[0].hook, r.videos[0].musicId]).toEqual(["Le nom du site c'est koro.ai · Enregistre", "7706838535877200673"]);
+    expect([r.videos[0].hook, r.videos[0].musicId]).toEqual(["Le nom du site c'est koro.ai · Enregistre", "7706838532249102259"]);
     expect([r.videos[1].hook, r.videos[1].musicId, r.videos[1].musicTitle]).toEqual(["Texte rangé à son premier relevé", "111", "Son rangé"]);
   });
 
@@ -1107,6 +1107,16 @@ describe("Radar — un compte qui n'a rien à lire n'est plus repayé à chaque 
     expect(r.videos.map((v) => v.videoId)).toEqual([V_NEUVE, V_HIER]);
     // Sans trou, une seule page.
     expect(t.asked).toEqual([undefined]);
+  });
+
+  it("première page non servie sans que le compte y soit pour rien (TikHub en panne, sans repli) : rien à écrire, pas d'erreur de relevé (20/11/2026)", async () => {
+    const t = pages({ ok: false, noCredits: false, transient: true });
+    expect(await paidRead(t.page, () => true)).toEqual({ outcome: "skip", videos: [], reached: { done: false, found: false } });
+    // Une page SUIVANTE non servie garde ce qui est lu, comme un refus.
+    const cible = { videoId: V_SEMAINE, publishedAt: videoIdTime(V_SEMAINE) };
+    const k = pages({ ok: true, videos: [sig(V_NEUVE)], next: "c1" }, { ok: false, noCredits: false, transient: true });
+    const kept = await paidRead(k.page, () => true, cible);
+    expect([kept.outcome, kept.videos.map((v) => v.videoId)]).toEqual(["read", [V_NEUVE]]);
   });
 
   it("liste trouée : page après page jusqu'à la vidéo ; une page suivante refusée garde ce qui est lu ; `more` borne", async () => {

@@ -23,7 +23,8 @@ import { internalAction, internalMutation, internalQuery } from "../_generated/s
 import type { Doc, Id } from "../_generated/dataModel";
 import { e2eMutation, permissionQuery, type ProjectQueryCtx } from "./functions";
 import { MAX_READ_ERRORS, MEDIAN_WINDOW, hookTemplate, medianViews, multiplierOf, nextReadAt, shouldPromote } from "./radarNetworkMath";
-import { RETENTION_DAYS, addSnapshot, allowance, budgetState, ratioOf, type SignalInput } from "./radarSignalsMath";
+import { RETENTION_DAYS, addSnapshot, allowance, ratioOf, type SignalInput } from "./radarSignalsMath";
+import { jobBudget } from "./radarProviders";
 import {
   TRANSCRIPT_FREE_MAX_MS,
   TRANSCRIPT_FREE_PAGES,
@@ -211,7 +212,7 @@ export const runInstaReads = internalAction({
     const now = Date.now();
     if (!scKeyPresent()) return { skipped: "no-key" };
     const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    const left = allowance(st.budget, budgetState(st.budget, st.usage, st.balance), "insta", todayCredits(st, "insta"), INSTA_RUNS_PER_DAY);
+    const left = allowance(st.budget, jobBudget(st), "insta", todayCredits(st, "insta"), INSTA_RUNS_PER_DAY);
     const due: DueIg[] = await ctx.runQuery(internal.radar.radarSources.dueIgAccounts, { now, limit: left });
     let credits = 0;
     let calls = 0;
@@ -305,7 +306,9 @@ export const runTranscripts = internalAction({
     // réserve ou un poste coupé n'arrêtent, eux, que le payant (n = 0) : la voie gratuite tourne.
     if (!scKeyPresent()) return { skipped: "no-key" };
     const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    const n = allowance(st.budget, budgetState(st.budget, st.usage, st.balance), "transcript", todayCredits(st, "transcript"), TRANSCRIPT_RUNS_PER_DAY);
+    const n = allowance(st.budget, jobBudget(st), "transcript", todayCredits(st, "transcript"), TRANSCRIPT_RUNS_PER_DAY);
+    // Le budget commun à toutes les tâches (radarProviders.jobBudget) : les transcriptions restent chez ScrapeCreators,
+    // jugées sur son palier et son solde, quel que soit le réglage RADAR_TIKHUB.
     const due: DueTranscript[] = await ctx.runQuery(internal.radar.radarSources.dueTranscripts, { now, limit: n, freeLimit: TRANSCRIPT_FREE_PAGES });
     const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
     const page = retrying(

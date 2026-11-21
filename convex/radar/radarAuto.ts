@@ -52,12 +52,14 @@ import {
   MERGES_2011,
   NOT_FIXES_2011,
   storeTwin,
+  storeTwinKey,
   withNot,
 } from "./radarAutoMath";
 import { ficheApp } from "./radarFicheMath";
 import { ensureSettings, mergeApp, refreshAppNet, trackedCounts, type TrackedCounter } from "./radarSignals";
 import { MAX_OTHER_TOTAL, MAX_TRACKED } from "./radarNetworkMath";
-import { allowanceUsd, budgetState } from "./radarSignalsMath";
+import { allowanceUsd } from "./radarSignalsMath";
+import { jobBudget } from "./radarProviders";
 import { alreadyFollowed } from "./radarStoreMath";
 import { scKeyPresent } from "./scrapeCreatorsApi";
 
@@ -144,20 +146,28 @@ async function autoFollowCore(ctx: MutationCtx, now: number, verdicts: ReadonlyM
   let followed = 0;
   let kept = 0;
   let attached = 0;
-  // Les apps suivies et le compteur des comptes, lus UNE fois pour tout le passage (cf radarNetworks.CreateOpts).
-  const apps = (await ctx.db.query("radarApps").collect()).filter((a) => a.mergedInto === undefined);
-  const counter: TrackedCounter = {};
-  const shared = { followed: apps, counter };
+  // Les apps suivies et le compteur des comptes, lus UNE fois pour tout le passage (cf radarNetworks.CreateOpts) — et
+  // seulement à la première app repérée qui en a besoin (20/11/2026, facture Convex) : une app des classements qui peut
+  // être une app suivie (radarAutoMath.storeTwinKey), ou une app qui n'est pas écartée d'emblée. Un passage sans rien à
+  // regarder (file vide, ou que des « preuve insuffisante » hors classements) relisait les ~2 200 apps (1,96 Mo, 144
+  // passages par jour) pour rien. Avant cette première lecture, le passage n'écrit que dans radarAppCandidates : elle
+  // voit la table telle qu'au début du passage, comme avant (tests/radar/radar-lectures-leviers.test.ts).
+  let shared: { followed: Doc<"radarApps">[]; counter: TrackedCounter } | null = null;
+  const load = async () => ({ followed: (await ctx.db.query("radarApps").collect()).filter((a) => a.mergedInto === undefined), counter: {} });
   for (const c of await pickCandidates(ctx, only)) {
     if (followed >= AUTO_MAX_FOLLOWS) break;
     // Une app des classements qui EST une app déjà suivie (même nom, son hashtag dans les recherches) : ses comptes
     // prouvés la rejoignent, sans créer d'app ni lancer de recherche, quel que soit le garde qui l'aurait laissée
     // proposée (nom courant, preuve insuffisante, motif déjà pris : il porte sur une app à créer, cf radarAutoMath.storeTwin).
-    const twin = storeTwin(c, apps);
-    if (twin) {
-      attached += await adoptStoreTwin(ctx, c, twin, now, counter);
-      await ctx.db.patch(c._id, { autoAt: now, autoNote: `même app que ${twin.name} : ses comptes l'ont rejointe` });
-      continue;
+    // Sans hashtag ou sans nom, storeTwin ne rend rien quelles que soient les apps : elles ne sont pas lues pour elle.
+    if (storeTwinKey(c)) {
+      shared ??= await load();
+      const twin = storeTwin(c, shared.followed);
+      if (twin) {
+        attached += await adoptStoreTwin(ctx, c, twin, now, shared.counter);
+        await ctx.db.patch(c._id, { autoAt: now, autoNote: `même app que ${twin.name} : ses comptes l'ont rejointe` });
+        continue;
+      }
     }
     const plan = autoPlan(c);
     if ("skip" in plan) {
@@ -165,6 +175,8 @@ async function autoFollowCore(ctx: MutationCtx, now: number, verdicts: ReadonlyM
       kept++;
       continue;
     }
+    shared ??= await load();
+    const apps = shared.followed;
     // Déjà suivie sous ce motif (liste de départ, ou suivie à l'écran entre-temps) : plus à proposer.
     if (alreadyFollowed(plan.patterns, apps)) {
       await ctx.db.patch(c._id, { status: "followed", autoAt: now, autoNote: "déjà suivie" });
@@ -235,7 +247,7 @@ export const runAutoFollow = internalAction({
     // Sans IA (clé absente, enveloppe épuisée, réponse illisible), rien n'entre d'office : les apps attendent.
     if (batch.length > 0 && process.env.ANTHROPIC_API_KEY) {
       const st = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-      if (allowanceUsd(st.budget, budgetState(st.budget, st.usage, st.balance), "ai") >= MIN_ALLOWANCE_USD) {
+      if (allowanceUsd(st.budget, jobBudget(st), "ai") >= MIN_ALLOWANCE_USD) {
         asked = true;
         try {
           const response = await new Anthropic().messages.create({
@@ -273,9 +285,8 @@ export const runAutoFollow = internalAction({
 
 /** Les mentions et les sites cités par deux comptes ou plus, jamais triés : les plus cités d'abord. */
 async function toTriage(ctx: QueryCtx, only?: (key: string) => boolean): Promise<TriageToJudge[]> {
-  const names = new Map((await ctx.db.query("radarApps").collect()).map((a) => [a._id as string, a.name]));
-  const out: TriageToJudge[] = [];
-  for (const kind of ["domain", "mention"] as const) {
+  const picked: { c: Doc<"radarAppCandidates">; kind: "domain" | "mention" }[] = [];
+  pick: for (const kind of ["domain", "mention"] as const) {
     const rows = await ctx.db
       .query("radarAppCandidates")
       .withIndex("by_kind_status_count", (q) => q.eq("kind", kind).eq("status", "new").gte("authorCount", TRIAGE_MIN_AUTHORS))
@@ -283,11 +294,17 @@ async function toTriage(ctx: QueryCtx, only?: (key: string) => boolean): Promise
       .take(300);
     for (const c of rows) {
       if (c.triage !== undefined || c.autoAt !== undefined || (only && !only(c.key))) continue;
-      out.push({ id: c._id, kind, label: c.label, authors: c.authorCount, apps: c.fromApps.map((id) => names.get(id as string) ?? "").filter(Boolean) });
-      if (out.length >= TRIAGE_BATCH) return out;
+      picked.push({ c, kind });
+      if (picked.length >= TRIAGE_BATCH) break pick;
     }
   }
-  return out;
+  // Les noms des apps qui les citent, lus un à un parmi celles des retenues (20/11/2026, facture Convex) : avant, toute
+  // la table radarApps (~2 200 apps, 1,92 Mo, 48 fois par jour) pour une quarantaine de noms. Une app absente donne
+  // « », retiré comme avant.
+  const ids = [...new Set(picked.flatMap(({ c }) => c.fromApps))];
+  const apps = await Promise.all(ids.map((id) => ctx.db.get(id)));
+  const names = new Map(ids.map((id, i) => [id as string, apps[i]?.name ?? ""]));
+  return picked.map(({ c, kind }) => ({ id: c._id, kind, label: c.label, authors: c.authorCount, apps: c.fromApps.map((id) => names.get(id as string) ?? "").filter(Boolean) }));
 }
 
 export const triageToDo = internalQuery({ args: {}, handler: (ctx) => toTriage(ctx) });
@@ -322,7 +339,7 @@ export const runCandidateTriage = internalAction({
     if (!process.env.ANTHROPIC_API_KEY) return { skipped: "no-key" };
     const now = Date.now();
     const st = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    if (allowanceUsd(st.budget, budgetState(st.budget, st.usage, st.balance), "ai") < MIN_ALLOWANCE_USD) return { skipped: "budget" };
+    if (allowanceUsd(st.budget, jobBudget(st), "ai") < MIN_ALLOWANCE_USD) return { skipped: "budget" };
     const batch: TriageToJudge[] = await ctx.runQuery(internal.radar.radarAuto.triageToDo, {});
     if (batch.length === 0) return { skipped: "rien" };
     let usd = 0;

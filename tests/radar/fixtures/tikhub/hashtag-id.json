@@ -1,0 +1,36 @@
+{
+ "_fixture": "Réponse TikHub réelle du banc du 20/11/2026 (th-hashtag-id-200.json), tronquée et anonymisée (scripts/fixtures-publiques.mjs --anonymise : auteurs et identifiants inventés, légendes, textes incrustés, titres et hashtags réécrits en mots de remplissage, largeurs tirées et emoji remplacés, dates déplacées par une table secrète et monotone, sans écart commun, durées et compteurs tirés loin des vrais ; ré-anonymisée en un passage le 21/11/2026).",
+ "code": 200,
+ "router": "/api/v1/tiktok/app/v3/fetch_hashtag_search_result",
+ "data": {
+  "status_code": 0,
+  "has_more": 1,
+  "cursor": 10,
+  "challenge_list": [
+   {
+    "challenge_info": {
+     "cid": "6960094601675801580",
+     "cha_name": "focustown"
+    }
+   },
+   {
+    "challenge_info": {
+     "cid": "7398792126181409786",
+     "cha_name": "focus_town"
+    }
+   },
+   {
+    "challenge_info": {
+     "cid": "7700232760878695420",
+     "cha_name": "focustown🦊☁️"
+    }
+   },
+   {
+    "challenge_info": {
+     "cid": "7707270228001948684",
+     "cha_name": "focustowns"
+    }
+   }
+  ]
+ }
+}

@@ -10,12 +10,26 @@ import schema from "../../convex/schema";
  *
  * Ordre de lecture : champs de l'index, puis `_creationTime`, comme Convex.
  * Documents comptés : tous ceux de la plage d'index parcourue (un `.filter`
- * ne réduit pas la lecture, il la trie seulement).
+ * ne réduit pas la lecture, il la trie seulement), au total et par table.
+ *
+ * Écritures (20/11/2026, leviers de la facture Convex) : `insert`, `patch`,
+ * `replace`, `delete` s'appliquent à la base, sont relues par la suite (index
+ * compris) et notées dans `writes()`, dans l'ordre. Un document déjà lu n'est
+ * pas modifié par une écriture suivante (copie à l'écriture), comme en Convex
+ * où une lecture rend un instantané. Les identifiants créés ne dépendent que de
+ * cette base : deux exécutions qui écrivent pareil rendent les mêmes.
  */
 
 export const CONVEX_READ_LIMIT = 32_000;
 
 export type MemoryDoc = Record<string, unknown> & { _id: string; _creationTime: number };
+
+/**
+ * Une écriture notée. `value` est recopiée au moment de l'écriture ; un champ mis à `undefined` (retiré par un patch)
+ * y est noté `UNDEFINED`, pour qu'une comparaison en JSON distingue « retiré » de « pas touché ».
+ */
+export type MemoryWrite = { op: "insert" | "patch" | "replace" | "delete"; table: string; id: string; value?: unknown };
+export const UNDEFINED = "__undefined__";
 
 type Op = "eq" | "gt" | "gte" | "lt" | "lte";
 type RangeStep = { op: Op; field: string; value: unknown };
@@ -72,7 +86,11 @@ export interface MemoryDb {
   db: unknown;
   /** Documents lus depuis la création (ou le dernier `resetReads`). */
   reads(): number;
+  /** Documents lus dans cette table depuis la création (ou le dernier `resetReads`). */
+  readsOf(table: string): number;
   resetReads(): void;
+  /** Écritures faites depuis la création, dans l'ordre. */
+  writes(): MemoryWrite[];
   /**
    * Allers-retours vers la base depuis la création (ou le dernier `resetAllers`) :
    * la longueur de la chaîne d'attente, pas le nombre de lectures. Des lectures
@@ -95,8 +113,10 @@ export function memoryDb(
 ): MemoryDb {
   const limit = opts.limit === undefined ? CONVEX_READ_LIMIT : opts.limit;
   let reads = 0;
-  const lus = (n: number) => {
+  const parTable = new Map<string, number>();
+  const lus = (n: number, table: string) => {
     reads += n;
+    parTable.set(table, (parTable.get(table) ?? 0) + n);
     if (limit !== null && reads > limit) {
       throw new Error(
         `Too many documents read in a single function execution (limit: ${limit}).`,
@@ -129,7 +149,15 @@ export function memoryDb(
     });
 
   const parId = new Map<string, MemoryDoc>();
-  for (const docs of Object.values(tables)) for (const d of docs) parId.set(d._id, d);
+  const tableDe = new Map<string, string>();
+  let derniere = 0;
+  for (const [table, docs] of Object.entries(tables)) {
+    for (const d of docs) {
+      parId.set(d._id, d);
+      tableDe.set(d._id, table);
+      if (d._creationTime > derniere) derniere = d._creationTime;
+    }
+  }
 
   // Par (table, index) : documents triés, regroupés par valeur du 1er champ.
   const trie = new Map<string, { champs: string[]; groupes: Map<string, MemoryDoc[]>; tous: MemoryDoc[] }>();
@@ -235,7 +263,7 @@ export function memoryDb(
       collect() {
         return aller(() => {
           const r = lignes();
-          lus(r.length);
+          lus(r.length, table);
           return r.filter(garde);
         });
       },
@@ -248,7 +276,7 @@ export function memoryDb(
             vus += 1;
             if (garde(d)) out.push(d);
           }
-          lus(vus);
+          lus(vus, table);
           return out;
         });
       },
@@ -262,7 +290,7 @@ export function memoryDb(
           const tout = lignes();
           const debut = opts.cursor === null ? 0 : Number(opts.cursor);
           const fin = Math.min(tout.length, debut + opts.numItems);
-          lus(fin - debut);
+          lus(fin - debut, table);
           return {
             page: tout.slice(debut, fin).filter(garde),
             continueCursor: String(fin),
@@ -280,7 +308,7 @@ export function memoryDb(
       },
       async *[Symbol.asyncIterator]() {
         for (const d of lignes()) {
-          lus(1);
+          lus(1, table);
           if (garde(d)) yield d;
         }
       },
@@ -288,23 +316,91 @@ export function memoryDb(
     return q;
   };
 
+  // Les écritures passent par le même aller que les lectures : servies dans l'ordre du code, une lecture lancée avant
+  // une écriture ne la voit pas.
+  const journal: MemoryWrite[] = [];
+  let crees = 0;
+  const noter = (op: MemoryWrite["op"], table: string, id: string, value?: Record<string, unknown>) => {
+    journal.push({ op, table, id, ...(value === undefined ? {} : { value: marquerUndefined(value) }) });
+    // Les index sont recalculés à la prochaine lecture.
+    trie.clear();
+  };
+  const sansUndefined = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
+  const remplacer = (id: string, doc: MemoryDoc) => {
+    const table = tableDe.get(id)!;
+    const docs = tables[table]!;
+    docs[docs.findIndex((d) => d._id === id)] = doc;
+    parId.set(id, doc);
+  };
+  const present = (id: string, op: string): MemoryDoc => {
+    const d = parId.get(id);
+    if (!d) throw new Error(`${op} : document absent ${id}`);
+    return d;
+  };
+
   const db = {
     get(id: string) {
       return aller(() => {
         const d = parId.get(id) ?? null;
-        if (d) lus(1);
+        if (d) lus(1, tableDe.get(id)!);
         return d;
       });
     },
     query,
+    normalizeId(table: string, id: string): string | null {
+      return tableDe.get(id) === table || id.startsWith(`${table}_`) ? id : null;
+    },
+    insert(table: string, value: Record<string, unknown>) {
+      return aller(() => {
+        crees += 1;
+        derniere += 1;
+        const id = `${table}_w${String(crees).padStart(5, "0")}`;
+        const doc = { ...sansUndefined(value), _id: id, _creationTime: derniere } as MemoryDoc;
+        (tables[table] ??= []).push(doc);
+        parId.set(id, doc);
+        tableDe.set(id, table);
+        noter("insert", table, id, value);
+        return id;
+      });
+    },
+    patch(id: string, value: Record<string, unknown>) {
+      return aller(() => {
+        const d = present(id, "patch");
+        remplacer(id, sansUndefined({ ...d, ...value, _id: d._id, _creationTime: d._creationTime }) as MemoryDoc);
+        noter("patch", tableDe.get(id)!, id, value);
+      });
+    },
+    replace(id: string, value: Record<string, unknown>) {
+      return aller(() => {
+        const d = present(id, "replace");
+        remplacer(id, { ...sansUndefined(value), _id: d._id, _creationTime: d._creationTime } as MemoryDoc);
+        noter("replace", tableDe.get(id)!, id, value);
+      });
+    },
+    delete(id: string) {
+      return aller(() => {
+        present(id, "delete");
+        const table = tableDe.get(id)!;
+        const docs = tables[table]!;
+        docs.splice(
+          docs.findIndex((d) => d._id === id),
+          1,
+        );
+        parId.delete(id);
+        noter("delete", table, id);
+      });
+    },
   };
 
   return {
     db,
     reads: () => reads,
+    readsOf: (table: string) => parTable.get(table) ?? 0,
     resetReads: () => {
       reads = 0;
+      parTable.clear();
     },
+    writes: () => journal,
     allers: () => allers,
     resetAllers: () => {
       allers = 0;
@@ -330,4 +426,12 @@ function filtreConvex(f: (b: unknown) => unknown): (d: MemoryDoc) => boolean {
   };
   const expr = val(f(b));
   return (d) => Boolean(expr(d));
+}
+
+/** Une valeur écrite, recopiée, ses `undefined` notés `UNDEFINED` (un tableau garde sa longueur). */
+function marquerUndefined(v: unknown): unknown {
+  if (v === undefined) return UNDEFINED;
+  if (Array.isArray(v)) return v.map(marquerUndefined);
+  if (v !== null && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, marquerUndefined(x)]));
+  return v;
 }

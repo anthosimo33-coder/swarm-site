@@ -1,0 +1,6747 @@
+{
+ "L5 plafond total, abonnés d'une vidéo non mesurés (TikHub)": {
+  "out": {
+   "attached": 2,
+   "signals": 5,
+   "updated": 0
+  },
+  "writes": [
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_c49eb5fd",
+    "value": {
+     "trackedCount": 1
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_010da95f",
+    "value": {
+     "trackedCount": 2
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_dbb41672",
+    "value": {
+     "trackedCount": 3
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_5491fd36",
+    "value": {
+     "trackedCount": 11
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00001",
+    "value": {
+     "platform": "tiktok",
+     "handle": "nouveau1",
+     "appId": "radarApps_5491fd36",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 2000,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00002",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "v1",
+     "url": "https://www.tiktok.com/@nouveau1/video/v1",
+     "authorId": "uid_nouveau1",
+     "authorHandle": "nouveau1",
+     "authorFans": 2000,
+     "caption": "je teste cibleapp ce soir",
+     "lang": "en",
+     "publishedAt": 1795104000000,
+     "views": 60000,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 30,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 60000
+      }
+     ],
+     "appId": "radarApps_5491fd36",
+     "appName": "Cible",
+     "appRivalOf": [],
+     "foundBy": [
+      "réseau Cible"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00003",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "v2",
+     "url": "https://www.tiktok.com/@connu1/video/v2",
+     "authorId": "uid_connu1",
+     "authorHandle": "connu1",
+     "authorFans": 2000,
+     "caption": "encore cibleapp",
+     "lang": "en",
+     "publishedAt": 1795104000000,
+     "views": 60000,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 30,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 60000
+      }
+     ],
+     "appId": "radarApps_5491fd36",
+     "appName": "Cible",
+     "appRivalOf": [],
+     "foundBy": [
+      "réseau Cible"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00004",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "v3",
+     "url": "https://www.tiktok.com/@ecarte1/video/v3",
+     "authorId": "uid_ecarte1",
+     "authorHandle": "ecarte1",
+     "authorFans": 2000,
+     "caption": "cibleapp, mon avis",
+     "lang": "en",
+     "publishedAt": 1795104000000,
+     "views": 60000,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 30,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 60000
+      }
+     ],
+     "appId": "radarApps_5491fd36",
+     "appName": "Cible",
+     "appRivalOf": [],
+     "foundBy": [
+      "réseau Cible"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_5491fd36",
+    "value": {
+     "trackedCount": 12
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00005",
+    "value": {
+     "platform": "tiktok",
+     "handle": "nouveau2",
+     "appId": "radarApps_5491fd36",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 2000,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00006",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "v5",
+     "url": "https://www.tiktok.com/@nouveau3/video/v5",
+     "authorId": "uid_nouveau3",
+     "authorHandle": "nouveau3",
+     "authorFans": 2000,
+     "caption": "cibleapp again",
+     "lang": "en",
+     "publishedAt": 1795104000000,
+     "views": 60000,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 30,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 60000
+      }
+     ],
+     "appId": "radarApps_5491fd36",
+     "appName": "Cible",
+     "appRivalOf": [],
+     "foundBy": [
+      "réseau Cible"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00007",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "v7",
+     "url": "https://www.tiktok.com/@nouveau4/video/v7",
+     "authorId": "uid_nouveau4",
+     "authorHandle": "nouveau4",
+     "authorFans": 2000,
+     "caption": "cibleapp toujours",
+     "lang": "fr",
+     "publishedAt": 1795104000000,
+     "views": 60000,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 30,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 60000
+      }
+     ],
+     "appId": "radarApps_5491fd36",
+     "appName": "Cible",
+     "appRivalOf": [],
+     "foundBy": [
+      "réseau Cible"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_5491fd36",
+    "value": {
+     "net": {
+      "accounts": 3,
+      "active": 1,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_5491fd36",
+    "value": {
+     "networkSearch": {
+      "requestedAt": 1795175940000,
+      "startedAt": 1795175940000,
+      "step": 2,
+      "steps": 4,
+      "attached": 2,
+      "signals": 5,
+      "full": 2
+     }
+    }
+   }
+  ],
+  "scheduled": []
+ },
+ "L6 graine 61, abonnés non mesurés (TikHub)": {
+  "outs": [
+   {
+    "inserted": 9,
+    "updated": 2,
+    "admitted": 3,
+    "attached": 6
+   },
+   {
+    "inserted": 5,
+    "updated": 0,
+    "admitted": 2,
+    "attached": 5
+   }
+  ],
+  "writes": [
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00001",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d0",
+     "url": "https://www.tiktok.com/@auteur0/video/d0",
+     "authorId": "uid_auteur0",
+     "authorHandle": "auteur0",
+     "authorFans": 6018,
+     "caption": "vocaai  vidéo 0",
+     "lang": "fr",
+     "publishedAt": 1794484800000,
+     "views": 229134,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 38.074775672981055,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 229134
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "trackedCount": 31
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00002",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur2",
+     "appId": "radarApps_8191422c",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 6056,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSignals",
+    "id": "radarSignals_a159fe09",
+    "value": {
+     "authorFans": 6056,
+     "caption": "recentfollow  vidéo 2",
+     "views": 5102,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 0.8424702774108322,
+     "snapshots": [
+      {
+       "at": 1795172400000,
+       "views": 5102
+      }
+     ],
+     "foundBy": [
+      "avant",
+      "app couple·fr"
+     ],
+     "appId": "radarApps_8191422c",
+     "appName": "Recentfollow",
+     "appRivalOf": [
+      "snytch"
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00003",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d3",
+     "url": "https://www.tiktok.com/@auteur3/video/d3",
+     "authorId": "uid_auteur3",
+     "authorHandle": "auteur3",
+     "authorFans": 6007,
+     "caption": "ma routine  vidéo 3",
+     "lang": "en",
+     "publishedAt": 1793793600000,
+     "views": 61454,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.230397869152656,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 61454
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00004",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d5",
+     "url": "https://www.tiktok.com/@auteur5/video/d5",
+     "authorId": "uid_auteur5",
+     "authorHandle": "auteur5",
+     "authorFans": 3156,
+     "caption": "pixa  vidéo 5",
+     "lang": "en",
+     "publishedAt": 1795082400000,
+     "views": 343184,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 108.74017743979721,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 343184
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 5
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00005",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur7",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 4123,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSignals",
+    "id": "radarSignals_3f9177ba",
+    "value": {
+     "authorFans": 4123,
+     "caption": "#bestapp glowly vidéo 7",
+     "views": 304235,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 73.789716226049,
+     "snapshots": [
+      {
+       "at": 1795172400000,
+       "views": 304235
+      }
+     ],
+     "foundBy": [
+      "avant",
+      "app couple·fr"
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "trackedCount": 32
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00006",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur8",
+     "appId": "radarApps_8191422c",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 17688,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00007",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d8",
+     "url": "https://www.tiktok.com/@auteur8/video/d8",
+     "authorId": "uid_auteur8",
+     "authorHandle": "auteur8",
+     "authorFans": 17688,
+     "caption": "recentfollow ma routine vidéo 8",
+     "lang": "fr",
+     "publishedAt": 1795147200000,
+     "views": 329562,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 18.631953867028493,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 329562
+      }
+     ],
+     "appId": "radarApps_8191422c",
+     "appName": "Recentfollow",
+     "appRivalOf": [
+      "snytch"
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795233600000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00008",
+    "value": {
+     "key": "@uid_m9",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur9"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "auteur9",
+       "url": "https://www.tiktok.com/@auteur9/video/d9"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00009",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d9",
+     "url": "https://www.tiktok.com/@auteur9/video/d9",
+     "authorId": "uid_auteur9",
+     "authorHandle": "auteur9",
+     "authorFans": 3809,
+     "caption": "pixa  vidéo 9",
+     "lang": "en",
+     "publishedAt": 1793880000000,
+     "views": 76345,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 20.04331845628774,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 76345
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00010",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d10",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d10",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 14171,
+     "caption": "pixa photo  vidéo 10",
+     "lang": "fr",
+     "publishedAt": 1795176000000,
+     "views": 262657,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 18.534824641874252,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 262657
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795197600000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 6
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00011",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur11",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 10742,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "auteur12"
+     ],
+     "authorCount": 2,
+     "examples": [
+      {
+       "handle": "auteur12",
+       "url": "https://www.tiktok.com/@auteur12/video/d12"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00012",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d12",
+     "url": "https://www.tiktok.com/@auteur12/video/d12",
+     "authorId": "uid_auteur12",
+     "authorHandle": "auteur12",
+     "authorFans": 3235,
+     "caption": "#bestapp  vidéo 12",
+     "lang": "fr",
+     "publishedAt": 1795093200000,
+     "views": 161278,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 49.85409582689336,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 161278
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00013",
+    "value": {
+     "key": "monsite.io",
+     "kind": "domain",
+     "label": "monsite.io",
+     "authors": [
+      "auteur13"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_c259e342"
+     ],
+     "examples": [
+      {
+       "handle": "auteur13",
+       "url": "https://www.tiktok.com/@auteur13/video/d13"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00014",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d13",
+     "url": "https://www.tiktok.com/@auteur13/video/d13",
+     "authorId": "uid_auteur13",
+     "authorHandle": "auteur13",
+     "authorFans": 14388,
+     "caption": "lien sur monsite.io @voca vidéo 13",
+     "lang": "en",
+     "publishedAt": 1795089600000,
+     "views": 355397,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 24.700931331665277,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 355397
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795262400000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00015",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d15",
+     "url": "https://www.tiktok.com/@auteur15/video/d15",
+     "authorId": "uid_auteur15",
+     "authorHandle": "auteur15",
+     "authorFans": 9151,
+     "caption": "@voca  vidéo 15",
+     "lang": "en",
+     "publishedAt": 1794571200000,
+     "views": 331123,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 36.18435143700142,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 331123
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "trackedCount": 33
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00016",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur16",
+     "appId": "radarApps_8191422c",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 12878,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 4
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00017",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur17",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 22656,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00018",
+    "value": {
+     "key": "@uid_m17",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur17"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_287c1745"
+     ],
+     "examples": [
+      {
+       "handle": "auteur17",
+       "url": "https://www.tiktok.com/@auteur17/video/d17"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSettings",
+    "id": "radarSettings_9e3779b1",
+    "value": {
+     "curveDay": "2026-11-20",
+     "curveAdmitted": 6
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "net": {
+      "accounts": 3,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "net": {
+      "accounts": 3,
+      "active": 1,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "net": {
+      "accounts": 1,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00019",
+    "value": {
+     "key": "#bestapp",
+     "kind": "hashtag",
+     "label": "bestapp",
+     "authors": [
+      "auteur18"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "auteur18",
+       "url": "https://www.tiktok.com/@auteur18/video/d18"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00019",
+    "value": {
+     "authors": [
+      "auteur18",
+      "auteur19"
+     ],
+     "authorCount": 2,
+     "examples": [
+      {
+       "handle": "auteur18",
+       "url": "https://www.tiktok.com/@auteur18/video/d18"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00013",
+    "value": {
+     "authors": [
+      "auteur13",
+      "auteur20"
+     ],
+     "authorCount": 2,
+     "examples": [
+      {
+       "handle": "auteur13",
+       "url": "https://www.tiktok.com/@auteur13/video/d13"
+      },
+      {
+       "handle": "auteur20",
+       "url": "https://www.tiktok.com/@auteur20/video/d20"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00020",
+    "value": {
+     "key": "@uid_m22",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "deja_suivi"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d22"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00013",
+    "value": {
+     "authors": [
+      "auteur13",
+      "auteur20",
+      "deja_suivi"
+     ],
+     "authorCount": 3,
+     "examples": [
+      {
+       "handle": "auteur13",
+       "url": "https://www.tiktok.com/@auteur13/video/d13"
+      },
+      {
+       "handle": "auteur20",
+       "url": "https://www.tiktok.com/@auteur20/video/d20"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d22"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00019",
+    "value": {
+     "authors": [
+      "auteur18",
+      "auteur19",
+      "deja_suivi"
+     ],
+     "authorCount": 3,
+     "examples": [
+      {
+       "handle": "auteur18",
+       "url": "https://www.tiktok.com/@auteur18/video/d18"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d22"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00021",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d22",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d22",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 4825,
+     "caption": "#bestapp lien sur monsite.io vidéo 22",
+     "lang": "en",
+     "publishedAt": 1795104000000,
+     "views": 88399,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 18.321036269430053,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 88399
+      }
+     ],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00022",
+    "value": {
+     "key": "@uid_m23",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur0"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "auteur0",
+       "url": "https://www.tiktok.com/@auteur0/video/d23"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00019",
+    "value": {
+     "authors": [
+      "auteur18",
+      "auteur19",
+      "deja_suivi",
+      "auteur1"
+     ],
+     "authorCount": 4,
+     "examples": [
+      {
+       "handle": "auteur18",
+       "url": "https://www.tiktok.com/@auteur18/video/d18"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d22"
+      },
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d24"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 7
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00023",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur3",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 5756,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00024",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d26",
+     "url": "https://www.tiktok.com/@auteur3/video/d26",
+     "authorId": "uid_auteur3",
+     "authorHandle": "auteur3",
+     "authorFans": 5756,
+     "caption": "glowly.app lumiq vidéo 26",
+     "lang": "fr",
+     "publishedAt": 1795089600000,
+     "views": 123448,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 21.44683808200139,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 123448
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795262400000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 8
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00025",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur5",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 28713,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00026",
+    "value": {
+     "key": "@uid_m28",
+     "kind": "mention",
+     "label": "@Compte28",
+     "authors": [
+      "auteur5"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "auteur5",
+       "url": "https://www.tiktok.com/@auteur5/video/d28"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00013",
+    "value": {
+     "authors": [
+      "auteur13",
+      "auteur20",
+      "deja_suivi",
+      "auteur5"
+     ],
+     "authorCount": 4,
+     "fromApps": [
+      "radarApps_c259e342",
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "auteur13",
+       "url": "https://www.tiktok.com/@auteur13/video/d13"
+      },
+      {
+       "handle": "auteur20",
+       "url": "https://www.tiktok.com/@auteur20/video/d20"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d22"
+      },
+      {
+       "handle": "auteur5",
+       "url": "https://www.tiktok.com/@auteur5/video/d28"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 9
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00027",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur6",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 23336,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00028",
+    "value": {
+     "key": "@uid_m29",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur6"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "auteur6",
+       "url": "https://www.tiktok.com/@auteur6/video/d29"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00029",
+    "value": {
+     "key": "@uid_m30",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur7"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_c259e342"
+     ],
+     "examples": [
+      {
+       "handle": "auteur7",
+       "url": "https://www.tiktok.com/@auteur7/video/d30"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00019",
+    "value": {
+     "authors": [
+      "auteur18",
+      "auteur19",
+      "deja_suivi",
+      "auteur1",
+      "auteur8"
+     ],
+     "authorCount": 5,
+     "fromApps": [
+      "radarApps_8191422c"
+     ],
+     "examples": [
+      {
+       "handle": "auteur18",
+       "url": "https://www.tiktok.com/@auteur18/video/d18"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d22"
+      },
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d24"
+      },
+      {
+       "handle": "auteur8",
+       "url": "https://www.tiktok.com/@auteur8/video/d31"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 1
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00030",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur9",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 28099,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00031",
+    "value": {
+     "key": "@uid_m32",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur9"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_af8c0b54"
+     ],
+     "examples": [
+      {
+       "handle": "auteur9",
+       "url": "https://www.tiktok.com/@auteur9/video/d32"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00032",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d33",
+     "url": "https://www.tiktok.com/@auteur10/video/d33",
+     "authorId": "uid_auteur10",
+     "authorHandle": "auteur10",
+     "authorFans": 14710,
+     "caption": "ma routine  vidéo 33",
+     "lang": "en",
+     "publishedAt": 1795125600000,
+     "views": 182999,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 12.440448674371176,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 182999
+      }
+     ],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00033",
+    "value": {
+     "key": "@uid_m34",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur11"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "auteur11",
+       "url": "https://www.tiktok.com/@auteur11/video/d34"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00013",
+    "value": {
+     "authors": [
+      "auteur13",
+      "auteur20",
+      "deja_suivi",
+      "auteur5",
+      "auteur11"
+     ],
+     "authorCount": 5,
+     "examples": [
+      {
+       "handle": "auteur13",
+       "url": "https://www.tiktok.com/@auteur13/video/d13"
+      },
+      {
+       "handle": "auteur20",
+       "url": "https://www.tiktok.com/@auteur20/video/d20"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d22"
+      },
+      {
+       "handle": "auteur5",
+       "url": "https://www.tiktok.com/@auteur5/video/d28"
+      },
+      {
+       "handle": "auteur11",
+       "url": "https://www.tiktok.com/@auteur11/video/d34"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00034",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d34",
+     "url": "https://www.tiktok.com/@auteur11/video/d34",
+     "authorId": "uid_auteur11",
+     "authorHandle": "auteur11",
+     "authorFans": 1492,
+     "caption": "glowly.app lien sur monsite.io vidéo 34",
+     "lang": "en",
+     "publishedAt": 1794052800000,
+     "views": 370783,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 248.51407506702412,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 370783
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 2
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00035",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur12",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 10872,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00036",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d35",
+     "url": "https://www.tiktok.com/@auteur12/video/d35",
+     "authorId": "uid_auteur12",
+     "authorHandle": "auteur12",
+     "authorFans": 10872,
+     "caption": "pixa photo his recent following vidéo 35",
+     "lang": "en",
+     "publishedAt": 1795100400000,
+     "views": 345577,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 31.785963944076528,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 345577
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795186800000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSettings",
+    "id": "radarSettings_9e3779b1",
+    "value": {
+     "curveDay": "2026-11-20",
+     "curveAdmitted": 8
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "net": {
+      "accounts": 6,
+      "active": 1,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "net": {
+      "accounts": 2,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   }
+  ],
+  "scheduled": []
+ },
+ "L6 graine 62, abonnés non mesurés (TikHub)": {
+  "outs": [
+   {
+    "inserted": 8,
+    "updated": 2,
+    "admitted": 2,
+    "attached": 3
+   },
+   {
+    "inserted": 11,
+    "updated": 0,
+    "admitted": 1,
+    "attached": 8
+   }
+  ],
+  "writes": [
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 1
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00001",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur0",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 24371,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00002",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d0",
+     "url": "https://www.tiktok.com/@auteur0/video/d0",
+     "authorId": "uid_auteur0",
+     "authorHandle": "auteur0",
+     "authorFans": 24371,
+     "caption": "lumiq pixa photo vidéo 0",
+     "lang": "fr",
+     "publishedAt": 1795089600000,
+     "views": 395183,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 16.21529686922982,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 395183
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795262400000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "auteur1"
+     ],
+     "authorCount": 2,
+     "fromApps": [
+      "radarApps_c259e342"
+     ],
+     "examples": [
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d1"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00003",
+    "value": {
+     "key": "monsite.io",
+     "kind": "domain",
+     "label": "monsite.io",
+     "authors": [
+      "deja_suivi"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_287c1745"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d2"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSignals",
+    "id": "radarSignals_a159fe09",
+    "value": {
+     "authorFans": 29427,
+     "caption": "lien sur monsite.io lumiq vidéo 2",
+     "views": 239770,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 8.147959357053047,
+     "snapshots": [
+      {
+       "at": 1795172400000,
+       "views": 239770
+      }
+     ],
+     "foundBy": [
+      "avant",
+      "app couple·fr"
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00004",
+    "value": {
+     "key": "@uid_m3",
+     "kind": "mention",
+     "label": "@Compte3",
+     "authors": [
+      "deja_suivi"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d3"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 4
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00005",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur4",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 220,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00003",
+    "value": {
+     "authors": [
+      "deja_suivi",
+      "auteur4"
+     ],
+     "authorCount": 2,
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d2"
+      },
+      {
+       "handle": "auteur4",
+       "url": "https://www.tiktok.com/@auteur4/video/d4"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00006",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d4",
+     "url": "https://www.tiktok.com/@auteur4/video/d4",
+     "authorId": "uid_auteur4",
+     "authorHandle": "auteur4",
+     "authorFans": 220,
+     "caption": "lien sur monsite.io lumiq vidéo 4",
+     "lang": "fr",
+     "publishedAt": 1794484800000,
+     "views": 113488,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 515.8545454545455,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 113488
+      }
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00007",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d5",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d5",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 18453,
+     "caption": "vocaai @voca vidéo 5",
+     "lang": "fr",
+     "publishedAt": 1794052800000,
+     "views": 222758,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 12.071641467512057,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 222758
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSignals",
+    "id": "radarSignals_3f9177ba",
+    "value": {
+     "authorFans": 26301,
+     "caption": "ma routine lumiq vidéo 7",
+     "views": 106318,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 4.042355803961827,
+     "snapshots": [
+      {
+       "at": 1795172400000,
+       "views": 106318
+      }
+     ],
+     "foundBy": [
+      "avant",
+      "app couple·fr"
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00008",
+    "value": {
+     "key": "@uid_m9",
+     "kind": "mention",
+     "label": "@Compte9",
+     "authors": [
+      "auteur9"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "auteur9",
+       "url": "https://www.tiktok.com/@auteur9/video/d9"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00009",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d9",
+     "url": "https://www.tiktok.com/@auteur9/video/d9",
+     "authorId": "uid_auteur9",
+     "authorHandle": "auteur9",
+     "authorFans": 25060,
+     "caption": "pixa  vidéo 9",
+     "lang": "en",
+     "publishedAt": 1795100400000,
+     "views": 390254,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 15.572785315243415,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 390254
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00010",
+    "value": {
+     "key": "@uid_m11",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "deja_suivi"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d11"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00011",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d12",
+     "url": "https://www.tiktok.com/@auteur12/video/d12",
+     "authorId": "uid_auteur12",
+     "authorHandle": "auteur12",
+     "authorFans": 12976,
+     "caption": "vocaai pixa vidéo 12",
+     "lang": "en",
+     "publishedAt": 1793880000000,
+     "views": 138971,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.709848951911221,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 138971
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 5
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00012",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur13",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 8492,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00013",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d13",
+     "url": "https://www.tiktok.com/@auteur13/video/d13",
+     "authorId": "uid_auteur13",
+     "authorHandle": "auteur13",
+     "authorFans": 8492,
+     "caption": "lumiq  vidéo 13",
+     "lang": "en",
+     "publishedAt": 1793620800000,
+     "views": 112653,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 13.265779557230335,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 112653
+      }
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00014",
+    "value": {
+     "key": "@uid_m14",
+     "kind": "mention",
+     "label": "@Compte14",
+     "authors": [
+      "auteur14"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "auteur14",
+       "url": "https://www.tiktok.com/@auteur14/video/d14"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00015",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d14",
+     "url": "https://www.tiktok.com/@auteur14/video/d14",
+     "authorId": "uid_auteur14",
+     "authorHandle": "auteur14",
+     "authorFans": 5642,
+     "caption": "his recent following  vidéo 14",
+     "lang": "en",
+     "publishedAt": 1794916800000,
+     "views": 161848,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 28.68628146047501,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 161848
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "auteur1",
+      "auteur16"
+     ],
+     "authorCount": 3,
+     "examples": [
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d1"
+      },
+      {
+       "handle": "auteur16",
+       "url": "https://www.tiktok.com/@auteur16/video/d16"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00003",
+    "value": {
+     "authors": [
+      "deja_suivi",
+      "auteur4",
+      "auteur16"
+     ],
+     "authorCount": 3,
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d2"
+      },
+      {
+       "handle": "auteur4",
+       "url": "https://www.tiktok.com/@auteur4/video/d4"
+      },
+      {
+       "handle": "auteur16",
+       "url": "https://www.tiktok.com/@auteur16/video/d16"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00016",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d17",
+     "url": "https://www.tiktok.com/@auteur17/video/d17",
+     "authorId": "uid_auteur17",
+     "authorHandle": "auteur17",
+     "authorFans": 10482,
+     "caption": "vocaai  vidéo 17",
+     "lang": "en",
+     "publishedAt": 1795168800000,
+     "views": 162868,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 15.537874451440565,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 162868
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795190400000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSettings",
+    "id": "radarSettings_9e3779b1",
+    "value": {
+     "curveDay": "2026-11-20",
+     "curveAdmitted": 5
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "net": {
+      "accounts": 1,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "net": {
+      "accounts": 2,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00017",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d18",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d18",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 5583,
+     "caption": "glowly.app  vidéo 18",
+     "lang": "en",
+     "publishedAt": 1795096800000,
+     "views": 152812,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 27.37094751925488,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 152812
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795183200000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "auteur1",
+      "auteur16",
+      "auteur19"
+     ],
+     "authorCount": 4,
+     "examples": [
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d1"
+      },
+      {
+       "handle": "auteur16",
+       "url": "https://www.tiktok.com/@auteur16/video/d16"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00003",
+    "value": {
+     "authors": [
+      "deja_suivi",
+      "auteur4",
+      "auteur16",
+      "auteur19"
+     ],
+     "authorCount": 4,
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d2"
+      },
+      {
+       "handle": "auteur4",
+       "url": "https://www.tiktok.com/@auteur4/video/d4"
+      },
+      {
+       "handle": "auteur16",
+       "url": "https://www.tiktok.com/@auteur16/video/d16"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 2
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00018",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur20",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 11470,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00019",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d20",
+     "url": "https://www.tiktok.com/@auteur20/video/d20",
+     "authorId": "uid_auteur20",
+     "authorHandle": "auteur20",
+     "authorFans": 11470,
+     "caption": "pixa photo  vidéo 20",
+     "lang": "en",
+     "publishedAt": 1794830400000,
+     "views": 356639,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 31.093199651264168,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 356639
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00020",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d21",
+     "url": "https://www.tiktok.com/@auteur21/video/d21",
+     "authorId": "uid_auteur21",
+     "authorHandle": "auteur21",
+     "authorFans": 1972,
+     "caption": "ma routine  vidéo 21",
+     "lang": "en",
+     "publishedAt": 1795089600000,
+     "views": 24360,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 12.352941176470589,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 24360
+      }
+     ],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 6
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00021",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur22",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 9566,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00022",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d22",
+     "url": "https://www.tiktok.com/@auteur22/video/d22",
+     "authorId": "uid_auteur22",
+     "authorHandle": "auteur22",
+     "authorFans": 9566,
+     "caption": "pixa lumiq vidéo 22",
+     "lang": "fr",
+     "publishedAt": 1794312000000,
+     "views": 156324,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 16.341626594187748,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 156324
+      }
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00023",
+    "value": {
+     "key": "@uid_m23",
+     "kind": "mention",
+     "label": "@Compte23",
+     "authors": [
+      "auteur0"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "auteur0",
+       "url": "https://www.tiktok.com/@auteur0/video/d23"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00024",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d23",
+     "url": "https://www.tiktok.com/@auteur0/video/d23",
+     "authorId": "uid_auteur0",
+     "authorHandle": "auteur0",
+     "authorFans": 5149,
+     "caption": "his recent following  vidéo 23",
+     "lang": "fr",
+     "publishedAt": 1793966400000,
+     "views": 55534,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.785395222373277,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 55534
+      }
+     ],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 3
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00025",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur1",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 17684,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 5
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00026",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur3",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 2747,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00027",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d26",
+     "url": "https://www.tiktok.com/@auteur3/video/d26",
+     "authorId": "uid_auteur3",
+     "authorHandle": "auteur3",
+     "authorFans": 2747,
+     "caption": "glowly.app  vidéo 26",
+     "lang": "en",
+     "publishedAt": 1794052800000,
+     "views": 320888,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 116.81397888605751,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 320888
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00028",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d27",
+     "url": "https://www.tiktok.com/@auteur4/video/d27",
+     "authorId": "uid_auteur4",
+     "authorHandle": "auteur4",
+     "authorFans": 1660,
+     "caption": "glowly  vidéo 27",
+     "lang": "en",
+     "publishedAt": 1794312000000,
+     "views": 262280,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 158,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 262280
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 6
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00029",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur5",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 20521,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "auteur1",
+      "auteur16",
+      "auteur19",
+      "auteur5"
+     ],
+     "authorCount": 5,
+     "fromApps": [
+      "radarApps_c259e342",
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d1"
+      },
+      {
+       "handle": "auteur16",
+       "url": "https://www.tiktok.com/@auteur16/video/d16"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      },
+      {
+       "handle": "auteur5",
+       "url": "https://www.tiktok.com/@auteur5/video/d28"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00003",
+    "value": {
+     "authors": [
+      "deja_suivi",
+      "auteur4",
+      "auteur16",
+      "auteur19",
+      "auteur5"
+     ],
+     "authorCount": 5,
+     "fromApps": [
+      "radarApps_287c1745",
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d2"
+      },
+      {
+       "handle": "auteur4",
+       "url": "https://www.tiktok.com/@auteur4/video/d4"
+      },
+      {
+       "handle": "auteur16",
+       "url": "https://www.tiktok.com/@auteur16/video/d16"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      },
+      {
+       "handle": "auteur5",
+       "url": "https://www.tiktok.com/@auteur5/video/d28"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 4
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00030",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur6",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 16373,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00031",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d29",
+     "url": "https://www.tiktok.com/@auteur6/video/d29",
+     "authorId": "uid_auteur6",
+     "authorHandle": "auteur6",
+     "authorFans": 16373,
+     "caption": "pixa photo vocaai vidéo 29",
+     "lang": "en",
+     "publishedAt": 1794916800000,
+     "views": 245971,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 15.022964636902216,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 245971
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00003",
+    "value": {
+     "authors": [
+      "deja_suivi",
+      "auteur4",
+      "auteur16",
+      "auteur19",
+      "auteur5",
+      "auteur7"
+     ],
+     "authorCount": 6,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 7
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00032",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur8",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 24979,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 8
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00033",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur9",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 10586,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00034",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d32",
+     "url": "https://www.tiktok.com/@auteur9/video/d32",
+     "authorId": "uid_auteur9",
+     "authorHandle": "auteur9",
+     "authorFans": 10586,
+     "caption": "glowly.app  vidéo 32",
+     "lang": "en",
+     "publishedAt": 1794225600000,
+     "views": 187536,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 17.7154732665785,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 187536
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00035",
+    "value": {
+     "key": "@uid_m33",
+     "kind": "mention",
+     "label": "@Compte33",
+     "authors": [
+      "auteur10"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_c259e342"
+     ],
+     "examples": [
+      {
+       "handle": "auteur10",
+       "url": "https://www.tiktok.com/@auteur10/video/d33"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00003",
+    "value": {
+     "authors": [
+      "deja_suivi",
+      "auteur4",
+      "auteur16",
+      "auteur19",
+      "auteur5",
+      "auteur7",
+      "auteur10"
+     ],
+     "authorCount": 7,
+     "fromApps": [
+      "radarApps_287c1745",
+      "radarApps_b54cda26",
+      "radarApps_c259e342"
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00036",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d33",
+     "url": "https://www.tiktok.com/@auteur10/video/d33",
+     "authorId": "uid_auteur10",
+     "authorHandle": "auteur10",
+     "authorFans": 6857,
+     "caption": "@voca lien sur monsite.io vidéo 33",
+     "lang": "en",
+     "publishedAt": 1794312000000,
+     "views": 113724,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 16.58509552282339,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 113724
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "auteur1",
+      "auteur16",
+      "auteur19",
+      "auteur5",
+      "deja_suivi"
+     ],
+     "authorCount": 6,
+     "examples": [
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d1"
+      },
+      {
+       "handle": "auteur16",
+       "url": "https://www.tiktok.com/@auteur16/video/d16"
+      },
+      {
+       "handle": "auteur19",
+       "url": "https://www.tiktok.com/@auteur19/video/d19"
+      },
+      {
+       "handle": "auteur5",
+       "url": "https://www.tiktok.com/@auteur5/video/d28"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d34"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "auteur1",
+      "auteur16",
+      "auteur19",
+      "auteur5",
+      "deja_suivi",
+      "auteur12"
+     ],
+     "authorCount": 7,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00003",
+    "value": {
+     "authors": [
+      "deja_suivi",
+      "auteur4",
+      "auteur16",
+      "auteur19",
+      "auteur5",
+      "auteur7",
+      "auteur10",
+      "auteur12"
+     ],
+     "authorCount": 8,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00037",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d35",
+     "url": "https://www.tiktok.com/@auteur12/video/d35",
+     "authorId": "uid_auteur12",
+     "authorHandle": "auteur12",
+     "authorFans": 4863,
+     "caption": "pixa lien sur monsite.io vidéo 35",
+     "lang": "en",
+     "publishedAt": 1794139200000,
+     "views": 194849,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 40.06765371170059,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 194849
+      }
+     ],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSettings",
+    "id": "radarSettings_9e3779b1",
+    "value": {
+     "curveDay": "2026-11-20",
+     "curveAdmitted": 6
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "net": {
+      "accounts": 4,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "net": {
+      "accounts": 3,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "net": {
+      "accounts": 5,
+      "active": 1,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   }
+  ],
+  "scheduled": []
+ },
+ "L6 graine 63, abonnés non mesurés (TikHub)": {
+  "outs": [
+   {
+    "inserted": 6,
+    "updated": 2,
+    "admitted": 3,
+    "attached": 10
+   },
+   {
+    "inserted": 14,
+    "updated": 0,
+    "admitted": 4,
+    "attached": 3
+   }
+  ],
+  "writes": [
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi"
+     ],
+     "authorCount": 2,
+     "fromApps": [
+      "radarApps_af8c0b54"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d0"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00001",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d0",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d0",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 8546,
+     "caption": "pixa photo pixa vidéo 0",
+     "lang": "en",
+     "publishedAt": 1795107600000,
+     "views": 264827,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 30.9884156330447,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 264827
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795194000000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 5
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00002",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur1",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 23222,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 6
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00003",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur2",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 27779,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSignals",
+    "id": "radarSignals_a159fe09",
+    "value": {
+     "authorFans": 27779,
+     "caption": "vocaai glowly.app vidéo 2",
+     "views": 341213,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 12.283127542388135,
+     "snapshots": [
+      {
+       "at": 1795172400000,
+       "views": 341213
+      }
+     ],
+     "foundBy": [
+      "avant",
+      "app couple·fr"
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "trackedCount": 31
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00004",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur3",
+     "appId": "radarApps_8191422c",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 20264,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00005",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d3",
+     "url": "https://www.tiktok.com/@auteur3/video/d3",
+     "authorId": "uid_auteur3",
+     "authorHandle": "auteur3",
+     "authorFans": 20264,
+     "caption": "recentfollow  vidéo 3",
+     "lang": "fr",
+     "publishedAt": 1793620800000,
+     "views": 331204,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 16.34445321752862,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 331204
+      }
+     ],
+     "appId": "radarApps_8191422c",
+     "appName": "Recentfollow",
+     "appRivalOf": [
+      "snytch"
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00006",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d5",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d5",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 11939,
+     "caption": "his recent following @voca vidéo 5",
+     "lang": "en",
+     "publishedAt": 1794916800000,
+     "views": 373872,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 31.315185526426,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 373872
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 4
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00007",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur6",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 25820,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSignals",
+    "id": "radarSignals_3f9177ba",
+    "value": {
+     "authorFans": 27702,
+     "caption": "vocaai  vidéo 7",
+     "views": 148512,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 5.361056963396145,
+     "snapshots": [
+      {
+       "at": 1795172400000,
+       "views": 148512
+      }
+     ],
+     "foundBy": [
+      "avant",
+      "app couple·fr"
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795222800000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 5
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00008",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur9",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 16001,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00009",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d9",
+     "url": "https://www.tiktok.com/@auteur9/video/d9",
+     "authorId": "uid_auteur9",
+     "authorHandle": "auteur9",
+     "authorFans": 16001,
+     "caption": "lumiq  vidéo 9",
+     "lang": "en",
+     "publishedAt": 1795093200000,
+     "views": 189725,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 11.857071433035435,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 189725
+      }
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795179600000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00010",
+    "value": {
+     "key": "monsite.io",
+     "kind": "domain",
+     "label": "monsite.io",
+     "authors": [
+      "deja_suivi"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d11"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "trackedCount": 32
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00011",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur12",
+     "appId": "radarApps_8191422c",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 15016,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00012",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d12",
+     "url": "https://www.tiktok.com/@auteur12/video/d12",
+     "authorId": "uid_auteur12",
+     "authorHandle": "auteur12",
+     "authorFans": 15016,
+     "caption": "his recent following recentfollow vidéo 12",
+     "lang": "en",
+     "publishedAt": 1794398400000,
+     "views": 154273,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.273907831646245,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 154273
+      }
+     ],
+     "appId": "radarApps_8191422c",
+     "appName": "Recentfollow",
+     "appRivalOf": [
+      "snytch"
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 7
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00013",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur13",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 12108,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 1
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00014",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur14",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 21766,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00015",
+    "value": {
+     "key": "@uid_m14",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur14"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_af8c0b54"
+     ],
+     "examples": [
+      {
+       "handle": "auteur14",
+       "url": "https://www.tiktok.com/@auteur14/video/d14"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 2
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00016",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur15",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 13187,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00017",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d15",
+     "url": "https://www.tiktok.com/@auteur15/video/d15",
+     "authorId": "uid_auteur15",
+     "authorHandle": "auteur15",
+     "authorFans": 13187,
+     "caption": "pixa photo  vidéo 15",
+     "lang": "en",
+     "publishedAt": 1794916800000,
+     "views": 148291,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 11.245241525745051,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 148291
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "trackedCount": 33
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00018",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur17",
+     "appId": "radarApps_8191422c",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 25712,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi",
+      "auteur17"
+     ],
+     "authorCount": 3,
+     "fromApps": [
+      "radarApps_af8c0b54",
+      "radarApps_8191422c"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d0"
+      },
+      {
+       "handle": "auteur17",
+       "url": "https://www.tiktok.com/@auteur17/video/d17"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSettings",
+    "id": "radarSettings_9e3779b1",
+    "value": {
+     "curveDay": "2026-11-20",
+     "curveAdmitted": 6
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "net": {
+      "accounts": 4,
+      "active": 1,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "net": {
+      "accounts": 3,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "net": {
+      "accounts": 2,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "net": {
+      "accounts": 2,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00019",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d18",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d18",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 1345,
+     "caption": "@voca his recent following vidéo 18",
+     "lang": "fr",
+     "publishedAt": 1794398400000,
+     "views": 329152,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 244.72267657992566,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 329152
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00020",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d19",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d19",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 352,
+     "caption": "vocaai  vidéo 19",
+     "lang": "fr",
+     "publishedAt": 1794139200000,
+     "views": 155609,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 442.07102272727275,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 155609
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00021",
+    "value": {
+     "key": "@uid_m20",
+     "kind": "mention",
+     "label": "@Compte20",
+     "authors": [
+      "deja_suivi"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_8191422c"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d20"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00022",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d20",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d20",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 2469,
+     "caption": "lumiq recentfollow vidéo 20",
+     "lang": "en",
+     "publishedAt": 1794484800000,
+     "views": 207356,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 83.98379910895099,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 207356
+      }
+     ],
+     "appId": "radarApps_8191422c",
+     "appName": "Recentfollow",
+     "appRivalOf": [
+      "snytch"
+     ],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00023",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d21",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d21",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 13853,
+     "caption": "vocaai  vidéo 21",
+     "lang": "fr",
+     "publishedAt": 1795089600000,
+     "views": 395637,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 28.55966216703963,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 395637
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795262400000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 8
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00024",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur22",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 2137,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00025",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d22",
+     "url": "https://www.tiktok.com/@auteur22/video/d22",
+     "authorId": "uid_auteur22",
+     "authorHandle": "auteur22",
+     "authorFans": 2137,
+     "caption": "@voca glowly.app vidéo 22",
+     "lang": "en",
+     "publishedAt": 1793793600000,
+     "views": 129537,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 60.61628451099673,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 129537
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00026",
+    "value": {
+     "key": "#bestapp",
+     "kind": "hashtag",
+     "label": "bestapp",
+     "authors": [
+      "auteur0"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_c259e342"
+     ],
+     "examples": [
+      {
+       "handle": "auteur0",
+       "url": "https://www.tiktok.com/@auteur0/video/d23"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00027",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d23",
+     "url": "https://www.tiktok.com/@auteur0/video/d23",
+     "authorId": "uid_auteur0",
+     "authorHandle": "auteur0",
+     "authorFans": 25024,
+     "caption": "#bestapp vocaai vidéo 23",
+     "lang": "fr",
+     "publishedAt": 1793880000000,
+     "views": 256175,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.237172314578006,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 256175
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi",
+      "auteur17",
+      "auteur1"
+     ],
+     "authorCount": 4,
+     "fromApps": [
+      "radarApps_af8c0b54",
+      "radarApps_8191422c",
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d0"
+      },
+      {
+       "handle": "auteur17",
+       "url": "https://www.tiktok.com/@auteur17/video/d17"
+      },
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d24"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00028",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d25",
+     "url": "https://www.tiktok.com/@auteur2/video/d25",
+     "authorId": "uid_auteur2",
+     "authorHandle": "auteur2",
+     "authorFans": 12850,
+     "caption": "recentfollow lumiq vidéo 25",
+     "lang": "en",
+     "publishedAt": 1795122000000,
+     "views": 291199,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 22.661400778210115,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 291199
+      }
+     ],
+     "appId": "radarApps_8191422c",
+     "appName": "Recentfollow",
+     "appRivalOf": [
+      "snytch"
+     ],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795208400000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00029",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d26",
+     "url": "https://www.tiktok.com/@auteur3/video/d26",
+     "authorId": "uid_auteur3",
+     "authorHandle": "auteur3",
+     "authorFans": 10159,
+     "caption": "@voca  vidéo 26",
+     "lang": "en",
+     "publishedAt": 1794139200000,
+     "views": 243667,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 23.98533320208682,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 243667
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00030",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d27",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d27",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 24586,
+     "caption": "vocaai vocaai vidéo 27",
+     "lang": "fr",
+     "publishedAt": 1794916800000,
+     "views": 263586,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.720979419181647,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 263586
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 3
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00031",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur5",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 22773,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi",
+      "auteur17",
+      "auteur1",
+      "auteur5"
+     ],
+     "authorCount": 5,
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d0"
+      },
+      {
+       "handle": "auteur17",
+       "url": "https://www.tiktok.com/@auteur17/video/d17"
+      },
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d24"
+      },
+      {
+       "handle": "auteur5",
+       "url": "https://www.tiktok.com/@auteur5/video/d28"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00032",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d28",
+     "url": "https://www.tiktok.com/@auteur5/video/d28",
+     "authorId": "uid_auteur5",
+     "authorHandle": "auteur5",
+     "authorFans": 22773,
+     "caption": "his recent following pixa photo vidéo 28",
+     "lang": "fr",
+     "publishedAt": 1795114800000,
+     "views": 227976,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.010802265841127,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 227976
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795201200000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00033",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d29",
+     "url": "https://www.tiktok.com/@auteur6/video/d29",
+     "authorId": "uid_auteur6",
+     "authorHandle": "auteur6",
+     "authorFans": 9888,
+     "caption": "pixa photo  vidéo 29",
+     "lang": "en",
+     "publishedAt": 1793966400000,
+     "views": 196835,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 19.906452265372167,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 196835
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00034",
+    "value": {
+     "key": "@uid_m30",
+     "kind": "mention",
+     "label": "@Compte30",
+     "authors": [
+      "auteur7"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "auteur7",
+       "url": "https://www.tiktok.com/@auteur7/video/d30"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00035",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d30",
+     "url": "https://www.tiktok.com/@auteur7/video/d30",
+     "authorId": "uid_auteur7",
+     "authorHandle": "auteur7",
+     "authorFans": 18044,
+     "caption": "ma routine ma routine vidéo 30",
+     "lang": "en",
+     "publishedAt": 1794225600000,
+     "views": 246658,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 13.669807138106849,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 246658
+      }
+     ],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00036",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d31",
+     "url": "https://www.tiktok.com/@auteur8/video/d31",
+     "authorId": "uid_auteur8",
+     "authorHandle": "auteur8",
+     "authorFans": 9453,
+     "caption": "vocaai  vidéo 31",
+     "lang": "fr",
+     "publishedAt": 1795089600000,
+     "views": 337867,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 35.74177509785253,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 337867
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795262400000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 4
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00037",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur10",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 23715,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi",
+      "auteur17",
+      "auteur1",
+      "auteur5",
+      "auteur10"
+     ],
+     "authorCount": 6,
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d0"
+      },
+      {
+       "handle": "auteur17",
+       "url": "https://www.tiktok.com/@auteur17/video/d17"
+      },
+      {
+       "handle": "auteur1",
+       "url": "https://www.tiktok.com/@auteur1/video/d24"
+      },
+      {
+       "handle": "auteur5",
+       "url": "https://www.tiktok.com/@auteur5/video/d28"
+      },
+      {
+       "handle": "auteur10",
+       "url": "https://www.tiktok.com/@auteur10/video/d33"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00038",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d34",
+     "url": "https://www.tiktok.com/@auteur11/video/d34",
+     "authorId": "uid_auteur11",
+     "authorHandle": "auteur11",
+     "authorFans": 5549,
+     "caption": "vocaai  vidéo 34",
+     "lang": "fr",
+     "publishedAt": 1793620800000,
+     "views": 138460,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 24.952243647504055,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 138460
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "ce site·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi",
+      "auteur17",
+      "auteur1",
+      "auteur5",
+      "auteur10",
+      "auteur12"
+     ],
+     "authorCount": 7,
+     "fromApps": [
+      "radarApps_af8c0b54",
+      "radarApps_8191422c",
+      "radarApps_b54cda26",
+      "radarApps_c259e342"
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSettings",
+    "id": "radarSettings_9e3779b1",
+    "value": {
+     "curveDay": "2026-11-20",
+     "curveAdmitted": 10
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "net": {
+      "accounts": 5,
+      "active": 1,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "net": {
+      "accounts": 4,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   }
+  ],
+  "scheduled": []
+ },
+ "L6 sans motifs, abonnés non mesurés (TikHub)": {
+  "out": {
+   "inserted": 20,
+   "updated": 2,
+   "admitted": 6,
+   "attached": 15
+  },
+  "writes": [
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00001",
+    "value": {
+     "key": "monsite.io",
+     "kind": "domain",
+     "label": "monsite.io",
+     "authors": [
+      "auteur0"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_c259e342"
+     ],
+     "examples": [
+      {
+       "handle": "auteur0",
+       "url": "https://www.tiktok.com/@auteur0/video/d0"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "trackedCount": 31
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00002",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur2",
+     "appId": "radarApps_8191422c",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 29200,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSignals",
+    "id": "radarSignals_a159fe09",
+    "value": {
+     "authorFans": 29200,
+     "caption": "recentfollow  vidéo 2",
+     "views": 117909,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 4.0379794520547945,
+     "snapshots": [
+      {
+       "at": 1795172400000,
+       "views": 117909
+      }
+     ],
+     "foundBy": [
+      "avant",
+      "app couple·fr"
+     ],
+     "appId": "radarApps_8191422c",
+     "appName": "Recentfollow",
+     "appRivalOf": [
+      "snytch"
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi"
+     ],
+     "authorCount": 2,
+     "fromApps": [
+      "radarApps_c259e342"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d3"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00003",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d3",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d3",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 9417,
+     "caption": "ma routine vocaai vidéo 3",
+     "lang": "fr",
+     "publishedAt": 1795154400000,
+     "views": 396170,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 42.06966125092917,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 396170
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795240800000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00004",
+    "value": {
+     "key": "@uid_m5",
+     "kind": "mention",
+     "label": "@Compte5",
+     "authors": [
+      "deja_suivi"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d5"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00005",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d5",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d5",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 25434,
+     "caption": "glowly.app recentfollow vidéo 5",
+     "lang": "en",
+     "publishedAt": 1795165200000,
+     "views": 385339,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 15.150546512542267,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 385339
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795186800000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00006",
+    "value": {
+     "key": "@uid_m6",
+     "kind": "mention",
+     "label": "@Compte6",
+     "authors": [
+      "deja_suivi"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d6"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 5
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00007",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur7",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 18227,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSignals",
+    "id": "radarSignals_3f9177ba",
+    "value": {
+     "authorFans": 18227,
+     "caption": "vocaai glowly.app vidéo 7",
+     "views": 347820,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 19.082679541339772,
+     "snapshots": [
+      {
+       "at": 1795172400000,
+       "views": 347820
+      }
+     ],
+     "foundBy": [
+      "avant",
+      "app couple·fr"
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 4
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00008",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur8",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 14,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00009",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d8",
+     "url": "https://www.tiktok.com/@auteur8/video/d8",
+     "authorId": "uid_auteur8",
+     "authorHandle": "auteur8",
+     "authorFans": 14,
+     "caption": "lumiq ma routine vidéo 8",
+     "lang": "en",
+     "publishedAt": 1795100400000,
+     "views": 34053,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 340.53,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 34053
+      }
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795186800000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 6
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00010",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur9",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 12944,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00011",
+    "value": {
+     "key": "@uid_m9",
+     "kind": "mention",
+     "label": "@Compte9",
+     "authors": [
+      "auteur9"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "auteur9",
+       "url": "https://www.tiktok.com/@auteur9/video/d9"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00012",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d10",
+     "url": "https://www.tiktok.com/@auteur10/video/d10",
+     "authorId": "uid_auteur10",
+     "authorHandle": "auteur10",
+     "authorFans": 1147,
+     "caption": "pixa  vidéo 10",
+     "lang": "en",
+     "publishedAt": 1795150800000,
+     "views": 52037,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 45.36791630340017,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 52037
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 5
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00013",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur12",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 11028,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00014",
+    "value": {
+     "key": "@uid_m12",
+     "kind": "mention",
+     "label": "@Compte12",
+     "authors": [
+      "auteur12"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_287c1745"
+     ],
+     "examples": [
+      {
+       "handle": "auteur12",
+       "url": "https://www.tiktok.com/@auteur12/video/d12"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00001",
+    "value": {
+     "authors": [
+      "auteur0",
+      "auteur12"
+     ],
+     "authorCount": 2,
+     "fromApps": [
+      "radarApps_c259e342",
+      "radarApps_287c1745"
+     ],
+     "examples": [
+      {
+       "handle": "auteur0",
+       "url": "https://www.tiktok.com/@auteur0/video/d0"
+      },
+      {
+       "handle": "auteur12",
+       "url": "https://www.tiktok.com/@auteur12/video/d12"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00015",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d12",
+     "url": "https://www.tiktok.com/@auteur12/video/d12",
+     "authorId": "uid_auteur12",
+     "authorHandle": "auteur12",
+     "authorFans": 11028,
+     "caption": "lien sur monsite.io lumiq vidéo 12",
+     "lang": "en",
+     "publishedAt": 1795176000000,
+     "views": 364206,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 33.02557127312296,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 364206
+      }
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795197600000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00016",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d13",
+     "url": "https://www.tiktok.com/@auteur13/video/d13",
+     "authorId": "uid_auteur13",
+     "authorHandle": "auteur13",
+     "authorFans": 3472,
+     "caption": "#bestapp  vidéo 13",
+     "lang": "en",
+     "publishedAt": 1793620800000,
+     "views": 169637,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 48.858582949308754,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 169637
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 7
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00017",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur14",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 27624,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi",
+      "auteur14"
+     ],
+     "authorCount": 3,
+     "fromApps": [
+      "radarApps_c259e342",
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d3"
+      },
+      {
+       "handle": "auteur14",
+       "url": "https://www.tiktok.com/@auteur14/video/d14"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00018",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d14",
+     "url": "https://www.tiktok.com/@auteur14/video/d14",
+     "authorId": "uid_auteur14",
+     "authorHandle": "auteur14",
+     "authorFans": 27624,
+     "caption": "glowly.app pixa photo vidéo 14",
+     "lang": "en",
+     "publishedAt": 1795100400000,
+     "views": 386505,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 13.991637706342312,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 386505
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795186800000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 1
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00019",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur15",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 28854,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 8
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00020",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur16",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 14094,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00021",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d17",
+     "url": "https://www.tiktok.com/@auteur17/video/d17",
+     "authorId": "uid_auteur17",
+     "authorHandle": "auteur17",
+     "authorFans": 2236,
+     "caption": "his recent following vocaai vidéo 17",
+     "lang": "en",
+     "publishedAt": 1794225600000,
+     "views": 147288,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 65.87119856887298,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 147288
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 9
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00022",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur19",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 18830,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00023",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d19",
+     "url": "https://www.tiktok.com/@auteur19/video/d19",
+     "authorId": "uid_auteur19",
+     "authorHandle": "auteur19",
+     "authorFans": 18830,
+     "caption": "glowly #bestapp vidéo 19",
+     "lang": "en",
+     "publishedAt": 1795168800000,
+     "views": 243893,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 12.952363250132766,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 243893
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000,
+     "nextCheckAt": 1795190400000,
+     "curveStartedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 10
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00024",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur20",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 24041,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00025",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d20",
+     "url": "https://www.tiktok.com/@auteur20/video/d20",
+     "authorId": "uid_auteur20",
+     "authorHandle": "auteur20",
+     "authorFans": 24041,
+     "caption": "glowly  vidéo 20",
+     "lang": "en",
+     "publishedAt": 1794139200000,
+     "views": 275461,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 11.457967638617362,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 275461
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "trackedCount": 6
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00026",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur21",
+     "appId": "radarApps_287c1745",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 18084,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00027",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d22",
+     "url": "https://www.tiktok.com/@auteur22/video/d22",
+     "authorId": "uid_auteur22",
+     "authorHandle": "auteur22",
+     "authorFans": 9437,
+     "caption": "@voca  vidéo 22",
+     "lang": "en",
+     "publishedAt": 1794571200000,
+     "views": 99401,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.533114337183427,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 99401
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "trackedCount": 32
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00028",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur0",
+     "appId": "radarApps_8191422c",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 26570,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00029",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d23",
+     "url": "https://www.tiktok.com/@auteur0/video/d23",
+     "authorId": "uid_auteur0",
+     "authorHandle": "auteur0",
+     "authorFans": 26570,
+     "caption": "recentfollow lien sur monsite.io vidéo 23",
+     "lang": "en",
+     "publishedAt": 1794744000000,
+     "views": 339227,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 12.767293940534437,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 339227
+      }
+     ],
+     "appId": "radarApps_8191422c",
+     "appName": "Recentfollow",
+     "appRivalOf": [
+      "snytch"
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00001",
+    "value": {
+     "authors": [
+      "auteur0",
+      "auteur12",
+      "deja_suivi"
+     ],
+     "authorCount": 3,
+     "examples": [
+      {
+       "handle": "auteur0",
+       "url": "https://www.tiktok.com/@auteur0/video/d0"
+      },
+      {
+       "handle": "auteur12",
+       "url": "https://www.tiktok.com/@auteur12/video/d12"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d24"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00030",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d24",
+     "url": "https://www.tiktok.com/@deja_suivi/video/d24",
+     "authorId": "uid_deja_suivi",
+     "authorHandle": "deja_suivi",
+     "authorFans": 5291,
+     "caption": "lien sur monsite.io  vidéo 24",
+     "lang": "en",
+     "publishedAt": 1795086000000,
+     "views": 286418,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 54.13305613305613,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 286418
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00001",
+    "value": {
+     "authors": [
+      "auteur0",
+      "auteur12",
+      "deja_suivi",
+      "auteur2"
+     ],
+     "authorCount": 4,
+     "examples": [
+      {
+       "handle": "auteur0",
+       "url": "https://www.tiktok.com/@auteur0/video/d0"
+      },
+      {
+       "handle": "auteur12",
+       "url": "https://www.tiktok.com/@auteur12/video/d12"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d24"
+      },
+      {
+       "handle": "auteur2",
+       "url": "https://www.tiktok.com/@auteur2/video/d25"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00031",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d25",
+     "url": "https://www.tiktok.com/@auteur2/video/d25",
+     "authorId": "uid_auteur2",
+     "authorHandle": "auteur2",
+     "authorFans": 18265,
+     "caption": "lien sur monsite.io lumiq vidéo 25",
+     "lang": "fr",
+     "publishedAt": 1794657600000,
+     "views": 205324,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 11.24139063783192,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 205324
+      }
+     ],
+     "appId": "radarApps_287c1745",
+     "appName": "Lumiq",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 11
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00032",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur3",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 5865,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi",
+      "auteur14",
+      "auteur4"
+     ],
+     "authorCount": 4,
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d3"
+      },
+      {
+       "handle": "auteur14",
+       "url": "https://www.tiktok.com/@auteur14/video/d14"
+      },
+      {
+       "handle": "auteur4",
+       "url": "https://www.tiktok.com/@auteur4/video/d27"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00001",
+    "value": {
+     "authors": [
+      "auteur0",
+      "auteur12",
+      "deja_suivi",
+      "auteur2",
+      "auteur4"
+     ],
+     "authorCount": 5,
+     "examples": [
+      {
+       "handle": "auteur0",
+       "url": "https://www.tiktok.com/@auteur0/video/d0"
+      },
+      {
+       "handle": "auteur12",
+       "url": "https://www.tiktok.com/@auteur12/video/d12"
+      },
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d24"
+      },
+      {
+       "handle": "auteur2",
+       "url": "https://www.tiktok.com/@auteur2/video/d25"
+      },
+      {
+       "handle": "auteur4",
+       "url": "https://www.tiktok.com/@auteur4/video/d27"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00033",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d27",
+     "url": "https://www.tiktok.com/@auteur4/video/d27",
+     "authorId": "uid_auteur4",
+     "authorHandle": "auteur4",
+     "authorFans": 744,
+     "caption": "lien sur monsite.io  vidéo 27",
+     "lang": "fr",
+     "publishedAt": 1795168800000,
+     "views": 51887,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 69.74059139784946,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 51887
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00001",
+    "value": {
+     "authors": [
+      "auteur0",
+      "auteur12",
+      "deja_suivi",
+      "auteur2",
+      "auteur4",
+      "auteur5"
+     ],
+     "authorCount": 6,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00034",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d28",
+     "url": "https://www.tiktok.com/@auteur5/video/d28",
+     "authorId": "uid_auteur5",
+     "authorHandle": "auteur5",
+     "authorFans": 25857,
+     "caption": "lien sur monsite.io  vidéo 28",
+     "lang": "en",
+     "publishedAt": 1795125600000,
+     "views": 266023,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 10.288239161542329,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 266023
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00035",
+    "value": {
+     "key": "@uid_m29",
+     "kind": "mention",
+     "label": "@Marque",
+     "authors": [
+      "auteur6"
+     ],
+     "authorCount": 1,
+     "fromApps": [],
+     "examples": [
+      {
+       "handle": "auteur6",
+       "url": "https://www.tiktok.com/@auteur6/video/d29"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00036",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d29",
+     "url": "https://www.tiktok.com/@auteur6/video/d29",
+     "authorId": "uid_auteur6",
+     "authorHandle": "auteur6",
+     "authorFans": 12873,
+     "caption": "ma routine  vidéo 29",
+     "lang": "en",
+     "publishedAt": 1794052800000,
+     "views": 379688,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 29.494911830964032,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 379688
+      }
+     ],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00037",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d30",
+     "url": "https://www.tiktok.com/@auteur7/video/d30",
+     "authorId": "uid_auteur7",
+     "authorHandle": "auteur7",
+     "authorFans": 11792,
+     "caption": "glowly  vidéo 30",
+     "lang": "en",
+     "publishedAt": 1793793600000,
+     "views": 318453,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 27.005851424694708,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 318453
+      }
+     ],
+     "appId": "radarApps_b54cda26",
+     "appName": "Glowly",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00001",
+    "value": {
+     "authors": [
+      "auteur0",
+      "auteur12",
+      "deja_suivi",
+      "auteur2",
+      "auteur4",
+      "auteur5",
+      "auteur8"
+     ],
+     "authorCount": 7,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "trackedCount": 2
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00038",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur10",
+     "appId": "radarApps_af8c0b54",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 17419,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_03228458",
+    "value": {
+     "authors": [
+      "autre",
+      "deja_suivi",
+      "auteur14",
+      "auteur4",
+      "auteur10"
+     ],
+     "authorCount": 5,
+     "fromApps": [
+      "radarApps_c259e342",
+      "radarApps_b54cda26",
+      "radarApps_af8c0b54"
+     ],
+     "examples": [
+      {
+       "handle": "deja_suivi",
+       "url": "https://www.tiktok.com/@deja_suivi/video/d3"
+      },
+      {
+       "handle": "auteur14",
+       "url": "https://www.tiktok.com/@auteur14/video/d14"
+      },
+      {
+       "handle": "auteur4",
+       "url": "https://www.tiktok.com/@auteur4/video/d27"
+      },
+      {
+       "handle": "auteur10",
+       "url": "https://www.tiktok.com/@auteur10/video/d33"
+      }
+     ],
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00039",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d33",
+     "url": "https://www.tiktok.com/@auteur10/video/d33",
+     "authorId": "uid_auteur10",
+     "authorHandle": "auteur10",
+     "authorFans": 17419,
+     "caption": "pixa photo  vidéo 33",
+     "lang": "en",
+     "publishedAt": 1794484800000,
+     "views": 353963,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 20.320512084505424,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 353963
+      }
+     ],
+     "appId": "radarApps_af8c0b54",
+     "appName": "Pixa",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "trackedCount": 12
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarTracked",
+    "id": "radarTracked_w00040",
+    "value": {
+     "platform": "tiktok",
+     "handle": "auteur11",
+     "appId": "radarApps_b54cda26",
+     "status": "paused",
+     "pausedReason": "vetting",
+     "vetAt": 1795176000000,
+     "matchedBy": "caption",
+     "fans": 21314,
+     "videosSeen": 0,
+     "nextReadAt": 1795176000000,
+     "readErrors": 0,
+     "addedAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarAppCandidates",
+    "id": "radarAppCandidates_w00041",
+    "value": {
+     "key": "@uid_m34",
+     "kind": "mention",
+     "label": "@Compte34",
+     "authors": [
+      "auteur11"
+     ],
+     "authorCount": 1,
+     "fromApps": [
+      "radarApps_b54cda26"
+     ],
+     "examples": [
+      {
+       "handle": "auteur11",
+       "url": "https://www.tiktok.com/@auteur11/video/d34"
+      }
+     ],
+     "status": "new",
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "insert",
+    "table": "radarSignals",
+    "id": "radarSignals_w00042",
+    "value": {
+     "platform": "tiktok",
+     "videoId": "d35",
+     "url": "https://www.tiktok.com/@auteur12/video/d35",
+     "authorId": "uid_auteur12",
+     "authorHandle": "auteur12",
+     "authorFans": 5923,
+     "caption": "vocaai  vidéo 35",
+     "lang": "fr",
+     "publishedAt": 1794657600000,
+     "views": 73126,
+     "likes": 900,
+     "comments": 40,
+     "shares": 12,
+     "saves": 30,
+     "ratio": 12.346108391018065,
+     "snapshots": [
+      {
+       "at": 1795176000000,
+       "views": 73126
+      }
+     ],
+     "appId": "radarApps_c259e342",
+     "appName": "Vocaai",
+     "appRivalOf": [],
+     "foundBy": [
+      "app couple·fr"
+     ],
+     "firstSeenAt": 1795176000000,
+     "lastSeenAt": 1795176000000
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarSettings",
+    "id": "radarSettings_9e3779b1",
+    "value": {
+     "curveDay": "2026-11-20",
+     "curveAdmitted": 9
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_8191422c",
+    "value": {
+     "net": {
+      "accounts": 2,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_b54cda26",
+    "value": {
+     "net": {
+      "accounts": 9,
+      "active": 1,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_287c1745",
+    "value": {
+     "net": {
+      "accounts": 3,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   },
+   {
+    "op": "patch",
+    "table": "radarApps",
+    "id": "radarApps_af8c0b54",
+    "value": {
+     "net": {
+      "accounts": 2,
+      "active": 0,
+      "posts7d": 0,
+      "at": 1795176000000
+     }
+    }
+   }
+  ],
+  "scheduled": []
+ }
+}

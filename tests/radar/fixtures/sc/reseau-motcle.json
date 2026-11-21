@@ -1,0 +1,210 @@
+{
+ "_fixture": "Réponse ScrapeCreators réelle du banc du 20/11/2026 (sc-reseau-motcle-200.json), tronquée et anonymisée (scripts/fixtures-publiques.mjs --anonymise : auteurs et identifiants inventés, légendes, textes incrustés, titres et hashtags réécrits en mots de remplissage, largeurs tirées et emoji remplacés, dates déplacées par une table secrète et monotone, sans écart commun, durées et compteurs tirés loin des vrais ; ré-anonymisée en un passage le 21/11/2026).",
+ "success": true,
+ "credits_remaining": 1582,
+ "credits_charged": 1,
+ "cursor": 30,
+ "has_more": 1,
+ "search_item_list": [
+  {
+   "type": null,
+   "aweme_info": {
+    "aweme_id": "7706756502668706986",
+    "desc": "Orincid teu imides fu dolore fu l’laparia ulla 🪁 Toccae.ee #nul #Iquaut #toccae #or #laparia @DMin Modt @Membre ",
+    "desc_language": "fr",
+    "region": "FR",
+    "create_time": 1794369085,
+    "is_top": 0,
+    "is_ad": false,
+    "statistics": {
+     "play_count": 376,
+     "digg_count": 8,
+     "comment_count": 0,
+     "share_count": 4,
+     "collect_count": 1
+    },
+    "video": {
+     "duration": 70311,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-04~tplv-tiktokx-cropcenter:500:800.jpeg"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000015",
+     "unique_id": "auteur_20",
+     "follower_count": 6,
+     "nickname": "Auteur",
+     "signature": ""
+    },
+    "music": {
+     "id": 7706756532733478000,
+     "id_str": "7706756532733478071",
+     "title": "son original - auteur_20",
+     "owner_handle": "auteur_20"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 60,
+      "end": 64,
+      "hashtag_name": "nul"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 65,
+      "end": 72,
+      "hashtag_name": "iquaut"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 73,
+      "end": 80,
+      "hashtag_name": "toccae"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 81,
+      "end": 84,
+      "hashtag_name": "or"
+     },
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 85,
+      "end": 93,
+      "hashtag_name": "laparia"
+     },
+     {
+      "type": 0,
+      "user_id": "9100000000000000016",
+      "start": 94,
+      "end": 104
+     },
+     {
+      "type": 0,
+      "user_id": "9100000000000000017",
+      "start": 105,
+      "end": 112
+     }
+    ],
+    "url": "https://www.tiktok.com/@auteur_20/video/7706756502668706986"
+   }
+  },
+  {
+   "type": null,
+   "aweme_info": {
+    "aweme_id": "7705394456869995653",
+    "desc": "Personne c'ffi do cepteu de nre n'ri eruntm 🎈🎈               ⛄️ toccae.ee  #toccae #laparia #eufugiatnu ",
+    "desc_language": "fr",
+    "region": "FR",
+    "create_time": 1794051957,
+    "is_top": 0,
+    "is_ad": false,
+    "statistics": {
+     "play_count": 485,
+     "digg_count": 22,
+     "comment_count": 1,
+     "share_count": 0,
+     "collect_count": 4
+    },
+    "video": {
+     "duration": 41428,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-05~tplv-tiktokx-cropcenter:500:800.jpeg"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000018",
+     "unique_id": "auteur_21",
+     "follower_count": 49091,
+     "nickname": "Auteur",
+     "signature": ""
+    },
+    "music": {
+     "id": 7408001876093830000,
+     "id_str": "7408001876093830173",
+     "title": "AUten"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "start": 77,
+      "end": 84,
+      "hashtag_name": "toccae"
+     },
+     {
+      "type": 1,
+      "start": 85,
+      "end": 93,
+      "hashtag_name": "laparia"
+     },
+     {
+      "type": 1,
+      "start": 94,
+      "end": 105,
+      "hashtag_name": "eufugiatnu"
+     }
+    ],
+    "url": "https://www.tiktok.com/@auteur_21/video/7705394456869995653"
+   }
+  },
+  {
+   "type": null,
+   "aweme_info": {
+    "aweme_id": "7706749239879009438",
+    "desc": "#Stlab S rsitamet TocCae risnisiut ocon upid dolore tinv. #toccae #tduisauteiruredolori #EX",
+    "desc_language": "un",
+    "region": "FR",
+    "create_time": 1794367392,
+    "is_top": 0,
+    "is_ad": false,
+    "statistics": {
+     "play_count": 322,
+     "digg_count": 2,
+     "comment_count": 0,
+     "share_count": 0,
+     "collect_count": 1
+    },
+    "video": {
+     "duration": 21666,
+     "cover": {
+      "url_list": [
+       "https://example.invalid/media/couverture-06~tplv-tiktokx-cropcenter:500:800.jpeg"
+      ]
+     }
+    },
+    "author": {
+     "uid": "9100000000000000019",
+     "unique_id": "auteur_22",
+     "follower_count": 3,
+     "nickname": "Auteur",
+     "signature": ""
+    },
+    "music": {
+     "id": 7706749261353846000,
+     "id_str": "7706749261353845930",
+     "title": "son original - auteur_22",
+     "owner_handle": "auteur_22"
+    },
+    "text_extra": [
+     {
+      "type": 1,
+      "user_id": "",
+      "start": 88,
+      "end": 91,
+      "hashtag_name": "ex"
+     }
+    ],
+    "url": "https://www.tiktok.com/@auteur_22/video/7706749239879009438"
+   }
+  }
+ ]
+}

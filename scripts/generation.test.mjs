@@ -13,7 +13,7 @@ const appPages = pages('src/app/pages');
 
 // ─── Q11 : un lien de canevas sans paramètre ne mène plus à une fiche d'exemple réelle ───
 {
-  const hits = appPages.filter(([, s]) => /\/app\/apps\/astraai|\/app\/createurs\/zinedine\.gsbb|\/app\/videos\/7705929733220994337/.test(s)).map(([f]) => f);
+  const hits = appPages.filter(([, s]) => /\/app\/apps\/astraai|\/app\/createurs\/zinedine\.gsbb|\/app\/videos\/7705929730054170541/.test(s)).map(([f]) => f);
   ok(!hits.length, `Q11 : aucun écran ne renvoie vers Astra AI, zinedine.gsbb ou une vidéo d'exemple (${hits.join(', ') || 'aucun'})`);
 }
 

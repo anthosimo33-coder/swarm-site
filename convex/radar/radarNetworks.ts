@@ -92,7 +92,23 @@ import { LANG_BY_HAND, OFF_TOPIC_BY_HAND } from "./radarSeedAccounts";
 import { screenLang } from "./radarTextLang";
 import { isEarlyHit, isTextOnShot } from "./radarDisplay";
 import { networkSearchOutcome, networkSearchOutcomeValidator, networkSearchPhase, networkSearchValidator } from "./radarNetworkSearch";
-import { ACCOUNT_LEASE_MS, RETENTION_DAYS, allowance, budgetState, catchUpAllowance, cleanText, keepSignal, needsBalanceProbe, ratioOf, addSnapshot, tierDefers, type SavedKey } from "./radarSignalsMath";
+import {
+  ACCOUNT_LEASE_MS,
+  RETENTION_DAYS,
+  allowanceParts,
+  cleanText,
+  keepSignal,
+  monthLeftUnits,
+  needsBalanceProbe,
+  ratioOf,
+  addSnapshot,
+  tierDefers,
+  tierOf,
+  type BudgetState,
+  type Provider,
+  type SavedKey,
+  type SignalInput,
+} from "./radarSignalsMath";
 import {
   FREE_LANE_MAX_MS,
   PASS_MAX_MS,
@@ -128,6 +144,10 @@ import { REJECTED_KEEP_MS, accountProof } from "./radarVetMath";
 import { fromStoredCursor } from "./radarCursorMath";
 import { MARKET_CURRENCY } from "./radarMarketMath";
 import {
+  APP_RULES_MAX,
+  activeApps,
+  appLite,
+  appLiteValidator,
   appRef,
   attachAccount,
   curveInLane,
@@ -139,11 +159,31 @@ import {
   signalInput,
   todayCredits,
   writeSignal,
+  type AppLite,
   type JobState,
   type RunResult,
   type TrackedCounter,
 } from "./radarSignals";
 import { scKeyPresent, scNetworkPage, scProfileVideosPage } from "./scrapeCreatorsApi";
+import {
+  USAGE_FLUSH_UNITS,
+  canCall,
+  jobBudget,
+  fallbackClaimer,
+  makeRouter,
+  passGate,
+  passLimit,
+  passProvider,
+  posteProvider,
+  reserveFor,
+  spendUnits,
+  tikhubJobs,
+  usageWriter,
+  type PassGate,
+  type Routed,
+  type Spend,
+} from "./radarProviders";
+import { TH_ROUTES, hashtagKey, thHashtagId, thHashtagPage, thKeywordPage, thProfilePage } from "./tikhubApi";
 
 const DAY = 86_400_000;
 /** La tâche réseau tourne 4 fois par jour, celle des comptes 24 fois. */
@@ -154,7 +194,7 @@ const NETWORK_RUNS_PER_DAY = 1;
 const NETWORK_MAX_MS = 8 * 60_000;
 const ACCOUNT_RUNS_PER_DAY = 24;
 /** Relevés menés de front, et durée au plus d'un passage (une tâche est coupée à 10 minutes). */
-const ACCOUNT_READ_POOL = 8;
+export const ACCOUNT_READ_POOL = 8;
 const ACCOUNT_READ_MAX_MS = PASS_MAX_MS;
 /** Apps dont le résumé de réseau est refait par appel (chaque heure, de proche en proche). */
 const APP_NET_BATCH = 15;
@@ -206,6 +246,32 @@ export const appToSearch = internalQuery({
     if (!a) return null;
     if (a.status !== "active") return "paused";
     return dueApp(a);
+  },
+});
+
+/**
+ * Un hashtag sans nom exact chez TikHub (tikhubApi.thHashtagId) est recherché de nouveau au bout de 7 jours : un
+ * hashtag naît quand une première vidéo le porte, et ce refus ne coûte qu'un appel par semaine.
+ */
+export const HASHTAG_MISS_KEEP_MS = 7 * DAY;
+
+/** L'identifiant TikHub gardé d'un hashtag (`tag` : tikhubApi.hashtagKey) : `null` jamais cherché. */
+export const hashtagIdOf = internalQuery({
+  args: { tag: v.string() },
+  handler: async (ctx, { tag }): Promise<{ cid: string | null; at: number } | null> => {
+    const r = await ctx.db.query("radarHashtagIds").withIndex("by_tag", (q) => q.eq("tag", tag)).first();
+    return r ? { cid: r.cid ?? null, at: r.at } : null;
+  },
+});
+
+/** Range l'identifiant d'un hashtag (ou son absence, sans `cid`). */
+export const saveHashtagId = internalMutation({
+  args: { tag: v.string(), cid: v.optional(v.string()), name: v.optional(v.string()), now: v.number() },
+  handler: async (ctx, { tag, cid, name, now }): Promise<void> => {
+    const r = await ctx.db.query("radarHashtagIds").withIndex("by_tag", (q) => q.eq("tag", tag)).first();
+    const doc = { tag, at: now, ...(cid ? { cid } : {}), ...(name ? { name } : {}) };
+    if (r) await ctx.db.replace(r._id, doc);
+    else await ctx.db.insert("radarHashtagIds", doc);
   },
 });
 
@@ -298,38 +364,17 @@ export const noteFreeRun = internalMutation({
 
 /**
  * Ce qu'un relevé de compte lit d'une app (`applyAccountRead`) : ses motifs (radarNetworkMath.AppRule), son nom, ses
- * projets concurrents. Lus UNE fois par passage de relevés (`appRules`) et passés à chaque relevé : jusqu'au 20/11/2026,
- * chaque relevé relisait toute la table radarApps (2 187 apps, 1,84 Mo ; ~6 700 relevés par jour, 11,4 Go lus), la
- * première ligne de la facture Convex. Les motifs seuls pèsent 0,38 Mo, et un argument ne se lit pas en base.
+ * projets concurrents (radarSignals.appLiteValidator). Lus UNE fois par passage de relevés (`appRules`) et passés à
+ * chaque relevé : jusqu'au 20/11/2026, chaque relevé relisait toute la table radarApps (2 187 apps, 1,84 Mo ; ~6 700
+ * relevés par jour, 11,4 Go lus), la première ligne de la facture Convex. Les motifs seuls pèsent 0,38 Mo, et un
+ * argument ne se lit pas en base. La découverte fait de même depuis le 20/11/2026 (apps actives, `active`).
+ *
+ * Les motifs de toutes les apps, dans l'ordre de création (la première citée l'emporte, cf radarNetworkMath.findApp).
  */
-const appLiteValidator = v.object({
-  _id: v.id("radarApps"),
-  status: v.union(v.literal("active"), v.literal("paused")),
-  name: v.string(),
-  rivalOf: v.array(v.string()),
-  strong: v.array(v.string()),
-  weak: v.array(v.string()),
-  context: v.array(v.string()),
-  not: v.optional(v.array(v.string())),
-});
-export type AppLite = Infer<typeof appLiteValidator>;
-const appLite = (a: Doc<"radarApps">): AppLite => ({
-  _id: a._id,
-  status: a.status,
-  name: a.name,
-  rivalOf: a.rivalOf,
-  strong: a.strong,
-  weak: a.weak,
-  context: a.context,
-  ...(a.not ? { not: a.not } : {}),
-});
-/** Au-delà, la liste ne tient plus dans un argument Convex (8 192 éléments par tableau) : chaque relevé relit la table. */
-const APP_RULES_MAX = 8_000;
-
-/** Les motifs de toutes les apps, dans l'ordre de création (la première citée l'emporte, cf radarNetworkMath.findApp). */
 export const appRules = internalQuery({
-  args: {},
-  handler: async (ctx): Promise<AppLite[]> => (await ctx.db.query("radarApps").collect()).map(appLite),
+  // `active` : les apps actives seules, dans le même ordre (celles que la découverte cite, cf radarSignals.activeApps).
+  args: { active: v.optional(v.boolean()) },
+  handler: async (ctx, { active }): Promise<AppLite[]> => (active ? await activeApps(ctx) : await ctx.db.query("radarApps").collect()).map(appLite),
 });
 
 /** Comptes dus lus en plus de la part du passage : ceux d'une app en pause sont sautés sans prendre de place. */
@@ -471,15 +516,32 @@ export const seedApps = internalMutation({
  * rattache son auteur au réseau, et entre dans Signaux si elle sort du lot.
  */
 export const attachFromSearch = internalMutation({
+  // `fansUnknown` : les vidéos (identifiants) dont les abonnés de l'auteur ne sont pas mesurés (mot-clé chez TikHub).
   // `keepText` : vidéos lues sur leur page publique (tri des hashtags) — un signal déjà rangé garde son texte à l'écran et son son.
-  args: { appId: v.id("radarApps"), videos: v.array(signalInput), foundBy: v.string(), now: v.number(), step: v.optional(v.number()), keepText: v.optional(v.boolean()) },
+  args: {
+    appId: v.id("radarApps"),
+    videos: v.array(signalInput),
+    foundBy: v.string(),
+    now: v.number(),
+    step: v.optional(v.number()),
+    fansUnknown: v.optional(v.array(v.string())),
+    keepText: v.optional(v.boolean()),
+  },
   handler: (ctx, args): Promise<{ attached: number; signals: number; updated: number }> => attachFromSearchCore(ctx, args),
 });
 
 /** `signals` : signaux neufs ; `updated` : signaux déjà rangés mis à jour (la mesure des règles du tri des hashtags). */
 async function attachFromSearchCore(
   ctx: MutationCtx,
-  { appId, videos, foundBy, now, step, keepText }: { appId: Id<"radarApps">; videos: Infer<typeof signalInput>[]; foundBy: string; now: number; step?: number; keepText?: boolean },
+  {
+    appId,
+    videos,
+    foundBy,
+    now,
+    step,
+    fansUnknown,
+    keepText,
+  }: { appId: Id<"radarApps">; videos: Infer<typeof signalInput>[]; foundBy: string; now: number; step?: number; fansUnknown?: string[]; keepText?: boolean },
 ): Promise<{ attached: number; signals: number; updated: number }> {
   const app = await ctx.db.get(appId);
   if (!app) return { attached: 0, signals: 0, updated: 0 };
@@ -498,6 +560,8 @@ async function attachFromSearchCore(
       insert: keepSignal(s) && s.publishedAt >= now - RETENTION_DAYS * DAY,
       foundBy,
       app: appRef(app),
+      // Abonnés non mesurés : le compte entre (à 0, comme par une page de hashtag), le signal neuf non.
+      ...(fansUnknown?.includes(s.videoId) ? { fansUnknown: true } : {}),
       ...(keepText ? { keepText } : {}),
     });
     if (r === "inserted") signals++;
@@ -1073,6 +1137,11 @@ export const markReadErrors = internalMutation({
  * (bouton « Chercher son réseau », app ajoutée), cette app seule, tout de suite,
  * sur ce qui reste du budget du jour. Chaque app cherchée note sa progression
  * et son issue (radarApps.networkSearch) : l'écran les affiche.
+ *
+ * Deux fournisseurs depuis le 20/11/2026 (radarProviders.passProvider) : sous `RADAR_TIKHUB=network`, les passes
+ * mesurées identiques partent chez TikHub (hashtag sans région, mot-clé FR par pertinence), les autres restent chez
+ * ScrapeCreators. Chez TikHub, le mot-clé se pagine par décalage (doublons retirés dans la passe) et le hashtag par son
+ * identifiant, cherché une fois puis gardé (radarHashtagIds). Sans réglage, tout est fait comme avant.
  */
 export const runNetworkSearch = internalAction({
   args: { appId: v.optional(v.id("radarApps")), auto: v.optional(v.boolean()) },
@@ -1084,11 +1153,24 @@ export const runNetworkSearch = internalAction({
     }
     await ctx.runMutation(internal.radar.radarNetworks.seedApps, {});
     const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    const b = budgetState(st.budget, st.usage, st.balance);
+    const jobs = tikhubJobs();
+    // La dépense est écrite après chaque app (cf usageWriter) : un passage qui tombe en route ne la fait plus disparaître.
+    const usage = usageWriter(ctx, "network", now);
+    const router = makeRouter({ poste: "network", jobs, st, book: usage.book, start: now, claimFallback: fallbackClaimer(ctx) });
+    const b = await router.open();
+    const runs = appId ? 1 : NETWORK_RUNS_PER_DAY;
+    // La porte du budget d'une app : sa part du jour, ou (jamais cherchée) le reste du mois — le rattrapage,
+    // radarSignalsMath.catchUpAllowance — en unités partagées entre les deux fournisseurs.
+    const gateFor = (state: JobState, bs: BudgetState, never: boolean): PassGate => {
+      const parts = allowanceParts(state.budget, bs, "network", todayCredits(state, "network"), runs);
+      return passGate(never ? { ...parts, units: Math.max(parts.units, monthLeftUnits(state.budget, bs, "network")) } : parts);
+    };
+    // Ce que le passage peut dépenser au plus, chez l'un ou l'autre fournisseur de ses passes.
+    const most = (g: PassGate) => (router.on ? Math.max(g.limit("sc"), g.limit("tikhub")) : g.limit("sc"));
     // Demandée à la main : tout ce qui reste du jour, pas la part d'un passage.
-    const left0 = allowance(st.budget, b, "network", todayCredits(st, "network"), appId ? 1 : NETWORK_RUNS_PER_DAY);
+    const left0 = most(gateFor(st, b, false));
     // Le rattrapage des apps jamais cherchées puise dans le reste du mois (radarSignalsMath.catchUpAllowance).
-    const catchUp0 = catchUpAllowance(st.budget, b, "network");
+    const catchUp0 = most(passGate({ ...allowanceParts(st.budget, b, "network", 0, 1), units: monthLeftUnits(st.budget, b, "network") }));
     let due: DueApp[];
     if (appId) {
       const one = await ctx.runQuery(internal.radar.radarNetworks.appToSearch, { appId });
@@ -1102,23 +1184,57 @@ export const runNetworkSearch = internalAction({
     }
     // Palier du solde (radarSignalsMath.creditTier) : les recherches complètes, puis la routine, des apps non
     // concurrentes attendent qu'un pack soit acheté (elles restent dues). Jamais une recherche demandée à l'écran.
-    const defers = tierDefers(b.tier);
-    const deferred = !appId || auto ? due.filter((a) => !a.rival && (defers.routine || (defers.deep && a.deep))) : [];
+    // Chaque fournisseur a son palier : une app est reportée si celui de L'UN des fournisseurs de ses passes la reporte
+    // (ses passes de base pour la routine, toutes pour une recherche complète).
+    // Une app sans recherche (aucune passe) se juge sur le palier du fournisseur du poste : ScrapeCreators sans bascule,
+    // comme main. Corrigé le 20/11/2026 : sans passe, aucun palier ne la reportait — en économie et en survie, elle était
+    // enregistrée cherchée (« done », zéro appel) quand main la laisse due.
+    const providersOf = (a: DueApp) => new Set(networkPasses(a.searches, a.deep).map((p) => passProvider(p, jobs).provider));
+    const defersApp = (a: DueApp) =>
+      [...(providersOf(a).size ? providersOf(a) : [posteProvider(jobs, "network")])].some((p) => {
+        const d = tierDefers(tierOf(b, p));
+        return d.routine || (d.deep && a.deep);
+      });
+    const deferred = !appId || auto ? due.filter((a) => !a.rival && defersApp(a)) : [];
     if (deferred.length) {
       due = due.filter((a) => !deferred.includes(a));
       if (appId) await ctx.runMutation(internal.radar.radarNetworks.finishNetworkSearch, { appId, now, outcome: "budget", searched: false });
     }
-    // La dépense est écrite après chaque app (cf usageWriter) : un passage qui tombe en route ne la fait plus disparaître.
-    const usage = usageWriter(ctx, "network", now);
+    // ScrapeCreators fermé pour ce passage (palier « reserve », solde, plafond) alors que TikHub est ouvert : une app dont
+    // une passe doit partir chez ScrapeCreators ne peut pas être cherchée. Elle reste due SANS être touchée (ni relue,
+    // ni réécrite : sa dernière issue reste affichée), sauf celle demandée à l'écran, qui dit pourquoi. Corrigé le
+    // 20/11/2026 : la part TikHub rendait toutes les apps dues, et chacune coûtait une lecture de l'état (jobState :
+    // radarUsage du mois, réglages) et une réécriture de son document, à chaque passage, pour aucun appel — la file
+    // grossissant jusqu'aux ~2 000 apps actives (sous `network`, chaque app a une passe chez ScrapeCreators).
+    const needsSc = (a: DueApp) => router.on && providersOf(a).has("sc");
+    const scShut = due.filter((a) => needsSc(a) && gateFor(st, b, a.never).limit("sc") === 0);
+    // Le pendant pour TikHub : sa part du passage à 0 (palier « reserve », solde à sec, plafond) ET la porte de repli
+    // fermée (quota du jour pris, palier de ScrapeCreators) — une app dont une passe doit partir chez TikHub ne peut pas
+    // être cherchée ; elle reste due sans être touchée, de même. Corrigé le 20/11/2026 : ses passes chez ScrapeCreators
+    // étaient payées avant que sa première passe chez TikHub n'arrête le passage (« budget ») ; une concurrente, jamais
+    // reportée et remise en tête, repayait ces pages à chaque passage, et aucune autre app du réseau n'avançait tant que
+    // TikHub n'était pas rechargé. Ici, les mots-clés seuls : un hashtag peut être lu chez ScrapeCreators (identifiant
+    // introuvable chez TikHub, cf `servedBy`), il est jugé dans la boucle, une fois son identifiant connu.
+    const thUnreachable = (g: PassGate) => g.limit("tikhub") === 0 && router.fallbackRoom() === 0;
+    const needsTh = (a: DueApp) => router.on && networkPasses(a.searches, a.deep).some((p) => p.kind === "keyword" && passProvider(p, jobs).provider === "tikhub");
+    const thShut = due.filter((a) => !scShut.includes(a) && needsTh(a) && thUnreachable(gateFor(st, b, a.never)));
+    const shut = [...scShut, ...thShut];
+    if (shut.length) {
+      due = due.filter((a) => !shut.includes(a));
+      if (appId) await ctx.runMutation(internal.radar.radarNetworks.finishNetworkSearch, { appId, now, outcome: "budget", searched: false });
+    }
     let lastError: string | undefined;
     let stop = false;
     let attached = 0;
     // La part du passage est recalculée avant chaque app, sur la dépense écrite et le solde relu : plusieurs recherches
     // peuvent tourner en même temps (la tâche de l'heure, celles des apps suivies d'office ou demandées à l'écran), et
     // chacune ne voyait que la part calculée à son départ.
-    let left = due[0]?.never ? Math.max(left0, catchUp0) : left0;
-    let spentAtLeft = 0;
+    let gate = gateFor(st, b, due[0]?.never ?? false);
     let timedOut = false;
+    // ScrapeCreators s'est fermé en cours de passage (vu à la relecture de la part) : les apps qui en ont besoin ne sont
+    // plus touchées (cf `scShut`). De même pour TikHub, porte de repli comprise (cf `thShut`).
+    let scClosed = false;
+    let thClosed = false;
     // Le tri des hashtags (radarNetworkMath.checkHashtag) : une page publique à la fois, une pause avant chacune. Sa
     // garde l'arrête au temps du passage, au plafond de pages, après des refus ou des « rien » d'affilée : les hashtags
     // suivants paient comme avant.
@@ -1147,15 +1263,63 @@ export const runNetworkSearch = internalAction({
     };
     try {
       for (const [k, app] of due.entries()) {
-        if (k > 0) {
-          const fresh: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now: Date.now() });
-          const fb = budgetState(fresh.budget, fresh.usage, fresh.balance);
-          const daily = allowance(fresh.budget, fb, "network", todayCredits(fresh, "network"), appId ? 1 : NETWORK_RUNS_PER_DAY);
-          left = app.never ? Math.max(daily, catchUpAllowance(fresh.budget, fb, "network")) : daily;
-          spentAtLeft = usage.spent.credits;
-        }
+        if (scClosed && needsSc(app)) continue;
         // Chaque recherche de l'app passe deux fois : sans région, puis par la France (radarNetworkMath.NETWORK_REGIONS).
         const passes = networkPasses(app.searches, app.deep);
+        const routed = passes.map((p) => passProvider(p, jobs));
+        // Les identifiants TikHub gardés des hashtags de l'app qui passent chez TikHub (une lecture par hashtag).
+        // `null` : TikHub ne rend pas ce nom exact dans son top 10 (gardé 7 jours) ; absent : à chercher.
+        const cids = new Map<string, string | null>();
+        if (router.on) {
+          const asked = new Set<string>();
+          for (const [i, p] of passes.entries()) {
+            if (p.kind !== "hashtag" || routed[i].provider !== "tikhub") continue;
+            const tag = hashtagKey(p.value);
+            if (asked.has(tag)) continue;
+            asked.add(tag);
+            // Une lecture refusée : comme jamais cherché (l'identifiant sera relu chez TikHub, un appel), l'app continue.
+            const kept: { cid: string | null; at: number } | null = await ctx.runQuery(internal.radar.radarNetworks.hashtagIdOf, { tag }).catch(() => null);
+            if (kept && (kept.cid !== null || Date.now() - kept.at < HASHTAG_MISS_KEEP_MS)) cids.set(tag, kept.cid);
+          }
+        }
+        /**
+         * Le fournisseur qui lit une passe. Un hashtag sans nom exact chez TikHub est lu chez ScrapeCreators, comme avant
+         * la bascule, sur la part du poste chez lui — ce n'est pas un repli : TikHub n'a pas échoué, et rien ne prouve
+         * qu'il n'a pas ce hashtag (seul son top 10 est consulté). Corrigé le 20/11/2026 : cette passe ne passait que par
+         * la porte de repli — fermée (quota du jour, palier), elle était vide et l'app enregistrée comme cherchée, sa
+         * recherche complète comprise ; ouverte, elle s'arrêtait après une page (15 attendues en recherche complète).
+         */
+        const servedBy = (i: number): Provider =>
+          passes[i].kind === "hashtag" && routed[i].provider === "tikhub" && cids.get(hashtagKey(passes[i].value)) === null ? "sc" : routed[i].provider;
+        const scNeeded = router.on && passes.some((_, i) => servedBy(i) === "sc");
+        const thNeeded = router.on && passes.some((_, i) => servedBy(i) === "tikhub");
+        if ((scClosed && scNeeded) || (thClosed && thNeeded)) continue;
+        // TikHub tombé en panne pendant ce passage (les refus de l'app d'avant, une clé refusée, un solde à sec), porte
+        // de repli fermée : une app dont une passe doit partir chez lui n'est pas commencée — ses passes chez
+        // ScrapeCreators seraient payées pour une recherche qui resterait due. Le passage s'arrête, elle reste due sans
+        // être touchée (21/11/2026).
+        if (thNeeded && router.down() && router.fallbackRoom() === 0) {
+          stop = true;
+          break;
+        }
+        if (k > 0) {
+          const fresh: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now: Date.now() });
+          gate = gateFor(fresh, jobBudget(fresh, jobs, usage.book, Date.now()), app.never);
+        }
+        // Une app dont une passe doit partir chez ScrapeCreators, fermé : reportée en entier, rien n'est payé chez TikHub
+        // pour une recherche qui serait refaite.
+        if (scNeeded && gate.limit("sc") === 0) {
+          await ctx.runMutation(internal.radar.radarNetworks.finishNetworkSearch, { appId: app.id, now: Date.now(), outcome: "budget", searched: false, deep: app.deep });
+          scClosed = true;
+          continue;
+        }
+        // Une app dont une passe doit partir chez TikHub, fermé, porte de repli fermée (cf `thShut`) : reportée en
+        // entier, rien n'est payé chez ScrapeCreators pour une recherche qui serait refaite.
+        if (thNeeded && thUnreachable(gate)) {
+          await ctx.runMutation(internal.radar.radarNetworks.finishNetworkSearch, { appId: app.id, now: Date.now(), outcome: "budget", searched: false, deep: app.deep });
+          thClosed = true;
+          continue;
+        }
         await ctx.runMutation(internal.radar.radarNetworks.startNetworkSearch, { appId: app.id, now: Date.now(), steps: passes.length });
         let complete = true;
         let noCredits = false;
@@ -1163,83 +1327,234 @@ export const runNetworkSearch = internalAction({
         let appFailures = 0;
         let appError: string | undefined;
         let crashed = false;
+        // TikHub en panne pour le passage (coupe-circuit, clé refusée, à sec), une page non servie et sans repli : l'app
+        // reste due, son issue est une erreur.
+        let providerFailed = false;
         let appAttached = 0;
+        // Une passe s'est arrêtée après une page servie EN REPLI alors qu'elle aurait continué (une pagination ne se
+        // poursuit pas chez l'autre fournisseur) : la recherche n'est pas complète. Corrigé le 20/11/2026 : elle était
+        // quand même enregistrée comme recherche complète (deepSearchedAt), qui ne revenait jamais ; l'app est désormais
+        // cherchée comme une routine, et sa recherche complète revient à son prochain tour.
+        let truncated = false;
+        /**
+         * Compte un appel de la recherche de l'app ; rend faux s'il a échoué (et dit pourquoi). Corrigé le 20/11/2026 :
+         * tout échec passager laissait l'app due, ses autres passes payées pendant ce temps — un échec qui se reproduit
+         * au même endroit faisait repayer toute sa recherche à chaque passage. Désormais, selon `router` et `thFailed` :
+         *  - plus le temps ni le budget d'appeler TikHub (repli refusé) : un passage coupé, comme quand la part est
+         *    épuisée avant l'appel — ni appel ni erreur comptés, l'app reste due (son issue : « budget ») ;
+         *  - TikHub en panne pour le passage : l'app reste due, son issue est une erreur, le passage s'arrête ;
+         *  - un refus de TikHub sur l'appel (`thFailed` : il a répondu en échec) : comme une page refusée chez
+         *    ScrapeCreators avant la bascule, la passe s'arrête là, les suivantes sont faites et l'app est cherchée — y
+         *    compris le refus qui fait sauter le coupe-circuit ;
+         *  - une passe que la panne a empêchée de partir APRÈS un refus de TikHub dans cette app (`appThRefused`) :
+         *    sautée, ni appel ni erreur comptés ; l'app est cherchée comme une routine (`truncated` : sa recherche
+         *    complète revient à son prochain tour).
+         * LE COUPE-CIRCUIT NE GARDE DUES QUE LES APPS QU'IL A EMPÊCHÉES DE PARTIR (corrigé le 21/11/2026, comme la courbe,
+         * la découverte et les relevés depuis le 20/11) : l'app dont les refus le faisaient sauter finissait en erreur,
+         * jamais cherchée (`networkSearchedAt` inchangé), remise en tête par networkQueueOrder au passage suivant — ses
+         * pages ScrapeCreators repayées, ses refus déjà conclus perdus avec elle, et aucune autre app du réseau n'avançait
+         * tant que la route refusait. Reste due, en erreur, l'app dont aucun appel n'a été refusé par TikHub lui-même
+         * (clé refusée, solde à sec : rien n'est dit de ses appels).
+         */
+        let appThRefused = false;
+        const counted = (r: { spend: Spend; creditsRemaining?: number } & ({ ok: true } | { ok: false; error: string; noCredits: boolean; transient: boolean; thFailed: boolean })): boolean => {
+          gate.spend(r.spend);
+          usage.book.add(r.spend);
+          usage.seen(r.creditsRemaining);
+          // TikHub n'a pas été appelé (budget, échéance, panne) et le repli est refusé.
+          const prevented = !r.ok && r.transient && !r.thFailed;
+          if (prevented && !router.down()) {
+            timedOut = Date.now() - now > NETWORK_MAX_MS || router.expired();
+            stop = true;
+            complete = false;
+            return false;
+          }
+          if (prevented && appThRefused) {
+            truncated = true;
+            return false;
+          }
+          usage.book.calls++;
+          appCalls++;
+          if (r.ok) return true;
+          usage.book.errors++;
+          appFailures++;
+          lastError = r.error;
+          appError = r.error;
+          if (r.thFailed) appThRefused = true;
+          if (r.noCredits) {
+            stop = true;
+            complete = false;
+            noCredits = true;
+          }
+          if (prevented) {
+            stop = true;
+            complete = false;
+            providerFailed = true;
+          }
+          return false;
+        };
+        // Le tri des hashtags de l'app (une page publique par hashtag, pour ses deux passes), AVANT le choix du fournisseur.
         const tags = new Map<string, TagRun>();
         try {
           for (const [i, pass] of passes.entries()) {
             const { kind, value, region, sort } = pass;
-            // Un hashtag est lu une fois pour ses deux passes ; absent, ou complet et ses vidéos lues : la passe ne paie pas.
+            // LA PORTE GRATUITE D'ABORD (#24) : un hashtag est lu une fois pour ses deux passes ; absent, ou complet et ses
+            // vidéos lues, la passe ne paie pas — ni chez ScrapeCreators, ni chez TikHub (ni son identifiant chez TikHub).
             if (kind === "hashtag" && !tags.has(value)) tags.set(value, await tagRun(value, app, passes.filter((p) => p.kind === kind && p.value === value).length));
             const tag = kind === "hashtag" ? tags.get(value) : undefined;
             const skip = passSkip(pass, tags);
             if (skip) {
-              usage.spare("hashtag", 1);
+              // Une passe évitée, quel que soit le fournisseur qui l'aurait servie (radarUsage.saved.hashtag).
+              usage.book.spare("hashtag", 1);
               // Lues sur leur page : un signal déjà rangé garde son texte à l'écran (son ordre diffère du payant, radarFreeMath).
               if (skip.length) appAttached += (await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, { appId: app.id, videos: skip, foundBy: networkFoundBy(app.name, region), now, step: i + 1, keepText: true })).attached;
               continue;
             }
             const failuresBefore = appFailures;
-            let cursor: number | undefined;
-            // Recherche complète : tant que les pages ramènent de nouveaux comptes ; de routine : 2 ou 3 pages.
-            const read = { page: 0, dry: 0 };
-            while (nextSearchPage(read, app.deep, app.rival)) {
-              if (usage.spent.credits - spentAtLeft >= left || Date.now() - now > NETWORK_MAX_MS) {
+            // PUIS LE FOURNISSEUR (radarProviders.passProvider).
+            const { region: thRegion } = routed[i];
+            let provider = servedBy(i);
+            const foundBy = networkFoundBy(app.name, region);
+            type Page = { videos: SignalInput[]; next: number | undefined; rawCount?: number; fansUnknown?: string[] };
+            /** Une page de la passe chez ScrapeCreators, dans la forme d'une page TikHub. */
+            const scPage = async (at: number | undefined) => {
+              const x = await scNetworkPage(kind, value, at, region ?? undefined, sort);
+              return x.ok ? { ...x, value: { videos: x.value.videos, next: x.value.cursor } as Page } : x;
+            };
+            // L'identifiant TikHub du hashtag : gardé (cf `cids`), sinon cherché (un appel, compté dans la recherche de l'app).
+            let cid: string | null = null;
+            // Sa lecture n'a pas pu partir ou n'a pas abouti : la première page, déjà rendue par la porte de repli
+            // (servie chez ScrapeCreators, ou l'échec à compter).
+            let first: Routed<Page> | null = null;
+            if (router.on && provider === "tikhub" && kind === "hashtag") {
+              const key = hashtagKey(value);
+              const known = cids.get(key);
+              if (known !== undefined) cid = known;
+              else if (Date.now() - now > NETWORK_MAX_MS || router.expired()) {
                 timedOut = Date.now() - now > NETWORK_MAX_MS;
                 stop = true;
                 complete = false;
                 break;
-              }
-              const r = await scNetworkPage(kind, value, cursor, region ?? undefined, sort);
-              usage.spent.calls++;
-              appCalls++;
-              usage.spent.credits += r.credits;
-              usage.seen(r.creditsRemaining);
-              if (!r.ok) {
-                usage.spent.errors++;
-                appFailures++;
-                lastError = r.error;
-                appError = r.error;
-                if (r.noCredits) {
+              } else if (!gate.take("tikhub")) {
+                // La part TikHub du poste est épuisée : la première page passe par la porte de repli, comme toute page
+                // destinée à TikHub (canCall) ; refusée, le passage s'arrête et l'app reste due. Corrigé le 20/11/2026 :
+                // le passage s'arrêtait sans essayer le repli, à chaque passage tant que TikHub n'était pas rechargé.
+                first = await router.fallback(() => scPage(undefined), { firstPage: true, scBudget: () => gate.take("sc") });
+                if (!first) {
                   stop = true;
                   complete = false;
-                  noCredits = true;
+                  break;
                 }
+              } else {
+                const t = await router.thOnly((o) => thHashtagId(value, o), TH_ROUTES.hashtagSearch);
+                if (t.r?.ok) {
+                  counted({ ok: true, spend: t.spend });
+                  const found = t.r.value;
+                  await ctx.runMutation(internal.radar.radarNetworks.saveHashtagId, { tag: key, ...(found ? { cid: found.cid, name: found.name } : {}), now: Date.now() });
+                  cid = found?.cid ?? null;
+                  cids.set(key, cid);
+                  // Pas de nom exact chez TikHub : la passe est lue chez ScrapeCreators (cf `servedBy`).
+                  if (cid === null) provider = "sc";
+                } else {
+                  // Refus de TikTok, échec isolé, panne, plus le temps : la première page suit le sort d'un appel aiguillé
+                  // (chez ScrapeCreators si la porte de repli le permet), et rien n'est gardé — un refus ne dit pas que
+                  // TikHub n'a pas ce hashtag.
+                  first = await router.rescue(t, () => scPage(undefined), { firstPage: true, scBudget: () => gate.take("sc") });
+                }
+              }
+            }
+            let cursor: number | undefined;
+            const seen = new Set<string>();
+            // La passe s'est arrêtée après une page servie en repli (cf `truncated`) : elle n'est pas allée au bout.
+            let passCut = false;
+            // Recherche complète : tant que les pages ramènent de nouveaux comptes ; de routine : 2 ou 3 pages.
+            const read = { page: 0, dry: 0 };
+            while (nextSearchPage(read, app.deep, app.rival)) {
+              const thPass = router.on && provider === "tikhub";
+              let r: Routed<Page> | null = first;
+              first = null;
+              if (!r) {
+                const can = canCall(gate, provider, router, read.page === 0);
+                if (!can || Date.now() - now > NETWORK_MAX_MS || router.expired()) {
+                  timedOut = Date.now() - now > NETWORK_MAX_MS || router.expired();
+                  stop = true;
+                  complete = false;
+                  break;
+                }
+                const at = cursor;
+                const asPage = () => scPage(at);
+                const opts = { firstPage: read.page === 0, scBudget: () => gate.take("sc"), thBudget: () => gate.take("tikhub") };
+                if (!thPass) r = await router.sc(asPage);
+                else if (kind === "keyword")
+                  r = await router.route("tikhub", (o) => thKeywordPage(value, read.page, thRegion ?? "US", o), asPage, { route: TH_ROUTES.search, ...opts });
+                else if (cid !== null) {
+                  const c = cid;
+                  r = await router.route("tikhub", (o) => thHashtagPage(c, at, thRegion, o), asPage, { route: TH_ROUTES.hashtagVideos, ...opts });
+                } else {
+                  // Sans identifiant, la passe est lue chez ScrapeCreators (`provider`), ou sa seule page est déjà rendue
+                  // par la porte de repli (`first`) : on n'arrive jamais ici. Une erreur visible plutôt qu'une passe vide.
+                  throw new Error(`hashtag « ${value} » sans identifiant TikHub`);
+                }
+              }
+              if (!counted(r) || !r.ok) break;
+              // Un mot-clé chez TikHub : ses pages se recouvrent, les doublons sont retirés dans la passe.
+              const dedupe = r.served === "tikhub" && kind === "keyword";
+              const fresh = dedupe ? r.value.videos.filter((x) => !seen.has(x.videoId)) : r.value.videos;
+              for (const x of fresh) seen.add(x.videoId);
+              const unknown = dedupe ? (r.value.fansUnknown ?? []).filter((id) => fresh.some((x) => x.videoId === id)) : [];
+              if (dedupe && fresh.length === 0 && (r.value.rawCount ?? 0) > 0) {
+                // Que des doublons : rien à ranger, la page compte sèche.
+                read.page++;
+                read.dry++;
+              } else {
+                const found: { attached: number; signals: number; updated: number } = await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, {
+                  appId: app.id,
+                  videos: fresh,
+                  foundBy,
+                  now,
+                  step: i + 1,
+                  ...(unknown.length ? { fansUnknown: unknown } : {}),
+                });
+                appAttached += found.attached;
+                // Ce que la page payée d'un hashtag a rapporté, servie par l'un ou l'autre fournisseur (mesure des règles du tri).
+                if (tag) notePaidPage(tag, found, fresh, app.rule);
+                read.page++;
+                read.dry = found.attached > 0 ? 0 : read.dry + 1;
+              }
+              cursor = r.value.next;
+              if (dedupe ? (r.value.rawCount ?? 0) === 0 || cursor === undefined : cursor === undefined || r.value.videos.length === 0) break;
+              // Une première page servie par ScrapeCreators en repli : sa pagination ne se poursuit pas chez TikHub. Elle
+              // annonçait une suite (sinon la passe a fini juste au-dessus) et une première page n'épuise jamais une
+              // recherche (2 pages au moins) : la recherche n'est pas complète (cf `truncated`).
+              if (thPass && r.served === "sc") {
+                truncated = true;
+                passCut = true;
                 break;
               }
-              const found: { attached: number; signals: number; updated: number } = await ctx.runMutation(internal.radar.radarNetworks.attachFromSearch, {
-                appId: app.id,
-                videos: r.value.videos,
-                foundBy: networkFoundBy(app.name, region),
-                now,
-                step: i + 1,
-              });
-              appAttached += found.attached;
-              if (tag) notePaidPage(tag, found, r.value.videos, app.rule);
-              read.page++;
-              read.dry = found.attached > 0 ? 0 : read.dry + 1;
-              cursor = r.value.cursor;
-              if (cursor === undefined || r.value.videos.length === 0) break;
             }
-            if (tag) notePaidPass(tag, { stopped: stop, failed: appFailures > failuresBefore });
+            // Une passe payée ne compte que si elle est allée au bout (radarNetworkMath.notePaidPass) : une passe coupée
+            // après sa page servie en repli ne l'est pas (son compteur de vidéos rendues serait faux).
+            if (tag) notePaidPass(tag, { stopped: stop || passCut, failed: appFailures > failuresBefore });
             if (stop) break;
           }
         } catch (e) {
           // Une page illisible ne laisse pas l'app « en cours » pour toujours : son issue est notée, la tâche continue.
           crashed = true;
           complete = false;
-          usage.spent.errors++;
+          usage.book.errors++;
           appError = e instanceof Error ? e.message : String(e);
           lastError = appError;
         }
-        // Une app à moitié cherchée (budget du passage épuisé) reprend au suivant.
-        const outcome = crashed ? "error" : networkSearchOutcome({ complete, noCredits, calls: appCalls, failures: appFailures });
+        // Une app à moitié cherchée (budget du passage épuisé) reprend au suivant ; une app que TikHub n'a pas pu
+        // servir aussi, avec son erreur.
+        const outcome = crashed || providerFailed ? "error" : networkSearchOutcome({ complete, noCredits, calls: appCalls, failures: appFailures });
         const paid = paidTags(tags);
         await ctx.runMutation(internal.radar.radarNetworks.finishNetworkSearch, {
           appId: app.id,
           now: Date.now(),
           outcome,
           searched: complete,
-          deep: app.deep,
+          deep: app.deep && !truncated,
           ...(paid.length ? { tags: paid } : {}),
           ...(outcome !== "done" && outcome !== "budget" && appError ? { error: appError } : {}),
         });
@@ -1251,20 +1566,19 @@ export const runNetworkSearch = internalAction({
       // Les pages TikTok du tri, une ligne par passage (les passes évitées sont dans radarUsage.saved.hashtag).
       if (tagGuard.tags) console.log(`[radar] tri des hashtags : ${tagGuard.tags} hashtags, ${tagGuard.pages} pages TikTok${tagGuard.stopped ? ` ; arrêté : ${tagGuard.stopped}` : ""}`);
       // Même si le passage tombe (une écriture refusée), ce qu'il a payé est compté.
+      await router.close().catch(() => undefined);
       await usage.flush(lastError);
     }
-    const { calls, credits, errors } = usage.spent;
+    const { calls, errors } = usage.book;
     // Les comptes trouvés à la demande sont relevés tout de suite, pas à l'heure suivante.
     if (appId && attached) await ctx.scheduler.runAfter(0, internal.radar.radarNetworks.runAccountReads, {});
     // Rattrapage : coupé par le temps avec des apps jamais cherchées encore dues, le passage suivant part une minute après
     // (la tâche de l'heure en ferait ~8 par heure ; 171 attendaient).
     if (!appId && networkChainNext({ timedOut, neverLeft: due.some((a) => a.never) })) await ctx.scheduler.runAfter(NETWORK_CHAIN_MS, internal.radar.radarNetworks.runNetworkSearch, {});
-    return { calls, credits, errors };
+    return { calls, credits: usage.book.units(), errors };
   },
 });
 
-/** La dépense d'un passage est écrite au fil de l'eau, par tranches de ce nombre de crédits. */
-const USAGE_FLUSH_CREDITS = 50;
 
 /** Comptes : les relevés dus, dans la limite du budget. */
 export const runAccountReads = internalAction({
@@ -1286,91 +1600,20 @@ export const runAccountReads = internalAction({
   },
 });
 
-/**
- * La dépense d'un passage, écrite au fil de l'eau dans radarUsage (et le solde lu avec elle). Une tranche n'est
- * comptée écrite qu'une fois l'écriture faite : une écriture refusée repart avec la suivante. Les écritures se suivent
- * (jamais deux en même temps). Le 13/11/2026, des passages qui ont levé en route ont fait disparaître ~2 100 à 2 900
- * crédits de radarUsage : le solde baissait, les comptes ne le voyaient pas.
- */
-function usageWriter(ctx: ActionCtx, poste: string, now: number) {
-  const spent = { credits: 0, calls: 0, errors: 0 };
-  const written = { credits: 0, calls: 0, errors: 0 };
-  /** Les crédits par motif (relevés de comptes, cf radarFreeMath.PaidReason), écrits avec le reste. */
-  const reasons: Record<string, number> = {};
-  const reasonsWritten: Record<string, number> = {};
-  /** Les appels payants évités par une page publique, par brique (cf radarSignalsMath.SavedKey). */
-  const saved: Record<string, number> = {};
-  const savedWritten: Record<string, number> = {};
-  /** La mesure côte à côte d'une brique en « mesure », par verdict (cf radarFreeMath.GapMeasure). */
-  const measured: Record<string, number> = {};
-  const measuredWritten: Record<string, number> = {};
-  let balance: { remaining: number; at: number } | undefined;
-  let chain: Promise<void> = Promise.resolve();
-  const unwritten = (all: Record<string, number>, done: Record<string, number>): Record<string, number> => {
-    const out: Record<string, number> = {};
-    for (const [k, c] of Object.entries(all)) if (c - (done[k] ?? 0) > 0) out[k] = c - (done[k] ?? 0);
-    return out;
-  };
-  const write = async (error?: string) => {
-    const d = { credits: spent.credits - written.credits, calls: spent.calls - written.calls, errors: spent.errors - written.errors };
-    const r = unwritten(reasons, reasonsWritten);
-    const sv = unwritten(saved, savedWritten);
-    const ms = unwritten(measured, measuredWritten);
-    if (d.credits <= 0 && d.calls <= 0 && d.errors <= 0 && !error && !balance && !Object.keys(sv).length && !Object.keys(ms).length) return;
-    const b = balance;
-    await ctx.runMutation(internal.radar.radarSignals.recordRun, {
-      poste,
-      ...d,
-      now,
-      ...(Object.keys(r).length ? { reasons: r } : {}),
-      ...(Object.keys(sv).length ? { saved: sv } : {}),
-      ...(Object.keys(ms).length ? { measured: ms } : {}),
-      ...(b ? { creditsRemaining: b.remaining, creditsSeenAt: b.at } : {}),
-      ...(error ? { lastError: error } : {}),
-    });
-    written.credits += d.credits;
-    written.calls += d.calls;
-    written.errors += d.errors;
-    for (const [k, c] of Object.entries(r)) reasonsWritten[k] = (reasonsWritten[k] ?? 0) + c;
-    for (const [k, c] of Object.entries(sv)) savedWritten[k] = (savedWritten[k] ?? 0) + c;
-    for (const [k, c] of Object.entries(ms)) measuredWritten[k] = (measuredWritten[k] ?? 0) + c;
-    if (balance === b) balance = undefined;
-  };
-  return {
-    spent,
-    /** Des crédits dépensés pour ce motif (en plus de `spent.credits`, qui les compte déjà). */
-    because: (reason: string, credits: number) => {
-      if (credits > 0) reasons[reason] = (reasons[reason] ?? 0) + credits;
-    },
-    /** Des appels payants évités par une page publique (au moins un crédit chacun), pour cette brique. */
-    spare: (key: SavedKey, calls: number) => {
-      if (calls > 0) saved[key] = (saved[key] ?? 0) + calls;
-    },
-    /** Un verdict de la mesure côte à côte (page publique contre payant) d'une brique en « mesure ». */
-    measure: (key: GapMeasure) => {
-      measured[key] = (measured[key] ?? 0) + 1;
-    },
-    /** Le solde que l'API vient de donner (plus récent que les précédents). */
-    seen: (remaining: number | undefined) => {
-      if (remaining !== undefined) balance = { remaining, at: Date.now() };
-    },
-    /** Écrit ce qui ne l'est pas encore (à la suite des écritures en cours). */
-    flush: (error?: string): Promise<void> => {
-      const next = chain.then(() => write(error));
-      // Une écriture refusée ne bloque pas les suivantes : elles la reprennent (rien n'est compté écrit).
-      chain = next.catch(() => undefined);
-      return next;
-    },
-    pending: () => spent.credits - written.credits,
-  };
-}
-
 /** Un passage de relevé de comptes (sous le verrou de `runAccountReads`). */
 async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: number; credits: number; errors: number }> {
   await ctx.runMutation(internal.radar.radarNetworks.seedApps, {});
   const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-  const b = budgetState(st.budget, st.usage, st.balance);
-  const n = allowance(st.budget, b, "tiktok", todayCredits(st, "tiktok"), ACCOUNT_RUNS_PER_DAY);
+  // Les relevés payants passent chez TikHub sous RADAR_TIKHUB=tiktok (20/11/2026, radarProviders) ; sans réglage, chez
+  // ScrapeCreators comme avant. Le solde TikHub est lu (gratuit) avant le budget.
+  const jobs = tikhubJobs();
+  const usage = usageWriter(ctx, "tiktok", now);
+  const router = makeRouter({ poste: "tiktok", jobs, st, book: usage.book, start: now, claimFallback: fallbackClaimer(ctx) });
+  const b = await router.open();
+  const provider = posteProvider(jobs, "tiktok");
+  const gate = passGate(allowanceParts(st.budget, b, "tiktok", todayCredits(st, "tiktok"), ACCOUNT_RUNS_PER_DAY));
+  // Les relevés payants du passage, en unités : sa part chez son fournisseur (et, TikHub à sec, de quoi passer la porte de repli).
+  const n = passLimit(gate, provider, router);
   // Les motifs des apps, lus une fois pour tout le passage et passés à chaque relevé (cf `appLiteValidator`).
   const rules: AppLite[] = await ctx.runQuery(internal.radar.radarNetworks.appRules, {});
   const apps = rules.length <= APP_RULES_MAX ? rules : undefined;
@@ -1382,11 +1625,23 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     ...(active ? { active } : {}),
   });
   if (parked.length) await ctx.runMutation(internal.radar.radarNetworks.parkAccounts, { ids: parked, now });
-  const usage = usageWriter(ctx, "tiktok", now);
+  // Pages payées par le passage (bornées par `n`), et celles de ScrapeCreators à part : la sonde de son solde ne doit
+  // pas être empêchée par des relevés servis par TikHub.
   let paidCalls = 0;
+  let scPaidCalls = 0;
+  // TikHub en panne sans repli : plus aucun relevé payant ne part, et aucun compte ne prend d'erreur pour ça.
+  let halted = false;
+  // Les comptes dont la première page a été refusée par TikHub lui-même (5xx, 4xx, délai), repli fermé : une erreur de
+  // relevé chacun EN FIN DE PASSAGE — y compris ceux dont les refus ont fait tomber TikHub en panne : le coupe-circuit ne
+  // garde dus, sans erreur, que les comptes qu'il a empêché de partir (comme la courbe, radarSignals.runCurve). Corrigé
+  // le 20/11/2026 : ces comptes rendaient « skip » sans erreur, restaient dus et repartaient à chaque passage (un délai
+  // payé au prix plein, un 5xx deux appels) sans jamais passer en pause ; puis, en panne, ils restaient dus en tête de
+  // file. Une route retirée coûte au plus une vague de relevés menés de front (ACCOUNT_READ_POOL) par passage ; avant la
+  // bascule, chaque compte refusé par ScrapeCreators prenait une erreur de relevé.
+  const isolatedMisses: Id<"radarTracked">[] = [];
   let lastError: string | undefined;
   const failed = (e: unknown) => {
-    usage.spent.errors++;
+    usage.book.errors++;
     lastError = e instanceof Error ? e.message : String(e);
     console.error(`[radar] relevé d'un compte : ${lastError}`);
   };
@@ -1404,53 +1659,85 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     () => sleep(FREE_RETRY_MS),
   );
   /**
-   * Un relevé payant : `limit` borne les appels du passage (compté AVANT l'appel : 8 relevés partent de front).
+   * Un relevé payant : `more` borne les appels du passage (compté AVANT l'appel : 8 relevés partent de front).
    * `gap` : la liste du profil n'allait pas jusqu'à cette vidéo — on lit page après page (GAP_PAGES au plus) jusqu'à
    * la retrouver, ou dépasser sa date sans la voir (elle n'est plus en ligne : `markGapChecked`). `seen` : ce que sa
-   * page publique en a dit (radarFreeMath.GAP_FREE_CHECK, en mesure) — l'accord des deux est compté.
+   * page publique en a dit (radarFreeMath.GAP_FREE_CHECK, en mesure) — l'accord des deux est compté, quel que soit le
+   * fournisseur qui a servi le relevé. `forceSc` : chez ScrapeCreators quel que soit le réglage (la sonde de son solde).
    */
-  const readPaid = async (acc: DueAccount, limit: number, reason: PaidReason, gap?: NewestKnown, seen?: GapSeen): Promise<"stop" | void> => {
-    if (paidCalls >= limit) return;
+  const readPaid = async (acc: DueAccount, reason: PaidReason, o: { more: () => boolean; forceSc?: boolean }, gap?: NewestKnown, seen?: GapSeen): Promise<"stop" | void> => {
+    // TikHub en panne n'empêche pas la sonde, qui part chez ScrapeCreators.
+    if ((halted && !o.forceSc) || !o.more()) return;
+    // Un échec isolé de TikHub sur une page de ce compte (cf `isolatedMisses`).
+    let isolated = false;
     try {
       const read = await paidRead(
         async (cursor): Promise<PaidPage> => {
           paidCalls++;
-          const r = await scProfileVideosPage(acc.handle, cursor);
-          usage.spent.credits += r.credits;
-          usage.spent.calls++;
-          usage.because(reason, r.credits);
+          const sc = () => {
+            scPaidCalls++;
+            return scProfileVideosPage(acc.handle, cursor);
+          };
+          const r =
+            o.forceSc || provider === "sc"
+              ? await router.sc(sc)
+              : await router.route("tikhub", (opts) => thProfilePage(acc.handle, cursor, opts), sc, {
+                  route: TH_ROUTES.profile,
+                  firstPage: cursor === undefined,
+                  thBudget: () => gate.take("tikhub"),
+                  scBudget: () => gate.take("sc"),
+                });
+          gate.spend(r.spend);
+          usage.book.add(r.spend);
+          usage.book.calls++;
+          usage.book.because(reason, spendUnits(r.spend));
           usage.seen(r.creditsRemaining);
           if (r.ok) return { ok: true, videos: r.value.videos, next: r.value.next };
-          usage.spent.errors++;
+          usage.book.errors++;
           lastError = r.error;
+          if (r.transient) {
+            // TikHub n'a pas servi la page, rien ne l'a remplacé : rien n'est conclu sur le compte tout de suite. Un refus
+            // de TikHub est jugé en fin de passage (cf `isolatedMisses`) ; en panne, le passage s'arrête.
+            if (r.thFailed) isolated = true;
+            if (router.down()) halted = true;
+            return { ok: false, noCredits: false, transient: true };
+          }
           return { ok: false, noCredits: r.noCredits };
         },
-        () => paidCalls < limit,
+        o.more,
         gap,
       );
       const { outcome, videos: all, reached } = read;
-      if (gap && seen) usage.measure(gapMeasure(seen, read, gap));
+      if (gap && seen) usage.book.measure(gapMeasure(seen, read, gap));
       // Première page refusée ou vide : une erreur de relevé (un jour d'attente, en pause à la troisième).
       if (outcome === "error") await ctx.runMutation(internal.radar.radarNetworks.markReadError, { accountId: acc.id, now });
+      if (outcome === "skip" && isolated) isolatedMisses.push(acc.id);
       if (all.length) await ctx.runMutation(internal.radar.radarNetworks.applyAccountRead, { accountId: acc.id, videos: all, now, ...(apps ? { apps } : {}) });
-      if (outcome === "stop") return "stop";
+      if (outcome === "stop" || halted) return "stop";
       if (gap && reached.done && !reached.found) await ctx.runMutation(internal.radar.radarNetworks.markGapChecked, { accountId: acc.id, videoId: gap.videoId });
     } catch (e) {
       // Un compte dont l'écriture échoue ne fait plus tomber le passage (ni disparaître sa dépense).
       failed(e);
       await ctx.runMutation(internal.radar.radarNetworks.markReadError, { accountId: acc.id, now }).catch(failed);
     } finally {
-      if (usage.pending() >= USAGE_FLUSH_CREDITS) await usage.flush().catch(failed);
+      if (usage.pending() >= USAGE_FLUSH_UNITS) await usage.flush().catch(failed);
     }
   };
   // Le PREMIER relevé d'un compte passe aussi par la voie gratuite (15/11/2026, cf radarFreeMath.laneQueue) ; payant
   // seulement si la page gratuite échoue. Au palier « survie », ce repli payant attend (une heure à la fois) que le
   // solde remonte.
-  const waitFirst = tierDefers(b.tier).firstReads;
+  // Le palier qui compte est celui du fournisseur qui sert les relevés : TikHub s'il le peut, sinon ScrapeCreators.
+  const served = provider === "tikhub" && router.on && gate.limit("tikhub") > 0 ? "tikhub" : "sc";
+  const waitFirst = tierDefers(tierOf(b, served)).firstReads;
+  // La réserve qui compte (brique 8) est celle du fournisseur qui sert les relevés payants : la réserve de
+  // ScrapeCreators ne retient jamais un relevé que TikHub sert (radarProviders.reserveFor).
+  const reserveReached = reserveFor(b, provider, router, gate);
   // La part payante du passage, moins celle des ratés retenus (radarFreeMath.missPlan) : elle reste à eux.
   let limit = n;
-  const paid = (list: readonly DueAccount[], reason: PaidReason): Promise<number> =>
-    pooled(list, ACCOUNT_READ_POOL, (acc) => readPaid(acc, limit, reason), () => Date.now() - now < ACCOUNT_READ_MAX_MS);
+  // Basculé : un relevé ne part que s'il reste du budget chez TikHub, ou une place à la porte de repli (sinon il reste dû).
+  const more = () => paidCalls < limit && (!router.on || canCall(gate, provider, router));
+  const alive = () => Date.now() - now < ACCOUNT_READ_MAX_MS && !router.expired();
+  const paid = (list: readonly DueAccount[], reason: PaidReason): Promise<number> => pooled(list, ACCOUNT_READ_POOL, (acc) => readPaid(acc, reason, { more }), alive);
   // La courbe des vues d'abord, dans la file et le temps de la voie (20/11/2026, radarSignals.curveInLane) : la voie
   // reprend sa série de pages refusées (un seul coupe-circuit, radarFreeMath.laneAfterCurve). Ses relevés payants et ses
   // écritures suivent PENDANT la voie, à côté : attendus à la fin du passage, ils ne retardent pas les relevés payants
@@ -1482,7 +1769,7 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
             if (f.gapChecked) await ctx.runMutation(internal.radar.radarNetworks.markGapChecked, { accountId: acc.id, videoId: f.gapChecked });
             // Les appels payants que ce relevé gratuit a évités : l'échec retenu au passage d'avant (radarFreeMath.holdMisses),
             // ou le trou vérifié — un seul pour les deux (radarFreeMath.freeReadSaved).
-            for (const [key, calls] of Object.entries(freeReadSaved(f, acc)) as [SavedKey, number][]) usage.spare(key, calls);
+            for (const [key, calls] of Object.entries(freeReadSaved(f, acc)) as [SavedKey, number][]) usage.book.spare(key, calls);
           } catch (e) {
             // Lu gratuitement mais pas rangé : il reste dû, relu gratuitement au passage suivant (pas de repli payant :
             // l'écriture échouerait de même).
@@ -1507,7 +1794,7 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     //   lieu d'être relu gratuitement en tête de file à chaque passage, pour rien (brique 8, reserveMisses) ;
     // - un premier relevé que la page gratuite n'a pas pu lire : en payant (ou il attend, palier « survie ») ; pas
     //   atteint, il attend le passage suivant, sauf voie fermée — ou s'il était retenu au passage d'avant : payé en tête.
-    const plan = missPlan(misses.paid, lane.notReached, { laneOpen: free.on, n, waitFirst, reserveReached: b.reserveReached }, now);
+    const plan = missPlan(misses.paid, lane.notReached, { laneOpen: free.on, n, waitFirst, reserveReached }, now);
     if (plan.hold.length) await ctx.runMutation(internal.radar.radarNetworks.holdFreeMisses, { ids: plan.hold.map((a) => a.id), at: now });
     limit = plan.limit;
     if (plan.reserveDefer.length) await ctx.runMutation(internal.radar.radarNetworks.deferAccounts, { ids: plan.reserveDefer.map((a) => a.id), until: now + RESERVE_MISS_WAIT_MS });
@@ -1518,8 +1805,8 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     await pooled(
       plan.missPay,
       ACCOUNT_READ_POOL,
-      (m) => readPaid(m.account, limit, missReason(m), m.newest, m.seen),
-      () => Date.now() - now < ACCOUNT_READ_MAX_MS,
+      (m) => readPaid(m.account, missReason(m), { more }, m.newest, m.seen),
+      alive,
     );
     // Ce qu'il n'a pas eu le temps de prendre attend le passage suivant (10 minutes), sauf retard ou voie fermée.
     const over = overflowToPay(
@@ -1529,11 +1816,14 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
     );
     await paid(over.pay, over.reason);
     // Sous la réserve, le solde n'est plus relu par rien d'autre : un appel d'un crédit le relit (un pack acheté
-    // relance le Radar), même si aucun relevé payant n'était dû ou que le poste est coupé.
-    if (needsBalanceProbe(b) && paidCalls === 0) {
+    // relance le Radar), même si aucun relevé payant n'était dû ou que le poste est coupé. Toujours chez
+    // ScrapeCreators (c'est son solde), et compté à part des relevés servis par TikHub.
+    if (needsBalanceProbe(b) && scPaidCalls === 0) {
       const probe: DueAccount | null = due[0] ?? (await ctx.runQuery(internal.radar.radarNetworks.probeAccount, {}));
-      if (probe) await readPaid(probe, 1, "sonde");
+      if (probe) await readPaid(probe, "sonde", { more: () => scPaidCalls < 1, forceSc: true });
     }
+    // Les comptes que TikHub a refusés : une erreur de relevé chacun, panne déclarée ou non (cf `isolatedMisses`).
+    if (isolatedMisses.length) await ctx.runMutation(internal.radar.radarNetworks.markReadErrors, { ids: isolatedMisses, now });
     await ctx.runMutation(internal.radar.radarNetworks.noteFreeRun, {
       ok: free.ok,
       fallback: free.fallback,
@@ -1543,10 +1833,11 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
       waiting: lane.notReached.length - over.pay.length,
       now: Date.now(),
     });
-    usage.spent.calls += free.ok;
+    usage.book.calls += free.ok;
+    await router.close().catch(failed);
     await usage.flush(lastError);
     const calls = free.ok + paidCalls;
-    return { calls, credits: usage.spent.credits, errors: usage.spent.errors };
+    return { calls, credits: usage.book.units(), errors: usage.book.errors };
   } finally {
     await curveDone;
     // Même si le passage tombe, ce qu'il a payé est compté.

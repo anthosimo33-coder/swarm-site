@@ -49,13 +49,13 @@ describe("pourquoi une vidéo n'est plus visible", () => {
 
   it("de la page lue au constat : servie, refusée avec son motif, ou illisible (on ne conclut rien)", () => {
     const page = (detail: unknown) => `<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({ __DEFAULT_SCOPE__: { "webapp.video-detail": detail } })}</script>`;
-    const servie = parseTikTokPublicPage(page({ statusCode: 0, statusMsg: "", itemInfo: { itemStruct: { id: "7704754488321527053", stats: { playCount: 56798 } } } }), "7704754488321527053");
+    const servie = parseTikTokPublicPage(page({ statusCode: 0, statusMsg: "", itemInfo: { itemStruct: { id: "7704754485268064129", stats: { playCount: 56798 } } } }), "7704754485268064129");
     expect(outcomeOf(servie)).toEqual({ kind: "visible" });
     // La page de la vidéo de la capture, le 10/11/2026.
-    const privee = parseTikTokPublicPage(page({ statusCode: 10222, statusMsg: "author_secret" }), "7704754488321527053");
+    const privee = parseTikTokPublicPage(page({ statusCode: 10222, statusMsg: "author_secret" }), "7704754485268064129");
     expect(outcomeOf(privee)).toEqual({ kind: "unavailable", reason: "private" });
     // TikTok ne répond pas à cette IP, ou la page a changé : ni visible, ni invisible.
-    expect(outcomeOf(parseTikTokPublicPage("<html>captcha</html>", "7704754488321527053"))).toEqual({ kind: "unknown" });
+    expect(outcomeOf(parseTikTokPublicPage("<html>captcha</html>", "7704754485268064129"))).toEqual({ kind: "unknown" });
   });
 });
 
@@ -70,7 +70,7 @@ describe("quelles vidéos contrôler", () => {
   });
 
   it("seul un vrai identifiant TikTok est lu : jamais une vidéo semée par un test", () => {
-    expect(isTikTokVideoId("7704754488321527053")).toBe(true);
+    expect(isTikTokVideoId("7704754485268064129")).toBe(true);
     expect(isTikTokVideoId("e2einv17943276050312")).toBe(false);
     expect(isTikTokVideoId("ig:DQx1abc")).toBe(false);
     expect(isTikTokVideoId("12345")).toBe(false);

@@ -11,7 +11,8 @@ import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import { internalAction, internalMutation, internalQuery } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
-import { allowanceUsd, budgetState } from "./radarSignalsMath";
+import { allowanceUsd } from "./radarSignalsMath";
+import { jobBudget } from "./radarProviders";
 import {
   addExample,
   FAMILY_BATCH,
@@ -95,7 +96,7 @@ export const runFamilies = internalAction({
     if (!process.env.ANTHROPIC_API_KEY) return { skipped: "no-key" };
     const now = Date.now();
     const st = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    if (allowanceUsd(st.budget, budgetState(st.budget, st.usage, st.balance), "ai") < MIN_ALLOWANCE_USD) return { skipped: "budget" };
+    if (allowanceUsd(st.budget, jobBudget(st), "ai") < MIN_ALLOWANCE_USD) return { skipped: "budget" };
     const work: FamilyWork = await ctx.runQuery(internal.radar.radarFamilies.familyWork, { now });
     if (work.candidates.length === 0) return { skipped: "rien" };
 

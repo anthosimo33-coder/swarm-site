@@ -75,7 +75,7 @@ const route = (url) => {
 };
 const CASES = [
   ['/app', { url: '/app.html' }], ['/app/apps', { url: '/app.html' }], ['/app/createurs/zinedine.gsbb', { url: '/app.html' }],
-  ['/app/videos/7705929733220994337?x=1', { url: '/app.html?x=1' }], ['/app.html', { url: '/app.html' }],
+  ['/app/videos/7705929730054170541?x=1', { url: '/app.html?x=1' }], ['/app.html', { url: '/app.html' }],
   ['/tarifs', { url: '/tarifs.html' }], ['/tarifs?ref=lp', { url: '/tarifs.html?ref=lp' }], ['/cgv', { url: '/cgv.html' }], ['/admin', { url: '/admin.html' }],
   ['/compte', { redirect: '/app/compte', status: 307 }], ['/src/app/main.js', { url: '/src/app/main.js' }], ['/favicon.svg', { url: '/favicon.svg' }],
 ];

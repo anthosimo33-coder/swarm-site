@@ -1,0 +1,245 @@
+{
+ "_fixture": "Réponse TikHub réelle du banc du 20/11/2026 (th-decouverte-200.json), tronquée et anonymisée (scripts/fixtures-publiques.mjs --anonymise : auteurs et identifiants inventés, légendes, textes incrustés, titres et hashtags réécrits en mots de remplissage, largeurs tirées et emoji remplacés, dates déplacées par une table secrète et monotone, sans écart commun, durées et compteurs tirés loin des vrais ; ré-anonymisée en un passage le 21/11/2026). La 1re vidéo est une pub (commerce_info.ad_source = 1) sans champ is_ad.",
+ "code": 200,
+ "router": "/api/v1/tiktok/app/v3/fetch_video_search_result",
+ "data": {
+  "status_code": 0,
+  "has_more": 0,
+  "cursor": 30,
+  "aweme_list": [],
+  "search_item_list": [
+   {
+    "type": null,
+    "aweme_info": {
+     "aweme_id": "7709666557760111870",
+     "desc": "LPaq fic ☁️ #abor #pta #uisnostrudexerc ",
+     "desc_language": "pt",
+     "region": "BR",
+     "create_time": 1795046646,
+     "is_top": 0,
+     "statistics": {
+      "play_count": 512146,
+      "digg_count": 41040,
+      "comment_count": 80,
+      "share_count": 824,
+      "collect_count": 2369
+     },
+     "video": {
+      "duration": 27650,
+      "cover": {
+       "url_list": [
+        "https://example.invalid/media/couverture-08~tplv-tiktokx-cropcenter:500:800.jpeg"
+       ]
+      }
+     },
+     "author": {
+      "uid": "9100000000000000002",
+      "unique_id": "auteur_02",
+      "follower_count": 58418,
+      "nickname": "Auteur",
+      "signature": ""
+     },
+     "music": {
+      "id": 7709666712378934000,
+      "id_str": "7709666712378934533",
+      "title": "som original - auteur_02",
+      "owner_handle": "auteur_02"
+     },
+     "text_extra": [
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 12,
+       "end": 17,
+       "hashtag_name": "abor"
+      },
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 18,
+       "end": 22,
+       "hashtag_name": "pta"
+      },
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 23,
+       "end": 39,
+       "hashtag_name": "uisnostrudexerc"
+      }
+     ],
+     "commerce_info": {
+      "ad_source": 1
+     }
+    }
+   },
+   {
+    "type": null,
+    "aweme_info": {
+     "aweme_id": "7708416305665148126",
+     "desc": "MModoconseq et @personne_97695 Un iusmodt quiofficiad llit Nul ap ap pidata colab iat r Iatu 🪁🧩 #nul #auteur_767 #rsintoc ",
+     "desc_language": "en",
+     "region": "BD",
+     "create_time": 1794755534,
+     "is_top": 0,
+     "statistics": {
+      "play_count": 10102,
+      "digg_count": 291,
+      "comment_count": 9,
+      "share_count": 78,
+      "collect_count": 176
+     },
+     "video": {
+      "duration": 96878,
+      "cover": {
+       "url_list": [
+        "https://example.invalid/media/couverture-09~tplv-tiktokx-cropcenter:500:800.jpeg"
+       ]
+      }
+     },
+     "author": {
+      "uid": "9100000000000000003",
+      "unique_id": "auteur_03",
+      "follower_count": 1604,
+      "nickname": "Auteur",
+      "signature": ""
+     },
+     "interaction_stickers": [],
+     "music": {
+      "id": 7691796946893145000,
+      "id_str": "7691796946893145182",
+      "title": "som original - auteur_04",
+      "owner_handle": "auteur_04"
+     },
+     "text_extra": [
+      {
+       "type": 0,
+       "user_id": "9100000000000000004",
+       "start": 15,
+       "end": 30
+      },
+      {
+       "type": 1,
+       "start": 98,
+       "end": 102,
+       "hashtag_name": "nul"
+      },
+      {
+       "type": 1,
+       "start": 103,
+       "end": 114,
+       "hashtag_name": "auteur_767"
+      },
+      {
+       "type": 1,
+       "start": 115,
+       "end": 123,
+       "hashtag_name": "rsintoc"
+      }
+     ]
+    }
+   },
+   {
+    "type": null,
+    "aweme_info": {
+     "aweme_id": "7708566393297306852",
+     "desc": "OEIUSMOD! Runt ullamc labore iamq atduisauteirure! #tlaborumloremipsumdolor #mveniamquisnostrudexe_t #nul #ddo #stlaborumloremips ",
+     "desc_language": "pt",
+     "region": "BR",
+     "create_time": 1794792297,
+     "is_top": 0,
+     "statistics": {
+      "play_count": 55099,
+      "digg_count": 919,
+      "comment_count": 15,
+      "share_count": 137,
+      "collect_count": 101
+     },
+     "video": {
+      "duration": 53139,
+      "cover": {
+       "url_list": [
+        "https://example.invalid/media/couverture-10~tplv-tiktokx-cropcenter:500:800.jpeg"
+       ]
+      }
+     },
+     "author": {
+      "uid": "9100000000000000005",
+      "unique_id": "auteur_05",
+      "follower_count": 611708,
+      "nickname": "Auteur",
+      "signature": ""
+     },
+     "interaction_stickers": [
+      {
+       "type": 18,
+       "text_info": "MINIM A EETDOLO\nDUIS FU NTINC\nNSECT UNTINCU\nMO URADIPISC."
+      },
+      {
+       "type": 18,
+       "text_info": "ENIAMQUIS NULL DOL\nIOFFIC UR RITI ULPA\nIOFFIC M CI."
+      },
+      {
+       "type": 18,
+       "text_info": "IADESE UFU ON UNTMOL\nNOSTRUDEXE NDER ITA\nUATDUI UR M CI."
+      },
+      {
+       "type": 18,
+       "text_info": "NTI LORE T UIOFFIC\nLAM STLABORUMLOREMIPS\n🎈"
+      },
+      {
+       "type": 18,
+       "text_info": "DOEIUSM R ELITE MO\nEHENDERIT MVE QUIO\nSM UNTUTL METCO LABORE."
+      },
+      {
+       "type": 18,
+       "text_info": "STLABOR REETDOL\nA MOLLITA ODOCONSE\nSUNTIN."
+      }
+     ],
+     "music": {
+      "id": 7685122271362418000,
+      "id_str": "7685122271362417735",
+      "title": "Pidat Equa"
+     },
+     "text_extra": [
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 51,
+       "end": 75,
+       "hashtag_name": "tlaborumloremipsumdolor"
+      },
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 76,
+       "end": 100,
+       "hashtag_name": "mveniamquisnostrudexe_t"
+      },
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 101,
+       "end": 105,
+       "hashtag_name": "nul"
+      },
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 106,
+       "end": 110,
+       "hashtag_name": "ddo"
+      },
+      {
+       "type": 1,
+       "user_id": "",
+       "start": 111,
+       "end": 129,
+       "hashtag_name": "stlaborumloremips"
+      }
+     ]
+    }
+   }
+  ]
+ }
+}

@@ -58,8 +58,8 @@ vi.mock("../../convex/radar/scrapeCreatorsApi", async (orig) => ({
  * jour-là : un bloc « __UNIVERSAL_DATA_FOR_REHYDRATION__ », `collectCount` en texte, les compteurs de 10 000 et plus
  * arrondis (16 805 vues servies « 16 800 »).
  */
-const ID = "7705093698693975317";
-const ID2 = "7704455095064235271";
+const ID = "7705093697490134927";
+const ID2 = "7704455091687794539";
 const page = (o: { id?: string; stats?: Record<string, unknown>; authorStats?: Record<string, unknown> } = {}): FreePage => ({
   ok: true,
   text: `<html><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({

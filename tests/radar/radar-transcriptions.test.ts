@@ -44,7 +44,7 @@ const vttUrl = (lang: string, source = "ASR") => `https://v16-webapp.tiktokcdn-e
 
 const page = (tracks: Track[], spoken?: string, video: Record<string, unknown> = {}) => {
   const item = {
-    id: "7707635935218797837",
+    id: "7707635931582310347",
     createTime: "1794780000",
     textLanguage: "en",
     video: {
@@ -59,7 +59,7 @@ const page = (tracks: Track[], spoken?: string, video: Record<string, unknown> =
 const refused = (statusCode: number, statusMsg: string) =>
   `<html><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({ __DEFAULT_SCOPE__: { "webapp.video-detail": { statusCode, statusMsg } } })}</script></html>`;
 /**
- * La page d'un carrousel photo telle que TikTok la sert (relevée le 20/11/2026 sur @charmcircuit4/photo/7709801657537694996
+ * La page d'un carrousel photo telle que TikTok la sert (relevée le 20/11/2026 sur @charmcircuit4/photo/7709801655956416468
  * et une autre, scopes et quelques champs) : ses données, mais pas de `webapp.video-detail`.
  */
 const NO_VIDEO = `<html><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({
@@ -412,7 +412,7 @@ describe("la file des transcriptions", () => {
         row("texte", { durationSec: 8 }),
         row("longue", { durationSec: 300 }),
         // Un carrousel photo : sans durée, très vu, et rien à transcrire.
-        row("photo", { views: 90_000, durationSec: undefined, url: "https://www.tiktok.com/@photo/photo/7709801657537694996" }),
+        row("photo", { views: 90_000, durationSec: undefined, url: "https://www.tiktok.com/@photo/photo/7709801655956416468" }),
       ],
       apps,
     );
@@ -436,7 +436,7 @@ describe("la file des transcriptions", () => {
       doc("radarSignals", { platform: "tiktok", videoId: String(seq), url: `https://www.tiktok.com/@${handle}/video/${seq}`, authorHandle: handle, caption: "", views: 100, publishedAt: NOW - DAY, durationSec: 40, ...o });
     const tables: Record<string, MemoryDoc[]> = {
       radarApps: [doc("radarApps", { status: "active", rivalOf: [], strong: ["glowup"], slug: "glowup", name: "glowup" })],
-      radarSignals: [signal("a", { views: 300 }), signal("b", { views: 200, subtitlesCheckedAt: NOW - DAY }), signal("c", { views: 100 }), signal("vieille", { publishedAt: NOW - 9 * DAY }), signal("photo", { views: 900, durationSec: undefined, url: "https://www.tiktok.com/@photo/photo/7709801657537694996" })],
+      radarSignals: [signal("a", { views: 300 }), signal("b", { views: 200, subtitlesCheckedAt: NOW - DAY }), signal("c", { views: 100 }), signal("vieille", { publishedAt: NOW - 9 * DAY }), signal("photo", { views: 900, durationSec: undefined, url: "https://www.tiktok.com/@photo/photo/7709801655956416468" })],
     };
     const run = (args: Record<string, unknown>) => (dueTranscripts as unknown as { _handler: (ctx: unknown, a: unknown) => Promise<{ url: string; checked: boolean }[]> })._handler({ db: memoryDb(tables).db }, { now: NOW, ...args });
     expect((await run({ limit: 0, freeLimit: 40 })).map((d) => [d.url.split("/")[3], d.checked])).toEqual([

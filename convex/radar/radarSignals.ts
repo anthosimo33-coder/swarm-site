@@ -36,13 +36,16 @@ import { LANG_BY_HAND, OFF_TOPIC_BY_HAND, SEED_ACCOUNTS, SEED_REMOVED } from "./
 import {
   BUDGET_VERSION,
   DISCOVERY_RUNS_PER_DAY,
+  POSTE_KEYS,
+  TH_RESERVE_USD,
+  envelopeUsdAt,
   RETENTION_DAYS,
   SIGNALS_LIST_CAP,
   SC_CURRENCY,
   SC_PRICE_PER_CREDIT,
   addCounts,
   addSnapshot,
-  allowance,
+  allowanceParts,
   cleanText,
   budgetState,
   curveAdmissionsLeft,
@@ -52,24 +55,32 @@ import {
   nextCheckpointAt,
   nextQueries,
   normalizeBudget,
-  plannedUsd,
   ratioOf,
   creditAlert,
   CREDIT_RESERVE,
+  TH_PRICE_USD,
+  scPerDay,
+  nextSpentLots,
+  spentOf,
+  thPerDay,
+  usageUnits,
   CURVE_LANE_WAIT_MS,
   curveCountsOf,
   curveLaneTake,
   curveNetCutoff,
-  recentPerDay,
   type Balance,
   type BudgetState,
   type CreditAlertKind,
   type BudgetSettings,
+  type PosteKey,
+  type Provider,
   type SignalInput,
 } from "./radarSignalsMath";
 import { CURVE_FREE, curveSaved, curveTally, readCurvePages, scRefused, settleCurve, type CurveReason, type FreePage } from "./radarFreeMath";
 import { keptFirst } from "./radarCreatorsMath";
 import { scKeyPresent, scSearchKeyword, scVideoInfo } from "./scrapeCreatorsApi";
+import { TH_ROUTES, thKeyPresent, thSearchKeyword, thVideoInfo, type ThPrices } from "./tikhubApi";
+import { FALLBACK_SC_PER_DAY, PassBook, canCall, fallbackClaimer, makeRouter, passGate, passLimit, posteProvider, posteProviders, spendUnits, thOnlyPostes, tikhubJobs, type ThJob } from "./radarProviders";
 
 const DAY = 86_400_000;
 
@@ -139,7 +150,36 @@ export async function activeApps(ctx: QueryCtx) {
   return ctx.db.query("radarApps").withIndex("by_status", (q) => q.eq("status", "active")).collect();
 }
 
-export const appRef = (a: Doc<"radarApps">): AppRef => ({ id: a._id, name: a.name, rivalOf: a.rivalOf });
+export const appRef = (a: Pick<Doc<"radarApps">, "_id" | "name" | "rivalOf">): AppRef => ({ id: a._id, name: a.name, rivalOf: a.rivalOf });
+
+/**
+ * Ce qu'une écriture lit d'une app quand on lui passe les motifs au lieu de relire la table (`appRules`) : ses motifs
+ * (radarNetworkMath.AppRule), son nom, ses projets concurrents, son statut. Les motifs de 2 187 apps pèsent 0,38 Mo
+ * (20/11/2026), et un argument ne se lit pas en base.
+ */
+export const appLiteValidator = v.object({
+  _id: v.id("radarApps"),
+  status: v.union(v.literal("active"), v.literal("paused")),
+  name: v.string(),
+  rivalOf: v.array(v.string()),
+  strong: v.array(v.string()),
+  weak: v.array(v.string()),
+  context: v.array(v.string()),
+  not: v.optional(v.array(v.string())),
+});
+export type AppLite = Infer<typeof appLiteValidator>;
+export const appLite = (a: Doc<"radarApps">): AppLite => ({
+  _id: a._id,
+  status: a.status,
+  name: a.name,
+  rivalOf: a.rivalOf,
+  strong: a.strong,
+  weak: a.weak,
+  context: a.context,
+  ...(a.not ? { not: a.not } : {}),
+});
+/** Au-delà, la liste ne tient plus dans un argument Convex (8 192 éléments par tableau) : chaque écriture relit la table. */
+export const APP_RULES_MAX = 8_000;
 
 /**
  * Les apps de départ et leurs comptes de départ (idempotent). Une app de départ
@@ -349,13 +389,23 @@ export type TrackedCounter = { counts?: { total: number; byApp: Map<string, numb
 /**
  * `byApp`, `total`, `others` : la place prise (lignes moins comptes en pause « hors sujet »), que le plafond lit ;
  * `rows` : les lignes de chaque app, le compteur `radarApps.trackedCount` tel qu'il est rangé.
+ *
+ * Seules les apps qui ont des comptes, ou pas encore de compteur, sont lues (index `by_tracked_count`) : une app à 0
+ * compte ne prend aucune place (max(0, 0 − hors sujet) = 0) et n'entre dans aucune somme ; absente des tables, elle y
+ * vaut 0, comme chez ses lecteurs (`?? 0`). Corrigé le 20/11/2026 : toute la table était relue (2 187 apps, 1,84 Mo),
+ * à chaque page de la recherche du réseau qui ramenait un auteur pas encore suivi ; 801 apps (0,92 Mo) ont des comptes.
+ * Même résultat, dans la même transaction (tests/radar/radar-lectures-recherches.test.ts, L5).
  */
 export async function trackedCounts(ctx: MutationCtx) {
   const byApp = new Map<string, number>();
   const rowsByApp = new Map<string, number>();
   let total = 0;
   let others = 0;
-  for (const a of await ctx.db.query("radarApps").collect()) {
+  const apps = [
+    ...(await ctx.db.query("radarApps").withIndex("by_tracked_count", (q) => q.eq("trackedCount", undefined)).collect()),
+    ...(await ctx.db.query("radarApps").withIndex("by_tracked_count", (q) => q.gt("trackedCount", 0)).collect()),
+  ];
+  for (const a of apps) {
     let rows = a.trackedCount;
     if (rows === undefined) {
       rows = (await ctx.db.query("radarTracked").withIndex("by_app", (q) => q.eq("appId", a._id)).collect()).length;
@@ -378,7 +428,8 @@ export async function trackedCounts(ctx: MutationCtx) {
  */
 export async function attachAccount(
   ctx: MutationCtx,
-  app: Doc<"radarApps">,
+  // Son id et ses projets concurrents suffisent (la découverte passe les motifs, cf `appLiteValidator`).
+  app: Pick<Doc<"radarApps">, "_id" | "rivalOf">,
   handle: string,
   fans: number,
   matchedBy: "caption" | "manual" | "seed",
@@ -482,6 +533,11 @@ export async function writeSignal(
     multiplier?: number;
     curve?: { nextCheckAt?: number; curveStartedAt?: number };
     forceSnapshot?: boolean;
+    /**
+     * Les abonnés de l'auteur ne sont pas mesurés (0 d'une recherche TikHub, 20/11/2026) : une vidéo connue garde ses
+     * abonnés et son ratio se calcule dessus ; une vidéo neuve n'entre pas (son ratio serait inventé).
+     */
+    fansUnknown?: boolean;
     /** Lue sur sa page publique : une vidéo déjà rangée garde son texte à l'écran et son son (leur ordre diffère du payant, radarFreeMath). */
     keepText?: boolean;
   },
@@ -491,6 +547,10 @@ export async function writeSignal(
     .query("radarSignals")
     .withIndex("by_video", (q) => q.eq("platform", platform).eq("videoId", s.videoId))
     .first();
+  if (opts.fansUnknown) {
+    if (!existing) return "skipped";
+    s = { ...s, authorFans: existing.authorFans };
+  }
   const app = opts.app ? { appId: opts.app.id, appName: opts.app.name, appRivalOf: opts.app.rivalOf } : {};
   const tracked = opts.trackedAccountId ? { trackedAccountId: opts.trackedAccountId } : {};
   const mult = opts.multiplier !== undefined ? { multiplier: opts.multiplier } : {};
@@ -557,10 +617,16 @@ export async function writeSignal(
 // `internal.radar.radarSignals.*` ; inférés, ils bouclent et font tomber toute l'API
 // générée en `any` (erreurs dans des fichiers sans rapport).
 
+/** Une ligne d'usage telle que les tâches la lisent (les champs TikHub seulement quand il y en a). */
+export type JobUsage = { poste: string; credits: number; day: string; usd?: number; thCalls?: number; thUsd?: number; thUnknown?: number; thFallbacks?: number };
+
+/** Le solde TikHub rangé (radarSettings), tel que le budget le lit (radarSignalsMath.ThBalance, sans `now`). */
+export type ThStored = { paidUsd: number; freeUsd: number; seenAt: number; spentSinceUsd: number; perDay: number | null };
+
 export type JobState = {
   budget: BudgetSettings;
   cursor: number;
-  usage: { poste: string; credits: number; day: string; usd?: number }[];
+  usage: JobUsage[];
   day: string;
   month: string;
   /** Le solde ScrapeCreators lu au dernier appel payant (`null` : jamais lu). Il borne chaque poste (budgetState). */
@@ -568,8 +634,79 @@ export type JobState = {
   /** Jours (Paris) où l'alerte de solde de chaque genre est déjà partie. */
   creditAlerted: Partial<Record<CreditAlertKind, string>>;
   /** La dépense des 4 derniers jours, mois précédent compris : le rythme qui dit combien de jours le solde tient. */
-  recentUsage: { poste: string; credits: number; day: string }[];
+  recentUsage: JobUsage[];
+  /** Le solde TikHub rangé (`null` : jamais lu), ses tarifs lus (`null` : jamais lus) et l'heure de leur lecture. */
+  th: ThStored | null;
+  thPrices: ThPrices | null;
+  thPricesAt: number | null;
+  /** Appels repassés par ScrapeCreators faute de TikHub aujourd'hui, tous postes (radarProviders.FALLBACK_SC_PER_DAY). */
+  fallbacksToday: number;
 };
+
+/** Une ligne d'usage pour les tâches : les champs TikHub n'y sont que s'ils sont rangés. */
+const jobUsage = (u: Doc<"radarUsage">): JobUsage => ({
+  poste: u.poste,
+  credits: u.credits,
+  day: u.day,
+  ...(u.usd !== undefined ? { usd: u.usd } : {}),
+  ...(u.thCalls !== undefined ? { thCalls: u.thCalls } : {}),
+  ...(u.thUsd !== undefined ? { thUsd: u.thUsd } : {}),
+  ...(u.thUnknown !== undefined ? { thUnknown: u.thUnknown } : {}),
+  ...(u.thFallbacks !== undefined ? { thFallbacks: u.thFallbacks } : {}),
+});
+
+/**
+ * Le solde TikHub rangé, pour le budget (radarSignalsMath.ThBalance), avec son rythme : celui des postes que TikHub sert
+ * sous le réglage en cours (radarSignalsMath.thPerDay).
+ */
+function thStored(settings: Doc<"radarSettings"> | null, recent: readonly JobUsage[], day: string, providers: Partial<Record<PosteKey, Provider>>): ThStored | null {
+  if (settings?.thBalanceUsd === undefined || settings.thSeenAt === undefined) return null;
+  return {
+    paidUsd: settings.thBalanceUsd,
+    freeUsd: settings.thFreeUsd ?? 0,
+    seenAt: settings.thSeenAt,
+    spentSinceUsd: settings.thSpentSinceUsd ?? 0,
+    perDay: thPerDay(recent, day, providers),
+  };
+}
+
+/** Les replis écrits dans radarUsage ce jour-là (Paris), tous postes. */
+const fallbacksOn = (rows: readonly { day: string; thFallbacks?: number }[], day: string): number =>
+  rows.filter((u) => u.day === day).reduce((n, u) => n + (u.thFallbacks ?? 0), 0);
+
+/**
+ * Les appels repassés par ScrapeCreators faute de TikHub ce jour-là (Paris), tous postes : ce que borne la porte de
+ * repli (radarProviders.FALLBACK_SC_PER_DAY). Les replis PRIS (claimFallback, avant l'appel, tous passages) et, s'ils
+ * sont plus nombreux, ceux écrits dans radarUsage (pris avant ce compte). Un seul calcul pour les tâches (jobState),
+ * pour la mutation qui prend le quota et pour /admin (20/11/2026).
+ */
+const fallbacksUsed = (settings: Doc<"radarSettings"> | null, rows: readonly { day: string; thFallbacks?: number }[], day: string): number =>
+  Math.max(settings?.thFallbackDay === day ? (settings.thFallbackClaims ?? 0) : 0, fallbacksOn(rows, day));
+
+/**
+ * Prend une place de la porte de repli pour un appel chez ScrapeCreators, AVANT l'appel : `false` si le quota du jour
+ * (Paris) est atteint, tous passages confondus. Corrigé le 20/11/2026 : chaque passage comptait ses replis contre le
+ * quota lu à son ouverture (jobState), sans voir ceux des passages qui tournaient en même temps (relevés toutes les
+ * 10 minutes, réseau à l'heure pile, recherches lancées par le suivi d'office, courbe) — 200 à 400 replis par jour au
+ * lieu de 100, sur la clé ScrapeCreators que partagent les relevés de la paie de Jarvia. Une mutation : deux passages
+ * qui la prennent en même temps sont mis en série par la base, aucun ne dépasse le quota. Une place prise pour un appel
+ * qui n'aboutit pas reste prise (le quota est une borne haute).
+ */
+export const claimFallback = internalMutation({
+  args: { now: v.number() },
+  handler: async (ctx, { now }): Promise<boolean> => {
+    const settings = await ensureSettings(ctx);
+    const day = dayKeyParis(now);
+    const rows = await ctx.db.query("radarUsage").withIndex("by_day_poste", (q) => q.eq("day", day)).collect();
+    const used = fallbacksUsed(settings, rows, day);
+    if (used >= FALLBACK_SC_PER_DAY) return false;
+    await ctx.db.patch(settings._id, { thFallbackDay: day, thFallbackClaims: used + 1 });
+    return true;
+  },
+});
+
+const pricesOf = (settings: Doc<"radarSettings"> | null): ThPrices | null =>
+  settings?.thPrices ? Object.fromEntries(settings.thPrices.map((p) => [p.route, { usd: p.usd, free: p.free }])) : null;
 type DueCheck = { id: Id<"radarSignals">; url: string; videoId: string; handle: string };
 export type RunResult = { skipped: "no-key" | "busy" } | { calls: number; credits: number; errors: number };
 
@@ -583,27 +720,37 @@ export const jobState = internalQuery({
     const remaining = settings?.creditsRemaining;
     const since = dayKeyParis(now - 4 * DAY);
     const recent = await ctx.db.query("radarUsage").withIndex("by_day_poste", (q) => q.gte("day", since)).collect();
+    const recentUsage = recent.map(jobUsage);
+    const jobs = tikhubJobs();
     return {
       budget: normalizeBudget(settings),
       cursor: settings?.discoveryCursor ?? 0,
-      usage: usage.map((u) => ({ poste: u.poste, credits: u.credits, day: u.day, ...(u.usd !== undefined ? { usd: u.usd } : {}) })),
+      usage: usage.map(jobUsage),
       day,
       month,
-      balance: remaining !== undefined ? { remaining, seenAt: settings?.creditsSeenAt ?? 0, now, perDay: recentPerDay(recent, day) } : null,
+      // Le rythme de ScrapeCreators : ce qu'il sert sous le réglage en cours (radarSignalsMath.scPerDay, 20/11/2026).
+      balance: remaining !== undefined ? { remaining, seenAt: settings?.creditsSeenAt ?? 0, now, perDay: scPerDay(recentUsage, day, thOnlyPostes(jobs)) } : null,
       creditAlerted: {
         ...(settings?.lowCreditsAlertDay ? { low: settings.lowCreditsAlertDay } : {}),
         ...(settings?.economieAlertDay ? { economie: settings.economieAlertDay } : {}),
         ...(settings?.survieAlertDay ? { survie: settings.survieAlertDay } : {}),
         ...(settings?.reserveAlertDay ? { reserve: settings.reserveAlertDay } : {}),
       },
-      recentUsage: recent.map((u) => ({ poste: u.poste, credits: u.credits, day: u.day })),
+      recentUsage,
+      th: thStored(settings, recentUsage, day, posteProviders(jobs)),
+      thPrices: pricesOf(settings),
+      thPricesAt: settings?.thPricesAt ?? null,
+      fallbacksToday: fallbacksUsed(settings, recentUsage, day),
     };
   },
 });
 
-/** Crédits déjà dépensés aujourd'hui par un poste. */
+/**
+ * Unités déjà dépensées aujourd'hui par un poste : crédits ScrapeCreators et appels TikHub (radarSignalsMath.usageUnits).
+ * Sans TikHub, ce sont les crédits, comme avant le 20/11/2026.
+ */
 export const todayCredits = (st: JobState, poste: string) =>
-  st.usage.filter((u) => u.day === st.day && u.poste === poste).reduce((s, u) => s + u.credits, 0);
+  st.usage.filter((u) => u.day === st.day && u.poste === poste).reduce((s, u) => s + usageUnits(u), 0);
 
 /**
  * Les relevés de courbe dus à `now`. `since` : dus depuis cet instant seulement (la voie gratuite, cf curveInLane :
@@ -638,7 +785,9 @@ export const dueCurve = internalQuery({
  * dans le réseau de l'app.
  */
 export const upsertDiscovered = internalMutation({
-  args: { videos: v.array(signalInput), foundBy: v.string(), now: v.number() },
+  // `fansUnknown` : les vidéos (identifiants) dont les abonnés de l'auteur ne sont pas mesurés (recherche TikHub).
+  // `apps` : les motifs des apps actives, lus une fois par le passage (radarNetworks.appRules) ; absents, relus ici.
+  args: { videos: v.array(signalInput), foundBy: v.string(), now: v.number(), fansUnknown: v.optional(v.array(v.string())), apps: v.optional(v.array(appLiteValidator)) },
   handler: (ctx, args): Promise<{ inserted: number; updated: number; admitted: number; attached: number }> => upsertDiscoveredCore(ctx, args),
 });
 
@@ -657,12 +806,15 @@ export const e2eCandidates = e2eMutation({
 
 async function upsertDiscoveredCore(
   ctx: MutationCtx,
-  { videos, foundBy, now }: { videos: Infer<typeof signalInput>[]; foundBy: string; now: number },
+  { videos, foundBy, now, fansUnknown, apps: passed }: { videos: Infer<typeof signalInput>[]; foundBy: string; now: number; fansUnknown?: string[]; apps?: AppLite[] },
 ): Promise<{ inserted: number; updated: number; admitted: number; attached: number }> {
   {
     const settings = await ensureSettings(ctx);
     const budget = normalizeBudget(settings);
-    const apps = await activeApps(ctx);
+    // Les motifs des apps actives, lus une fois par le passage de découverte et passés à chaque recherche (comme pour
+    // les relevés de comptes, cf radarNetworks.appRules). Corrigé le 20/11/2026 : chaque recherche relisait toutes les
+    // apps actives (2 142 apps, 1,80 Mo) ; une app mise en pause ou créée pendant le passage est vue au suivant.
+    const apps: readonly AppLite[] = passed?.filter((a) => a.status === "active") ?? (await activeApps(ctx)).map(appLite);
     const day = dayKeyParis(now);
     let admittedToday = settings.curveDay === day ? settings.curveAdmitted : 0;
     let inserted = 0;
@@ -671,7 +823,9 @@ async function upsertDiscoveredCore(
     let attached = 0;
     const counter: TrackedCounter = {};
     const grown = new Set<Id<"radarApps">>();
-    for (const s of videos) {
+    const unknown = new Set(fansUnknown ?? []);
+    for (const raw of videos) {
+      let s = raw;
       const app = findApp(s.caption, s.authorHandle, apps);
       if (app && (await attachAccount(ctx, app, s.authorHandle, s.authorFans, "caption", now, counter, undefined, true)) === "added") {
         attached++;
@@ -682,11 +836,16 @@ async function upsertDiscoveredCore(
         .query("radarSignals")
         .withIndex("by_video", (q) => q.eq("platform", "tiktok").eq("videoId", s.videoId))
         .first();
+      // Abonnés non mesurés (recherche TikHub) : une vidéo connue est jugée sur ses abonnés connus ; une neuve n'entre
+      // ni dans les signaux, ni dans la courbe (writeSignal la saute).
+      const fu = unknown.has(s.videoId);
+      if (fu && existing) s = { ...s, authorFans: existing.authorFans };
       // La courbe ne suit que ce qui cite une app suivie, hors « texte sur plan » :
       // du 06 au 09/11/2026, 58 des 62 vidéos suivies étaient hors niche, et
       // aucune décision ne lisait leur courbe.
       const admit =
         (!existing || existing.curveStartedAt === undefined) &&
+        (!fu || existing !== null) &&
         app !== undefined &&
         !isTextOnShot(s) &&
         curveCandidate(s, now) &&
@@ -699,6 +858,7 @@ async function upsertDiscoveredCore(
         foundBy,
         ...(app ? { app: appRef(app) } : {}),
         curve,
+        ...(fu ? { fansUnknown: true } : {}),
       });
       if (r === "skipped") continue;
       if (r === "inserted") inserted++;
@@ -729,8 +889,10 @@ const curveCounts = v.object({
 
 /** Range un relevé de courbe ; `video: null` = vidéo disparue (privée, supprimée) → courbe finie. */
 export const applyCurve = internalMutation({
-  args: { id: v.id("radarSignals"), video: v.union(curveCounts, v.null()), now: v.number() },
-  handler: async (ctx, { id, video, now }): Promise<void> => {
+  // `fansUnknown` : le relevé ne mesure pas les abonnés (détail d'une vidéo chez TikHub : toujours 0, 20/11/2026) ; les
+  // abonnés connus restent, et le ratio se calcule dessus.
+  args: { id: v.id("radarSignals"), video: v.union(curveCounts, v.null()), now: v.number(), fansUnknown: v.optional(v.boolean()) },
+  handler: async (ctx, { id, video, now, fansUnknown }): Promise<void> => {
     const s = await ctx.db.get(id);
     if (!s) return;
     if (video === null) {
@@ -738,14 +900,15 @@ export const applyCurve = internalMutation({
       return;
     }
     const views = Math.max(s.views, video.views);
+    const fans = fansUnknown ? s.authorFans : video.authorFans;
     await ctx.db.patch(id, {
-      authorFans: video.authorFans,
+      authorFans: fans,
       views,
       likes: video.likes,
       comments: video.comments,
       shares: video.shares,
       saves: video.saves,
-      ratio: ratioOf(views, video.authorFans),
+      ratio: ratioOf(views, fans),
       snapshots: addSnapshot(s.snapshots, now, video.views, true),
       nextCheckAt: nextCheckpointAt(s.publishedAt, now),
       lastSeenAt: now,
@@ -778,9 +941,26 @@ export const recordRun = internalMutation({
     cursor: v.optional(v.number()),
     // Dépense en dollars (l'analyse IA), en plus des crédits.
     usd: v.optional(v.number()),
-    // Crédits de ce passage par motif (déjà comptés dans `credits`).
+    // Unités de ce passage par motif (déjà comptées dans `credits` ou `thCalls`).
     reasons: v.optional(v.record(v.string(), v.number())),
-    // Appels payants évités par une page publique, par brique (radarSignalsMath.SavedKey) : pas comptés dans `credits`.
+    // La dépense TikHub de ce passage (cf radarUsage) : absente sans appel TikHub.
+    thCalls: v.optional(v.number()),
+    thUsd: v.optional(v.number()),
+    thUnknown: v.optional(v.number()),
+    thFallbacks: v.optional(v.number()),
+    // Le solde TikHub lu pendant le passage (gratuit), l'heure de sa lecture, et ce que le passage a dépensé chez
+    // TikHub APRÈS cette lecture (la part de ce lot que le solde lu ne compte pas encore).
+    thBalanceUsd: v.optional(v.number()),
+    thFreeUsd: v.optional(v.number()),
+    thSeenAt: v.optional(v.number()),
+    thSpentAfterUsd: v.optional(v.number()),
+    // Un refus « solde insuffisant » (HTTP 402) : sa route. La dernière erreur TikHub du passage.
+    thDryRoute: v.optional(v.string()),
+    thLastError: v.optional(v.string()),
+    // Les tarifs des routes, relus.
+    thPrices: v.optional(v.array(v.object({ route: v.string(), usd: v.number(), free: v.boolean() }))),
+    // Appels payants évités par une page publique, par brique (radarSignalsMath.SavedKey) : pas comptés dans `credits`
+    // ni dans `thCalls`. Un appel évité l'est chez le fournisseur qui l'aurait servi, quel qu'il soit.
     saved: v.optional(v.record(v.string(), v.number())),
     // Une mesure côte à côte (page publique contre payant), par verdict : courbe en VIDÉOS (radarFreeMath.CurveMeasure),
     // trou en comptes (radarFreeMath.GapMeasure).
@@ -789,8 +969,10 @@ export const recordRun = internalMutation({
   handler: async (ctx, a): Promise<void> => {
     const settings = await ensureSettings(ctx);
     const day = dayKeyParis(a.now);
+    const thCalls = a.thCalls ?? 0;
+    const thUnknown = a.thUnknown ?? 0;
     const spared = Object.values({ ...a.saved, ...a.measured }).some((c) => c > 0);
-    if (a.calls > 0 || a.credits > 0 || spared) {
+    if (a.calls > 0 || a.credits > 0 || thCalls > 0 || thUnknown > 0 || spared) {
       const row = await ctx.db
         .query("radarUsage")
         .withIndex("by_day_poste", (q) => q.eq("day", day).eq("poste", a.poste))
@@ -798,14 +980,21 @@ export const recordRun = internalMutation({
       const usd = a.usd !== undefined ? { usd: (row?.usd ?? 0) + a.usd } : {};
       const reasons = addCounts(row?.reasons, a.reasons);
       const why = Object.keys(reasons).length ? { reasons } : {};
+      // Les champs TikHub ne s'écrivent que s'il y en a : sans TikHub, la ligne reste celle d'avant le 20/11/2026.
+      const th = {
+        ...(a.thCalls !== undefined ? { thCalls: (row?.thCalls ?? 0) + a.thCalls } : {}),
+        ...(a.thUsd !== undefined ? { thUsd: (row?.thUsd ?? 0) + a.thUsd } : {}),
+        ...(a.thUnknown !== undefined ? { thUnknown: (row?.thUnknown ?? 0) + a.thUnknown } : {}),
+        ...(a.thFallbacks !== undefined ? { thFallbacks: (row?.thFallbacks ?? 0) + a.thFallbacks } : {}),
+      };
       const saved = addCounts(row?.saved, a.saved);
       const avoided = Object.keys(saved).length ? { saved } : {};
       const measured = addCounts(row?.measured, a.measured);
       const side = Object.keys(measured).length ? { measured } : {};
       if (row) {
-        await ctx.db.patch(row._id, { credits: row.credits + a.credits, calls: row.calls + a.calls, errors: row.errors + a.errors, ...usd, ...why, ...avoided, ...side });
+        await ctx.db.patch(row._id, { credits: row.credits + a.credits, calls: row.calls + a.calls, errors: row.errors + a.errors, ...usd, ...why, ...th, ...avoided, ...side });
       } else {
-        await ctx.db.insert("radarUsage", { day, month: monthKeyParis(a.now), poste: a.poste, credits: a.credits, calls: a.calls, errors: a.errors, ...usd, ...why, ...avoided, ...side });
+        await ctx.db.insert("radarUsage", { day, month: monthKeyParis(a.now), poste: a.poste, credits: a.credits, calls: a.calls, errors: a.errors, ...usd, ...why, ...th, ...avoided, ...side });
       }
     }
     const field = LAST_RUN_FIELD[a.poste];
@@ -817,9 +1006,49 @@ export const recordRun = internalMutation({
       ...(a.cursor !== undefined ? { discoveryCursor: a.cursor } : {}),
       // Une erreur du passage s'affiche ; un passage propre l'efface.
       ...(a.lastError !== undefined || a.calls > 0 ? { lastError: a.lastError } : {}),
+      ...thSettingsPatch(settings, a, Date.now()),
     });
   },
 });
+
+/**
+ * Ce que le passage change au solde TikHub rangé. La dépense du lot s'ajoute à ce qui a été dépensé depuis la dernière
+ * lecture ; un solde lu plus frais que le rangé le remplace, et la dépense « depuis » garde ce qui a été écrit après
+ * cette lecture, plus ce que le passage a dépensé après l'avoir lue (radarSignalsMath.nextSpentLots). `writtenAt` :
+ * l'heure de cette écriture. Rien sans champ TikHub.
+ */
+function thSettingsPatch(
+  settings: Doc<"radarSettings">,
+  a: { now: number; thUsd?: number; thUnknown?: number; thBalanceUsd?: number; thFreeUsd?: number; thSeenAt?: number; thSpentAfterUsd?: number; thDryRoute?: string; thLastError?: string; thCalls?: number; thPrices?: { route: string; usd: number; free: boolean }[] },
+  writtenAt: number,
+): Partial<Doc<"radarSettings">> {
+  const out: Partial<Doc<"radarSettings">> = {};
+  const lot = (a.thUsd ?? 0) + (a.thUnknown ?? 0) * TH_PRICE_USD;
+  const fresher = a.thBalanceUsd !== undefined && a.thSeenAt !== undefined && a.thSeenAt >= (settings.thSeenAt ?? 0);
+  if (lot > 0 || fresher) {
+    // Écrit avant ce suivi (sans lots) : la dépense rangée compte comme un lot écrit maintenant — gardée une fois de
+    // trop plutôt qu'oubliée.
+    const prev = settings.thSpentLots ?? (settings.thSpentSinceUsd ? [{ at: writtenAt, usd: settings.thSpentSinceUsd }] : []);
+    const lots = nextSpentLots(prev, writtenAt, lot, fresher ? { at: a.thSeenAt as number, afterUsd: a.thSpentAfterUsd ?? 0 } : undefined);
+    out.thSpentLots = lots;
+    out.thSpentSinceUsd = spentOf(lots);
+  }
+  if (fresher) {
+    out.thBalanceUsd = a.thBalanceUsd;
+    out.thFreeUsd = a.thFreeUsd ?? 0;
+    out.thSeenAt = a.thSeenAt;
+  }
+  if (a.thDryRoute !== undefined) {
+    out.thDryAt = a.now;
+    out.thDryRoute = a.thDryRoute;
+  }
+  if (a.thLastError !== undefined) out.thLastError = a.thLastError;
+  if (a.thPrices !== undefined) {
+    out.thPrices = a.thPrices;
+    out.thPricesAt = a.now;
+  }
+  return out;
+}
 
 /** Efface les signaux plus vieux que la rétention, et leurs statuts (par lots). */
 export const purgeOldSignals = internalMutation({
@@ -837,7 +1066,11 @@ export const purgeOldSignals = internalMutation({
 
 // ─── Tâches ──────────────────────────────────────────────────────────────────
 
-/** Découverte : la part du passage de la rotation, dans la limite du budget. */
+/**
+ * Découverte : la part du passage de la rotation, dans la limite du budget. Chez TikHub si `RADAR_TIKHUB` le dit
+ * (`search`, hors de `all` : non prouvé hors FR au 20/11/2026) ; une vidéo dont TikHub ne mesure pas les abonnés (0)
+ * n'entre pas sur un ratio inventé (`fansUnknown`).
+ */
 export const runDiscovery = internalAction({
   args: {},
   handler: async (ctx): Promise<RunResult> => {
@@ -847,33 +1080,73 @@ export const runDiscovery = internalAction({
       return { skipped: "no-key" };
     }
     const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    const b = budgetState(st.budget, st.usage, st.balance);
-    const n = allowance(st.budget, b, "search", todayCredits(st, "search"), DISCOVERY_RUNS_PER_DAY);
+    const jobs = tikhubJobs();
+    const book = new PassBook();
+    const router = makeRouter({ poste: "search", jobs, st, book, start: now, claimFallback: fallbackClaimer(ctx) });
+    const b = await router.open();
+    const provider = posteProvider(jobs, "search");
+    const gate = passGate(allowanceParts(st.budget, b, "search", todayCredits(st, "search"), DISCOVERY_RUNS_PER_DAY));
+    const n = passLimit(gate, provider, router);
     const { queries } = nextQueries(st.cursor, n, DISCOVERY_ROTATION);
-    let credits = 0;
     let calls = 0;
     let errors = 0;
     let creditsRemaining: number | undefined;
     let lastError: string | undefined;
     let done = 0;
+    // Les motifs des apps actives (`undefined` : pas encore lus ; `null` : relus par chaque recherche).
+    let rules: AppLite[] | null | undefined;
     for (const dq of queries) {
-      const r = await scSearchKeyword(dq.query, dq.region, dq.lang);
+      if (router.expired() || (router.on && !canCall(gate, provider, router))) break;
+      const r = await router.route(
+        provider,
+        (o) => thSearchKeyword(dq.query, dq.region, dq.lang, o),
+        async () => {
+          const x = await scSearchKeyword(dq.query, dq.region, dq.lang);
+          return x.ok ? { ...x, value: { videos: x.value, fansUnknown: [] as string[] } } : x;
+        },
+        { route: TH_ROUTES.search, firstPage: true, thBudget: () => gate.take("tikhub"), scBudget: () => gate.take("sc") },
+      );
+      gate.spend(r.spend);
+      book.add(r.spend);
       calls++;
-      credits += r.credits;
-      done++;
       if (!r.ok) {
         errors++;
         lastError = r.error;
         console.error(`[radar] recherche « ${dq.query} » (${dq.region}) : ${r.error}`);
-        if (r.noCredits) break;
+        // TikHub n'a pas été appelé (budget, échéance, en panne pour le passage) et le repli est refusé : la recherche
+        // n'est pas faite, la suite non plus, le curseur reste avant elle. Une recherche que TikHub a lui-même refusée
+        // (`thFailed`) ou que TikTok a refusée (facturée) est passée, comme un échec ScrapeCreators avant la bascule —
+        // y compris celle qui fait tomber TikHub en panne. Corrigé le 20/11/2026 : tout échec passager arrêtait le
+        // passage sans avancer le curseur ; puis une panne déclarée ramenait le curseur avant la suite d'échecs qui
+        // l'avait déclarée — trois recherches que TikHub refuse toujours repassaient en tête à chaque passage, la
+        // découverte bloquée dessus.
+        if (r.transient && !r.thFailed) break;
+        done++;
+        // Le refus qui fait tomber TikHub en panne, repli fermé : la recherche est passée, le passage s'arrête après elle.
+        if (r.noCredits || (r.transient && router.down())) break;
         continue;
       }
+      done++;
       if (r.creditsRemaining !== undefined) creditsRemaining = r.creditsRemaining;
-      await ctx.runMutation(internal.radar.radarSignals.upsertDiscovered, { videos: r.value, foundBy: foundByLabel(dq), now });
+      const unknown = r.value.fansUnknown;
+      // Les motifs des apps actives : lus à la première recherche servie, puis passés à chacune (cf upsertDiscovered).
+      // Une lecture refusée, ou trop d'apps pour un argument : chaque recherche les relit, comme avant le 20/11/2026.
+      if (rules === undefined) {
+        const got: AppLite[] | null = await ctx.runQuery(internal.radar.radarNetworks.appRules, { active: true }).catch(() => null);
+        rules = got && got.length <= APP_RULES_MAX ? got : null;
+      }
+      await ctx.runMutation(internal.radar.radarSignals.upsertDiscovered, {
+        videos: r.value.videos,
+        foundBy: foundByLabel(dq),
+        now,
+        ...(unknown.length ? { fansUnknown: unknown } : {}),
+        ...(rules ? { apps: rules } : {}),
+      });
     }
+    await router.close();
     await ctx.runMutation(internal.radar.radarSignals.recordRun, {
       poste: "search",
-      credits,
+      credits: book.credits,
       calls,
       errors,
       now,
@@ -881,8 +1154,9 @@ export const runDiscovery = internalAction({
       ...(lastError ? { lastError } : {}),
       // Le curseur n'avance que des recherches réellement passées.
       cursor: nextQueries(st.cursor, done, DISCOVERY_ROTATION).cursor,
+      ...book.thArgs(),
     });
-    return { calls: done, credits, errors };
+    return { calls: done, credits: book.units(), errors };
   },
 });
 
@@ -893,7 +1167,8 @@ const CURVE_RUNS_PER_DAY = 24;
  * Courbe : les relevés dus (H+6, H+24, H+48), dans la limite du budget. Depuis le 20/11/2026, la voie gratuite les
  * prend à chaque passage (curveInLane) ; ici partent au payant, comme avant, ceux qu'elle n'a pas pris en
  * CURVE_LANE_WAIT_MS (passage tombé, plafond de pages, part payante du passage épuisée), et tout ce qui est dû quand
- * elle ne tourne plus (radarSignalsMath.curveNetCutoff) — motif « retard ».
+ * elle ne tourne plus (radarSignalsMath.curveNetCutoff) — motif « retard ». Chez TikHub si `RADAR_TIKHUB` le dit
+ * (`curve`) : même adresse, mêmes vues ; ses abonnés (toujours 0) ne remplacent jamais les abonnés connus.
  */
 export const runCurve = internalAction({
   args: {},
@@ -901,39 +1176,72 @@ export const runCurve = internalAction({
     const now = Date.now();
     if (!scKeyPresent()) return { skipped: "no-key" };
     const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-    const b = budgetState(st.budget, st.usage, st.balance);
-    const n = allowance(st.budget, b, "curve", todayCredits(st, "curve"), CURVE_RUNS_PER_DAY);
+    const jobs = tikhubJobs();
+    const book = new PassBook();
+    const router = makeRouter({ poste: "curve", jobs, st, book, start: now, claimFallback: fallbackClaimer(ctx) });
+    const b = await router.open();
+    const provider = posteProvider(jobs, "curve");
+    const gate = passGate(allowanceParts(st.budget, b, "curve", todayCredits(st, "curve"), CURVE_RUNS_PER_DAY));
+    const n = passLimit(gate, provider, router);
     const due: DueCheck[] = await ctx.runQuery(internal.radar.radarSignals.dueCurve, { now, limit: n, net: true });
-    let credits = 0;
     let errors = 0;
     let creditsRemaining: number | undefined;
     let lastError: string | undefined;
+    // Les vidéos que TikHub n'a pas pu relever (il a répondu en échec : 5xx, 4xx, délai), sans repli : conclues en fin
+    // de passage.
+    const transient: DueCheck[] = [];
     for (const d of due) {
-      const r = await scVideoInfo(d.url);
-      credits += r.credits;
+      if (router.expired() || (router.on && !canCall(gate, provider, router))) break;
+      const r = await router.route(provider, (o) => thVideoInfo(d.url, o), () => scVideoInfo(d.url), {
+        route: TH_ROUTES.video,
+        firstPage: true,
+        thBudget: () => gate.take("tikhub"),
+        scBudget: () => gate.take("sc"),
+      });
+      gate.spend(r.spend);
+      book.add(r.spend);
       if (!r.ok) {
         errors++;
         lastError = r.error;
         if (r.noCredits) break;
+        if (r.transient) {
+          // TikHub n'a pas été appelé (en panne pour le passage, part épuisée, échéance) et le repli a été refusé (quota
+          // du jour pris par un autre passage, moins de 90 s avant l'échéance…) : rien n'est conclu sur la vidéo, qui
+          // reste due, et la suite non plus (le repli serait refusé de même). Corrigé le 20/11/2026 : elle sortait de
+          // la courbe en fin de passage, comme un échec isolé.
+          if (!r.thFailed) break;
+          transient.push(d);
+          continue;
+        }
         // Une vidéo introuvable sort de la courbe ; une panne réseau aussi : au
         // pire un relevé manqué, jamais une boucle qui repaie la même vidéo.
         await ctx.runMutation(internal.radar.radarSignals.applyCurve, { id: d.id, video: null, now });
         continue;
       }
       if (r.creditsRemaining !== undefined) creditsRemaining = r.creditsRemaining;
-      await ctx.runMutation(internal.radar.radarSignals.applyCurve, { id: d.id, video: r.value ? curveCountsOf(r.value) : null, now });
+      await ctx.runMutation(internal.radar.radarSignals.applyCurve, { id: d.id, video: r.value ? curveCountsOf(r.value) : null, now, ...(r.served === "tikhub" && r.value ? { fansUnknown: true } : {}) });
     }
+    // Échecs passagers : comme un échec ScrapeCreators, la vidéo sort de la courbe — y compris quand ces échecs ont fait
+    // tomber TikHub en panne. LE COUPE-CIRCUIT NE GARDE DUES QUE LES VIDÉOS QU'IL A EMPÊCHÉ DE PARTIR (corrigé le
+    // 20/11/2026) : celles qui le faisaient sauter restaient dues, leur nextCheckAt inchangé, et revenaient en tête de la
+    // file (dueCurve, par nextCheckAt) à chaque passage — trois vidéos que TikHub refuse toujours, et la courbe ne passait
+    // plus jamais chez TikHub, le quota de replis du jour pris par elle. Une panne réelle coûte au plus BREAKER_FAILS
+    // vidéos par passage (main : chaque vidéo en échec chez ScrapeCreators sortait de la courbe).
+    for (const d of transient) await ctx.runMutation(internal.radar.radarSignals.applyCurve, { id: d.id, video: null, now });
+    await router.close();
     await ctx.runMutation(internal.radar.radarSignals.recordRun, {
       poste: "curve",
-      credits,
+      credits: book.credits,
       calls: due.length,
       errors,
       now,
-      ...(credits > 0 ? { reasons: { retard: credits } satisfies Partial<Record<CurveReason, number>> } : {}),
+      // Tout ce que le filet paie est en retard sur la voie (en unités : crédits ScrapeCreators et appels TikHub).
+      ...(book.units() > 0 ? { reasons: { retard: book.units() } satisfies Partial<Record<CurveReason, number>> } : {}),
       ...(creditsRemaining !== undefined ? { creditsRemaining } : {}),
       ...(lastError ? { lastError } : {}),
+      ...book.thArgs(),
     });
-    return { calls: due.length, credits, errors };
+    return { calls: due.length, credits: book.units(), errors };
   },
 });
 
@@ -947,6 +1255,14 @@ export const runCurve = internalAction({
  * aussi la série de pages refusées à la fin (`streak`, `stopped`) : la voie la reprend (radarFreeMath.laneAfterCurve).
  * En mesure tant que radarFreeMath.CURVE_FREE est faux (pourquoi : là) : la page est lue, le payant part quand même et
  * l'accord des deux est compté, en vidéos (radarUsage.measured). `free` : pour les tests de la bascule.
+ * LE PAYANT CHEZ LE FOURNISSEUR RÉGLÉ (fusion avec la bascule TikHub, 20/11/2026) : la page gratuite d'abord, puis
+ * l'aiguilleur du poste « curve » (radarProviders.makeRouter), comme le filet (runCurve). Sans RADAR_TIKHUB=curve (ou
+ * sans clé), ScrapeCreators à l'identique de main. Avec : la part du passage chez TikHub (son solde et son palier, pas la
+ * réserve de ScrapeCreators), la porte de repli, le coupe-circuit ; ses abonnés à 0 ne remplacent pas les connus et ne
+ * comptent pas dans la mesure (radarFreeMath.curveMatch) ; une vidéo que TikHub a refusée sort de la courbe en fin de
+ * passage, que ses refus l'aient fait tomber en panne ou non (comme runCurve) ; TikHub non appelé, repli refusé : rien
+ * n'est conclu, la vidéo et les suivantes restent dues. La dépense et les motifs sont en unités ;
+ * `credits` reste en crédits ScrapeCreators, la dépense TikHub dans ses champs (radarProviders.PassBook.thArgs).
  */
 export async function curveInLane(
   ctx: ActionCtx,
@@ -956,9 +1272,16 @@ export async function curveInLane(
   now: number,
   alive: () => boolean,
   free: boolean = CURVE_FREE,
+  jobs: ReadonlySet<ThJob> = tikhubJobs(),
 ): Promise<{ rest: () => Promise<void>; streak: number; stopped: string | null }> {
   const nothing = { rest: async (): Promise<void> => undefined, streak: 0, stopped: null };
-  const paidLeft = allowance(st.budget, b, "curve", todayCredits(st, "curve"), CURVE_RUNS_PER_DAY);
+  // Le budget du passage (`b`, lu par les relevés avec le solde TikHub du passage) : pas de lecture de plus ici.
+  const book = new PassBook();
+  const router = makeRouter({ poste: "curve", jobs, st, book, start: now, claimFallback: fallbackClaimer(ctx) });
+  const provider = posteProvider(jobs, "curve");
+  const gate = passGate(allowanceParts(st.budget, b, "curve", todayCredits(st, "curve"), CURVE_RUNS_PER_DAY));
+  // La part payante du passage, en unités, chez le fournisseur qui sert la courbe (sans bascule : allowance, au bit près).
+  const paidLeft = passLimit(gate, provider, router);
   const take = curveLaneTake(st.budget, free, paidLeft);
   if (take <= 0) return nothing;
   const due: DueCheck[] = await ctx.runQuery(internal.radar.radarSignals.dueCurve, { now, since: now - CURVE_LANE_WAIT_MS, limit: take });
@@ -969,26 +1292,52 @@ export async function curveInLane(
     const tally = curveTally<DueCheck>();
     let creditsRemaining: number | undefined;
     let lastError: string | undefined;
+    // Les vidéos dont TikHub a rendu un échec isolé (5xx, 4xx, délai), sans repli : jugées en fin de passage.
+    const isolated = new Set<DueCheck>();
+    const later: DueCheck[] = [];
     try {
       await settleCurve(
         read.reads,
         {
           paid: async (d) => {
-            const r = await scVideoInfo(d.url);
+            const r = await router.route(provider, (o) => thVideoInfo(d.url, o), () => scVideoInfo(d.url), {
+              route: TH_ROUTES.video,
+              firstPage: true,
+              thBudget: () => gate.take("tikhub"),
+              scBudget: () => gate.take("sc"),
+            });
+            gate.spend(r.spend);
+            book.add(r.spend);
+            const units = spendUnits(r.spend);
             if (r.creditsRemaining !== undefined) creditsRemaining = r.creditsRemaining;
             if (!r.ok) {
               lastError = r.error;
-              return { ok: false, credits: r.credits, noCredits: r.noCredits, refused: scRefused(r.error) };
+              // TikHub non appelé (en panne pour le passage, part épuisée, échéance), repli refusé : rien n'est conclu,
+              // la vidéo et les suivantes restent dues — comme des crédits épuisés.
+              if (r.transient && !r.thFailed) return { ok: false, credits: units, noCredits: true, refused: false };
+              if (r.transient) isolated.add(d);
+              // Refusée par le fournisseur : la vidéo est partie pour lui aussi (ScrapeCreators, cf scRefused). Chez
+              // TikHub, un refus de TikTok (`upstream`) n'est pas prouvé « partie » au banc : une panne pour la mesure.
+              return { ok: false, credits: units, noCredits: r.noCredits, refused: r.served === "sc" && scRefused(r.error) };
             }
-            return { ok: true, credits: r.credits, counts: r.value ? curveCountsOf(r.value) : null };
+            const counts = r.value ? curveCountsOf(r.value) : null;
+            return { ok: true, credits: units, counts, ...(r.served === "tikhub" && counts ? { fansUnknown: true as const } : {}) };
           },
-          apply: async (d, counts) => {
-            await ctx.runMutation(internal.radar.radarSignals.applyCurve, { id: d.id, video: counts, now: Date.now() });
+          apply: async (d, counts, fansUnknown) => {
+            // Un échec isolé de TikHub n'est conclu qu'en fin de passage (cf `later`).
+            if (counts === null && isolated.has(d)) {
+              later.push(d);
+              return;
+            }
+            await ctx.runMutation(internal.radar.radarSignals.applyCurve, { id: d.id, video: counts, now: Date.now(), ...(fansUnknown ? { fansUnknown } : {}) });
           },
         },
-        { free, paidLeft },
+        { free, paidLeft, ...(router.on ? { more: () => !router.expired() && canCall(gate, provider, router) } : {}) },
         tally,
       );
+      // Échecs de TikHub : la vidéo sort de la courbe, comme un échec ScrapeCreators — y compris quand ils ont fait tomber
+      // TikHub en panne (cf runCurve : le coupe-circuit ne garde dues que les vidéos qu'il a empêché de partir).
+      for (const d of later) await ctx.runMutation(internal.radar.radarSignals.applyCurve, { id: d.id, video: null, now: Date.now() });
     } catch (e) {
       lastError = e instanceof Error ? e.message : String(e);
       console.error(`[radar] courbe dans la voie : ${lastError}`);
@@ -1004,7 +1353,7 @@ export async function curveInLane(
         await ctx
           .runMutation(internal.radar.radarSignals.recordRun, {
             poste: "curve",
-            credits: tally.credits,
+            credits: book.credits,
             calls,
             errors: tally.errors,
             now,
@@ -1013,6 +1362,7 @@ export async function curveInLane(
             ...(Object.keys(m).length ? { measured: m } : {}),
             ...(creditsRemaining !== undefined ? { creditsRemaining } : {}),
             ...(lastError ? { lastError } : {}),
+            ...book.thArgs(),
           })
           .catch((e: unknown) => console.error(`[radar] courbe dans la voie, dépense : ${e instanceof Error ? e.message : String(e)}`));
       }
@@ -1033,23 +1383,58 @@ export async function getRadarBudgetCore(ctx: ProjectQueryCtx) {
   const remaining = settings?.creditsRemaining;
   // Le rythme des derniers jours complets, mois précédent compris (comme jobState) : il dit le palier du solde.
   const recent = await ctx.db.query("radarUsage").withIndex("by_day_poste", (q) => q.gte("day", dayKeyParis(now - 4 * DAY))).collect();
-  const perDay = recentPerDay(recent, dayKeyParis(now));
-  const state = budgetState(budget, usage, remaining !== undefined ? { remaining, seenAt: settings?.creditsSeenAt ?? 0, now, perDay } : null);
+  // Les deux fournisseurs ne jugent le budget que quand la bascule TikHub est posée (radarProviders.tikhubJobs).
+  const jobs = tikhubJobs();
+  const today = dayKeyParis(now);
+  const perDay = scPerDay(recent.map(jobUsage), today, thOnlyPostes(jobs));
+  const providers = posteProviders(jobs);
+  const th = jobs.size ? thStored(settings, recent.map(jobUsage), today, providers) : null;
+  const scBalance = remaining !== undefined ? { remaining, seenAt: settings?.creditsSeenAt ?? 0, now, perDay } : null;
+  const state = jobs.size ? budgetState(budget, usage, scBalance, { providers, th: th ? { ...th, now } : null }) : budgetState(budget, usage, scBalance);
+  const thDays = new Map<string, { thCalls: number; thUsd: number; thUnknown: number }>();
+  for (const u of usage) {
+    if (u.thCalls === undefined && u.thUsd === undefined && u.thUnknown === undefined) continue;
+    const d = thDays.get(u.day) ?? { thCalls: 0, thUsd: 0, thUnknown: 0 };
+    d.thCalls += u.thCalls ?? 0;
+    d.thUsd += u.thUsd ?? 0;
+    d.thUnknown += u.thUnknown ?? 0;
+    thDays.set(u.day, d);
+  }
   return {
     month,
     budget,
-    plannedUsd: plannedUsd(budget),
+    // Ce que /admin affiche (src/admin/Radar.js) : « Dépense de <mois> » = Σ days[].credits × pricePerCredit, « prévu » =
+    // plannedUsd. Corrigé le 20/11/2026 (sans toucher à l'écran) : `days[].credits` comptait les crédits ScrapeCreators
+    // seuls et `plannedUsd` était au prix ScrapeCreators ; sous RADAR_TIKHUB=tiktok, la dépense affichée ne comptait plus
+    // les relevés payés chez TikHub (~81 % de celle du Radar) et le prévu restait ~1,88 fois trop haut pour les postes
+    // basculés. Désormais :
+    //  - `days[].credits` : la dépense du jour chez les deux fournisseurs, EN CRÉDITS SCRAPECREATORS ÉQUIVALENTS (les
+    //    dollars TikHub, appels à facturation inconnue au prix plein, divisés par le prix du crédit) — ce que l'écran
+    //    multiplie par `pricePerCredit`. Les crédits ScrapeCreators seuls sont dans `days[].scCredits`. L'analyse IA (en
+    //    dollars) n'y est pas, comme avant : elle est dans `spentUsdAll` ;
+    //  - `plannedUsd` : chaque poste au prix du fournisseur qui le sert (sans bascule : le prévu d'avant, au bit près).
+    plannedUsd: POSTE_KEYS.reduce((sum, k) => sum + envelopeUsdAt(budget, k, providers[k] ?? "sc"), 0),
     pricePerCredit: SC_PRICE_PER_CREDIT,
     currency: SC_CURRENCY,
     state,
+    // Pas encore affichés (pas d'écran sans maquette) : le fournisseur de chaque poste, le prix d'un appel chez chacun,
+    // la dépense du mois en dollars, analyse IA comprise. `jobs.creditsRemaining` reste le solde ScrapeCreators.
+    providers: Object.fromEntries(POSTE_KEYS.map((k) => [k, providers[k] ?? "sc"])),
+    pricePerCall: { sc: SC_PRICE_PER_CREDIT, tikhub: TH_PRICE_USD },
+    spentUsdAll: state.spentUsd,
     days: usage
-      .reduce<{ day: string; credits: number }[]>((acc, u) => {
+      .reduce<{ day: string; scCredits: number }[]>((acc, u) => {
         const d = acc.find((x) => x.day === u.day);
-        if (d) d.credits += u.credits;
-        else acc.push({ day: u.day, credits: u.credits });
+        if (d) d.scCredits += u.credits;
+        else acc.push({ day: u.day, scCredits: u.credits });
         return acc;
       }, [])
-      .sort((a, b) => a.day.localeCompare(b.day)),
+      .sort((a, b) => a.day.localeCompare(b.day))
+      .map((d) => {
+        const th = thDays.get(d.day);
+        const thSpent = th ? th.thUsd + th.thUnknown * TH_PRICE_USD : 0;
+        return { day: d.day, credits: d.scCredits + thSpent / SC_PRICE_PER_CREDIT, scCredits: d.scCredits, ...(th ?? {}) };
+      }),
     jobs: {
       keyPresent: scKeyPresent(),
       lastDiscoveryAt: settings?.lastDiscoveryAt ?? null,
@@ -1063,6 +1448,21 @@ export async function getRadarBudgetCore(ctx: ProjectQueryCtx) {
       creditReserve: CREDIT_RESERVE,
       // Comptes que la voie gratuite n'a pas eu le temps de prendre au dernier passage, et qui l'attendent.
       freeWaiting: settings?.lastFreeWaiting ?? null,
+      // TikHub (bascule du 20/11/2026) : clé, postes réglés, solde lu et estimé (moins ce qui a été dépensé depuis la
+      // lecture), dernier refus « solde insuffisant », dernière erreur, appels repassés par ScrapeCreators aujourd'hui.
+      tikhub: {
+        keyPresent: thKeyPresent(),
+        jobs: [...jobs],
+        balanceUsd: settings?.thBalanceUsd ?? null,
+        freeUsd: settings?.thFreeUsd ?? null,
+        seenAt: settings?.thSeenAt ?? null,
+        estimatedUsd: settings?.thBalanceUsd !== undefined ? settings.thBalanceUsd - (settings.thSpentSinceUsd ?? 0) : null,
+        dryAt: settings?.thDryAt ?? null,
+        dryRoute: settings?.thDryRoute ?? null,
+        lastError: settings?.thLastError ?? null,
+        fallbacksToday: fallbacksUsed(settings, recent, today),
+        reserveUsd: TH_RESERVE_USD,
+      },
     },
     // Les relevés de comptes payés aujourd'hui, par motif (radarFreeMath.PaidReason).
     readsToday: recent.find((u) => u.day === dayKeyParis(now) && u.poste === "tiktok")?.reasons ?? null,

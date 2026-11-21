@@ -56,7 +56,8 @@ import { MEDIAN_WINDOW, bioNamesApp, citesNormalized, findApp, normalize } from 
 import { productKey } from "./radarMarketMath";
 import { APP_REVIEW, JUDGE_REVIEW, REVIEW_VERSION, type Reviewed } from "./radarJudgeReview";
 import { ensureSettings, moveAccount, refreshAppNet } from "./radarSignals";
-import { allowanceUsd, budgetState } from "./radarSignalsMath";
+import { allowanceUsd } from "./radarSignalsMath";
+import { jobBudget } from "./radarProviders";
 import { proofDetail, type ProofDetail } from "./radarVetMath";
 import { scKeyPresent } from "./scrapeCreatorsApi";
 
@@ -148,13 +149,31 @@ export const applyNatures = internalMutation({
 type JudgeItem = AccountToJudge & { appId: Id<"radarApps">; weak: WeakWhy; proof: ProofDetail };
 
 /**
+ * Les apps lues à la demande, une fois chacune (20/11/2026, facture Convex) : le parcours des comptes relisait toute la
+ * table radarApps (~2 200 apps, 2 Mo sur les 2,75 Mo d'un appel, 78 fois par jour) pour les quelques dizaines d'apps des
+ * comptes actifs d'une page. Rien n'écrit dans radarApps pendant la lecture : même app qu'une table lue d'avance.
+ */
+type AppReader = (id: Id<"radarApps">) => Promise<Doc<"radarApps"> | null>;
+function appReader(ctx: QueryCtx): AppReader {
+  const cache = new Map<Id<"radarApps">, Promise<Doc<"radarApps"> | null>>();
+  return (id) => {
+    let app = cache.get(id);
+    if (!app) {
+      app = ctx.db.get(id);
+      cache.set(id, app);
+    }
+    return app;
+  };
+}
+
+/**
  * Les comptes à juger d'une page du parcours : actifs, preuve faible (radarJudgeMath.weakProof), pas encore jugés.
  * S'il y en a plus que `limit`, le curseur ne bouge pas : la page sera relue, les jugés sautés.
  */
 /** Le compte à juger, s'il l'est : actif, d'une app connue, preuve faible, pas encore jugé. */
-async function judgeItemFor(ctx: QueryCtx, t: Doc<"radarTracked">, apps: Map<Id<"radarApps">, Doc<"radarApps">>): Promise<JudgeItem | null> {
+async function judgeItemFor(ctx: QueryCtx, t: Doc<"radarTracked">, appOf: AppReader): Promise<JudgeItem | null> {
   if (t.status !== "active") return null;
-  const app = apps.get(t.appId);
+  const app = await appOf(t.appId);
   if (!app) return null;
   // Déjà jugé sous les définitions d'aujourd'hui (JUDGE_VERSION) : sauté AVANT de lire ses vidéos (le parcours repasse
   // sur toute la table ; un compte jugé n'a pas à coûter 30 lectures à chaque tour).
@@ -207,10 +226,10 @@ async function judgeWorkCore(ctx: QueryCtx, stored: string | null, limit: number
   // Un curseur illisible (recopié d'un autre déploiement) : le parcours repart du début (cf radarCursorMath).
   const { result: r, restarted } = await fromStoredCursor(stored, (c) => ctx.db.query("radarTracked").paginate({ cursor: c, numItems: JUDGE_SCAN }));
   const cursor = restarted ? null : stored;
-  const apps = new Map((await ctx.db.query("radarApps").collect()).map((a) => [a._id, a]));
+  const appOf = appReader(ctx);
   const items: JudgeItem[] = [];
   for (const t of r.page) {
-    const item = await judgeItemFor(ctx, t, apps);
+    const item = await judgeItemFor(ctx, t, appOf);
     if (!item) continue;
     // Plus de comptes à juger que la part du passage : la page sera relue (les jugés sautés), le curseur ne bouge pas.
     if (items.length >= limit) return { items, cursor, done: false };
@@ -322,7 +341,7 @@ async function aiAllowed(ctx: ActionCtx, now: number): Promise<"no-key" | "no-ai
   if (!scKeyPresent()) return "no-key";
   if (!process.env.ANTHROPIC_API_KEY) return "no-ai-key";
   const st = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
-  return allowanceUsd(st.budget, budgetState(st.budget, st.usage, st.balance), "ai") < MIN_ALLOWANCE_USD ? "budget" : null;
+  return allowanceUsd(st.budget, jobBudget(st), "ai") < MIN_ALLOWANCE_USD ? "budget" : null;
 }
 
 export const runAppNatures = internalAction({
@@ -447,11 +466,11 @@ export const e2eJudgeAccounts = e2eMutation({
   handler: async (ctx, { handles, answers }) => {
     const now = Date.now();
     // Les comptes donnés, retrouvés par leur pseudo (une seule pagination par fonction : pas de parcours ici).
-    const apps = new Map((await ctx.db.query("radarApps").collect()).map((a) => [a._id, a]));
+    const appOf = appReader(ctx);
     const asked: JudgeItem[] = [];
     for (const handle of handles) {
       const t = await ctx.db.query("radarTracked").withIndex("by_handle", (q) => q.eq("platform", "tiktok").eq("handle", handle)).first();
-      const item = t ? await judgeItemFor(ctx, t, apps) : null;
+      const item = t ? await judgeItemFor(ctx, t, appOf) : null;
       if (item) asked.push(item);
     }
     const idOf = new Map(asked.map((a) => [a.handle, a.id]));
@@ -653,6 +672,27 @@ async function applyReviewedCore(
 const REVIEW_SCAN = 500;
 
 /**
+ * Les seules apps que le périmètre peut toucher, dans l'ordre où la table entière les donnait (création) : celles d'un
+ * slug relu « dehors » (par l'index `by_slug`), et celles en pause (index `by_status`) au motif « perimetre ». Toutes
+ * lues avant la première écriture, comme l'était la table. Avant le 20/11/2026 (facture Convex), toute la table
+ * radarApps (~2 200 apps) était relue 48 fois par jour pour une dizaine de slugs et les apps en pause.
+ */
+async function perimeterApps(ctx: MutationCtx, review: Readonly<Record<string, "dehors" | "dedans">>): Promise<Doc<"radarApps">[]> {
+  const out = Object.keys(review).filter((slug) => review[slug] === "dehors");
+  const [bySlug, pausedApps] = await Promise.all([
+    Promise.all(out.map((slug) => ctx.db.query("radarApps").withIndex("by_slug", (q) => q.eq("slug", slug)).collect())),
+    ctx.db
+      .query("radarApps")
+      .withIndex("by_status", (q) => q.eq("status", "paused"))
+      .filter((q) => q.eq(q.field("pausedReason"), "perimetre"))
+      .collect(),
+  ]);
+  const byId = new Map<Id<"radarApps">, Doc<"radarApps">>();
+  for (const a of [...bySlug.flat(), ...pausedApps]) byId.set(a._id, a);
+  return [...byId.values()].sort((a, b) => a._creationTime - b._creationTime || (a._id < b._id ? -1 : a._id > b._id ? 1 : 0));
+}
+
+/**
  * Le périmètre RELU (radarJudgeReview.APP_REVIEW) : une app relue « dehors » (ni app, ni SaaS, ni jeu mobile) passe en
  * pause dans le Radar — plus relevée, plus cherchée, plus envoyée à Swarm ; jamais une concurrente d'un projet, ni une
  * app remise en route à la main (`scopeByHand`). Une app mise en pause « périmètre » sans être relue « dehors » (le
@@ -661,7 +701,7 @@ const REVIEW_SCAN = 500;
 async function applyPerimeterCore(ctx: MutationCtx, review: Readonly<Record<string, "dehors" | "dedans">>, now: number, only?: (slug: string) => boolean): Promise<{ paused: string[]; resumed: string[] }> {
   const paused: string[] = [];
   const resumed: string[] = [];
-  for (const a of await ctx.db.query("radarApps").collect()) {
+  for (const a of await perimeterApps(ctx, review)) {
     if ((only && !only(a.slug)) || a.mergedInto !== undefined) continue;
     const out = review[a.slug] === "dehors";
     if (a.status === "active" && out && a.rivalOf.length === 0 && !a.scopeByHand) {
