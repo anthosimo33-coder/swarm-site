@@ -4,6 +4,7 @@
 //   2. SWARM_SYNC_OFF=1 (le dev) : les tâches planifiées ne font rien ; une synchro lancée à la main passe.
 //   3. La copie des miniatures a son propre rythme : une action qui manque de temps relance la suite elle-même.
 //   4. Les empreintes et les clés des pages se lisent dans boardMeta (≈ 100 o par page), jamais dans boards (≈ 1,6 Ko).
+//   5. (21/11) Une étape ne lit que les lignes d'état (carrousels, IA, genre, langues, images) de son groupe.
 // Usage : npm run test:sync   (ou node scripts/sync-cout.test.mjs <dossier convex>, pour la contre-épreuve)
 import fs from "node:fs";
 import os from "node:os";
@@ -351,7 +352,7 @@ function memDb() {
     Date.now = () => clock;
     globalThis.fetch = async () => { clock += minutesPerExport * 60_000; return exportPage(); };
     process.memoryUsage = () => ({ rss: (heapMo + 80) * 1e6, heapUsed: heapMo * 1e6, external: 0, arrayBuffers: 0, heapTotal: 0 });
-    const t = actionCtx({ startRun: "run1", staleStages: [], appStorePage: { items: [], cursor: "", done: true } });
+    const t = actionCtx({ startRun: "run1", staleStages: [], appStorePage: { items: [], cursor: "", done: true }, mediaPage: { items: [], cursor: "", done: true } });
     t.args = [];
     const mut = t.ctx.runMutation;
     t.ctx.runMutation = async (r, a) => { t.args.push([r.__path.split(".").pop(), a]); return mut(r, a); };
@@ -488,6 +489,61 @@ export const jsonSchemaOutputFormat = (x) => x;`;
     `F28 : la synchro écrit les adresses signées et marque la page (${v?.cover} ; ${v?._signed})`);
   ok(st && !("_signed" in st) && st.apps === 3, "F28 : une page sans image n'est pas marquée");
   delete process.env.COVER_SECRET;
+}
+
+// ─── 21/11 : une étape de la synchro ne lit que les lignes d'état de SES vidéos, comptes et images ─────────────────
+// Avant, chaque étape (un groupe d'apps, puis l'étape globale : une dizaine par nuit) relisait en entier carrousels,
+// lecture IA, genre, langues et images, pour n'en garder que les lignes de son groupe. Mêmes valeurs, lues par l'index.
+{
+  const NOW = 1_800_000_000_000, DAY = 86_400_000;
+  const m = memDb();
+  const add = (t, rows) => { for (const r of rows) m.tables[t] = [...(m.tables[t] ?? []), { _id: `${t}|${(m.tables[t]?.length ?? 0) + 1}`, ...r }]; };
+  const autres = (n, f) => Array.from({ length: n }, (_, i) => f(i));
+  // Le groupe : vidéos g1-g3, comptes ha/hb (acc1-acc3), app « app1 ». Le reste du Radar : 300 lignes par table.
+  add("videoSlides", [{ videoId: "g1", slideshow: true, images: 3, tries: 1, at: 1 }, { videoId: "g2", slideshow: null, tries: 0, at: 0 }, ...autres(300, (i) => ({ videoId: `x${i}`, slideshow: false, tries: 1, at: 1 }))]);
+  add("videoAi", [{ videoId: "g1", done: true, type: "demo", text: "il ment", tries: 1, at: 1 }, { videoId: "g2", done: false, tries: 0, at: 0 }, ...autres(300, (i) => ({ videoId: `x${i}`, done: true, type: "demo", text: "texte à l'écran ".repeat(4), tries: 1, at: 1 }))]);
+  add("accountAi", [{ handle: "ha", done: true, gender: "femme", ids: [], tries: 1, at: 1, v: 2, self: 2, covers: 3 }, { handle: "hb", done: true, gender: "homme", ids: [], tries: 1, at: 1 }, ...autres(300, (i) => ({ handle: `h${i}`, done: true, gender: "femme", ids: ["1", "2"], tries: 1, at: 1, v: 2, self: 1, covers: 3 }))]);
+  add("accountLangs", [{ accountId: "acc1", lang: "fr", at: NOW - DAY }, { accountId: "acc2", lang: null, at: NOW - 8 * DAY }, { accountId: "acc3", lang: null, at: NOW - DAY }, ...autres(300, (i) => ({ accountId: `a${i}`, lang: "es", at: NOW - DAY }))]);
+  // Images : relevé de la préparation (v:g2 effacée depuis, v:g3 copiée depuis), et la table du moment.
+  const urlOf = (k) => `https://x.convex.cloud/api/storage/${k.replace(/\W/g, "")}`;
+  const releve = ["icon:app1", "v:g1", "v:g2", "a:ha", "v:z1", ...autres(300, (i) => `v:x${i}`)];
+  add("media", ["icon:app1", "v:g1", "a:ha", "v:g3", "v:z1", ...autres(300, (i) => `v:x${i}`)].map((key) => ({ key, storageId: "s", url: urlOf(key), at: 1 })));
+  const files = { f1: JSON.stringify(releve.slice(0, 150)), f2: JSON.stringify(releve.slice(150)) };
+  const ctx = {
+    runQuery: async (r, a) => store[r.__path.split(".").pop()].handler(m.ctx, a),
+    storage: { get: async (id) => (files[id] ? new Blob([files[id]]) : null) },
+  };
+  const videos = new Set(["g1", "g2", "g3"]), handles = new Set(["ha", "hb"]), accounts = new Set(["acc1", "acc2", "acc3"]);
+  const media = (k) => k.startsWith("icon:") || (k.startsWith("v:") && videos.has(k.slice(2))) || (k.startsWith("a:") && handles.has(k.slice(2)));
+  const realNow = Date.now;
+  Date.now = () => NOW;
+  for (const k of Object.keys(m.read)) delete m.read[k];
+  // `video`, `handle`, `account` : la forme d'avant (prédicats), pour la contre-épreuve sur l'ancien code.
+  const st = await sync.loadStore(ctx, {
+    videos, handles, accounts, media, mediaKeys: ["f1", "f2"], mediaOwn: ["icon:app1", "v:g1", "v:g2", "v:g3", "a:ha", "a:hb"],
+    video: (x) => videos.has(x), handle: (h) => handles.has(h), account: (a) => accounts.has(a),
+  });
+  Date.now = realNow;
+  const own = (t, k, ids) => m.tables[t].filter((r) => ids.has(r[k])).reduce((n, r) => n + JSON.stringify(r).length, 0);
+  const ownMedia = m.tables.media.filter((r) => media(r.key)).reduce((n, r) => n + JSON.stringify(r).length, 0);
+  const lus = (t) => m.read[t] ?? 0;
+  ok(lus("videoSlides") <= own("videoSlides", "videoId", videos) && lus("videoAi") <= own("videoAi", "videoId", videos)
+    && lus("accountAi") <= own("accountAi", "handle", handles) && lus("accountLangs") <= own("accountLangs", "accountId", accounts),
+    `une étape ne lit que les carrousels, lectures IA, genres et langues de son groupe (${lus("videoSlides")}/${lus("videoAi")}/${lus("accountAi")}/${lus("accountLangs")} o lus)`);
+  ok(lus("media") <= ownMedia, `une étape de groupe ne lit que ses images dans la table, l'existence des autres vient du relevé (${lus("media")} o lus, ${ownMedia} pour les siennes)`);
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  ok(same([...st.slides], [["g1", 3]]) && same([...st.slideKnown].sort(), ["g1", "g2"]), "carrousels du groupe : photos de g1, g2 connue (pas encore lue)");
+  ok(same([...st.ai], [["g1", { type: "demo", text: "il ment" }]]) && same([...st.aiKnown].sort(), ["g1", "g2"]), "lecture IA du groupe : g1 lue, g2 connue");
+  ok(same([...st.genders].sort(), [["ha", "femme"], ["hb", "homme"]]) && same([...st.genderKnown], ["ha"]), "genre : lecture sur le contenu connue, ancienne lecture affichée mais à relire");
+  ok(same([...st.langs].sort(), [["acc1", "fr"], ["acc3", null]]), "langues : connue, inconnue récente ; inconnue depuis plus de 7 jours à recalculer");
+  ok(st.media["icon:app1"] === urlOf("icon:app1") && st.media["v:g1"] === urlOf("v:g1") && st.media["a:ha"] === urlOf("a:ha") && st.media["v:g3"] === urlOf("v:g3")
+    && !("v:g2" in st.media) && st.media["v:z1"] === "·" && st.media["v:x0"] === "·" && Object.keys(st.media).length === 305,
+    "images : celles de l'étape à jour (copiée depuis le relevé : présente ; effacée depuis : absente), les autres présentes sans adresse");
+  ok(sync.STORE_IDS_PER_CALL === store.STORE_IDS_MAX && sync.VIDEO_AI_IDS_PER_CALL === store.VIDEO_AI_IDS_MAX, "les paquets de la synchro tiennent sous les plafonds des lectures ciblées");
+  // L'étape globale : aucun compte, donc ni genre ni langue à lire.
+  for (const k of Object.keys(m.read)) delete m.read[k];
+  await sync.loadStore(ctx, { videos, handles: new Set(), accounts: new Set(), media, video: (x) => videos.has(x), handle: () => false, account: () => false });
+  ok(!lus("accountAi") && !lus("accountLangs"), `étape globale (aucun compte) : ni genre ni langue lus (${lus("accountAi")}/${lus("accountLangs")} o)`);
 }
 
 // ─── Radar déménagé (20/11) : avec RADAR_LOCAL=1, la synchro lit ses propres tables, plus l'export HTTP de Jarvia ──────

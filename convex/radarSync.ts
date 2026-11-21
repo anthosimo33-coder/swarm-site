@@ -325,7 +325,11 @@ const STEP_RETRIES = 3;
 /** Une valeur rangée sans son adresse : l'étape d'un groupe sait qu'une image existe, l'adresse ne sert qu'à son groupe. */
 const ELSEWHERE = "·";
 
-type StageIds = { apps: Id<"_storage">[]; tracked: Id<"_storage">[]; formats: Id<"_storage">[]; signals: Id<"_storage">[]; stores: Id<"_storage">[] };
+/**
+ * `mediaKeys` (21/11) : les clés des images rangées, relevées une fois par la préparation (sans leur adresse). Absent :
+ * étape d'un passage commencé avant ce relevé, les groupes lisent alors la table entière comme avant.
+ */
+type StageIds = { apps: Id<"_storage">[]; tracked: Id<"_storage">[]; formats: Id<"_storage">[]; signals: Id<"_storage">[]; stores: Id<"_storage">[]; mediaKeys?: Id<"_storage">[] };
 type Stage = {
   now: number;
   globals: StageIds;
@@ -393,24 +397,57 @@ async function readPages<T>(ctx: ActionCtx, query: FunctionReference<"query", "i
 export const LANG_RETRY_MS = 7 * 86_400_000;
 export const langKnown = ([, lang, at]: [string, string, number?], now: number) => !!lang || (at ?? now) > now - LANG_RETRY_MS;
 
-/** Ce que Swarm sait déjà des vidéos et des comptes (tables Swarm), filtré à ce qui sert à l'étape. */
-async function loadStore(ctx: ActionCtx, f: { video?: (id: string) => boolean; handle?: (h: string) => boolean; account?: (id: string) => boolean; media?: (k: string) => boolean }) {
-  const all = () => true;
-  const fv = f.video ?? all, fh = f.handle ?? all, fa = f.account ?? all, fm = f.media ?? all;
+/**
+ * Identifiants par appel des lectures ciblées : les plafonds de radarStore (STORE_IDS_MAX, VIDEO_AI_IDS_MAX), recopiés et
+ * non importés (aucun fichier « use node » d'ici n'importe un module de fonctions Convex) ; scripts/sync-cout.test.mjs
+ * vérifie qu'ils sont égaux.
+ */
+export const STORE_IDS_PER_CALL = 2000;
+export const VIDEO_AI_IDS_PER_CALL = 1000;
+
+/**
+ * Les lignes d'une table d'état pour ces identifiants seulement, par paquets (radarStore.slidesFor…). 21/11 : chaque
+ * étape relisait jusque-là ces tables en entier (une dizaine d'étapes par nuit) pour n'en garder que les lignes de son
+ * groupe ; elle ne lit plus que celles-là, une fois.
+ */
+async function readFor<T>(ctx: ActionCtx, query: FunctionReference<"query", "internal", { ids: string[] }, T[]>, ids: ReadonlySet<string>, per: number, each: (x: T) => void) {
+  const all = [...ids];
+  for (let i = 0; i < all.length; i += per) for (const x of await ctx.runQuery(query, { ids: all.slice(i, i + per) })) each(x);
+}
+
+/**
+ * Ce que Swarm sait déjà des vidéos et des comptes (tables Swarm), pour les vidéos, les pseudos et les comptes de
+ * l'étape (les ENSEMBLES : leurs lignes sont lues par leur index, cf readFor ; un ensemble vide ne lit rien).
+ * `media` filtre comme avant : les images rangées hors de l'étape sont notées présentes, sans leur adresse (ELSEWHERE).
+ */
+export async function loadStore(ctx: ActionCtx, f: { // exportée pour scripts/sync-cout.test.mjs
+  videos: ReadonlySet<string>; handles: ReadonlySet<string>; accounts: ReadonlySet<string>; media: (k: string) => boolean;
+  /** Clés des images rangées relevées par la préparation, et clés de l'étape (toutes vérifient `media`) : cf plus bas. */
+  mediaKeys?: Id<"_storage">[]; mediaOwn?: Iterable<string>;
+}) {
+  const fm = f.media;
   const media: Record<string, string> = {};
-  await readPages<[string, string]>(ctx, internal.radarStore.mediaPage, ([k, url]) => { media[k] = fm(k) ? url : ELSEWHERE; });
+  if (f.mediaKeys && f.mediaOwn) {
+    // 21/11 : la table des images n'est plus relue en entier par chaque groupe (une dizaine de fois par nuit). Qu'une
+    // image hors de l'étape EXISTE se lit dans le relevé de la préparation (ELSEWHERE, comme avant) ; les images de
+    // l'étape (les siennes et celles du relevé que `media` retient) sont lues par leur clé, à jour : présente ou non,
+    // avec son adresse, exactement comme la lecture entière les aurait vues. L'étape globale, elle, lit encore la table
+    // entière : son ménage efface ce qu'aucune page ne cite, il lui faut l'état du moment.
+    const mine = new Set<string>(f.mediaOwn);
+    await stageRead<string>(ctx, f.mediaKeys, (k) => { if (fm(k)) mine.add(k); else media[k] = ELSEWHERE; return false; });
+    await readFor<[string, string]>(ctx, internal.radarStore.mediaFor, mine, STORE_IDS_PER_CALL, ([k, url]) => { media[k] = url; });
+  } else await readPages<[string, string]>(ctx, internal.radarStore.mediaPage, ([k, url]) => { media[k] = fm(k) ? url : ELSEWHERE; });
   const regions = new Map<string, string>();
   await readPages<[string, string]>(ctx, internal.radarStore.regionPage, ([h, c]) => regions.set(h, c));
   const slides = new Map<string, number>(), slideKnown = new Set<string>();
-  await readPages<[string, number]>(ctx, internal.radarStore.slidePage, ([id, n]) => { if (!fv(id)) return; slideKnown.add(id); if (n >= 0) slides.set(id, n); });
+  await readFor<[string, number]>(ctx, internal.radarStore.slidesFor, f.videos, STORE_IDS_PER_CALL, ([id, n]) => { slideKnown.add(id); if (n >= 0) slides.set(id, n); });
   const ai = new Map<string, { type: string; text: string }>(), aiKnown = new Set<string>();
-  await readPages<[string, string, string, number]>(ctx, internal.radarStore.videoAiPage, ([id, type, text, ok]) => { if (!fv(id)) return; aiKnown.add(id); if (ok) ai.set(id, { type, text }); });
+  await readFor<[string, string, string, number]>(ctx, internal.radarStore.videoAiFor, f.videos, VIDEO_AI_IDS_PER_CALL, ([id, type, text, ok]) => { aiKnown.add(id); if (ok) ai.set(id, { type, text }); });
   const genders = new Map<string, string>(), genderKnown = new Set<string>();
   // Genre (18/11) : lu sur le contenu (version 2), femme ou homme seulement si la personne qui tient le compte se montre
   // elle-même sur SELF_MIN de ses miniatures ; sinon sans visage. Une ancienne lecture (photo de profil comprise comme
   // preuve) n'est pas « connue » : la synchro la remet en file, et son genre reste affiché jusqu'à la relecture.
-  await readPages<[string, string, number, number?, number?, number?]>(ctx, internal.radarStore.genderPage, ([h, g, ok, ver = 1, self = 0, covers = 0]) => {
-    if (!fh(h)) return;
+  await readFor<[string, string, number, number?, number?, number?]>(ctx, internal.radarStore.gendersFor, f.handles, STORE_IDS_PER_CALL, ([h, g, ok, ver = 1, self = 0, covers = 0]) => {
     if (ver >= 2) genderKnown.add(h);
     if (!g) return;
     if (ver >= 2 && ok) genders.set(h, g === "femme" || g === "homme" ? (self >= selfMin(covers) ? g : "sans_visage") : g);
@@ -420,7 +457,7 @@ async function loadStore(ctx: ActionCtx, f: { video?: (id: string) => boolean; h
   await readPages<[string, number]>(ctx, internal.radarStore.missPage, ([k, at]) => misses.set(k, at));
   const langs = new Map<string, string | null>();
   const now = Date.now();
-  await readPages<[string, string, number?]>(ctx, internal.radarStore.langPage, (row) => { if (fa(row[0]) && langKnown(row, now)) langs.set(row[0], row[1] || null); });
+  await readFor<[string, string, number]>(ctx, internal.radarStore.langsFor, f.accounts, STORE_IDS_PER_CALL, (row) => { if (langKnown(row, now)) langs.set(row[0], row[1] || null); });
   return { media, regions, slides, slideKnown, ai, aiKnown, genders, genderKnown, misses, langs };
 }
 type Store = Awaited<ReturnType<typeof loadStore>>;
@@ -668,9 +705,18 @@ export const run = internalAction({
       // passages suivants (staleStages).
       await ctx.runMutation(internal.radarStore.setStage, { id: runId, stage: { now, groups: [], fetch: [], outs: [], sizes, extra: [], globals: { apps: [], tracked: [], formats: [], signals: [], stores: [] } } });
       const note = async (id: Id<"_storage">) => { written.push(id); await ctx.runMutation(internal.radarStore.stageAdd, { id: runId, files: [id] }); };
+      // Les clés des images rangées (21/11), une fois pour tous les groupes (cf loadStore) : un fichier par page lue, sans
+      // garder toute la liste en mémoire. Après l'effacement des icônes changées, juste au-dessus.
+      const mediaKeys: Id<"_storage">[] = [];
+      for (let cursor: string | null = null, done = false; !done; ) {
+        const page: { items: [string, string][]; cursor: string; done: boolean } = await ctx.runQuery(internal.radarStore.mediaPage, { cursor });
+        mediaKeys.push(...(await stageWrite(ctx, page.items.map(([k]) => k), 4000, note)));
+        cursor = page.cursor;
+        done = page.done;
+      }
       const globals = {
         apps: await stageWrite(ctx, raw.apps, 4000, note), tracked: await stageWrite(ctx, raw.tracked, 4000, note), formats: await stageWrite(ctx, raw.formats, 1000, note),
-        signals: await stageWrite(ctx, raw.signals, 2000, note), stores: await stageWrite(ctx, [stores], 4000, note),
+        signals: await stageWrite(ctx, raw.signals, 2000, note), stores: await stageWrite(ctx, [stores], 4000, note), mediaKeys,
       };
       st = { now, groups, fetch: fetchIds, outs: groups.map(() => null), sizes, globals };
       MEMLOG(`préparation : ${groups.length} groupes`);
@@ -728,8 +774,10 @@ export const runGroup = internalAction({
       const ownAcc = new Set(g.tracked.filter((t) => set.has(canon(t.appId))).map((t) => t.id));
       const ownHandles = new Set(g.tracked.filter((t) => ownAcc.has(t.id)).map((t) => t.handle));
       const store = await loadStore(ctx, {
-        video: (vid) => own.has(vid), handle: (h) => ownHandles.has(h), account: (a) => ownAcc.has(a),
+        videos: own, handles: ownHandles, accounts: ownAcc,
         media: (k) => k.startsWith("icon:") || (k.startsWith("v:") && own.has(k.slice(2))) || (k.startsWith("a:") && ownHandles.has(k.slice(2))),
+        mediaKeys: st.globals.mediaKeys,
+        mediaOwn: [...apps.map((a) => iconKey(a.slug)), ...[...own].map((x) => `v:${x}`), ...[...ownHandles].map((h) => `a:${h}`)],
       });
       const raw: Raw = { apps, tracked: g.tracked, trackedVideos, formats, signals: g.signals };
       gc();
@@ -804,7 +852,7 @@ export const runGlobal = internalAction({
       }
       // Les seules vidéos de cette étape : reprises et signaux que personne ne suit (leur carrousel, leur lecture IA).
       const ids = new Set([...memberIds, ...g.signals.map((s) => s.videoId)]);
-      const store = await loadStore(ctx, { video: (x) => ids.has(x), handle: () => false, account: () => false, media: (k) => k.startsWith("icon:") || (k.startsWith("v:") && ids.has(k.slice(2))) });
+      const store = await loadStore(ctx, { videos: ids, handles: new Set(), accounts: new Set(), media: (k) => k.startsWith("icon:") || (k.startsWith("v:") && ids.has(k.slice(2))) });
       const raw: Raw = { apps: g.apps, tracked: g.tracked, trackedVideos: [], formats: g.formats, signals: g.signals };
       gc();
       MEMLOG('global avant calcul');

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { internalAction, internalMutation, internalQuery, type MutationCtx, type QueryCtx } from "./_generated/server";
 
@@ -538,8 +538,7 @@ export const slidePage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
     const r = await ctx.db.query("videoSlides").paginate({ cursor, numItems: 4000 });
-    return { items: r.page.map((x) => [x.videoId, x.slideshow === null ? -1 : x.slideshow ? x.images ?? 1 : 0] as [string, number]),
-      cursor: r.continueCursor, done: r.isDone };
+    return { items: r.page.map(slideItem), cursor: r.continueCursor, done: r.isDone };
   },
 });
 
@@ -605,7 +604,7 @@ export const videoAiPage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
     const r = await ctx.db.query("videoAi").paginate({ cursor, numItems: 1000, maximumBytesRead: 6_000_000 });
-    return { items: r.page.map((x) => [x.videoId, x.type ?? "", x.text ?? "", x.done ? 1 : 0] as [string, string, string, number]), cursor: r.continueCursor, done: r.isDone };
+    return { items: r.page.map(videoAiItem), cursor: r.continueCursor, done: r.isDone };
   },
 });
 
@@ -614,8 +613,7 @@ export const genderPage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
     const r = await ctx.db.query("accountAi").paginate({ cursor, numItems: 4000 });
-    // [pseudo, genre, lu, version, miniatures où il se montre, miniatures lues] (version 2 : lecture par le contenu, 18/11).
-    return { items: r.page.map((x) => [x.handle, x.gender ?? "", x.done ? 1 : 0, x.v ?? 1, x.self ?? 0, x.covers ?? 0] as [string, string, number, number, number, number]), cursor: r.continueCursor, done: r.isDone };
+    return { items: r.page.map(genderItem), cursor: r.continueCursor, done: r.isDone };
   },
 });
 
@@ -757,8 +755,71 @@ export const langPage = internalQuery({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
     const r = await ctx.db.query("accountLangs").paginate({ cursor, numItems: 5000 });
-    return { items: r.page.map((x) => [x.accountId, x.lang ?? "", x.at] as [string, string, number]), cursor: r.continueCursor, done: r.isDone };
+    return { items: r.page.map(langItem), cursor: r.continueCursor, done: r.isDone };
   },
+});
+
+// ─── Lectures ciblées de la synchro (convex/radarSync.ts, loadStore) ───────────────────────────
+
+/** [id, nombre de photos] (0 : pas un carrousel, -1 : pas encore lue). */
+const slideItem = (x: Doc<"videoSlides">) => [x.videoId, x.slideshow === null ? -1 : x.slideshow ? x.images ?? 1 : 0] as [string, number];
+/** [id, type, texte à l'écran, lue ? 1 : 0]. */
+const videoAiItem = (x: Doc<"videoAi">) => [x.videoId, x.type ?? "", x.text ?? "", x.done ? 1 : 0] as [string, string, string, number];
+/** [pseudo, genre, lu, version, miniatures où il se montre, miniatures lues] (version 2 : lecture par le contenu, 18/11). */
+const genderItem = (x: Doc<"accountAi">) => [x.handle, x.gender ?? "", x.done ? 1 : 0, x.v ?? 1, x.self ?? 0, x.covers ?? 0] as [string, string, number, number, number, number];
+/** [id, langue ("" : on ne sait pas), date du calcul]. */
+const langItem = (x: Doc<"accountLangs">) => [x.accountId, x.lang ?? "", x.at] as [string, string, number];
+
+/**
+ * Identifiants demandés par appel, au plus : une lecture indexée par identifiant, sous les 32 000 documents et quelques
+ * Mo lus d'une requête (une lecture IA pèse jusqu'à quelques Ko : 1 000 par appel, comme videoAiPage).
+ */
+export const STORE_IDS_MAX = 2000;
+export const VIDEO_AI_IDS_MAX = 1000;
+
+/**
+ * Les lignes des seuls identifiants demandés, par leur index (21/11). Jusque-là, chaque étape de la synchro (un groupe
+ * d'apps, puis l'étape globale : une dizaine par nuit) relisait ces tables en entier pour n'en garder que les lignes de
+ * son groupe — chaque ligne lue une dizaine de fois par nuit, pour une fois utile. Mêmes éléments que les pages
+ * ci-dessus, doublons compris (`collect` sur l'index, dans l'ordre où la page les lisait). Les lectures partent par
+ * paquets de 100 à la fois : une à une, mille lectures enchaînées approchent la limite de temps d'une requête.
+ */
+async function rowsFor<T>(ids: string[], max: number, read: (id: string) => Promise<T[]>): Promise<T[]> {
+  if (ids.length > max) throw new Error(`lecture ciblée : ${ids.length} identifiants pour ${max} au plus`);
+  const out: T[] = [];
+  for (let i = 0; i < ids.length; i += 100) for (const rows of await Promise.all(ids.slice(i, i + 100).map(read))) out.push(...rows);
+  return out;
+}
+
+/** [clé, adresse servie par Swarm] des images demandées (celles qu'une étape de groupe affiche elle-même). */
+export const mediaFor = internalQuery({
+  args: { ids: v.array(v.string()) }, // clés
+  handler: async (ctx, { ids }) =>
+    (await rowsFor(ids, STORE_IDS_MAX, (key) => ctx.db.query("media").withIndex("by_key", (q) => q.eq("key", key)).collect())).map((m) => [m.key, m.url] as [string, string]),
+});
+
+export const slidesFor = internalQuery({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) =>
+    (await rowsFor(ids, STORE_IDS_MAX, (videoId) => ctx.db.query("videoSlides").withIndex("by_video", (q) => q.eq("videoId", videoId)).collect())).map(slideItem),
+});
+
+export const videoAiFor = internalQuery({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) =>
+    (await rowsFor(ids, VIDEO_AI_IDS_MAX, (videoId) => ctx.db.query("videoAi").withIndex("by_video", (q) => q.eq("videoId", videoId)).collect())).map(videoAiItem),
+});
+
+export const gendersFor = internalQuery({
+  args: { ids: v.array(v.string()) }, // pseudos
+  handler: async (ctx, { ids }) =>
+    (await rowsFor(ids, STORE_IDS_MAX, (handle) => ctx.db.query("accountAi").withIndex("by_handle", (q) => q.eq("handle", handle)).collect())).map(genderItem),
+});
+
+export const langsFor = internalQuery({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) =>
+    (await rowsFor(ids, STORE_IDS_MAX, (accountId) => ctx.db.query("accountLangs").withIndex("by_account", (q) => q.eq("accountId", accountId)).collect())).map(langItem),
 });
 
 /** Efface les langues de comptes que l'export ne connaît plus (audit Q56). */

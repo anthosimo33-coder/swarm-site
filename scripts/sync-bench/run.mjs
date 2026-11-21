@@ -6,6 +6,7 @@
 // dans .bench-data/hashes-<étiquette>-xN.json : un 2e passage part de là (« à l'équilibre ») ; deux versions se comparent
 // page pour page en comparant leurs fichiers. BENCH_DUMP=clé1,clé2 garde le contenu de ces pages (dump-<étiquette>.json).
 // Horloge figée (BENCH_T0) pour que deux versions calculent au même instant. Données : dump-export.mjs, dump-store.mjs.
+// « [banc] lectures » : les lignes des tables d'état rendues à chaque étape, par requête (pages entières ou lectures ciblées).
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -105,6 +106,10 @@ globalThis.fetch = async (url) => {
 const pagesOf = (fn) => fs.readFileSync(`${S}store/${fn}.jsonl`, "utf8").trim().split("\n");
 const storePages = {}; for (const fn of ["mediaPage", "regionPage", "slidePage", "videoAiPage", "genderPage", "missPage", "langPage"]) storePages[fn] = pagesOf(fn);
 const appStoreMap = JSON.parse(fs.readFileSync(`${S}store/appStoreMap.json`, "utf8"));
+// Lignes des tables d'état lues par l'étape, par requête : [nombre, octets des éléments rendus] (« [banc] lectures »).
+const FOR = { mediaFor: ["mediaPage", 2000], slidesFor: ["slidePage", 2000], videoAiFor: ["videoAiPage", 1000], gendersFor: ["genderPage", 2000], langsFor: ["langPage", 2000] };
+const reads = {};
+const lu = (fn, items) => { const r = (reads[fn] ??= [0, 0]); r[0] += items.length; r[1] += JSON.stringify(items).length; };
 const HASHES = `${STATE}hashes.json`, RUNS = `${STATE}runs.json`;
 const prevFile = `${S}hashes-${TAG}-x${N}.json`;
 const saved = new Map(Object.entries(fs.existsSync(HASHES) ? JSON.parse(fs.readFileSync(HASHES, "utf8")) : fs.existsSync(prevFile) && FN === "run" ? JSON.parse(fs.readFileSync(prevFile, "utf8")) : {}));
@@ -140,7 +145,18 @@ async function query(r, a) {
     if (fn === "boardHashes") return a.keys.map((k) => saved.get(k) ?? null);
     if (fn === "getStage") return runs[a.id] && !runs[a.id].finishedAt ? runs[a.id].stage ?? null : null;
     if (fn === "staleStages") return [];
-    if (storePages[fn]) { const i = Number(a.cursor || 0); const p = JSON.parse(storePages[fn][i]); return { ...p, cursor: String(i + 1), done: i + 1 >= storePages[fn].length }; }
+    if (storePages[fn]) { const i = Number(a.cursor || 0); const p = JSON.parse(storePages[fn][i]); lu(fn, p.items); return { ...p, cursor: String(i + 1), done: i + 1 >= storePages[fn].length }; }
+    // Lectures ciblées (21/11) : les éléments des mêmes pages, pour ces identifiants seulement, dans l'ordre des pages.
+    if (FOR[fn]) {
+      const [page, max] = FOR[fn];
+      if (a.ids.length > max) throw new Error(`${fn} : ${a.ids.length} identifiants pour ${max} au plus`);
+      // Sans index gardé en mémoire (il gonflerait le pic de l'étape mesuré par le banc) : les pages relues à chaque appel.
+      const want = new Set(a.ids), got = new Map();
+      for (const l of storePages[page]) for (const x of JSON.parse(l).items) if (want.has(x[0])) { if (!got.has(x[0])) got.set(x[0], []); got.get(x[0]).push(x); }
+      const items = a.ids.flatMap((id) => got.get(id) ?? []);
+      lu(fn, items);
+      return items;
+    }
     throw new Error("requête inconnue " + fn);
 }
 async function mutation(r, a) {
@@ -204,5 +220,6 @@ if (LIMITS) fs.writeFileSync(`${STATE}limits.json`, JSON.stringify(LIMITS));
 fs.writeFileSync(`${STATE}queue.json`, JSON.stringify(queue));
 if (process.env.BENCH_DUMP) fs.writeFileSync(`${S}dump-${TAG}.json`, JSON.stringify(dumped, null, 1));
 if (parts) console.log(`[banc] morceaux rangés : ${parts}`);
+if (Object.keys(reads).length) console.log(`[banc] lectures ${JSON.stringify(reads)}`);
 console.log(`[banc] pic rss=${Math.round(peak.rss / 1e6)} tas=${Math.round(peak.heap / 1e6)} Mo | ${Math.round((Date.now() - t0) / 1000)} s | export ${fetches} demandes | mutations ${Math.round(mutBytes / 1e6)} Mo`);
 process.exit(0);
