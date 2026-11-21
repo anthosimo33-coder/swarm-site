@@ -10,13 +10,14 @@ import { internalAction, type ActionCtx } from "./_generated/server";
 import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
 import { COVER_ID, signedPage } from "./coverSign";
 import { backgroundOff, TIKTOK_LEASE } from "./background";
+import { nuitDeSynchro } from "./syncCadence";
 import { APP_STORE_ID, buildBoards, iconKey, siteOf, type GroupOut, type Part, type RApp, type Raw, type RFormat, type RSignal, type RTracked, type RVideo } from "./radarModels";
 
 /** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
 const STORE_RULE = 6; // 6 : à plusieurs candidates, titre exact ou nette avance en avis ; 5 : fiche exacte par l'identifiant du Radar ; sinon recherche France puis États-Unis, refusée si le nom est ambigu ; icône gardée
 
 /**
- * Synchronisation quotidienne du Radar (cron, convex/crons.ts, et lui seul : les lectures de fond ne la relancent plus
+ * Synchronisation du Radar, une nuit sur deux depuis le 21/11 (convex/syncCadence.ts ; cron, convex/crons.ts, et lui seul : les lectures de fond ne la relancent plus
  * depuis le 20/11), en étapes (voir « Synchro par groupes d'apps » plus bas) :
  *  1. `run` lit l'export du Radar (ses tables, RADAR_LOCAL=1 ; sinon celui de Jarvia, clé JARVIA_EXPORT_SECRET) : apps, comptes,
  *     formats, signaux, et les fiches App Store ;
@@ -607,6 +608,8 @@ export const run = internalAction({
   handler: async (ctx, { manual }): Promise<Record<string, number>> => {
     // Le dev (SWARM_SYNC_OFF=1) ne fait pas tourner la synchro planifiée : seulement celle lancée à la main.
     if (backgroundOff() && !manual) return { skipped: 1 };
+    // Une nuit sur deux (21/11, convex/syncCadence.ts) : la nuit sautée ne lit ni n'écrit rien.
+    if (!manual && !nuitDeSynchro(Date.now(), await ctx.runQuery(internal.radarStore.lastOkStart, {}))) return { skipped: 2 };
     const runId = await ctx.runMutation(internal.radarStore.startRun, {});
     if (runId === null) return { skipped: 1 }; // un passage tourne déjà
     resetPeaks();

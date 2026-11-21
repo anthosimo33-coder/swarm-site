@@ -325,6 +325,15 @@ export const startRun = internalMutation({
   },
 });
 
+/** Début du dernier passage réussi (null : aucun) : la cadence d'une nuit sur deux en dépend (convex/syncCadence.ts). */
+export const lastOkStart = internalQuery({
+  args: {},
+  handler: async (ctx): Promise<number | null> => {
+    for (const r of await ctx.db.query("syncRuns").withIndex("by_started").order("desc").take(20)) if (r.ok === true) return r.startedAt;
+    return null;
+  },
+});
+
 /** Signe de vie d'une étape. */
 export const beat = internalMutation({
   args: { id: v.id("syncRuns") },

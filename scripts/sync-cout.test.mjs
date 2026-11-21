@@ -5,6 +5,7 @@
 //   3. La copie des miniatures a son propre rythme : une action qui manque de temps relance la suite elle-même.
 //   4. Les empreintes et les clés des pages se lisent dans boardMeta (≈ 100 o par page), jamais dans boards (≈ 1,6 Ko).
 //   5. (21/11) Une étape ne lit que les lignes d'état (carrousels, IA, genre, langues, images) de son groupe.
+//   6. (21/11) Une nuit sur deux : la nuit sautée ne lit rien ; rattrapage si la nuit d'avant a manqué.
 // Usage : npm run test:sync   (ou node scripts/sync-cout.test.mjs <dossier convex>, pour la contre-épreuve)
 import fs from "node:fs";
 import os from "node:os";
@@ -565,6 +566,30 @@ export const jsonSchemaOutputFormat = (x) => x;`;
   ok(remote.exportCalls === 4 && remote.pages.length === 0, `Sans RADAR_LOCAL : l'export de Jarvia, comme avant (${remote.exportCalls} appels HTTP)`);
   delete process.env.RADAR_LOCAL;
   globalThis.fetch = realFetch;
+}
+
+// ─── 21/11 : une nuit sur deux (convex/syncCadence.ts) ────────────────────────────────────────────────────────────
+{
+  const H = 3_600_000;
+  const realNow = Date.now;
+  /** Le cron de 1 h 30 UTC ce jour-là, dernier passage réussi commencé `depuisH` heures plus tôt (null : aucun). */
+  const nuit = async (jour, depuisH, args = {}) => {
+    const at = Date.parse(`${jour}T01:30:00Z`);
+    Date.now = () => at;
+    const t = actionCtx({ lastOkStart: depuisH === null ? null : at - depuisH * H, startRun: null });
+    try { return { r: await quiet(() => sync.run.handler(t.ctx, args)), calls: t.calls }; } finally { Date.now = realNow; }
+  };
+  const lance = (x) => x.calls.includes("startRun");
+  ok(lance(await nuit("2026-11-22", 24)), "nuit du 22/11 (impaire) : la synchro passe");
+  const saute = await nuit("2026-11-23", 24);
+  ok(!lance(saute) && saute.r?.skipped === 2 && saute.calls.join() === "lastOkStart", `nuit du 23/11 (paire), passage réussi la veille : rien n'est lu ni écrit (${saute.calls.join(", ")})`);
+  ok(lance(await nuit("2026-11-23", 48)), "nuit du 23/11, la nuit du 22/11 a échoué (dernier passage réussi il y a 48 h) : rattrapage");
+  ok(lance(await nuit("2026-11-23", null)), "nuit paire sans aucun passage réussi connu : la synchro passe");
+  ok(lance(await nuit("2026-11-23", 24, { manual: true })), "lancée à la main une nuit paire : la synchro passe");
+  // L'alternance tient aux fins de mois et d'année (30/11 → 1/12, 31/12 → 1/1).
+  const impaire = (j) => Math.floor(Date.parse(`${j}T01:30:00Z`) / 86_400_000) % 2 === 1;
+  const alterne = [["2026-11-30", "2026-12-01"], ["2026-12-31", "2027-01-01"], ["2027-02-28", "2027-03-01"]].every(([a, b]) => impaire(a) !== impaire(b));
+  ok(alterne, "une nuit sur deux, sans deux nuits de suite au changement de mois ou d'année");
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });
