@@ -1828,6 +1828,85 @@ describe("runAccountReads chez TikHub (tiktok)", () => {
     expect(sum(f, "credits")).toBe(0);
     expect(f.named("radar/radarSignals:recordRun").some((c) => String(c.args.thLastError ?? "").includes("401"))).toBe(true);
   });
+
+  // LA MINUTE DU RELEVÉ PAYANT (corrigé le 21/11/2026). La voie gratuite tourne jusqu'à 7 minutes (FREE_LANE_MAX_MS) ;
+  // les relevés payants de ce qu'elle a raté ou pas atteint partent APRÈS elle, jusqu'à 8 minutes (PASS_MAX_MS) — la
+  // minute de main. L'échéance de l'aiguilleur (8 minutes, dernier appel TikHub à 7) arrêtait tout relevé payant d'un
+  // passage basculé dès 7 minutes : quand la voie prenait son créneau, rien n'était payé — ni chez TikHub ni par la porte
+  // de repli —, et les comptes en retard, les ratés au second échec et les premiers relevés illisibles restaient dus,
+  // relus pour rien en tête de la voie au passage suivant.
+  describe("la voie gratuite prend ses 7 minutes : la minute qui reste au relevé payant", () => {
+    /** La première page publique répond (500) quand le passage a tourné 7 min 05 s : la voie se ferme sur le temps. */
+    const slowLane = () => {
+      let first = true;
+      return (): [number, string] => {
+        if (first) {
+          first = false;
+          vi.setSystemTime(Date.now() + 7 * 60_000 + 5_000);
+        }
+        return [500, "refus"];
+      };
+    };
+    const late = (n: number) => Array.from({ length: n }, (_, i) => account(`r${i}`));
+    const profilePage = (url: string) => url.includes(TH_ROUTES.profile) || url.includes("api.scrapecreators.com/v3/tiktok/profile/videos");
+
+    it("sans bascule (main) : les comptes en retard partent chez ScrapeCreators dans la minute qui reste", async () => {
+      process.env.SCRAPECREATORS_API_KEY = "cle-sc-de-test";
+      const starts: number[] = [];
+      const { net, f, done } = reads(jobStateFor(), late(6), {}, { www: slowLane(), latency: (url) => (profilePage(url) && starts.push(Date.now() - NOW), 0) });
+      await done;
+      expect(net.calls.filter((c) => c.url.includes("api.scrapecreators.com/v3/tiktok/profile/videos"))).toHaveLength(6);
+      expect(f.named("radar/radarNetworks:applyAccountRead")).toHaveLength(6);
+      expect(Math.min(...starts)).toBeGreaterThanOrEqual(7 * 60_000);
+    });
+
+    it("RADAR_TIKHUB=tiktok : ils partent chez TikHub, dans la même minute", async () => {
+      setEnv("tiktok");
+      const starts: number[] = [];
+      const { net, f, done } = reads(jobStateFor(), late(6), {}, { www: slowLane(), latency: (url) => (profilePage(url) && starts.push(Date.now() - NOW), 0) });
+      await done;
+      expect(net.paths().filter((p) => p === TH_ROUTES.profile)).toHaveLength(6);
+      expect(net.calls.filter((c) => c.url.includes("scrapecreators"))).toHaveLength(0);
+      expect(f.named("radar/radarNetworks:applyAccountRead")).toHaveLength(6);
+      expect(f.named("radar/radarNetworks:markReadError")).toHaveLength(0);
+      expect(Math.min(...starts)).toBeGreaterThanOrEqual(7 * 60_000);
+      expect(sum(f, "thCalls")).toBe(6);
+    });
+
+    it("RADAR_TIKHUB=tiktok, TikHub à sec : ils passent par la porte de repli chez ScrapeCreators, dans la même minute", async () => {
+      setEnv("tiktok");
+      const starts: number[] = [];
+      const st = jobStateFor({ th: { ...freshTh(), paidUsd: 0, freeUsd: 0 } });
+      const { net, f, done } = reads(st, late(6), {}, { www: slowLane(), latency: (url) => (profilePage(url) && starts.push(Date.now() - NOW), 0) });
+      await done;
+      expect(net.paths().filter((p) => p === TH_ROUTES.profile)).toHaveLength(0);
+      expect(net.calls.filter((c) => c.url.includes("api.scrapecreators.com/v3/tiktok/profile/videos"))).toHaveLength(6);
+      expect(sum(f, "thFallbacks")).toBe(6);
+      expect(f.named("radar/radarNetworks:applyAccountRead")).toHaveLength(6);
+      expect(Math.min(...starts)).toBeGreaterThanOrEqual(7 * 60_000);
+    });
+
+    // La borne de main tient chez TikHub : le dernier relevé part à 8 minutes au plus, et son appel (30 s de délai) finit
+    // au plus tard à 8 min 30 s — sous la coupure de 10 minutes et le verrou du passage (ACCOUNT_LEASE_MS).
+    it("RADAR_TIKHUB=tiktok, 25 s par appel : aucun relevé ne part après 8 minutes, le passage finit avant 8 min 30 s", async () => {
+      setEnv("tiktok");
+      const starts: number[] = [];
+      const { net, done } = reads(jobStateFor(), late(5 * ACCOUNT_READ_POOL), {}, {
+        www: slowLane(),
+        latency: (url) => (url.includes(TH_ROUTES.profile) ? (starts.push(Date.now() - NOW), 25_000) : 0),
+      });
+      await done;
+      // Le raté de la voie d'abord (seul), puis les comptes en retard par vagues de front, toutes les 25 s : des relevés
+      // partent après 7 min 30 s, aucun après 8 minutes, et les comptes de la vague d'après restent dus.
+      const th = net.paths().filter((p) => p === TH_ROUTES.profile).length;
+      expect(th).toBe(starts.length);
+      expect(th).toBeGreaterThan(ACCOUNT_READ_POOL);
+      expect(th).toBeLessThan(5 * ACCOUNT_READ_POOL);
+      expect(Math.max(...starts)).toBeGreaterThan(7 * 60_000 + 30_000);
+      expect(Math.max(...starts)).toBeLessThanOrEqual(8 * 60_000);
+      expect(Date.now() - NOW).toBeLessThanOrEqual(8 * 60_000 + 30_000);
+    });
+  });
 });
 
 describe("échéance d'un passage basculé", () => {

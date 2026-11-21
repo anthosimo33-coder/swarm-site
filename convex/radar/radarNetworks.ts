@@ -168,6 +168,7 @@ import { scKeyPresent, scNetworkPage, scProfileVideosPage } from "./scrapeCreato
 import {
   USAGE_FLUSH_UNITS,
   canCall,
+  deadlineAfter,
   jobBudget,
   fallbackClaimer,
   makeRouter,
@@ -1612,10 +1613,11 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
   await ctx.runMutation(internal.radar.radarNetworks.seedApps, {});
   const st: JobState = await ctx.runQuery(internal.radar.radarSignals.jobState, { now });
   // Les relevés payants passent chez TikHub sous RADAR_TIKHUB=tiktok (20/11/2026, radarProviders) ; sans réglage, chez
-  // ScrapeCreators comme avant. Le solde TikHub est lu (gratuit) avant le budget.
+  // ScrapeCreators comme avant. Le solde TikHub est lu (gratuit) avant le budget. Le dernier relevé payant part à
+  // ACCOUNT_READ_MAX_MS chez l'un comme chez l'autre (radarProviders.deadlineAfter) : la minute après la voie gratuite.
   const jobs = tikhubJobs();
   const usage = usageWriter(ctx, "tiktok", now);
-  const router = makeRouter({ poste: "tiktok", jobs, st, book: usage.book, start: now, claimFallback: fallbackClaimer(ctx) });
+  const router = makeRouter({ poste: "tiktok", jobs, st, book: usage.book, start: now, deadlineMs: deadlineAfter(ACCOUNT_READ_MAX_MS), claimFallback: fallbackClaimer(ctx) });
   const b = await router.open();
   const provider = posteProvider(jobs, "tiktok");
   const gate = passGate(allowanceParts(st.budget, b, "tiktok", todayCredits(st, "tiktok"), ACCOUNT_RUNS_PER_DAY));
@@ -1743,6 +1745,7 @@ async function accountReadsPass(ctx: ActionCtx, now: number): Promise<{ calls: n
   let limit = n;
   // Basculé : un relevé ne part que s'il reste du budget chez TikHub, ou une place à la porte de repli (sinon il reste dû).
   const more = () => paidCalls < limit && (!router.on || canCall(gate, provider, router));
+  // Basculé, l'échéance tombe avec ACCOUNT_READ_MAX_MS : un relevé TikHub part jusqu'à 8 minutes, comme sur main.
   const alive = () => Date.now() - now < ACCOUNT_READ_MAX_MS && !router.expired();
   const paid = (list: readonly DueAccount[], reason: PaidReason): Promise<number> => pooled(list, ACCOUNT_READ_POOL, (acc) => readPaid(acc, reason, { more }), alive);
   // La courbe des vues d'abord, dans la file et le temps de la voie (20/11/2026, radarSignals.curveInLane) : la voie

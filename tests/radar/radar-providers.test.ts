@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { NO_SPEND, PassBook, makeRouter, passGate, passProvider, posteProvider, posteProviders, tikhubJobs, type Router } from "../../convex/radar/radarProviders";
+import { NO_SPEND, PassBook, deadlineAfter, makeRouter, passGate, passProvider, posteProvider, posteProviders, tikhubJobs, type Router } from "../../convex/radar/radarProviders";
 import { networkPasses } from "../../convex/radar/radarNetworkMath";
 import { claimFallback, type JobState } from "../../convex/radar/radarSignals";
 import { handlerOf, writableDb } from "./action-ctx";
@@ -466,6 +466,35 @@ describe("aiguilleur : TikHub, repli, coupe-circuit, échéance", () => {
       }
       expect(timeouts).toEqual([30_000]);
       expect(r.down()).toBeNull();
+    });
+  });
+
+  // Corrigé le 21/11/2026 : les relevés de comptes, dont les relevés payants partent jusqu'à 8 minutes sur main (après
+  // la voie gratuite, qui en prend 7), prenaient l'échéance par défaut — dernier appel à 7 minutes.
+  it("échéance réglée (relevés : deadlineAfter(8 min), 9 minutes) : le dernier appel TikHub part à 8 minutes avec son délai entier, le dernier repli à 7 min 30 s", async () => {
+    await withEnv(on, async () => {
+      expect(deadlineAfter(8 * 60_000)).toBe(9 * 60_000);
+      let t = NOW;
+      const f = fetchLog(thAnswer({ profile: [200, fixture("tikhub/profil.json")] }));
+      vi.stubGlobal("fetch", f.impl);
+      const r = makeRouter({ poste: "tiktok", jobs: tikhubJobs(), st: jobStateFor({ th: freshTh() }), book: new PassBook(), start: NOW, deadlineMs: deadlineAfter(8 * 60_000), claimFallback: claimOk, clock: () => t });
+      await r.open();
+      const timeouts: (number | undefined)[] = [];
+      const call = (thBudget = () => true) =>
+        r.route("tikhub", (o) => (timeouts.push(o.timeoutMs), thProfilePage("auteur_01", undefined, o)), () => scProfileVideosPage("auteur_01"), { route: TH_ROUTES.profile, firstPage: true, scBudget: () => true, thBudget });
+      t = NOW + 8 * 60_000;
+      expect(r.expired()).toBe(false);
+      expect(await call()).toMatchObject({ ok: true, served: "tikhub" });
+      expect(timeouts).toEqual([30_000]);
+      t = NOW + 8 * 60_000 + 1;
+      expect(r.expired()).toBe(true);
+      expect(await call()).toMatchObject({ ok: false, served: "tikhub", transient: true, thFailed: false });
+      expect(timeouts).toEqual([30_000]);
+      // La part TikHub épuisée : la porte de repli s'ouvre jusqu'à 90 s avant l'échéance.
+      t = NOW + 7 * 60_000 + 30_000;
+      expect(await call(() => false)).toMatchObject({ ok: true, served: "sc", spend: { fallback: 1 } });
+      t = NOW + 7 * 60_000 + 30_001;
+      expect(await call(() => false)).toMatchObject({ ok: false, served: "tikhub", transient: true, spend: { sc: 0, fallback: 0 } });
     });
   });
 

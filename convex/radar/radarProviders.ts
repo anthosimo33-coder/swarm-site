@@ -104,17 +104,33 @@ export function passProvider(pass: Pick<NetworkPass, "kind" | "region" | "sort">
 
 // ─── Le passage d'une tâche : budget, aiguillage, repli, coupe-circuit, échéance ─────────────────────────────────
 
-/** Un passage basculé (au moins un appel chez TikHub) s'arrête à 8 minutes : une tâche Convex est coupée à 10. */
+/**
+ * Un passage basculé (au moins un appel chez TikHub) s'arrête à 8 minutes : une tâche Convex est coupée à 10. Par
+ * défaut (la courbe, la découverte, le réseau) ; les relevés de comptes ont la leur (`deadlineAfter`).
+ */
 export const PASS_DEADLINE_MS = 8 * 60_000;
 /**
  * Délai d'un appel TikHub : 30 s, ENTIERS, et l'appel doit finir 30 s avant l'échéance — rien ne part s'il ne reste pas
- * ce temps (le dernier appel d'un passage part donc à 7 minutes). Corrigé le 20/11/2026 : le délai était rogné au temps
- * qui restait (500 ms à 7 min 29,5 s, quand TikHub répond en 1,8 s au banc) ; l'appel abandonné par NOTRE échéance
- * revenait comme un échec de TikHub, payé au prix plein (facturation inconnue) : la vidéo sortait de la courbe, le
- * compte prenait une erreur de relevé, la recherche était passée, et trois de suite déclaraient TikHub en panne.
+ * ce temps (le dernier appel d'un passage part donc une minute avant son échéance : à 7 minutes par défaut). Corrigé
+ * le 20/11/2026 : le délai était rogné au temps qui restait (500 ms à 7 min 29,5 s, quand TikHub répond en 1,8 s au
+ * banc) ; l'appel abandonné par NOTRE échéance revenait comme un échec de TikHub, payé au prix plein (facturation
+ * inconnue) : la vidéo sortait de la courbe, le compte prenait une erreur de relevé, la recherche était passée, et
+ * trois de suite déclaraient TikHub en panne.
  */
 export const TH_CALL_MAX_MS = 30_000;
 export const TH_CALL_MARGIN_MS = 30_000;
+/**
+ * L'échéance (depuis le début du passage) d'un passage dont le dernier appel payant part à `lastCallMs` : l'appel TikHub
+ * qui part à cette heure a son délai entier et finit TH_CALL_MARGIN_MS avant elle. Corrigé le 21/11/2026 : les relevés de
+ * comptes prenaient l'échéance par défaut (PASS_DEADLINE_MS, dernier appel à 7 minutes) quand leurs relevés payants
+ * partent jusqu'à 8 minutes sur main (radarFreeMath.PASS_MAX_MS) — APRÈS la voie gratuite, qui tourne jusqu'à 7 minutes
+ * (radarFreeMath.FREE_LANE_MAX_MS). La minute qui leur restait disparaissait : un passage dont la voie prenait son
+ * créneau ne payait plus rien — ni chez TikHub, ni par la porte de repli —, ses comptes en retard, ses ratés et ses
+ * premiers relevés illisibles restant dus, relus pour rien en tête de la voie au passage suivant. Pour 8 minutes :
+ * l'échéance est à 9, le dernier appel TikHub finit à 8 min 30 s au plus et le dernier repli (FALLBACK_MIN_LEFT_MS) part
+ * à 7 min 30 s — sous la coupure de 10 minutes et le verrou du passage (radarSignalsMath.ACCOUNT_LEASE_MS).
+ */
+export const deadlineAfter = (lastCallMs: number): number => lastCallMs + TH_CALL_MARGIN_MS + TH_CALL_MAX_MS;
 /** Pas de repli chez ScrapeCreators à moins de 90 s de l'échéance (son délai est de 60 s, plus la marge). */
 export const FALLBACK_MIN_LEFT_MS = 90_000;
 /**
@@ -291,6 +307,8 @@ export type RouterOpts = {
   claimFallback: () => Promise<boolean>;
   /** Début du passage : l'échéance en part. */
   start: number;
+  /** L'échéance, depuis `start` : PASS_DEADLINE_MS par défaut (cf `deadlineAfter`). */
+  deadlineMs?: number;
   clock?: () => number;
   sleep?: (ms: number) => Promise<void>;
   fetchImpl?: typeof fetch;
@@ -306,7 +324,7 @@ export function makeRouter(o: RouterOpts) {
   const clock = o.clock ?? Date.now;
   const sleep = o.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
   const on = taskOnTikHub(o.jobs, o.poste) && thKeyPresent();
-  const deadline = on ? o.start + PASS_DEADLINE_MS : undefined;
+  const deadline = on ? o.start + (o.deadlineMs ?? PASS_DEADLINE_MS) : undefined;
   let prices: ThPrices | null = o.st.thPrices;
   let lastRead = -Infinity;
   let streak = 0;
