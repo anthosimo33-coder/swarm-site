@@ -469,9 +469,10 @@ describe("aiguilleur : TikHub, repli, coupe-circuit, échéance", () => {
     });
   });
 
-  // Corrigé le 21/11/2026 : les relevés de comptes, dont les relevés payants partent jusqu'à 8 minutes sur main (après
-  // la voie gratuite, qui en prend 7), prenaient l'échéance par défaut — dernier appel à 7 minutes.
-  it("échéance réglée (relevés : deadlineAfter(8 min), 9 minutes) : le dernier appel TikHub part à 8 minutes avec son délai entier, le dernier repli à 7 min 30 s", async () => {
+  // Corrigé le 21/11/2026 : les relevés de comptes (dont les relevés payants partent jusqu'à 8 minutes sur main, après
+  // la voie gratuite, qui en prend 7) et le réseau (8 minutes, NETWORK_MAX_MS) prenaient l'échéance par défaut —
+  // dernier appel à 7 minutes.
+  it("échéance réglée (relevés, réseau : deadlineAfter(8 min), 9 minutes) : le dernier appel TikHub part à 8 minutes avec son délai entier, le dernier repli à 7 min 30 s", async () => {
     await withEnv(on, async () => {
       expect(deadlineAfter(8 * 60_000)).toBe(9 * 60_000);
       let t = NOW;

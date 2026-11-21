@@ -106,7 +106,7 @@ export function passProvider(pass: Pick<NetworkPass, "kind" | "region" | "sort">
 
 /**
  * Un passage basculé (au moins un appel chez TikHub) s'arrête à 8 minutes : une tâche Convex est coupée à 10. Par
- * défaut (la courbe, la découverte, le réseau) ; les relevés de comptes ont la leur (`deadlineAfter`).
+ * défaut (la courbe, la découverte) ; les relevés de comptes et le réseau ont la leur (`deadlineAfter`).
  */
 export const PASS_DEADLINE_MS = 8 * 60_000;
 /**
@@ -129,6 +129,9 @@ export const TH_CALL_MARGIN_MS = 30_000;
  * premiers relevés illisibles restant dus, relus pour rien en tête de la voie au passage suivant. Pour 8 minutes :
  * l'échéance est à 9, le dernier appel TikHub finit à 8 min 30 s au plus et le dernier repli (FALLBACK_MIN_LEFT_MS) part
  * à 7 min 30 s — sous la coupure de 10 minutes et le verrou du passage (radarSignalsMath.ACCOUNT_LEASE_MS).
+ * De même pour le réseau (corrigé le 21/11/2026) : ses pages partent jusqu'à NETWORK_MAX_MS (8 minutes) sur main ;
+ * l'échéance par défaut coupait dès 7 minutes toutes les pages d'un passage basculé (`router.expired()`), celles servies
+ * par ScrapeCreators comprises — un huitième du temps de chaque passage, et autant de passages de rattrapage en plus.
  */
 export const deadlineAfter = (lastCallMs: number): number => lastCallMs + TH_CALL_MARGIN_MS + TH_CALL_MAX_MS;
 /** Pas de repli chez ScrapeCreators à moins de 90 s de l'échéance (son délai est de 60 s, plus la marge). */

@@ -1238,15 +1238,64 @@ describe("runNetworkSearch chez TikHub", () => {
     expect(total(f, "errors")).toBe(0);
   });
 
+  // LA MINUTE DES PAGES DU RÉSEAU (corrigé le 21/11/2026). Sur main, une page part jusqu'à NETWORK_MAX_MS (8 minutes).
+  // L'échéance par défaut de l'aiguilleur (dernier appel TikHub à 7 minutes) coupait dès 7 minutes toutes les pages d'un
+  // passage basculé, celles servies par ScrapeCreators comprises : un huitième du temps de chaque passage perdu, et le
+  // rattrapage des apps jamais cherchées allongé d'autant de passages (chacun avec ses lectures fixes).
+  it("une première page finie à 7 min 10 s : sous RADAR_TIKHUB=network, la suite part jusqu'à 8 minutes — les mêmes pages ScrapeCreators que main, la passe FR chez TikHub, l'app cherchée", async () => {
+    // Le mot-clé chez ScrapeCreators a toujours une page suivante : sa passe en lit autant que la routine en permet.
+    const scKeyword = { success: true, credits_charged: 1, credits_remaining: 30_000, search_item_list: fixture("sc/reseau-motcle.json").search_item_list, cursor: 20 };
+    const lateRun = async () => {
+      vi.setSystemTime(NOW);
+      const net = network({ "/v1/tiktok/search/keyword": [200, scKeyword] });
+      const starts: number[] = [];
+      let slow = true;
+      vi.stubGlobal("fetch", (async (input: string | URL | Request, init?: RequestInit) => {
+        const url = String(input);
+        if (!url.includes("/api/v1/tikhub/user/")) starts.push(Date.now() - NOW);
+        if (slow && url.includes("api.scrapecreators.com")) {
+          slow = false;
+          vi.setSystemTime(Date.now() + 7 * 60_000 + 10_000);
+        }
+        return net.impl(input, init);
+      }) as typeof fetch);
+      const f = taskCtx({
+        "radar/radarSignals:jobState": () => jobStateFor(),
+        "radar/radarNetworks:dueApps": () => [focus({ searches: ["focus town"], rival: false })],
+        "radar/radarNetworks:attachFromSearch": () => ({ attached: 1, signals: 0 }),
+        "radar/radarNetworks:hashtagIdOf": () => null,
+      });
+      await drive(handlerOf(runNetworkSearch)(f.ctx, {}) as Promise<unknown>);
+      return { net, f, starts };
+    };
+    process.env.SCRAPECREATORS_API_KEY = "cle-sc-de-test";
+    const main = await lateRun();
+    const mainSc = scCalls(main.net, "/v1/tiktok/search/keyword");
+    // Sur main, après la page de 7 min 10 s : les pages suivantes de la passe sans région, puis la passe FR.
+    expect(mainSc.filter((p) => p.region !== "FR").length).toBeGreaterThan(1);
+    expect(mainSc.filter((p) => p.region === "FR").length).toBeGreaterThan(0);
+    expect(finish(main.f)).toEqual([{ appId: "radarApps_focus", outcome: "done", searched: true, error: undefined }]);
+    setEnv("network");
+    const th = await lateRun();
+    // La passe sans région chez ScrapeCreators, page pour page comme main ; la passe FR chez TikHub, après 7 minutes.
+    expect(scCalls(th.net, "/v1/tiktok/search/keyword")).toEqual(mainSc.filter((p) => p.region !== "FR"));
+    expect(offsets(th.net).length).toBeGreaterThan(0);
+    expect(finish(th.f)).toEqual([{ appId: "radarApps_focus", outcome: "done", searched: true, error: undefined }]);
+    expect(Math.max(...th.starts)).toBeGreaterThan(7 * 60_000);
+    expect(Math.max(...th.starts)).toBeLessThanOrEqual(8 * 60_000);
+    expect(total(th.f, "errors")).toBe(0);
+  });
+
   it("budget TikHub épuisé à moins de 90 s de l'échéance (repli refusé) : rien n'est parti chez TikHub, l'app reste due (« budget »), pas cherchée à moitié", async () => {
     setEnv("network");
     const net = network();
-    // La passe sans région (chez ScrapeCreators) prend 7 min 10 s : la passe FR arrive 50 s avant l'échéance (8 min).
+    // La passe sans région (chez ScrapeCreators) prend 7 min 40 s : la passe FR arrive 80 s avant l'échéance du réseau
+    // (9 min, deadlineAfter(NETWORK_MAX_MS) depuis le 21/11/2026 : 8 min avant), quand un appel TikHub partirait encore.
     let slow = true;
     vi.stubGlobal("fetch", (async (input: string | URL | Request, init?: RequestInit) => {
       if (slow && String(input).includes("api.scrapecreators.com")) {
         slow = false;
-        vi.setSystemTime(Date.now() + 7 * 60_000 + 10_000);
+        vi.setSystemTime(Date.now() + 7 * 60_000 + 40_000);
       }
       return net.impl(input, init);
     }) as typeof fetch);
@@ -1448,12 +1497,12 @@ describe("runNetworkSearch chez TikHub", () => {
     setEnv("network");
     const net = network({ "/v1/tiktok/search/hashtag": [200, { success: true, credits_charged: 1, credits_remaining: 30_000, aweme_list: fixture("sc/profil.json").aweme_list }] });
     // L'app d'avant est lue chez ScrapeCreators (son hashtag est gardé introuvable chez TikHub) ; sa première page prend
-    // 6 min 45 s.
+    // 7 min 45 s : 75 s avant l'échéance du réseau (9 min depuis le 21/11/2026, deadlineAfter(NETWORK_MAX_MS)).
     let slow = true;
     vi.stubGlobal("fetch", (async (input: string | URL | Request, init?: RequestInit) => {
       if (slow && String(input).includes("api.scrapecreators.com")) {
         slow = false;
-        vi.setSystemTime(Date.now() + 6 * 60_000 + 45_000);
+        vi.setSystemTime(Date.now() + 7 * 60_000 + 45_000);
       }
       return net.impl(input, init);
     }) as typeof fetch);

@@ -1157,7 +1157,8 @@ export const runNetworkSearch = internalAction({
     const jobs = tikhubJobs();
     // La dépense est écrite après chaque app (cf usageWriter) : un passage qui tombe en route ne la fait plus disparaître.
     const usage = usageWriter(ctx, "network", now);
-    const router = makeRouter({ poste: "network", jobs, st, book: usage.book, start: now, claimFallback: fallbackClaimer(ctx) });
+    // La dernière page part à NETWORK_MAX_MS chez l'un comme chez l'autre fournisseur (radarProviders.deadlineAfter).
+    const router = makeRouter({ poste: "network", jobs, st, book: usage.book, start: now, deadlineMs: deadlineAfter(NETWORK_MAX_MS), claimFallback: fallbackClaimer(ctx) });
     const b = await router.open();
     const runs = appId ? 1 : NETWORK_RUNS_PER_DAY;
     // La porte du budget d'une app : sa part du jour, ou (jamais cherchée) le reste du mois — le rattrapage,
