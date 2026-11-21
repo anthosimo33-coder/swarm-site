@@ -80,7 +80,7 @@ import { CURVE_FREE, curveSaved, curveTally, noFansMatch, readCurvePages, scRefu
 import { keptFirst } from "./radarCreatorsMath";
 import { scKeyPresent, scSearchKeyword, scVideoInfo } from "./scrapeCreatorsApi";
 import { TH_ROUTES, thKeyPresent, thSearchKeyword, thVideoInfo, type ThPrices } from "./tikhubApi";
-import { FALLBACK_SC_PER_DAY, PassBook, canCall, fallbackClaimer, makeRouter, passGate, passLimit, posteProvider, posteProviders, spendUnits, tikhubJobs, type ThJob } from "./radarProviders";
+import { FALLBACK_SC_PER_DAY, PassBook, canCall, fallbackClaimer, makeRouter, passGate, passLimit, posteProvider, posteProviders, spendUnits, thDayCapUsd, tikhubJobs, type ThJob } from "./radarProviders";
 
 const DAY = 86_400_000;
 
@@ -1393,7 +1393,9 @@ export async function getRadarBudgetCore(ctx: ProjectQueryCtx) {
   const providers = posteProviders(jobs);
   const th = jobs.size ? thStored(settings, recent.map(jobUsage), today, providers) : null;
   const scBalance = remaining !== undefined ? { remaining, seenAt: settings?.creditsSeenAt ?? 0, now, perDay } : null;
-  const state = jobs.size ? budgetState(budget, usage, scBalance, { providers, th: th ? { ...th, now } : null }) : budgetState(budget, usage, scBalance);
+  const state = jobs.size
+    ? budgetState(budget, usage, scBalance, { providers, th: th ? { ...th, now } : null, thDay: { today, capUsd: thDayCapUsd() } })
+    : budgetState(budget, usage, scBalance);
   const thDays = new Map<string, { thCalls: number; thUsd: number; thUnknown: number }>();
   for (const u of usage) {
     if (u.thCalls === undefined && u.thUsd === undefined && u.thUnknown === undefined) continue;

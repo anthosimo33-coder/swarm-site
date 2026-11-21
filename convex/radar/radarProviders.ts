@@ -21,6 +21,7 @@ import type { NetworkPass } from "./radarNetworkMath";
 import type { JobState } from "./radarSignals";
 import {
   TH_BALANCE_STALE_MS,
+  TH_DAY_CAP_USD,
   TH_PRICE_USD,
   budgetState,
   capUnits,
@@ -53,6 +54,18 @@ export function tikhubJobs(env: Readonly<Record<string, string | undefined>> = p
     else if ((JOBS as readonly string[]).includes(t)) out.add(t as ThJob);
   }
   return out;
+}
+
+/**
+ * Le plafond TikHub du jour, en dollars (radarSignalsMath.TH_DAY_CAP_USD) : `RADAR_TIKHUB_USD_PER_DAY` s'il est un
+ * nombre fini positif ou nul (virgule ou point décimal ; 0 arrête TikHub), sinon 5 $ — une valeur illisible ne lève
+ * jamais le plafond. Lu à chaque passage : se change sans redéployer.
+ */
+export function thDayCapUsd(env: Readonly<Record<string, string | undefined>> = process.env): number {
+  const raw = env.RADAR_TIKHUB_USD_PER_DAY?.trim();
+  if (!raw) return TH_DAY_CAP_USD;
+  const usd = Number(raw.replace(",", "."));
+  return Number.isFinite(usd) && usd >= 0 ? usd : TH_DAY_CAP_USD;
 }
 
 /** Le fournisseur réglé de chaque poste TikTok (le réseau est mixte : cf `passProvider`). */
@@ -259,7 +272,11 @@ function thBalanceFor(st: JobState, jobs: ReadonlySet<ThJob>, book: PassBook | u
  */
 export function jobBudget(st: JobState, jobs: ReadonlySet<ThJob> = tikhubJobs(), book?: PassBook, now = st.balance?.now ?? Date.now()): BudgetState {
   if (jobs.size === 0) return budgetState(st.budget, st.usage, st.balance);
-  return budgetState(st.budget, st.usage, st.balance, { providers: posteProviders(jobs), th: thBalanceFor(st, jobs, book, now) });
+  return budgetState(st.budget, st.usage, st.balance, {
+    providers: posteProviders(jobs),
+    th: thBalanceFor(st, jobs, book, now),
+    thDay: { today: st.day, capUsd: thDayCapUsd() },
+  });
 }
 
 export type RouterOpts = {

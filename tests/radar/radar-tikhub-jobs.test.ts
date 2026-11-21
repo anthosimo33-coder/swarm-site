@@ -20,7 +20,7 @@ import type { MemoryDoc } from "./convex-memory-db";
  */
 
 const NOW = Date.parse("2026-11-20T12:00:00Z");
-const ENV_KEYS = ["TIKHUB_API_KEY", "RADAR_TIKHUB", "SCRAPECREATORS_API_KEY"] as const;
+const ENV_KEYS = ["TIKHUB_API_KEY", "RADAR_TIKHUB", "SCRAPECREATORS_API_KEY", "RADAR_TIKHUB_USD_PER_DAY"] as const;
 let savedEnv: Record<string, string | undefined>;
 beforeEach(() => {
   savedEnv = Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]]));
@@ -1635,6 +1635,57 @@ describe("runAccountReads chez TikHub (tiktok)", () => {
     expect(f.named("radar/radarNetworks:deferAccounts")).toHaveLength(0);
     expect(net.paths().filter((p) => p === TH_ROUTES.profile)).toHaveLength(2);
     expect(reasons(f)).toEqual({ premier: 2 });
+  });
+
+  describe("le plafond TikHub du jour", () => {
+    const spentToday = (usd: number) => jobStateFor({ usage: [{ poste: "network", credits: 0, day: "2026-11-20", thCalls: Math.round(usd * 1000), thUsd: usd }] });
+    const scProfile = (net: ReturnType<typeof thAndSc>) => net.calls.filter((c) => c.url.includes("api.scrapecreators.com/v3/tiktok/profile/videos"));
+
+    it("5 $ déjà dépensés aujourd'hui chez TikHub (un autre poste) : aucun relevé chez TikHub ; seule la porte de repli passe chez ScrapeCreators, aucun compte en erreur", async () => {
+      setEnv("tiktok");
+      const { net, f, done } = reads(spentToday(5), ["a1", "a2", "a3"].map((h) => account(h)));
+      await done;
+      expect(net.paths().filter((p) => p === TH_ROUTES.profile)).toHaveLength(0);
+      expect(scProfile(net)).toHaveLength(3);
+      expect(sum(f, "thFallbacks")).toBe(3);
+      expect(sum(f, "thCalls")).toBe(0);
+      expect(f.named("radar/radarNetworks:markReadError")).toHaveLength(0);
+    });
+
+    // Le reste du plafond se juge sur la dépense comptée : les relevés menés de front (ACCOUNT_READ_POOL) partis avant
+    // qu'elle ne l'atteigne passent encore — une borne à quelques appels près, jamais plus d'une vague.
+    it("le reste du plafond borne le passage : 4,99 $ dépensés (10 appels), 30 comptes — 10 relevés chez TikHub plus au plus une vague en vol, la suite par la porte de repli", async () => {
+      setEnv("tiktok");
+      const { net, f, done } = reads(spentToday(4.99), Array.from({ length: 30 }, (_, i) => account(`p${i}`)));
+      await done;
+      const th = net.paths().filter((p) => p === TH_ROUTES.profile).length;
+      expect(th).toBeGreaterThanOrEqual(10);
+      expect(th).toBeLessThanOrEqual(10 + ACCOUNT_READ_POOL - 1);
+      expect(sum(f, "thCalls")).toBe(th);
+      expect(scProfile(net)).toHaveLength(30 - th);
+      expect(sum(f, "thFallbacks")).toBe(30 - th);
+      expect(f.named("radar/radarNetworks:markReadError")).toHaveLength(0);
+    });
+
+    it("RADAR_TIKHUB_USD_PER_DAY=10 : les mêmes 5 $ laissent partir les relevés chez TikHub", async () => {
+      setEnv("tiktok");
+      process.env.RADAR_TIKHUB_USD_PER_DAY = "10";
+      const { net, done } = reads(spentToday(5), ["a1", "a2", "a3"].map((h) => account(h)));
+      await done;
+      expect(net.paths().filter((p) => p === TH_ROUTES.profile)).toHaveLength(3);
+      expect(scProfile(net)).toHaveLength(0);
+    });
+
+    it("RADAR_TIKHUB_USD_PER_DAY=0, porte de repli fermée (quota du jour pris) : rien ne part, les comptes restent dus sans erreur", async () => {
+      setEnv("tiktok");
+      process.env.RADAR_TIKHUB_USD_PER_DAY = "0";
+      const { net, f, done } = reads(jobStateFor({ fallbacksToday: 100 }), ["a1", "a2"].map((h) => account(h)));
+      await done;
+      expect(net.paths().filter((p) => p === TH_ROUTES.profile)).toHaveLength(0);
+      expect(scProfile(net)).toHaveLength(0);
+      expect(f.named("radar/radarNetworks:applyAccountRead")).toHaveLength(0);
+      expect(f.named("radar/radarNetworks:markReadError")).toHaveLength(0);
+    });
   });
 
   it("TikHub en panne n'empêche pas la sonde du solde ScrapeCreators", async () => {

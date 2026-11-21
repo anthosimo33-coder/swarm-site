@@ -26,6 +26,17 @@ export const TH_PRICE_USD = 0.001;
 /** Dollars TikHub laissés en compte, que le Radar ne dépense jamais (à confirmer par le fondateur ; 0 au 20/11/2026). */
 export const TH_RESERVE_USD = 0;
 /**
+ * LE PLAFOND TIKHUB DU JOUR (choix du fondateur, 21/11/2026) : 5 $ par jour (Paris), tous postes, appels à facturation
+ * inconnue au prix plein — surchargé par la variable `RADAR_TIKHUB_USD_PER_DAY` (radarProviders.thDayCapUsd). TikHub n'a
+ * pas de recharge automatique et le Radar ne connaît que son solde : sans plafond, un rattrapage du réseau ou une boucle
+ * viderait le compte en une journée. Atteint, plus rien ne part chez TikHub jusqu'au lendemain : ce qui reste dû
+ * attend, seule la porte de repli (radarProviders.FALLBACK_SC_PER_DAY) passe chez ScrapeCreators ; le palier TikHub,
+ * qui dit combien de jours son solde tient, ne bouge pas. Une borne à quelques appels près : un passage juge chaque
+ * appel sur la dépense déjà comptée (les relevés menés de front, radarNetworks.ACCOUNT_READ_POOL, partent avant de la
+ * voir), et sur la dépense du jour écrite par les autres passages à son ouverture — quelques centimes au plus.
+ */
+export const TH_DAY_CAP_USD = 5;
+/**
  * UNE UNITÉ DU BUDGET = un appel au prix de base de TikHub, un millième de dollar (un crédit ScrapeCreators vaut une
  * unité). Les quantités des postes restent des nombres d'appels : 5,4 $ de solde TikHub font 5 400 unités.
  */
@@ -572,8 +583,9 @@ export type BudgetState = {
    * Le solde TikHub, EN UNITÉS (cf `thUnits`) : `paidLeft` le payé seul (la route des relevés de profil refuse le
    * crédit gratuit), `allLeft` payé + gratuit ; tous deux moins ce qui a été dépensé depuis la dernière lecture (une
    * borne basse, recalée à chaque lecture gratuite). `null` : jamais lu. `tier` : son palier, calculé sur `paidLeft`.
+   * `dayLeft` : ce que le plafond du jour laisse encore, en unités (cf TH_DAY_CAP_USD) ; `null` : pas de plafond posé.
    */
-  th: { paidLeft: number | null; allLeft: number | null; tier: CreditTier; daysLeft: number | null; stale: boolean };
+  th: { paidLeft: number | null; allLeft: number | null; tier: CreditTier; daysLeft: number | null; stale: boolean; dayLeft: number | null };
 };
 
 /**
@@ -643,8 +655,11 @@ export type Balance = { remaining: number; seenAt: number; now: number; perDay?:
  */
 export type ThBalance = { paidUsd: number; freeUsd: number; seenAt: number; spentSinceUsd: number; now: number; perDay?: number | null };
 
-/** Les options d'un budget à deux fournisseurs : qui sert chaque poste, et le solde TikHub. Sans elles : ScrapeCreators seul. */
-export type BudgetOpts = { providers?: Partial<Record<PosteKey, Provider>>; th?: ThBalance | null };
+/**
+ * Les options d'un budget à deux fournisseurs : qui sert chaque poste, le solde TikHub, et son plafond du jour (`thDay` :
+ * le jour de Paris et le plafond en dollars, cf TH_DAY_CAP_USD). Sans elles : ScrapeCreators seul.
+ */
+export type BudgetOpts = { providers?: Partial<Record<PosteKey, Provider>>; th?: ThBalance | null; thDay?: { today: string; capUsd: number } };
 
 /** Le solde TikHub est relu (gratuitement) en tête de passage quand la dernière lecture a plus d'une minute. */
 export const TH_BALANCE_STALE_MS = 60_000;
@@ -735,7 +750,7 @@ export function budgetState(s: BudgetSettings, monthUsage: readonly UsageRow[], 
   const capCut = [...cut];
   const balanceLeft = balance ? Math.max(0, Math.floor(balance.remaining - CREDIT_RESERVE)) : null;
   const { tier, daysLeft } = creditTier(balanceLeft, balance?.perDay);
-  const th = thState(opts?.th);
+  const th = thState(opts?.th, thDayLeft(monthUsage, opts?.thDay));
   // Chaque poste est coupé par le palier du fournisseur qui le sert (dans l'ordre des paliers, comme avant la bascule).
   const tierOfProvider: Record<Provider, CreditTier> = { sc: tier, tikhub: th.tier };
   for (const p of PROVIDERS) {
@@ -760,14 +775,21 @@ export function budgetState(s: BudgetSettings, monthUsage: readonly UsageRow[], 
   };
 }
 
-/** Le solde TikHub en unités et son palier (cf `BudgetState.th`). */
-function thState(th: ThBalance | null | undefined): BudgetState["th"] {
-  if (!th) return { paidLeft: null, allLeft: null, tier: "normal", daysLeft: null, stale: false };
+/** Ce que le plafond TikHub du jour laisse encore, en unités : le plafond moins la dépense TikHub écrite aujourd'hui, tous postes. */
+function thDayLeft(monthUsage: readonly UsageRow[], day: BudgetOpts["thDay"]): number | null {
+  if (!day) return null;
+  const spent = monthUsage.reduce((sum, u) => (u.day === day.today && hasTh(u) ? sum + thUsageUsd(u) : sum), 0);
+  return Math.max(0, thUnits(day.capUsd - spent));
+}
+
+/** Le solde TikHub en unités, son palier et le reste de son plafond du jour (cf `BudgetState.th`). */
+function thState(th: ThBalance | null | undefined, dayLeft: number | null): BudgetState["th"] {
+  if (!th) return { paidLeft: null, allLeft: null, tier: "normal", daysLeft: null, stale: false, dayLeft };
   const since = Math.max(0, th.spentSinceUsd);
   const paidLeft = Math.max(0, thUnits(th.paidUsd - since - TH_RESERVE_USD));
   const allLeft = Math.max(0, thUnits(th.paidUsd + th.freeUsd - since - TH_RESERVE_USD));
   const { tier, daysLeft } = creditTier(paidLeft, th.perDay);
-  return { paidLeft, allLeft, tier, daysLeft, stale: th.now - th.seenAt >= TH_BALANCE_STALE_MS };
+  return { paidLeft, allLeft, tier, daysLeft, stale: th.now - th.seenAt >= TH_BALANCE_STALE_MS, dayLeft };
 }
 
 /** Le palier du fournisseur `p` (ScrapeCreators : celui du solde de toujours). */
@@ -895,7 +917,8 @@ export function creditAlert(
  *  - `capUsd` : le reste du plafond, en dollars (commun aux deux fournisseurs) ;
  *  - `open` : le poste peut-il partir chez ce fournisseur (branché, allumé, plafond non atteint, ni coupé par le
  *    plafond, ni par le palier du solde de CE fournisseur) ;
- *  - `balance` : ce que le solde de ce fournisseur permet encore, en unités (`Infinity` : jamais lu).
+ *  - `balance` : ce que le solde de ce fournisseur permet encore, en unités (`Infinity` : jamais lu) ; chez TikHub,
+ *    borné aussi par le reste de son plafond du jour (TH_DAY_CAP_USD).
  * `todayUnits` : les unités déjà dépensées aujourd'hui par le poste (cf radarSignals.todayCredits).
  */
 export type AllowanceParts = { units: number; capUsd: number; open: Record<Provider, boolean>; balance: Record<Provider, number> };
@@ -911,7 +934,7 @@ export function allowanceParts(s: BudgetSettings, state: BudgetState, k: PosteKe
     units: Math.min(Math.ceil(perDay / Math.max(1, runsPerDay)), leftToday, leftMonth),
     capUsd: s.capUsd - state.spentUsd,
     open: { sc: alive && !TIER_CUT[state.tier].includes(k), tikhub: alive && !TIER_CUT[state.th.tier].includes(k) },
-    balance: { sc: state.balanceLeft ?? Infinity, tikhub: (TH_FREE_OK[k] ? state.th.allLeft : state.th.paidLeft) ?? Infinity },
+    balance: { sc: state.balanceLeft ?? Infinity, tikhub: Math.min((TH_FREE_OK[k] ? state.th.allLeft : state.th.paidLeft) ?? Infinity, state.th.dayLeft ?? Infinity) },
   };
 }
 

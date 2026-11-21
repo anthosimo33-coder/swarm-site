@@ -25,6 +25,7 @@ import {
   type ThBalance,
   type UsageRow,
 } from "../../convex/radar/radarSignalsMath";
+import { thDayCapUsd } from "../../convex/radar/radarProviders";
 
 /**
  * Le budget à deux fournisseurs (bascule TikHub, 20/11/2026) : chaque poste se juge sur le solde, le palier et le prix
@@ -226,13 +227,60 @@ describe("un palier par fournisseur", () => {
 
   it("sans solde TikHub lu : pas de borne de solde, palier normal (comme ScrapeCreators jamais lu)", () => {
     const st = budgetState(d, [], null, tiktokChezTikHub);
-    expect(st.th).toEqual({ paidLeft: null, allLeft: null, tier: "normal", daysLeft: null, stale: false });
+    expect(st.th).toEqual({ paidLeft: null, allLeft: null, tier: "normal", daysLeft: null, stale: false, dayLeft: null });
     expect(allowance(d, st, "tiktok", 0, 24, "tikhub")).toBe(375);
   });
 
   it("une lecture de plus d'une minute est périmée", () => {
     expect(budgetState(d, [], null, { th: { ...th(1), seenAt: NOW - 60_000 } }).th.stale).toBe(true);
     expect(budgetState(d, [], null, { th: { ...th(1), seenAt: NOW - 59_999 } }).th.stale).toBe(false);
+  });
+});
+
+describe("le plafond TikHub du jour (5 $ par défaut, RADAR_TIKHUB_USD_PER_DAY)", () => {
+  const thDay = { today: "2026-11-20", capUsd: 5 };
+  const row = (poste: string, day: string, thUsd: number, thUnknown = 0): UsageRow => ({ poste, credits: 0, day, thCalls: Math.round(thUsd * 1000), thUsd, thUnknown });
+
+  it("borne la part TikHub de chaque poste par ce qui reste du plafond du jour, tous postes confondus ; la veille ne compte pas ; ScrapeCreators n'est pas touché", () => {
+    const usage = [row("tiktok", "2026-11-19", 9), row("network", "2026-11-20", 2), row("tiktok", "2026-11-20", 2.9)];
+    const st = budgetState(d, usage, sc(40_000), { ...tiktokChezTikHub, th: th(50), thDay });
+    expect(st.th.dayLeft).toBe(100);
+    expect(allowanceParts(d, st, "tiktok", 0, 24).balance.tikhub).toBe(100);
+    expect(allowanceParts(d, st, "curve", 0, 24).balance.tikhub).toBe(100);
+    expect(allowanceParts(d, st, "tiktok", 0, 24).balance.sc).toBe(40_000 - CREDIT_RESERVE);
+    expect(catchUpAllowance(d, st, "network", "tikhub")).toBe(100);
+  });
+
+  it("atteint (appels à facturation inconnue au prix plein compris) : plus aucun appel chez TikHub aujourd'hui ; son palier ne bouge pas, ScrapeCreators continue", () => {
+    const st = budgetState(d, [row("tiktok", "2026-11-20", 4.99, 10)], sc(50_000, 1_000), { ...tiktokChezTikHub, th: th(50), thDay });
+    expect(st.th.dayLeft).toBe(0);
+    expect(tierOf(st, "tikhub")).toBe("normal");
+    expect(allowance(d, st, "tiktok", 0, 24, "tikhub")).toBe(0);
+    expect(catchUpAllowance(d, st, "network", "tikhub")).toBe(0);
+    expect(allowance(d, st, "tiktok", 0, 24, "sc")).toBe(375);
+  });
+
+  it("le solde TikHub reste la borne quand il est plus bas que le reste du plafond", () => {
+    const st = budgetState(d, [row("tiktok", "2026-11-20", 1)], null, { ...tiktokChezTikHub, th: th(0.05), thDay });
+    expect(st.th.dayLeft).toBe(4_000);
+    expect(allowanceParts(d, st, "tiktok", 0, 24).balance.tikhub).toBe(50);
+  });
+
+  it("sans plafond posé (budget ScrapeCreators seul) : aucune borne du jour", () => {
+    const usage = [row("tiktok", "2026-11-20", 7)];
+    expect(budgetState(d, usage, sc(40_000)).th.dayLeft).toBeNull();
+    expect(budgetState(d, usage, null, tiktokChezTikHub).th.dayLeft).toBeNull();
+  });
+
+  it("RADAR_TIKHUB_USD_PER_DAY : 5 $ sans réglage ; « 2,5 » comme « 2.5 » ; 0 arrête TikHub ; une valeur illisible ou négative garde 5 $", () => {
+    expect(thDayCapUsd({})).toBe(5);
+    expect(thDayCapUsd({ RADAR_TIKHUB_USD_PER_DAY: " " })).toBe(5);
+    expect(thDayCapUsd({ RADAR_TIKHUB_USD_PER_DAY: "2,5" })).toBe(2.5);
+    expect(thDayCapUsd({ RADAR_TIKHUB_USD_PER_DAY: "2.5" })).toBe(2.5);
+    expect(thDayCapUsd({ RADAR_TIKHUB_USD_PER_DAY: "0" })).toBe(0);
+    expect(thDayCapUsd({ RADAR_TIKHUB_USD_PER_DAY: "dix" })).toBe(5);
+    expect(thDayCapUsd({ RADAR_TIKHUB_USD_PER_DAY: "-1" })).toBe(5);
+    expect(thDayCapUsd({ RADAR_TIKHUB_USD_PER_DAY: "Infinity" })).toBe(5);
   });
 });
 
