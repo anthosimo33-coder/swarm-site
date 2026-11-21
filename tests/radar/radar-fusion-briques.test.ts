@@ -311,6 +311,15 @@ describe("Fusion — la réserve des relevés est celle du fournisseur qui les s
     expect(reserveFor(state(false, "economie"), "tikhub", router(true, 0), gate(0))).toBe(false);
   });
 
+  it("TikHub sert, plafond du jour atteint (solde au-dessus) : comme sa réserve — les ratés attendent si la porte de repli ne peut rien faire partir", () => {
+    const capped = { reserveReached: false, th: { ...budgetState(DEFAULT_BUDGET, []).th, tier: "normal" as const, dayLeft: 0 } };
+    expect(reserveFor(capped, "tikhub", router(true, 0), gate(10))).toBe(true);
+    expect(reserveFor(capped, "tikhub", router(true, 5), gate(10))).toBe(false);
+    expect(reserveFor({ ...capped, th: { ...capped.th, dayLeft: 1 } }, "tikhub", router(true, 0), gate(0))).toBe(false);
+    expect(reserveFor({ ...capped, reserveReached: true }, "sc", router(true, 0), gate(0))).toBe(true);
+    expect(reserveFor({ ...capped, reserveReached: false }, "sc", router(true, 0), gate(0))).toBe(false);
+  });
+
   const account = (handle: string) => ({ id: `radarTracked_${handle}`, handle, located: false, first: false, dueAt: NOW - 2 * 3_600_000 });
   function reads(st: JobState, due: ReturnType<typeof account>[]) {
     const net = thAndSc();
@@ -343,6 +352,20 @@ describe("Fusion — la réserve des relevés est celle du fournisseur qui les s
   it("relevés chez TikHub, TikHub à sec et porte de repli fermée : les ratés attendent (brique 8), rien ne part", async () => {
     setEnv("tiktok");
     const st = jobStateFor({ fallbacksToday: 100, th: { ...freshTh(), paidUsd: 0, freeUsd: 0 } });
+    const { net, f, done } = reads(st, [account("a1"), account("a2")]);
+    await done;
+    expect(deferred(f).sort()).toEqual(["radarTracked_a1", "radarTracked_a2"]);
+    expect(thHits(net, TH_ROUTES.profile)).toHaveLength(0);
+    expect(scHits(net)).toHaveLength(0);
+  });
+
+  it("relevés chez TikHub, plafond du jour atteint avec 20 $ en compte, porte de repli fermée : les ratés attendent (brique 8) au lieu d'être relus en tête de voie jusqu'à minuit", async () => {
+    setEnv("tiktok");
+    const st = jobStateFor({
+      fallbacksToday: 100,
+      th: { ...freshTh(), paidUsd: 20 },
+      usage: [{ poste: "network", credits: 0, day: "2026-11-20", thCalls: 5_000, thUsd: 5 }],
+    });
     const { net, f, done } = reads(st, [account("a1"), account("a2")]);
     await done;
     expect(deferred(f).sort()).toEqual(["radarTracked_a1", "radarTracked_a2"]);

@@ -692,8 +692,11 @@ export function passLimit(gate: PassGate, provider: Provider, router: Router): n
  * 20/11/2026). La brique 8 fait attendre la sonde aux ratés quand aucun relevé payant ne peut partir faute de solde :
  *  - ScrapeCreators (sans bascule, ou poste réglé chez lui) : son solde sous CREDIT_RESERVE (`reserveReached`), comme
  *    avant — au bit près ;
- *  - TikHub : son solde payé à sec (palier « reserve », radarSignalsMath.BudgetState.th) ET aucun relevé ne peut passer
- *    par la porte de repli (quota du jour, palier ou réserve de ScrapeCreators, budget du poste chez lui).
+ *  - TikHub : son solde payé à sec (palier « reserve », radarSignalsMath.BudgetState.th) ou son plafond du jour atteint
+ *    (`th.dayLeft` à 0, radarSignalsMath.TH_DAY_CAP_USD) ET aucun relevé ne peut passer par la porte de repli (quota du
+ *    jour, palier ou réserve de ScrapeCreators, budget du poste chez lui). Corrigé le 21/11/2026 : le plafond atteint
+ *    avec un solde au-dessus laissait le palier « normal », et les ratés étaient relus en tête de voie à chaque passage
+ *    jusqu'à minuit sans qu'aucun relevé payant ne puisse partir.
  * La réserve de ScrapeCreators ne retient JAMAIS un poste que TikHub sert : ses relevés partent chez TikHub, et un raté
  * relu au passage suivant y sera payé — l'attente de la sonde n'éviterait rien, elle retarderait. Sous la réserve de
  * TikHub, l'attente reste RESERVE_MISS_WAIT_MS (50 min) : son solde est relu gratuitement en tête de chaque passage
@@ -708,5 +711,5 @@ export function reserveFor(
   gate: Pick<PassGate, "limit">,
 ): boolean {
   if (provider === "sc" || !router.on) return b.reserveReached;
-  return b.th.tier === "reserve" && Math.min(gate.limit("sc"), router.fallbackRoom()) === 0;
+  return (b.th.tier === "reserve" || b.th.dayLeft === 0) && Math.min(gate.limit("sc"), router.fallbackRoom()) === 0;
 }
