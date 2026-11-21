@@ -5,6 +5,8 @@ const crons = cronJobs();
 
 // Le Radar relève ses comptes jusque tard le soir (heure de Paris) : Swarm se
 // synchronise ensuite, à 1 h 30 UTC (2 h 30 ou 3 h 30 à Paris selon la saison).
+// Une nuit sur deux depuis le 21/11 : le cron reste quotidien, `run` saute une
+// nuit sur deux (convex/syncCadence.ts).
 crons.daily("synchronisation du Radar", { hourUTC: 1, minuteUTC: 30 }, internal.radarSync.run, {});
 
 // Le pays des comptes que le Radar ne situe pas, lu sur la page publique de leurs vidéos (150 comptes par passage).
