@@ -69,15 +69,6 @@ export function posteProviders(jobs: ReadonlySet<ThJob>): Partial<Record<PosteKe
 export const posteProvider = (jobs: ReadonlySet<ThJob>, k: PosteKey): Provider => posteProviders(jobs)[k] ?? "sc";
 
 /**
- * Les postes que TikHub sert EN ENTIER sous ce réglage : les relevés de comptes (`tiktok`) et la courbe (`curve`).
- * ScrapeCreators ne leur sert plus que des replis et la sonde de son solde. Le réseau reste mixte (ses passes par date ;
- * sous `network`, aussi le hashtag FR et le mot-clé sans région), la recherche aussi (les tournures, radarNaming, sont
- * comptées au poste « search » et restent chez ScrapeCreators). Le rythme de ScrapeCreators s'en sert
- * (radarSignalsMath.scPerDay, 20/11/2026).
- */
-export const thOnlyPostes = (jobs: ReadonlySet<ThJob>): PosteKey[] => (["tiktok", "curve"] as const).filter((k) => jobs.has(k));
-
-/**
  * Le fournisseur d'une passe de recherche de réseau, et la région à envoyer à TikHub. Les passes triées par date
  * restent chez ScrapeCreators (tri non mesuré sur 3 mois). Sous `network` : le hashtag sans région (sans paramètre,
  * la configuration mesurée) et le mot-clé FR par pertinence. Sous `network-all`, en plus : le mot-clé sans région

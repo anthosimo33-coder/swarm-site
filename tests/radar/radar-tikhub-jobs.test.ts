@@ -208,9 +208,10 @@ describe("jobState : ce que les tâches reçoivent", () => {
     const st = await run(settingsDoc({ thBalanceUsd: 5.4, thFreeUsd: 0.02, thSeenAt: LATE - 10_000, thSpentSinceUsd: 0.4, thPrices: prices, thPricesAt: LATE - 3_600_000 }));
     expect([st.day, st.month]).toEqual(["2026-11-21", "2026-11"]);
     expect(st.fallbacksToday).toBe(5);
-    // Rythme TikHub (relevés, courbe, réseau sous `all`), en unités : 20/11 900 appels, 19/11 313 (7 crédits, 300
-    // appels, 6 à facturation inconnue), 18/11 Instagram seul — ces postes n'ont rien dépensé → 1 213 ÷ 3.
-    expect(st.th).toEqual({ paidUsd: 5.4, freeUsd: 0.02, seenAt: LATE - 10_000, spentSinceUsd: 0.4, perDay: 1_213 / 3 });
+    // Rythme TikHub (relevés, courbe, réseau sous `all`), en unités : 20/11 900 appels, 19/11 306 (300 appels, 6 à
+    // facturation inconnue — les 7 crédits du réseau, mixte, sont la part de ScrapeCreators ce jour-là), 18/11 Instagram
+    // seul — ces postes n'ont rien dépensé → 1 206 ÷ 3.
+    expect(st.th).toEqual({ paidUsd: 5.4, freeUsd: 0.02, seenAt: LATE - 10_000, spentSinceUsd: 0.4, perDay: 1_206 / 3 });
     expect(st.thPrices).toEqual({ [TH_ROUTES.profile]: { usd: 0.001, free: false } });
     expect(st.thPricesAt).toBe(LATE - 3_600_000);
     expect(st.usage).toHaveLength(6);
@@ -330,6 +331,18 @@ describe("le rythme qui dit combien de jours le solde ScrapeCreators tient", () 
     expect(st.balance?.perDay).toBe(12 + 120 + 45 + 40);
     expect(b.tier).toBe("normal");
     expect(b.cut).toEqual([]);
+    expect(admin.tier).toBe("normal");
+  });
+
+  // Corrigé le 21/11/2026 : le réseau, mixte, comptait en entier dans le rythme de ScrapeCreators, appels TikHub compris.
+  it("rattrapage du réseau chez TikHub (RADAR_TIKHUB=tiktok,curve,network-all, 10 500 appels par jour) : ScrapeCreators ne compte que ses ~300 crédits — palier « normal », pas « economie »", async () => {
+    process.env.SCRAPECREATORS_API_KEY = "cle-sc-de-test";
+    process.env.TIKHUB_API_KEY = "cle-de-test";
+    process.env.RADAR_TIKHUB = "tiktok,curve,network-all";
+    const rows = days.flatMap((d) => [row(d, "tiktok", { credits: 2, thCalls: 930, thUsd: 0.93 }), row(d, "network", { credits: 95, thCalls: 10_500, thUsd: 10.5 }), ...rest(d)]);
+    const { st, b, admin } = await state(rows, 5_000);
+    expect(st.balance?.perDay).toBe(2 + 95 + 120 + 45 + 40);
+    expect(b.tier).toBe("normal");
     expect(admin.tier).toBe("normal");
   });
 });

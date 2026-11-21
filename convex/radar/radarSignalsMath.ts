@@ -796,30 +796,50 @@ export function recentPerDay(usage: readonly UsageRow[], today: string, days = 3
 }
 
 /**
+ * Les postes que TikHub ne sert JAMAIS en entier, même réglés chez lui (radarProviders.posteProviders, passProvider) : le
+ * réseau (ses passes par date ; sous `network`, aussi le hashtag FR et le mot-clé sans région) et la recherche (les
+ * tournures, radarNaming, comptées au poste « search », restent chez ScrapeCreators).
+ */
+export const MIXED_POSTES: readonly PosteKey[] = ["network", "search"];
+/** Une ligne d'usage écrite par un passage basculé : dépense ou replis TikHub. */
+const servedByTh = (u: UsageRow): boolean => hasTh(u) || u.thFallbacks !== undefined;
+
+/**
  * Le rythme du solde TikHub : la dépense moyenne par jour, EN UNITÉS, des postes que TikHub sert (`providers`), sur les
  * jours complets les plus récents (cf `recentPerDay`) — quel que soit le fournisseur qui les a servis ce jour-là : un
  * crédit ScrapeCreators et un appel TikHub lisent la même page (banc du 20/11/2026), et le budget compte déjà les deux
- * dans la même quantité du poste (`usageUnits`). Le réseau, mixte (radarProviders.passProvider), compte en entier :
- * une borne haute, qui fait baisser le palier un peu plus tôt, jamais plus tard. `null` quand aucun poste n'est chez
- * TikHub (rien à juger), ou sans aucun jour complet.
+ * dans la même quantité du poste (`usageUnits`). Un poste mixte (MIXED_POSTES) ne compte en entier que les jours sans
+ * champ TikHub (avant la bascule : une borne haute, qui fait baisser le palier un peu plus tôt, jamais plus tard) ; une
+ * ligne qui porte des champs TikHub dit la part de TikHub ce jour-là : ses appels, et ses replis (des appels qui lui
+ * étaient destinés), pas les crédits que ScrapeCreators sert de toute façon (passes par date, tournures). `null` quand
+ * aucun poste n'est chez TikHub (rien à juger), ou sans aucun jour complet.
  * Corrigé le 20/11/2026 : on comptait les seuls appels TikHub de chaque jour. Un jour d'avant la bascule (aucun champ
  * TikHub) comptait pour 0 — un zéro fabriqué, « non mesuré » devenu « nul » — et le jour de la bascule pour ses seules
  * heures chez TikHub : le lendemain, 167 appels par jour au lieu de ~1 000, 9 jours de solde au lieu de 1,5, le palier
  * « normal » au lieu d'« economie » ; de même pendant 3 jours après chaque réactivation de RADAR_TIKHUB.
+ * Corrigé le 21/11/2026 : le réseau comptait en entier les jours basculés, crédits ScrapeCreators de ses passes par
+ * date compris.
  */
 export function thPerDay(usage: readonly UsageRow[], today: string, providers: Partial<Record<PosteKey, Provider>>, days = 3): number | null {
   const served = (poste: string) => isPosteKey(poste) && providers[poste] === "tikhub";
   if (!POSTE_KEYS.some(served)) return null;
-  return recentPerDay(usage, today, days, (u) => (served(u.poste) ? usageUnits(u) : 0));
+  const share = (u: UsageRow): number => {
+    if (!served(u.poste)) return 0;
+    if (MIXED_POSTES.includes(u.poste as PosteKey) && servedByTh(u)) return (u.thCalls ?? 0) + (u.thUnknown ?? 0) + (u.thFallbacks ?? 0);
+    return usageUnits(u);
+  };
+  return recentPerDay(usage, today, days, share);
 }
 
 /**
  * Le rythme du solde ScrapeCreators, le pendant de `thPerDay` : la dépense moyenne par jour, EN UNITÉS, de ce que
- * ScrapeCreators sert sous le réglage en cours, sur les jours complets les plus récents (cf `recentPerDay`).
- *  - Un poste qu'il sert, en entier ou en partie, compte toutes ses unités, quel que soit le fournisseur qui les a
- *    servies ce jour-là. Le réseau et la recherche restent mixtes chez TikHub (passes par date, tournures) : comptés en
- *    entier, une borne haute, comme le réseau dans `thPerDay` — le palier baisse un peu plus tôt, jamais plus tard.
- *  - Un poste que TikHub sert EN ENTIER (`thOnly`, radarProviders.thOnlyPostes : relevés, courbe) ne compte que ce que
+ * ScrapeCreators sert sous le réglage en cours (`providers`), sur les jours complets les plus récents (cf `recentPerDay`).
+ *  - Un poste qu'il sert en entier compte toutes ses unités, quel que soit le fournisseur qui les a servies ce jour-là
+ *    (au retour en arrière, les appels TikHub d'hier sont ce qu'il servira).
+ *  - Un poste mixte réglé chez TikHub (MIXED_POSTES : réseau, recherche) compte ses crédits : exactement la part de
+ *    ScrapeCreators une ligne qui porte des champs TikHub, replis compris (ils sont servis par lui) ; une ligne d'avant
+ *    la bascule, en entier (ses crédits sont toutes ses unités) — une borne haute.
+ *  - Un poste que TikHub sert EN ENTIER (relevés, courbe : réglés chez lui, hors MIXED_POSTES) ne compte que ce que
  *    ScrapeCreators lui a réellement servi les jours où il passait chez TikHub (replis, sonde : les `credits` d'une
  *    ligne qui porte de la dépense ou des replis TikHub). Un jour d'avant la bascule ne mesure pas ce que
  *    ScrapeCreators lui servirait sous ce réglage : il n'y compte pas. Hypothèse assumée : sans échec de TikHub, aucun
@@ -830,10 +850,17 @@ export function thPerDay(usage: readonly UsageRow[], today: string, providers: P
  * « survie » à tort : transcriptions, tournures, routine du réseau et porte de repli coupées) ; revenir en arrière
  * (RADAR_TIKHUB retiré) le laissait à ~205 pour ~1 150 (palier « normal » à tort : la réserve, que partagent les
  * relevés de la paie de Jarvia, n'était plus protégée par les paliers).
+ * Corrigé le 21/11/2026 : un poste mixte comptait en entier, appels TikHub compris — un jour de rattrapage du réseau
+ * chez TikHub (10 500 appels, ~300 crédits ScrapeCreators) faisait passer ScrapeCreators en « economie » : tournures,
+ * transcriptions payantes et pubs coupées, porte de repli fermée, recherches complètes du réseau reportées.
  */
-export function scPerDay(usage: readonly UsageRow[], today: string, thOnly: readonly PosteKey[], days = 3): number | null {
-  const servedByTh = (u: UsageRow) => hasTh(u) || u.thFallbacks !== undefined;
-  return recentPerDay(usage, today, days, (u) => (isPosteKey(u.poste) && thOnly.includes(u.poste) ? (servedByTh(u) ? u.credits : 0) : usageUnits(u)));
+export function scPerDay(usage: readonly UsageRow[], today: string, providers: Partial<Record<PosteKey, Provider>>, days = 3): number | null {
+  const share = (u: UsageRow): number => {
+    if (!isPosteKey(u.poste) || providers[u.poste] !== "tikhub") return usageUnits(u);
+    if (MIXED_POSTES.includes(u.poste)) return u.credits;
+    return servedByTh(u) ? u.credits : 0;
+  };
+  return recentPerDay(usage, today, days, share);
 }
 
 /** Sous ce nombre de jours de crédits, Telegram prévient (une fois par jour). */

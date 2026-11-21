@@ -80,7 +80,7 @@ import { CURVE_FREE, curveSaved, curveTally, noFansMatch, readCurvePages, scRefu
 import { keptFirst } from "./radarCreatorsMath";
 import { scKeyPresent, scSearchKeyword, scVideoInfo } from "./scrapeCreatorsApi";
 import { TH_ROUTES, thKeyPresent, thSearchKeyword, thVideoInfo, type ThPrices } from "./tikhubApi";
-import { FALLBACK_SC_PER_DAY, PassBook, canCall, fallbackClaimer, makeRouter, passGate, passLimit, posteProvider, posteProviders, spendUnits, thOnlyPostes, tikhubJobs, type ThJob } from "./radarProviders";
+import { FALLBACK_SC_PER_DAY, PassBook, canCall, fallbackClaimer, makeRouter, passGate, passLimit, posteProvider, posteProviders, spendUnits, tikhubJobs, type ThJob } from "./radarProviders";
 
 const DAY = 86_400_000;
 
@@ -729,7 +729,7 @@ export const jobState = internalQuery({
       day,
       month,
       // Le rythme de ScrapeCreators : ce qu'il sert sous le réglage en cours (radarSignalsMath.scPerDay, 20/11/2026).
-      balance: remaining !== undefined ? { remaining, seenAt: settings?.creditsSeenAt ?? 0, now, perDay: scPerDay(recentUsage, day, thOnlyPostes(jobs)) } : null,
+      balance: remaining !== undefined ? { remaining, seenAt: settings?.creditsSeenAt ?? 0, now, perDay: scPerDay(recentUsage, day, posteProviders(jobs)) } : null,
       creditAlerted: {
         ...(settings?.lowCreditsAlertDay ? { low: settings.lowCreditsAlertDay } : {}),
         ...(settings?.economieAlertDay ? { economie: settings.economieAlertDay } : {}),
@@ -1389,7 +1389,7 @@ export async function getRadarBudgetCore(ctx: ProjectQueryCtx) {
   // Les deux fournisseurs ne jugent le budget que quand la bascule TikHub est posée (radarProviders.tikhubJobs).
   const jobs = tikhubJobs();
   const today = dayKeyParis(now);
-  const perDay = scPerDay(recent.map(jobUsage), today, thOnlyPostes(jobs));
+  const perDay = scPerDay(recent.map(jobUsage), today, posteProviders(jobs));
   const providers = posteProviders(jobs);
   const th = jobs.size ? thStored(settings, recent.map(jobUsage), today, providers) : null;
   const scBalance = remaining !== undefined ? { remaining, seenAt: settings?.creditsSeenAt ?? 0, now, perDay } : null;

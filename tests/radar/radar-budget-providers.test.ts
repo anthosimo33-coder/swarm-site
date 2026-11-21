@@ -117,9 +117,31 @@ describe("poste servi par TikHub", () => {
     expect(thPerDay(usage.filter((u) => u.day === "2026-11-19"), "2026-11-19", { tiktok: "tikhub" })).toBeNull();
   });
 
+  // Un poste MIXTE (réseau, recherche : TikHub ne le sert jamais en entier) n'est compté en entier que les jours sans
+  // champ TikHub (avant la bascule : une borne haute). Une ligne qui porte des champs TikHub donne la part de chacun ce
+  // jour-là : à ScrapeCreators ses crédits, replis compris (il les a servis) ; à TikHub ses appels et ses replis (des
+  // appels qui lui étaient destinés : une borne haute, comme pour les relevés). Corrigé le 21/11/2026 : chaque fournisseur comptait la dépense de l'autre — un jour de rattrapage du réseau
+  // chez TikHub (10 500 appels) passait ScrapeCreators, qui n'en avait dépensé que 300, au palier « economie ».
+  it("le réseau, mixte : chaque fournisseur ne compte que sa part d'une ligne qui porte des champs TikHub ; une ligne d'avant la bascule, en entier", () => {
+    const usage: UsageRow[] = [
+      // Le 19 : passes par date chez ScrapeCreators (300 crédits, dont 20 replis), le reste chez TikHub (10 500 appels).
+      { poste: "network", credits: 300, thCalls: 10_500, thUnknown: 4, thFallbacks: 20, day: "2026-11-19" },
+      { poste: "insta", credits: 120, day: "2026-11-19" },
+      // Le 18 : avant la bascule, tout le réseau chez ScrapeCreators.
+      { poste: "network", credits: 900, day: "2026-11-18" },
+    ];
+    const today = "2026-11-20";
+    const providers = { network: "tikhub" } as const;
+    expect(scPerDay(usage, today, providers)).toBe((300 + 120 + 900) / 2);
+    expect(thPerDay(usage, today, providers)).toBe((10_504 + 20 + 900) / 2);
+    // Sans réglage (retour en arrière) : ScrapeCreators sert tout le réseau, TikHub plus rien.
+    expect(scPerDay(usage, today, {})).toBe((10_804 + 120 + 900) / 2);
+  });
+
   it("le rythme de ScrapeCreators : les unités de ce qu'il sert sous le réglage en cours ; d'un poste que TikHub sert en entier, ce qu'il lui a servi les jours chez TikHub (replis), rien d'avant la bascule", () => {
     const usage: UsageRow[] = [
-      // Le 19 : relevés chez TikHub, 30 replis chez ScrapeCreators ; réseau mixte (20 crédits, 25 appels TikHub).
+      // Le 19 : relevés chez TikHub, 30 replis chez ScrapeCreators ; réseau chez ScrapeCreators (il l'était ce jour-là
+      // en partie chez TikHub : 20 crédits, 25 appels).
       { poste: "tiktok", credits: 30, thCalls: 900, thUnknown: 3, thFallbacks: 30, day: "2026-11-19" },
       { poste: "network", credits: 20, thCalls: 25, day: "2026-11-19" },
       { poste: "insta", credits: 120, day: "2026-11-19" },
@@ -131,14 +153,16 @@ describe("poste servi par TikHub", () => {
     ];
     const today = "2026-11-20";
     // Sans réglage (ou retour en arrière) : toutes les unités, appels TikHub compris — ScrapeCreators sert tout.
-    expect(scPerDay(usage, today, [])).toBe((933 + 45 + 120 + 7 + 1_080) / 3);
+    expect(scPerDay(usage, today, {})).toBe((933 + 45 + 120 + 7 + 1_080) / 3);
     // Relevés et courbe chez TikHub : leurs replis mesurés (30 le 19, 7 le 18), rien des relevés du 17 ; le réseau,
-    // mixte, en entier (borne haute).
-    expect(scPerDay(usage, today, ["tiktok", "curve"])).toBe((30 + 45 + 120 + 7 + 80) / 3);
+    // chez ScrapeCreators sous ce réglage, en entier (ses appels TikHub du 19 sont ce qu'il lui servira).
+    expect(scPerDay(usage, today, { tiktok: "tikhub", curve: "tikhub" })).toBe((30 + 45 + 120 + 7 + 80) / 3);
+    // Le réseau aussi chez TikHub (mixte) : ScrapeCreators n'en compte que ses 20 crédits du 19.
+    expect(scPerDay(usage, today, { tiktok: "tikhub", curve: "tikhub", network: "tikhub" })).toBe((30 + 20 + 120 + 7 + 80) / 3);
     // Sans aucune ligne TikHub ni réglage : les crédits, exactement le rythme d'avant le 20/11/2026.
     const before = usage.filter((u) => u.day === "2026-11-17");
-    expect(scPerDay(before, today, [])).toBe(recentPerDay(before, today));
-    expect(scPerDay([], today, ["tiktok"])).toBeNull();
+    expect(scPerDay(before, today, {})).toBe(recentPerDay(before, today));
+    expect(scPerDay([], today, { tiktok: "tikhub" })).toBeNull();
   });
 });
 
