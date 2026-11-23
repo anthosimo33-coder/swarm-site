@@ -38,15 +38,15 @@ export default class MPalette extends DCLogic {
       AP = S.apps.map((a) => { const full = byApp[a.slug];
         const covs = full ? (full.top || []).filter((t) => t.cover).map((t) => ({ src: t.cover, v: nf(t.views) })) : [];
         return Object.assign({ k: 'app', n: a.name, niche: a.niche || '', mk: full ? flags(full.markets.map((x) => x[0])) : [], v30: nf(a.views30 || 0), acc: full && typeof full.accounts === 'number' ? full.accounts.toLocaleString('en-US').replace(/,/g, '\u202f') : '—',
-          hasCov: covs.length > 0, covs, href: '/app/apps/' + a.slug, key: a.name + ' ' + (a.niche || '') }, ico(a)); });
+          hasCov: covs.length > 0, covs, id: a.slug, href: '/app/apps/' + a.slug, key: a.name + ' ' + (a.niche || '') }, ico(a)); });
       FM = S.formats.map((f) => { const full = byFmt[f.id]; const hook = f.kind !== 'sound';
         return { k: 'fm', t: hook ? '« ' + f.label + ' »' : 'Son « ' + f.label + ' »', kind: hook ? 'Accroche' : 'Son', ico: hook ? TXT : SON,
           sub: [hook ? 'Accroche' : 'Son', f.accounts + ' comptes', full && full.medX ? xf(full.medX) + ' la normale' : ''].filter(Boolean).join(' · '),
-          href: '/app/formats/' + f.id, key: f.label }; });
+          id: f.id, href: '/app/formats/' + f.id, key: f.label }; });
       // Les créateurs de l'index, par documents de 4 000 : « search », puis « search:creators:2 », « :3 »… (16/11).
       const SC = SC0;
       CR = (S.creators || []).concat(...SC.map((d) => (d && d.creators) || [])).map((c) => ({ av: c.avatar || '', noav: true, handle: c.handle, k: 'cr', h: '@' + c.handle, s: [c.app, nf(c.fans || 0) + ' abonnés', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
-        href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || '') }));
+        id: c.handle, href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || '') }));
       [AP, FM, CR].forEach((L) => L.forEach((x) => { x._n = String(x.key || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }));
       this.constructor._ix = { docs, AP, FM, CR };
       }
@@ -75,14 +75,25 @@ export default class MPalette extends DCLogic {
       cc = Object.assign({}, crHit, { av: crHit.av || (d && d.avatar) || '', noav: true, covs, hasCov: covs.length > 0,
         ryt: p7 === null ? (crHit.ryt || '—') : p7 ? (p7 >= 30 ? 'au moins 30 vidéos' : p7 + (p7 > 1 ? ' vidéos' : ' vidéo')) + ' en 7 j' : 'Rien en 7 j' }); // 30 = au moins 30 (7C)
     }
+    const KIND = { app: 'app', cr: 'creator', fm: 'format' };
+    const opener = (x) => () => { if (x && x.id && KIND[x.k] && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('kopycat:opened', { detail: { kind: KIND[x.k], id: x.id } })); };
+    const withOpen = (L) => L.map((x) => Object.assign({}, x, { open: opener(x) }));
+    // Ouverts récemment (maquette 9B, 24/11) : sans recherche, les deux dernières fiches ouvertes d'ici (préférence
+    // `recent`, src/app/recent.js), chiffres du jour pris dans l'index ; une fiche sortie de l'index n'est plus montrée.
+    const RS = !nq && S && S.apps ? get('saved:recent') : null;
+    const want = (k) => scope === 'tout' || scope === k;
+    const LR = { app: [AP, 'apps'], creator: [CR, 'createurs'], format: [FM, 'formats'] };
+    const rec = Array.isArray(RS) ? RS.map((r) => (LR[r.kind] && want(LR[r.kind][1]) ? LR[r.kind][0].find((x) => x.id === r.id) : null)).filter(Boolean).map((x) => ({
+      href: x.href, open: opener(x), isApp: x.k === 'app', isCr: x.k === 'cr', isFm: x.k === 'fm', logo: x.logo || '', nologo: !!x.nologo, blank: x.blank || '', av: x.av || '', ico: x.ico || '',
+      nm: x.k === 'cr' ? x.h : x.k === 'fm' ? x.t : x.n, sub: x.k === 'cr' ? x.s : x.k === 'fm' ? x.sub : (x.niche ? x.niche + ' · ' : '') + x.v30 + ' vues en 30 j' })) : [];
     const close = () => { if (this.props.onClose) this.props.onClose(); };
     return {
-      q, close, onQ: (e) => this.setState({ q: e.target.value }), setInput: (el) => { this.inp = el; },
+      q, close, rec, hasRec: rec.length > 0, onQ: (e) => this.setState({ q: e.target.value }), setInput: (el) => { this.inp = el; },
       keys: (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } },
       scopes: [['tout', 'Tout'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs']].map((s) => ({ l: s[1], on: s[0] === scope ? 'true' : 'false', pick: () => this.setState({ scope: s[0] }) })),
-      apps: apps.slice(cur && nq ? 1 : 0), fms, crs: crHit ? crs.slice(1) : crs, pc: !!crHit, cc, hasApps: apps.length > (cur && nq ? 1 : 0), hasFms: fms.length > 0, hasCrs: crs.length > (crHit ? 1 : 0),
+      apps: withOpen(apps.slice(cur && nq ? 1 : 0)), fms: withOpen(fms), crs: withOpen(crHit ? crs.slice(1) : crs), pc: !!crHit, cc: Object.assign({}, cc, { open: opener(crHit) }), hasApps: apps.length > (cur && nq ? 1 : 0), hasFms: fms.length > 0, hasCrs: crs.length > (crHit ? 1 : 0),
       gApps: nq ? 'Autres apps' : 'Les plus vues en 30 jours', gFms: nq ? 'Formats' : 'Formats de la semaine', gCrs: nq ? 'Créateurs' : 'Créateurs à suivre',
-      pa: !!cur && !!nq, cur: cur || {}, none: apps.length + fms.length + crs.length === 0
+      pa: !!cur && !!nq, cur: Object.assign({}, cur || {}, { open: opener(cur) }), none: apps.length + fms.length + crs.length === 0
     };
   }
 
@@ -121,7 +132,7 @@ export default class MPalette extends DCLogic {
         ] : null,
         $h("div", { "style": "padding: 0 16px 32px;" },
           ($v.pa) ? [
-            $h("a", { "href": $u($v.cur?.href), "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u($v.cur?.href), "onClick": $v.cur?.open, "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
               $h("span", { "style": "display: flex; align-items: center; gap: 12px;" },
                 $h("span", { "class": `sw-app-icon ${$t($v.cur?.blank)}`, "style": "width: 52px; height: 52px; border-radius: 15px;" },
                   ($v.cur?.logo) ? [
@@ -191,7 +202,7 @@ export default class MPalette extends DCLogic {
             )
           ] : null,
           ($v.pc) ? [
-            $h("a", { "href": $u($v.cc?.href), "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
+            $h("a", { "href": $u($v.cc?.href), "onClick": $v.cc?.open, "class": "sw-card is-featured", "style": "margin-top: 12px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit;" },
               $h("span", { "style": "display: flex; align-items: center; gap: 12px;" },
                 $h("span", { "style": "width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   ($v.cc?.av) ? [
@@ -242,6 +253,59 @@ export default class MPalette extends DCLogic {
               )
             )
           ] : null,
+          ($v.hasRec) ? [
+            $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 18px 0 4px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
+              $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
+                $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+              ),
+              "Ouverts récemment"
+            ),
+            ($l($v.rec)).map((r) => [
+              $h("a", { "href": $u(r?.href), "onClick": r?.open, "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+                (r?.isApp) ? [
+                  $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 40px; height: 40px; border-radius: 12px;" },
+                    (r?.logo) ? [
+                      $h("img", { "class": "sw-logo-img", "src": $u(r?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
+                    ] : null,
+                    (r?.nologo) ? [
+                      $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                        $h("path", { "d": "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      )
+                    ] : null
+                  )
+                ] : null,
+                (r?.isCr) ? [
+                  $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
+                    (r?.av) ? [
+                      $h("img", { "src": $u(r?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })
+                    ] : null,
+                    $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("circle", { "cx": "12", "cy": "9", "r": "4", "fill": "#3A4558" }),
+                      $h("path", { "d": "M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4", "fill": "#3A4558" })
+                    )
+                  )
+                ] : null,
+                (r?.isFm) ? [
+                  $h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--track); color: var(--ink-muted);" },
+                    $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                      $h("path", { "d": r?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                    )
+                  )
+                ] : null,
+                $h("span", { "style": "flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;" },
+                  $h("span", { "style": "font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                    $t(r?.nm)
+                  ),
+                  $h("span", { "style": "font-size: 13px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                    $t(r?.sub)
+                  )
+                ),
+                $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "color: var(--ink-faint); flex-shrink: 0;" },
+                  $h("path", { "d": "M9 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                )
+              )
+            ])
+          ] : null,
           ($v.hasApps) ? [
             $h("span", { "style": "display: flex; align-items: center; gap: 8px; padding: 18px 0 4px; font-size: 13px; font-weight: 600; color: var(--ink-muted);" },
               $h("svg", { "width": "15", "height": "15", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: var(--ink-faint);" },
@@ -250,7 +314,7 @@ export default class MPalette extends DCLogic {
               $t($v.gApps)
             ),
             ($l($v.apps)).map((a) => [
-              $h("a", { "href": $u(a?.href), "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+              $h("a", { "href": $u(a?.href), "onClick": a?.open, "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
                 $h("span", { "class": `sw-app-icon ${$t(a?.blank)}`, "style": "width: 40px; height: 40px; border-radius: 12px;" },
                   (a?.logo) ? [
                     $h("img", { "class": "sw-logo-img", "src": $u(a?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
@@ -283,7 +347,7 @@ export default class MPalette extends DCLogic {
               $t($v.gFms)
             ),
             ($l($v.fms)).map((f) => [
-              $h("a", { "href": $u(f?.href), "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+              $h("a", { "href": $u(f?.href), "onClick": f?.open, "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
                 $h("span", { "style": "width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--track); color: var(--ink-soft);" },
                   $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": f?.ico, "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -311,7 +375,7 @@ export default class MPalette extends DCLogic {
               $t($v.gCrs)
             ),
             ($l($v.crs)).map((c) => [
-              $h("a", { "href": $u(c?.href), "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
+              $h("a", { "href": $u(c?.href), "onClick": c?.open, "style": "display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit;" },
                 $h("span", { "style": "width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #1B2333, #111724); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10); position: relative;" },
                   (c?.av) ? [
                     $h("img", { "src": $u(c?.av), "alt": "", "style": "position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block;", "loading": "lazy", "decoding": "async" })

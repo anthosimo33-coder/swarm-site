@@ -197,4 +197,26 @@ const has = (f) => fs.existsSync(app(f));
     '1A : le reflet glisse en transform (pas de background-position), absent si l\'on demande moins d\'animations');
 }
 
+// ─── 9B (24/11) : la recherche garde les deux dernières fiches qu'on y a ouvertes ───
+{
+  ok(has('recent.js'), '9B : module src/app/recent.js présent');
+  if (has('recent.js')) {
+    const { pushRecent, RECENT_MAX } = await import(app('recent.js'));
+    const a = pushRecent(null, { kind: 'app', id: 'diane-ai' }, 1);
+    const b = pushRecent(a, { kind: 'creator', id: 'fantine.diane' }, 2);
+    const c = pushRecent(b, { kind: 'format', id: 'f1' }, 3);
+    const d = pushRecent(c, { kind: 'creator', id: 'fantine.diane' }, 4);
+    const ids = (l) => (l || []).map((x) => x.kind + ':' + x.id).join(' ');
+    ok(RECENT_MAX === 2 && ids(b) === 'creator:fantine.diane app:diane-ai' && ids(c) === 'format:f1 creator:fantine.diane',
+      `9B : la plus récente en tête, deux au plus (${ids(c)})`);
+    ok(ids(d) === 'creator:fantine.diane format:f1' && d[0].at === 4, `9B : rouvrir une fiche la remonte sans doublon (${ids(d)})`);
+    ok(pushRecent(b, { kind: 'video', id: 'x' }, 5) === null && pushRecent(b, { kind: 'app', id: '' }, 5) === null, '9B : une sorte inconnue ou un id vide ne s\'écrit pas');
+  }
+  ok(/SAVED = \[[^\]]*'recent'/.test(main) && /connectRecent\(\{ read: \(\) => savedEntry\('recent'\)\.value/.test(main) && /key\.startsWith\('saved:'\)/.test(main),
+    '9B : le routeur charge la clé recent, branche recent.js et laisse la recherche la lire par get(\'saved:recent\')');
+  const pal = fs.readFileSync(path.join(root, 'design/app/Palette.dc.html'), 'utf8'), mpal = fs.readFileSync(path.join(root, 'design/app/MPalette.dc.html'), 'utf8');
+  ok([pal, mpal].every((t) => /get\('saved:recent'\)/.test(t) && /kopycat:opened/.test(t) && /Ouverts récemment/.test(t)),
+    '9B : ordinateur et téléphone lisent les ouverts récemment et annoncent chaque fiche ouverte');
+}
+
 end();

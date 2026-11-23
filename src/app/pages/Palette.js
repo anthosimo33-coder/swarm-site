@@ -38,6 +38,7 @@ export default class Palette extends DCLogic {
     const scope = st.scope || 'tout';
     const nq = norm(q.trim());
     const needCr = !!nq || scope === 'createurs';
+    let ixNow = null; // l'index en cours (site seulement)
     if (real) {
       const AD = get('apps'), FD = get('formats');
       // Les créateurs de l'index, par documents de 4 000 : « search », puis « search:creators:2 », « :3 »… (16/11).
@@ -46,7 +47,7 @@ export default class Palette extends DCLogic {
       const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
       const crOf = (c) => ({ k: 'cr', av: c.avatar || '', h: '@' + c.handle, handle: c.handle,
         sub: [c.app ? 'pousse ' + c.app : '', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
-        href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || ''), _n: norm('@' + c.handle + ' ' + (c.app || '')) });
+        id: c.handle, href: '/app/createurs/' + c.handle, key: '@' + c.handle + ' ' + (c.app || ''), _n: norm('@' + c.handle + ' ' + (c.app || '')) });
       const allCr = () => (S.creators || []).concat(...SC.map((d) => (d && d.creators) || [])).map(crOf);
       let ix = this.constructor._ix;
       if (ix && ix.docs.length === docs.length && ix.docs.every((d, i) => d === docs[i])) {
@@ -64,7 +65,7 @@ export default class Palette extends DCLogic {
           // La grande carte (comptes, vidéos par semaine, variation, vignettes) se met en forme à l'affichage, pour une app.
           return { k: 'app', n: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', full: full || null,
             v30: nf(a.views30 || 0), sub: (a.niche ? a.niche + ' · ' : '') + nf(a.views30 || 0) + ' vues en 30 j',
-            href: '/app/apps/' + a.slug, key: a.name + ' ' + (a.niche || '') };
+            id: a.slug, href: '/app/apps/' + a.slug, key: a.name + ' ' + (a.niche || '') };
         });
         FM = (S.formats || []).map((f) => {
           const full = byFmt[f.id];
@@ -72,7 +73,7 @@ export default class Palette extends DCLogic {
           const names = full && full.apps ? full.apps.filter(Boolean).map((a) => a.name) : [];
           return { k: 'fm', t: f.kind === 'sound' ? f.label : '« ' + f.label + ' »', ico: ICO[f.kind] || ICO.hook,
             sub: kind + ' · ' + f.accounts + ' comptes' + (full && full.medX ? ' · ' + xf(full.medX) + ' la normale' : ''),
-            href: '/app/formats/' + f.id, key: f.label + ' ' + names.join(' ') + ' ' + ((full && full.niche) || '') };
+            id: f.id, href: '/app/formats/' + f.id, key: f.label + ' ' + names.join(' ') + ' ' + ((full && full.niche) || '') };
         });
         [AP, FM].forEach((L) => L.forEach((x) => { x._n = norm(x.key); }));
         // Sans recherche, seuls les 3 premiers créateurs s'affichent : le reste attend un temps mort (componentDidMount),
@@ -83,6 +84,7 @@ export default class Palette extends DCLogic {
         this.constructor._ix = ix;
         CR = ix.CR;
       }
+      ixNow = this.constructor._ix;
     } else {
       // Le canevas : l'exemple, mis à la forme des données du site.
       AP = AP.map((a) => Object.assign({}, a, { sub: a.niche + ' · ' + a.v30 + ' vues en 30 j' }));
@@ -94,6 +96,15 @@ export default class Palette extends DCLogic {
     let apps = want('apps') ? AP.filter(hit) : [];
     let crs = want('createurs') ? CR.filter(hit) : [];
     let fms = want('formats') ? FM.filter(hit) : [];
+    // Ouverts récemment (maquette 9B, 24/11) : sans recherche, les deux dernières fiches ouvertes d'ici (préférence
+    // `recent`, src/app/recent.js), avec leurs chiffres du jour pris dans l'index ; une fiche sortie de l'index n'est plus montrée.
+    const RS = real && !nq ? get('saved:recent') : null;
+    let rec = [];
+    if (Array.isArray(RS) && RS.length && ixNow) {
+      if (RS.some((r) => r.kind === 'creator') && ixNow.fill) { ixNow.fill(); CR = ixNow.CR; }
+      const L = { app: [AP, 'apps'], creator: [CR, 'createurs'], format: [FM, 'formats'] };
+      rec = RS.map((r) => L[r.kind] && want(L[r.kind][1]) ? L[r.kind][0].find((x) => x.id === r.id) : null).filter(Boolean);
+    }
     const total = apps.length + crs.length + fms.length;
     // Une recherche : la première app trouvée en grande carte, puis les autres groupes. Sans recherche : les plus vues.
     const big = nq && apps.length ? apps[0] : null;
@@ -112,13 +123,15 @@ export default class Palette extends DCLogic {
       const a = at[p], b = (at[p + nq.length - 1] || a) + 1;
       return [{ t: t.slice(0, a), c: '' }, { t: t.slice(a, b), c: 'pal-hl' }, { t: t.slice(b), c: '' }].filter((s) => s.t);
     };
-    const flat = [].concat(big ? [big] : [], apps, crs, fms);
+    const flat = [].concat(big ? [big] : [], rec, apps, crs, fms);
     const sel = Math.min(st.sel || 0, Math.max(0, flat.length - 1));
     let at = 0;
     const row = (x) => {
       const i = at++;
       const on = i === sel;
+      const kind = { app: 'app', cr: 'creator', fm: 'format' }[x.k];
       return { sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', edge: on ? 'var(--accent-edge)' : 'var(--card-edge)', href: x.href,
+        open: () => { if (x.id && kind && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('kopycat:opened', { detail: { kind, id: x.id } })); },
         hover: () => { if ((this.state || {}).sel !== i) this.setState({ sel: i }); },
         isApp: x.k === 'app', isCr: x.k === 'cr', isFm: x.k === 'fm', logo: x.logo, nologo: x.nologo, blank: x.blank, av: x.av || '', ini: x.h ? (Array.from(x.h.slice(1))[0] || '').toUpperCase() : '', ico: x.ico,
         nm: cut(x.k === 'cr' ? x.h : x.k === 'fm' ? x.t : x.n), sub: cut(x.sub) };
@@ -136,10 +149,11 @@ export default class Palette extends DCLogic {
         delta: d === null ? '' : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%', dInk: d !== null && d >= 0 ? '#5CD394' : '#FF9A9A', hasCov: covs.length > 0, covs });
     }
     const groups = [
+      [rec, 'Ouverts récemment', true],
       [apps, nq ? 'Autres apps' : 'Les plus vues en 30 jours'],
       [crs, nq ? 'Créateurs' : (real ? 'Les plus vus' : 'Créateurs à suivre')],
       [fms, nq ? 'Formats' : (real ? 'Les plus repris' : 'Formats de la semaine')],
-    ].filter((g) => g[0].length).map((g) => ({ l: g[1], rows: g[0].map(row) }));
+    ].filter((g) => g[0].length).map((g) => ({ l: g[1], ic: !!g[2], rows: g[0].map(row) }));
     const close = () => { if (this.props.onClose) this.props.onClose(); };
     const scopes = [['tout', 'Tout'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs']]
       .map((s) => ({ l: s[1], on: s[0] === scope ? 'true' : 'false', pick: () => this.setState({ scope: s[0], sel: 0 }) }));
@@ -199,7 +213,7 @@ export default class Palette extends DCLogic {
                 )
               ] : null,
               ($v.pa) ? [
-                $h("a", { "class": "pal-row", "data-sel": $v.big?.sel, "href": $u($v.big?.href), "onMouseEnter": $v.big?.hover, "style": `display: flex; align-items: center; gap: 16px; margin: 0 16px 6px; padding: 16px; border-radius: 18px; text-decoration: none; color: inherit; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px ${$t($v.big?.edge)};` },
+                $h("a", { "class": "pal-row", "data-sel": $v.big?.sel, "href": $u($v.big?.href), "onClick": $v.big?.open, "onMouseEnter": $v.big?.hover, "style": `display: flex; align-items: center; gap: 16px; margin: 0 16px 6px; padding: 16px; border-radius: 18px; text-decoration: none; color: inherit; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px ${$t($v.big?.edge)};` },
                   $h("span", { "class": `sw-app-icon ${$t($v.big?.blank)}`, "style": "width: 56px; height: 56px; border-radius: 15px; align-self: flex-start;" },
                     ($v.big?.logo) ? [
                       $h("img", { "class": "sw-logo-img", "src": $u($v.big?.logo), "alt": "", "loading": "lazy", "decoding": "async" })
@@ -255,11 +269,16 @@ export default class Palette extends DCLogic {
               ] : null,
               ($l($v.groups)).map((g) => [
                 $h("div", { "style": "padding: 10px 16px 0;" },
-                  $h("span", { "style": "display: block; padding: 4px 4px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);" },
+                  $h("span", { "style": "display: flex; align-items: center; gap: 7px; padding: 4px 4px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);" },
+                    (g?.ic) ? [
+                      $h("svg", { "width": "13", "height": "13", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                        $h("path", { "d": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                      )
+                    ] : null,
                     $t(g?.l)
                   ),
                   ($l(g?.rows)).map((r) => [
-                    $h("a", { "class": "pal-row", "data-sel": r?.sel, "href": $u(r?.href), "onMouseEnter": r?.hover, "style": `display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 12px 8px 4px; margin: 0 -4px 0 0; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(r?.bg)};` },
+                    $h("a", { "class": "pal-row", "data-sel": r?.sel, "href": $u(r?.href), "onClick": r?.open, "onMouseEnter": r?.hover, "style": `display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 12px 8px 4px; margin: 0 -4px 0 0; border-radius: 12px; text-decoration: none; color: inherit; background: ${$t(r?.bg)};` },
                       (r?.isApp) ? [
                         $h("span", { "class": `sw-app-icon ${$t(r?.blank)}`, "style": "width: 32px; height: 32px; border-radius: 9px;" },
                           (r?.logo) ? [

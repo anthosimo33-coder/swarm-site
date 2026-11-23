@@ -33,6 +33,8 @@ import './pull.js';
 // Ordinateur : glisser une ligne ou une carte vers un dossier ; les explications au survol (voir les fichiers).
 import { connectFolders } from './drag.js';
 import './hint.js';
+// La recherche : les deux dernières fiches qu'on y a ouvertes (maquette 9B, voir le fichier).
+import { connectRecent } from './recent.js';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { useAuthActions } from '@convex-dev/auth/react';
@@ -112,7 +114,7 @@ const here = () => clean(window.location.pathname) + window.location.search;
 // chiffres. Audit F15 : home, formats, creators:FR et alerts l'étaient aussi, jamais visités pour certains, et chaque
 // réécriture renvoyait ~2,25 Mo par onglet ; ils s'ouvrent maintenant avec leur écran (et se ferment après, F3).
 const WARM = ['apps', 'search', 'stats'];
-const SAVED = ['follows', 'folders', 'alertRules', 'seen', 'views'];
+const SAVED = ['follows', 'folders', 'alertRules', 'seen', 'views', 'recent'];
 
 /** L'adresse -> sa route, ses paramètres (décodés sans lever, audit Q31) et la clé de ses données (src/app/plan.js). */
 const matchRoute = routeMatcher(ROUTES);
@@ -151,6 +153,8 @@ connectFolders({
   write: (value) => save('folders', value),
   listen: (f) => { const e = savedEntry('folders'); e.listeners.add(f); return () => e.listeners.delete(f); },
 });
+// Les deux dernières fiches ouvertes depuis la recherche (src/app/recent.js), rangées dans les préférences du compte.
+connectRecent({ read: () => savedEntry('recent').value, write: (value) => save('recent', value) });
 /** Attend qu'un document soit arrivé (ou absent : null). */
 function ready(key) {
   const entry = board(key);
@@ -515,8 +519,9 @@ function App() {
     const t = setTimeout(() => watcher.sweep(), 0);
     return () => clearTimeout(t);
   }, [screen]);
-  const get = (key) => follow(`board:${key}`, board(key));
   const saved = (key) => follow(`saved:${key}`, savedEntry(key));
+  // `get('saved:recent')` : une préférence lue comme un document (la recherche, ouverte depuis chaque écran, ne reçoit que get).
+  const get = (key) => (key.startsWith('saved:') ? saved(key.slice(6)) : follow(`board:${key}`, board(key)));
 
   // Aperçu : une fiche hors du top 3 (document verrouillé par le serveur) renvoie à Apps, fenêtre ouverte. Seulement
   // sur une adresse ouverte : un écran fermé (Accueil chargé avant que le profil arrive) relève de l'effet précédent.
