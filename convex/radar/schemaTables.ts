@@ -142,6 +142,7 @@ export const radarTables = {
     survieAlertDay: v.optional(v.string()), // jour (Paris) de la dernière alerte « palier survie »
     accountsLeaseUntil: v.optional(v.number()), // un passage de relevé de comptes tourne jusqu'à cette heure (verrou)
     accountsRerun: v.optional(v.boolean()), // un passage a été demandé pendant qu'un autre tournait : relancé à sa fin
+    seedsAt: v.optional(v.number()), // dernier alignement des apps de départ sur le code (radarNetworks.seedApps, une fois par heure)
     rejudgeCursor: v.optional(v.string()), // où reprend le rejugement des comptes en pause (convex/radarNetworks)
     judgeCursor: v.optional(v.string()), // où reprend le jugement IA des comptes à preuve faible (convex/radarJudge)
     judgeCursorV: v.optional(v.number()), // la version du parcours en cours ; une autre version repart du début
