@@ -507,9 +507,22 @@ export const refreshAppNets = internalMutation({
   },
 });
 
+/**
+ * Les apps de départ suivent le code (radarSignals.ensureSeedApps, idempotent) : une fois par heure suffit (24/11/2026).
+ * Le passage de relevés (toutes les 10 min) et la recherche de réseau l'appelaient à chaque fois : ~0,85 Mo lus par
+ * appel (les compteurs de toutes les apps, quand un compte de départ attend une place), ~190 appels par jour. `force` :
+ * tout de suite (lancement à la main, après un changement de la liste de départ).
+ */
+const SEED_EVERY_MS = 60 * 60_000;
 export const seedApps = internalMutation({
-  args: {},
-  handler: async (ctx): Promise<number> => ensureSeedApps(ctx),
+  args: { force: v.optional(v.boolean()) },
+  handler: async (ctx, { force }): Promise<number> => {
+    const s = await ensureSettings(ctx);
+    const now = Date.now();
+    if (!force && s.seedsAt !== undefined && now - s.seedsAt < SEED_EVERY_MS) return 0;
+    await ctx.db.patch(s._id, { seedsAt: now });
+    return ensureSeedApps(ctx);
+  },
 });
 
 /**

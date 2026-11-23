@@ -6,6 +6,7 @@
 //   4. Les empreintes et les clés des pages se lisent dans boardMeta (≈ 100 o par page), jamais dans boards (≈ 1,6 Ko).
 //   5. (21/11) Une étape ne lit que les lignes d'état (carrousels, IA, genre, langues, images) de son groupe.
 //   6. (21/11) Une nuit sur deux : la nuit sautée ne lit rien ; rattrapage si la nuit d'avant a manqué.
+//   7. (24/11) Radar : les apps de départ alignées sur le code une fois par heure, plus à chaque passage de relevés.
 // Usage : npm run test:sync   (ou node scripts/sync-cout.test.mjs <dossier convex>, pour la contre-épreuve)
 import fs from "node:fs";
 import os from "node:os";
@@ -590,6 +591,27 @@ export const jsonSchemaOutputFormat = (x) => x;`;
   const impaire = (j) => Math.floor(Date.parse(`${j}T01:30:00Z`) / 86_400_000) % 2 === 1;
   const alterne = [["2026-11-30", "2026-12-01"], ["2026-12-31", "2027-01-01"], ["2027-02-28", "2027-03-01"]].every(([a, b]) => impaire(a) !== impaire(b));
   ok(alterne, "une nuit sur deux, sans deux nuits de suite au changement de mois ou d'année");
+}
+
+// ─── 24/11 : les apps de départ alignées une fois par heure, plus à chaque passage de relevés ────────────────────────
+{
+  const radar = await load("radar/radarNetworks");
+  const m = memDb();
+  const realNow = Date.now;
+  const H = 3_600_000;
+  const at = (t, f) => { Date.now = () => t; return f().finally(() => { Date.now = realNow; }); };
+  const lus = () => { const r = { ...m.read }; for (const k of Object.keys(m.read)) delete m.read[k]; return r; };
+  const t0 = Date.parse("2026-11-24T10:00:00Z");
+  await at(t0, () => quiet(() => radar.seedApps.handler(m.ctx, {})));
+  const premier = lus();
+  ok((m.tables.radarApps ?? []).length > 0 && premier.radarApps !== undefined, `premier passage : les apps de départ sont créées (${(m.tables.radarApps ?? []).length})`);
+  await at(t0 + 10 * 60_000, () => quiet(() => radar.seedApps.handler(m.ctx, {})));
+  const second = lus();
+  ok(Object.keys(second).join() === "radarSettings", `10 min plus tard : seuls les réglages sont lus (${Object.keys(second).join(", ")})`);
+  await at(t0 + 2 * H, () => quiet(() => radar.seedApps.handler(m.ctx, {})));
+  ok(lus().radarApps !== undefined, "2 h plus tard : les apps de départ sont de nouveau alignées sur le code");
+  await at(t0 + 2 * H + 60_000, () => quiet(() => radar.seedApps.handler(m.ctx, { force: true })));
+  ok(lus().radarApps !== undefined, "force : alignées tout de suite, même dans l'heure");
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });
