@@ -3,7 +3,7 @@ import type { QueryCtx } from "../_generated/server";
 import { MARKET_CURRENCY } from "./radarMarketMath";
 import { citesNormalized, MEDIAN_WINDOW, normalize, videoCitesApp } from "./radarNetworkMath";
 import { storeUrl } from "./radarStoreMath";
-import { proofDetail, VET_MIN_VIDEOS } from "./radarVetMath";
+import { accountProof, proofDetail, staleVideoProof, VET_MIN_VIDEOS, type DatedText } from "./radarVetMath";
 
 /**
  * Les pages de l'export vers Swarm (convex/swarmExport) : ce qui part de chaque table, réduit et filtré. À part des
@@ -209,25 +209,30 @@ export async function appShown(apps: AppsById, id: Id<"radarApps"> | undefined):
   return app.status === "active" && app.trialSince === undefined ? "shown" : "hidden";
 }
 
+/** Relié sans lire une vidéo : pseudo, bio, ajout à la main ou liste de départ. */
+const provenWithoutVideos = (t: Doc<"radarTracked">, app: Doc<"radarApps">): boolean => proofDetail(t.handle, t.bio, [], app, t.matchedBy).by !== null;
+
 /**
- * Le compte est-il relié à son app par sa preuve ? Le même verdict que `proofDetail` sur ses 30 dernières vidéos, lu
- * au plus court (15/11/2026 : les 88 pages de `tracked` prenaient 69 s en prod) : pseudo, bio, ajout à la main ou liste
- * de départ, sans lire une vidéo ; sinon ses vidéos, des plus récentes aux plus anciennes, jusqu'à la deuxième qui
- * cite l'app (`VET_MIN_VIDEOS` : prouvé quelle que soit la suite) ; le reste, comme avant, sur les 30.
+ * Ce que ses vidéos disent du lien d'un compte à son app : prouvé (le même verdict que `accountProof` sur ses 30
+ * dernières vidéos), périmé (sa dernière vidéo qui cite l'app a plus de 42 jours et il a publié depuis sans la nommer,
+ * radarVetMath.staleVideoProof), ou rien. Lu au plus court (15/11/2026 : les 88 pages de `tracked` prenaient 69 s en
+ * prod) : des plus récentes aux plus anciennes, l'âge se décide à la première qui cite l'app (elle et celles d'après
+ * sont lues), la preuve à la deuxième (`VET_MIN_VIDEOS`) ; le reste, comme avant, sur les 30.
  */
-async function provenForExport(ctx: QueryCtx, t: Doc<"radarTracked">, app: Doc<"radarApps">): Promise<boolean> {
-  if (proofDetail(t.handle, t.bio, [], app, t.matchedBy).by !== null) return true;
-  const texts: string[] = [];
+async function videoLink(ctx: QueryCtx, t: Doc<"radarTracked">, app: Doc<"radarApps">, now: number): Promise<"proven" | "stale" | "none"> {
+  const texts: DatedText[] = [];
   let read = 0;
   let cites = 0;
   for await (const x of ctx.db.query("radarTrackedVideos").withIndex("by_account_published", (q) => q.eq("accountId", t._id)).order("desc")) {
     if (read++ >= MEDIAN_WINDOW) break;
     if (x.platform) continue;
     const text = `${x.caption ?? ""} ${x.hook ?? ""}`;
-    texts.push(text);
-    if (citesNormalized(normalize(text), app) && ++cites >= VET_MIN_VIDEOS) return true;
+    texts.push({ text, at: x.publishedAt });
+    if (!citesNormalized(normalize(text), app)) continue;
+    if (++cites === 1 && staleVideoProof(texts, app, app.name, now)) return "stale";
+    if (cites >= VET_MIN_VIDEOS) return "proven";
   }
-  return proofDetail(t.handle, t.bio, texts, app, t.matchedBy).by !== null;
+  return accountProof(t.handle, t.bio, texts.map((x) => x.text), app) !== null ? "proven" : "none";
 }
 
 /** Apps par appel de l'export filtré (`apps`). */
@@ -247,9 +252,10 @@ const readAppsCursor = (cursor: string | null): AppsCursor => {
 /**
  * La page `cursor` (null = la première) d'une table de l'export, réduite à ce que Swarm affiche. `appIds` (tables
  * `tracked` et `trackedVideos` seulement) : les lignes rangées sous ces apps, et elles seules — une app fondue
- * (`mergedInto`) n'est pas remplacée par la vraie : Swarm passe lui-même les ids fondus avec la vraie.
+ * (`mergedInto`) n'est pas remplacée par la vraie : Swarm passe lui-même les ids fondus avec la vraie. `now` : l'heure
+ * à laquelle se juge l'âge d'une preuve par vidéos (`videoLink`).
  */
-export async function exportPage(ctx: QueryCtx, table: ExportTable, cursor: string | null, appIds?: readonly Id<"radarApps">[]) {
+export async function exportPage(ctx: QueryCtx, table: ExportTable, cursor: string | null, appIds?: readonly Id<"radarApps">[], now = Date.now()) {
   if (appIds && table !== "tracked" && table !== "trackedVideos") throw new Error(`le filtre par apps ne vaut que pour tracked et trackedVideos, pas ${table}`);
   if (appIds && appIds.length > EXPORT_MAX_APPS) throw new Error(`${EXPORT_MAX_APPS} apps au plus par appel`);
   const at = appIds ? readAppsCursor(cursor) : null;
@@ -283,10 +289,16 @@ export async function exportPage(ctx: QueryCtx, table: ExportTable, cursor: stri
         // créateur pour Swarm, qui ne liste que les comptes actifs, mais ses vidéos gardent leur pseudo et leur lien
         // (#513). Aucune justification ne part.
         // Le « pousse » RELU et appliqué seulement (radarJudgeReview) : celui de l'IA seule ne relie plus rien (15/11/2026).
-        // Du moins cher au plus cher : rien à lire, puis ses jugements, puis ses vidéos.
+        // Une preuve par vidéos PÉRIMÉE (24/11/2026, staleVideoProof) ne relie plus, même relue « pousse » : la relecture
+        // a jugé les vidéos d'alors (une créatrice de recettes, relue le 15/11 sur six vidéos Solaia de septembre et d'octobre).
+        // Du moins cher au plus cher : rien à lire, puis ses vidéos, puis ses jugements.
         const reviewed = async (a: Doc<"radarApps">) =>
           (await ctx.db.query("radarAccountJudgments").withIndex("by_account", (q) => q.eq("accountId", t._id)).collect()).some((j) => j.appId === a._id && j.reviewed === "pousse");
-        const linked = !app || t.placement === true || (await reviewed(app)) || (await provenForExport(ctx, t, app));
+        let linked = !app || t.placement === true || provenWithoutVideos(t, app);
+        if (!linked && app) {
+          const byVideos = await videoLink(ctx, t, app, now);
+          linked = byVideos === "proven" || (byVideos === "none" && (await reviewed(app)));
+        }
         rows.push(linked ? projectTracked(t) : { ...projectTracked(t), status: "paused" as const });
       }
       return { rows, ...after(r) };

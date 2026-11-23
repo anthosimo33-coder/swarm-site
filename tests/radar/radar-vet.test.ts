@@ -14,6 +14,8 @@ const app = (...strong: string[]) => ({ strong });
 const DECLIC = app("declicapp");
 const HYPER = app("hyperapp");
 const SNITCHY = app("snitchy");
+/** Le nom de l'app et l'heure du passage, qui disent si une preuve par vidéos est encore fraîche. */
+const SNITCHY_NOW = { name: "Snitchy", now: NOW };
 
 describe("Radar — filtre d'entrée : ce qui prouve qu'un compte pousse une app", () => {
   it("son pseudo la porte, ou sa bio la nomme", () => {
@@ -85,22 +87,22 @@ describe("Radar — filtre d'entrée : ce que dit la page publique d'un compte",
   const page = (text: string) => ({ ok: true as const, text });
 
   it("prouvé : il entre, avec ses abonnés et sa bio", () => {
-    expect(vetOutcome(page(profil(["#snitchy a", "#snitchy b", "autre"], { signature: "Ma bio" })), "lea", SNITCHY)).toEqual({ kind: "proven", proof: "videos", fans: 1_840, bio: "Ma bio" });
-    expect(vetOutcome(page(profil([], { signature: "J'utilise snitchy" })), "lea", SNITCHY)).toMatchObject({ kind: "proven", proof: "bio" });
-    expect(vetOutcome(page(profil([])), "snitchy.fan", SNITCHY)).toMatchObject({ kind: "proven", proof: "handle" });
+    expect(vetOutcome(page(profil(["#snitchy a", "#snitchy b", "autre"], { signature: "Ma bio" })), "lea", SNITCHY, SNITCHY_NOW)).toEqual({ kind: "proven", proof: "videos", fans: 1_840, bio: "Ma bio" });
+    expect(vetOutcome(page(profil([], { signature: "J'utilise snitchy" })), "lea", SNITCHY, SNITCHY_NOW)).toMatchObject({ kind: "proven", proof: "bio" });
+    expect(vetOutcome(page(profil([])), "snitchy.fan", SNITCHY, SNITCHY_NOW)).toMatchObject({ kind: "proven", proof: "handle" });
   });
 
   it("non prouvé : il n'entre pas ; un compte privé non plus", () => {
-    expect(vetOutcome(page(profil(["#snitchy", "a", "b", "c", "d"])), "lea", SNITCHY)).toEqual({ kind: "unproven", why: "cites" });
-    expect(vetOutcome(page(profil(["#snitchy", "#snitchy"], { privateAccount: true })), "lea", SNITCHY)).toEqual({ kind: "unproven", why: "private" });
+    expect(vetOutcome(page(profil(["#snitchy", "a", "b", "c", "d"])), "lea", SNITCHY, SNITCHY_NOW)).toEqual({ kind: "unproven", why: "cites" });
+    expect(vetOutcome(page(profil(["#snitchy", "#snitchy"], { privateAccount: true })), "lea", SNITCHY, SNITCHY_NOW)).toEqual({ kind: "unproven", why: "private" });
   });
 
   it("une page qui ne dit rien de ce compte : son premier relevé le jugera ; une page refusée : à redemander", () => {
     // TikTok ne sert pas la page d'intégration de certains comptes (400), que le fournisseur relève pourtant.
-    expect(vetOutcome({ ok: false, kind: "absent" }, "lea", SNITCHY)).toEqual({ kind: "paid" });
-    expect(vetOutcome(page(profil([])), "lea", SNITCHY)).toEqual({ kind: "paid" });
-    expect(vetOutcome({ ok: false, kind: "suspect" }, "lea", SNITCHY)).toEqual({ kind: "retry" });
-    expect(vetOutcome(page("<html>ratelimit triggered</html>"), "lea", SNITCHY)).toEqual({ kind: "retry" });
+    expect(vetOutcome({ ok: false, kind: "absent" }, "lea", SNITCHY, SNITCHY_NOW)).toEqual({ kind: "paid" });
+    expect(vetOutcome(page(profil([])), "lea", SNITCHY, SNITCHY_NOW)).toEqual({ kind: "paid" });
+    expect(vetOutcome({ ok: false, kind: "suspect" }, "lea", SNITCHY, SNITCHY_NOW)).toEqual({ kind: "retry" });
+    expect(vetOutcome(page("<html>ratelimit triggered</html>"), "lea", SNITCHY, SNITCHY_NOW)).toEqual({ kind: "retry" });
   });
 
   it("six heures d'attente : il entre par le relevé payant ; un compte écarté n'est pas revérifié avant 30 jours", () => {

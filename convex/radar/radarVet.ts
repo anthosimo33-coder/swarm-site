@@ -2,7 +2,8 @@
  * RADAR — LE FILTRE D'ENTRÉE des comptes (règles : convex/radarVetMath). Un compte trouvé par une recherche est
  * rangé « en attente » : ni relevé, ni montré. Toutes les 5 minutes, les comptes en attente sont lus sur leur page
  * publique, un à la fois avec une pause (le rythme des contrôles des classements, que TikTok sert à nos serveurs) :
- *  - prouvé (pseudo, bio, ou au moins deux vidéos qui citent l'app) : il entre, son premier relevé part ;
+ *  - prouvé (pseudo, bio, ou au moins deux vidéos qui citent l'app, dont la dernière a 42 jours au plus s'il a publié
+ *    depuis sans la nommer — radarVetMath.staleVideoProof) : il entre, son premier relevé part ;
  *  - non prouvé : il n'entre pas, et n'est pas revérifié pour cette app avant 30 jours ;
  *  - page illisible pour ce compte, ou jamais servie en 6 heures : il entre, et son premier relevé le juge.
  * Gratuit : aucun crédit. Sans la clé du fournisseur de données (tests, intégration continue), rien ne tourne.
@@ -18,7 +19,7 @@ import { fetchEmbedPage, profileEmbedUrl, storePauseMs } from "./radarStoreMath"
 import { VET_APPLY_BATCH, VET_BREAKER, VET_MAX_MS, VET_PER_RUN, vetOutcome, waitedTooLong, type VetOutcome, type VetPage } from "./radarVetMath";
 import { scKeyPresent } from "./scrapeCreatorsApi";
 
-type Queued = { id: Id<"radarTracked">; handle: string; queuedAt: number; rule: AppRule };
+type Queued = { id: Id<"radarTracked">; handle: string; queuedAt: number; rule: AppRule; name: string };
 
 /** Les comptes en attente, les plus anciens d'abord, chacun avec les motifs de son app. */
 async function vetQueueCore(ctx: QueryCtx, limit: number, only?: (handle: string) => boolean): Promise<Queued[]> {
@@ -36,7 +37,7 @@ async function vetQueueCore(ctx: QueryCtx, limit: number, only?: (handle: string
     if (!apps.has(t.appId)) apps.set(t.appId, await ctx.db.get(t.appId));
     const app = apps.get(t.appId);
     if (!app) continue;
-    out.push({ id: t._id, handle: t.handle, queuedAt: t.vetAt ?? t.nextReadAt, rule: { strong: app.strong, weak: app.weak, context: app.context, ...(app.not ? { not: app.not } : {}) } });
+    out.push({ id: t._id, handle: t.handle, queuedAt: t.vetAt ?? t.nextReadAt, name: app.name, rule: { strong: app.strong, weak: app.weak, context: app.context, ...(app.not ? { not: app.not } : {}) } });
   }
   return out;
 }
@@ -135,7 +136,7 @@ export const runVetting = internalAction({
       if (i > 0) await new Promise<void>((done) => setTimeout(done, storePauseMs(Math.random())));
       const r = await fetchEmbedPage(profileEmbedUrl(acc.handle));
       const page: VetPage = r.kind === "ok" ? { ok: true, text: r.text } : { ok: false, kind: r.kind };
-      const o = vetOutcome(page, acc.handle, acc.rule);
+      const o = vetOutcome(page, acc.handle, acc.rule, { name: acc.name, now: Date.now() });
       if (o.kind === "retry") {
         // Refusé : il attend le passage suivant — sauf s'il attend depuis 6 heures, auquel cas son premier relevé jugera.
         suspects++;
@@ -223,7 +224,7 @@ export const e2eVet = e2eMutation({
     for (const acc of queue) {
       const p = pages.find((x) => x.handle === acc.handle);
       const page: VetPage = !p ? { ok: false, kind: "absent" } : p.refused ? { ok: false, kind: "suspect" } : { ok: true, text: p.html ?? "" };
-      const o = vetOutcome(page, acc.handle, acc.rule);
+      const o = vetOutcome(page, acc.handle, acc.rule, { name: acc.name, now });
       if (o.kind !== "retry") verdicts.push(toVerdict(acc.id, o));
       else if (waited) verdicts.push({ id: acc.id, kind: "paid" });
       else waiting++;

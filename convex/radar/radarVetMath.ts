@@ -62,6 +62,59 @@ export function proofDetail(
   return { by: proof ?? (matchedBy === "caption" ? null : matchedBy), cites, of: texts.length };
 }
 
+// ─── L'âge d'une preuve par vidéos ───────────────────────────────────────────
+
+const DAY = 24 * HOUR;
+
+/**
+ * Une preuve par vidéos a un âge (24/11/2026). Le fondateur, devant une créatrice de recettes rangée sous
+ * Solaia : ses vidéos ne poussent pas Solaia. Elles l'ont poussée : six, du 20/09 au 09/10, qui la nomment comme l'app
+ * qu'elle utilise ; puis cinq autres jusqu'au 18/11 sans la nommer. Six de ses douze dernières vidéos la citaient encore :
+ * la règle des deux vidéos la prouvait, et l'aurait prouvée tant que ces six restaient parmi ses trente dernières.
+ *
+ * Sur la prod du 24/11 (11 942 créateurs montrés), ~600 comptes reliés par leurs seules vidéos ne nommaient plus leur
+ * app depuis plus de 42 jours tout en ayant publié au moins deux vidéos depuis — des comptes UGC passés à une autre app
+ * (PCOS Pal → Noise, DealSeek → TendWell, Margins → SlowRead), des créateurs dont la campagne est finie, et des
+ * homonymes entrés avant le filtre (« #houseappliances » sous House AI, la classe « 7mo B » sous 7mob).
+ *
+ * 42 jours : la fenêtre la plus longue que Kopycat montre d'une app (son historique jour par jour, radarModels.DAYS).
+ * Une vidéo plus ancienne ne compte déjà plus dans ses vues : retirer son auteur n'en enlève aucune.
+ */
+export const PROOF_FRESH_MS = 42 * DAY;
+/**
+ * Un nom d'app d'au moins 4 lettres, sans espaces, est cherché tel quel dans les vidéos publiées après la dernière
+ * citation. Ses motifs sont parfois plus étroits que ce qu'écrivent ses créateurs (« faithmode.app » quand une vidéo
+ * dit « Search "Faith Mode" ») : un compte qui nomme encore l'app la pousse encore. Le nom ne sert qu'à garder.
+ */
+export const NAME_MIN = 4;
+
+/** Le texte d'une vidéo et sa date de publication. */
+export type DatedText = { text: string; at: number };
+
+/** Le texte nomme-t-il l'app, par un motif ou par son nom ? */
+function namesApp(text: string, rule: AppRule, name: string): boolean {
+  const n = normalize(text);
+  if (citesNormalized(n, rule)) return true;
+  const key = normalize(name).compact;
+  return key.length >= NAME_MIN && citesNormalized(n, { strong: [key], ...(rule.not ? { not: rule.not } : {}) });
+}
+
+/**
+ * Sa preuve par vidéos est-elle PÉRIMÉE ? `texts` : ses dernières vidéos, les plus récentes d'abord. Oui quand sa
+ * dernière vidéo qui cite l'app a plus de 42 jours ET qu'il a publié depuis au moins deux vidéos avec du texte (autant
+ * qu'il en faut pour le prouver, `VET_MIN_VIDEOS`), dont aucune ne nomme l'app. Non quand aucune ne la cite (ce
+ * n'est pas une preuve périmée, c'est une preuve absente), ni quand il n'a rien publié depuis (un compte qui ne publie
+ * plus : rien de ce qu'on montre de lui ne parle d'autre chose). Une vidéo sans légende ni texte à l'écran ne dit rien :
+ * elle ne compte pas. Rejoué sur la prod du 24/11, une seule vidéo après la campagne retirait aussi des créateurs qui
+ * la poussaient encore sans la nommer (« My new obsession: having to stalk a missing girl… » d'un compte ColdTrace).
+ */
+export function staleVideoProof(texts: readonly DatedText[], rule: AppRule, name: string, now: number): boolean {
+  const last = texts.findIndex((t) => citesNormalized(normalize(t.text), rule));
+  if (last < 0 || now - texts[last].at <= PROOF_FRESH_MS) return false;
+  const since = texts.slice(0, last).filter((t) => t.text.trim().length > 0);
+  return since.length >= VET_MIN_VIDEOS && !since.some((t) => namesApp(t.text, rule, name));
+}
+
 // ─── Un passage du filtre ────────────────────────────────────────────────────
 
 /** Comptes vérifiés au plus par passage (un passage toutes les 5 minutes, une page par compte). */
@@ -85,15 +138,18 @@ export type VetPage = { ok: true; text: string } | { ok: false; kind: "absent" |
 export type VetOutcome =
   /** Prouvé : il entre, avec ses abonnés et sa bio lus sur sa page. */
   | { kind: "proven"; proof: Proof; fans: number; bio: string }
-  /** Pas un compte qui pousse l'app : il n'entre pas. */
-  | { kind: "unproven"; why: "private" | "cites" }
+  /** Pas un compte qui pousse l'app : il n'entre pas. « stale » : il l'a poussée, il ne la nomme plus (staleVideoProof). */
+  | { kind: "unproven"; why: "private" | "cites" | "stale" }
   /** Sa page publique ne dit rien (TikTok ne la sert pas pour ce compte, ou elle ne liste aucune vidéo) : son premier relevé tranchera. */
   | { kind: "paid" }
   /** TikTok a refusé la page : à redemander au passage suivant. */
   | { kind: "retry" };
 
-/** Ce que la page publique d'un compte dit de lui, pour l'app où on l'a trouvé. */
-export function vetOutcome(page: VetPage, handle: string, rule: AppRule): VetOutcome {
+/**
+ * Ce que la page publique d'un compte dit de lui, pour l'app où on l'a trouvé. `app` : le nom de l'app et l'heure du
+ * passage, qui disent si sa preuve par vidéos est encore fraîche.
+ */
+export function vetOutcome(page: VetPage, handle: string, rule: AppRule, app: { name: string; now: number }): VetOutcome {
   if (!page.ok) return page.kind === "absent" ? { kind: "paid" } : { kind: "retry" };
   const profile = parseFreeProfile(page.text);
   if (!profile) return { kind: "retry" };
@@ -105,6 +161,10 @@ export function vetOutcome(page: VetPage, handle: string, rule: AppRule): VetOut
     profile.videos.map((v) => v.caption),
     rule,
   );
+  // Prouvé par des vidéos d'il y a plus de 42 jours, et il a publié depuis sans nommer l'app : il ne la pousse plus.
+  if (proof === "videos" && staleVideoProof(profile.videos.map((v) => ({ text: v.caption, at: v.publishedAt })), rule, app.name, app.now)) {
+    return { kind: "unproven", why: "stale" };
+  }
   if (proof) return { kind: "proven", proof, fans: profile.fans, bio: profile.bio };
   return profile.videos.length === 0 ? { kind: "paid" } : { kind: "unproven", why: "cites" };
 }
