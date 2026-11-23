@@ -662,6 +662,7 @@ a.ib-pill:hover { color: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(255,255,255,0
   .ib-vid { flex: 1 1 0; min-width: 0; max-width: 96px; width: auto; height: auto; aspect-ratio: 3 / 4; }
 }
 
+.fi-meta > span[aria-hidden="true"]:first-child { display: none; } /* plus de « Dans le Radar depuis » (24/11) : pas de point devant le 1er lien */
 /* Téléphone (maquettes T2 et T3 du 20/11) : la pastille de la barre flottante (tabbar.js), la pastille qui suit le doigt
    dans une feuille (sheet.js), la capsule « Chercher » qu'on tire (pull.js), les listes qu'on balaie (swipe.js). */
 nav[data-tabbar] [data-tab] { position: relative; z-index: 1; }

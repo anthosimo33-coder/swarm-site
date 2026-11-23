@@ -113,7 +113,7 @@ export default class FicheApp extends DCLogic {
       .map((m, i) => ({ c: m[0], l: m[1], v: m[2].toFixed(1).replace('.', ',') + '\u202fM', p: Math.round(m[2] / 57.65 * 100) + '\u202f%', w: (m[2] / 57.65 * 100).toFixed(1) + '%', bg: i === 0 ? 'var(--accent)' : 'var(--line-strong)' }));
     let creators = (globalThis.__dcSample?.["FicheApp"]?.["creators"] ?? []).map((c) => { const av = (globalThis.__dcSample?.["FicheApp"]?.["av"] ?? {})[c[1]] || false; return { ini: c[0], h: c[1], bio: c[2], mk: c[3], fans: c[4], v: c[5], med: c[6], bg: c[7], av, noav: !av }; });
     // L'en-tête et les chiffres de l'exemple (le canevas n'a pas de données).
-    let app = (globalThis.__dcSample?.["FicheApp"]?.["app"] ?? {"icon":"","name":"","niche":"","nicheHref":"","kind":"","delta":"","since":"","store":"","play":"","v30":"","ig":"","week":"","wd":"","acc":"","ppw":"","best":"","top10":"","vidsHref":"","crLabel":""});
+    let app = (globalThis.__dcSample?.["FicheApp"]?.["app"] ?? {"icon":"","name":"","niche":"","nicheHref":"","kind":"","delta":"","store":"","play":"","v30":"","ig":"","week":"","wd":"","acc":"","ppw":"","best":"","top10":"","vidsHref":"","crLabel":"","crHref":""});
     let top = 20;
     // Le tableau de bord du haut de la fiche : mêmes entrées pour l'exemple et pour le Radar.
     let src = { views30: 57.7e6, ig: 2.8e6, weekDelta: 0.06, accounts: 269, ppw: 1360, bestX: 2333, top10: 0.43, videoCount: 2552,
@@ -132,7 +132,7 @@ export default class FicheApp extends DCLogic {
       const day = (ms) => new Date(ms).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
       const ago = (ms) => { const d = Math.max(0, Math.round((Date.now() - ms) / 86400000)); return d === 0 ? "aujourd'hui" : 'il y a ' + d + '\u202fj'; };
       app = {
-        icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, nicheHref: '/app/apps?niche=' + encodeURIComponent(D.niche || ''), kind: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[D.kind] || '', delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine', since: day(D.trackedSince),
+        icon: D.icon || '', noIcon: !D.icon, name: D.name, niche: D.niche, nicheHref: '/app/apps?niche=' + encodeURIComponent(D.niche || ''), kind: ({ app: 'App', saas: 'SaaS', jeu_mobile: 'Jeu mobile' })[D.kind] || '', delta: D.weekDelta === null ? '' : pct(D.weekDelta) + ' cette semaine',
         store: D.store || '', play: 'https://play.google.com/store/search?q=' + encodeURIComponent(D.name) + '&c=apps',
         v30: nf(D.views30), ig: D.views30Ig > 0 ? 'dont ' + nf(D.views30Ig) + ' sur Instagram' : 'vidéos publiées ces 30 jours',
         week: nf(D.weeks[5]),
@@ -140,7 +140,9 @@ export default class FicheApp extends DCLogic {
         acc: D.accounts.toLocaleString('fr-FR'), ppw: D.videosPerWeek.toLocaleString('fr-FR'), best: D.bestX ? xf(D.bestX) : '—',
         top10: D.top10Share === null ? '—' : Math.round(D.top10Share * 100) + '\u202f% des vues',
         vidsHref: D.videos.length ? '/app/videos/' + D.videos[0].id : '/app/videos',
-        crLabel: 'Tous les créateurs'
+        crLabel: 'Tous les créateurs',
+        // Les créateurs de CETTE app, tous marchés : Créateurs lit `app` (liste, le nom) et `m` dans l'adresse (F25).
+        crHref: '/app/createurs?m=ALL&app=' + encodeURIComponent(D.name || ''),
       };
       const scale = Math.max.apply(null, D.weeks) || 1;
       top = Math.max(1, Math.ceil(scale / 1e6 / 2) * 2);
@@ -329,8 +331,7 @@ export default class FicheApp extends DCLogic {
                     $t($v.dash?.rankBadge)
                   )
                 ] : null,
-                $h("span", { "style": "display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: 6px; font-size: 13px; color: var(--ink-faint);" },
-                  "Dans le Radar depuis le ", $t($v.app?.since),
+                $h("span", { "class": "fi-meta", "style": "display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: 6px; font-size: 13px; color: var(--ink-faint);" },
                   ($v.app?.store) ? [
                     $h("span", { "aria-hidden": "true" },
                       "·"
@@ -817,7 +818,7 @@ export default class FicheApp extends DCLogic {
                 $h("h2", { "id": "fa-cr-t", "class": "sw-card-title" },
                   "Les créateurs qui le poussent"
                 ),
-                $h("a", { "class": "sw-more", "href": "/app/createurs" },
+                $h("a", { "class": "sw-more", "href": $u($v.app?.crHref) },
                   $t($v.app?.crLabel),
                   $h("svg", { "width": "14", "height": "14", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                     $h("path", { "d": "M5 12h14M13 6l6 6-6 6", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })
