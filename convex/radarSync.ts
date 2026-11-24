@@ -11,7 +11,7 @@ import { appStoreHit, appStoreLookup, copyImage } from "./imageCopy";
 import { COVER_ID, signedPage } from "./coverSign";
 import { backgroundOff, TIKTOK_LEASE } from "./background";
 import { nuitDeSynchro } from "./syncCadence";
-import { APP_STORE_ID, buildBoards, iconKey, siteOf, type GroupOut, type Part, type RApp, type Raw, type RFormat, type RSignal, type RTracked, type RVideo } from "./radarModels";
+import { APP_STORE_ID, buildBoards, iconKey, prepareFormats, slimFormat, siteOf, type GroupOut, type Part, type RApp, type Raw, type RFormat, type RSignal, type RTracked, type RVideo } from "./radarModels";
 
 /** Version de la règle qui associe une app à sa fiche App Store (convex/imageCopy.ts, sameApp). */
 const STORE_RULE = 6; // 6 : à plusieurs candidates, titre exact ou nette avance en avis ; 5 : fiche exacte par l'identifiant du Radar ; sinon recherche France puis États-Unis, refusée si le nom est ambigu ; icône gardée
@@ -120,6 +120,8 @@ function slimRow(table: string, row: Record<string, unknown>, k: Slim): unknown 
       caption: row.caption, hook: row.hook, musicTitle: row.musicTitle, coverUrl: null, region: row.region, cites: row.cites,
     };
   }
+  // Formats (24/11/2026) : reconstruits de même, identifiants et pseudos partagés (radarModels.slimFormat).
+  if (table === "formats") return slimFormat(row, k.intern);
   return row;
 }
 
@@ -633,6 +635,9 @@ export const run = internalAction({
       const raw = {} as Omit<Raw, "trackedVideos">;
       for (const t of ["apps", "tracked", "formats", "signals"] as const) { (raw as Record<string, unknown>)[t] = await fetchTable(src, t, slim); gc(); MEMLOG('export ' + t); deadline("export " + t); }
       pool.clear();
+      // Les formats tels que toutes les étapes les liront (radarModels.prepareFormats) : sans les accroches qu'une idée
+      // montrée couvre déjà, sans la liste des vidéos des idées.
+      raw.formats = prepareFormats(raw.formats, now);
       // Essai sur le dev seulement : des comptes marqués « placement payé » à la main (variable SWARM_TEST_PLACEMENT,
       // pseudos séparés par des virgules), tant que l'export du Radar n'envoie pas encore `placement`.
       const testPaid = (process.env.SWARM_TEST_PLACEMENT ?? "").split(",").map((h) => h.trim().replace(/^@/, "")).filter(Boolean);

@@ -39,6 +39,7 @@ import { FREE_RETRY_MS, paced, retrying, type FreePage } from "./radarFreeMath";
 import { fetchEmbedPage, storePauseMs } from "./radarStoreMath";
 import { appRef, todayCredits, writeSignal, type JobState, type RunResult } from "./radarSignals";
 import { shareFormat } from "./radarNetworks";
+import { queueIdea } from "./radarIdeas";
 import { scIgFollowers, scIgReels, scKeyPresent, scTranscript } from "./scrapeCreatorsApi";
 
 const DAY = 86_400_000;
@@ -115,6 +116,8 @@ export const applyIgRead = internalMutation({
           ...(r.hook ? { hook: r.hook } : {}),
           ...(hk ? { hookKey: hk } : {}),
         });
+        // Son accroche attend d'être rangée dans une idée de son app (convex/radar/radarIdeas).
+        await queueIdea(ctx, { videoId, appId: acc.appId, publishedAt: r.publishedAt, ...(r.hook ? { hook: r.hook } : {}) }, now);
       }
     }
     const recent = (await ctx.db.query("radarTrackedVideos").withIndex("by_account_published", (q) => q.eq("accountId", accountId)).order("desc").take(MEDIAN_WINDOW * 3))

@@ -78,7 +78,7 @@ function grow(t, row, c) {
   if (t === "apps") { r.id = s(r.id); r.slug = `${r.slug}-${c}`; r.name = `${r.name} ${c}`; if (r.mergedInto) r.mergedInto = s(r.mergedInto); }
   if (t === "tracked") { r.id = s(r.id); r.appId = s(r.appId); r.handle = `${r.handle}_${c}`; if (r.igHandle) r.igHandle = `${r.igHandle}_${c}`; }
   if (t === "trackedVideos") { r.id = s(r.id); r.accountId = s(r.accountId); r.appId = s(r.appId); r.videoId = /^\d+$/.test(r.videoId) ? r.videoId + c : s(r.videoId); }
-  if (t === "formats") { r.id = s(r.id); r.key = s(r.key); r.appIds = r.appIds.map(s); r.members = r.members.map((m) => ({ ...m, accountId: s(m.accountId), appId: s(m.appId), handle: `${m.handle}_${c}`, videoId: /^\d+$/.test(m.videoId) ? m.videoId + c : s(m.videoId) })); }
+  if (t === "formats") { r.id = s(r.id); r.key = s(r.key); r.appIds = r.appIds.map(s); r.members = r.members.map((m) => ({ ...m, accountId: s(m.accountId), appId: s(m.appId), handle: `${m.handle}_${c}`, videoId: /^\d+$/.test(m.videoId) ? m.videoId + c : s(m.videoId) })); if (r.videos) r.videos = r.videos.map((v) => (/^\d+$/.test(v) ? v + c : s(v))); }
   if (t === "signals") { r.id = s(r.id); r.videoId = /^\d+$/.test(r.videoId) ? r.videoId + c : s(r.videoId); r.authorHandle = `${r.authorHandle}_${c}`; if (r.appId) r.appId = s(r.appId); if (r.trackedAccountId) r.trackedAccountId = s(r.trackedAccountId); }
   return r;
 }
@@ -145,6 +145,7 @@ async function query(r, a) {
     if (fn === "boardHashes") return a.keys.map((k) => saved.get(k) ?? null);
     if (fn === "getStage") return runs[a.id] && !runs[a.id].finishedAt ? runs[a.id].stage ?? null : null;
     if (fn === "staleStages") return [];
+    if (fn === "lastOkStart") return null; // aucun passage réussi : la nuit est une nuit de synchro (convex/syncCadence.ts, #31)
     if (storePages[fn]) { const i = Number(a.cursor || 0); const p = JSON.parse(storePages[fn][i]); lu(fn, p.items); return { ...p, cursor: String(i + 1), done: i + 1 >= storePages[fn].length }; }
     // Lectures ciblées (21/11) : les éléments des mêmes pages, pour ces identifiants seulement, dans l'ordre des pages.
     if (FOR[fn]) {

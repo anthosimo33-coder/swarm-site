@@ -229,6 +229,44 @@ RULES.push(['Formats : title = le texte à l\'écran de la reprise la plus vue q
   return out;
 }]);
 
+// La fiche d'une app (24/11/2026) : les formats que SES comptes reprennent, rangés par eux. Rangés par le nombre de comptes
+// toutes apps confondues, les 8 formats de la fiche de Diane AI étaient des sons où elle n'avait qu'un compte.
+RULES.push(['Fiche d\'app : ses formats repris par au moins 2 de ses comptes, les plus repris chez elle d\'abord ; own = ses comptes, accounts = tous ceux du format', (docs, raw) => {
+  const out = [], NOW = 1794780000000;
+  const byId = new Map(raw.apps.map((a) => [a.id, a]));
+  const canon = (a) => { for (let i = 0; a && a.mergedInto && i < 5; i++) a = byId.get(a.mergedInto) ?? a; return a; };
+  const fmt = new Map(raw.formats.map((f) => [f.id, f]));
+  const own = (f, slug) => new Set(f.members.filter((m) => canon(byId.get(m.appId))?.slug === slug).map((m) => m.accountId)).size;
+  const isFormat = (f) => f.accountCount >= 3 && NOW - f.lastPostAt <= 21 * DAY;
+  const absorbed = models.absorbedFormats(raw.formats, isFormat);
+  let shown = 0, below = 0;
+  for (const [k, d] of docs) {
+    if (!/^app:[^:]+$/.test(k)) continue;
+    const slug = k.slice(4), list = d.formats ?? [];
+    shown += list.length;
+    for (const f of list) {
+      const r = fmt.get(f.id), n = own(r, slug);
+      if (f.own !== n) out.push(`${k} → ${f.id} : own ${f.own}, ${n} de ses comptes`);
+      // Deux de ses comptes au moins (décision du 24/11/2026, écrite ici en clair : la règle ne relit pas la constante).
+      if (n < 2) out.push(`${k} → ${f.id} : ${n} compte(s) de l'app seulement`);
+      if (f.accounts !== r.accountCount) out.push(`${k} → ${f.id} : accounts ${f.accounts} ≠ ${r.accountCount}`);
+    }
+    for (let i = 1; i < list.length; i++) if (list[i].own > list[i - 1].own) out.push(`${k} : ${list[i].id} (${list[i].own}) après ${list[i - 1].id} (${list[i - 1].own})`);
+    // Aucun format plus repris chez elle n'est laissé de côté.
+    const floor = list.length >= models.FICHE_FORMATS ? list[list.length - 1].own : 1;
+    const listed = new Set(list.map((f) => f.id));
+    for (const f of raw.formats) {
+      if (!isFormat(f) || absorbed.has(f.id) || listed.has(f.id)) continue;
+      const n = own(f, slug);
+      if (n > floor) out.push(`${k} : ${f.id} manque (${n} de ses comptes)`);
+      else if (n === 1) below++;
+    }
+  }
+  // Sans fiche qui montre un format, ni format écarté faute de comptes de l'app, la règle ne prouverait rien.
+  if (!shown || !below) out.push(`l'export inventé ne couvre pas les cas (formats montrés ${shown}, écartés à 1 compte ${below})`);
+  return [...new Set(out)].slice(0, 10);
+}]);
+
 // Le contrat docs/donnees-app.md nomme chaque champ que la synchro écrit (audit Q47, Q66 : il décrivait des marchés, des
 // pages et des seuils qui n'étaient plus ceux du code).
 RULES.push(['docs/donnees-app.md nomme chaque champ des documents', (docs) => {
@@ -267,7 +305,43 @@ const TITLES = [
 const titleFails = TITLES.filter(([inp, want]) => models.formatTitle(inp) !== want || (want && Array.from(want).length > 90));
 console.log(`${titleFails.length ? 'ÉCHEC' : 'OK   '} Nom d'un format par son texte à l'écran (formatTitle, maquette C1)${titleFails.length ? ` : ${titleFails.length} — ${titleFails.slice(0, 4).map(([i, w]) => `${JSON.stringify(i)} → ${JSON.stringify(models.formatTitle(i))} au lieu de ${JSON.stringify(w)}`).join(' ; ')}` : ''}`);
 
-let fail = (bioFails.length ? 1 : 0) + (titleFails.length ? 1 : 0);
+// Idées d'accroches (convex/radar/radarIdeas, 24/11/2026) : une accroche dont une idée MONTRÉE couvre les reprises n'est
+// plus un format à part (ni dans la liste, ni sa fiche, ni sur la fiche de son app) ; une idée pas montrée (2 comptes) ne
+// couvre rien.
+const ideaFails = (() => {
+  const out = [], NOW = 1794780000000, raw = fixtureRaw();
+  const shown = (f) => f.accountCount >= 3 && NOW - f.lastPostAt <= 21 * DAY;
+  const hooks = raw.formats.filter((f) => f.kind === 'hook' && shown(f) && new Set(f.members.map((m) => m.accountId)).size >= 3);
+  const [tpl, other] = hooks;
+  const idea = (id, members, videos, accounts) => ({ id, kind: 'hook', key: `idee:${id}`, label: `Idée ${id}`, members, accountCount: accounts, appIds: [...new Set(members.map((m) => m.appId))],
+    maxViews: Math.max(...members.map((m) => m.views)), lastPostAt: NOW - DAY, firstSeenAt: NOW - 3 * DAY, lang: 'fr', videos });
+  raw.formats.push(idea('grande', tpl.members, tpl.members.map((m) => m.videoId), new Set(tpl.members.map((m) => m.accountId)).size));
+  const two = other.members.filter((m, i, a) => a.findIndex((x) => x.accountId === m.accountId) === i).slice(0, 2);
+  raw.formats.push(idea('petite', two, other.members.map((m) => m.videoId), 2));
+  const docs = boardsOf(models, raw);
+  const list = (docs.get('formats')?.formats ?? []).map((f) => f.id);
+  if (list.includes(tpl.id) || docs.has(`format:${tpl.id}`)) out.push(`${tpl.id} couvert par une idée montrée, encore listé`);
+  for (const [k, d] of docs) if (/^(app|creator):/.test(k) && (d.formats ?? []).some((f) => f.id === tpl.id)) out.push(`${k} cite ${tpl.id}`);
+  if (!list.includes('grande')) out.push('l\'idée montrée manque à la liste');
+  if (!list.includes(other.id)) out.push(`${other.id} écarté par une idée de 2 comptes`);
+  if (list.includes('petite')) out.push('une idée de 2 comptes est listée');
+  // La synchro garde les formats préparés une fois pour toutes ses étapes (convex/radarSync.ts : slimFormat à la lecture
+  // de l'export, puis prepareFormats) : sans l'accroche couverte, sans la liste des vidéos ni le texte des reprises des
+  // idées, et les mêmes pages au caractère près.
+  const prepared = models.prepareFormats(raw.formats.map((f) => models.slimFormat(f, (x) => x)), NOW);
+  if (prepared.some((f) => f.videos !== undefined)) out.push('préparés : une idée garde sa liste de vidéos');
+  if (prepared.some((f) => f.id === tpl.id)) out.push(`préparés : ${tpl.id}, couvert, encore là`);
+  for (const id of ['grande', 'petite', other.id]) if (!prepared.some((f) => f.id === id)) out.push(`préparés : ${id} perdu`);
+  if (prepared.some((f) => f.key.startsWith('idee:') && f.members.some((m) => m.hook !== undefined))) out.push('préparés : une reprise d\'idée garde son texte');
+  const docs2 = boardsOf(models, { ...raw, formats: prepared });
+  const h = (d) => { const { updatedAt, ...rest } = d ?? {}; return JSON.stringify(rest); };
+  const changed = [...new Set([...docs.keys(), ...docs2.keys()])].filter((k) => h(docs.get(k)) !== h(docs2.get(k)));
+  if (changed.length) out.push(`préparés : ${changed.length} page(s) changée(s) (${changed.slice(0, 3).join(', ')})`);
+  return out;
+})();
+console.log(`${ideaFails.length ? 'ÉCHEC' : 'OK   '} Idées d'accroches : l'accroche couverte par une idée montrée disparaît, pas les autres ; formats préparés par la synchro = mêmes pages${ideaFails.length ? ` : ${ideaFails.join(' ; ')}` : ''}`);
+
+let fail = (bioFails.length ? 1 : 0) + (titleFails.length ? 1 : 0) + (ideaFails.length ? 1 : 0);
 const run = async (label, docs, strict, raw) => {
   console.log(`── ${label} : ${docs.size} pages`);
   for (const [name, rule] of RULES) {

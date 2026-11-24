@@ -47,6 +47,8 @@ export type RFormatMember = { accountId: string; handle: string; appId: string; 
 export type RFormat = {
   id: string; kind: "hook" | "sound"; key: string; label: string; members: RFormatMember[]; accountCount: number;
   appIds: string[]; maxViews: number; lastPostAt: number; firstSeenAt: number; lang: string | null;
+  /** Format d'une IDÉE d'accroche (clé « idee:… », convex/radar/radarIdeas) : toutes les vidéos qu'elle range. */
+  videos?: string[];
 };
 export type RSignal = {
   id: string; platform: "tiktok" | "instagram"; videoId: string; url: string; authorHandle: string; authorFans: number;
@@ -320,6 +322,74 @@ export const formatTitle = (text: string | null | undefined, max = FORMAT_TITLE)
   const t = cut.replace(/[\s,;:.…·•|\-–—]+$/u, "");
   return t ? t + "…" : null;
 };
+
+/** Un format = repris par au moins FORMAT_MIN_ACCOUNTS comptes, avec une reprise dans les FORMAT_DAYS derniers jours. */
+export const FORMAT_MIN_ACCOUNTS = 3;
+export const FORMAT_DAYS = 21;
+/** Un format montrable : FORMAT_MIN_ACCOUNTS comptes au moins, une reprise dans les FORMAT_DAYS derniers jours. */
+export const isShownFormat = (f: RFormat, now: number) => f.accountCount >= FORMAT_MIN_ACCOUNTS && now - f.lastPostAt <= FORMAT_DAYS * 86_400_000;
+/**
+ * La fiche d'une app montre les formats que SES créateurs reprennent : au moins FICHE_FORMAT_ACCOUNTS de ses comptes,
+ * rangés par le nombre de ses comptes. 24/11/2026 : rangés par le nombre de comptes toutes apps confondues, les 8 formats
+ * de la fiche de Diane AI étaient des sons repris par 28 à 35 comptes de 15 à 29 apps, dont un seul de Diane, et ses
+ * accroches reprises par 11 à 14 de ses comptes n'y étaient pas ; sur les 620 fiches, 1 744 formats montrés sur 2 082
+ * n'avaient qu'un compte de l'app (219 fiches n'avaient que ceux-là).
+ */
+export const FICHE_FORMAT_ACCOUNTS = 2;
+export const FICHE_FORMATS = 8;
+/** Les reprises d'un format qu'un document montre au plus (sa page : 30 ; « formats » : 4 ; alertes : 3 ; accueil : 1). */
+export const FORMAT_DOC_MEMBERS = 30;
+/** La clé d'un format d'idée d'accroche (convex/radar/radarIdeasMath.ideaFormatKey). */
+export const IDEA_FORMAT_KEY = "idee:";
+/**
+ * Les formats de gabarit qu'une idée montrée couvre déjà : une accroche dont la moitié des reprises au moins sont des
+ * vidéos d'une idée (format `idee:…` montré, cf `shown`) n'est plus un format à part, l'idée la montre. Sans cela, la
+ * même reprise apparaîtrait deux fois : dans son idée (« t'as fini de réviser plus tôt grâce à la fille à 17 de
+ * moyenne », toutes tournures) et dans son gabarit (« t as termine de »).
+ */
+export function absorbedFormats(formats: readonly RFormat[], shown: (f: RFormat) => boolean): Set<string> {
+  const covered = new Set<string>();
+  for (const f of formats) if (f.key.startsWith(IDEA_FORMAT_KEY) && shown(f)) for (const id of f.videos ?? f.members.map((m) => m.videoId)) covered.add(id);
+  const out = new Set<string>();
+  if (!covered.size) return out;
+  for (const f of formats) {
+    if (f.kind !== "hook" || f.key.startsWith(IDEA_FORMAT_KEY) || !f.members.length) continue;
+    if (f.members.filter((m) => covered.has(m.videoId)).length * 2 >= f.members.length) out.add(f.id);
+  }
+  return out;
+}
+
+/**
+ * Les formats tels que la synchro les garde (convex/radarSync.ts, à sa préparation, une fois pour toutes ses étapes) :
+ * sans les accroches qu'une idée montrée couvre déjà (absorbedFormats), puis sans la liste `videos` des idées, qui ne
+ * sert qu'à ce choix. Les pages ne changent pas (scripts/radar.test.mjs) ; banc du 24/11/2026, export du jour ×3 :
+ * portées jusqu'à l'étape globale, les listes et les accroches couvertes la menaient à 539 Mo (512 par action).
+ */
+export function prepareFormats(formats: readonly RFormat[], now: number): RFormat[] {
+  const absorbed = absorbedFormats(formats, (f) => isShownFormat(f, now));
+  return formats.filter((f) => !absorbed.has(f.id)).map(({ videos: _videos, ...f }) => f);
+}
+
+/**
+ * Une ligne de format de l'export, RECONSTRUITE champs toujours dans le même ordre (un `delete` passe l'objet en mode
+ * dictionnaire, cf radarSync.slimRow) : identifiants de compte et d'app et pseudos partagés par `intern` (un compte
+ * reprend beaucoup de formats), et sans le texte des reprises d'une idée (aucune page ne le montre : l'idée a son nom ;
+ * seuls les sons se nomment par celui de leurs reprises).
+ */
+export function slimFormat(row: Record<string, unknown>, intern: (s: string) => string): RFormat {
+  const id = (x: unknown) => (typeof x === "string" ? intern(x) : x);
+  const ms = Array.isArray(row.members) ? (row.members as Record<string, unknown>[]) : [];
+  const idea = typeof row.key === "string" && row.key.startsWith(IDEA_FORMAT_KEY);
+  return {
+    id: row.id, kind: row.kind, key: row.key, label: row.label,
+    members: ms.map((m) => ({
+      accountId: id(m.accountId), handle: id(m.handle), appId: id(m.appId), videoId: m.videoId,
+      publishedAt: m.publishedAt, views: m.views, multiplier: m.multiplier, hook: idea ? undefined : m.hook, platform: m.platform,
+    })),
+    accountCount: row.accountCount, appIds: Array.isArray(row.appIds) ? row.appIds.map(id) : row.appIds,
+    maxViews: row.maxViews, lastPostAt: row.lastPostAt, firstSeenAt: row.firstSeenAt, lang: row.lang, videos: row.videos,
+  } as RFormat;
+}
 
 /**
  * Le lien « voir sur la plateforme » venu du Radar, s'il mène bien à TikTok ou Instagram en https ; sinon null (la page
@@ -804,18 +874,27 @@ export function buildBoards(
     const a = canonical(id);
     return a ? appRef(a) : null;
   };
-  const formatRows = raw.formats
-    // Un format = repris par au moins 3 comptes : à 2, ce sont surtout des sons au hasard.
-    .filter((f) => f.accountCount >= 3 && now - f.lastPostAt <= 21 * DAY)
+  // Un format = repris par au moins 3 comptes : à 2, ce sont surtout des sons au hasard.
+  const isFormat = (f: RFormat) => isShownFormat(f, now);
+  // Les accroches qu'une idée montrée couvre déjà ne sont plus des formats à part (absorbedFormats). La synchro les a
+  // déjà écartées à sa préparation (convex/radarSync.ts, sans la liste `videos` ensuite) : ici, pour le calcul d'un coup.
+  const absorbed = absorbedFormats(raw.formats, isFormat);
+  const rawFormats = absorbed.size ? raw.formats.filter((f) => !absorbed.has(f.id)) : raw.formats;
+  const coverOf = (m: RFormatMember) => cover(m.videoId, trackedByVideo.get(m.videoId)?.coverUrl ?? signalByVideo.get(m.videoId)?.coverUrl, m.handle);
+  const memberRow = (m: RFormatMember) => {
+    const tv = trackedByVideo.get(m.videoId);
+    return { _video: tv ?? memberVideo(m), handle: m.handle, videoId: m.videoId, views: m.views, x: accountX(m), publishedAt: m.publishedAt, cover: coverOf(m) };
+  };
+  const formatRows = rawFormats
+    .filter(isFormat)
     .map((f) => {
       const xs = f.members.map(accountX).filter((x): x is number => x !== null);
       const sorted = [...f.members].sort((p, q) => q.views - p.views);
-      const coverOf = (m: RFormatMember) => cover(m.videoId, trackedByVideo.get(m.videoId)?.coverUrl ?? signalByVideo.get(m.videoId)?.coverUrl, m.handle);
-      // Les reprises montrées : seulement celles qui ont une image (les chiffres portent sur toutes).
-      const members = withImage(sorted, sorted.length, (m) => coverOf(m) !== null).map((m) => {
-        const tv = trackedByVideo.get(m.videoId);
-        return { _video: tv ?? memberVideo(m), handle: m.handle, videoId: m.videoId, views: m.views, x: accountX(m), publishedAt: m.publishedAt, cover: coverOf(m) };
-      });
+      // Les reprises montrées : seulement celles qui ont une image (les chiffres portent sur toutes), FORMAT_DOC_MEMBERS
+      // au plus. Leur ligne (image, vidéo) n'est faite que pour les formats qu'un document écrit (membersOf) : banc du
+      // 24/11/2026, la faire pour chacun des formats montrables portait l'étape globale à 549 Mo à ×3 avec les idées
+      // d'accroches (512 Mo par action). L'image de chacune est cherchée ici, comme avant (copie demandée).
+      const imaged = withImage(sorted, sorted.length, (m) => coverOf(m) !== null).slice(0, FORMAT_DOC_MEMBERS);
       const appIdsOf = [...new Set(f.appIds.map((id) => canonical(id)?.id).filter(Boolean) as string[])];
       const appsOf = appIdsOf.map(appMini).filter(Boolean);
       const firstApp = appIdsOf.length ? appById.get(appIdsOf[0]) : undefined;
@@ -829,11 +908,18 @@ export function buildBoards(
         id: f.id, kind: f.kind, label: f.label, title, accounts: f.accountCount, apps: appsOf,
         niche: firstApp ? nicheOf(firstApp) : "Autres", market: majority(f.members.map((m) => mkOf(m.accountId))),
         maxViews: f.maxViews, medX: roundOrNull(median(xs), 1), wins: xs.filter((x) => x > 1).length, n: f.members.length,
-        lastPostAt: f.lastPostAt, firstSeenAt: f.firstSeenAt, members,
+        lastPostAt: f.lastPostAt, firstSeenAt: f.firstSeenAt, _imaged: imaged,
       };
     })
-    .filter((f) => f.members.length > 0) // un format sans aucune reprise montrable n'apparaît pas
+    .filter((f) => f._imaged.length > 0) // un format sans aucune reprise montrable n'apparaît pas
     .sort((p, q) => q.accounts - p.accounts || (q.medX ?? 0) - (p.medX ?? 0));
+  type FormatRow = (typeof formatRows)[number];
+  const builtMembers = new Map<string, ReturnType<typeof memberRow>[]>();
+  const membersOf = (f: FormatRow) => {
+    let ms = builtMembers.get(f.id);
+    if (!ms) builtMembers.set(f.id, (ms = f._imaged.map(memberRow)));
+    return ms;
+  };
   // Chaque reprise montrée mène à sa vidéo : elle a sa page dans le lecteur.
   const shown = formatRows.slice(0, FORMAT_PAGES);
   // Les formats qui ont leur fiche. Une fiche d'app ou de créateur cite aussi les autres, marqués page:false : l'écran
@@ -841,25 +927,41 @@ export function buildBoards(
   // menaient à « Cette fiche n'est plus dans le Radar ».
   const hasPage = new Set(shown.map((f) => f.id));
   const pageFlag = (id: string) => (hasPage.has(id) ? {} : { page: false as const });
-  for (const f of shown) for (const m of f.members.slice(0, 30)) {
+  for (const f of shown) for (const m of membersOf(f).slice(0, FORMAT_DOC_MEMBERS)) {
     if (usedVideos.has(m.videoId)) continue;
     // Une reprise suivie a sa page dans le groupe qui la suit ; une reprise que personne ne suit, à l'étape globale.
     if (G && !trackedByVideo.has(m.videoId)) continue;
     if (GL && trackedElsewhere.has(m.videoId)) continue;
     usedVideos.set(m.videoId, m._video);
   }
-  const plain = (ms: (typeof formatRows)[number]["members"]) => ms.map(({ _video, ...m }) => m);
-  // Un format tel que l'écrivent les documents : ses n premières reprises, sans firstSeenAt (il ne sert qu'au choix des
-  // nouveaux formats des alertes ; aucun écran ne le lit, audit Q66).
-  const formatDoc = ({ firstSeenAt: _first, ...f }: (typeof formatRows)[number], n: number) => ({ ...f, members: plain(f.members.slice(0, n)) });
+  const plain = (ms: ReturnType<typeof memberRow>[]) => ms.map(({ _video, ...m }) => m);
+  // Un format tel que l'écrivent les documents : ses n premières reprises (FORMAT_DOC_MEMBERS au plus), sans firstSeenAt
+  // (il ne sert qu'au choix des nouveaux formats des alertes ; aucun écran ne le lit, audit Q66).
+  const formatDoc = (row: FormatRow, n: number) => {
+    const { firstSeenAt: _first, _imaged: _members, ...f } = row;
+    return { ...f, members: plain(membersOf(row).slice(0, n)) };
+  };
   if (!G) {
     boards.set("formats", { updatedAt: now, markets: MARKETS, formats: shown.map((f) => formatDoc(f, 4)) });
-    for (const f of shown) boards.set(`format:${f.id}`, { updatedAt: now, ...formatDoc(f, 30) });
+    for (const f of shown) boards.set(`format:${f.id}`, { updatedAt: now, ...formatDoc(f, FORMAT_DOC_MEMBERS) });
   }
   const formatsByAccount = groupBy(
-    raw.formats.flatMap((f) => f.members.map((m) => ({ accountId: m.accountId, f }))),
+    rawFormats.flatMap((f) => f.members.map((m) => ({ accountId: m.accountId, f }))),
     (x) => x.accountId,
   );
+  // Les comptes de chaque app qui reprennent chaque format (la fiche d'une app range ses formats par eux).
+  const ownAccounts = new Map<string, Map<string, number>>();
+  for (const f of rawFormats) {
+    if (!isFormat(f)) continue; // seuls les formats montrables (formatRows) vont sur une fiche
+    const byApp = new Map<string, Set<string>>();
+    for (const m of f.members) {
+      const id = canonical(m.appId)?.id;
+      if (!id) continue;
+      if (!byApp.has(id)) byApp.set(id, new Set());
+      byApp.get(id)!.add(m.accountId);
+    }
+    ownAccounts.set(f.id, new Map([...byApp].map(([id, accs]) => [id, accs.size])));
+  }
 
   // ── Créateurs, par marché, et la fiche de chaque créateur ──
   const creatorRow = (t: RTracked) => {
@@ -936,7 +1038,15 @@ export function buildBoards(
       .sort((p, q) => (q.medianViews ?? 0) - (p.medianViews ?? 0))
       .slice(0, APP_CREATORS)
       .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle) }));
-    const appFormats = formatRows.filter((f) => f.apps.some((x) => x?.slug === a.slug)).slice(0, 8).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX, maxViews: f.maxViews, ...pageFlag(f.id) }));
+    // Les formats que ses créateurs reprennent (FICHE_FORMAT_ACCOUNTS de ses comptes au moins), les plus repris chez
+    // elle d'abord. `accounts` : tous les comptes du format, comme sur sa fiche (le chiffre que l'écran montre, inchangé
+    // le 24/11/2026 faute de maquette) ; `own` : ses comptes à elle qui le reprennent (le rang).
+    const appFormats = formatRows
+      .map((f) => ({ f, own: ownAccounts.get(f.id)?.get(a.id) ?? 0 }))
+      .filter((x) => x.own >= FICHE_FORMAT_ACCOUNTS)
+      .sort((p, q) => q.own - p.own || q.f.accounts - p.f.accounts || (q.f.medX ?? 0) - (p.f.medX ?? 0))
+      .slice(0, FICHE_FORMATS)
+      .map(({ f, own }) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, own, medX: f.medX, maxViews: f.maxViews, ...pageFlag(f.id) }));
     const { _top12, _accs, ...row } = r;
     boards.set(`app:${a.slug}`, { updatedAt: now, ...row, videos: _top12.map(card), formats: appFormats, creators: appCreators });
   }
