@@ -59,10 +59,13 @@ const synthVideo = (o: Record<string, unknown> = {}) => ({
 });
 
 describe("fixtures publiques : le contrôle structurel", () => {
+  // Délai de 30 s (24/11/2026) : ces deux contrôles lisent tout le code du Radar, qui grossit ; 2,6 à 2,9 s en local, mais
+  // jusqu'à 5,9 s sur la machine de la CI, où le délai par défaut de 5 s les a fait échouer (main le 23/11, #37 le 24/11).
+  const SCAN_MS = 30_000;
   it("les fixtures, le code et les tests du Radar sont en règle", () => {
     expect(scanFixtures().map((f: Finding) => `${f.file} ${f.at} ${f.kind}`)).toEqual([]);
     expect(scanCode().map((f: Finding) => `${f.file} ${f.at} ${f.kind}`)).toEqual([]);
-  });
+  }, SCAN_MS);
 
   it("aucune liste de valeurs réelles ni d'empreintes : rien qui permette de tester un pseudo deviné", () => {
     expect(Object.keys(publiques)).not.toContain("KNOWN");
@@ -79,7 +82,7 @@ describe("fixtures publiques : le contrôle structurel", () => {
     expect(ko.status).toBe(1);
     expect(ko.stdout).toContain("x.json $.cover : cdn");
     expect(ko.stdout).not.toContain("cle-temoin");
-  });
+  }, SCAN_MS);
 
   // Corrigé le 20/11/2026 : les sons, les vidéos signées et les effets des réponses brutes passaient.
   it("chaque hôte de média est reconnu, en clair comme encodé ; tout autre hôte qu'example.invalid et les API est refusé", () => {
