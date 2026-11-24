@@ -206,6 +206,10 @@ export const eraseAccount = internalMutation({
     for (const row of await ctx.db.query("checkoutLinks").withIndex("by_user_key", (q) => q.eq("userId", userId)).collect()) {
       await ctx.db.delete(row._id);
     }
+    // Un changement d'adresse en attente (son lien ne mènerait plus à rien).
+    for (const row of await ctx.db.query("emailChanges").withIndex("by_user", (q) => q.eq("userId", userId)).collect()) {
+      await ctx.db.delete(row._id);
+    }
     // Le compteur de pages (convex/boardQuota.ts, audit S22).
     for (const row of await ctx.db.query("pageQuota").withIndex("by_user", (q) => q.eq("userId", userId)).collect()) {
       await ctx.db.delete(row._id);
@@ -333,13 +337,39 @@ export const closeOtherSessions = internalMutation({
   },
 });
 
+// ─── Changer d'adresse (24/11, maquettes AdrA1-A4 du canevas « Swarm sans abonnement ») ───
+// La nouvelle adresse ne remplace l'ancienne qu'une fois confirmée : un lien part vers elle (24 heures), et la page
+// /confirmer-adresse l'applique d'un clic (pas à l'ouverture : les antivirus de messagerie ouvrent les liens). Puis
+// l'ancienne adresse est prévenue. Avant le 24/11, l'adresse changeait tout de suite, sans vérifier qu'elle existe.
+
+export const EMAIL_LINK_TTL_MS = 24 * 60 * 60_000;
+/** Liens demandés par compte (demande et renvoi) : 5 par heure, pour que Kopycat ne serve pas à écrire à n'importe qui. */
+const EMAIL_LINK_MAX = 5;
+const EMAIL_LINK_WINDOW_MS = 60 * 60_000;
+
+const hexOf = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+const tokenHash = async (token: string) => hexOf(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+/** 32 octets au hasard, en hexadécimal : le jeton du lien (seule son empreinte est rangée). */
+function newToken(): string {
+  const buf = new Uint8Array(32);
+  crypto.getRandomValues(buf);
+  return hexOf(buf.buffer);
+}
+
+/** Une adresse est-elle déjà prise par un AUTRE compte ? */
+async function emailTakenByOther(ctx: MutationCtx, userId: Id<"users">, email: string): Promise<boolean> {
+  const taken = (await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email)).first())
+    ?? (await ctx.db.query("authAccounts").withIndex("providerAndAccountId", (q) => q.eq("provider", PASSWORD).eq("providerAccountId", email)).first());
+  return !!taken && ("userId" in taken ? taken.userId : taken._id) !== userId;
+}
+
 /**
- * Change l'e-mail (Réglages › Profil) : mot de passe exigé, adresse libre ; l'identifiant de connexion suit. L'adresse
- * n'est pas encore confirmée par un lien (pas d'envoi d'e-mails avant le domaine) : « Vérifiée » disparaît.
+ * Demande de changement (Réglages › Profil) : mot de passe exigé, adresse libre. Rien ne change encore : un lien part
+ * vers la nouvelle adresse. Rend { pending: true, email }.
  */
 export const changeEmail = action({
   args: { email: v.string(), password: v.string() },
-  handler: async (ctx, a): Promise<string> => {
+  handler: async (ctx, a): Promise<{ pending: true; email: string }> => {
     const userId = await liveUserIdInAction(ctx);
     if (userId === null) throw failWith("non_connecte");
     const email = a.email.trim().toLowerCase();
@@ -348,22 +378,129 @@ export const changeEmail = action({
     if (!login) throw failWith("compte_sans_mot_de_passe");
     if (email === (before ?? "").toLowerCase()) throw failWith("email_identique");
     await checkPassword(ctx, login, a.password);
-    const r = await ctx.runMutation(internal.users.applyEmail, { userId, email });
+    if (!(await ctx.runMutation(internal.authLimits.hit, { key: `emailLink:${userId}`, max: EMAIL_LINK_MAX, windowMs: EMAIL_LINK_WINDOW_MS }))) {
+      throw failWith("trop_de_tentatives");
+    }
+    const token = newToken();
+    const r: string = await ctx.runMutation(internal.users.requestEmailChange, { userId, email, hash: await tokenHash(token) });
     if (r !== "ok") throw failWith(r);
+    await ctx.scheduler.runAfter(0, internal.mail.sendConfirmNewEmail, { to: email, from: before ?? login, token });
+    return { pending: true, email };
+  },
+});
+
+export const requestEmailChange = internalMutation({
+  args: { userId: v.id("users"), email: v.string(), hash: v.string() },
+  handler: async (ctx, { userId, email, hash }): Promise<string> => {
+    if (await emailTakenByOther(ctx, userId, email)) return "email_pris";
+    const account = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId).eq("provider", PASSWORD)).first();
+    if (!account) return "compte_sans_mot_de_passe";
+    for (const old of await ctx.db.query("emailChanges").withIndex("by_user", (q) => q.eq("userId", userId)).collect()) await ctx.db.delete(old._id);
+    await ctx.db.insert("emailChanges", { userId, email, hash, expiresAt: Date.now() + EMAIL_LINK_TTL_MS });
+    return "ok";
+  },
+});
+
+/** Le changement en attente de la personne connectée (Réglages l'affiche « À confirmer »), ou null. */
+export const pendingEmail = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await liveUserId(ctx);
+    if (userId === null) return null;
+    const row = await ctx.db.query("emailChanges").withIndex("by_user", (q) => q.eq("userId", userId)).first();
+    return row && row.expiresAt > Date.now() ? { email: row.email, expiresAt: row.expiresAt } : null;
+  },
+});
+
+/** Annule le changement en attente : le lien déjà parti ne marche plus. */
+export const cancelEmailChange = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await liveUserId(ctx);
+    if (userId === null) throw failWith("non_connecte");
+    for (const row of await ctx.db.query("emailChanges").withIndex("by_user", (q) => q.eq("userId", userId)).collect()) await ctx.db.delete(row._id);
+  },
+});
+
+/** Renvoie le lien (nouveau jeton, de nouveau 24 heures) ; l'ancien lien ne marche plus. Rend l'adresse. */
+export const resendEmailChange = action({
+  args: {},
+  handler: async (ctx): Promise<string> => {
+    const userId = await liveUserIdInAction(ctx);
+    if (userId === null) throw failWith("non_connecte");
+    if (!(await ctx.runMutation(internal.authLimits.hit, { key: `emailLink:${userId}`, max: EMAIL_LINK_MAX, windowMs: EMAIL_LINK_WINDOW_MS }))) {
+      throw failWith("trop_de_tentatives");
+    }
+    const token = newToken();
+    const email: string | null = await ctx.runMutation(internal.users.renewEmailChange, { userId, hash: await tokenHash(token) });
+    if (email === null) throw failWith("aucun_changement");
+    const { email: before, login } = await ctx.runQuery(internal.users.credentialsOf, { userId });
+    await ctx.scheduler.runAfter(0, internal.mail.sendConfirmNewEmail, { to: email, from: before ?? login ?? "", token });
     return email;
   },
 });
 
-export const applyEmail = internalMutation({
-  args: { userId: v.id("users"), email: v.string() },
-  handler: async (ctx, { userId, email }): Promise<string> => {
-    const taken = (await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email)).first())
-      ?? (await ctx.db.query("authAccounts").withIndex("providerAndAccountId", (q) => q.eq("provider", PASSWORD).eq("providerAccountId", email)).first());
-    if (taken && (("userId" in taken ? taken.userId : taken._id) !== userId)) return "email_pris";
-    const account = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId).eq("provider", PASSWORD)).first();
-    if (!account) return "compte_sans_mot_de_passe";
-    await ctx.db.patch(account._id, { providerAccountId: email });
-    await ctx.db.patch(userId, { email, emailVerificationTime: undefined });
-    return "ok";
+export const renewEmailChange = internalMutation({
+  args: { userId: v.id("users"), hash: v.string() },
+  handler: async (ctx, { userId, hash }): Promise<string | null> => {
+    const row = await ctx.db.query("emailChanges").withIndex("by_user", (q) => q.eq("userId", userId)).first();
+    if (!row || row.expiresAt <= Date.now()) return null;
+    await ctx.db.patch(row._id, { hash, expiresAt: Date.now() + EMAIL_LINK_TTL_MS });
+    return row.email;
+  },
+});
+
+/** La page du lien, avant le clic : les deux adresses, ou « expire » (lien inconnu, déjà servi ou trop vieux). */
+export const peekEmailChange = action({
+  args: { token: v.string() },
+  handler: async (ctx, { token }): Promise<{ ok: true; from: string; to: string } | { ok: false; reason: "expire" }> =>
+    ctx.runQuery(internal.users.emailChangeByHash, { hash: await tokenHash(token) }),
+});
+
+export const emailChangeByHash = internalQuery({
+  args: { hash: v.string() },
+  handler: async (ctx, { hash }): Promise<{ ok: true; from: string; to: string } | { ok: false; reason: "expire" }> => {
+    const row = await ctx.db.query("emailChanges").withIndex("by_hash", (q) => q.eq("hash", hash)).first();
+    if (!row || row.expiresAt <= Date.now()) return { ok: false, reason: "expire" };
+    const user = await ctx.db.get(row.userId);
+    if (!user) return { ok: false, reason: "expire" };
+    return { ok: true, from: user.email ?? "", to: row.email };
+  },
+});
+
+/** Le clic « Confirmer cette adresse » : l'adresse change, elle est vérifiée, et l'ancienne est prévenue. */
+export const confirmEmailChange = action({
+  args: { token: v.string() },
+  handler: async (ctx, { token }): Promise<{ ok: true; email: string } | { ok: false; reason: "expire" | "email_pris" }> => {
+    const r: { ok: true; from: string; to: string } | { ok: false; reason: "expire" | "email_pris" } =
+      await ctx.runMutation(internal.users.applyEmailChange, { hash: await tokenHash(token) });
+    if (!r.ok) return r;
+    if (r.from) await ctx.scheduler.runAfter(0, internal.mail.sendEmailChanged, { to: r.from, next: r.to, at: Date.now() });
+    return { ok: true, email: r.to };
+  },
+});
+
+export const applyEmailChange = internalMutation({
+  args: { hash: v.string() },
+  handler: async (ctx, { hash }): Promise<{ ok: true; from: string; to: string } | { ok: false; reason: "expire" | "email_pris" }> => {
+    const row = await ctx.db.query("emailChanges").withIndex("by_hash", (q) => q.eq("hash", hash)).first();
+    if (!row) return { ok: false, reason: "expire" };
+    if (row.expiresAt <= Date.now()) {
+      await ctx.db.delete(row._id);
+      return { ok: false, reason: "expire" };
+    }
+    const user = await ctx.db.get(row.userId);
+    const account = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", row.userId).eq("provider", PASSWORD)).first();
+    if (!user || !account) {
+      await ctx.db.delete(row._id);
+      return { ok: false, reason: "expire" };
+    }
+    // Prise entre la demande et le clic (une inscription) : refusée, le lien reste pour rien.
+    if (await emailTakenByOther(ctx, row.userId, row.email)) return { ok: false, reason: "email_pris" };
+    const from = user.email ?? ""; // lue avant le changement : c'est elle qu'on prévient
+    await ctx.db.patch(account._id, { providerAccountId: row.email });
+    await ctx.db.patch(row.userId, { email: row.email, emailVerificationTime: Date.now() });
+    await ctx.db.delete(row._id);
+    return { ok: true, from, to: row.email };
   },
 });

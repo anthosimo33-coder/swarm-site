@@ -228,4 +228,104 @@ const withClock = async (ms, f) => { const real = Date.now; Date.now = () => rea
   ok(mails.closed.subject === 'Ton compte Kopycat est fermé' && mails.closed.text.includes('fermé le 24 novembre 2026.') && !mails.closed.html.includes('href="https://www.kopycat.io/app'), 'compte fermé : objet, jour, aucun lien vers l’app');
 }
 
+// ─── 9. Changer d'adresse : un lien vers la nouvelle, rien ne change avant le clic, puis l'ancienne est prévenue ───
+{
+  const w = world();
+  const created = await w.auth({ flow: 'signUp', email: ME, password: OLD });
+  const userId = created.ok.userId;
+  const sessionId = await w.m.db.insert('authSessions', { userId, expirationTime: Date.now() + 864e5 });
+  const actx = { ...w.ctx, __userId: userId, __sessionId: sessionId };
+  const U = mods.users;
+  const run = async (f) => { try { return await f(); } catch (e) { return { err: e?.data?.code ?? String(e?.message ?? e) }; } };
+  const change = (email, password = OLD) => run(() => U.changeEmail.handler(actx, { email, password }));
+  const links = () => w.sent.filter((x) => x.fn === 'mail.sendConfirmNewEmail');
+  const NEWE = 'nouvelle@exemple.fr';
+  await w.auth({ flow: 'signUp', email: 'prise@exemple.fr', password: 'Autre-mdp-77' });
+
+  ok((await change(NEWE, 'mauvais-1')).err === 'mot_de_passe_faux' && !links().length, 'mot de passe faux : refusé, aucun lien');
+  ok((await change('prise@exemple.fr')).err === 'email_pris' && !links().length, 'adresse d’un autre compte : refusée, aucun lien');
+  const r = await change('  Nouvelle@Exemple.fr ');
+  ok(r.pending === true && r.email === NEWE, `demande : en attente, adresse nettoyée (${JSON.stringify(r)})`);
+  const token = links().at(-1)?.args.token ?? '';
+  ok(links().length === 1 && links()[0].args.to === NEWE && links()[0].args.from === ME && /^[0-9a-f]{64}$/.test(token), 'un lien part vers la NOUVELLE adresse, avec un jeton de 64 caractères');
+  ok(w.m.rows('users').find((u) => u._id === userId)?.email === ME && (await w.signIn(ME, OLD)).ok?.userId === userId, 'avant le clic, rien ne change : on se connecte toujours avec l’ancienne adresse');
+  ok(!JSON.stringify(w.m.rows('emailChanges')).includes(token), 'le jeton n’est jamais rangé en clair');
+  const pend = await U.pendingEmail.handler(actx, {});
+  ok(pend?.email === NEWE, `Réglages voit le changement en attente (${JSON.stringify(pend)})`);
+  const peek = await U.peekEmailChange.handler(actx, { token });
+  ok(peek.ok && peek.from === ME && peek.to === NEWE, 'la page du lien montre les deux adresses sans rien changer');
+  ok((await U.peekEmailChange.handler(actx, { token: 'f'.repeat(64) })).ok === false, 'un faux jeton : « lien expiré »');
+
+  // Renvoyer : nouveau jeton, l'ancien ne marche plus.
+  const again = await run(() => U.resendEmailChange.handler(actx, {}));
+  const token2 = links().at(-1)?.args.token;
+  ok(again === NEWE && token2 && token2 !== token && (await U.peekEmailChange.handler(actx, { token })).ok === false, 'renvoyer : un nouveau lien, l’ancien ne marche plus');
+
+  // Le clic.
+  const before = Date.now();
+  const done = await U.confirmEmailChange.handler(actx, { token: token2 });
+  const user = w.m.rows('users').find((u) => u._id === userId);
+  ok(done.ok && done.email === NEWE && user.email === NEWE && user.emailVerificationTime >= before, `confirmé : la nouvelle adresse est celle du compte, et vérifiée (${JSON.stringify(done)})`);
+  ok((await w.signIn(NEWE, OLD)).ok?.userId === userId && (await w.signIn(ME, OLD)).code === 'IDENTIFIANTS_INCORRECTS', 'on se connecte avec la nouvelle adresse et le même mot de passe ; plus avec l’ancienne');
+  const notice = w.sent.filter((x) => x.fn === 'mail.sendEmailChanged');
+  ok(notice.length === 1 && notice[0].args.to === ME && notice[0].args.next === NEWE, `l’ancienne adresse est prévenue (${JSON.stringify(notice.map((x) => x.args.to))})`);
+  ok(!w.m.rows('emailChanges').length && (await U.confirmEmailChange.handler(actx, { token: token2 })).ok === false, 'le lien ne sert qu’une fois');
+  ok((await U.pendingEmail.handler(actx, {})) === null, 'plus rien en attente');
+}
+
+// ─── 10. Lien expiré, annulé, adresse prise entre-temps, plafond, fermeture du compte ───
+{
+  const w = world();
+  const created = await w.auth({ flow: 'signUp', email: ME, password: OLD });
+  const userId = created.ok.userId;
+  const sessionId = await w.m.db.insert('authSessions', { userId, expirationTime: Date.now() + 864e5 });
+  const actx = { ...w.ctx, __userId: userId, __sessionId: sessionId };
+  const U = mods.users;
+  const run = async (f) => { try { return await f(); } catch (e) { return { err: e?.data?.code ?? String(e?.message ?? e) }; } };
+  const change = (email) => run(() => U.changeEmail.handler(actx, { email, password: OLD }));
+  const lastToken = () => w.sent.filter((x) => x.fn === 'mail.sendConfirmNewEmail').at(-1)?.args.token;
+
+  await change('a1@exemple.fr');
+  const t1 = lastToken();
+  ok((await withClock(25 * 3600_000, () => U.confirmEmailChange.handler(actx, { token: t1 }))).reason === 'expire', 'au bout de 24 heures : lien expiré, adresse inchangée');
+  ok(w.m.rows('users').find((u) => u._id === userId).email === ME, 'l’adresse n’a pas bougé');
+
+  await change('a2@exemple.fr');
+  const t2 = lastToken();
+  await U.cancelEmailChange.handler(actx, {});
+  ok((await U.confirmEmailChange.handler(actx, { token: t2 })).reason === 'expire' && (await U.pendingEmail.handler(actx, {})) === null, 'annulé : le lien déjà parti ne marche plus');
+
+  await change('a3@exemple.fr');
+  const t3 = lastToken();
+  await w.auth({ flow: 'signUp', email: 'a3@exemple.fr', password: 'Autre-mdp-77' });
+  const taken = await U.confirmEmailChange.handler(actx, { token: t3 });
+  ok(taken.reason === 'email_pris' && w.m.rows('users').find((u) => u._id === userId).email === ME, 'adresse prise par une inscription entre la demande et le clic : refusée');
+
+  await change('a4@exemple.fr');
+  const fifth = await change('a5@exemple.fr');
+  const capped = await change('a6@exemple.fr');
+  ok(fifth.pending === true && capped.err === 'trop_de_tentatives', `5 liens dans l’heure, le 6e refusé (${JSON.stringify(capped)})`);
+
+  // La fermeture du compte efface un changement en attente.
+  await w.m.db.insert('emailChanges', { userId, email: 'a7@exemple.fr', hash: 'x', expiresAt: Date.now() + 864e5 });
+  await mods.users.eraseAccount.handler({ db: w.m.db }, { userId, limitKeys: [] });
+  ok(!w.m.rows('emailChanges').length, 'fermer le compte efface le changement en attente');
+}
+
+// ─── 11. Les deux mails du changement d'adresse ───
+{
+  const T = mods.mailTemplates;
+  const tok = 'a'.repeat(64);
+  const c = T.confirmNewEmailMail('n&v@exemple.fr', 'old@exemple.fr', tok);
+  ok(c.subject === 'Confirme ta nouvelle adresse' && c.html.includes(`https://www.kopycat.io/confirmer-adresse?t=${tok}`) && c.text.includes(`https://www.kopycat.io/confirmer-adresse?t=${tok}`),
+    'confirmer : objet, et le lien (bouton, lien de secours, version texte)');
+  ok(c.html.includes('n&amp;v@exemple.fr') && !c.html.includes('n&v@') && c.html.includes('Le lien marche 24 heures'), 'confirmer : adresse échappée, 24 heures');
+  let threw = false; try { T.confirmNewEmailMail('x@exemple.fr', 'y@exemple.fr', 'pas-un-jeton'); } catch { threw = true; }
+  ok(threw, 'un jeton mal formé n’est jamais mis dans un lien');
+  const n = T.emailChangedMail('old@exemple.fr', 'new@exemple.fr', Date.UTC(2026, 10, 24, 9, 32));
+  ok(n.subject === 'L’adresse de ton compte a changé' && n.html.includes('mailto:support@kopycat.io') && n.text.includes('support@kopycat.io') && n.html.includes('24 novembre 2026 à 10 h 32'),
+    'ancienne adresse : objet, support@kopycat.io, quand');
+  ok([c, n].every((m) => !/[<>]/.test(m.text) && !/undefined|null|NaN/.test(m.html + m.text)), 'versions texte propres, rien d’indéfini');
+}
+
 end();

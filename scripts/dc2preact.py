@@ -38,6 +38,7 @@ PAGES = [
     ('Connexion.dc.html', 'Connexion', 'cx'),
     ('Inscription.dc.html', 'Inscription', 'ins'),
     ('MotDePasse.dc.html', 'MotDePasse', 'mdp'),  # mot de passe oublié (24/11, parcours B)
+    ('Adresse.dc.html', 'Adresse', 'adr'),  # le lien qui confirme une nouvelle adresse (24/11)
 ]
 # Liens entre artboards du canevas -> routes du site
 LINKS = {
@@ -48,6 +49,7 @@ LINKS = {
     'Connexion.dc.html': '/connexion',
     'Inscription.dc.html': '/inscription',
     'MotDePasse.dc.html': '/mot-de-passe-oublie',
+    'Adresse.dc.html': '/confirmer-adresse',
     '#quiz': '/inscription',      # « Trouver mon app » : création du compte
     '#connexion': '/connexion',   # « Se connecter »
     '#paiement': '/inscription',  # « Passer Pro » : on crée d'abord le compte
@@ -644,7 +646,7 @@ console.log(JSON.stringify(bad));
 # La page HTML qui porte chaque écran : ses <link> de polices sont déjà chargés.
 PAGE_HTML = {'app': 'app.html', 'LP': 'index.html', 'LPMobile': 'index.html', 'Tarifs': 'tarifs.html',
              'TarifsMobile': 'tarifs.html', 'Connexion': 'connexion.html', 'Inscription': 'inscription.html',
-             'MotDePasse': 'mot-de-passe-oublie.html'}
+             'MotDePasse': 'mot-de-passe-oublie.html', 'Adresse': 'confirmer-adresse.html'}
 FONT_LINK = re.compile(r'<link\b[^>]*>', re.S)
 
 
