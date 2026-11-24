@@ -94,6 +94,13 @@ for (const [k, val, why] of [
   ['views', [{ id: 'v', screen: 'createurs', name: 'x', at: 1 }], 'une vue sans sa requête'],
 ]) { const r = await put(k, val); ok(!r.ok && /FORME_INVALIDE/.test(r.err) && !r.rows.length, `forme refusée : ${why} (${r.ok ? 'acceptée' : r.err})`); }
 { const r = await put('views', [{ id: 'v1', screen: 'createurs', name: 'Études · France', q: 'niche=%C3%89tudes&m=FR', at: 1 }]); ok(r.ok, `vue enregistrée (maquette D2) : acceptée${r.ok ? '' : ` (${r.err})`}`); }
+// Historique de recherche (maquette 9B, 24/11) : deux fiches ouvertes au plus, de trois sortes.
+{ const r = await put('recent', [{ kind: 'app', id: 'diane-ai', at: 2 }, { kind: 'creator', id: 'fantine.diane', at: 1 }]); ok(r.ok, `ouverts récemment (9B) : acceptés${r.ok ? '' : ` (${r.err})`}`); }
+for (const [val, why] of [
+  [[{ kind: 'app', id: 'a', at: 3 }, { kind: 'app', id: 'b', at: 2 }, { kind: 'app', id: 'c', at: 1 }], 'trois fiches au lieu de deux'],
+  [[{ kind: 'video', id: 'v', at: 1 }], 'une sorte inconnue'],
+  [[{ kind: 'app', id: 'a', at: 1, label: 'Diane' }], 'un champ de plus'],
+]) { const r = await put('recent', val); ok(!r.ok && /FORME_INVALIDE/.test(r.err), `ouverts récemment refusés : ${why} (${r.ok ? 'acceptés' : r.err})`); }
 { const read = Array.from({ length: 60 }, (_, i) => (0xFFFFFFFF - i).toString(36)).join(' '); const r = await put('seen', { alerts: 1794780000000, alertsRead: read }); ok(r.ok, `« lu » des 60 alertes ouvertes, empreintes les plus longues (seen.alertsRead, ${read.length} caractères) : accepté${r.ok ? '' : ` (${r.err})`}`); }
 { const r = await put('alertRules', [{ id: 'r', createdAt: 1, quoi: 'video', niche: null, seuil: 1e6, marche: 'FR', langue: 'es' }]); ok(r.ok, `alerte avec un champ simple de plus : acceptée${r.ok ? '' : ` (${r.err})`}`); }
 { const r = await put('follows', VALUES.follows, { users: {} }); ok(!r.ok && /NON_CONNECTE/.test(r.err) && !r.rows.length, `compte supprimé, session encore ouverte : rien n'est réinséré (audit S27 ; ${r.ok ? 'écrit' : r.err})`); }

@@ -32,13 +32,13 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 </div>
 <div ref="{{setList}}" style="max-height: min(560px, calc(100vh - 230px)); overflow-y: auto; overscroll-behavior: contain; padding: 8px 0 14px;">
 <sc-if value="{{none}}" hint-placeholder-val="{{false}}"><div class="sw-empty" style="padding: 40px 24px;"><div class="sw-empty-radar"></div><p class="sw-empty-title">Rien pour « {{q}} »</p><p class="sw-empty-text">Essaie un nom d’app, un @compte ou un mot de l’accroche.</p></div></sc-if>
-<sc-if value="{{pa}}" hint-placeholder-val="{{true}}"><a class="pal-row" data-sel="{{big.sel}}" href="{{big.href}}" onMouseEnter="{{big.hover}}" style="display: flex; align-items: center; gap: 16px; margin: 0 16px 6px; padding: 16px; border-radius: 18px; text-decoration: none; color: inherit; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px {{big.edge}};">
+<sc-if value="{{pa}}" hint-placeholder-val="{{true}}"><a class="pal-row" data-sel="{{big.sel}}" href="{{big.href}}" onClick="{{big.open}}" onMouseEnter="{{big.hover}}" style="display: flex; align-items: center; gap: 16px; margin: 0 16px 6px; padding: 16px; border-radius: 18px; text-decoration: none; color: inherit; background: linear-gradient(180deg, var(--card-top), var(--card-bottom)); box-shadow: inset 0 0 0 1px {{big.edge}};">
 <span class="sw-app-icon {{big.blank}}" style="width: 56px; height: 56px; border-radius: 15px; align-self: flex-start;"><sc-if value="{{big.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{big.logo}}" alt=""></sc-if><sc-if value="{{big.nologo}}" hint-placeholder-val="{{false}}"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span>
 <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;"><span class="pal-ell" style="font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.025em;"><sc-for list="{{big.nm}}" as="s" hint-placeholder-count="2"><span class="{{s.c}}">{{s.t}}</span></sc-for></span><span class="pal-ell" style="font-size: 12px; color: var(--ink-faint);">{{big.sub}}</span>
 <span style="display: flex; align-items: flex-end; gap: 22px; margin-top: 8px;"><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-family: var(--font-display); font-size: 22px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;">{{big.v30}}</span><span style="font-size: 12px; color: var(--ink-faint);">vues sur 30 jours</span></span><sc-if value="{{big.delta}}" hint-placeholder-val="{{true}}"><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-family: var(--font-display); font-size: 22px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: {{big.dInk}};">{{big.delta}}</span><span style="font-size: 12px; color: var(--ink-faint);">cette semaine</span></span></sc-if></span></span>
 <sc-if value="{{big.hasCov}}" hint-placeholder-val="{{true}}"><span style="display: flex; gap: 6px; flex-shrink: 0;"><sc-for list="{{big.covs}}" as="v" hint-placeholder-count="3"><span style="position: relative; display: block; width: 64px; height: 86px; border-radius: 10px; overflow: hidden; background: var(--track); box-shadow: inset 0 0 0 1px var(--line);"><img class="sw-cover" src="{{v.src}}" alt=""></span></sc-for></span></sc-if>
 </a></sc-if>
-<sc-for list="{{groups}}" as="g" hint-placeholder-count="2"><div style="padding: 10px 16px 0;"><span style="display: block; padding: 4px 4px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);">{{g.l}}</span><sc-for list="{{g.rows}}" as="r" hint-placeholder-count="3"><a class="pal-row" data-sel="{{r.sel}}" href="{{r.href}}" onMouseEnter="{{r.hover}}" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 12px 8px 4px; margin: 0 -4px 0 0; border-radius: 12px; text-decoration: none; color: inherit; background: {{r.bg}};">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="2"><div style="padding: 10px 16px 0;"><span style="display: flex; align-items: center; gap: 7px; padding: 4px 4px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);"><sc-if value="{{g.ic}}" hint-placeholder-val="{{false}}"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>{{g.l}}</span><sc-for list="{{g.rows}}" as="r" hint-placeholder-count="3"><a class="pal-row" data-sel="{{r.sel}}" href="{{r.href}}" onClick="{{r.open}}" onMouseEnter="{{r.hover}}" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 12px 8px 4px; margin: 0 -4px 0 0; border-radius: 12px; text-decoration: none; color: inherit; background: {{r.bg}};">
 <sc-if value="{{r.isApp}}" hint-placeholder-val="{{true}}"><span class="sw-app-icon {{r.blank}}" style="width: 32px; height: 32px; border-radius: 9px;"><sc-if value="{{r.logo}}" hint-placeholder-val="{{true}}"><img class="sw-logo-img" src="{{r.logo}}" alt=""></sc-if><sc-if value="{{r.nologo}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span></sc-if>
 <sc-if value="{{r.isCr}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: relative; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #23704F, #154733); color: #FFFFFF; font-size: 13px; font-weight: 700; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);">{{r.ini}}<sc-if value="{{r.av}}" hint-placeholder-val="{{false}}"><img src="{{r.av}}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;"></sc-if></span></sc-if>
 <sc-if value="{{r.isFm}}" hint-placeholder-val="{{false}}"><span style="width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--track); color: var(--ink-soft);"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="{{r.ico}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if>
@@ -87,6 +87,7 @@ class Component extends DCLogic {
     const scope = st.scope || 'tout';
     const nq = norm(q.trim());
     const needCr = !!nq || scope === 'createurs';
+    let ixNow = null; // l'index en cours (site seulement)
     if (real) {
       const AD = get('apps'), FD = get('formats');
       // Les créateurs de l'index, par documents de 4 000 : « search », puis « search:creators:2 », « :3 »… (16/11).
@@ -95,7 +96,7 @@ class Component extends DCLogic {
       const nf = (n) => (n >= 999500 ? (n / 1e6).toFixed(1).replace('.', ',').replace(/,0$/, '') + '\u202fM' : n >= 999.5 ? Math.round(n / 1e3) + '\u202fk' : String(Math.round(n || 0)));
       const crOf = (c) => ({ k: 'cr', av: c.avatar || '', h: '@' + c.handle, handle: c.handle,
         sub: [c.app ? 'pousse ' + c.app : '', c.median ? nf(c.median) + ' vues médianes' : ''].filter(Boolean).join(' · '),
-        href: 'CreateurFicheA.dc.html?h=' + c.handle, key: '@' + c.handle + ' ' + (c.app || ''), _n: norm('@' + c.handle + ' ' + (c.app || '')) });
+        id: c.handle, href: 'CreateurFicheA.dc.html?h=' + c.handle, key: '@' + c.handle + ' ' + (c.app || ''), _n: norm('@' + c.handle + ' ' + (c.app || '')) });
       const allCr = () => (S.creators || []).concat(...SC.map((d) => (d && d.creators) || [])).map(crOf);
       let ix = this.constructor._ix;
       if (ix && ix.docs.length === docs.length && ix.docs.every((d, i) => d === docs[i])) {
@@ -113,7 +114,7 @@ class Component extends DCLogic {
           // La grande carte (comptes, vidéos par semaine, variation, vignettes) se met en forme à l'affichage, pour une app.
           return { k: 'app', n: a.name, niche: a.niche || '', logo: a.icon || '', nologo: !a.icon, blank: a.icon ? '' : 'sw-app-blank', full: full || null,
             v30: nf(a.views30 || 0), sub: (a.niche ? a.niche + ' · ' : '') + nf(a.views30 || 0) + ' vues en 30 j',
-            href: 'FicheA.dc.html?app=' + a.slug, key: a.name + ' ' + (a.niche || '') };
+            id: a.slug, href: 'FicheA.dc.html?app=' + a.slug, key: a.name + ' ' + (a.niche || '') };
         });
         FM = (S.formats || []).map((f) => {
           const full = byFmt[f.id];
@@ -121,7 +122,7 @@ class Component extends DCLogic {
           const names = full && full.apps ? full.apps.filter(Boolean).map((a) => a.name) : [];
           return { k: 'fm', t: f.kind === 'sound' ? f.label : '« ' + f.label + ' »', ico: ICO[f.kind] || ICO.hook,
             sub: kind + ' · ' + f.accounts + ' comptes' + (full && full.medX ? ' · ' + xf(full.medX) + ' la normale' : ''),
-            href: 'FormatFicheA.dc.html?f=' + f.id, key: f.label + ' ' + names.join(' ') + ' ' + ((full && full.niche) || '') };
+            id: f.id, href: 'FormatFicheA.dc.html?f=' + f.id, key: f.label + ' ' + names.join(' ') + ' ' + ((full && full.niche) || '') };
         });
         [AP, FM].forEach((L) => L.forEach((x) => { x._n = norm(x.key); }));
         // Sans recherche, seuls les 3 premiers créateurs s'affichent : le reste attend un temps mort (componentDidMount),
@@ -132,6 +133,7 @@ class Component extends DCLogic {
         this.constructor._ix = ix;
         CR = ix.CR;
       }
+      ixNow = this.constructor._ix;
     } else {
       // Le canevas : l'exemple, mis à la forme des données du site.
       AP = AP.map((a) => Object.assign({}, a, { sub: a.niche + ' · ' + a.v30 + ' vues en 30 j' }));
@@ -143,6 +145,15 @@ class Component extends DCLogic {
     let apps = want('apps') ? AP.filter(hit) : [];
     let crs = want('createurs') ? CR.filter(hit) : [];
     let fms = want('formats') ? FM.filter(hit) : [];
+    // Ouverts récemment (maquette 9B, 24/11) : sans recherche, les deux dernières fiches ouvertes d'ici (préférence
+    // `recent`, src/app/recent.js), avec leurs chiffres du jour pris dans l'index ; une fiche sortie de l'index n'est plus montrée.
+    const RS = real && !nq ? get('saved:recent') : null;
+    let rec = [];
+    if (Array.isArray(RS) && RS.length && ixNow) {
+      if (RS.some((r) => r.kind === 'creator') && ixNow.fill) { ixNow.fill(); CR = ixNow.CR; }
+      const L = { app: [AP, 'apps'], creator: [CR, 'createurs'], format: [FM, 'formats'] };
+      rec = RS.map((r) => L[r.kind] && want(L[r.kind][1]) ? L[r.kind][0].find((x) => x.id === r.id) : null).filter(Boolean);
+    }
     const total = apps.length + crs.length + fms.length;
     // Une recherche : la première app trouvée en grande carte, puis les autres groupes. Sans recherche : les plus vues.
     const big = nq && apps.length ? apps[0] : null;
@@ -161,13 +172,15 @@ class Component extends DCLogic {
       const a = at[p], b = (at[p + nq.length - 1] || a) + 1;
       return [{ t: t.slice(0, a), c: '' }, { t: t.slice(a, b), c: 'pal-hl' }, { t: t.slice(b), c: '' }].filter((s) => s.t);
     };
-    const flat = [].concat(big ? [big] : [], apps, crs, fms);
+    const flat = [].concat(big ? [big] : [], rec, apps, crs, fms);
     const sel = Math.min(st.sel || 0, Math.max(0, flat.length - 1));
     let at = 0;
     const row = (x) => {
       const i = at++;
       const on = i === sel;
+      const kind = { app: 'app', cr: 'creator', fm: 'format' }[x.k];
       return { sel: on ? 'true' : 'false', bg: on ? 'var(--accent-soft)' : 'transparent', edge: on ? 'var(--accent-edge)' : 'var(--card-edge)', href: x.href,
+        open: () => { if (x.id && kind && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('kopycat:opened', { detail: { kind, id: x.id } })); },
         hover: () => { if ((this.state || {}).sel !== i) this.setState({ sel: i }); },
         isApp: x.k === 'app', isCr: x.k === 'cr', isFm: x.k === 'fm', logo: x.logo, nologo: x.nologo, blank: x.blank, av: x.av || '', ini: x.h ? (Array.from(x.h.slice(1))[0] || '').toUpperCase() : '', ico: x.ico,
         nm: cut(x.k === 'cr' ? x.h : x.k === 'fm' ? x.t : x.n), sub: cut(x.sub) };
@@ -185,10 +198,11 @@ class Component extends DCLogic {
         delta: d === null ? '' : (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) + '\u202f%', dInk: d !== null && d >= 0 ? '#5CD394' : '#FF9A9A', hasCov: covs.length > 0, covs });
     }
     const groups = [
+      [rec, 'Ouverts récemment', true],
       [apps, nq ? 'Autres apps' : 'Les plus vues en 30 jours'],
       [crs, nq ? 'Créateurs' : (real ? 'Les plus vus' : 'Créateurs à suivre')],
       [fms, nq ? 'Formats' : (real ? 'Les plus repris' : 'Formats de la semaine')],
-    ].filter((g) => g[0].length).map((g) => ({ l: g[1], rows: g[0].map(row) }));
+    ].filter((g) => g[0].length).map((g) => ({ l: g[1], ic: !!g[2], rows: g[0].map(row) }));
     const close = () => { if (this.props.onClose) this.props.onClose(); };
     const scopes = [['tout', 'Tout'], ['apps', 'Apps'], ['formats', 'Formats'], ['createurs', 'Créateurs']]
       .map((s) => ({ l: s[1], on: s[0] === scope ? 'true' : 'false', pick: () => this.setState({ scope: s[0], sel: 0 }) }));

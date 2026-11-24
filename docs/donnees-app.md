@@ -236,6 +236,7 @@ Sur le canevas, ces props n'existent pas : l'écran garde un état local, comme 
 | `alertRules` | `[{ id, createdAt, quoi: 'compte'\|'video'\|'format', niche: nom\|null, seuil: nombre, marche: code pays\|null }]` — « montre-moi quand un compte / une vidéo / un format de <niche> fait <seuil>× sa normale (<pays>) » ; aucune alerte n'est envoyée, elles filtrent l'écran Alertes |
 | `seen` | `{ alerts: date en ms, alertsRead?: texte }` — `alerts` : « Tout marquer comme lu » ; `alertsRead` : les alertes ouvertes, sur ordinateur comme au téléphone (une empreinte de 7 caractères au plus par alerte, FNV-1a en base 36 de `f-<id>` ou `v-<id>`, séparées par des espaces ; seules celles encore non lues par la date, 500 caractères au plus) |
 | `views` | `[{ id, screen: 'createurs', name, q, at }]` — les vues enregistrées d'une liste (« Mes vues ») : `q` = la requête de l'adresse qui porte ses filtres (`niche=Études&m=FR`), `name` composé par l'écran depuis ces filtres |
+| `recent` | `[{ kind: 'app'\|'creator'\|'format', id, at }]` ×2 — les deux dernières fiches ouvertes depuis la recherche (maquette 9B), la plus récente d'abord. Écrite par `src/app/recent.js` sur l'évènement `kopycat:opened` ; la recherche, qui ne reçoit que `get`, la lit par `get('saved:recent')` et retrouve les chiffres du jour dans l'index (une fiche sortie de l'index n'est plus montrée) |
 
 Une valeur pèse au plus 256 Ko, comptés comme Convex les compte ; un compte écrit au plus 300 fois par 10 minutes
 (`TROP_DE_REQUETES` au-delà). Sa forme est vérifiée : champs connus du bon type,
