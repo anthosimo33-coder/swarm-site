@@ -187,7 +187,10 @@ export const deleteAccount = action({
     // Les compteurs d'échecs liés à ce compte (connexion par e-mail haché, liens de paiement, écritures) partent aussi.
     const limitKeys = [`checkout:${userId}`, `saved:${userId}`, ...(login ? [await signInKey(login)] : [])];
     const erased: boolean = await ctx.runMutation(internal.users.eraseAccount, { userId, limitKeys });
-    return erased ? { ok: true } : { ok: false, reason: "resiliation" };
+    if (!erased) return { ok: false, reason: "resiliation" };
+    // L'adresse lue avant l'effacement : le compte n'existe plus quand l'e-mail part.
+    await ctx.scheduler.runAfter(0, internal.mail.sendAccountClosed, { to: mine, at: Date.now() });
+    return { ok: true };
   },
 });
 
@@ -269,7 +272,9 @@ export const changePassword = action({
     if (verdict !== "ok") throw failWith(`mot_de_passe_${verdict}`);
     await checkPassword(ctx, login, current);
     await modifyAccountCredentials(ctx, { provider: PASSWORD, account: { id: login, secret: next } });
-    return await ctx.runMutation(internal.users.closeOtherSessions, { userId, keep: (await getAuthSessionId(ctx)) ?? null });
+    const closed: number = await ctx.runMutation(internal.users.closeOtherSessions, { userId, keep: (await getAuthSessionId(ctx)) ?? null });
+    await ctx.scheduler.runAfter(0, internal.mail.sendPasswordChanged, { to: login, at: Date.now() });
+    return closed;
   },
 });
 
@@ -289,6 +294,7 @@ export const resetPassword = internalAction({
     await modifyAccountCredentials(ctx, { provider: PASSWORD, account: { id: found.login, secret: password } });
     const closed: number = await ctx.runMutation(internal.users.closeOtherSessions, { userId: found.userId, keep: null });
     await ctx.runMutation(internal.users.clearSignInLimits, { userId: found.userId, key: await signInKey(found.login) });
+    await ctx.scheduler.runAfter(0, internal.mail.sendPasswordChanged, { to: found.login, at: Date.now() });
     return { ok: true, sessionsFermees: closed };
   },
 });

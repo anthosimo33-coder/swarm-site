@@ -109,6 +109,7 @@ const password = ConvexCredentials({
           account: { id: email, secret },
           profile: { email },
         });
+        await ctx.scheduler.runAfter(0, internal.mail.sendWelcome, { to: email });
         return { userId: user._id };
       }
       if (params.flow === "signIn") {
@@ -160,6 +161,7 @@ const password = ConvexCredentials({
         // les compteurs d'échecs remis à zéro (un compte bloqué par les essais d'un tiers se rouvre).
         await ctx.runMutation(internal.users.closeOtherSessions, { userId: res.userId, keep: null });
         await ctx.runMutation(internal.users.clearSignInLimits, { userId: res.userId, key: await signInKey(res.login) });
+        await ctx.scheduler.runAfter(0, internal.mail.sendPasswordChanged, { to: res.login, at: Date.now() });
         return { userId: res.userId };
       }
       throw new Error(`Flow inconnu : ${String(params.flow)}`);

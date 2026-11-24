@@ -33,8 +33,10 @@ const m = memDb();
 let breakAccounts = false;
 const db = { ...m.db, query: (t) => { if (t === "authAccounts" && breakAccounts) throw new Error("panne passagère"); return m.db.query(t); } };
 const dbCtx = { db, auth: { getUserIdentity: async () => null } };
+const scheduled = [];
 const ctx = {
   auth: { getUserIdentity: async () => null },
+  scheduler: { runAfter: async (ms, ref, a) => { scheduled.push([ref.__path, a]); } },
   runMutation: async (ref, a) => {
     if (ref === "auth:store") {
       const { type, ...args } = a.args;
