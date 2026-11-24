@@ -1,4 +1,4 @@
-// Mot de passe oublié (24/11, parcours B) : le vrai fournisseur « password » de convex/auth.ts (flows reset,
+// Mot de passe oublié (24/11, parcours B) et e-mails du compte (bienvenue, mot de passe changé, compte fermé) : le vrai fournisseur « password » de convex/auth.ts (flows reset,
 // reset-check, reset-verification), convex/passwordReset.ts, convex/mail.ts et le gabarit du mail, avec les vraies
 // mutations de Convex Auth 0.0.96 (auth:store), sur une base en mémoire. L'envoi chez Resend est remplacé par un relevé.
 // Usage : node scripts/mdp-oublie.test.mjs   (ou <autre dossier convex/>, pour la contre-épreuve)
@@ -54,8 +54,9 @@ function world() {
   const reset = (email) => auth({ flow: 'reset', email });
   const check = (email, code) => auth({ flow: 'reset-check', email, code });
   const finish = (email, code, pw) => auth({ flow: 'reset-verification', email, code, newPassword: pw });
-  const lastCode = () => sent.at(-1)?.args.code;
-  return { m, ctx, sent, auth, signIn, reset, check, finish, lastCode };
+  const codes = () => sent.filter((x) => x.fn === 'mail.sendResetCode');
+  const lastCode = () => codes().at(-1)?.args.code;
+  return { m, ctx, sent, codes, auth, signIn, reset, check, finish, lastCode };
 }
 
 const { ok, end } = checker();
@@ -70,7 +71,7 @@ const withClock = async (ms, f) => { const real = Date.now; Date.now = () => rea
   const known = await w.reset('  Inscrite@Exemple.fr ');
   const unknown = await w.reset('personne@exemple.fr');
   ok(known.ok === null && unknown.ok === null, `demande : même réponse, avec ou sans compte (${JSON.stringify(known)} / ${JSON.stringify(unknown)})`);
-  ok(w.sent.length === 1 && w.sent[0].fn === 'mail.sendResetCode' && w.sent[0].args.to === ME, `un seul e-mail planifié, vers l'adresse du compte (${JSON.stringify(w.sent.map((s) => s.args.to))})`);
+  ok(w.codes().length === 1 && w.codes()[0].args.to === ME, `un seul code planifié, vers l'adresse du compte (${JSON.stringify(w.codes().map((s) => s.args.to))})`);
   ok(/^\d{6}$/.test(w.lastCode() ?? ''), `le code envoyé a 6 chiffres (${w.lastCode()})`);
   const rows = w.m.rows('passwordResets');
   ok(rows.length === 2 && rows.every((r) => r.tries === 0 && r.expiresAt > Date.now()), `une ligne par adresse, inconnue comprise (${rows.length})`);
@@ -136,7 +137,7 @@ const withClock = async (ms, f) => { const real = Date.now; Date.now = () => rea
   ok((await w.check(ME, third)).ok === null, 'le dernier code marche');
   const fourth = await w.reset(ME), other = await w.reset('personne@exemple.fr');
   ok(fourth.code === 'TROP_DE_TENTATIVES', `4e demande dans l’heure : refusée (${fourth.code ?? 'acceptée'})`);
-  ok(w.sent.length === 3, `3 e-mails partis, pas 4 (${w.sent.length})`);
+  ok(w.codes().length === 3, `3 codes partis, pas 4 (${w.codes().length})`);
   for (let i = 0; i < 3; i++) await w.reset('personne@exemple.fr');
   ok(other.ok === null && (await w.reset('personne@exemple.fr')).code === 'TROP_DE_TENTATIVES', 'le plafond vaut aussi pour une adresse inconnue');
   ok((await withClock(61 * 60_000, () => w.reset(ME))).ok === null, 'une heure plus tard, une demande passe de nouveau');
@@ -160,23 +161,70 @@ const withClock = async (ms, f) => { const real = Date.now; Date.now = () => rea
   const realFetch = globalThis.fetch, calls = [];
   globalThis.fetch = async (url, init) => { calls.push({ url, init }); return new Response(JSON.stringify({ id: 're_123' }), { status: 200 }); };
   const send = mods.mail.sendResetCode.handler;
+  const REAL = 'lea@domaine-reel.fr';
   delete process.env.RESEND_API_KEY;
   let missing = '';
-  try { await send({}, { to: ME, code: '481207' }); } catch (e) { missing = String(e.message); }
+  try { await send({}, { to: REAL, code: '481207' }); } catch (e) { missing = String(e.message); }
   ok(/RESEND_API_KEY/.test(missing) && calls.length === 0, `sans clé : erreur qui nomme la variable, rien n’est appelé (${missing.slice(0, 60)})`);
   process.env.RESEND_API_KEY = 're_test_cle';
   const log = console.log; console.log = () => {};
-  await send({}, { to: ME, code: '481207' });
+  await send({}, { to: REAL, code: '481207' });
+  await send({}, { to: 'test@Exemple.fr', code: '481207' });
   console.log = log;
   const body = JSON.parse(calls[0]?.init.body ?? '{}');
   ok(calls[0]?.url === 'https://api.resend.com/emails' && calls[0].init.headers.Authorization === 'Bearer re_test_cle', 'appel à l’API de Resend, avec la clé');
-  ok(body.from === 'Kopycat <compte@kopycat.io>' && body.to?.[0] === ME && body.subject === '481 207 est ton code Kopycat' && body.text && body.html, `expéditeur, destinataire, objet, HTML et texte (${body.from} → ${body.to})`);
+  ok(calls.length === 1, `adresse de test (@exemple.fr) : rien n’est envoyé (${calls.length} appel(s) pour 2 envois)`);
+  ok(body.from === 'Kopycat <compte@kopycat.io>' && body.to?.[0] === REAL && body.subject === '481 207 est ton code Kopycat' && body.text && body.html, `expéditeur, destinataire, objet, HTML et texte (${body.from} → ${body.to})`);
   globalThis.fetch = async () => new Response('{"message":"domain not verified"}', { status: 403 });
   let refused = '';
-  try { await send({}, { to: ME, code: '481207' }); } catch (e) { refused = String(e.message); }
+  try { await send({}, { to: REAL, code: '481207' }); } catch (e) { refused = String(e.message); }
   ok(/403/.test(refused), `Resend refuse : l’erreur remonte (${refused.slice(0, 50)})`);
   globalThis.fetch = realFetch;
   delete process.env.RESEND_API_KEY;
+}
+
+// ─── 7. Les e-mails du compte : planifiés au bon moment, vers la bonne adresse ───
+{
+  const w = world();
+  const created = await w.auth({ flow: 'signUp', email: ME, password: OLD });
+  const welcome = w.sent.filter((x) => x.fn === 'mail.sendWelcome');
+  ok(welcome.length === 1 && welcome[0].args.to === ME, `inscription : un e-mail de bienvenue (${JSON.stringify(welcome.map((x) => x.args))})`);
+  await w.auth({ flow: 'signUp', email: ME, password: OLD });
+  ok(w.sent.filter((x) => x.fn === 'mail.sendWelcome').length === 1, 'inscription refusée (compte existant) : pas de second e-mail');
+  await w.reset(ME);
+  const code = w.lastCode();
+  await w.finish(ME, code, '12345678');
+  ok(!w.sent.some((x) => x.fn === 'mail.sendPasswordChanged'), 'mot de passe refusé : aucun « mot de passe changé »');
+  const before = Date.now();
+  await w.finish(ME, code, NEW);
+  const changed = w.sent.filter((x) => x.fn === 'mail.sendPasswordChanged');
+  ok(changed.length === 1 && changed[0].args.to === ME && changed[0].args.at >= before, `mot de passe oublié : « mot de passe changé » vers le compte, à l’heure du changement (${changed.length})`);
+  // Réglages › Sécurité : même e-mail ; un mauvais mot de passe actuel n'en envoie aucun.
+  const sessionId = await w.m.db.insert('authSessions', { userId: created.ok.userId, expirationTime: Date.now() + 864e5 });
+  const actx = { ...w.ctx, __userId: created.ok.userId, __sessionId: sessionId };
+  const change = async (current, next) => { try { return await mods.users.changePassword.handler(actx, { current, next }); } catch (e) { return e?.data?.code ?? String(e); } };
+  const bad = await change('mauvais-mdp-1', 'Encore-autre-93');
+  ok(w.sent.filter((x) => x.fn === 'mail.sendPasswordChanged').length === 1, `Réglages, mot de passe actuel faux (${bad}) : aucun e-mail`);
+  await change(NEW, 'Encore-autre-93');
+  const after = w.sent.filter((x) => x.fn === 'mail.sendPasswordChanged');
+  ok(after.length === 2 && after[1].args.to === ME, 'Réglages : « mot de passe changé » vers le compte');
+}
+
+// ─── 8. Les gabarits : objet, heure de Paris, lien, adresse échappée, version texte ───
+{
+  const T = mods.mailTemplates;
+  ok(T.parisDate(Date.UTC(2026, 10, 24, 9, 32)) === '24 novembre 2026 à 10 h 32', `heure de Paris en hiver (${T.parisDate(Date.UTC(2026, 10, 24, 9, 32))})`);
+  ok(T.parisDate(Date.UTC(2026, 6, 1, 8, 5)) === '1 juillet 2026 à 10 h 05', `heure de Paris en été (${T.parisDate(Date.UTC(2026, 6, 1, 8, 5))})`);
+  const at = Date.UTC(2026, 10, 24, 9, 32), who = 'a&b@exemple.fr';
+  const mails = { change: T.passwordChangedMail(who, at), welcome: T.welcomeMail(who), closed: T.accountClosedMail(who, at) };
+  const all = Object.values(mails);
+  ok(all.every((m) => m.html.includes('a&amp;b@exemple.fr') && !m.html.includes('a&b@')), 'adresse échappée dans les trois HTML');
+  ok(all.every((m) => !/[<>]/.test(m.text) && !/undefined|null|NaN/.test(m.html + m.text) && m.text.includes('JARVIA STUDIO')), 'versions texte sans balise, rien d’indéfini, éditeur dans le pied');
+  ok(all.every((m) => m.html.includes('color-scheme" content="light only')), 'fond blanc seulement');
+  ok(mails.change.subject === 'Ton mot de passe a été changé' && mails.change.html.includes('24 novembre 2026 à 10 h 32 (heure de Paris)') && mails.change.html.includes('https://www.kopycat.io/mot-de-passe-oublie') && mails.change.text.includes('https://www.kopycat.io/mot-de-passe-oublie'),
+    'mot de passe changé : objet, quand, et « Ce n’était pas moi » vers le mot de passe oublié');
+  ok(mails.welcome.subject === 'Ton compte Kopycat est prêt' && mails.welcome.html.includes('https://www.kopycat.io/app/apps') && mails.welcome.text.includes('TikTok, Instagram et YouTube Shorts'), 'bienvenue : objet, lien vers Apps, les trois réseaux');
+  ok(mails.closed.subject === 'Ton compte Kopycat est fermé' && mails.closed.text.includes('fermé le 24 novembre 2026.') && !mails.closed.html.includes('href="https://www.kopycat.io/app'), 'compte fermé : objet, jour, aucun lien vers l’app');
 }
 
 end();

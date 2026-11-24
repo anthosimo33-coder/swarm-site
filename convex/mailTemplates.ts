@@ -67,11 +67,35 @@ const h1 = (t: string) =>
 const p = (t: string, size = 16, color = SOFT, last = false) =>
   `<p style="margin:0 0 ${last ? 0 : 24}px;font-size:${size}px;line-height:1.6;color:${color};">${esc(fr(t))}</p>`;
 
+/** Le bouton d'action du site (pilule bleue, pastille ronde et flèche), en tableau pour les messageries. */
+const button = (label: string, href: string) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;"><tr><td bgcolor="#0B6FE0" style="border-radius:999px;background:#0B6FE0;background-image:linear-gradient(180deg,#4C9AFF 0%,#0B6FE0 100%);border:1px solid #0A63C9;">`
+  + `<a href="${esc(href)}" style="display:inline-block;padding:6px 6px 6px 24px;font-family:${SANS};font-size:16px;line-height:40px;font-weight:600;color:#FFFFFF;text-decoration:none;white-space:nowrap;">${esc(fr(label))}`
+  + `<span style="display:inline-block;width:38px;height:38px;margin-left:12px;border-radius:50%;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.45);text-align:center;line-height:38px;font-size:17px;vertical-align:top;">&rarr;</span></a></td></tr></table>`;
+
+/** Lignes « étiquette · valeur » séparées par des filets (mot de passe changé). */
+const facts = (rows: [string, string][]) =>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;border-bottom:1px solid ${LINE};">`
+  + rows.map(([k, v]) => `<tr><td style="width:120px;padding:12px 16px 12px 0;border-top:1px solid ${LINE};font-size:15px;line-height:1.5;color:${MUTED};vertical-align:top;">${esc(fr(k))}</td>`
+    + `<td style="padding:12px 0;border-top:1px solid ${LINE};font-size:15px;line-height:1.5;color:${INK};word-break:break-word;">${esc(fr(v))}</td></tr>`).join("")
+  + `</table>`;
+
+const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+/** « 24 novembre 2026 à 10 h 32 » à l'heure de Paris. */
+export function parisDate(ms: number): string {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return `${Number(parts.day)} ${MONTHS[Number(parts.month) - 1]} ${parts.year} à ${Number(parts.hour)} h ${parts.minute}`;
+}
+
+const reasonFor = (email: string) => `Tu reçois cet e-mail parce qu’un compte Kopycat utilise ${email}.`;
+const footText = (reason: string) => ["—", fr(reason), "Kopycat · www.kopycat.io", `Kopycat est édité par ${EDITEUR}.`];
+
 /** Le code de « mot de passe oublié » (parcours B) : le code dans l'objet, pour le lire dès la notification. */
 export function resetCodeMail(code: string, email: string): Mail {
   if (!/^\d{6}$/.test(code)) throw new Error("code attendu : 6 chiffres");
   const shown = `${code.slice(0, 3)} ${code.slice(3)}`;
-  const reason = `Tu reçois cet e-mail parce qu’un compte Kopycat utilise ${email}.`;
+  const reason = reasonFor(email);
   const lines = {
     title: "Ton code pour changer de mot de passe",
     use: "Entre-le sur la page de Kopycat restée ouverte. Il marche 15 minutes.",
@@ -84,7 +108,59 @@ export function resetCodeMail(code: string, email: string): Mail {
   return {
     subject: `${shown} est ton code Kopycat`,
     html: layout({ title: lines.title, preview: "Il marche 15 minutes.", body, reason }),
-    text: [`${fr(lines.title)} : ${shown}`, "", fr(lines.use), "", fr(lines.notMe), "", "—", fr(reason), "Kopycat · www.kopycat.io",
-      `Kopycat est édité par ${EDITEUR}.`].join("\n"),
+    text: [`${fr(lines.title)} : ${shown}`, "", fr(lines.use), "", fr(lines.notMe), "", ...footText(reason)].join("\n"),
+  };
+}
+
+/** Le mot de passe a changé (mot de passe oublié, Réglages, ou remise par le support) : les autres appareils sont déconnectés. */
+export function passwordChangedMail(email: string, at: number): Mail {
+  const when = `${parisDate(at)} (heure de Paris)`;
+  const reason = reasonFor(email);
+  const lines = {
+    title: "Ton mot de passe a changé",
+    done: "Le mot de passe de ton compte Kopycat a été changé. Tes autres appareils ont été déconnectés.",
+    notMe: "Pas toi ? Change-le tout de suite : l’autre personne sera déconnectée.",
+  };
+  const href = `${SITE}/mot-de-passe-oublie`;
+  const body = h1(lines.title) + p(lines.done) + facts([["Compte", email], ["Quand", when]]) + p(lines.notMe) + button("Ce n’était pas moi", href).replace("margin:0 0 24px;", "margin:0;");
+  return {
+    subject: "Ton mot de passe a été changé",
+    html: layout({ title: lines.title, preview: `Le ${parisDate(at)}. Tes autres appareils ont été déconnectés.`, body, reason }),
+    text: [fr(lines.title), "", fr(lines.done), "", `Compte : ${email}`, fr(`Quand : ${when}`), "", fr(lines.notMe), href, "", ...footText(reason)].join("\n"),
+  };
+}
+
+/** Bienvenue, à l'inscription par e-mail. */
+export function welcomeMail(email: string): Mail {
+  const reason = `Tu reçois cet e-mail parce que tu viens de créer un compte Kopycat avec ${email}.`;
+  const lines = {
+    title: "Bienvenue sur Kopycat",
+    start: "Commence par Apps : les apps que les réseaux de créateurs poussent en ce moment sur TikTok, Instagram et YouTube Shorts.",
+  };
+  const href = `${SITE}/app/apps`;
+  const created = `<p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${SOFT};">Ton compte est créé avec <b style="color:${INK};">${esc(email)}</b>.</p>`;
+  const body = h1(lines.title) + created + p(lines.start) + button("Voir les apps", href).replace("margin:0 0 24px;", "margin:0;");
+  return {
+    subject: "Ton compte Kopycat est prêt",
+    html: layout({ title: lines.title, preview: "Les apps que les réseaux de créateurs poussent en ce moment.", body, reason }),
+    text: [fr(lines.title), "", `Ton compte est créé avec ${email}.`, "", fr(lines.start), href, "", ...footText(reason)].join("\n"),
+  };
+}
+
+/** Le compte est fermé (Réglages › Profil) : tout ce qu'il contenait est effacé. */
+export function accountClosedMail(email: string, at: number): Mail {
+  const reason = `Tu reçois cet e-mail parce que ton compte Kopycat utilisait ${email}.`;
+  const day = parisDate(at).replace(/ à .*$/, "");
+  const lines = {
+    title: "Ton compte est fermé",
+    erased: "Tout ce qu’il contenait est effacé : dossiers, alertes, réglages.",
+    again: "Tu peux recréer un compte avec la même adresse quand tu veux.",
+  };
+  const closed = `<p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${SOFT};">Le compte <b style="color:${INK};">${esc(email)}</b> a été fermé le ${esc(day)}. ${esc(fr(lines.erased))}</p>`;
+  const body = h1(lines.title) + closed + p(lines.again, 16, SOFT, true);
+  return {
+    subject: "Ton compte Kopycat est fermé",
+    html: layout({ title: lines.title, preview: "Tes dossiers, alertes et réglages ont été effacés.", body, reason }),
+    text: [fr(lines.title), "", `Le compte ${email} a été fermé le ${day}. ${fr(lines.erased)}`, "", fr(lines.again), "", ...footText(reason)].join("\n"),
   };
 }

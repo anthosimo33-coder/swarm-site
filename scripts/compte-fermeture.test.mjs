@@ -54,8 +54,9 @@ async function world({ status = "active", sub = true, google = false, sessionAge
     return f.handler({ db: m.db }, a);
   };
   // Un contexte qui sert d'action (runQuery, runMutation) comme de mutation (db) : l'ancienne fermeture était une mutation.
-  const ctx = { db: m.db, __userId: userId, __sessionId: sessionId, runQuery: call, runMutation: call, runAction: call, scheduler: { runAfter: async () => null } };
-  return { m, ctx, userId, close: (email, password = "Bon-mdp-42") => quiet(() => mods.users.deleteAccount.handler(ctx, password === null ? { email } : { email, password })) };
+  const scheduled = [];
+  const ctx = { db: m.db, __userId: userId, __sessionId: sessionId, runQuery: call, runMutation: call, runAction: call, scheduler: { runAfter: async (ms, ref, args) => { scheduled.push([ref.__path, args]); return null; } } };
+  return { m, ctx, userId, scheduled, close: (email, password = "Bon-mdp-42") => quiet(() => mods.users.deleteAccount.handler(ctx, password === null ? { email } : { email, password })) };
 }
 const cancels = () => whop.calls.filter((c) => c.method === "POST" && /\/cancel$/.test(c.url));
 
@@ -67,12 +68,15 @@ const { ok, end } = checker();
   ok(cancels().length === 1 && !cancels()[0].body?.cancel_at_period_end, "résiliation immédiate (sans cancel_at_period_end)");
   ok(r?.ok === true && !w.m.rows("users").length && !w.m.rows("saved").length && !w.m.rows("authSessions").length && !w.m.rows("authAccounts").length, "puis le compte et ce qu'il garde sont effacés");
   ok(whop.memberships.mem_1.status === "canceled", "chez Whop, plus rien n'est prélevé");
+  const mail = w.scheduled.filter(([f]) => f === "mail.sendAccountClosed");
+  ok(mail.length === 1 && mail[0][1].to === "abonnee@exemple.fr", `compte fermé : l'e-mail part vers l'adresse lue avant l'effacement (${JSON.stringify(mail.map(([, a]) => a.to))})`);
 }
 {
   const w = await world();
   whop.down = true;
   const r = await w.close("abonnee@exemple.fr");
   ok(r?.ok === false && w.m.rows("users").length === 1 && w.m.rows("saved").length === 1, `Whop ne répond pas : rien n'est effacé (${JSON.stringify(r)})`);
+  ok(!w.scheduled.some(([f]) => f === "mail.sendAccountClosed"), "rien d'effacé : pas d'e-mail « compte fermé »");
   ok(r?.reason === "resiliation", "et l'écran sait pourquoi (reason « resiliation »)");
 }
 {

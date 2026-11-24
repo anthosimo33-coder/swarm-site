@@ -50,7 +50,7 @@ function world() {
     if (!f) throw new Error('fonction inconnue ' + ref.__path);
     return f.handler({ ...dbCtx, runQuery: call, runMutation: call }, a);
   };
-  const ctx = { ...dbCtx, runQuery: call, runMutation: call, runAction: call };
+  const ctx = { ...dbCtx, runQuery: call, runMutation: call, runAction: call, scheduler: { runAfter: async () => null } };
   const auth = async (flow, email, pw) => { try { return { ok: await password.authorize({ flow, email, password: pw }, ctx) }; } catch (e) { return { code: e?.data?.code ?? String(e?.message ?? e) }; } };
   return { m, ctx, call, auth };
 }
