@@ -206,7 +206,7 @@ export const ideaWork = internalQuery({
         continue;
       }
       const ai = x.hook && hookKey(x.hook) ? null : await ctx.db.query("videoAi").withIndex("by_video", (q) => q.eq("videoId", x.videoId)).first();
-      const text = ideaText(x.hook, ai?.text);
+      const text = ideaText(x.hook, ai);
       if (!text) {
         later(r);
         continue;

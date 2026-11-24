@@ -51,10 +51,13 @@ const member = (accountId: string, videoId: string, views: number, hook: string,
 
 describe("idées d'accroches : règles pures (radarIdeasMath)", () => {
   it("le texte lu : celui de TikTok s'il dit quelque chose, sinon celui que l'IA a lu sur la miniature", () => {
-    expect(ideaText("POV : t'as fini de réviser plus tôt", "autre texte lu par l'IA")).toBe("POV : t'as fini de réviser plus tôt");
-    expect(ideaText(undefined, "Je ne dirai jamais\n« J'ai réussi »\nmais « on a réussi »")).toBe("Je ne dirai jamais « J'ai réussi » mais « on a réussi »");
+    expect(ideaText("POV : t'as fini de réviser plus tôt", { text: "autre texte lu par l'IA", type: "ambassadeur" })).toBe("POV : t'as fini de réviser plus tôt");
+    expect(ideaText(undefined, { text: "Je ne dirai jamais\n« J'ai réussi »\nmais « on a réussi »", type: "ambiance_texte" })).toBe("Je ne dirai jamais « J'ai réussi » mais « on a réussi »");
+    // Une capture d'écran de l'app : l'IA y lit l'interface, pas une accroche.
+    expect(ideaText(undefined, { text: "Enhance quality Export Add Opacity Erase Cutout", type: "demo_ecran" })).toBeNull();
+    expect(ideaText("Le texte posé sur ma démo", { text: "Export Add Opacity", type: "demo_ecran" })).toBe("Le texte posé sur ma démo");
     // Trop court pour dire une idée (moins de 3 mots), des deux côtés.
-    expect(ideaText("Diane ai", "ok")).toBeNull();
+    expect(ideaText("Diane ai", { text: "ok" })).toBeNull();
     expect(ideaText("· Diane ai ·", undefined)).toBeNull();
     // Coupé par caractère entier (un émoji coupé en deux, Convex le refuse).
     const long = ideaText("révise 😭 ".repeat(80), null)!;

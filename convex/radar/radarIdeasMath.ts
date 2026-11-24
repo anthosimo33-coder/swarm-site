@@ -69,10 +69,12 @@ const clip = (s: string, n: number) => {
 
 /**
  * Le texte à l'écran d'une vidéo pour le rangement : celui de TikTok s'il dit quelque chose (3 mots au moins, cf
- * hookKey), sinon celui que l'IA a lu sur la miniature ; `null` sans texte qui dise une idée.
+ * hookKey), sinon celui que l'IA a lu sur la miniature ; `null` sans texte qui dise une idée. Pas celui d'une
+ * capture d'écran de l'app (type `demo_ecran`, convex/radarAi) : l'IA y recopie l'interface (rejeu du 24/11/2026 :
+ * « Enhance quality Export Add Opacity Erase Cutout… » chez 40 comptes d'Hypic, les titres et BPM de djay chez 40).
  */
-export function ideaText(hook: string | null | undefined, aiText: string | null | undefined): string | null {
-  for (const t of [hook, aiText]) if (t && hookKey(t)) return clip(t, TEXT_MAX);
+export function ideaText(hook: string | null | undefined, ai: { text?: string | null; type?: string | null } | null | undefined): string | null {
+  for (const t of [hook, ai?.type === "demo_ecran" ? null : ai?.text]) if (t && hookKey(t)) return clip(t, TEXT_MAX);
   return null;
 }
 
