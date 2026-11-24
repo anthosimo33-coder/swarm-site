@@ -1,10 +1,10 @@
 # Écrit les 3 pages légales statiques de Kopycat dans public/ (servies en /cgv, /confidentialite, /mentions-legales).
 # Usage : python3 scripts/legal-pages.py public
-# Société d'après le Kbis du 17/11/2026. À ajouter quand ils existent : l'e-mail de contact (mentions légales, CGV,
-# confidentialité) et le médiateur de la consommation (CGV, article 10).
+# Société d'après le Kbis du 17/11/2026. Contact par e-mail : support@kopycat.io (redirection ImprovMX, 24/11/2026).
+# À ajouter quand il existe : le médiateur de la consommation (CGV, article 10).
 import sys
 OUT = sys.argv[1] if len(sys.argv) > 1 else 'public'
-MAJ = "19 novembre 2026"
+MAJ = "24 novembre 2026"
 SOC = "JARVIA STUDIO, société par actions simplifiée au capital de 50 €, immatriculée au RCS de Paris sous le numéro 132 937 848, dont le siège social est situé 47 rue Vivienne, 75002 Paris"
 
 def page(slug, title, intro, body):
@@ -71,6 +71,7 @@ mentions = page("mentions-legales", "Mentions légales",
 <p>Directeur de la publication : Anthony Simonet, président de JARVIA STUDIO.</p>
 
 <h2 id="contact">Contact</h2>
+<p>Par e-mail : <a href="mailto:support@kopycat.io">support@kopycat.io</a>.</p>
 <p>Par courrier : JARVIA STUDIO, 47 rue Vivienne, 75002 Paris.</p>
 
 <h2>Hébergement</h2>
