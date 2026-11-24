@@ -39,6 +39,9 @@ crons.hourly("radar instagram", { minuteUTC: 40 }, ...radar("radarSources:runIns
 crons.interval("radar transcriptions", { hours: 2 }, ...radar("radarSources:runTranscripts"));
 // Familles de hooks d'une langue à l'autre (Claude Haiku).
 crons.interval("radar familles de hooks", { hours: 6 }, ...radar("radarFamilies:runFamilies"));
+// Idées d'accroches de chaque app, quelle que soit leur tournure (Claude Haiku) ; leurs vieilles idées purgées.
+crons.interval("radar idees des accroches", { minutes: 15 }, ...radar("radarIdeas:runIdeas"));
+crons.daily("radar purge des idees", { hourUTC: 4, minuteUTC: 20 }, ...radar("radarIdeas:purgeIdeas"));
 // Vidéos devenues invisibles : pages publiques, aucun crédit.
 crons.interval("radar visibilite des videos", { hours: 2 }, ...radar("radarAvailability:runChecks"));
 // Classements App Store, contrôle de leurs hashtags sur TikTok, apps sœurs.

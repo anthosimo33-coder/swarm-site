@@ -115,9 +115,13 @@ function projectFormat(f: Doc<"radarFormats">, members: Doc<"radarFormats">["mem
     accountCount: new Set(members.map((m) => m.accountId)).size,
     appIds: [...new Set(members.map((m) => m.appId))],
     maxViews: members.length ? Math.max(...members.map((m) => m.views)) : 0,
-    lastPostAt: members.length ? Math.max(...members.map((m) => m.publishedAt)) : f.lastPostAt,
+    // Un format d'idée (radarIdeas) garde la meilleure vidéo de chaque compte, pas forcément sa dernière : sa dernière
+    // reprise est tenue à part, sur toutes ses vidéos.
+    lastPostAt: members.length ? Math.max(...members.map((m) => m.publishedAt), f.videos ? f.lastPostAt : 0) : f.lastPostAt,
     firstSeenAt: f.firstSeenAt,
     lang: f.lang ?? null,
+    // Les vidéos qu'une idée range (Kopycat écarte les formats de gabarit qu'une idée montrée couvre déjà).
+    ...(f.videos ? { videos: f.videos } : {}),
   };
 }
 

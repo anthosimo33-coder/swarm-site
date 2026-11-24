@@ -42,6 +42,8 @@ import type * as radar_radarFiche from "../radar/radarFiche.js";
 import type * as radar_radarFicheMath from "../radar/radarFicheMath.js";
 import type * as radar_radarFreeMath from "../radar/radarFreeMath.js";
 import type * as radar_radarHandles from "../radar/radarHandles.js";
+import type * as radar_radarIdeas from "../radar/radarIdeas.js";
+import type * as radar_radarIdeasMath from "../radar/radarIdeasMath.js";
 import type * as radar_radarJudge from "../radar/radarJudge.js";
 import type * as radar_radarJudgeMath from "../radar/radarJudgeMath.js";
 import type * as radar_radarJudgeReview from "../radar/radarJudgeReview.js";
@@ -127,6 +129,8 @@ declare const fullApi: ApiFromModules<{
   "radar/radarFicheMath": typeof radar_radarFicheMath;
   "radar/radarFreeMath": typeof radar_radarFreeMath;
   "radar/radarHandles": typeof radar_radarHandles;
+  "radar/radarIdeas": typeof radar_radarIdeas;
+  "radar/radarIdeasMath": typeof radar_radarIdeasMath;
   "radar/radarJudge": typeof radar_radarJudge;
   "radar/radarJudgeMath": typeof radar_radarJudgeMath;
   "radar/radarJudgeReview": typeof radar_radarJudgeReview;

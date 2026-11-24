@@ -32,6 +32,7 @@ import { internalAction, internalMutation, internalQuery, type ActionCtx, type M
 import type { Doc, Id } from "../_generated/dataModel";
 import { e2eMutation, permissionMutation, permissionQuery, type ProjectQueryCtx } from "./functions";
 import { normalizeTikTokHandle } from "./radarHandles";
+import { queueIdea, refreshIdeaMember } from "./radarIdeas";
 import {
   FORMAT_MAX_MEMBERS,
   FORMAT_WINDOW_MS,
@@ -757,6 +758,8 @@ export const applyAccountRead = internalMutation({
     if (!acc) return { promoted: 0 };
     let app = await ctx.db.get(acc.appId);
     const fresh: typeof videos = [];
+    // Les vidéos déjà rangées dans une idée d'accroche (convex/radar/radarIdeas) : leur reprise y est tenue à jour.
+    const ideaOf = new Map<string, Id<"radarIdeas">>();
     for (const s of videos) {
       const hk = hookTemplate(s.hook);
       const extra = {
@@ -772,6 +775,7 @@ export const applyAccountRead = internalMutation({
       // Le pays de création de la vidéo, tel que TikTok le donne : c'est lui qui situe le compte.
       const region = s.region && /^[A-Za-z]{2}$/.test(s.region.trim()) ? { region: s.region.trim().toUpperCase() } : {};
       if (known) {
+        if (known.ideaId) ideaOf.set(s.videoId, known.ideaId);
         await ctx.db.patch(known._id, {
           views: Math.max(known.views, s.views),
           snapshots: addSnapshot(known.snapshots, now, s.views),
@@ -795,6 +799,8 @@ export const applyAccountRead = internalMutation({
           ...region,
         });
         fresh.push(s);
+        // Son accroche attend d'être rangée dans une idée de son app.
+        await queueIdea(ctx, { videoId: s.videoId, appId: acc.appId, publishedAt: s.publishedAt, ...(s.hook ? { hook: s.hook } : {}) }, now);
       }
     }
     // Les vidéos dont seules les vues ont été relues : leur compteur et leur relevé avancent, là où elles sont
@@ -906,6 +912,8 @@ export const applyAccountRead = internalMutation({
       const hk = hookTemplate(s.hook);
       if (hk && s.hook) await shareFormat(ctx, "hook", hk, s.hook, member, now);
       if (s.musicId && s.musicTitle) await shareFormat(ctx, "sound", s.musicId, s.musicTitle, member, now);
+      const idea = ideaOf.get(s.videoId);
+      if (idea) await refreshIdeaMember(ctx, idea, member, now);
     }
 
     for (const s of fresh) await noteCandidates(ctx, { ...s, authorBio: undefined }, now, apps, appId);

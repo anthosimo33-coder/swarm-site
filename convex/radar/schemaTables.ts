@@ -8,6 +8,19 @@ import { networkSearchValidator } from "./radarNetworkSearch";
  * pubs (radarAds), les marques des signaux par projet, l'essai des premiers relevés, les analyses par projet et
  * l'ancien Radar (Apify).
  */
+/** Une reprise d'un format (radarFormats) ou d'une idée d'accroche (radarIdeas) : la vidéo et son compte. */
+const formatMember = v.object({
+  accountId: v.id("radarTracked"),
+  handle: v.string(),
+  appId: v.id("radarApps"),
+  videoId: v.string(),
+  publishedAt: v.number(),
+  views: v.number(),
+  multiplier: v.optional(v.number()),
+  hook: v.optional(v.string()), // sa variante du gabarit (ou de l'idée)
+  platform: v.optional(v.literal("instagram")),
+});
+
 export const radarTables = {
   radarSignals: defineTable({
     // Les Reels Instagram viennent des comptes suivis dont la bio donne l'Instagram
@@ -137,6 +150,9 @@ export const radarTables = {
     thPrices: v.optional(v.array(v.object({ route: v.string(), usd: v.number(), free: v.boolean() }))),
     thPricesAt: v.optional(v.number()),
     lowCreditsAlertDay: v.optional(v.string()), // jour (Paris) de la dernière alerte « moins de 3 jours de crédits »
+    // Rattrapage des idées d'accroches (convex/radar/radarIdeas) : les vidéos des 45 jours d'avant leur mise en route,
+    // mises en file par pages de l'index by_published, à partir de `from` ; `done` une fois au bout.
+    ideaBackfill: v.optional(v.object({ from: v.number(), cursor: v.union(v.string(), v.null()), done: v.boolean() })),
     reserveAlertDay: v.optional(v.string()), // jour (Paris) de la dernière alerte « réserve atteinte »
     economieAlertDay: v.optional(v.string()), // jour (Paris) de la dernière alerte « palier économie » (radarSignalsMath.creditTier)
     survieAlertDay: v.optional(v.string()), // jour (Paris) de la dernière alerte « palier survie »
@@ -395,6 +411,9 @@ export const radarTables = {
     caption: v.optional(v.string()), // 300 caractères au plus
     hook: v.optional(v.string()), // texte à l'écran
     hookKey: v.optional(v.string()), // GABARIT du hook, cf radarNetworkMath.hookTemplate
+    // L'IDÉE de son accroche dans son app (convex/radar/radarIdeas), une fois rangée par l'IA : son relevé tient à jour
+    // la reprise de l'idée, comme celle de son gabarit.
+    ideaId: v.optional(v.id("radarIdeas")),
     musicId: v.optional(v.string()),
     musicTitle: v.optional(v.string()),
     region: v.optional(v.string()), // pays de création de la vidéo d'après TikTok (« FR »)
@@ -414,19 +433,7 @@ export const radarTables = {
     kind: v.union(v.literal("hook"), v.literal("sound")),
     key: v.string(), // hookKey, ou id du son
     label: v.string(), // le hook tel qu'écrit, ou le titre du son
-    members: v.array(
-      v.object({
-        accountId: v.id("radarTracked"),
-        handle: v.string(),
-        appId: v.id("radarApps"),
-        videoId: v.string(),
-        publishedAt: v.number(),
-        views: v.number(),
-        multiplier: v.optional(v.number()),
-        hook: v.optional(v.string()), // sa variante du gabarit
-        platform: v.optional(v.literal("instagram")),
-      }),
-    ),
+    members: v.array(formatMember),
     accountCount: v.number(), // comptes distincts
     appIds: v.array(v.id("radarApps")),
     maxViews: v.number(),
@@ -438,10 +445,41 @@ export const radarTables = {
     familyId: v.optional(v.id("radarHookFamilies")),
     familyCheckedAt: v.optional(v.number()),
     lang: v.optional(v.string()), // langue de la majorité de ses comptes, au rangement
+    // Format d'une IDÉE d'accroche (clé « idee:<id> », convex/radar/radarIdeas) : toutes les vidéos qu'elle range
+    // (400 au plus), pour que Kopycat écarte les formats de gabarit qu'elle couvre déjà (radarModels).
+    videos: v.optional(v.array(v.string())),
   })
     .index("by_key", ["kind", "key"])
     .index("by_shared", ["accountCount", "lastPostAt"])
     .index("by_last", ["lastPostAt"]),
+  // Les IDÉES d'accroches d'une app (convex/radar/radarIdeas, 24/11/2026) : ses accroches rangées par Claude Haiku,
+  // quelle que soit leur tournure. Une idée reprise par deux comptes au moins a son format dans radarFormats (`formatId`).
+  radarIdeas: defineTable({
+    appId: v.id("radarApps"),
+    label: v.string(), // l'idée, en français, 8 mots au plus
+    examples: v.array(v.string()), // ses variantes les plus vues, montrées au modèle
+    members: v.array(formatMember), // ses reprises montrées (40 au plus, la meilleure de chaque compte d'abord)
+    videoIds: v.array(v.string()), // toutes ses vidéos (400 au plus)
+    accountIds: v.array(v.string()), // tous ses comptes (400 au plus)
+    accountCount: v.number(),
+    lastPostAt: v.number(),
+    createdAt: v.number(),
+    lastSeenAt: v.number(), // dernière vidéo rangée dedans
+    formatId: v.optional(v.id("radarFormats")),
+  })
+    .index("by_app_last", ["appId", "lastSeenAt"])
+    .index("by_last", ["lastSeenAt"]),
+  // Les vidéos qui attendent d'être rangées dans une idée : à leur entrée (relevé), ou au premier passage (rattrapage
+  // des 45 derniers jours). `dueAt` : quand la reprendre (une vidéo sans texte attend la lecture de sa miniature).
+  radarIdeaQueue: defineTable({
+    videoId: v.string(),
+    appId: v.id("radarApps"),
+    dueAt: v.number(),
+    tries: v.number(),
+  })
+    .index("by_due", ["dueAt"])
+    .index("by_app_due", ["appId", "dueAt"])
+    .index("by_video", ["videoId"]),
   radarHookFamilies: defineTable({
     label: v.string(), // l'idée, en français, 8 mots au plus
     examples: v.array(v.object({ text: v.string(), lang: v.string() })),

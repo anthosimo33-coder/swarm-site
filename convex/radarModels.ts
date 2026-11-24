@@ -47,6 +47,8 @@ export type RFormatMember = { accountId: string; handle: string; appId: string; 
 export type RFormat = {
   id: string; kind: "hook" | "sound"; key: string; label: string; members: RFormatMember[]; accountCount: number;
   appIds: string[]; maxViews: number; lastPostAt: number; firstSeenAt: number; lang: string | null;
+  /** Format d'une IDÉE d'accroche (clé « idee:… », convex/radar/radarIdeas) : toutes les vidéos qu'elle range. */
+  videos?: string[];
 };
 export type RSignal = {
   id: string; platform: "tiktok" | "instagram"; videoId: string; url: string; authorHandle: string; authorFans: number;
@@ -320,6 +322,38 @@ export const formatTitle = (text: string | null | undefined, max = FORMAT_TITLE)
   const t = cut.replace(/[\s,;:.…·•|\-–—]+$/u, "");
   return t ? t + "…" : null;
 };
+
+/** Un format = repris par au moins FORMAT_MIN_ACCOUNTS comptes, avec une reprise dans les FORMAT_DAYS derniers jours. */
+export const FORMAT_MIN_ACCOUNTS = 3;
+export const FORMAT_DAYS = 21;
+/**
+ * La fiche d'une app montre les formats que SES créateurs reprennent : au moins FICHE_FORMAT_ACCOUNTS de ses comptes,
+ * rangés par le nombre de ses comptes. 24/11/2026 : rangés par le nombre de comptes toutes apps confondues, les 8 formats
+ * de la fiche de Diane AI étaient des sons repris par 28 à 35 comptes de 15 à 29 apps, dont un seul de Diane, et ses
+ * accroches reprises par 11 à 14 de ses comptes n'y étaient pas ; sur les 620 fiches, 1 744 formats montrés sur 2 082
+ * n'avaient qu'un compte de l'app (219 fiches n'avaient que ceux-là).
+ */
+export const FICHE_FORMAT_ACCOUNTS = 2;
+export const FICHE_FORMATS = 8;
+/** La clé d'un format d'idée d'accroche (convex/radar/radarIdeasMath.ideaFormatKey). */
+export const IDEA_FORMAT_KEY = "idee:";
+/**
+ * Les formats de gabarit qu'une idée montrée couvre déjà : une accroche dont la moitié des reprises au moins sont des
+ * vidéos d'une idée (format `idee:…` montré, cf `shown`) n'est plus un format à part, l'idée la montre. Sans cela, la
+ * même reprise apparaîtrait deux fois : dans son idée (« t'as fini de réviser plus tôt grâce à la fille à 17 de
+ * moyenne », toutes tournures) et dans son gabarit (« t as termine de »).
+ */
+export function absorbedFormats(formats: readonly RFormat[], shown: (f: RFormat) => boolean): Set<string> {
+  const covered = new Set<string>();
+  for (const f of formats) if (f.key.startsWith(IDEA_FORMAT_KEY) && shown(f)) for (const id of f.videos ?? f.members.map((m) => m.videoId)) covered.add(id);
+  const out = new Set<string>();
+  if (!covered.size) return out;
+  for (const f of formats) {
+    if (f.kind !== "hook" || f.key.startsWith(IDEA_FORMAT_KEY) || !f.members.length) continue;
+    if (f.members.filter((m) => covered.has(m.videoId)).length * 2 >= f.members.length) out.add(f.id);
+  }
+  return out;
+}
 
 /**
  * Le lien « voir sur la plateforme » venu du Radar, s'il mène bien à TikTok ou Instagram en https ; sinon null (la page
@@ -804,9 +838,13 @@ export function buildBoards(
     const a = canonical(id);
     return a ? appRef(a) : null;
   };
-  const formatRows = raw.formats
-    // Un format = repris par au moins 3 comptes : à 2, ce sont surtout des sons au hasard.
-    .filter((f) => f.accountCount >= 3 && now - f.lastPostAt <= 21 * DAY)
+  // Un format = repris par au moins 3 comptes : à 2, ce sont surtout des sons au hasard.
+  const isFormat = (f: RFormat) => f.accountCount >= FORMAT_MIN_ACCOUNTS && now - f.lastPostAt <= FORMAT_DAYS * DAY;
+  // Les accroches qu'une idée montrée couvre déjà ne sont plus des formats à part (absorbedFormats).
+  const absorbed = absorbedFormats(raw.formats, isFormat);
+  const rawFormats = absorbed.size ? raw.formats.filter((f) => !absorbed.has(f.id)) : raw.formats;
+  const formatRows = rawFormats
+    .filter(isFormat)
     .map((f) => {
       const xs = f.members.map(accountX).filter((x): x is number => x !== null);
       const sorted = [...f.members].sort((p, q) => q.views - p.views);
@@ -857,9 +895,21 @@ export function buildBoards(
     for (const f of shown) boards.set(`format:${f.id}`, { updatedAt: now, ...formatDoc(f, 30) });
   }
   const formatsByAccount = groupBy(
-    raw.formats.flatMap((f) => f.members.map((m) => ({ accountId: m.accountId, f }))),
+    rawFormats.flatMap((f) => f.members.map((m) => ({ accountId: m.accountId, f }))),
     (x) => x.accountId,
   );
+  // Les comptes de chaque app qui reprennent chaque format (la fiche d'une app range ses formats par eux).
+  const ownAccounts = new Map<string, Map<string, number>>();
+  for (const f of rawFormats) {
+    const byApp = new Map<string, Set<string>>();
+    for (const m of f.members) {
+      const id = canonical(m.appId)?.id;
+      if (!id) continue;
+      if (!byApp.has(id)) byApp.set(id, new Set());
+      byApp.get(id)!.add(m.accountId);
+    }
+    ownAccounts.set(f.id, new Map([...byApp].map(([id, accs]) => [id, accs.size])));
+  }
 
   // ── Créateurs, par marché, et la fiche de chaque créateur ──
   const creatorRow = (t: RTracked) => {
@@ -936,7 +986,15 @@ export function buildBoards(
       .sort((p, q) => (q.medianViews ?? 0) - (p.medianViews ?? 0))
       .slice(0, APP_CREATORS)
       .map((t) => ({ handle: t.handle, fans: t.fans, median: t.medianViews, posts7d: t.posts7d ?? 0, market: mkOf(t.id), page: creatorPages.has(t.handle) }));
-    const appFormats = formatRows.filter((f) => f.apps.some((x) => x?.slug === a.slug)).slice(0, 8).map((f) => ({ id: f.id, kind: f.kind, label: f.label, accounts: f.accounts, medX: f.medX, maxViews: f.maxViews, ...pageFlag(f.id) }));
+    // Les formats que ses créateurs reprennent (FICHE_FORMAT_ACCOUNTS de ses comptes au moins), les plus repris chez
+    // elle d'abord. `accounts` : ses comptes à elle (l'écran : « Les formats qui cartonnent chez eux ») ; `allAccounts` :
+    // tous les comptes du format, ceux que montre sa fiche.
+    const appFormats = formatRows
+      .map((f) => ({ f, own: ownAccounts.get(f.id)?.get(a.id) ?? 0 }))
+      .filter((x) => x.own >= FICHE_FORMAT_ACCOUNTS)
+      .sort((p, q) => q.own - p.own || q.f.accounts - p.f.accounts || (q.f.medX ?? 0) - (p.f.medX ?? 0))
+      .slice(0, FICHE_FORMATS)
+      .map(({ f, own }) => ({ id: f.id, kind: f.kind, label: f.label, accounts: own, allAccounts: f.accounts, medX: f.medX, maxViews: f.maxViews, ...pageFlag(f.id) }));
     const { _top12, _accs, ...row } = r;
     boards.set(`app:${a.slug}`, { updatedAt: now, ...row, videos: _top12.map(card), formats: appFormats, creators: appCreators });
   }

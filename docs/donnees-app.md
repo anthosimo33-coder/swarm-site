@@ -110,7 +110,11 @@ réel, dans sa niche si elle en compte au moins 2, sinon parmi toutes.
 
 ### `app:<slug>` — fiche d'une app (FicheA, MFiche)
 L'`App` ci-dessus, plus `videos: [VideoCard ×12]` (les plus vues sur 30 j, ordre du lecteur),
-`formats: [{ id, kind: 'hook'|'sound', label, accounts, medX, maxViews, page? }] ×8`,
+`formats: [{ id, kind: 'hook'|'sound', label, accounts, allAccounts, medX, maxViews, page? }] ×8` — les formats que SES
+comptes reprennent (24/11/2026) : au moins 2 de ses comptes (`FICHE_FORMAT_ACCOUNTS`), rangés par ce nombre, puis par le
+nombre de comptes du format ; `accounts` = ses comptes à elle qui le reprennent (« Les formats qui cartonnent chez eux »),
+`allAccounts` = tous les comptes du format (ceux de sa fiche `format:<id>`). Avant, rangés par `allAccounts` : des sons
+repris dans 20 apps, avec un seul compte de l'app, prenaient toute la place.
 `creators: [{ handle, fans, median, posts7d, market, page: a-t-il une fiche ? }] ×6` (les 6 que l'écran montre).
 
 ### `video:<id>` — lecteur (VideoA, MVideo)
@@ -122,7 +126,12 @@ Une vidéo notée introuvable (supprimée, compte privé) n'a pas de fiche.
 
 ### `formats` — formats repris (FormatsB, MFormats)
 `{ updatedAt, markets, formats: [Format] }` (repris par au moins 3 comptes, actifs sur 21 jours, 150 au plus),
-triés par nombre de comptes puis multiplicateur médian.
+triés par nombre de comptes puis multiplicateur médian. Deux sortes de formats `hook` : le gabarit (les 4 premiers mots
+de l'accroche, chiffres masqués) et, depuis le 24/11/2026, l'IDÉE d'accroche d'une app (convex/radar/radarIdeas : ses
+accroches rangées par Claude Haiku quelle que soit leur tournure, texte de TikTok ou lu par l'IA sur la miniature, sur
+45 jours ; clé `idee:<id>` côté Radar, nommée par l'accroche de sa reprise la plus vue). Un gabarit dont la moitié des
+reprises au moins sont des vidéos d'une idée montrée n'est plus un format à part (`absorbedFormats`) : ni dans la liste,
+ni sa fiche, ni sur les fiches d'app ou de créateur.
 `Format = { id, kind, label, title, accounts, apps: [{slug, name, icon, page?}], niche, market, maxViews, medX, wins: reprises au-dessus
 de leur normale, n: reprises, lastPostAt, members: [{ handle, videoId, views, x, publishedAt, cover }] }` (4 membres ici, 30 dans la fiche).
 `title` (maquette C1 du 20/11) : le format nommé par ce qu'on lit dans ses vidéos, pour un format `sound` : le texte à l'écran
