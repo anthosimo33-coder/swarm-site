@@ -440,7 +440,10 @@ export type BudgetSettings = {
 // dépensé. Instagram : 300 relevés/jour (les comptes dont la bio donne l'Instagram) ;
 // 50 transcriptions/jour ; pubs 1 500 crédits/mois (concurrentes tous les 3 jours,
 // les autres chaque semaine). Prévu au plus : ~178 $/mois sous un plafond de 300 $.
-// Analyse IA : ~1 $ par mois prévu (Claude Haiku, quelques centaines de hooks), 2 $ au plus.
+// Analyse IA : 15 $ par mois au plus depuis le 24/11/2026 (accord du fondateur). À 2 $, le rattrapage des idées
+// d'accroches (radarIdeas, ~10-15 $/mois mesuré au rejeu) a vidé l'enveloppe de novembre le jour même (2,002 $) et
+// coupé jusqu'au mois suivant TOUS les travaux IA du Radar (tri des comptes, familles, fiches, marchés, idées). La
+// prod n'a pas de budgetVersion : c'est ce défaut qui s'y applique, pas la ligne rangée dans radarSettings.postes.
 // Découverte : 20 recherches/jour du 09/11/2026 (60 avant) — 170 de ses 190 signaux étaient hors niche ;
 // 100 depuis le 12/11/2026 : les 76 recherches du thème « argent » (side hustle) chaque jour, en plus (~4,50 $/mois) ;
 // 150 depuis le 14/11/2026 : les ~40 recherches des produits web chaque jour (JobStep, Pimzi : jamais trouvés), +2,82 $/mois.
@@ -453,9 +456,9 @@ export type BudgetSettings = {
 // routine sont gratuits (pages publiques, radarFreeMath) ; les 9 000 relevés payés par jour couvrent les premiers
 // relevés et les replis (1 à 9 % des comptes par jour, mesuré les 14 et 15/11). La recherche des réseaux coûte
 // ~28 crédits par app (mesuré du 13 au 15/11 : 108 apps pour 3 114 crédits) : 100 000 crédits/mois font le premier
-// tour de ~1 350 apps de plus et les revisites. Prévu au plus : 745,54 $/mois sous un plafond de 900 $ ; attendu
-// en régime : 170 à 300 $/mois. Ce sont des plafonds, dépensés seulement s'il y a des comptes et des apps.
-const DEFAULT_QTY: Record<PosteKey, number> = { search: 150, curve: 100, tiktok: 9_000, network: 100_000, insta: 300, transcript: 50, ads: 1_500, ai: 2 };
+// tour de ~1 350 apps de plus et les revisites. Prévu au plus : 758,54 $/mois (745,54 $ avant l'IA à 15 $) sous un
+// plafond de 900 $ ; attendu en régime : 170 à 300 $/mois. Ce sont des plafonds, dépensés seulement s'il y a des comptes et des apps.
+const DEFAULT_QTY: Record<PosteKey, number> = { search: 150, curve: 100, tiktok: 9_000, network: 100_000, insta: 300, transcript: 50, ads: 1_500, ai: 15 };
 
 export const DEFAULT_BUDGET: BudgetSettings = {
   capUsd: 900,

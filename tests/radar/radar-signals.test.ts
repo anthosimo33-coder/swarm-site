@@ -267,10 +267,10 @@ describe("budget", () => {
   const d = normalizeBudget(null);
   const usage = (poste: string, credits: number, day = "2026-11-06") => ({ poste, credits, day });
 
-  it("prévoit 745,54 $ au plus par défaut sous un plafond de 900 $ : 150 recherches/jour, courbe, 9 000 relevés payés/jour, 100 000 crédits de réseaux, Instagram, transcriptions, pubs, et 2 $ d'analyse IA", () => {
+  it("prévoit 758,54 $ au plus par défaut sous un plafond de 900 $ : 150 recherches/jour, courbe, 9 000 relevés payés/jour, 100 000 crédits de réseaux, Instagram, transcriptions, pubs, et 15 $ d'analyse IA", () => {
     expect(d.capUsd).toBe(900);
-    expect(plannedUsd(d)).toBeCloseTo((150 * 30 + 100 * 3 * 30 + 9_000 * 30 + 100_000 + 300 * 30 + 50 * 30 + 1_500) * SC_PRICE_PER_CREDIT + 2, 6);
-    expect(plannedUsd(d)).toBeCloseTo(745.54, 2);
+    expect(plannedUsd(d)).toBeCloseTo((150 * 30 + 100 * 3 * 30 + 9_000 * 30 + 100_000 + 300 * 30 + 50 * 30 + 1_500) * SC_PRICE_PER_CREDIT + 15, 6);
+    expect(plannedUsd(d)).toBeCloseTo(758.54, 2);
     expect(plannedUsd(d)).toBeLessThanOrEqual(d.capUsd);
   });
 
@@ -340,7 +340,7 @@ describe("budget", () => {
       budgetVersion: 4,
     });
     expect(b.capUsd).toBe(900);
-    expect(b.postes.find((p) => p.key === "ai")).toEqual({ key: "ai", qty: 2, on: true });
+    expect(b.postes.find((p) => p.key === "ai")).toEqual({ key: "ai", qty: 15, on: true });
     expect(b.postes.find((p) => p.key === "tiktok")?.on).toBe(true);
     // D'une v4, la découverte prend aussi son défaut (150/jour) ; en v9, une quantité réglée est bornée.
     expect(b.postes.find((p) => p.key === "search")).toEqual({ key: "search", qty: 150, on: true });
@@ -363,9 +363,9 @@ describe("budget", () => {
     expect(s.byPoste.ai.usd).toBe(0.5);
     expect(s.spentCredits).toBe(1_000);
     expect(s.spentUsd).toBeCloseTo(1_000 * SC_PRICE_PER_CREDIT + 0.5, 6);
-    expect(allowanceUsd(d, s, "ai")).toBeCloseTo(1.5, 6);
+    expect(allowanceUsd(d, s, "ai")).toBeCloseTo(14.5, 6);
     // Enveloppe mangée : rien.
-    expect(allowanceUsd(d, budgetState(d, [{ poste: "ai", credits: 0, usd: 2 }]), "ai")).toBe(0);
+    expect(allowanceUsd(d, budgetState(d, [{ poste: "ai", credits: 0, usd: 15 }]), "ai")).toBe(0);
     // Éteinte : rien. Un poste en crédits n'a pas d'allocation en dollars.
     const off = { ...d, postes: d.postes.map((p) => (p.key === "ai" ? { ...p, on: false } : p)) };
     expect(allowanceUsd(off, budgetState(off, []), "ai")).toBe(0);
@@ -375,6 +375,15 @@ describe("budget", () => {
     const st = budgetState(serre, [usage("tiktok", 90_000, "2026-11-05")]);
     expect(st.cut[0]).toBe("ai");
     expect(allowanceUsd(serre, st, "ai")).toBe(0);
+  });
+
+  it("réglages de la prod (sans budgetVersion) : l'enveloppe IA est de 15 $, 2 $ dépensés ne coupent plus l'IA (24/11/2026)", () => {
+    // La ligne rangée en prod le 24/11/2026 : postes d'une ancienne version, `ai` éteint à 12, pas de budgetVersion.
+    // normalizeBudget l'ignore (RESETS) et prend le défaut. À 2 $, le rattrapage des idées d'accroches a vidé
+    // l'enveloppe de novembre (2,002 $) et coupé tous les travaux IA du Radar jusqu'au mois suivant.
+    const prod = normalizeBudget({ capUsd: 60, postes: [{ key: "ai", qty: 12, on: false }], cutOrder: ["search", "transcript", "curve", "insta", "ai", "tiktok"] });
+    expect(prod.postes.find((p) => p.key === "ai")).toEqual({ key: "ai", qty: 15, on: true });
+    expect(allowanceUsd(prod, budgetState(prod, [{ poste: "ai", credits: 0, usd: 2.002 }]), "ai")).toBeCloseTo(12.998, 6);
   });
 
   it("le solde réel borne chaque poste : sous la réserve, plus rien ne part, et une sonde relit le solde (14/11/2026)", () => {

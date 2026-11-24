@@ -43,12 +43,19 @@ function oldState(s: ReturnType<typeof budgetState>) {
   return out;
 }
 
+/**
+ * Le défaut tel qu'il était sur b4814df : l'analyse IA à 2 $ par mois. Le 24/11/2026, son défaut passe à 15 $
+ * (radarSignalsMath.DEFAULT_QTY) : un choix de réglage, pas un calcul. La référence reste celle de main, jamais
+ * réécrite sur le code modifié ; le test la compare donc au défaut de son époque.
+ */
+const BASE: BudgetSettings = { ...DEFAULT_BUDGET, postes: DEFAULT_BUDGET.postes.map((p) => (p.key === "ai" ? { ...p, qty: 2 } : p)) };
+
 const settings: Record<string, BudgetSettings> = {
-  defaut: DEFAULT_BUDGET,
-  serre: normalizeBudget({ ...DEFAULT_BUDGET, capUsd: 300, budgetVersion: 10 }),
+  defaut: BASE,
+  serre: normalizeBudget({ ...BASE, capUsd: 300, budgetVersion: 10 }),
   eteints: normalizeBudget({
-    ...DEFAULT_BUDGET,
-    postes: DEFAULT_BUDGET.postes.map((p) => (p.key === "search" || p.key === "insta" ? { ...p, on: false } : p.key === "tiktok" ? { ...p, qty: 4_000 } : p)),
+    ...BASE,
+    postes: BASE.postes.map((p) => (p.key === "search" || p.key === "insta" ? { ...p, on: false } : p.key === "tiktok" ? { ...p, qty: 4_000 } : p)),
     cutOrder: ["tiktok", "network", "search", "ai"],
     budgetVersion: 10,
   }),
@@ -108,7 +115,7 @@ function grid() {
     }
   }
   // La courbe éteinte : la voie n'en prend aucune, plus aucune admission.
-  const curveOff = normalizeBudget({ ...DEFAULT_BUDGET, postes: DEFAULT_BUDGET.postes.map((p) => (p.key === "curve" ? { ...p, on: false } : p)), budgetVersion: 10 });
+  const curveOff = normalizeBudget({ ...BASE, postes: BASE.postes.map((p) => (p.key === "curve" ? { ...p, on: false } : p)), budgetVersion: 10 });
   for (const free of [false, true]) {
     for (const paidLeft of [0, 4]) out[`curveLaneTake:courbeEteinte:${free}:${paidLeft}`] = curveLaneTake(curveOff, free, paidLeft);
     out[`curveAdmissionsLeft:courbeEteinte:${free}:0`] = curveAdmissionsLeft(curveOff, 0, free);
