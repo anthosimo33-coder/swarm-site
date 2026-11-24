@@ -247,6 +247,8 @@ describe("Radar : un compte dont la preuve par vidéos est périmée n'est plus 
     }
   });
 
+  // 30 s : le rejugement aligne d'abord les apps et les comptes de départ (radarSignals.ensureSeedApps, des centaines de
+  // lignes) ; 2,9 s en local pour ses deux passages, plus de 5 s sur la machine de la CI (24/11/2026).
   it("en pause, le rejugement ne le relance pas le 24/11 : ses vieilles vidéos Solaia sont toujours rangées (le 13/11, il l'aurait relancé)", async () => {
     for (const [at, want] of [[NOW, "paused"], [ENTRY, "active"]] as const) {
       const w = monde();
@@ -258,5 +260,5 @@ describe("Radar : un compte dont la preuve par vidéos est périmée n'est plus 
       vi.useRealTimers();
       expect((await compte(mem, "compte_fini")).status).toBe(want);
     }
-  });
+  }, 30_000);
 });
