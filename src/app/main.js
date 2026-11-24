@@ -395,6 +395,8 @@ function App() {
   const sessions = useQuery(api.users.sessions, isAuthenticated && (settings || menu || onSettingsScreen) ? {} : 'skip');
   // L'abonnement Whop et ses paiements (Réglages › Formule et facturation).
   const abo = useQuery(api.whop.mine, isAuthenticated && (settings || menu || onSettingsScreen) ? {} : 'skip');
+  // Une nouvelle adresse en attente de son clic (Réglages › Profil, « À confirmer »).
+  const pendingEmail = useQuery(api.users.pendingEmail, isAuthenticated && (settings || onSettingsScreen) ? {} : 'skip');
 
   // Aperçu : une adresse fermée (lien direct, favori, retour arrière) revient à Apps, fenêtre des formules ouverte ;
   // Accueil y revient sans fenêtre.
@@ -616,6 +618,9 @@ function App() {
     onSaveName: (name) => client.mutation(api.users.setName, { name }),
     onChangePassword: (current, next) => client.action(api.users.changePassword, { current, next }),
     onChangeEmail: (email, password) => client.action(api.users.changeEmail, { email, password }),
+    pendingEmail,
+    onCancelEmail: () => client.mutation(api.users.cancelEmailChange, {}),
+    onResendEmail: () => client.action(api.users.resendEmailChange, {}),
     onSignOutOthers: () => client.mutation(api.users.signOutOthers, {}),
     // Audit S27 : le mot de passe est demandé pour fermer un compte « mot de passe » (convex/users.ts, deleteAccount).
     onDelete: (email, password) => client.action(api.users.deleteAccount, password ? { email, password } : { email }).then(async (r) => {

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
-import { accountClosedMail, passwordChangedMail, resetCodeMail, welcomeMail, type Mail } from "./mailTemplates";
+import { accountClosedMail, confirmNewEmailMail, emailChangedMail, passwordChangedMail, resetCodeMail, welcomeMail, type Mail } from "./mailTemplates";
 
 /**
  * L'envoi des e-mails, par l'API de Resend (domaine kopycat.io, vérifié chez Resend le 24/11/2026).
@@ -71,5 +71,23 @@ export const sendAccountClosed = internalAction({
   handler: async (_ctx, { to, at }) => {
     const id = await sendMail(to, accountClosedMail(to, at), "compte-ferme");
     if (id) console.log(`e-mail « compte-ferme » parti chez Resend : ${id}`);
+  },
+});
+
+/** Le lien qui confirme une nouvelle adresse (users.changeEmail, users.resendEmailChange). */
+export const sendConfirmNewEmail = internalAction({
+  args: { to: v.string(), from: v.string(), token: v.string() },
+  handler: async (_ctx, { to, from, token }) => {
+    const id = await sendMail(to, confirmNewEmailMail(to, from, token), "confirmer-adresse");
+    if (id) console.log(`e-mail « confirmer-adresse » parti chez Resend : ${id}`);
+  },
+});
+
+/** L'ancienne adresse prévenue, une fois la nouvelle confirmée (users.confirmEmailChange). */
+export const sendEmailChanged = internalAction({
+  args: { to: v.string(), next: v.string(), at: v.number() },
+  handler: async (_ctx, { to, next, at }) => {
+    const id = await sendMail(to, emailChangedMail(to, next, at), "adresse-changee");
+    if (id) console.log(`e-mail « adresse-changee » parti chez Resend : ${id}`);
   },
 });

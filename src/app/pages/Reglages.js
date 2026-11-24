@@ -49,6 +49,7 @@ export default class Reglages extends DCLogic {
     const p = this.props || {};
     const st = this.state || {};
     const u = p.user || { nom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A', pro: false, emailVerified: true };
+    const pending = p.pendingEmail || null; // { email, expiresAt } : une nouvelle adresse attend son clic
     const pro = !!u.pro;
     const mob = !!p.mobile;
     const view = mob ? (st.view || p.view || 'list') : 'detail'; // p.view : ouvert sur une rubrique (src/app/main.js)
@@ -112,7 +113,8 @@ export default class Reglages extends DCLogic {
       mot_de_passe_trop_court: '8 caractères minimum.', mot_de_passe_identique: 'Choisis un mot de passe différent de l’actuel.',
       mot_de_passe_trop_long: '128 caractères au plus.', mot_de_passe_trop_courant: 'Trop courant : choisis un mot de passe moins facile à deviner.',
       email_invalide: 'Cette adresse n’est pas valide.', email_pris: 'Un compte utilise déjà cette adresse.', email_identique: 'C’est déjà ton adresse.',
-      compte_sans_mot_de_passe: 'Ton compte se connecte avec Google : rien à changer ici.'
+      compte_sans_mot_de_passe: 'Ton compte se connecte avec Google : rien à changer ici.',
+      aucun_changement: 'Ce lien a expiré : refais la demande.'
     };
     const errOf = (e) => ERR[(e && e.data && e.data.code) || ''] || 'Pas fait : vérifie ta connexion et réessaie.';
     const pwNew = st.pwNew || '';
@@ -183,16 +185,29 @@ export default class Reglages extends DCLogic {
         }, (e) => this.setState({ busy: null, pwErr: errOf(e) }));
       },
       // E-mail
-      emShown: !!st.em, emClosed: !st.em, emNew: st.emNew || '', emPw: st.emPw || '',
+      // Changement d'adresse en attente de son clic (convex/users.ts, pendingEmail) : le bloc « À confirmer » (maquette AdrA1).
+      emPending: !!pending, emPendingTo: pending ? pending.email : '', emVerified: !!u.emailVerified && !pending,
+      emPendErr: st.emPendErr || '', emPendBusy: !!st.busy, emResendLabel: st.busy === 'emResend' ? 'Envoi…' : 'Renvoyer',
+      emPendCancel: () => {
+        if (!p.onCancelEmail || st.busy) return;
+        this.setState({ busy: 'emCancel', emPendErr: '' });
+        p.onCancelEmail().then(() => { this.setState({ busy: null }); say('Changement d’adresse annulé'); }, (e) => this.setState({ busy: null, emPendErr: errOf(e) }));
+      },
+      emResend: () => {
+        if (!p.onResendEmail || st.busy) return;
+        this.setState({ busy: 'emResend', emPendErr: '' });
+        p.onResendEmail().then((email) => { this.setState({ busy: null }); say('Lien renvoyé à ' + email); }, (e) => this.setState({ busy: null, emPendErr: errOf(e) }));
+      },
+      emShown: !!st.em, emClosed: !st.em && !pending, emNew: st.emNew || '', emPw: st.emPw || '',
       onEmNew: (e) => this.setState({ emNew: e.target.value, emErr: '' }), onEmPw: (e) => this.setState({ emPw: e.target.value, emErr: '' }),
-      emErr: st.emErr || '', emOff: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((st.emNew || '').trim()) || !st.emPw || st.busy === 'em', emLabel: st.busy === 'em' ? 'Changement…' : 'Changer l’e-mail',
+      emErr: st.emErr || '', emOff: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((st.emNew || '').trim()) || !st.emPw || st.busy === 'em', emLabel: st.busy === 'em' ? 'Envoi…' : 'Envoyer le lien',
       emOpen: () => this.setState({ em: true, emNew: '', emPw: '', emErr: '' }), emCancel: () => this.setState({ em: false, emNew: '', emPw: '', emErr: '' }),
       emGo: () => {
         if (!p.onChangeEmail || st.busy) return;
         this.setState({ busy: 'em', emErr: '' });
-        p.onChangeEmail((st.emNew || '').trim(), st.emPw).then((email) => {
+        p.onChangeEmail((st.emNew || '').trim(), st.emPw).then((r) => {
           this.setState({ busy: null, em: false, emNew: '', emPw: '' });
-          say('E-mail changé : tu te connectes maintenant avec ' + email, 7000);
+          say('Lien envoyé à ' + ((r && r.email) || (st.emNew || '').trim()), 7000);
         }, (e) => this.setState({ busy: null, emErr: errOf(e) }));
       },
       // 30 jours : la durée des sessions de Convex Auth (audit Q37 : le texte disait 90).
@@ -467,14 +482,14 @@ export default class Reglages extends DCLogic {
                       "E-mail"
                     ),
                     $h("span", { "class": "reg-h" },
-                      "Pour te connecter et recevoir tes reçus."
+                      "Pour te connecter et recevoir tes reçus. On t’envoie un lien pour confirmer un changement."
                     )
                   ),
                   $h("span", { "style": "display: flex; align-items: center; gap: 12px; min-width: 0;" },
                     $h("span", { "style": "font-size: 14px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
                       $t($v.me?.email)
                     ),
-                    ($v.me?.verified) ? [
+                    ($v.emVerified) ? [
                       $h("span", { "class": "reg-pill reg-green" },
                         $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
                           $h("path", { "d": "M5 12.5l4.5 4.5L19 7.5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -489,6 +504,39 @@ export default class Reglages extends DCLogic {
                     ] : null
                   )
                 ),
+                ($v.emPending) ? [
+                  $h("div", { "role": "status", "class": "reg-pending", "style": "display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px 16px; margin: 0 0 18px; padding: 14px 16px; border-radius: 12px; background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-edge);" },
+                    $h("span", { "style": "display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 260px;" },
+                      $h("span", { "style": "display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--accent);" },
+                        $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0;" },
+                          $h("circle", { "cx": "12", "cy": "12", "r": "8.5", "fill": "none", "stroke": "currentColor", "stroke-width": "2" }),
+                          $h("path", { "d": "M12 7.5V12l3 2", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round" })
+                        ),
+                        "À confirmer"
+                      ),
+                      $h("span", { "style": "font-size: 14px; line-height: 1.5; color: var(--ink-soft); overflow-wrap: anywhere;" },
+                        "Un lien est parti à ",
+                        $h("b", { "style": "color: #FFFFFF; font-weight: 600;" },
+                          $t($v.emPendingTo)
+                        ),
+                        ". Ton adresse change quand tu cliques dessus. Il marche 24 heures."
+                      ),
+                      ($v.emPendErr) ? [
+                        $h("span", { "class": "reg-err", "role": "alert" },
+                          $t($v.emPendErr)
+                        )
+                      ] : null
+                    ),
+                    $h("span", { "style": "display: flex; align-items: center; gap: 4px; flex-shrink: 0;" },
+                      $h("button", { "class": "reg-btn reg-text", "type": "button", "disabled": $v.emPendBusy, "onClick": $v.emPendCancel },
+                        "Annuler"
+                      ),
+                      $h("button", { "class": "reg-btn", "type": "button", "disabled": $v.emPendBusy, "onClick": $v.emResend },
+                        $t($v.emResendLabel)
+                      )
+                    )
+                  )
+                ] : null,
                 ($v.emShown) ? [
                   $h("div", { "class": "reg-form" },
                     $h("span", { "class": "reg-grid2" },
@@ -506,7 +554,7 @@ export default class Reglages extends DCLogic {
                       )
                     ),
                     $h("span", { "class": "reg-note" },
-                      "Tu te connecteras ensuite avec la nouvelle adresse."
+                      "Un lien part à cette adresse : elle remplace l’ancienne quand tu cliques dessus."
                     ),
                     ($v.emErr) ? [
                       $h("span", { "class": "reg-err", "role": "alert" },

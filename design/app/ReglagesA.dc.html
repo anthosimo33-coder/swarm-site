@@ -131,8 +131,9 @@ body{margin:0;background:#05070C}
 <div class="reg-card">
 <div id="reg-photo" class="reg-row" style=" {{glow.photo}}"><span class="reg-lab"><span class="reg-t">Photo</span><span class="reg-h">Ton initiale, tant que tu n’as pas mis de photo.</span></span><span class="reg-av">{{me.initiale}}</span></div>
 <div id="reg-prenom" class="reg-row" style="border-top: 1px solid var(--line); {{glow.prenom}}"><span class="reg-lab"><span class="reg-t">Prénom</span><span class="reg-h">Affiché dans l’app.</span></span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;"><input class="reg-in" type="text" value="{{nameVal}}" onInput="{{onName}}" onBlur="{{onNameBlur}}" maxlength="40" placeholder="Ton prénom" aria-label="Prénom" autocomplete="given-name"><sc-if value="{{nameSaved}}" hint-placeholder-val="{{false}}"><span class="reg-ok"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Enregistré</span></sc-if><sc-if value="{{nameErr}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: #FF8A8A;">{{nameErr}}</span></sc-if></span></div>
-<div id="reg-email" class="reg-row" style="border-top: 1px solid var(--line); {{glow.email}}"><span class="reg-lab"><span class="reg-t">E-mail</span><span class="reg-h">Pour te connecter et recevoir tes reçus.</span></span><span style="display: flex; align-items: center; gap: 12px; min-width: 0;"><span style="font-size: 14px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{me.email}}</span><sc-if value="{{me.verified}}" hint-placeholder-val="{{true}}"><span class="reg-pill reg-green"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Vérifiée</span></sc-if><sc-if value="{{emClosed}}" hint-placeholder-val="{{true}}"><button class="reg-btn" type="button" onClick="{{emOpen}}">Changer</button></sc-if></span></div>
-<sc-if value="{{emShown}}" hint-placeholder-val="{{false}}"><div class="reg-form"><span class="reg-grid2"><label class="reg-field"><span>Nouvel e-mail</span><input class="reg-in" type="email" autocomplete="email" value="{{emNew}}" onInput="{{onEmNew}}" placeholder="toi@exemple.fr"></label><label class="reg-field"><span>Ton mot de passe</span><input class="reg-in" type="password" autocomplete="current-password" value="{{emPw}}" onInput="{{onEmPw}}"></label></span><span class="reg-note">Tu te connecteras ensuite avec la nouvelle adresse.</span><sc-if value="{{emErr}}" hint-placeholder-val="{{false}}"><span class="reg-err" role="alert">{{emErr}}</span></sc-if><span class="reg-actions"><button class="reg-btn reg-text" type="button" onClick="{{emCancel}}">Annuler</button><button class="reg-btn reg-blue-btn" type="button" disabled="{{emOff}}" onClick="{{emGo}}">{{emLabel}}</button></span></div></sc-if>
+<div id="reg-email" class="reg-row" style="border-top: 1px solid var(--line); {{glow.email}}"><span class="reg-lab"><span class="reg-t">E-mail</span><span class="reg-h">Pour te connecter et recevoir tes reçus. On t’envoie un lien pour confirmer un changement.</span></span><span style="display: flex; align-items: center; gap: 12px; min-width: 0;"><span style="font-size: 14px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{me.email}}</span><sc-if value="{{emVerified}}" hint-placeholder-val="{{true}}"><span class="reg-pill reg-green"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Vérifiée</span></sc-if><sc-if value="{{emClosed}}" hint-placeholder-val="{{true}}"><button class="reg-btn" type="button" onClick="{{emOpen}}">Changer</button></sc-if></span></div>
+<sc-if value="{{emPending}}" hint-placeholder-val="{{false}}"><div role="status" class="reg-pending" style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px 16px; margin: 0 0 18px; padding: 14px 16px; border-radius: 12px; background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-edge);"><span style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 260px;"><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--accent);"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0;"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>À confirmer</span><span style="font-size: 14px; line-height: 1.5; color: var(--ink-soft); overflow-wrap: anywhere;">Un lien est parti à <b style="color: #FFFFFF; font-weight: 600;">{{emPendingTo}}</b>. Ton adresse change quand tu cliques dessus. Il marche 24 heures.</span><sc-if value="{{emPendErr}}" hint-placeholder-val="{{false}}"><span class="reg-err" role="alert">{{emPendErr}}</span></sc-if></span><span style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;"><button class="reg-btn reg-text" type="button" disabled="{{emPendBusy}}" onClick="{{emPendCancel}}">Annuler</button><button class="reg-btn" type="button" disabled="{{emPendBusy}}" onClick="{{emResend}}">{{emResendLabel}}</button></span></div></sc-if>
+<sc-if value="{{emShown}}" hint-placeholder-val="{{false}}"><div class="reg-form"><span class="reg-grid2"><label class="reg-field"><span>Nouvel e-mail</span><input class="reg-in" type="email" autocomplete="email" value="{{emNew}}" onInput="{{onEmNew}}" placeholder="toi@exemple.fr"></label><label class="reg-field"><span>Ton mot de passe</span><input class="reg-in" type="password" autocomplete="current-password" value="{{emPw}}" onInput="{{onEmPw}}"></label></span><span class="reg-note">Un lien part à cette adresse : elle remplace l’ancienne quand tu cliques dessus.</span><sc-if value="{{emErr}}" hint-placeholder-val="{{false}}"><span class="reg-err" role="alert">{{emErr}}</span></sc-if><span class="reg-actions"><button class="reg-btn reg-text" type="button" onClick="{{emCancel}}">Annuler</button><button class="reg-btn reg-blue-btn" type="button" disabled="{{emOff}}" onClick="{{emGo}}">{{emLabel}}</button></span></div></sc-if>
 </div>
 <div class="reg-card reg-danger" style="margin-top: 20px;">
 <div id="reg-fermer" class="reg-row" style="{{glow.fermer}}"><span class="reg-lab"><span class="reg-t">Fermer mon compte</span><span class="reg-h">{{delHint}}</span></span><sc-if value="{{delClosed}}" hint-placeholder-val="{{true}}"><button class="reg-btn reg-redline" type="button" onClick="{{delOpen}}">Fermer mon compte</button></sc-if></div>
@@ -216,6 +217,7 @@ class Component extends DCLogic {
     const p = this.props || {};
     const st = this.state || {};
     const u = p.user || { nom: 'Anthony', email: 'anthony@exemple.fr', initiale: 'A', pro: false, emailVerified: true };
+    const pending = p.pendingEmail || null; // { email, expiresAt } : une nouvelle adresse attend son clic
     const pro = !!u.pro;
     const mob = !!p.mobile;
     const view = mob ? (st.view || p.view || 'list') : 'detail'; // p.view : ouvert sur une rubrique (src/app/main.js)
@@ -279,7 +281,8 @@ class Component extends DCLogic {
       mot_de_passe_trop_court: '8 caractères minimum.', mot_de_passe_identique: 'Choisis un mot de passe différent de l’actuel.',
       mot_de_passe_trop_long: '128 caractères au plus.', mot_de_passe_trop_courant: 'Trop courant : choisis un mot de passe moins facile à deviner.',
       email_invalide: 'Cette adresse n’est pas valide.', email_pris: 'Un compte utilise déjà cette adresse.', email_identique: 'C’est déjà ton adresse.',
-      compte_sans_mot_de_passe: 'Ton compte se connecte avec Google : rien à changer ici.'
+      compte_sans_mot_de_passe: 'Ton compte se connecte avec Google : rien à changer ici.',
+      aucun_changement: 'Ce lien a expiré : refais la demande.'
     };
     const errOf = (e) => ERR[(e && e.data && e.data.code) || ''] || 'Pas fait : vérifie ta connexion et réessaie.';
     const pwNew = st.pwNew || '';
@@ -350,16 +353,29 @@ class Component extends DCLogic {
         }, (e) => this.setState({ busy: null, pwErr: errOf(e) }));
       },
       // E-mail
-      emShown: !!st.em, emClosed: !st.em, emNew: st.emNew || '', emPw: st.emPw || '',
+      // Changement d'adresse en attente de son clic (convex/users.ts, pendingEmail) : le bloc « À confirmer » (maquette AdrA1).
+      emPending: !!pending, emPendingTo: pending ? pending.email : '', emVerified: !!u.emailVerified && !pending,
+      emPendErr: st.emPendErr || '', emPendBusy: !!st.busy, emResendLabel: st.busy === 'emResend' ? 'Envoi…' : 'Renvoyer',
+      emPendCancel: () => {
+        if (!p.onCancelEmail || st.busy) return;
+        this.setState({ busy: 'emCancel', emPendErr: '' });
+        p.onCancelEmail().then(() => { this.setState({ busy: null }); say('Changement d’adresse annulé'); }, (e) => this.setState({ busy: null, emPendErr: errOf(e) }));
+      },
+      emResend: () => {
+        if (!p.onResendEmail || st.busy) return;
+        this.setState({ busy: 'emResend', emPendErr: '' });
+        p.onResendEmail().then((email) => { this.setState({ busy: null }); say('Lien renvoyé à ' + email); }, (e) => this.setState({ busy: null, emPendErr: errOf(e) }));
+      },
+      emShown: !!st.em, emClosed: !st.em && !pending, emNew: st.emNew || '', emPw: st.emPw || '',
       onEmNew: (e) => this.setState({ emNew: e.target.value, emErr: '' }), onEmPw: (e) => this.setState({ emPw: e.target.value, emErr: '' }),
-      emErr: st.emErr || '', emOff: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((st.emNew || '').trim()) || !st.emPw || st.busy === 'em', emLabel: st.busy === 'em' ? 'Changement…' : 'Changer l’e-mail',
+      emErr: st.emErr || '', emOff: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((st.emNew || '').trim()) || !st.emPw || st.busy === 'em', emLabel: st.busy === 'em' ? 'Envoi…' : 'Envoyer le lien',
       emOpen: () => this.setState({ em: true, emNew: '', emPw: '', emErr: '' }), emCancel: () => this.setState({ em: false, emNew: '', emPw: '', emErr: '' }),
       emGo: () => {
         if (!p.onChangeEmail || st.busy) return;
         this.setState({ busy: 'em', emErr: '' });
-        p.onChangeEmail((st.emNew || '').trim(), st.emPw).then((email) => {
+        p.onChangeEmail((st.emNew || '').trim(), st.emPw).then((r) => {
           this.setState({ busy: null, em: false, emNew: '', emPw: '' });
-          say('E-mail changé : tu te connectes maintenant avec ' + email, 7000);
+          say('Lien envoyé à ' + ((r && r.email) || (st.emNew || '').trim()), 7000);
         }, (e) => this.setState({ busy: null, emErr: errOf(e) }));
       },
       // 30 jours : la durée des sessions de Convex Auth (audit Q37 : le texte disait 90).

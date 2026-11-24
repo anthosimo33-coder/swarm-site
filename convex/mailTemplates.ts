@@ -164,3 +164,44 @@ export function accountClosedMail(email: string, at: number): Mail {
     text: [fr(lines.title), "", `Le compte ${email} a été fermé le ${day}. ${fr(lines.erased)}`, "", fr(lines.again), "", ...footText(reason)].join("\n"),
   };
 }
+
+const rule = `<div style="height:1px;margin:0 0 24px;background:${LINE};line-height:1px;font-size:1px;">&nbsp;</div>`;
+const fallback = (url: string) =>
+  `<p style="margin:0;font-size:13px;line-height:1.6;color:${MUTED};">${esc(fr("Le bouton ne marche pas ? Copie ce lien dans ton navigateur :"))}<br>`
+  + `<a href="${esc(url)}" style="color:#0B6FE0;word-break:break-all;">${esc(url)}</a></p>`;
+export const SUPPORT = "support@kopycat.io";
+
+/** Le lien qui confirme une nouvelle adresse (Réglages › Profil), envoyé À la nouvelle adresse. */
+export function confirmNewEmailMail(to: string, from: string, token: string): Mail {
+  if (!/^[0-9a-f]{64}$/.test(token)) throw new Error("jeton attendu : 64 caractères hexadécimaux");
+  const href = `${SITE}/confirmer-adresse?t=${token}`;
+  const reason = "Tu reçois cet e-mail parce que quelqu’un a demandé à mettre cette adresse sur un compte Kopycat.";
+  const lines = {
+    title: "Confirme ta nouvelle adresse",
+    small: "Le lien marche 24 heures. Pas toi ? Ignore cet e-mail : rien ne change.",
+  };
+  const change = `<p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${SOFT};">Ton compte Kopycat passera de ${esc(from)} à <b style="color:${INK};">${esc(to)}</b> dès que tu confirmes.</p>`;
+  const body = h1(lines.title) + change + button("Confirmer cette adresse", href) + p(lines.small, 14, MUTED) + rule + fallback(href);
+  return {
+    subject: "Confirme ta nouvelle adresse",
+    html: layout({ title: lines.title, preview: "Ton compte Kopycat passe sur cette adresse dès que tu confirmes.", body, reason }),
+    text: [fr(lines.title), "", `Ton compte Kopycat passera de ${from} à ${to} dès que tu confirmes :`, href, "", fr(lines.small), "", ...footText(reason)].join("\n"),
+  };
+}
+
+/** L'adresse du compte a changé, envoyé à l'ANCIENNE adresse une fois la nouvelle confirmée. */
+export function emailChangedMail(to: string, next: string, at: number): Mail {
+  const when = `${parisDate(at)} (heure de Paris)`;
+  const reason = `Tu reçois cet e-mail parce que ton compte Kopycat utilisait ${to}.`;
+  const lines = {
+    title: "L’adresse de ton compte a changé",
+    moved: "Ton compte Kopycat utilise maintenant une autre adresse. Les prochains e-mails partiront là-bas.",
+  };
+  const notMe = `<p style="margin:0;font-size:16px;line-height:1.6;color:${SOFT};">${esc(fr("Pas toi ? Écris-nous tout de suite à"))} <a href="mailto:${SUPPORT}" style="color:#0B6FE0;font-weight:600;">${SUPPORT}</a>.</p>`;
+  const body = h1(lines.title) + p(lines.moved) + facts([["Avant", to], ["Maintenant", next], ["Quand", when]]) + notMe;
+  return {
+    subject: "L’adresse de ton compte a changé",
+    html: layout({ title: lines.title, preview: `Ton compte Kopycat utilise maintenant ${next}.`, body, reason }),
+    text: [fr(lines.title), "", fr(lines.moved), "", `Avant : ${to}`, `Maintenant : ${next}`, fr(`Quand : ${when}`), "", fr(`Pas toi ? Écris-nous tout de suite à ${SUPPORT}.`), "", ...footText(reason)].join("\n"),
+  };
+}

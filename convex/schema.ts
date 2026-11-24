@@ -74,6 +74,10 @@ export default defineSchema({
   checkoutLinks: defineTable({ userId: v.id("users"), key: v.string(), url: v.string(), at: v.number() }).index("by_user_key", ["userId", "key"]),
   // Limites de l'authentification (convex/authLimits.ts) : passages comptés par fenêtre fixe, une ligne par clé.
   authLimits: defineTable({ key: v.string(), n: v.number(), since: v.number() }).index("by_key", ["key"]),
+  // Changer d'adresse (24/11, convex/users.ts) : la nouvelle adresse attend son clic, une ligne par compte ; `hash` =
+  // empreinte du jeton du lien, jamais le jeton.
+  emailChanges: defineTable({ userId: v.id("users"), email: v.string(), hash: v.string(), expiresAt: v.number() })
+    .index("by_user", ["userId"]).index("by_hash", ["hash"]),
   // Mot de passe oublié (24/11, convex/passwordReset.ts) : le code à 6 chiffres envoyé par e-mail, une ligne par e-mail
   // (`key` = son empreinte). Une adresse sans compte a aussi sa ligne, avec un code que personne ne reçoit : elle se
   // comporte comme les autres (essais, expiration), et ne dit donc pas qu'elle n'a pas de compte. `codeHash` : empreinte
