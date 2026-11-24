@@ -231,7 +231,7 @@ RULES.push(['Formats : title = le texte à l\'écran de la reprise la plus vue q
 
 // La fiche d'une app (24/11/2026) : les formats que SES comptes reprennent, rangés par eux. Rangés par le nombre de comptes
 // toutes apps confondues, les 8 formats de la fiche de Diane AI étaient des sons où elle n'avait qu'un compte.
-RULES.push(['Fiche d\'app : ses formats repris par au moins 2 de ses comptes, les plus repris chez elle d\'abord ; accounts = ses comptes', (docs, raw) => {
+RULES.push(['Fiche d\'app : ses formats repris par au moins 2 de ses comptes, les plus repris chez elle d\'abord ; own = ses comptes, accounts = tous ceux du format', (docs, raw) => {
   const out = [], NOW = 1794780000000;
   const byId = new Map(raw.apps.map((a) => [a.id, a]));
   const canon = (a) => { for (let i = 0; a && a.mergedInto && i < 5; i++) a = byId.get(a.mergedInto) ?? a; return a; };
@@ -246,14 +246,14 @@ RULES.push(['Fiche d\'app : ses formats repris par au moins 2 de ses comptes, le
     shown += list.length;
     for (const f of list) {
       const r = fmt.get(f.id), n = own(r, slug);
-      if (f.accounts !== n) out.push(`${k} → ${f.id} : accounts ${f.accounts}, ${n} de ses comptes`);
+      if (f.own !== n) out.push(`${k} → ${f.id} : own ${f.own}, ${n} de ses comptes`);
       // Deux de ses comptes au moins (décision du 24/11/2026, écrite ici en clair : la règle ne relit pas la constante).
       if (n < 2) out.push(`${k} → ${f.id} : ${n} compte(s) de l'app seulement`);
-      if (f.allAccounts !== r.accountCount) out.push(`${k} → ${f.id} : allAccounts ${f.allAccounts} ≠ ${r.accountCount}`);
+      if (f.accounts !== r.accountCount) out.push(`${k} → ${f.id} : accounts ${f.accounts} ≠ ${r.accountCount}`);
     }
-    for (let i = 1; i < list.length; i++) if (list[i].accounts > list[i - 1].accounts) out.push(`${k} : ${list[i].id} (${list[i].accounts}) après ${list[i - 1].id} (${list[i - 1].accounts})`);
+    for (let i = 1; i < list.length; i++) if (list[i].own > list[i - 1].own) out.push(`${k} : ${list[i].id} (${list[i].own}) après ${list[i - 1].id} (${list[i - 1].own})`);
     // Aucun format plus repris chez elle n'est laissé de côté.
-    const floor = list.length >= models.FICHE_FORMATS ? list[list.length - 1].accounts : 1;
+    const floor = list.length >= models.FICHE_FORMATS ? list[list.length - 1].own : 1;
     const listed = new Set(list.map((f) => f.id));
     for (const f of raw.formats) {
       if (!isFormat(f) || absorbed.has(f.id) || listed.has(f.id)) continue;
@@ -325,9 +325,21 @@ const ideaFails = (() => {
   if (!list.includes('grande')) out.push('l\'idée montrée manque à la liste');
   if (!list.includes(other.id)) out.push(`${other.id} écarté par une idée de 2 comptes`);
   if (list.includes('petite')) out.push('une idée de 2 comptes est listée');
+  // La synchro garde les formats préparés une fois pour toutes ses étapes (convex/radarSync.ts : slimFormat à la lecture
+  // de l'export, puis prepareFormats) : sans l'accroche couverte, sans la liste des vidéos ni le texte des reprises des
+  // idées, et les mêmes pages au caractère près.
+  const prepared = models.prepareFormats(raw.formats.map((f) => models.slimFormat(f, (x) => x)), NOW);
+  if (prepared.some((f) => f.videos !== undefined)) out.push('préparés : une idée garde sa liste de vidéos');
+  if (prepared.some((f) => f.id === tpl.id)) out.push(`préparés : ${tpl.id}, couvert, encore là`);
+  for (const id of ['grande', 'petite', other.id]) if (!prepared.some((f) => f.id === id)) out.push(`préparés : ${id} perdu`);
+  if (prepared.some((f) => f.key.startsWith('idee:') && f.members.some((m) => m.hook !== undefined))) out.push('préparés : une reprise d\'idée garde son texte');
+  const docs2 = boardsOf(models, { ...raw, formats: prepared });
+  const h = (d) => { const { updatedAt, ...rest } = d ?? {}; return JSON.stringify(rest); };
+  const changed = [...new Set([...docs.keys(), ...docs2.keys()])].filter((k) => h(docs.get(k)) !== h(docs2.get(k)));
+  if (changed.length) out.push(`préparés : ${changed.length} page(s) changée(s) (${changed.slice(0, 3).join(', ')})`);
   return out;
 })();
-console.log(`${ideaFails.length ? 'ÉCHEC' : 'OK   '} Idées d'accroches : l'accroche couverte par une idée montrée disparaît, pas les autres${ideaFails.length ? ` : ${ideaFails.join(' ; ')}` : ''}`);
+console.log(`${ideaFails.length ? 'ÉCHEC' : 'OK   '} Idées d'accroches : l'accroche couverte par une idée montrée disparaît, pas les autres ; formats préparés par la synchro = mêmes pages${ideaFails.length ? ` : ${ideaFails.join(' ; ')}` : ''}`);
 
 let fail = (bioFails.length ? 1 : 0) + (titleFails.length ? 1 : 0) + (ideaFails.length ? 1 : 0);
 const run = async (label, docs, strict, raw) => {

@@ -110,11 +110,11 @@ réel, dans sa niche si elle en compte au moins 2, sinon parmi toutes.
 
 ### `app:<slug>` — fiche d'une app (FicheA, MFiche)
 L'`App` ci-dessus, plus `videos: [VideoCard ×12]` (les plus vues sur 30 j, ordre du lecteur),
-`formats: [{ id, kind: 'hook'|'sound', label, accounts, allAccounts, medX, maxViews, page? }] ×8` — les formats que SES
-comptes reprennent (24/11/2026) : au moins 2 de ses comptes (`FICHE_FORMAT_ACCOUNTS`), rangés par ce nombre, puis par le
-nombre de comptes du format ; `accounts` = ses comptes à elle qui le reprennent (« Les formats qui cartonnent chez eux »),
-`allAccounts` = tous les comptes du format (ceux de sa fiche `format:<id>`). Avant, rangés par `allAccounts` : des sons
-repris dans 20 apps, avec un seul compte de l'app, prenaient toute la place.
+`formats: [{ id, kind: 'hook'|'sound', label, accounts, own, medX, maxViews, page? }] ×8` — les formats que SES
+comptes reprennent (24/11/2026) : au moins 2 de ses comptes (`FICHE_FORMAT_ACCOUNTS`), rangés par ce nombre (`own`), puis
+par le nombre de comptes du format ; `accounts` = tous les comptes du format (ceux de sa fiche `format:<id>`, le chiffre
+que l'écran montre), `own` = ses comptes à elle qui le reprennent. Avant, rangés par `accounts` : des sons repris dans
+20 apps, avec un seul compte de l'app, prenaient toute la place.
 `creators: [{ handle, fans, median, posts7d, market, page: a-t-il une fiche ? }] ×6` (les 6 que l'écran montre).
 
 ### `video:<id>` — lecteur (VideoA, MVideo)
