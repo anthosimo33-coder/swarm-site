@@ -115,6 +115,25 @@ export function staleVideoProof(texts: readonly DatedText[], rule: AppRule, name
   return since.length >= VET_MIN_VIDEOS && !since.some((t) => namesApp(t.text, rule, name));
 }
 
+/**
+ * Un compte relié à son app par ses SEULES vidéos, et dont cette preuve est périmée (staleVideoProof) : l'export Kopycat
+ * le montre en pause (#37) ; le Radar le met en pause à son relevé et ne le relance pas au rejugement
+ * (convex/radar/radarNetworks). Décision du fondateur, 24/11/2026 (« arrêt complet ») : plus aucun relevé, gratuit,
+ * payant ni Instagram, pour ces ~600 comptes ; il ne revient qu'à la main (`keptByHand`). Pseudo, bio, liste de départ,
+ * ajout à la main et placement payé ne s'usent pas. `recent` : ses vidéos rangées, les plus récentes d'abord.
+ */
+export function staleLink(
+  acc: { handle: string; bio?: string | null; matchedBy: "caption" | "manual" | "seed"; placement?: boolean },
+  app: AppRule & { name: string },
+  recent: readonly { platform?: string; caption?: string | null; hook?: string | null; publishedAt: number }[],
+  now: number,
+): boolean {
+  if (acc.placement) return false;
+  if (proofDetail(acc.handle, acc.bio, [], app, acc.matchedBy).by !== null) return false;
+  const texts = recent.filter((r) => !r.platform).map((r) => ({ text: `${r.caption ?? ""} ${r.hook ?? ""}`, at: r.publishedAt }));
+  return staleVideoProof(texts, app, app.name, now);
+}
+
 // ─── Un passage du filtre ────────────────────────────────────────────────────
 
 /** Comptes vérifiés au plus par passage (un passage toutes les 5 minutes, une page par compte). */

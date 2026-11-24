@@ -141,7 +141,7 @@ import {
 } from "./radarFreeMath";
 import { fetchEmbedPage, storePauseMs, storeUrl } from "./radarStoreMath";
 import { linkCandidate } from "./radarFiche";
-import { REJECTED_KEEP_MS, accountProof } from "./radarVetMath";
+import { REJECTED_KEEP_MS, accountProof, staleLink } from "./radarVetMath";
 import { fromStoredCursor } from "./radarCursorMath";
 import { MARKET_CURRENCY } from "./radarMarketMath";
 import {
@@ -852,7 +852,10 @@ export const applyAccountRead = internalMutation({
     // l'app compte dans ses vues (définition du fondateur, 14/11/2026). Un compte jamais vu publier, relevé depuis
     // plus de 3 jours, n'a rien à montrer : en pause (lot 4 du dig, A6).
     const empty = isEmptyAccount(acc, recent.length, fresh.length, now);
-    const offTopic = (((verdict.kind === "offTopic" || unproven) && !acc.placement) || empty) && !acc.keptByHand;
+    // Relié par ses seules vidéos, et elles ne nomment plus son app depuis 42 jours (radarVetMath.staleLink) : Kopycat ne
+    // le montre plus (#37) ; il n'est plus relevé non plus (« arrêt complet », 24/11/2026).
+    const stale = !!own && verdict.kind === "keep" && staleLink({ ...acc, bio: bio ?? acc.bio }, own, recent, now);
+    const offTopic = (((verdict.kind === "offTopic" || unproven || stale) && !acc.placement) || empty) && !acc.keptByHand;
     const fans = videos[0]?.authorFans ?? profile?.fans ?? acc.fans;
     // Son Instagram, s'il le donne : relevé à son tour (convex/radarSources).
     const ig = acc.igHandle ? null : igHandleFromBio(bio);
@@ -1008,11 +1011,13 @@ async function rejudgeAccounts(ctx: MutationCtx, paused: readonly Doc<"radarTrac
     if (verdict.kind === "move") {
       await moveAccount(ctx, t, own, verdict.to, recent);
       moved++;
-    } else if (own.status === "active" && accountProof(t.handle, t.bio, texts, own) !== null) {
+    } else if (own.status === "active" && accountProof(t.handle, t.bio, texts, own) !== null && !staleLink(t, own, recent, now)) {
       // Une app en pause (ou fondue dans une autre) ne reprend aucun compte ; ils peuvent seulement aller vers une
       // app suivie qu'ils citent nettement (ci-dessus).
       // Sa bio nomme son app, ou ses vidéos la citent maintenant (ses motifs ont changé). Des vidéos purgées ne
       // suffisent pas à le relancer : il faut la preuve.
+      // Une preuve par vidéos PÉRIMÉE ne le relance pas (radarVetMath.staleLink, 24/11/2026) : ses vieilles vidéos qui
+      // citent l'app sont toujours rangées, il repartirait en relevé pour être remis en pause au suivant.
       resumed++;
     } else continue;
     await ctx.db.patch(t._id, { status: "active", pausedReason: undefined, nextReadAt: now, readErrors: 0 });
