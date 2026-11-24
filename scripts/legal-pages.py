@@ -68,7 +68,7 @@ mentions = page("mentions-legales", "Mentions légales",
 <h2>Éditeur</h2>
 <p>Le site et le service Kopycat sont édités par {SOC}.</p>
 <p>Numéro de TVA intracommunautaire : FR93132937848.</p>
-<p>Directeur de la publication : Anthony Simonet, président de JARVIA STUDIO.</p>
+<p>Directeur de la publication : le président de JARVIA STUDIO.</p>
 
 <h2 id="contact">Contact</h2>
 <p>Par e-mail : <a href="mailto:support@kopycat.io">support@kopycat.io</a>.</p>
