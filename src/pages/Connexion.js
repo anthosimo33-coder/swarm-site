@@ -42,7 +42,15 @@ export default class Connexion extends DCLogic {
       notice: st.notice || '',
       hasNotice: !!st.notice,
       google: () => run(() => auth.google()),
-      forgot: (e) => { e.preventDefault(); this.setState({ error: '', notice: 'La réinitialisation du mot de passe par e-mail n’est pas encore ouverte.' }); },
+      // « Mot de passe oublié ? » mène à sa page ; l'e-mail déjà tapé l'y suit, par le stockage de l'onglet (jamais par
+      // l'adresse de la page, qui finirait dans l'historique et les journaux).
+      forgot: (e) => {
+        try {
+          const field = e.currentTarget.closest('form').elements.email;
+          const email = field ? field.value.trim() : '';
+          if (email) window.sessionStorage.setItem('kopycat:reset-email', email);
+        } catch (err) { /* stockage refusé : la page s'ouvre avec le champ vide */ }
+      },
       submit: (e) => {
         e.preventDefault();
         const form = new FormData(e.currentTarget);
@@ -103,7 +111,7 @@ export default class Connexion extends DCLogic {
                   "Mot de passe"
                 ),
                 $h("input", { "class": "sw-input", "id": "a-pass", "name": "password", "type": "password", "required": true, "autocomplete": "current-password" }),
-                $h("a", { "class": "sw-link-quiet", "href": "#", "onClick": $v.forgot, "style": "align-self: flex-end; font-size: 13px; margin-top: 2px;" },
+                $h("a", { "class": "sw-link-quiet", "href": "/mot-de-passe-oublie", "onClick": $v.forgot, "style": "align-self: flex-end; font-size: 13px; margin-top: 2px;" },
                   "Mot de passe oublié ?"
                 )
               ),
