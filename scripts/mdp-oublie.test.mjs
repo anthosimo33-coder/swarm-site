@@ -174,6 +174,7 @@ const withClock = async (ms, f) => { const real = Date.now; Date.now = () => rea
   const body = JSON.parse(calls[0]?.init.body ?? '{}');
   ok(calls[0]?.url === 'https://api.resend.com/emails' && calls[0].init.headers.Authorization === 'Bearer re_test_cle', 'appel à l’API de Resend, avec la clé');
   ok(calls.length === 1, `adresse de test (@exemple.fr) : rien n’est envoyé (${calls.length} appel(s) pour 2 envois)`);
+  ok(body.reply_to === 'support@kopycat.io', `répondre à un e-mail arrive au support (reply_to ${body.reply_to})`);
   ok(body.from === 'Kopycat <compte@kopycat.io>' && body.to?.[0] === REAL && body.subject === '481 207 est ton code Kopycat' && body.text && body.html, `expéditeur, destinataire, objet, HTML et texte (${body.from} → ${body.to})`);
   globalThis.fetch = async () => new Response('{"message":"domain not verified"}', { status: 403 });
   let refused = '';

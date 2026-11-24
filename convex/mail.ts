@@ -4,10 +4,12 @@ import { accountClosedMail, passwordChangedMail, resetCodeMail, welcomeMail, typ
 
 /**
  * L'envoi des e-mails, par l'API de Resend (domaine kopycat.io, vérifié chez Resend le 24/11/2026).
- * Variables du déploiement : RESEND_API_KEY (obligatoire), MAIL_FROM (facultatif, « Kopycat <compte@kopycat.io> » sinon).
+ * Variables du déploiement : RESEND_API_KEY (obligatoire), MAIL_FROM (facultatif, « Kopycat <compte@kopycat.io> » sinon),
+ * MAIL_REPLY_TO (facultatif, support@kopycat.io sinon : une réponse à un e-mail arrive au support, redirigé par ImprovMX).
  * Sans clé, l'envoi échoue en clair dans les journaux de Convex : rien ne part en silence.
  */
 const FROM = "Kopycat <compte@kopycat.io>";
+const REPLY_TO = "support@kopycat.io";
 
 /**
  * Les adresses des comptes de test (@exemple.fr, @ex.fr, cf. l'admin) et les domaines réservés aux exemples : jamais
@@ -27,7 +29,7 @@ export async function sendMail(to: string, mail: Mail, tag: string): Promise<str
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: process.env.MAIL_FROM || FROM, to: [to], subject: mail.subject, html: mail.html, text: mail.text,
+      from: process.env.MAIL_FROM || FROM, reply_to: process.env.MAIL_REPLY_TO || REPLY_TO, to: [to], subject: mail.subject, html: mail.html, text: mail.text,
       tags: [{ name: "type", value: tag }],
     }),
   });
