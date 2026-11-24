@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Id } from "../../convex/_generated/dataModel";
 import { DAYS } from "../../convex/radarModels";
-import { accountProof, PROOF_FRESH_MS, staleVideoProof, vetOutcome, type DatedText } from "../../convex/radar/radarVetMath";
+import { accountProof, PROOF_FRESH_MS, staleLink, staleVideoProof, vetOutcome, type DatedText } from "../../convex/radar/radarVetMath";
+import { applyAccountRead, rejudgePaused } from "../../convex/radar/radarNetworks";
 import { exportPage } from "../../convex/radar/swarmExportPage";
 import { memoryDb, type MemoryDoc } from "./convex-memory-db";
 
@@ -190,4 +191,74 @@ describe("Export vers Kopycat : un compte dont la preuve par vidéos est périm�
   it("le 13/11, les mêmes données le montraient sous Solaia", async () => {
     expect(await statuts(ENTRY)).toEqual({ compte_fini: "active", compte_bio: "active", compte_oral: "active" });
   });
+});
+
+// ─── Le Radar : plus relevé (« arrêt complet », 24/11/2026) ──────────────────
+
+type Handler = { _handler: (ctx: unknown, args: unknown) => Promise<unknown> };
+const run = (f: unknown, ctx: unknown, args: unknown) => (f as Handler)._handler(ctx, args);
+const ctxOf = (tables: Record<string, MemoryDoc[]>) => {
+  const mem = memoryDb({ radarSettings: [], radarIdeaQueue: [], radarRejected: [], ...tables }, { limit: null });
+  return { mem, ctx: { db: mem.db, scheduler: { runAfter: async () => undefined, runAt: async () => undefined } } };
+};
+const compte = async (mem: ReturnType<typeof memoryDb>, handle: string) =>
+  ((await (mem.db.query("radarTracked") as { collect: () => Promise<MemoryDoc[]> }).collect()).find((t) => t.handle === handle))!;
+/** Son relevé gratuit du jour : seules les vues de ses vidéos déjà rangées sont relues. */
+const releve = async (ctx: unknown, acc: MemoryDoc, now: number) =>
+  run(applyAccountRead, ctx, { accountId: acc._id, videos: [], light: [{ videoId: `${acc.handle}-0`, views: 9_500 }], now });
+
+describe("Radar : un compte dont la preuve par vidéos est périmée n'est plus relevé", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("staleLink : périmée le 24/11, pas le 13/11 ; la bio, l'ajout à la main, la liste de départ et le placement payé ne s'usent pas", () => {
+    const recent = CAMPAGNE_FINIE.map((v) => ({ caption: v.text, publishedAt: v.at }));
+    const app = { ...SOLAIA, name: "Solaia" };
+    const acc = { handle: "compte_fini", bio: BIO, matchedBy: "caption" as const };
+    expect(staleLink(acc, app, recent, NOW)).toBe(true);
+    expect(staleLink(acc, app, recent, ENTRY)).toBe(false);
+    expect(staleLink({ ...acc, bio: "J'utilise @SOLAIA ⭐️" }, app, recent, NOW)).toBe(false);
+    expect(staleLink({ ...acc, matchedBy: "manual" }, app, recent, NOW)).toBe(false);
+    expect(staleLink({ ...acc, matchedBy: "seed" }, app, recent, NOW)).toBe(false);
+    expect(staleLink({ ...acc, placement: true }, app, recent, NOW)).toBe(false);
+    // Ses Reels Instagram ne comptent pas : la preuve se lit sur TikTok, comme dans l'export.
+    expect(staleLink(acc, app, recent.map((r) => ({ ...r, platform: "instagram" })), NOW)).toBe(false);
+  });
+
+  it("à son relevé du 24/11, le compte de la campagne finie passe en pause « hors sujet » : plus aucun relevé ; celui dont la bio nomme l'app reste", async () => {
+    const w = monde();
+    const { mem, ctx } = ctxOf(w.tables);
+    await releve(ctx, await compte(mem, "compte_fini"), NOW);
+    await releve(ctx, await compte(mem, "compte_bio"), NOW);
+    expect(await compte(mem, "compte_fini")).toMatchObject({ status: "paused", pausedReason: "offTopic" });
+    expect(await compte(mem, "compte_bio")).toMatchObject({ status: "active" });
+  });
+
+  it("le 13/11, le même relevé le gardait actif ; remis à la main (keptByHand) ou en placement payé, il n'est jamais mis en pause pour ça", async () => {
+    const w = monde();
+    const { mem, ctx } = ctxOf(w.tables);
+    await releve(ctx, await compte(mem, "compte_fini"), ENTRY);
+    expect(await compte(mem, "compte_fini")).toMatchObject({ status: "active" });
+    for (const extra of [{ keptByHand: true }, { placement: true }]) {
+      const v = monde();
+      Object.assign(v.tables.radarTracked.find((t) => t.handle === "compte_fini")!, extra);
+      const x = ctxOf(v.tables);
+      await releve(x.ctx, await compte(x.mem, "compte_fini"), NOW);
+      expect(await compte(x.mem, "compte_fini")).toMatchObject({ status: "active" });
+    }
+  });
+
+  // 30 s : le rejugement aligne d'abord les apps et les comptes de départ (radarSignals.ensureSeedApps, des centaines de
+  // lignes) ; 2,9 s en local pour ses deux passages, plus de 5 s sur la machine de la CI (24/11/2026).
+  it("en pause, le rejugement ne le relance pas le 24/11 : ses vieilles vidéos Solaia sont toujours rangées (le 13/11, il l'aurait relancé)", async () => {
+    for (const [at, want] of [[NOW, "paused"], [ENTRY, "active"]] as const) {
+      const w = monde();
+      Object.assign(w.tables.radarTracked.find((t) => t.handle === "compte_fini")!, { status: "paused", pausedReason: "offTopic" });
+      const { mem, ctx } = ctxOf(w.tables);
+      vi.useFakeTimers({ toFake: ["Date"] }); // seule l'heure : le rejugement la lit par Date.now()
+      vi.setSystemTime(at);
+      await run(rejudgePaused, ctx, {});
+      vi.useRealTimers();
+      expect((await compte(mem, "compte_fini")).status).toBe(want);
+    }
+  }, 30_000);
 });
