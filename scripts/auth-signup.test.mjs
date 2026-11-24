@@ -12,7 +12,7 @@ const { retrieveAccountWithCredentialsImpl } = await import(path.join(IMPL, "mut
 const authFile = path.resolve(process.argv[2] ?? path.join(root, "convex/auth.ts"));
 // convexAuth est remplacé pour garder sa configuration ; createAccount et retrieveAccount sont les vrais (index.js).
 await load(authFile, [[/^@convex-dev\/auth\/server$/, `
-export { createAccount, retrieveAccount } from ${JSON.stringify(path.join(IMPL, "index.js"))};
+export { createAccount, retrieveAccount, modifyAccountCredentials } from ${JSON.stringify(path.join(IMPL, "index.js"))};
 export const convexAuth = (config) => { globalThis.__authConfig = config; return {}; };
 `]]);
 const limitsFile = path.join(path.dirname(authFile), "authLimits.ts");

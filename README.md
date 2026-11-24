@@ -5,6 +5,7 @@ Kopycat (ex-Swarm) : les apps et les formats qui explosent en ce moment sur TikT
 - `/` : la landing page
 - `/tarifs` : la page tarifs (un seul plan, Pro)
 - `/connexion` et `/inscription` : les écrans retenus sur le canevas de l'app (Connexion A, Inscription A), rendus responsives, branchés sur un vrai backend (voir « Comptes »)
+- `/mot-de-passe-oublie` : le mot de passe oublié (parcours B du canevas « Swarm sans abonnement » : un code à 6 chiffres par e-mail, voir « Comptes »)
 - `/app/…` : l'app, réservée aux personnes connectées (voir « L'app »)
 
 Chaque page existe en version desktop et en version mobile. La version mobile s'affiche sous 860 px de large, ou sur un téléphone couché (`MOBILE_QUERY`, `src/runtime.js`), et la page bascule si la fenêtre change. `mountResponsive` ne charge que la version affichée, préchargée dès le `<head>` (`vite.config.js`, `variantPreload`).
@@ -21,6 +22,7 @@ Les pages sont dessinées sur le canevas de design (artboards `LP`, `LPMobile`, 
 | `design/TarifsMobile.dc.html` | `src/pages/TarifsMobile.js` | `src/styles/tfm.css` |
 | `design/Connexion.dc.html` | `src/pages/Connexion.js` | `src/styles/cx.css` + design system |
 | `design/Inscription.dc.html` | `src/pages/Inscription.js` | `src/styles/ins.css` + design system |
+| `design/MotDePasse.dc.html` | `src/pages/MotDePasse.js` | `src/styles/mdp.css` + design system |
 
 Les fichiers de `src/pages` et `src/styles` sont générés : on ne les modifie pas à la main. Pour changer une page, on modifie l'artboard, on recopie le `.dc.html` dans `design/`, puis :
 
@@ -49,6 +51,8 @@ Le backend est un projet Convex à part, « swarm » (dossier `convex/`), sans l
 
 Ce que fait le backend :
 - `convex/auth.ts` : e-mail + mot de passe et Google. Le mot de passe suit `convex/passwordPolicy.ts` (8 à 128 caractères, pas un mot de passe courant ni une suite évidente, pas l'e-mail), à l'inscription comme au changement ; l'e-mail est ramené en minuscules. Le fournisseur mot de passe est écrit sur l'API publique de Convex Auth pour que les erreurs (identifiants incorrects, compte déjà existant, trop de tentatives) arrivent au site sous forme de codes (`convex/authErrors.ts`) : Convex masque en production le message des erreurs ordinaires. Une inscription sur une adresse déjà inscrite répond « compte existant » sans tester le mot de passe ; les inscriptions sont limitées en nombre (`convex/authLimits.ts`).
+- Mot de passe oublié (`/mot-de-passe-oublie`, 24/11) : trois étapes du même fournisseur « password », sans connexion avant la dernière. `reset` envoie un code à 6 chiffres (15 minutes, 5 essais, 3 codes par heure et par adresse) ; `reset-check` dit s'il est bon ; `reset-verification` le vérifie encore, change le mot de passe, ferme toutes les sessions du compte, remet à zéro les compteurs d'échecs et connecte. Une adresse sans compte répond exactement comme une autre (même réponse, même vie du code), et seul un compte « mot de passe » reçoit un e-mail. Codes : `convex/passwordReset.ts` (table `passwordResets`, empreintes seulement). « Mot de passe oublié ? » sur la connexion y emmène l'e-mail tapé, par le stockage de l'onglet.
+- E-mails : `convex/mail.ts` les envoie par l'API de Resend (domaine kopycat.io), `convex/mailTemplates.ts` les met en forme (canevas « Swarm sans abonnement », direction M2 ; logo `public/media/mail/kopycat-mark.png`). Variables du déploiement : `RESEND_API_KEY` (sans elle, l'envoi échoue en clair dans les journaux de Convex), `MAIL_FROM` facultative (`Kopycat <compte@kopycat.io>` sinon). Banc : `npm run test:mdp`.
 - Google ne s'allume que si `AUTH_GOOGLE_ID` et `AUTH_GOOGLE_SECRET` sont posées sur le déploiement ; sans elles, le bouton affiche un message.
 - `convex/users.ts` : `viewer` (la personne connectée), et ce que font les Réglages : prénom (rangé dans `displayName`, que la connexion Google ne réécrit pas), mot de passe, e-mail, sessions ouvertes, « Déconnecter les autres », fermeture du compte (mot de passe exigé, ou connexion de moins de 10 minutes pour un compte Google seul ; l'abonnement Whop est résilié d'abord). `convex/session.ts` : une session fermée perd l'accès tout de suite, sans attendre l'expiration du jeton (1 h).
 
@@ -109,7 +113,6 @@ Vercel, projet relié à ce dépôt : chaque push sur `main` déploie le site en
 
 ## Reste à brancher
 
-- « Mot de passe oublié » : il faut un service d'envoi d'e-mails (le lien affiche pour l'instant que la réinitialisation n'est pas ouverte).
 - L'envoi des alertes (e-mail, notification) : les règles filtrent l'écran Alertes, rien n'est envoyé.
 
 ## À vérifier avant d'en faire la publicité

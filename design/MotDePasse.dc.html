@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mot de passe oublié · Kopycat</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Inter+Tight:wght@600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#05070C;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+.cta{transition:transform 0.25s ease,box-shadow 0.25s ease}
+.cta:hover{transform:translateY(-1px);box-shadow:0 14px 28px rgba(11,111,224,0.40),inset 0 1px 0 rgba(255,255,255,0.45) !important}
+.auth-notice{margin:0;border-radius:14px;padding:10px 14px;background:var(--accent-soft);border:1px solid var(--accent-edge);color:var(--ink-soft);font-size:14px;line-height:1.5}
+.auth-form .sw-input{height:50px}
+.auth-form .sw-btn-provider{height:50px}
+.auth-bg{display:none}
+.auth-error{margin:0;border-radius:14px;padding:10px 14px;background:rgba(255,122,122,0.10);border:1px solid rgba(255,122,122,0.40);color:var(--ink-soft);font-size:14px;line-height:1.5}
+.cta:disabled{opacity:0.7;cursor:progress;transform:none}
+@media (max-height: 820px){.auth-x2{display:none !important}}
+@media (max-height: 740px){.auth-x1{display:none !important}}
+@media (max-width: 860px){
+.auth-root{padding:16px 20px 20px !important}
+.auth-card{display:flex !important;background:none !important;border:0 !important;box-shadow:none !important;padding:0 !important;border-radius:0 !important}
+.auth-side{display:none !important}
+.auth-bg{display:block !important}
+.auth-form .sw-btn-provider{background:var(--field)}
+.auth-form{padding:0 !important;flex:1 1 auto}
+.auth-form form{gap:14px !important}
+.auth-form h1{font-size:23px !important;margin:0 !important}
+.auth-form .sw-input,.auth-form .sw-btn-provider{height:48px}
+}
+@media (max-width: 860px) and (max-height: 700px){
+.auth-root{gap:10px !important;padding-top:12px !important;padding-bottom:12px !important}
+.auth-form form{gap:10px !important}
+.auth-form h1{font-size:21px !important}
+.auth-form .sw-field{gap:5px}
+.auth-form .sw-input,.auth-form .sw-btn-provider{height:44px}
+.auth-notice,.auth-error{padding:8px 12px;font-size:13px}
+}
+@media (max-height: 520px){html,body{overflow:auto}.auth-root{height:auto !important;min-height:100vh;overflow:visible !important}}
+.pw-back{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;min-height:32px;padding:0;border:0;background:none;font:inherit;font-size:14px;color:var(--ink-muted);text-decoration:none;cursor:pointer}
+.pw-back:hover{color:var(--ink)}
+.pw-lead{margin:-4px 0 0;font-size:15px;line-height:1.55;color:var(--ink-muted);overflow-wrap:anywhere}
+.pw-lead b{color:var(--ink);font-weight:600}
+.pw-code{position:relative;display:flex;align-items:center;gap:8px;align-self:flex-start}
+.pw-otp{position:absolute;inset:0;z-index:1;width:100%;height:100%;box-sizing:border-box;margin:0;padding:0;border:0;outline:none;background:transparent;color:transparent;caret-color:transparent;font-size:16px;letter-spacing:0;-webkit-appearance:none;appearance:none;cursor:text}
+.pw-otp::selection{background:transparent}
+.pw-code .sw-input.pw-digit{width:52px;height:60px;padding:0;display:grid;place-items:center;box-sizing:border-box;font-family:var(--font-mono);font-size:24px;font-weight:500;color:var(--ink)}
+.pw-code .pw-sep{width:12px;height:2px;border-radius:2px;background:var(--line-strong);flex-shrink:0}
+.pw-pass{position:relative}
+.pw-pass .sw-input{padding-right:52px}
+.pw-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;border-radius:12px;background:transparent;color:var(--ink-muted);display:grid;place-items:center;cursor:pointer}
+.pw-eye:hover,.pw-eye[aria-pressed="true"]{color:var(--ink)}
+.pw-user{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);opacity:0}
+.pw-row{margin:0;display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:14px;color:var(--ink-muted)}
+.pw-wait{color:var(--ink-faint);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pw-resend{padding:0;border:0;background:none;font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
+.pw-chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;height:28px;padding:0 12px 0 8px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent-edge);color:var(--ink-soft);font-size:13px;font-weight:500}
+.pw-chip svg{color:var(--accent)}
+.pw-foot{margin:0;font-size:13px;line-height:1.5;color:var(--ink-faint);text-align:center}
+@media (max-width: 860px){
+.pw-code .sw-input.pw-digit{width:44px;height:54px;font-size:22px}
+.pw-code{gap:6px}
+.pw-lead{font-size:14px}
+.pw-row{flex-wrap:wrap;gap:4px 16px}
+}
+</style>
+</helmet>
+<div class="sw sw-ground auth-root" style="position: relative; isolation: isolate; height: 100vh; height: 100dvh; overflow: hidden; box-sizing: border-box; padding: clamp(16px, 3vh, 32px) 24px; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vh, 24px); color: var(--ink); font-family: var(--font-body);">
+<div aria-hidden="true" class="auth-bg" style="position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: linear-gradient(180deg, #0A1A35 0%, #071329 46%, #05070C 100%);"><div class="sw-dots-bg" style="position: absolute; inset: 0; -webkit-mask-image: radial-gradient(95% 60% at 75% 8%, #000, transparent); mask-image: radial-gradient(95% 60% at 75% 8%, #000, transparent);"></div><div style="position: absolute; right: -170px; top: -190px; width: 540px; height: 540px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.40), transparent); animation: sw-drift 16s ease-in-out infinite;"></div><div style="position: absolute; left: -220px; bottom: -240px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.18), transparent);"></div></div>
+<a class="sw-logo" href="LP.dc.html" aria-label="Kopycat, page d'accueil" style="flex-shrink: 0;"><svg class="sw-logo-mark on-dark" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px;"><circle class="d-a" cx="5" cy="8" r="2.3"></circle><circle class="d-a" cx="11" cy="5" r="2.3"></circle><circle class="d-a" cx="17" cy="8" r="2.3"></circle><circle class="d-b" cx="8" cy="14" r="2.3"></circle><circle class="d-b" cx="14" cy="13" r="2.3"></circle><circle class="d-b" cx="19" cy="17" r="2.3"></circle><circle class="d-b" cx="11" cy="20" r="2.3"></circle></svg><span class="sw-wordmark" style="font-size: 24px;">kopycat</span></a>
+<div class="auth-card" style="flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1240px; box-sizing: border-box; padding: 16px; border-radius: 32px; background: var(--surface-raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;">
+<section class="auth-form" style="min-height: 0; display: flex; align-items: flex-start; justify-content: center; padding: clamp(16px, 4vh, 48px) 40px;">
+<sc-if value="{{isEmail}}" hint-placeholder-val="{{true}}">
+<form onSubmit="{{submitEmail}}" aria-labelledby="t-mdp1" style="width: 100%; max-width: 400px; margin: auto 0; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);">
+<a class="pw-back" href="Connexion.dc.html"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Retour à la connexion</a>
+<h1 id="t-mdp1" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;">Mot de passe oublié</h1>
+<p class="pw-lead">Entre l’e-mail de ton compte : on t’envoie un code à 6 chiffres.</p>
+<div class="sw-field"><label class="sw-label" for="mdp-mail">E-mail</label><input class="sw-input" id="mdp-mail" name="email" type="email" required autocomplete="email" placeholder="toi@exemple.fr" value="{{email}}" onInput="{{onEmail}}"></div>
+<sc-if value="{{hasError}}" hint-placeholder-val="{{false}}"><p class="auth-error" role="alert">{{error}}</p></sc-if>
+<button type="submit" class="cta" disabled="{{busy}}" aria-busy="{{busy}}" style="align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);">Recevoir le code<span aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" style="display: block;"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+<sc-if value="{{hasNotice}}" hint-placeholder-val="{{false}}"><p class="auth-notice" role="status">{{notice}}</p></sc-if>
+</form>
+</sc-if>
+<sc-if value="{{isCode}}" hint-placeholder-val="{{false}}">
+<form onSubmit="{{submitCode}}" aria-labelledby="t-mdp2" style="width: 100%; max-width: 400px; margin: auto 0; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);">
+<button class="pw-back" type="button" onClick="{{changeEmail}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Changer d’adresse</button>
+<h1 id="t-mdp2" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;">Entre le code</h1>
+<p class="pw-lead">Si un compte existe pour <b>{{email}}</b>, un code vient de partir. Il marche 15 minutes.</p>
+<div class="{{codeField}}"><label class="sw-label" for="mdp-code">Code reçu par e-mail</label>
+<div class="pw-code"><input class="pw-otp" id="mdp-code" name="code" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" required value="{{code}}" onInput="{{onCode}}" onFocus="{{codeFocus}}" onBlur="{{codeBlur}}"><sc-for list="{{boxesA}}" as="b" hint-placeholder-count="3"><span class="{{b.cls}}" aria-hidden="true">{{b.d}}</span></sc-for><span class="pw-sep" aria-hidden="true"></span><sc-for list="{{boxesB}}" as="b" hint-placeholder-count="3"><span class="{{b.cls}}" aria-hidden="true">{{b.d}}</span></sc-for></div>
+<sc-if value="{{hasError}}" hint-placeholder-val="{{false}}"><span class="sw-hint" role="alert">{{error}}</span></sc-if>
+</div>
+<p class="pw-row"><span>Rien reçu ? Regarde dans les indésirables.</span><sc-if value="{{waiting}}" hint-placeholder-val="{{true}}"><span class="pw-wait">Renvoyer dans {{wait}}</span></sc-if><sc-if value="{{canResend}}" hint-placeholder-val="{{false}}"><button class="sw-link pw-resend" type="button" onClick="{{resend}}" disabled="{{busy}}">Renvoyer le code</button></sc-if></p>
+<button type="submit" class="cta" disabled="{{busy}}" aria-busy="{{busy}}" style="align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);">Continuer<span aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" style="display: block;"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+<sc-if value="{{hasNotice}}" hint-placeholder-val="{{false}}"><p class="auth-notice" role="status">{{notice}}</p></sc-if>
+</form>
+</sc-if>
+<sc-if value="{{isPass}}" hint-placeholder-val="{{false}}">
+<form onSubmit="{{submitPass}}" aria-labelledby="t-mdp3" style="width: 100%; max-width: 400px; margin: auto 0; display: flex; flex-direction: column; gap: clamp(12px, 2.1vh, 20px);">
+<span class="pw-chip"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>Code vérifié</span>
+<h1 id="t-mdp3" style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;">Choisis un nouveau mot de passe</h1>
+<p class="pw-lead">Pour <b>{{email}}</b>.</p>
+<input class="pw-user" type="email" name="username" autocomplete="username" value="{{email}}" readonly tabindex="-1" aria-hidden="true">
+<div class="{{passField}}"><label class="sw-label" for="mdp-new">Nouveau mot de passe</label>
+<div class="pw-pass"><input class="sw-input" id="mdp-new" name="password" type="{{passType}}" required minlength="8" autocomplete="new-password" value="{{password}}" onInput="{{onPass}}"><button class="pw-eye" type="button" onClick="{{toggleShow}}" aria-label="{{eyeLabel}}" aria-pressed="{{shown}}"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"></circle></svg></button></div>
+<span class="sw-hint" role="{{passRole}}">{{passHint}}</span>
+</div>
+<button type="submit" class="cta" disabled="{{busy}}" aria-busy="{{busy}}" style="align-self: center; display: inline-flex; align-items: center; justify-content: flex-start; gap: 12px; height: 56px; box-sizing: border-box; padding: 0 5px 0 26px; margin: 2px 0 0; border-radius: 999px; background: linear-gradient(180deg, #4C9AFF 0%, #0B6FE0 100%); border: 1px solid #0A63C9; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 10px 24px rgba(11,111,224,0.28), inset 0 1px 0 rgba(255,255,255,0.45);">Enregistrer et me connecter<span aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.45); display: grid; place-items: center;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" style="display: block;"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+<p class="pw-foot">Tes autres appareils seront déconnectés.</p>
+<sc-if value="{{hasNotice}}" hint-placeholder-val="{{false}}"><p class="auth-notice" role="status">{{notice}}</p></sc-if>
+</form>
+</sc-if>
+</section>
+<section class="auth-side" aria-label="Ce que suit Kopycat" style="position: relative; min-height: 0; overflow: hidden; border-radius: 24px; background: var(--ground); border: 1px solid var(--line); padding: clamp(24px, 5vh, 56px) clamp(28px, 4vw, 56px); display: flex; flex-direction: column; justify-content: center; gap: clamp(16px, 3.4vh, 36px);">
+<div aria-hidden="true" class="sw-dots-bg" style="position: absolute; inset: 0; -webkit-mask-image: radial-gradient(80% 70% at 70% 20%, #000, transparent); mask-image: radial-gradient(80% 70% at 70% 20%, #000, transparent);"></div>
+<div aria-hidden="true" style="position: absolute; right: -180px; top: -200px; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.30), transparent); animation: sw-drift 16s ease-in-out infinite;"></div>
+<h2 class="sw-enter" style="position: relative; margin: 0; max-width: 560px; font-family: var(--font-display); font-size: clamp(34px, 5.4vh, 54px); line-height: 1.04; font-weight: 700; letter-spacing: -0.05em; color: var(--ink);">Bon retour. <span style="color: var(--accent);">Tout est comme tu l'as laissé.</span></h2>
+<div style="position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+<sc-for list="{{tiles}}" as="t" hint-placeholder-count="6">
+<div class="sw-card sw-enter {{t.cls}}" style="padding: clamp(12px, 1.9vh, 20px) clamp(14px, 1.6vw, 22px); border-radius: 18px; display: flex; flex-direction: column; gap: clamp(8px, 1.3vh, 14px); animation-delay: {{t.delay}};">
+<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--accent);"><path d="{{t.d}}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="display: flex; flex-direction: column; gap: 2px;"><span class="sw-stat" style="font-size: clamp(20px, 3.1vh, 28px);">{{t.v}}</span><span style="font-size: 14px; line-height: 1.4; color: var(--ink-muted);">{{t.l}}</span></span>
+</div>
+</sc-for>
+</div>
+<span class="sw-calc auth-x2" style="position: relative;">Exemples relevés par le Radar.</span>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S0 = (this.props && this.props.stats) || { apps: 190, accounts: 4900 };
+    const rs = { apps: S0.apps.toLocaleString('fr-FR'), accounts: S0.accounts.toLocaleString('fr-FR') };
+
+    const ic = {
+      apps: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+      createurs: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
+      marche: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z',
+      tendance: 'M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6',
+      radar: 'M12 4a8 8 0 1 0 8 8M12 8a4 4 0 1 0 4 4M12 12l6-6',
+      alertes: 'M6 16v-5a6 6 0 1 1 12 0v5l2 2H4zM10 20.5a2 2 0 0 0 4 0'
+    };
+    const tiles = [
+      ['apps', '+' + rs.apps, 'apps suivies'],
+      ['createurs', '+' + rs.accounts, 'comptes passés au crible'],
+      ['tendance', '7,5 M vues', 'Luv or Pop, repérée à H+26'],
+      ['radar', '2 333×', 'une vidéo d’Astra AI face à sa normale'],
+      ['marche', 'Tous', 'les marchés, toutes les langues'],
+      ['alertes', '+69 comptes', 'dans le réseau de Love8']
+    ].map((t, i) => ({ d: ic[t[0]], v: t[1], l: t[2], cls: i >= 4 ? 'auth-x1' : '', delay: (0.15 + i * 0.08).toFixed(2) + 's' }));
+    const st = this.state || {};
+    const step = st.step || 'email';
+    const auth = this.props && this.props.auth;
+    const WAIT = 45000;
+    const left = st.sentAt ? Math.max(0, Math.ceil((st.sentAt + WAIT - (st.now || Date.now())) / 1000)) : 0;
+    const code = st.code || '';
+    const focus = !!st.codeFocus;
+    const box = (i) => ({ d: code[i] || '', cls: 'sw-input pw-digit' + (focus && i === Math.min(code.length, 5) ? ' is-focus' : '') });
+    // Une action du parcours : rend null si elle a réussi, sinon { code, message } (src/auth.js). Sur le canevas, sans
+    // backend, chaque étape réussit pour qu'on puisse enchaîner les écrans.
+    const run = async (action, done) => {
+      this.setState({ busy: true, error: '', notice: '', passError: '' });
+      const failed = auth ? await action() : null;
+      if (!failed) { done(); return; }
+      if (failed.code === 'CODE_EXPIRE' || failed.code === 'CODE_EPUISE') {
+        // Le code ne marche plus : retour à la saisie du code, « Renvoyer » tout de suite.
+        this.setState({ busy: false, step: 'code', code: '', sentAt: 0, error: failed.message });
+      } else if (failed.code === 'CODE_INVALIDE') {
+        this.setState({ busy: false, code: '', error: failed.message });
+      } else if (String(failed.code || '').indexOf('MOT_DE_PASSE') === 0) {
+        this.setState({ busy: false, passError: failed.message });
+      } else {
+        this.setState({ busy: false, error: failed.message });
+      }
+    };
+    const email = (st.email || '').trim();
+    const sent = (notice) => this.setState({ busy: false, step: 'code', code: '', sentAt: Date.now(), now: Date.now(), notice: notice || '' });
+    const check = (value) => run(() => auth.resetCheck(email, value), () => this.setState({ busy: false, step: 'pass' }));
+    return {
+      tiles,
+      busy: !!st.busy,
+      isEmail: step === 'email', isCode: step === 'code', isPass: step === 'pass',
+      email: st.email || '',
+      error: st.error || '', hasError: !!st.error,
+      notice: st.notice || '', hasNotice: !!st.notice,
+      onEmail: (e) => this.setState({ email: e.currentTarget.value }),
+      submitEmail: (e) => {
+        e.preventDefault();
+        run(() => auth.resetRequest(email), () => sent(''));
+      },
+      changeEmail: () => this.setState({ step: 'email', code: '', error: '', notice: '' }),
+      code,
+      codeField: st.error && step === 'code' ? 'sw-field is-error' : 'sw-field',
+      boxesA: [box(0), box(1), box(2)],
+      boxesB: [box(3), box(4), box(5)],
+      codeFocus: () => this.setState({ codeFocus: true }),
+      codeBlur: () => this.setState({ codeFocus: false }),
+      onCode: (e) => {
+        const value = e.currentTarget.value.replace(/\D/g, '').slice(0, 6);
+        this.setState({ code: value, error: '' });
+        // Le 6e chiffre tapé (ou le code collé, ou proposé par le téléphone) : vérifié tout de suite.
+        if (value.length === 6 && !st.busy) check(value);
+      },
+      submitCode: (e) => {
+        e.preventDefault();
+        if (code.length !== 6) { this.setState({ error: 'Le code a 6 chiffres.' }); return; }
+        check(code);
+      },
+      waiting: left > 0,
+      wait: Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'),
+      canResend: left === 0,
+      resend: () => run(() => auth.resetRequest(email), () => sent('Nouveau code envoyé.')),
+      password: st.password || '',
+      passType: st.shown ? 'text' : 'password',
+      shown: st.shown ? 'true' : 'false',
+      eyeLabel: st.shown ? 'Masquer le mot de passe' : 'Afficher le mot de passe',
+      toggleShow: () => this.setState({ shown: !st.shown }),
+      onPass: (e) => this.setState({ password: e.currentTarget.value, passError: '' }),
+      passField: st.passError ? 'sw-field is-error' : 'sw-field',
+      passHint: st.passError || '8 caractères minimum.',
+      passRole: st.passError ? 'alert' : 'note',
+      submitPass: (e) => {
+        e.preventDefault();
+        // Réussi : la personne est connectée, le pont l'emmène dans l'app ; le bouton reste désactivé d'ici là.
+        run(() => auth.resetFinish(email, code, st.password || ''), () => {
+          if (!auth) this.setState({ busy: false, notice: 'Maquette : sur le site, ce bouton change le mot de passe et ouvre l’app.' });
+        });
+      }
+    };
+  }
+
+  componentDidMount() {
+    // L'e-mail tapé sur la connexion, passé par « Mot de passe oublié ? » (jamais par l'adresse de la page).
+    try {
+      const email = window.sessionStorage.getItem('kopycat:reset-email');
+      if (email) { window.sessionStorage.removeItem('kopycat:reset-email'); this.setState({ email }); }
+    } catch (e) { /* stockage refusé : le champ reste vide */ }
+    this.tick = setInterval(() => {
+      const st = this.state || {};
+      if (st.step === 'code' && st.sentAt && Date.now() - st.sentAt < 46000) this.setState({ now: Date.now() });
+    }, 1000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.tick);
+  }
+}
+</script>
+</body>
+</html>

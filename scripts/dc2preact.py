@@ -37,6 +37,7 @@ PAGES = [
     ('TarifsMobile.dc.html', 'TarifsMobile', 'tfm'),
     ('Connexion.dc.html', 'Connexion', 'cx'),
     ('Inscription.dc.html', 'Inscription', 'ins'),
+    ('MotDePasse.dc.html', 'MotDePasse', 'mdp'),  # mot de passe oublié (24/11, parcours B)
 ]
 # Liens entre artboards du canevas -> routes du site
 LINKS = {
@@ -46,6 +47,7 @@ LINKS = {
     'TarifsMobile.dc.html': '/tarifs',
     'Connexion.dc.html': '/connexion',
     'Inscription.dc.html': '/inscription',
+    'MotDePasse.dc.html': '/mot-de-passe-oublie',
     '#quiz': '/inscription',      # « Trouver mon app » : création du compte
     '#connexion': '/connexion',   # « Se connecter »
     '#paiement': '/inscription',  # « Passer Pro » : on crée d'abord le compte
@@ -641,7 +643,8 @@ console.log(JSON.stringify(bad));
 # ─── Polices des canevas (audit Q12) ───
 # La page HTML qui porte chaque écran : ses <link> de polices sont déjà chargés.
 PAGE_HTML = {'app': 'app.html', 'LP': 'index.html', 'LPMobile': 'index.html', 'Tarifs': 'tarifs.html',
-             'TarifsMobile': 'tarifs.html', 'Connexion': 'connexion.html', 'Inscription': 'inscription.html'}
+             'TarifsMobile': 'tarifs.html', 'Connexion': 'connexion.html', 'Inscription': 'inscription.html',
+             'MotDePasse': 'mot-de-passe-oublie.html'}
 FONT_LINK = re.compile(r'<link\b[^>]*>', re.S)
 
 

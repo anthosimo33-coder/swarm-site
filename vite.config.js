@@ -135,6 +135,7 @@ export default defineConfig({
         tarifs: resolve(import.meta.dirname, 'tarifs.html'),
         connexion: resolve(import.meta.dirname, 'connexion.html'),
         inscription: resolve(import.meta.dirname, 'inscription.html'),
+        motDePasse: resolve(import.meta.dirname, 'mot-de-passe-oublie.html'),
         app: resolve(import.meta.dirname, 'app.html'),
         admin: resolve(import.meta.dirname, 'admin.html'),
       },

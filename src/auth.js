@@ -28,12 +28,18 @@ const MESSAGES = {
   [AUTH_ERRORS.IDENTIFIANTS_INCORRECTS]: 'E-mail ou mot de passe incorrect.',
   [AUTH_ERRORS.COMPTE_EXISTANT]: 'Un compte existe déjà avec cet e-mail.',
   [AUTH_ERRORS.TROP_DE_TENTATIVES]: 'Trop de tentatives. Réessaie dans quelques minutes.',
+  [AUTH_ERRORS.CODE_EXPIRE]: 'Ce code a expiré. Demande-en un nouveau.',
+  [AUTH_ERRORS.CODE_EPUISE]: 'Trop d’essais avec ce code. Demande-en un nouveau.',
 };
+// Mot de passe oublié : le plafond est de 3 codes par heure et par adresse (convex/passwordReset.ts).
+const RESET_LIMIT = 'Trop de codes demandés pour cette adresse. Réessaie dans une heure.';
+const wrongCode = (left) => `Ce code n’est pas le bon. Encore ${left} essai${left > 1 ? 's' : ''}, puis il faudra en demander un autre.`;
 const UNKNOWN = 'Ça n’a pas marché. Réessaie dans un instant.';
 const GOOGLE_FAILED = 'La connexion avec Google n’a pas marché. Réessaie, ou passe par ton e-mail.';
 
 function failure(error, fallback = UNKNOWN) {
   const code = error instanceof ConvexError ? error.data?.code ?? null : null;
+  if (code === AUTH_ERRORS.CODE_INVALIDE) return { code, message: wrongCode(Number(error.data?.left) || 1) };
   return { code, message: MESSAGES[code] ?? fallback };
 }
 
@@ -53,6 +59,33 @@ function AuthPage({ Page }) {
     async password(flow, email, password) {
       try {
         await signIn('password', { flow, email, password });
+        return null;
+      } catch (error) {
+        return failure(error);
+      }
+    },
+    // Mot de passe oublié (parcours B) : le code part par e-mail, puis il est vérifié, puis le nouveau mot de passe
+    // connecte (la page passe alors dans l'app, comme après une connexion).
+    async resetRequest(email) {
+      try {
+        await signIn('password', { flow: 'reset', email });
+        return null;
+      } catch (error) {
+        const f = failure(error);
+        return f.code === AUTH_ERRORS.TROP_DE_TENTATIVES ? { ...f, message: RESET_LIMIT } : f;
+      }
+    },
+    async resetCheck(email, code) {
+      try {
+        await signIn('password', { flow: 'reset-check', email, code });
+        return null;
+      } catch (error) {
+        return failure(error);
+      }
+    },
+    async resetFinish(email, code, newPassword) {
+      try {
+        await signIn('password', { flow: 'reset-verification', email, code, newPassword });
         return null;
       } catch (error) {
         return failure(error);

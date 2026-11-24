@@ -155,6 +155,7 @@ conf = page("confidentialite", "Politique de confidentialité",
 <li>Vercel Inc. (États-Unis) : hébergement du site ;</li>
 <li>Convex, Inc. (États-Unis) : base de données du service, sur des serveurs situés dans l’Union européenne (Irlande) ;</li>
 <li>Anthropic PBC (États-Unis) : lecture automatique des miniatures de vidéos publiques ;</li>
+<li>Resend, Inc. (États-Unis) : envoi des e-mails du service, comme le code qui permet de changer un mot de passe oublié ;</li>
 <li>Google (si vous choisissez la connexion avec Google) ;</li>
 <li>Whop, Inc. (États-Unis) : paiement et gestion de l’abonnement, quand vous vous abonnez.</li>
 </ul>

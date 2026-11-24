@@ -16,7 +16,7 @@ const pages = [
 ];
 const today = new Date().toISOString().slice(0, 10);
 if (!existsSync('dist')) throw new Error('dist/ absent : lancer la construction (vite build) avant');
-writeFileSync('dist/robots.txt', `User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /compte\nDisallow: /connexion\n\nSitemap: ${site}/sitemap.xml\n`);
+writeFileSync('dist/robots.txt', `User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /compte\nDisallow: /connexion\nDisallow: /mot-de-passe-oublie\n\nSitemap: ${site}/sitemap.xml\n`);
 writeFileSync('dist/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages
   .map(([p, freq, prio]) => `  <url><loc>${site}${p === '/' ? '/' : p}</loc><lastmod>${today}</lastmod><changefreq>${freq}</changefreq><priority>${prio}</priority></url>`)
   .join('\n')}\n</urlset>\n`);

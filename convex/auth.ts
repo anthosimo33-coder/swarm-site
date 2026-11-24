@@ -1,12 +1,13 @@
 import Google from "@auth/core/providers/google";
 import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
-import { convexAuth, createAccount, retrieveAccount } from "@convex-dev/auth/server";
+import { convexAuth, createAccount, modifyAccountCredentials, retrieveAccount } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
 import { Scrypt } from "lucia";
 import { AUTH_ERRORS, type AuthErrorCode } from "./authErrors";
 import { signInKey } from "./authLimits";
 import { internal } from "./_generated/api";
 import { passwordVerdict } from "./passwordPolicy";
+import { blankHash, codeHash, newCode, resetKey } from "./passwordReset";
 
 const VERDICT_CODE = { trop_court: AUTH_ERRORS.MOT_DE_PASSE_TROP_COURT, trop_long: AUTH_ERRORS.MOT_DE_PASSE_TROP_LONG, trop_courant: AUTH_ERRORS.MOT_DE_PASSE_TROP_COURANT } as const;
 import type { MutationCtx } from "./_generated/server";
@@ -129,6 +130,37 @@ const password = ConvexCredentials({
         if (found === null) throw fail(AUTH_ERRORS.IDENTIFIANTS_INCORRECTS);
         await ctx.runMutation(internal.authLimits.clear, { key });
         return { userId: found.user._id };
+      }
+      // Mot de passe oublié (24/11, parcours B du canevas ; convex/passwordReset.ts). Trois étapes, sans connexion avant
+      // la dernière : `reset` envoie un code, `reset-check` dit s'il est bon (la page passe alors au nouveau mot de passe),
+      // `reset-verification` le vérifie encore, change le mot de passe, ferme toutes les sessions du compte et connecte.
+      // Une adresse sans compte répond exactement comme une autre.
+      if (params.flow === "reset") {
+        const key = await resetKey(email);
+        const code = newCode();
+        const verdict = await ctx.runMutation(internal.passwordReset.request, { email, key, hash: await codeHash(key, code), blank: blankHash(), code });
+        if (verdict === "limited") throw fail(AUTH_ERRORS.TROP_DE_TENTATIVES);
+        return null;
+      }
+      if (params.flow === "reset-check" || params.flow === "reset-verification") {
+        const finishing = params.flow === "reset-verification";
+        const next = String(params.newPassword ?? "");
+        // Le mot de passe d'abord : un mot de passe refusé ne coûte pas un essai du code.
+        if (finishing) {
+          const verdict = passwordVerdict(next, email);
+          if (verdict !== "ok") throw fail(VERDICT_CODE[verdict]);
+        }
+        const key = await resetKey(email);
+        const entered = String(params.code ?? "").replace(/\D/g, "");
+        const res = await ctx.runMutation(internal.passwordReset.check, { key, hash: await codeHash(key, entered), consume: finishing });
+        if (!res.ok) throw new ConvexError(res.code === AUTH_ERRORS.CODE_INVALIDE ? { code: res.code, left: res.left } : { code: res.code });
+        if (!finishing) return null;
+        await modifyAccountCredentials(ctx, { provider: PROVIDER, account: { id: res.login, secret: next } });
+        // Comme la remise par le support (users:resetPassword) : plus aucun appareil connecté avec l'ancien mot de passe, et
+        // les compteurs d'échecs remis à zéro (un compte bloqué par les essais d'un tiers se rouvre).
+        await ctx.runMutation(internal.users.closeOtherSessions, { userId: res.userId, keep: null });
+        await ctx.runMutation(internal.users.clearSignInLimits, { userId: res.userId, key: await signInKey(res.login) });
+        return { userId: res.userId };
       }
       throw new Error(`Flow inconnu : ${String(params.flow)}`);
     } catch (error) {

@@ -74,6 +74,18 @@ export default defineSchema({
   checkoutLinks: defineTable({ userId: v.id("users"), key: v.string(), url: v.string(), at: v.number() }).index("by_user_key", ["userId", "key"]),
   // Limites de l'authentification (convex/authLimits.ts) : passages comptés par fenêtre fixe, une ligne par clé.
   authLimits: defineTable({ key: v.string(), n: v.number(), since: v.number() }).index("by_key", ["key"]),
+  // Mot de passe oublié (24/11, convex/passwordReset.ts) : le code à 6 chiffres envoyé par e-mail, une ligne par e-mail
+  // (`key` = son empreinte). Une adresse sans compte a aussi sa ligne, avec un code que personne ne reçoit : elle se
+  // comporte comme les autres (essais, expiration), et ne dit donc pas qu'elle n'a pas de compte. `codeHash` : empreinte
+  // du code, jamais le code.
+  passwordResets: defineTable({
+    key: v.string(),
+    userId: v.union(v.id("users"), v.null()),
+    login: v.union(v.string(), v.null()),
+    codeHash: v.string(),
+    expiresAt: v.number(),
+    tries: v.number(),
+  }).index("by_key", ["key"]).index("by_expires", ["expiresAt"]),
   // Quota de pages des abonnés (convex/boardQuota.ts, audit S22) : pages comptées sur l'heure et sur 24 h, une ligne par
   // compte ; `warned` : l'échéance du refus déjà tracé dans les journaux.
   pageQuota: defineTable({
