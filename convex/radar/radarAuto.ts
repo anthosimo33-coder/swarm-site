@@ -54,6 +54,8 @@ import {
   storeTwin,
   storeTwinKey,
   withNot,
+  holdsForNow,
+  listRanks,
 } from "./radarAutoMath";
 import { ficheApp } from "./radarFicheMath";
 import { ensureSettings, mergeApp, refreshAppNet, trackedCounts, type TrackedCounter } from "./radarSignals";
@@ -239,6 +241,7 @@ export const runAutoFollow = internalAction({
     await ctx.runMutation(internal.radar.radarAuto.requeueStoreTwins, {});
     await ctx.runMutation(internal.radar.radarAuto.repair2011, {});
     await ctx.runMutation(internal.radar.radarAuto.resetCopiedCursors, {});
+    await ctx.runMutation(internal.radar.radarAuto.holdListTail, {});
     const batch: AutoToJudge[] = await ctx.runQuery(internal.radar.radarAuto.autoToJudge, {});
     let verdicts: AutoVerdict[] = [];
     let usd = 0;
@@ -592,6 +595,39 @@ export const resetCopiedCursors = internalMutation({
     if (s.cursorsReset2011At !== undefined) return false;
     await ctx.db.patch(s._id, { judgeCursor: undefined, rejudgeCursor: undefined, cursorsReset2011At: Date.now() });
     return true;
+  },
+});
+
+/**
+ * UNE fois (25/11/2026) : les apps à l'essai jamais cherchées hors du haut de la liste importée sont mises de côté
+ * (radarAutoMath.holdsForNow) avant la recharge qui relance les recherches. D'un coup, dans une transaction : ~2 300 apps
+ * actives et ~1 500 candidats de la liste lus, ~930 écritures, sous les limites d'une mutation. Le nombre d'apps mises
+ * de côté est rangé sur les réglages. Rien n'est relu ensuite (le marqueur seul).
+ */
+export const holdListTail = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<number | null> => {
+    const s = await ensureSettings(ctx);
+    if (s.holdTail2511At !== undefined) return null;
+    const [cands, apps] = await Promise.all([
+      ctx.db
+        .query("radarAppCandidates")
+        .withIndex("by_kind_status_count", (q) => q.eq("kind", "liste"))
+        .collect(),
+      ctx.db
+        .query("radarApps")
+        .withIndex("by_status", (q) => q.eq("status", "active"))
+        .collect(),
+    ]);
+    const ranks = listRanks(cands);
+    let held = 0;
+    for (const a of apps) {
+      if (!holdsForNow(a, ranks.get(a._id))) continue;
+      await ctx.db.patch(a._id, { status: "paused", pausedReason: "attente" });
+      held++;
+    }
+    await ctx.db.patch(s._id, { holdTail2511At: Date.now(), holdTail2511Held: held });
+    return held;
   },
 });
 
