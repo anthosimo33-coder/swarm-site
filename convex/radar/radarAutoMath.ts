@@ -447,3 +447,42 @@ export const MERGES_2011: readonly { from: string; into: string }[] = [
   { from: "hunch", into: "hunchdatingapp" },
   { from: "digimetrics", into: "digimetrics.ai" },
 ];
+
+// ─── La moitié du 25/11/2026 ─────────────────────────────────────────────────
+
+/**
+ * Le 25/11/2026, le fondateur ne fait chercher pour l'instant que la meilleure moitié des apps jamais cherchées
+ * (1 852) : les vraies apps (hors essai) et les apps de la liste importée (`kind: "liste"`, 15/11/2026) jusqu'au rang
+ * HOLD_KEEP_RANK. Le rang est l'ordre d'import : la page d'origine classait ses marques des plus vues aux moins vues,
+ * et les lots ont été importés dans cet ordre. Les autres apps à l'essai jamais cherchées — la fin de la liste, et
+ * celles qui n'en viennent pas — sont mises de côté (`pausedReason: "attente"`, radarAuto.holdListTail) : ni cherchées,
+ * ni relevées, ni montrées. Une app remise en route à la main (radarNetworks.setAppStatus) repart comme avant.
+ */
+export const HOLD_KEEP_RANK = 691;
+
+/**
+ * Le rang d'import de chaque app de la liste importée : 1 pour la première. Les candidats se rangent par date de
+ * création, puis par identifiant (deux candidats créés à la même milliseconde gardent un ordre fixe) ; un candidat
+ * ignoré garde sa place (le rang est celui de la liste d'origine, pas celui des apps suivies).
+ */
+export function listRanks<I extends string>(cands: readonly { _id: string; _creationTime: number; appId?: I }[]): Map<I, number> {
+  const sorted = [...cands].sort((a, b) => a._creationTime - b._creationTime || (a._id < b._id ? -1 : a._id > b._id ? 1 : 0));
+  const out = new Map<I, number>();
+  sorted.forEach((c, i) => {
+    if (c.appId !== undefined && !out.has(c.appId)) out.set(c.appId, i + 1);
+  });
+  return out;
+}
+
+/**
+ * L'app est-elle mise de côté ? À l'essai, active, jamais cherchée (ni recherche courte ni complète), ni fondue, ni
+ * concurrente d'un projet, et hors du haut de la liste importée (`rank` absent : elle n'en vient pas).
+ */
+export function holdsForNow(
+  a: { status: "active" | "paused"; trialSince?: number; networkSearchedAt?: number; deepSearchedAt?: number; mergedInto?: string; rivalOf: readonly string[] },
+  rank: number | undefined,
+): boolean {
+  if (a.status !== "active" || a.trialSince === undefined || a.mergedInto !== undefined || a.rivalOf.length > 0) return false;
+  if (a.networkSearchedAt !== undefined || a.deepSearchedAt !== undefined) return false;
+  return rank === undefined || rank > HOLD_KEEP_RANK;
+}

@@ -179,6 +179,9 @@ export const radarTables = {
     repair2011DoneAt: v.optional(v.number()),
     // Les curseurs recopiés de Jarvia remis à zéro (radarAuto.resetCopiedCursors, 20/11/2026).
     cursorsReset2011At: v.optional(v.number()),
+    // La mise en attente du 25/11/2026 (radarAuto.holdListTail) : quand elle a eu lieu, et combien d'apps elle a mises de côté.
+    holdTail2511At: v.optional(v.number()),
+    holdTail2511Held: v.optional(v.number()),
     lastDiscoveryAt: v.optional(v.number()),
     lastCurveAt: v.optional(v.number()),
     lastAccountsAt: v.optional(v.number()),
@@ -206,7 +209,9 @@ export const radarTables = {
     // Mise en pause d'office parce qu'elle n'est ni une app, ni un SaaS, ni un jeu mobile (radarJudgeMath.outOfScope,
     // définition du 14/11/2026). Remise en route à la main : `scopeByHand`, plus jamais remise en pause pour ce motif.
     // « essai » : suivie à l'essai (radarAutoMath.trialDecision), sa recherche n'a pas prouvé assez de comptes créateurs.
-    pausedReason: v.optional(v.union(v.literal("perimetre"), v.literal("essai"))),
+    // « attente » : à l'essai et jamais cherchée, mise de côté pour l'instant (radarAutoMath.holdsForNow, 25/11/2026) ;
+    // remise en route à la main, elle repart comme une app à l'essai jamais cherchée.
+    pausedReason: v.optional(v.union(v.literal("perimetre"), v.literal("essai"), v.literal("attente"))),
     scopeByHand: v.optional(v.boolean()),
     // Suivie À L'ESSAI depuis (15/11/2026) : une app des classements à deux comptes créateurs, que sa recherche de
     // réseau doit prouver avant qu'elle compte. Effacé quand elle est gardée ; Swarm ne la voit pas avant.
