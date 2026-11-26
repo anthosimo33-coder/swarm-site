@@ -1,12 +1,12 @@
 // Généré par scripts/dc2preact.py depuis design/SimulateurMobile.dc.html — ne pas modifier à la main.
 import { h as $h } from 'preact';  // $h : jamais masqué par une variable de boucle
-import { DCLogic, $t, $l } from '../runtime.js';
+import { DCLogic, $t, $l, $u } from '../runtime.js';
 
 export default class SimulateurMobile extends DCLogic {
   // Données du simulateur (relevé du 26/11/2026), constantes et petites fonctions. Rangées dans la classe : la conversion
   // du site (scripts/dc2preact.py) n'accepte aucun code hors de la classe. Chaque méthode reprend ce qu'elle lit.
   static K = (() => {
-    const DATA = {"releve":"26/11/2026","niches":[{"nom":"Social et loisirs","apps":111,"vuesParVideo":10460,"top":[{"nom":"MoboReels","store":"MoboReels: Short Drama Series","logo":"/media/simulateur/moboreels.jpg","comptes":98,"comptesFR":0,"videosSemaine":1252,"meilleure":{"vues":"12,7 k","compte":"austinobest1"},"note":{"note":"4,5","avis":"7,2 k"},"prix":{"min":"6,99","max":"59,99"},"accroches":[{"label":"Voix du bébé à naître porte chance","texte":"My Unborn Baby's Voice Made Me a Winner Mommy,look down,it's me!","vues":1322,"compte":"austinobest1","comptes":1,"vuesTxt":"1,3 k"},{"label":"Fille de concierge sans statut","texte":"I'm just a janitor's daughter","vues":857,"compte":"netflixtime_8","comptes":1,"vuesTxt":"857"},{"label":"Duo Puth et Rian","texte":"Puth and Rian","vues":835,"compte":"cat888818","comptes":1,"vuesTxt":"835"}],"quoi":"Short Drama Series"},{"nom":"SlowRead","store":"SlowRead : Bibliothèque & PAL","logo":"/media/simulateur/slowread.jpg","comptes":70,"comptesFR":0,"videosSemaine":792,"meilleure":{"vues":"35,8 k","compte":"andrea.booktoker"},"note":{"note":"3,8","avis":"36"},"prix":{"min":"7,79","max":"129,99"},"accroches":[{"label":"Concentration sans distractions","texte":"Okay I need to lock in no distractions","vues":10500,"compte":"chelskait_other","comptes":1,"vuesTxt":"10,5 k"},{"label":"Gagner des récompenses en jouant à des jeux mobiles","texte":"i overheard a girl at the airport saying she used girl math to get her nails done with rewards from playing ga","vues":6801,"compte":"living.better0","comptes":4,"vuesTxt":"6,8 k"},{"label":"Lucia, mes personnages fictifs valent mieux","texte":"Keep Lucia. I have 57 fictional men who'd burn the world down for me.","vues":4321,"compte":"totallybooked18","comptes":5,"vuesTxt":"4,3 k"}],"quoi":"Bibliothèque & PAL"},{"nom":"DramaBox","store":"DramaBox - Film et Drame Court","logo":"/media/simulateur/dramabox.jpg","comptes":88,"comptesFR":0,"videosSemaine":618,"meilleure":{"vues":"260 k","compte":"j3w3lz.rose"},"note":{"note":"4,6","avis":"57,2 k"},"prix":{"min":"0,99","max":"14,99"},"accroches":[{"label":"Grand-mère humiliée pour vente de tacos","texte":"¡HUMILLARON A MI ABUELA POR VENDER TACOS! A MI ABUELA POR VENDER TACOS!","vues":259900,"compte":"j3w3lz.rose","comptes":1,"vuesTxt":"260 k"},{"label":"Gagner de l'argent grâce à un riche, en arabe","texte":"DramaBox EP7-8 كل ما فعلته هوجني المال من الثري الذي يُنفق علي وفي النهاية حققت الحرية المالية حصريا DramaBox","vues":199300,"compte":"dramabox_ar","comptes":1,"vuesTxt":"199 k"},{"label":"Le regret tardif, en arabe","texte":"DramaBox EP3-4 الندم المتأخر DramaBox حصريا","vues":151200,"compte":"dramabox_ar","comptes":1,"vuesTxt":"151 k"}],"quoi":"Film et Drame Court"}]},{"nom":"Santé et physique","apps":70,"vuesParVideo":4598,"top":[{"nom":"Mise","store":"mise - meal planner","logo":"/media/simulateur/mise.jpg","comptes":130,"comptesFR":7,"videosSemaine":1353,"meilleure":{"vues":"1,3 M","compte":"paula.eatss"},"note":{"note":"4,5","avis":"98"},"prix":{"min":"9,99","max":"59,99"},"accroches":[{"label":"Trahison conjugale annoncée","texte":"Il avait rendez-vous avec Emma pour me tromper... il ignorait qui elle était Ouais Emma c'est","vues":1500000,"compte":"la.folleduvillage","comptes":1,"vuesTxt":"1,5 M"},{"label":"Ex ou conjoint donne peu d'argent pour nourrir les enfants","texte":"My baby daddy gave me $150 to feed these kids","vues":1400000,"compte":"meme.atethat","comptes":32,"vuesTxt":"1,4 M"},{"label":"Piège conjugal : partir avant son mari","texte":"J’ai empêché mon mari de me tromper ce soir en quittant la maison avant lui 🙅🏽‍♀️🙅🏽‍♀️ maquilles?","vues":935100,"compte":"la.folleduvillage","comptes":1,"vuesTxt":"935 k"}],"quoi":"Meal planner"},{"nom":"Musa","store":"Musa: Period & Pregnancy","logo":"/media/simulateur/musa.jpg","comptes":32,"comptesFR":2,"videosSemaine":526,"meilleure":{"vues":"289 k","compte":"marina.pragnancy"},"note":{"note":"4,7","avis":"181"},"prix":{"min":"6,99","max":"34,99"},"accroches":[{"label":"Des centaines de filles attendent leurs règles","texte":"I think November has delayed every girls period…🩸🩸🩸 · We must all be stressed😩","vues":43200,"compte":"mariana.hormones","comptes":13,"vuesTxt":"43,2 k"},{"label":"Recherche de bébé Disney","texte":"I searched \"my Disney baby\"","vues":31100,"compte":"brooke.pregnancy","comptes":1,"vuesTxt":"31,1 k"},{"label":"Crampes annonçant les règles, surprise","texte":"Girl to girl.. what’s the most obvious sign that your period is about to start?","vues":16300,"compte":"fal.cycletips","comptes":6,"vuesTxt":"16,3 k"}],"quoi":"Period & Pregnancy"},{"nom":"Solaia","store":"Solaia: Équilibre hormonal","logo":"/media/simulateur/solaia.jpg","comptes":64,"comptesFR":52,"videosSemaine":453,"meilleure":{"vues":"1,7 M","compte":"byelizen"},"note":{"note":"4,6","avis":"2,5 k"},"prix":{"min":"8,99","max":"79,99"},"accroches":[{"label":"Horaire de routine post-entraînement","texte":"18:00-22:00 Post workout routine","vues":1500000,"compte":"byelizen","comptes":1,"vuesTxt":"1,5 M"},{"label":"Effets de la pilule les premières semaines","texte":"100% moi les premières semaines où j’ai pris ma pilule","vues":96600,"compte":"justinendo","comptes":1,"vuesTxt":"96,6 k"},{"label":"Rêve de guérir des TCA","texte":"mon rêve niche c’est de guérir des tca","vues":55700,"compte":"indoinsa","comptes":1,"vuesTxt":"55,7 k"}],"quoi":"Équilibre hormonal"}]},{"nom":"Side hustle","apps":50,"vuesParVideo":1405,"top":[{"nom":"SideShift","store":"SideShift - Earn Money","logo":"/media/simulateur/sideshift.jpg","comptes":158,"comptesFR":19,"videosSemaine":1339,"meilleure":{"vues":"4,3 M","compte":"prankswithgenn_"},"note":{"note":"4,8","avis":"411"},"prix":{"min":"0,99","max":"89,99"},"accroches":[{"label":"Indépendance financière avant 25 ans","texte":"Mon objectif est de devenir financièrement indépendante avant mes 25 ans. Je suis ouverte à toutes les idées p","vues":1000000,"compte":"kelly.advice","comptes":1,"vuesTxt":"1 M"},{"label":"Propositions de marques, plusieurs acceptations","texte":"Hoy contacté a 100 marcas. 70 nunca respondieron. 20 dijeron que NO. 10 dijeron que Sl. Y 5 de esas me pagaron","vues":280400,"compte":"fernandaj_ugc","comptes":19,"vuesTxt":"280 k"},{"label":"Cinq jobs remote à lancer","texte":"TRES TRABAJOS DE NOCHE QUE PUEDES HACER DESDE TU CASA","vues":190800,"compte":"mafe.guzman29","comptes":4,"vuesTxt":"191 k"}],"quoi":"Earn Money"},{"nom":"Hub Capture","store":"Hub Capture","logo":"/media/simulateur/hub-capture.jpg","comptes":54,"comptesFR":0,"videosSemaine":180,"meilleure":{"vues":"79,2 k","compte":"tamiresrrosati"},"note":null,"prix":null,"accroches":[{"label":"Dificuldade para enxergar sem óculos","texte":"Gente, eu sem óculos não exergo nada 😂😂 perdão na leitura 🥹 a informação foi nada kk","vues":9343,"compte":"rennynooff","comptes":1,"vuesTxt":"9,3 k"},{"label":"Mão de zumbi","texte":"“MÃO DE ZUMBI”","vues":8453,"compte":"yasmin.robo","comptes":1,"vuesTxt":"8,5 k"},{"label":"Testando uma nova plataforma","texte":"Vou testar lataforma a novaaa","vues":6323,"compte":"sthecareli","comptes":1,"vuesTxt":"6,3 k"}],"quoi":"Plateforme de revenus en ligne par parrainage, avec dropshipping et création de contenu UGC pour TikTok Shop"},{"nom":"TikAlyzer","store":"TikAlyzer: Deviens Viral","logo":"/media/simulateur/tikalyzer.jpg","comptes":51,"comptesFR":0,"videosSemaine":87,"meilleure":{"vues":"1,1 k","compte":"viviana.tikalyzr"},"note":{"note":"4,2","avis":"5"},"prix":{"min":"6,99","max":"69,99"},"accroches":[],"quoi":"Deviens Viral"}]},{"nom":"Création de contenu","apps":41,"vuesParVideo":19873,"top":[{"nom":"Djay","store":"djay - DJ App & AI Mixer","logo":"/media/simulateur/djay.jpg","comptes":163,"comptesFR":3,"videosSemaine":355,"meilleure":{"vues":"61,7 k","compte":"djayoverlaps"},"note":{"note":"4,6","avis":"6,7 k"},"prix":{"min":"0,00","max":"49,99"},"accroches":[{"label":"Phrase kurde d'amour","texte":"گیانەکەم ، ئەتۆ نەبووی فێری گیانت کردم ؟ ئێستاش بێ گیانت کردم","vues":134800,"compte":".avii1i","comptes":1,"vuesTxt":"135 k"},{"label":"Envie de sortir un mix","texte":"im tryna dumpppp","vues":2929,"compte":"idontlikeyoufrbye","comptes":1,"vuesTxt":"2,9 k"},{"label":"Blague sur le repas de fête","texte":"Don’t bring no stank ah chitterlings for thanksgiving that smell like cousin feet","vues":2366,"compte":"dxmien_vt","comptes":1,"vuesTxt":"2,4 k"}],"quoi":"DJ App & AI Mixer"},{"nom":"Crsel","store":"Crsel: Carrousel & Story Maker","logo":"/media/simulateur/crsel.jpg","comptes":14,"comptesFR":0,"videosSemaine":104,"meilleure":{"vues":"6,8 k","compte":"emilycreatescontent"},"note":{"note":"4,7","avis":"1,2 k"},"prix":{"min":"5,99","max":"29,99"},"accroches":[],"quoi":"Carrousel & Story Maker"},{"nom":"VanDraw","store":"VanDraw","logo":"/media/simulateur/vandraw.jpg","comptes":19,"comptesFR":0,"videosSemaine":73,"meilleure":{"vues":"73,1 k","compte":"inspovikk"},"note":{"note":"4,6","avis":"173"},"prix":{"min":"6,00","max":"60,00"},"accroches":[{"label":"Titre de jeu vidéo en texte","texte":"grand theft auto","vues":57100,"compte":"inspovikk","comptes":1,"vuesTxt":"57,1 k"}],"quoi":"App de dessin qui permet de dessiner des avatars et des personnages à partir des commentaires ou de photos"}]},{"nom":"Langues","apps":36,"vuesParVideo":6669,"top":[{"nom":"Vocabulary","store":"Vocabulary - Apprenez mots","logo":"/media/simulateur/vocabulary.jpg","comptes":71,"comptesFR":0,"videosSemaine":637,"meilleure":{"vues":"4,2 k","compte":"edforyou6"},"note":{"note":"4,7","avis":"4 k"},"prix":{"min":"5,99","max":"59,99"},"accroches":[{"label":"Son qui empêche de trop penser","texte":"My roommate told me about this sound which blocks your brain from overthinking. I’ve been listening for 4 hour","vues":6517,"compte":"itskatiegirl8","comptes":11,"vuesTxt":"6,5 k"},{"label":"Gagner de l'argent avec des jeux mobiles","texte":"when people are using klarna to make payments to play the new GTA but I'm only $19 away from getting it using ","vues":2961,"compte":"lobotomized_fish101","comptes":9,"vuesTxt":"3 k"},{"label":"Burger sous vide","texte":"Sous vide burger","vues":977,"compte":"hazaeyrw6ue","comptes":1,"vuesTxt":"977"}],"quoi":"Apprenez mots"},{"nom":"Pingo AI","store":"Apprendre des langues Pingo AI","logo":"/media/simulateur/pingo-ai.jpg","comptes":147,"comptesFR":7,"videosSemaine":480,"meilleure":{"vues":"78,3 k","compte":"nadiaspeaksgerman"},"note":{"note":"4,6","avis":"1,8 k"},"prix":{"min":"14,99","max":"119,99"},"accroches":[{"label":"IA britannique contre IA américaine","texte":"🇬🇧 · 🇺🇸 · WHO ARE YOU? · I ASKED BETTER! · I’M A BRITISH AI!!! · WHAT?? · YOUR VOICE SOUNDS UGLY! · WHAAAA","vues":245600,"compte":"englishgurukat","comptes":2,"vuesTxt":"246 k"},{"label":"Examen de nationalité française","texte":"¿Quién dijo la frase? official Spanish nationality exam","vues":198400,"compte":"camilopolyglot","comptes":3,"vuesTxt":"198 k"},{"label":"Demander comment dire un mot tendre","texte":"How do you say \"green flag\" in Chinese 🇨🇳","vues":173100,"compte":"howtosaynihao","comptes":4,"vuesTxt":"173 k"}],"quoi":"Application d'apprentissage des langues par IA qui corrige les phrases et répond aux questions de vocabulaire"},{"nom":"Bunpo","store":"Bunpo: Apprendre les langues","logo":"/media/simulateur/bunpo.jpg","comptes":86,"comptesFR":0,"videosSemaine":206,"meilleure":{"vues":"18,9 k","compte":"frenchwithlars"},"note":{"note":"4,8","avis":"1,1 k"},"prix":{"min":"9,99","max":"99,99"},"accroches":[{"label":"Pas d'argent en japonais, humour","texte":"🇬🇧 🇯🇵 🇯🇵😩 I don’t have money お金が ありません","vues":344400,"compte":"bunpo_learnjapanese","comptes":1,"vuesTxt":"344 k"},{"label":"Méchant qui apprend le japonais","texte":"you’re a villain but you’re still learning Japanese 日本語勉強中のラスボス この漢字が読めないんだけど I actually can't read that kanji","vues":44300,"compte":"studytomodachi","comptes":1,"vuesTxt":"44,3 k"},{"label":"Apprendre l'espagnol, publicité","texte":"Anzeige Learning Spanish while eating fruit 🍊🇪🇸","vues":20200,"compte":"vittoria.aprende","comptes":1,"vuesTxt":"20,2 k"}],"quoi":"Apprendre les langues"}]},{"nom":"Études","apps":35,"vuesParVideo":4542,"top":[{"nom":"Aistote","store":"Aistote : QUIZ IA","logo":"/media/simulateur/aistote.jpg","comptes":46,"comptesFR":6,"videosSemaine":532,"meilleure":{"vues":"206 k","compte":"wow_its_clifford"},"note":{"note":"4,5","avis":"2,4 k"},"prix":{"min":"8,99","max":"49,99"},"accroches":[{"label":"Question d'examen prise au pied de la lettre","texte":"POV: you use a big word in your English essay and pray it means what you think it means","vues":205700,"compte":"wow_its_clifford","comptes":1,"vuesTxt":"206 k"},{"label":"Surprise de dernière page à l'examen","texte":"POV: you finally find a question you actually know and it's only worth 1 point","vues":174100,"compte":"wow_its_clifford","comptes":1,"vuesTxt":"174 k"},{"label":"Marché de Noël à Nantes","texte":"Le marché de Noël a ouvert à Nantes🎅🏻🎄","vues":89900,"compte":"arkenyxe","comptes":1,"vuesTxt":"89,9 k"}],"quoi":"QUIZ IA"},{"nom":"NurseMind","store":"NurseMind: AI Nursing Guide","logo":"/media/simulateur/nursemind.jpg","comptes":112,"comptesFR":0,"videosSemaine":435,"meilleure":{"vues":"2 k","compte":"learninghacks4u"},"note":null,"prix":{"min":"9,99","max":"34,99"},"accroches":[{"label":"Meilleurs moyens de gagner de l'argent en plus","texte":"these are the BEST outside the box ways to bring in some extra money 🤑","vues":1661,"compte":"anicaa275","comptes":7,"vuesTxt":"1,7 k"},{"label":"Gagner des récompenses en jouant à des jeux mobiles","texte":"3 things I bought this week just by playing cute mobile games on my phone","vues":1634,"compte":"anicaa275","comptes":15,"vuesTxt":"1,6 k"},{"label":"Ce qu'on ferait différemment au premier jour","texte":"if i could redo my first shift as a nurse what i'd do differently, from the first five minutes to clocking out","vues":1531,"compte":"doweknowhurrr","comptes":6,"vuesTxt":"1,5 k"}],"quoi":"AI Nursing Guide"},{"nom":"Diane AI","store":"Diane AI - Flashcards","logo":"/media/simulateur/diane-ai.jpg","comptes":53,"comptesFR":49,"videosSemaine":403,"meilleure":{"vues":"51,8 k","compte":"el1ott_lapt"},"note":{"note":"4,6","avis":"385"},"prix":{"min":"19,99","max":"89,99"},"accroches":[{"label":"Question sur la motivation pour les partiels","texte":"« Votre motivation pour réviser les partiels » · « Parce que faut être motivé en plus ? »","vues":109000,"compte":"jade_dianeai","comptes":1,"vuesTxt":"109 k"},{"label":"Rendez-vous à la BU à 8h non tenu","texte":"On se retrouve à 8h pour aller à la bu mais on est ni du matin ni des partiels","vues":87300,"compte":"jade_dianeai","comptes":2,"vuesTxt":"87,3 k"},{"label":"Fin du lycée après le bac","texte":"Juillet 2025, j'obtiens mon bac, j'ai officiellement terminé le lycée 🏫...","vues":71800,"compte":"el1ott_lapt","comptes":1,"vuesTxt":"71,8 k"}],"quoi":"Flashcards"}]},{"nom":"Productivité","apps":27,"vuesParVideo":4020,"top":[{"nom":"TapCook","store":"TapCook: Budget Meal Plans","logo":"/media/simulateur/tapcook.jpg","comptes":184,"comptesFR":0,"videosSemaine":3342,"meilleure":{"vues":"31,7 k","compte":"mealprepsteve"},"note":{"note":"4,5","avis":"2"},"prix":{"min":"9,99","max":"34,99"},"accroches":[{"label":"Budget courses choisi au hasard","texte":"¿EN COSTCO CON UN PRESUPUESTO AL AZAR?","vues":6156,"compte":"laurapresupuesto","comptes":2,"vuesTxt":"6,2 k"},{"label":"Nourrir une grande tablée à petit prix","texte":"No Frills Canada $45 to Feed 8 people Dinners for two days this weekend","vues":4646,"compte":"grocevypwoq","comptes":31,"vuesTxt":"4,6 k"},{"label":"Doute sur un petit budget courses","texte":"$80 this week for a family of 4!","vues":3862,"compte":"familytips44","comptes":49,"vuesTxt":"3,9 k"}],"quoi":"Budget Meal Plans"},{"nom":"FocusTown","store":"FocusTown : Minuteur Pomodoro","logo":"/media/simulateur/focustown.jpg","comptes":50,"comptesFR":0,"videosSemaine":432,"meilleure":{"vues":"165 k","compte":"yellen_forellen"},"note":{"note":"4,7","avis":"2,1 k"},"prix":{"min":"0,99","max":"34,99"},"accroches":[{"label":"Salle d'étude qui fait peur","texte":"why does this study room kinda looks like a horror movie 💀","vues":5720,"compte":"amiesstudycorner","comptes":1,"vuesTxt":"5,7 k"},{"label":"Macbeth comme fan fiction","texte":"macbeth is so much more interesting when you realise it’s basically a fan fic","vues":4564,"compte":"downtownacademic","comptes":1,"vuesTxt":"4,6 k"},{"label":"Café d'hiver pour lire ensemble","texte":"WAIT THERE‘S A WINTER CAFE TO READ WITH FRIENDS ONLINE?!","vues":3865,"compte":"amiesstudycorner","comptes":1,"vuesTxt":"3,9 k"}],"quoi":"Minuteur Pomodoro"},{"nom":"EcoGPT","store":"EcoGPT","logo":"/media/simulateur/ecogpt.jpg","comptes":130,"comptesFR":0,"videosSemaine":426,"meilleure":{"vues":"98,4 k","compte":"ecowithlourdes"},"note":{"note":"4,7","avis":"1,3 k"},"prix":{"min":"6,99","max":"79,99"},"accroches":[{"label":"Coïncidences qui n'arrivent qu'une fois","texte":"Coincidences that could happen only once in a lifetime 🎯","vues":1700000,"compte":"plainachos","comptes":1,"vuesTxt":"1,7 M"},{"label":"Photos d'oublis aux conséquences","texte":"Photos of times people forgot something and faced the consequences Pt.13 😂","vues":1500000,"compte":"plainachos","comptes":2,"vuesTxt":"1,5 M"},{"label":"La vaquita marina","texte":"La vaquita marina está extinta🥺💔","vues":901100,"compte":"ecologiacongaby","comptes":8,"vuesTxt":"901 k"}],"quoi":"Application d'IA conversationnelle présentée par les créatrices comme un moyen d'agir pour la planète à travers ses usages quotidiens"}]},{"nom":"Foi","apps":23,"vuesParVideo":4871,"top":[{"nom":"Sacred Shorts","store":"Sacred Shorts: Bible Videos","logo":"/media/simulateur/sacred-shorts.jpg","comptes":54,"comptesFR":0,"videosSemaine":715,"meilleure":{"vues":"392","compte":"guadalupedolores33"},"note":{"note":"5,0","avis":"2"},"prix":{"min":"14,99","max":"69,99"},"accroches":[{"label":"Regalo para mamá con vista cansada","texte":"le regalé esto a mi mamá en su cumpleaños y lloró","vues":190,"compte":"julianagarcia4007","comptes":2,"vuesTxt":"190"},{"label":"Hijo pide herencia y la pierde","texte":"pidió su herencia antes de tiempo y la perdió toda","vues":183,"compte":"alexandraquizano","comptes":3,"vuesTxt":"183"},{"label":"Militar pide recomendar la app","texte":"mi hermano en el ejército me pidió que se la recomendara","vues":181,"compte":"melisagomez747","comptes":4,"vuesTxt":"181"}],"quoi":"Bible Videos"},{"nom":"Tarteel","store":"Tarteel: Coran et Mémorisation","logo":"/media/simulateur/tarteel.jpg","comptes":50,"comptesFR":4,"videosSemaine":217,"meilleure":{"vues":"10,4 k","compte":"tarteel.travel"},"note":{"note":"4,8","avis":"2,9 k"},"prix":{"min":"14,99","max":"249,99"},"accroches":[{"label":"Trouver la paix dans le Coran","texte":"“Find peace in Quran after a long day”","vues":34800,"compte":"muhammadibrahim007458","comptes":1,"vuesTxt":"34,8 k"},{"label":"Muraja'ah sur un air mélodieux","texte":"MK : Muroja'ah dengan irama \"jiharka\"","vues":34500,"compte":"iqbalrajasaa","comptes":1,"vuesTxt":"34,5 k"},{"label":"Ami responsable de la classe de hifz","texte":"POV: Your friend gets put in charge of the Hifz class","vues":16700,"compte":"zafrul18","comptes":1,"vuesTxt":"16,7 k"}],"quoi":"Coran et Mémorisation"},{"nom":"Scroll The Bible","store":"Scroll The Bible","logo":"/media/simulateur/scroll-the-bible.jpg","comptes":29,"comptesFR":0,"videosSemaine":159,"meilleure":{"vues":"665 k","compte":"juless4jesus"},"note":{"note":"4,9","avis":"30"},"prix":{"min":"5,99","max":"44,99"},"accroches":[{"label":"Prière contre l'anxiété","texte":"God wants you To pray against Anxiety & worry!","vues":14200,"compte":"cirley.ruballo","comptes":2,"vuesTxt":"14,2 k"},{"label":"Dieu veut que tu entendes sa voix","texte":"God wants you to hear his voice this week","vues":12300,"compte":"jodavscroll","comptes":1,"vuesTxt":"12,3 k"},{"label":"Message de Dieu pour toi","texte":"A message from God for YOU❤️‍🔥","vues":6311,"compte":"jodavscroll","comptes":1,"vuesTxt":"6,3 k"}],"quoi":"App qui propose des sujets de prière quotidiens et des passages bibliques à partir de la Parole de Dieu"}]},{"nom":"Beauté IA","apps":23,"vuesParVideo":11777,"top":[{"nom":"Fits","store":"Fits – Closet & Outfit Maker","logo":"/media/simulateur/fits.jpg","comptes":11,"comptesFR":1,"videosSemaine":67,"meilleure":{"vues":"699","compte":".username._.com"},"note":{"note":"4,5","avis":"1,3 k"},"prix":{"min":"1,99","max":"79,99"},"accroches":[],"quoi":"Closet & Outfit Maker"},{"nom":"Tatship","store":"Tatship: Simulateur Tatouage","logo":"/media/simulateur/tatship.jpg","comptes":3,"comptesFR":0,"videosSemaine":30,"meilleure":{"vues":"1,5 k","compte":"tatshiphq"},"note":{"note":"4,4","avis":"118"},"prix":{"min":"14,99","max":"39,99"},"accroches":[{"label":"Formulaires de demande de tatouage difficiles à remplir","texte":"Tattoo request forms are HARD for clients","vues":106,"compte":"tatshiphq","comptes":1,"vuesTxt":"106"},{"label":"Tatoueur recommande l'app avant le rendez-vous","texte":"my tattoo artist just sent me this app to use before my appointment","vues":38,"compte":"tatshiphq","comptes":1,"vuesTxt":"38"}],"quoi":"Simulateur Tatouage"},{"nom":"Closfi","store":"Closfi: Tu Clóset Virtual IA","logo":"/media/simulateur/closfi.jpg","comptes":21,"comptesFR":0,"videosSemaine":19,"meilleure":{"vues":"4,5 k","compte":"carolina_outfits"},"note":null,"prix":{"min":"3,99","max":"59,99"},"accroches":[],"quoi":"Tu Clóset Virtual IA"}]},{"nom":"Jalousie et ex","apps":22,"vuesParVideo":4219,"top":[{"nom":"The Cringe","store":"The Cringe: Chat Wrapped","logo":"/media/simulateur/the-cringe.jpg","comptes":14,"comptesFR":2,"videosSemaine":95,"meilleure":{"vues":"144 k","compte":"ele_peivateaccoun"},"note":{"note":"4,0","avis":"849"},"prix":{"min":"9,99","max":"44,99"},"accroches":[],"quoi":"Chat Wrapped"},{"nom":"Red Flag","store":"Red Flag: Track Recent Follows","logo":"/media/simulateur/red-flag.jpg","comptes":21,"comptesFR":0,"videosSemaine":0,"meilleure":null,"note":{"note":"5,0","avis":"1"},"prix":{"min":"3,99","max":"89,99"},"accroches":[],"quoi":"Track Recent Follows"},{"nom":"Lucen","store":"Lucen: AI Text Dating Advice","logo":"/media/simulateur/lucen.jpg","comptes":1,"comptesFR":0,"videosSemaine":0,"meilleure":null,"note":null,"prix":null,"accroches":[],"quoi":"AI Text Dating Advice"}]},{"nom":"Bien-être mental","apps":18,"vuesParVideo":1580,"top":[{"nom":"Daimon","store":"Daimon: Honest Advice","logo":"/media/simulateur/daimon.jpg","comptes":5,"comptesFR":0,"videosSemaine":26,"meilleure":{"vues":"304 k","compte":"evelyn.0935"},"note":{"note":"4,9","avis":"904"},"prix":{"min":"0,99","max":"9,99"},"accroches":[],"quoi":"Honest Advice"},{"nom":"Gratitude Plus","store":"Gratitude Plus – Journal","logo":"/media/simulateur/gratitude-plus.jpg","comptes":5,"comptesFR":0,"videosSemaine":24,"meilleure":{"vues":"10,2 k","compte":"chaos_butmakeitcute_ish"},"note":{"note":"4,9","avis":"41"},"prix":{"min":"6,99","max":"399,99"},"accroches":[{"label":"Gagner de l'argent en postant des vidéos simples","texte":"I was tired of checking by bank account before every purchase So I started making videos of myself doing simpl","vues":275,"compte":"pis.taschio","comptes":1,"vuesTxt":"275"}],"quoi":"Journal"},{"nom":"Cora","store":"Cora - Become Her","logo":"/media/simulateur/cora.jpg","comptes":3,"comptesFR":0,"videosSemaine":4,"meilleure":{"vues":"737","compte":"becomingherpru"},"note":{"note":"4,4","avis":"34"},"prix":{"min":"6,99","max":"49,99"},"accroches":[],"quoi":"Become Her"}]},{"nom":"Séduction IA","apps":17,"vuesParVideo":18550,"top":[{"nom":"Liggo","store":"Liggo: Phrases de Drague IA","logo":"/media/simulateur/liggo.jpg","comptes":17,"comptesFR":0,"videosSemaine":111,"meilleure":{"vues":"492 k","compte":"inspectordelrizz"},"note":{"note":"5,0","avis":"2"},"prix":{"min":"3,99","max":"39,99"},"accroches":[{"label":"Qui m'accompagne à un mariage ou sortie","texte":"quien me acompaña a un casamiento quien es la afortunada?","vues":491700,"compte":"inspectordelrizz","comptes":2,"vuesTxt":"492 k"},{"label":"Amour caché, partenaire qui dort à côté","texte":"mi Sabés bien que nunca de cosas por vos, siempre fu JAJAJAJ QUE MANERA DE REÍRME que romántico que sos amigo!","vues":58087,"compte":"santidigraziaa","comptes":1,"vuesTxt":"58,1 k"},{"label":"Demander de la chance à Dieu","texte":"DIOSITO DESÉAME SUERTE","vues":33400,"compte":"mrrizz49","comptes":1,"vuesTxt":"33,4 k"}],"quoi":"Phrases de Drague IA"},{"nom":"Trick AI","store":"Trick AI","logo":"/media/simulateur/trick-ai.jpg","comptes":2,"comptesFR":0,"videosSemaine":36,"meilleure":{"vues":"70,8 k","compte":"ustamanipulator"},"note":{"note":"5,0","avis":"1"},"prix":{"min":"1,99","max":"69,99"},"accroches":[{"label":"Relégué en ami, puis plainte sur l'amitié","texte":"Beni arkadaş bölgesine attı. Sonra arkadaşlığımdan şikâyet etti.","vues":1164,"compte":"manipulasyonustasi","comptes":1,"vuesTxt":"1,2 k"},{"label":"Baiser en soirée, excusé par l'ivresse","texte":"Partide başka biriyle öpüştü. Ertesi gün \"sarhoştum, sayılmaz\" dedi.","vues":385,"compte":"manipulasyonustasi","comptes":1,"vuesTxt":"385"},{"label":"Faux nom de contact cachant une autre relation","texte":"Beni telefonuna \"Ayşe Hoca\" diye kaydetmiş. Meğer başka biriyle sevgiliymiş.","vues":304,"compte":"ustamanipulator","comptes":1,"vuesTxt":"304"}],"quoi":"Application qui aide à décoder et écrire les messages dans une conversation amoureuse, avec des conseils de réponse"},{"nom":"Yazcam","store":"Yazcam : Assistant Chat IA","logo":"/media/simulateur/yazcam.jpg","comptes":2,"comptesFR":0,"videosSemaine":10,"meilleure":{"vues":"7,8 k","compte":"alfaflort"},"note":null,"prix":{"min":"5,99","max":"79,99"},"accroches":[{"label":"Flörtün sevgilisi olduğunu öğrenmek","texte":"1 Haftadır konuştuğum Flört \"sevgilim var\" dedi","vues":4154,"compte":"tavlarizz","comptes":1,"vuesTxt":"4,2 k"},{"label":"Kıskançlık baştan itiraf, kıskançlık yarışması","texte":"POV: Kız 'ben çok kıskancım, baştan söyleyeyim' dedi ve sen kıskançlık yarışması açtın 👉","vues":522,"compte":"alfaflort","comptes":1,"vuesTxt":"522"}],"quoi":"Assistant Chat IA"}]},{"nom":"Rencontres","apps":17,"vuesParVideo":9647,"top":[{"nom":"Bump","store":"Bump - va voir tes amis IRL","logo":"/media/simulateur/bump.jpg","comptes":74,"comptesFR":7,"videosSemaine":302,"meilleure":{"vues":"621 k","compte":"brendon.bump"},"note":{"note":"4,9","avis":"12 k"},"prix":{"min":"2,49","max":"34,99"},"accroches":[{"label":"Ami en retard qu'on attend en discutant","texte":"Siempre un: Voy llegando","vues":965400,"compte":"jacqui.bump","comptes":3,"vuesTxt":"965 k"},{"label":"Ami qui préfère dormir au lieu de sortir","texte":"Azt mondja ne talizzunk ma, sokat dolgozott, inkább alszik... Most tényleg ennyire madárnak tűnök? 😂","vues":779100,"compte":"szaffi.bump","comptes":4,"vuesTxt":"779 k"},{"label":"Amour au premier regard avec Alex","texte":"- mergee Dragoste la prima vedere Alex - ok","vues":690500,"compte":"daduuu.bump","comptes":1,"vuesTxt":"691 k"}],"quoi":"Va voir tes amis IRL"},{"nom":"Milionegle","store":"Milionegle","logo":"/media/simulateur/milionegle.jpg","comptes":6,"comptesFR":0,"videosSemaine":65,"meilleure":{"vues":"5,1 k","compte":"rebecca.emprende"},"note":null,"prix":{"min":"0,99","max":"49,99"},"accroches":[{"label":"Client qui accuse le freelance d'un piratage","texte":"Hackearon la web de mi cliente y me llamó diciendo que fue mi culpa.","vues":10300,"compte":"gonzles1258","comptes":1,"vuesTxt":"10,3 k"},{"label":"Mention vague d'une application sans contexte","texte":"con una aplicación","vues":1301,"compte":"hurtaldo","comptes":1,"vuesTxt":"1,3 k"},{"label":"Client qui ne paie pas après livraison","texte":"Entregué la web, el cliente dijo «perfecto» y nunca pagó los últimos $700.","vues":1193,"compte":"gonzles1258","comptes":1,"vuesTxt":"1,2 k"}],"quoi":"App pour rencontrer d'autres entrepreneurs et développer une mentalité entrepreneuriale"},{"nom":"Dion","store":"Dion","logo":"/media/simulateur/dion.jpg","comptes":17,"comptesFR":0,"videosSemaine":41,"meilleure":{"vues":"8,3 k","compte":"gabyandsips"},"note":{"note":"4,9","avis":"53"},"prix":{"min":"24,99","max":"359,99"},"accroches":[{"label":"Sélection exclusive pour rejoindre Dion","texte":"Not everyone gets into Dion. Here’s why:","vues":3081,"compte":"revekkapal","comptes":1,"vuesTxt":"3,1 k"},{"label":"Fondateur de Dion qui tente une pause","texte":"POV: you try to take a break as the founder of Dion","vues":2540,"compte":"revekkapal","comptes":1,"vuesTxt":"2,5 k"},{"label":"Patron d'entreprise qui pense au travail la nuit","texte":"Business owners thinking they’ll get a good night sleep · my business brain all night","vues":1198,"compte":"revekkapal","comptes":1,"vuesTxt":"1,2 k"}],"quoi":"Application de mise en relation sur invitation pour rencontrer de nouvelles personnes et développer son réseau"}]},{"nom":"Finance","apps":17,"vuesParVideo":4049,"top":[{"nom":"Zoya","store":"Zoya: Halal Investing App","logo":"/media/simulateur/zoya.jpg","comptes":4,"comptesFR":0,"videosSemaine":31,"meilleure":{"vues":"96 k","compte":"malak.finance"},"note":{"note":"4,8","avis":"83"},"prix":{"min":"4,99","max":"129,99"},"accroches":[{"label":"L'islam guide aussi les finances et l'investissement","texte":"realizing that islam gives you instructions on everything including your finances, wealth, and halal investing","vues":3246,"compte":"keishaonwealth","comptes":1,"vuesTxt":"3,2 k"},{"label":"Filles qui investissent, accroche « girls who invest »","texte":"girls who invest >","vues":868,"compte":"keishaonwealth","comptes":1,"vuesTxt":"868"}],"quoi":"Halal Investing App"},{"nom":"WeStash","store":"WeStash: Budget & Épargne","logo":"/media/simulateur/westash.jpg","comptes":3,"comptesFR":0,"videosSemaine":30,"meilleure":{"vues":"4,3 k","compte":"eliestash"},"note":{"note":"4,4","avis":"28"},"prix":{"min":"3,99","max":"24,99"},"accroches":[],"quoi":"Budget & Épargne"},{"nom":"Finzee","store":"Finzee - Budget planner","logo":"/media/simulateur/finzee.jpg","comptes":13,"comptesFR":11,"videosSemaine":20,"meilleure":{"vues":"270 k","compte":"budget.forgirls"},"note":{"note":"4,8","avis":"791"},"prix":{"min":"4,99","max":"99,99"},"accroches":[],"quoi":"Budget planner"}]},{"nom":"Couple","apps":9,"vuesParVideo":5149,"top":[{"nom":"Amorly","store":"Amorly: Jeux de Couple & Quiz","logo":"/media/simulateur/amorly.jpg","comptes":2,"comptesFR":0,"videosSemaine":50,"meilleure":{"vues":"258 k","compte":"mayanowak076"},"note":{"note":"2,0","avis":"2"},"prix":{"min":"5,99","max":"79,99"},"accroches":[{"label":"Signes qu'il ou elle t'aime vraiment","texte":"4 oznaki, że twoja dziewczyna naprawdę cię kocha >>>","vues":182100,"compte":"majanowak074","comptes":2,"vuesTxt":"182 k"},{"label":"Signes de love bombing","texte":"Oznaki, że bombarduje cię miłością","vues":15800,"compte":"mayanowak076","comptes":1,"vuesTxt":"15,8 k"},{"label":"Red flags dans une relation","texte":"13 czerwonych flag 🚩 w związku ; Przeczytaj to >","vues":556,"compte":"mayanowak076","comptes":1,"vuesTxt":"556"}],"quoi":"Jeux de Couple & Quiz"},{"nom":"Pukutan","store":"Pukutan: Journal & Élevage","logo":"/media/simulateur/pukutan.jpg","comptes":30,"comptesFR":0,"videosSemaine":37,"meilleure":{"vues":"4,5 k","compte":"kydropout"},"note":{"note":"4,5","avis":"2"},"prix":{"min":"0,99","max":"69,99"},"accroches":[],"quoi":"Journal & Élevage"}]}]};
+    const DATA = {"releve":"26/11/2026","niches":[{"nom":"Social et loisirs","apps":111,"vuesParVideo":10460,"top":[{"nom":"MoboReels","store":"MoboReels: Short Drama Series","logo":"/media/simulateur/moboreels.jpg","comptes":98,"comptesFR":0,"videosSemaine":1252,"meilleure":{"vues":"12,7 k","compte":"austinobest1","video":"7710617508012756231"},"note":{"note":"4,5","avis":"7,2 k"},"prix":{"min":"6,99","max":"59,99"},"accroches":[{"texte":"My Unborn Baby's Voice Made Me a Winner Mommy,look down,it's me!","vuesTxt":"1,3 k","compte":"austinobest1","comptes":1,"video":"7710617880169172231"},{"texte":"I'm just a janitor's daughter","vuesTxt":"857","compte":"netflixtime_8","comptes":1,"video":"7710556274538204438"},{"texte":"Puth and Rian","vuesTxt":"835","compte":"cat888818","comptes":1,"video":"7708799388117716238"}],"quoi":"Short Drama Series","reseau":[{"pseudo":"austinobest1","abonnes":"10,8 k","vuesMed":"572","pays":"NG"},{"pseudo":"vehdgsv","abonnes":"9,9 k","vuesMed":"188","pays":"US"},{"pseudo":"nephejxloz6","abonnes":"3,8 k","vuesMed":"184","pays":"US"},{"pseudo":"qn657hpbr5","abonnes":"57","vuesMed":"146","pays":"US"},{"pseudo":"blanche.webb85","abonnes":"9","vuesMed":"139","pays":"CA"},{"pseudo":"catsen180","abonnes":"23","vuesMed":"89","pays":"US"}]},{"nom":"SlowRead","store":"SlowRead : Bibliothèque & PAL","logo":"/media/simulateur/slowread.jpg","comptes":70,"comptesFR":0,"videosSemaine":792,"meilleure":{"vues":"35,8 k","compte":"andrea.booktoker","video":"7706174306748845334"},"note":{"note":"3,8","avis":"36"},"prix":{"min":"7,79","max":"129,99"},"accroches":[{"texte":"Okay I need to lock in no distractions","vuesTxt":"10,5 k","compte":"chelskait_other","comptes":1,"video":"7710039825193241886"},{"texte":"i overheard a girl at the airport saying she used girl math to get her nails done with rewards from playing games… and after seeing her nail","vuesTxt":"6,8 k","compte":"living.better0","comptes":4,"video":"7710856114467785998"},{"texte":"Keep Lucia. I have 57 fictional men who'd burn the world down for me.","vuesTxt":"4,3 k","compte":"totallybooked18","comptes":5,"video":"7711841689144397070"}],"quoi":"Bibliothèque & PAL","reseau":[{"pseudo":"stirreel","abonnes":"42","vuesMed":"1,7 k","pays":"CA"},{"pseudo":"tabs_reads","abonnes":"28","vuesMed":"1,1 k","pays":"US"},{"pseudo":"relatable.bri","abonnes":"53","vuesMed":"1 k","pays":"US"},{"pseudo":"bookish.linds","abonnes":"706","vuesMed":"798","pays":"US"},{"pseudo":"summerkore7","abonnes":"74","vuesMed":"752","pays":"US"},{"pseudo":"emma.readss1","abonnes":"8","vuesMed":"752","pays":"US"}]},{"nom":"DramaBox","store":"DramaBox - Film et Drame Court","logo":"/media/simulateur/dramabox.jpg","comptes":88,"comptesFR":0,"videosSemaine":618,"meilleure":{"vues":"260 k","compte":"j3w3lz.rose","video":"7709357476939877646"},"note":{"note":"4,6","avis":"57,2 k"},"prix":{"min":"0,99","max":"14,99"},"accroches":[{"texte":"¡HUMILLARON A MI ABUELA POR VENDER TACOS! A MI ABUELA POR VENDER TACOS!","vuesTxt":"260 k","compte":"j3w3lz.rose","comptes":1,"video":"7709357476939877646"},{"texte":"DramaBox EP7-8 كل ما فعلته هوجني المال من الثري الذي يُنفق علي وفي النهاية حققت الحرية المالية حصريا DramaBox","vuesTxt":"199 k","compte":"dramabox_ar","comptes":1,"video":"7707578346397240584"},{"texte":"DramaBox EP3-4 الندم المتأخر DramaBox حصريا","vuesTxt":"151 k","compte":"dramabox_ar","comptes":1,"video":"7709069812281953544"}],"quoi":"Film et Drame Court","reseau":[{"pseudo":"dramabox_br_1","abonnes":"6,2 M","vuesMed":"580 k","pays":"BR"},{"pseudo":"bu_chintya","abonnes":"52,3 k","vuesMed":"395 k","pays":"ID"},{"pseudo":"populardrama","abonnes":"180 k","vuesMed":"104 k","pays":"SG"},{"pseudo":"user8577202100918","abonnes":"25,3 k","vuesMed":"77,1 k","pays":"JP"},{"pseudo":"guobrose","abonnes":"97,6 k","vuesMed":"66,4 k","pays":"US"},{"pseudo":"dramabox818","abonnes":"17,9 k","vuesMed":"53,5 k","pays":"PK"}]}]},{"nom":"Santé et physique","apps":70,"vuesParVideo":4598,"top":[{"nom":"Mise","store":"mise - meal planner","logo":"/media/simulateur/mise.jpg","comptes":130,"comptesFR":7,"videosSemaine":1353,"meilleure":{"vues":"1,3 M","compte":"paula.eatss","video":"7710492306742283528"},"note":{"note":"4,5","avis":"98"},"prix":{"min":"9,99","max":"59,99"},"accroches":[{"texte":"Il avait rendez-vous avec Emma pour me tromper... il ignorait qui elle était Ouais Emma c'est","vuesTxt":"1,5 M","compte":"la.folleduvillage","comptes":1,"video":"7709498093850381600"},{"texte":"My baby daddy gave me $150 to feed these kids","vuesTxt":"1,4 M","compte":"meme.atethat","comptes":32,"video":"7709218149148757261"},{"texte":"J’ai empêché mon mari de me tromper ce soir en quittant la maison avant lui maquilles?","vuesTxt":"935 k","compte":"la.folleduvillage","comptes":1,"video":"7710582935258287392"}],"quoi":"Meal planner","reseau":[{"pseudo":"nacho_porcal","abonnes":"15,8 k","vuesMed":"117 k","pays":"UY"},{"pseudo":"mise.cxvii","abonnes":"3,4 k","vuesMed":"52,9 k","pays":"AR"},{"pseudo":"lnamise","abonnes":"34 k","vuesMed":"34,2 k","pays":"VN"},{"pseudo":"7mise","abonnes":"8,5 k","vuesMed":"21,4 k","pays":"MX"},{"pseudo":"mise23hum","abonnes":"2,4 k","vuesMed":"16,4 k","pays":"AR"},{"pseudo":"objectifepargne","abonnes":"129 k","vuesMed":"8,9 k","pays":"FR"}]},{"nom":"Musa","store":"Musa: Period & Pregnancy","logo":"/media/simulateur/musa.jpg","comptes":32,"comptesFR":2,"videosSemaine":526,"meilleure":{"vues":"289 k","compte":"marina.pragnancy","video":"7710412757409041694"},"note":{"note":"4,7","avis":"181"},"prix":{"min":"6,99","max":"34,99"},"accroches":[{"texte":"I think November has delayed every girls period… · We must all be stressed","vuesTxt":"43,2 k","compte":"mariana.hormones","comptes":13,"video":"7710291978721725710"},{"texte":"I searched \"my Disney baby\"","vuesTxt":"31,1 k","compte":"brooke.pregnancy","comptes":1,"video":"7709197987737505038"},{"texte":"Girl to girl.. what’s the most obvious sign that your period is about to start?","vuesTxt":"16,3 k","compte":"fal.cycletips","comptes":6,"video":"7710808728353639710"}],"quoi":"Period & Pregnancy","reseau":[{"pseudo":"ccinloveeee","abonnes":"154","vuesMed":"5,9 k","pays":"US"},{"pseudo":"bree.pregnancy","abonnes":"94","vuesMed":"2,9 k","pays":"US"},{"pseudo":"elena.burgueno","abonnes":"28","vuesMed":"2 k","pays":"FR"},{"pseudo":"mur.cyclesync","abonnes":"118","vuesMed":"1,3 k","pays":"US"},{"pseudo":"aylin.hormones","abonnes":"1,5 k","vuesMed":"1,3 k","pays":"US"},{"pseudo":"ari.hormones","abonnes":"1,8 k","vuesMed":"1,1 k","pays":"PT"}]},{"nom":"Solaia","store":"Solaia: Équilibre hormonal","logo":"/media/simulateur/solaia.jpg","comptes":64,"comptesFR":52,"videosSemaine":453,"meilleure":{"vues":"1,7 M","compte":"byelizen","video":"7709915874399964448"},"note":{"note":"4,6","avis":"2,5 k"},"prix":{"min":"8,99","max":"79,99"},"accroches":[{"texte":"18:00-22:00 Post workout routine low|","vuesTxt":"1,5 M","compte":"byelizen","comptes":1,"video":"7709915874399964448"},{"texte":"100% moi les premières semaines où j’ai pris ma pilule","vuesTxt":"96,6 k","compte":"justinendo","comptes":1,"video":"7708363079444155681"},{"texte":"mon rêve niche c’est de guérir des tca","vuesTxt":"55,7 k","compte":"indoinsa","comptes":1,"video":"7708153950515563809"}],"quoi":"Équilibre hormonal","reseau":[{"pseudo":"lou56632","abonnes":"279","vuesMed":"14,4 k","pays":"AE"},{"pseudo":"indoinsa","abonnes":"37,8 k","vuesMed":"10,1 k","pays":"FR"},{"pseudo":"man.amedor","abonnes":"8,9 k","vuesMed":"6,7 k","pays":"FR"},{"pseudo":"lya_au_feminin","abonnes":"76","vuesMed":"4,1 k","pays":"FR"},{"pseudo":"emaaadbs","abonnes":"765","vuesMed":"3,6 k","pays":"FR"},{"pseudo":"health_elisa","abonnes":"925","vuesMed":"1,7 k","pays":"FR"}]}]},{"nom":"Side hustle","apps":50,"vuesParVideo":1405,"top":[{"nom":"SideShift","store":"SideShift - Earn Money","logo":"/media/simulateur/sideshift.jpg","comptes":158,"comptesFR":19,"videosSemaine":1339,"meilleure":{"vues":"4,3 M","compte":"prankswithgenn_","video":"7710695480325311765"},"note":{"note":"4,8","avis":"411"},"prix":{"min":"0,99","max":"89,99"},"accroches":[{"texte":"Mon objectif est de devenir financièrement indépendante avant mes 25 ans. Je suis ouverte à toutes les idées pour faire de l'argent.","vuesTxt":"1 M","compte":"kelly.advice","comptes":1,"video":"7707745824872156448"},{"texte":"Hoy contacté a 100 marcas. 70 nunca respondieron. 20 dijeron que NO. 10 dijeron que Sl. Y 5 de esas me pagaron 200 dl cada una. Eso es un to","vuesTxt":"280 k","compte":"fernandaj_ugc","comptes":19,"video":"7712028053731429665"},{"texte":"TRES TRABAJOS DE NOCHE QUE PUEDES HACER DESDE TU CASA","vuesTxt":"191 k","compte":"mafe.guzman29","comptes":4,"video":"7709728438550056213"}],"quoi":"Earn Money","reseau":[{"pseudo":"creatorera.edivany11","abonnes":"2,1 k","vuesMed":"26,2 k","pays":"BR"},{"pseudo":"ilianaconugc","abonnes":"9,1 k","vuesMed":"11,4 k","pays":"HN"},{"pseudo":"martiapproves","abonnes":"3,6 k","vuesMed":"10,3 k","pays":"AR"},{"pseudo":"be_like_olaa","abonnes":"688","vuesMed":"5,4 k","pays":"PL"},{"pseudo":"kingspranks","abonnes":"8,8 k","vuesMed":"5,3 k","pays":"GB"},{"pseudo":"eve.hustles","abonnes":"2 k","vuesMed":"4,2 k","pays":"GB"}]},{"nom":"Hub Capture","store":"Hub Capture","logo":"/media/simulateur/hub-capture.jpg","comptes":54,"comptesFR":0,"videosSemaine":180,"meilleure":{"vues":"79,2 k","compte":"tamiresrrosati","video":"7711010891512171784"},"note":null,"prix":null,"accroches":[{"texte":"Gente, eu sem óculos não exergo nada perdão na leitura a informação foi nada kk","vuesTxt":"9,3 k","compte":"rennynooff","comptes":1,"video":"7709532252459404565"},{"texte":"oração pra hub capture voltar hoje às 23h99","vuesTxt":"8,9 k","compte":"isatmai","comptes":3,"video":"7711836519509658900"},{"texte":"“MÃO DE ZUMBI”","vuesTxt":"8,5 k","compte":"yasmin.robo","comptes":1,"video":"7709571679147625749"}],"quoi":"Plateforme de revenus en ligne par parrainage, avec dropshipping et création de contenu UGC pour TikTok Shop","reseau":[{"pseudo":"leonardoorozco","abonnes":"553","vuesMed":"6,2 k","pays":"VE"},{"pseudo":"treinador_de_robo","abonnes":"398","vuesMed":"4,5 k","pays":"BR"},{"pseudo":"isatmai","abonnes":"6 k","vuesMed":"3,9 k","pays":"BR"},{"pseudo":"rennynooff","abonnes":"66,8 k","vuesMed":"3,5 k","pays":"BR"},{"pseudo":"oovilanovaa","abonnes":"189","vuesMed":"3,2 k","pays":"BR"},{"pseudo":"sindygital.us","abonnes":"12,7 k","vuesMed":"3,2 k","pays":"US"}]},{"nom":"TikAlyzer","store":"TikAlyzer: Deviens Viral","logo":"/media/simulateur/tikalyzer.jpg","comptes":51,"comptesFR":0,"videosSemaine":87,"meilleure":{"vues":"1,1 k","compte":"viviana.tikalyzr","video":"7711334652664974622"},"note":{"note":"4,2","avis":"5"},"prix":{"min":"6,99","max":"69,99"},"accroches":[],"quoi":"Deviens Viral","reseau":[{"pseudo":"blair.clipss","abonnes":"10","vuesMed":"527","pays":"BD"},{"pseudo":"allie.growth","abonnes":"37","vuesMed":"493","pays":"US"},{"pseudo":"ronnygrowth","abonnes":"32","vuesMed":"472","pays":"AO"},{"pseudo":"duke.clips4","abonnes":"8","vuesMed":"408","pays":"US"},{"pseudo":"bluetoria2","abonnes":"35","vuesMed":"368","pays":"US"},{"pseudo":"tikatori22","abonnes":"51","vuesMed":"356","pays":"US"}]}]},{"nom":"Création de contenu","apps":41,"vuesParVideo":19873,"top":[{"nom":"Djay","store":"djay - DJ App & AI Mixer","logo":"/media/simulateur/djay.jpg","comptes":163,"comptesFR":3,"videosSemaine":355,"meilleure":{"vues":"61,7 k","compte":"djayoverlaps","video":"7710786478829358366"},"note":{"note":"4,6","avis":"6,7 k"},"prix":{"min":"0,00","max":"49,99"},"accroches":[{"texte":"گیانەکەم ، ئەتۆ نەبووی فێری گیانت کردم ؟ ئێستاش بێ گیانت کردم","vuesTxt":"135 k","compte":".avii1i","comptes":1,"video":"7709586609292823828"},{"texte":"I LOVE MUSIC LIKE THIS, WHO DOESN'T LIKE BOUNCE MUSIC?","vuesTxt":"16,6 k","compte":"howyallfindingme2","comptes":1,"video":"7711484463041039648"},{"texte":"can yall catch this beatt??","vuesTxt":"12,2 k","compte":"howyallfindingme2","comptes":1,"video":"7711520404019399968"}],"quoi":"DJ App & AI Mixer","reseau":[{"pseudo":"etherealalofa","abonnes":"8,4 k","vuesMed":"186 k","pays":"US"},{"pseudo":"user8875467886","abonnes":"2,5 k","vuesMed":"133 k","pays":"US"},{"pseudo":"thy._.kdmh","abonnes":"45,3 k","vuesMed":"104 k","pays":"KH"},{"pseudo":"kaya.aj","abonnes":"1,8 k","vuesMed":"91,1 k","pays":"US"},{"pseudo":"userr2087764","abonnes":"1,3 k","vuesMed":"85,5 k","pays":"US"},{"pseudo":"msladydjay","abonnes":"1,8 k","vuesMed":"82,3 k","pays":"US"}]},{"nom":"Crsel","store":"Crsel: Carrousel & Story Maker","logo":"/media/simulateur/crsel.jpg","comptes":14,"comptesFR":0,"videosSemaine":104,"meilleure":{"vues":"6,8 k","compte":"emilycreatescontent","video":"7710974418348035359"},"note":{"note":"4,7","avis":"1,2 k"},"prix":{"min":"5,99","max":"29,99"},"accroches":[],"quoi":"Carrousel & Story Maker","reseau":[{"pseudo":"withgeorgy","abonnes":"199 k","vuesMed":"37,8 k","pays":"PL"},{"pseudo":"val_edits162","abonnes":"15,6 k","vuesMed":"4,9 k","pays":"PL"},{"pseudo":"creatlvblin","abonnes":"1,3 k","vuesMed":"3,4 k","pays":"PL"},{"pseudo":"sarahs_collages","abonnes":"3,5 k","vuesMed":"1,9 k","pays":"DE"},{"pseudo":"crselautenticooficial","abonnes":"11,6 k","vuesMed":"1,5 k","pays":"CO"},{"pseudo":"myaplikasiku","abonnes":"163","vuesMed":"1,4 k","pays":"ID"}]},{"nom":"VanDraw","store":"VanDraw","logo":"/media/simulateur/vandraw.jpg","comptes":19,"comptesFR":0,"videosSemaine":73,"meilleure":{"vues":"73,1 k","compte":"inspovikk","video":"7711450203571719444"},"note":{"note":"4,6","avis":"173"},"prix":{"min":"6,00","max":"60,00"},"accroches":[{"texte":"grand theft auto","vuesTxt":"57,1 k","compte":"inspovikk","comptes":1,"video":"7711450203571719444"}],"quoi":"App de dessin qui permet de dessiner des avatars et des personnages à partir des commentaires ou de photos","reseau":[{"pseudo":"simpleartjournal","abonnes":"12,5 k","vuesMed":"40 k","pays":"BR"},{"pseudo":"shezuun","abonnes":"840","vuesMed":"11,1 k","pays":"ID"},{"pseudo":"inspovikk","abonnes":"495","vuesMed":"9,4 k","pays":"UA"},{"pseudo":"john.arts.drawing","abonnes":"7,4 k","vuesMed":"6,5 k","pays":"PH"},{"pseudo":"lia.squisy_art","abonnes":"631","vuesMed":"3,8 k","pays":"ID"},{"pseudo":"draw4chilll","abonnes":"1,2 k","vuesMed":"3,8 k","pays":"US"}]}]},{"nom":"Langues","apps":36,"vuesParVideo":6669,"top":[{"nom":"Vocabulary","store":"Vocabulary - Apprenez mots","logo":"/media/simulateur/vocabulary.jpg","comptes":71,"comptesFR":0,"videosSemaine":637,"meilleure":{"vues":"4,2 k","compte":"edforyou6","video":"7710309824344460566"},"note":{"note":"4,7","avis":"4 k"},"prix":{"min":"5,99","max":"59,99"},"accroches":[{"texte":"My roommate told me about this sound which blocks your brain from overthinking. I’ve been listening for 4 hours straight","vuesTxt":"6,5 k","compte":"itskatiegirl8","comptes":11,"video":"7710312659320638751"},{"texte":"when people are using klarna to make payments to play the new GTA but I'm only $19 away from getting it using this app called vybs","vuesTxt":"3 k","compte":"lobotomized_fish101","comptes":9,"video":"7710387036712111373"},{"texte":"Sous vide burger","vuesTxt":"977","compte":"hazaeyrw6ue","comptes":1,"video":"7710757769732738334"}],"quoi":"Apprenez mots","reseau":[{"pseudo":"app.lingopic","abonnes":"82 k","vuesMed":"32,2 k","pays":"US"},{"pseudo":"yocable.app","abonnes":"17","vuesMed":"2,1 k","pays":"PH"},{"pseudo":"linds.learning","abonnes":"92","vuesMed":"2 k","pays":"US"},{"pseudo":"daisy.another.inc","abonnes":"24","vuesMed":"1,4 k","pays":"GB"},{"pseudo":"littlespanishdail","abonnes":"449","vuesMed":"1,1 k","pays":"US"},{"pseudo":"amanda.eats45","abonnes":"36","vuesMed":"900","pays":"US"}]},{"nom":"Pingo AI","store":"Apprendre des langues Pingo AI","logo":"/media/simulateur/pingo-ai.jpg","comptes":147,"comptesFR":7,"videosSemaine":480,"meilleure":{"vues":"78,3 k","compte":"nadiaspeaksgerman","video":"7711006014425795861"},"note":{"note":"4,6","avis":"1,8 k"},"prix":{"min":"14,99","max":"119,99"},"accroches":[{"texte":"· · WHO ARE YOU? · I ASKED BETTER! · I’M A BRITISH AI!!! · WHAT?? · YOUR VOICE SOUNDS UGLY! · WHAAAAT?? · WHAAAAT????!?? · WHAAAA-","vuesTxt":"246 k","compte":"englishgurukat","comptes":2,"video":"7708769313393511687"},{"texte":"¿Quién dijo la frase? official Spanish nationality exam","vuesTxt":"198 k","compte":"camilopolyglot","comptes":3,"video":"7710652660596133142"},{"texte":"How do you say \"green flag\" in Chinese","vuesTxt":"173 k","compte":"howtosaynihao","comptes":4,"video":"7710191199314824469"}],"quoi":"Application d'apprentissage des langues par IA qui corrige les phrases et répond aux questions de vocabulaire","reseau":[{"pseudo":"britttttspanishlearning","abonnes":"202 k","vuesMed":"674 k","pays":"US"},{"pseudo":"maksim_po_russki","abonnes":"39 k","vuesMed":"554 k","pays":"BR"},{"pseudo":"yuli_portuguese","abonnes":"88,7 k","vuesMed":"237 k","pays":"BR"},{"pseudo":"maris.german","abonnes":"11 k","vuesMed":"195 k","pays":"EE"},{"pseudo":"violla.languages","abonnes":"7,7 k","vuesMed":"193 k","pays":"IT"},{"pseudo":"sabinelearnsfrench","abonnes":"53,1 k","vuesMed":"178 k","pays":"US"}]},{"nom":"Bunpo","store":"Bunpo: Apprendre les langues","logo":"/media/simulateur/bunpo.jpg","comptes":86,"comptesFR":0,"videosSemaine":206,"meilleure":{"vues":"18,9 k","compte":"frenchwithlars","video":"7709922289172647201"},"note":{"note":"4,8","avis":"1,1 k"},"prix":{"min":"9,99","max":"99,99"},"accroches":[{"texte":"I don’t have money お金が ありません","vuesTxt":"344 k","compte":"bunpo_learnjapanese","comptes":1,"video":"7709163578669960481"},{"texte":"you’re a villain but you’re still learning Japanese 日本語勉強中のラスボス この漢字が読めないんだけど I actually can't read that kanji","vuesTxt":"44,3 k","compte":"studytomodachi","comptes":1,"video":"7710927397977197844"},{"texte":"Anzeige Learning Spanish while eating fruit","vuesTxt":"20,2 k","compte":"vittoria.aprende","comptes":1,"video":"7709806475069230358"}],"quoi":"Apprendre les langues","reseau":[{"pseudo":"germanwithgitte","abonnes":"1,1 k","vuesMed":"41,8 k","pays":"BE"},{"pseudo":"studytomodachi","abonnes":"23,9 k","vuesMed":"23,6 k","pays":"JP"},{"pseudo":"moco.minute","abonnes":"4,7 k","vuesMed":"15,1 k","pays":"VN"},{"pseudo":"japanesewithgia","abonnes":"16,6 k","vuesMed":"8,4 k","pays":"JP"},{"pseudo":"snowstudy.kr","abonnes":"15,9 k","vuesMed":"5,3 k","pays":"US"},{"pseudo":"koreanseonghy","abonnes":"3,7 k","vuesMed":"4,5 k","pays":"KR"}]}]},{"nom":"Études","apps":35,"vuesParVideo":4542,"top":[{"nom":"Aistote","store":"Aistote : QUIZ IA","logo":"/media/simulateur/aistote.jpg","comptes":46,"comptesFR":6,"videosSemaine":532,"meilleure":{"vues":"206 k","compte":"wow_its_clifford","video":"7711615369651277087"},"note":{"note":"4,5","avis":"2,4 k"},"prix":{"min":"8,99","max":"49,99"},"accroches":[{"texte":"POV: you use a big word in your English essay and pray it means what you think it means","vuesTxt":"206 k","compte":"wow_its_clifford","comptes":1,"video":"7711615369651277087"},{"texte":"POV: you finally find a question you actually know and it's only worth 1 point","vuesTxt":"174 k","compte":"wow_its_clifford","comptes":1,"video":"7709376662114225439"},{"texte":"Le marché de Noël a ouvert à Nantes","vuesTxt":"89,9 k","compte":"arkenyxe","comptes":1,"video":"7709988833684770081"}],"quoi":"QUIZ IA","reseau":[{"pseudo":"elissastudyy","abonnes":"3 k","vuesMed":"2,3 k","pays":"US"},{"pseudo":"studywithme_vena","abonnes":"1,1 k","vuesMed":"2,3 k","pays":"US"},{"pseudo":"felix_studytips","abonnes":"54","vuesMed":"1,3 k","pays":"US"},{"pseudo":"aceofstudies","abonnes":"1,3 k","vuesMed":"1,3 k","pays":"US"},{"pseudo":"mat.astuces","abonnes":"512","vuesMed":"1,2 k","pays":"FR"},{"pseudo":"studytok_nessa","abonnes":"1,7 k","vuesMed":"1,1 k","pays":"US"}]},{"nom":"NurseMind","store":"NurseMind: AI Nursing Guide","logo":"/media/simulateur/nursemind.jpg","comptes":112,"comptesFR":0,"videosSemaine":435,"meilleure":{"vues":"2 k","compte":"learninghacks4u","video":"7711442404619881742"},"note":null,"prix":{"min":"9,99","max":"34,99"},"accroches":[{"texte":"these are the BEST outside the box ways to bring in some extra money","vuesTxt":"1,7 k","compte":"anicaa275","comptes":7,"video":"7710488999206341909"},{"texte":"3 things I bought this week just by playing cute mobile games on my phone","vuesTxt":"1,6 k","compte":"anicaa275","comptes":15,"video":"7710708717120916757"},{"texte":"if i could redo my first shift as a nurse what i'd do differently, from the first five minutes to clocking out.","vuesTxt":"1,5 k","compte":"doweknowhurrr","comptes":6,"video":"7709400617407614238"}],"quoi":"AI Nursing Guide","reseau":[{"pseudo":"cloud.drift02","abonnes":"1","vuesMed":"755","pays":"US"},{"pseudo":"growwithsade","abonnes":"1,9 k","vuesMed":"744","pays":"US"},{"pseudo":"everythingbella_3","abonnes":"58","vuesMed":"722","pays":"GB"},{"pseudo":"ugcbyciara","abonnes":"24","vuesMed":"697","pays":"CA"},{"pseudo":"nursemindhn","abonnes":"22","vuesMed":"683","pays":"HN"},{"pseudo":"glossyangelx7","abonnes":"7","vuesMed":"678","pays":"GB"}]},{"nom":"Diane AI","store":"Diane AI - Flashcards","logo":"/media/simulateur/diane-ai.jpg","comptes":53,"comptesFR":49,"videosSemaine":403,"meilleure":{"vues":"51,8 k","compte":"el1ott_lapt","video":"7710371564923014432"},"note":{"note":"4,6","avis":"385"},"prix":{"min":"19,99","max":"89,99"},"accroches":[{"texte":"« Votre motivation pour réviser les partiels » · « Parce que faut être motivé en plus ? »","vuesTxt":"109 k","compte":"jade_dianeai","comptes":1,"video":"7710994709463715105"},{"texte":"On se retrouve à 8h pour aller à la bu mais on est ni du matin ni des partiels","vuesTxt":"87,3 k","compte":"jade_dianeai","comptes":2,"video":"7712069998566559015"},{"texte":"Juillet 2025, j'obtiens mon bac, j'ai officiellement terminé le lycée ...","vuesTxt":"71,8 k","compte":"el1ott_lapt","comptes":1,"video":"7708731515743604001"}],"quoi":"Flashcards","reseau":[{"pseudo":"oldberouitsa","abonnes":"4,1 k","vuesMed":"26,1 k","pays":"DZ"},{"pseudo":"jade_dianeai","abonnes":"1,3 k","vuesMed":"11,4 k","pays":"FR"},{"pseudo":"julye_aoot","abonnes":"1,8 k","vuesMed":"6,6 k","pays":"FR"},{"pseudo":"fantine.diane","abonnes":"452","vuesMed":"6,5 k","pays":"FR"},{"pseudo":"shana_diane","abonnes":"2,3 k","vuesMed":"5,1 k","pays":"FR"},{"pseudo":"studyemilie.dianeai","abonnes":"2,4 k","vuesMed":"4,9 k","pays":"FR"}]}]},{"nom":"Productivité","apps":27,"vuesParVideo":4020,"top":[{"nom":"TapCook","store":"TapCook: Budget Meal Plans","logo":"/media/simulateur/tapcook.jpg","comptes":184,"comptesFR":0,"videosSemaine":3342,"meilleure":{"vues":"31,7 k","compte":"mealprepsteve","video":"7711485707772054792"},"note":{"note":"4,5","avis":"2"},"prix":{"min":"9,99","max":"34,99"},"accroches":[{"texte":"¿EN COSTCO CON UN PRESUPUESTO AL AZAR?","vuesTxt":"6,2 k","compte":"laurapresupuesto","comptes":2,"video":"7711195276014374157"},{"texte":"No Frills Canada $45 to Feed 8 people Dinners for two days this weekend","vuesTxt":"4,6 k","compte":"grocevypwoq","comptes":31,"video":"7710684040143146260"},{"texte":"$80 this week for a family of 4!","vuesTxt":"3,9 k","compte":"familytips44","comptes":49,"video":"7711872874465840402"}],"quoi":"Budget Meal Plans","reseau":[{"pseudo":"kimbudgets","abonnes":"74","vuesMed":"3,7 k","pays":"CA"},{"pseudo":"symoneakira.cooks","abonnes":"4","vuesMed":"1,2 k","pays":"US"},{"pseudo":"nickistrunk.cooks","abonnes":"982","vuesMed":"1,1 k","pays":"US"},{"pseudo":"lulu.budget","abonnes":"126","vuesMed":"601","pays":"CA"},{"pseudo":"janelyncook","abonnes":"57","vuesMed":"564","pays":"CA"},{"pseudo":"taylor.budget","abonnes":"10","vuesMed":"357","pays":"US"}]},{"nom":"FocusTown","store":"FocusTown : Minuteur Pomodoro","logo":"/media/simulateur/focustown.jpg","comptes":50,"comptesFR":0,"videosSemaine":432,"meilleure":{"vues":"165 k","compte":"yellen_forellen","video":"7707246180899573025"},"note":{"note":"4,7","avis":"2,1 k"},"prix":{"min":"0,99","max":"34,99"},"accroches":[{"texte":"why does this study room kinda looks like a horror movie","vuesTxt":"5,7 k","compte":"amiesstudycorner","comptes":1,"video":"7709462763969514785"},{"texte":"macbeth is so much more interesting when you realise it’s basically a fan fic","vuesTxt":"4,6 k","compte":"downtownacademic","comptes":1,"video":"7710709185335315715"},{"texte":"WAIT THERE‘S A WINTER CAFE TO READ WITH FRIENDS ONLINE?!","vuesTxt":"3,9 k","compte":"amiesstudycorner","comptes":1,"video":"7711991636317801761"}],"quoi":"Minuteur Pomodoro","reseau":[{"pseudo":"jiwoostudy","abonnes":"7,2 k","vuesMed":"29,7 k","pays":"KR"},{"pseudo":"jsparkstudy","abonnes":"2,9 k","vuesMed":"8,1 k","pays":"GB"},{"pseudo":"amiesstudycorner","abonnes":"937","vuesMed":"4,2 k","pays":"DE"},{"pseudo":"lisa.studycorner","abonnes":"4,9 k","vuesMed":"3 k","pays":"AL"},{"pseudo":"alessio.studies","abonnes":"5 k","vuesMed":"2,5 k","pays":"CA"},{"pseudo":"allie.studycorner","abonnes":"3,5 k","vuesMed":"2,5 k","pays":"US"}]},{"nom":"EcoGPT","store":"EcoGPT","logo":"/media/simulateur/ecogpt.jpg","comptes":130,"comptesFR":0,"videosSemaine":426,"meilleure":{"vues":"98,4 k","compte":"ecowithlourdes","video":"7709927167127325973"},"note":{"note":"4,7","avis":"1,3 k"},"prix":{"min":"6,99","max":"79,99"},"accroches":[{"texte":"Coincidences that could happen only once in a lifetime","vuesTxt":"1,7 M","compte":"plainachos","comptes":1,"video":"7707806717182004511"},{"texte":"Photos of times people forgot something and faced the consequences Pt.13","vuesTxt":"1,5 M","compte":"plainachos","comptes":2,"video":"7708832040137035038"},{"texte":"La vaquita marina está extinta","vuesTxt":"901 k","compte":"ecologiacongaby","comptes":8,"video":"7710416614897880340"}],"quoi":"Application d'IA conversationnelle présentée par les créatrices comme un moyen d'agir pour la planète à travers ses usages quotidiens","reseau":[{"pseudo":"blueforgood","abonnes":"528 k","vuesMed":"549 k","pays":"GB"},{"pseudo":"devix516","abonnes":"95,8 k","vuesMed":"126 k","pays":"DE"},{"pseudo":"plainachos","abonnes":"47 k","vuesMed":"77,3 k","pays":"US"},{"pseudo":"savetheplanettoday1","abonnes":"133 k","vuesMed":"63 k","pays":"GB"},{"pseudo":"earthsimpact","abonnes":"63,7 k","vuesMed":"34,9 k","pays":"GB"},{"pseudo":"ecogpt.vale","abonnes":"71,2 k","vuesMed":"33,8 k","pays":"MX"}]}]},{"nom":"Foi","apps":23,"vuesParVideo":4871,"top":[{"nom":"Sacred Shorts","store":"Sacred Shorts: Bible Videos","logo":"/media/simulateur/sacred-shorts.jpg","comptes":54,"comptesFR":0,"videosSemaine":715,"meilleure":{"vues":"392","compte":"guadalupedolores33","video":"7710685921921731861"},"note":{"note":"5,0","avis":"2"},"prix":{"min":"14,99","max":"69,99"},"accroches":[{"texte":"le regalé esto a mi mamá en su cumpleaños y lloró","vuesTxt":"190","compte":"julianagarcia4007","comptes":2,"video":"7709334200461151508"},{"texte":"pidió su herencia antes de tiempo y la perdió toda","vuesTxt":"183","compte":"alexandraquizano","comptes":3,"video":"7708835521094798612"},{"texte":"mi hermano en el ejército me pidió que se la recomendara","vuesTxt":"181","compte":"melisagomez747","comptes":4,"video":"7708834799347174708"}],"quoi":"Bible Videos","reseau":[{"pseudo":"lucia.pilar98","abonnes":"22","vuesMed":"146","pays":"MX"},{"pseudo":"estheravv0","abonnes":"73","vuesMed":"146","pays":"MX"},{"pseudo":"vic_predica","abonnes":"33","vuesMed":"142","pays":"MX"},{"pseudo":"gabby_guille","abonnes":"30","vuesMed":"139","pays":"MX"},{"pseudo":"peyton.walker96","abonnes":"3","vuesMed":"74","pays":"US"}]},{"nom":"Tarteel","store":"Tarteel: Coran et Mémorisation","logo":"/media/simulateur/tarteel.jpg","comptes":50,"comptesFR":4,"videosSemaine":217,"meilleure":{"vues":"10,4 k","compte":"tarteel.travel","video":"7711109620495928589"},"note":{"note":"4,8","avis":"2,9 k"},"prix":{"min":"14,99","max":"249,99"},"accroches":[{"texte":"“Find peace in Quran after a long day”","vuesTxt":"34,8 k","compte":"muhammadibrahim007458","comptes":1,"video":"7710354141012380935"},{"texte":"MK : Muroja'ah dengan irama \"jiharka\"","vuesTxt":"34,5 k","compte":"iqbalrajasaa","comptes":1,"video":"7709421671882427654"},{"texte":"POV: Your friend gets put in charge of the Hifz class","vuesTxt":"16,7 k","compte":"zafrul18","comptes":1,"video":"7711058774496169238"}],"quoi":"Coran et Mémorisation","reseau":[{"pseudo":"islamic.clips113","abonnes":"4,7 k","vuesMed":"104 k","pays":"EG"},{"pseudo":"nassim_2510","abonnes":"76,9 k","vuesMed":"60,8 k","pays":"FR"},{"pseudo":"iqbalrajasaa","abonnes":"389 k","vuesMed":"58,2 k","pays":"ID"},{"pseudo":"muhammadibrahim007458","abonnes":"99,7 k","vuesMed":"46,2 k","pays":"GH"},{"pseudo":"sanasidiabasse","abonnes":"967 k","vuesMed":"28,2 k","pays":"EG"},{"pseudo":"mazeyy","abonnes":"91,9 k","vuesMed":"22,1 k","pays":"GB"}]},{"nom":"Scroll The Bible","store":"Scroll The Bible","logo":"/media/simulateur/scroll-the-bible.jpg","comptes":29,"comptesFR":0,"videosSemaine":159,"meilleure":{"vues":"665 k","compte":"juless4jesus","video":"7711219585697058062"},"note":{"note":"4,9","avis":"30"},"prix":{"min":"5,99","max":"44,99"},"accroches":[{"texte":"God wants you To pray against Anxiety & worry!","vuesTxt":"14,2 k","compte":"cirley.ruballo","comptes":2,"video":"7711527992677174559"},{"texte":"God wants you to hear his voice this week","vuesTxt":"12,3 k","compte":"jodavscroll","comptes":1,"video":"7711583732796378382"},{"texte":"A message from God for YOU","vuesTxt":"6,3 k","compte":"jodavscroll","comptes":1,"video":"7711615722098527502"}],"quoi":"App qui propose des sujets de prière quotidiens et des passages bibliques à partir de la Parole de Dieu","reseau":[{"pseudo":"gabereadsbible","abonnes":"13,7 k","vuesMed":"20 k","pays":"US"},{"pseudo":"leila.lovesjesus","abonnes":"3,9 k","vuesMed":"14,8 k","pays":"US"},{"pseudo":"johnsbiblescrolls","abonnes":"1,4 k","vuesMed":"11,5 k","pays":"US"},{"pseudo":"cirley.ruballo","abonnes":"4,4 k","vuesMed":"8,2 k","pays":"US"},{"pseudo":"audrey.scrollthebible","abonnes":"20,9 k","vuesMed":"7,5 k","pays":"US"},{"pseudo":"izackforchrist","abonnes":"10,2 k","vuesMed":"5,3 k","pays":"US"}]}]},{"nom":"Beauté IA","apps":23,"vuesParVideo":11777,"top":[{"nom":"Fits","store":"Fits – Closet & Outfit Maker","logo":"/media/simulateur/fits.jpg","comptes":11,"comptesFR":1,"videosSemaine":67,"meilleure":{"vues":"699","compte":".username._.com","video":"7710009869608307971"},"note":{"note":"4,5","avis":"1,3 k"},"prix":{"min":"1,99","max":"79,99"},"accroches":[],"quoi":"Closet & Outfit Maker","reseau":[]},{"nom":"Tatship","store":"Tatship: Simulateur Tatouage","logo":"/media/simulateur/tatship.jpg","comptes":3,"comptesFR":0,"videosSemaine":30,"meilleure":{"vues":"1,5 k","compte":"tatshiphq","video":"7711336534154218765"},"note":{"note":"4,4","avis":"118"},"prix":{"min":"14,99","max":"39,99"},"accroches":[{"texte":"Tattoo request forms are HARD for clients","vuesTxt":"106","compte":"tatshiphq","comptes":1,"video":"7712079092878757133"},{"texte":"my tattoo artist just sent me this app to use before my appointment","vuesTxt":"38","compte":"tatshiphq","comptes":1,"video":"7711801152064572703"}],"quoi":"Simulateur Tatouage","reseau":[{"pseudo":"theinkdiary6","abonnes":"245","vuesMed":"1,7 k","pays":"US"},{"pseudo":"tattooswithjas","abonnes":"62","vuesMed":"564","pays":"US"},{"pseudo":"tatshiphq","abonnes":"663","vuesMed":"103","pays":"US"}]},{"nom":"Closfi","store":"Closfi: Tu Clóset Virtual IA","logo":"/media/simulateur/closfi.jpg","comptes":21,"comptesFR":0,"videosSemaine":19,"meilleure":{"vues":"4,5 k","compte":"carolina_outfits","video":"7709294200990321926"},"note":null,"prix":{"min":"3,99","max":"59,99"},"accroches":[],"quoi":"Tu Clóset Virtual IA","reseau":[{"pseudo":"rosa.anaya.rivera","abonnes":"36","vuesMed":"1,8 k","pays":"CO"},{"pseudo":"mcami.style","abonnes":"15","vuesMed":"1,2 k","pays":"CO"},{"pseudo":"lisyeoutfits_","abonnes":"30","vuesMed":"843","pays":"CO"},{"pseudo":"mariangelic_7","abonnes":"6","vuesMed":"800","pays":"CO"},{"pseudo":"closfi.app","abonnes":"1,3 k","vuesMed":"796","pays":"CO"},{"pseudo":"nazafashion24","abonnes":"24","vuesMed":"782","pays":"CO"}]}]},{"nom":"Jalousie et ex","apps":22,"vuesParVideo":4219,"top":[{"nom":"The Cringe","store":"The Cringe: Chat Wrapped","logo":"/media/simulateur/the-cringe.jpg","comptes":14,"comptesFR":2,"videosSemaine":95,"meilleure":{"vues":"144 k","compte":"ele_peivateaccoun","video":"7710709720662674721"},"note":{"note":"4,0","avis":"849"},"prix":{"min":"9,99","max":"44,99"},"accroches":[],"quoi":"Chat Wrapped","reseau":[{"pseudo":"paul.crown4","abonnes":"104","vuesMed":"33,4 k","pays":"FR"},{"pseudo":"andra_privateacc","abonnes":"2,8 k","vuesMed":"8,4 k","pays":"RO"},{"pseudo":"anastasia_private3","abonnes":"412","vuesMed":"4,8 k","pays":"DE"},{"pseudo":"laure_privateacco","abonnes":"163","vuesMed":"3,8 k","pays":"FR"},{"pseudo":"dorcsyy_privateacc2","abonnes":"401","vuesMed":"2 k","pays":"HU"},{"pseudo":"privateacc_lucy","abonnes":"1,2 k","vuesMed":"1,3 k","pays":"ES"}]},{"nom":"Red Flag","store":"Red Flag: Track Recent Follows","logo":"/media/simulateur/red-flag.jpg","comptes":21,"comptesFR":0,"videosSemaine":0,"meilleure":null,"note":{"note":"5,0","avis":"1"},"prix":{"min":"3,99","max":"89,99"},"accroches":[],"quoi":"Track Recent Follows","reseau":[{"pseudo":"loveradaron","abonnes":"45","vuesMed":"1,6 k","pays":"US"},{"pseudo":"lovesignalcheck","abonnes":"9","vuesMed":"1,5 k","pays":"US"},{"pseudo":"theglowupfiles0","abonnes":"2","vuesMed":"1,5 k","pays":"US"},{"pseudo":"theredflagfiles","abonnes":"4","vuesMed":"1,4 k","pays":"US"},{"pseudo":"emotionalredflags","abonnes":"321","vuesMed":"1,4 k","pays":"US"},{"pseudo":"decodeyourdesign","abonnes":"2","vuesMed":"1,2 k","pays":"US"}]},{"nom":"Lucen","store":"Lucen: AI Text Dating Advice","logo":"/media/simulateur/lucen.jpg","comptes":1,"comptesFR":0,"videosSemaine":0,"meilleure":null,"note":null,"prix":null,"accroches":[],"quoi":"AI Text Dating Advice","reseau":[{"pseudo":"kerijagal","abonnes":"109","vuesMed":"716","pays":"US"}]}]},{"nom":"Bien-être mental","apps":18,"vuesParVideo":1580,"top":[{"nom":"Daimon","store":"Daimon: Honest Advice","logo":"/media/simulateur/daimon.jpg","comptes":5,"comptesFR":0,"videosSemaine":26,"meilleure":{"vues":"304 k","compte":"evelyn.0935","video":"7710878609850010910"},"note":{"note":"4,9","avis":"904"},"prix":{"min":"0,99","max":"9,99"},"accroches":[],"quoi":"Honest Advice","reseau":[{"pseudo":"siennaa260","abonnes":"511","vuesMed":"1,1 k","pays":"US"}]},{"nom":"Gratitude Plus","store":"Gratitude Plus – Journal","logo":"/media/simulateur/gratitude-plus.jpg","comptes":5,"comptesFR":0,"videosSemaine":24,"meilleure":{"vues":"10,2 k","compte":"chaos_butmakeitcute_ish","video":"7711057129750203662"},"note":{"note":"4,9","avis":"41"},"prix":{"min":"6,99","max":"399,99"},"accroches":[{"texte":"I was tired of checking by bank account before every purchase So I started making videos of myself doing simple tasks around the house And p","vuesTxt":"275","compte":"pis.taschio","comptes":1,"video":"7711600228968762637"}],"quoi":"Journal","reseau":[{"pseudo":"gratitudebrooklyn","abonnes":"48","vuesMed":"24,8 k","pays":"US"},{"pseudo":"chaos_butmakeitcute_ish","abonnes":"16","vuesMed":"326","pays":"US"},{"pseudo":"gratitude.caroline","abonnes":"575","vuesMed":"293","pays":"US"},{"pseudo":"jane.gratitude","abonnes":"407","vuesMed":"267","pays":"US"},{"pseudo":"pis.taschio","abonnes":"4","vuesMed":"128","pays":"US"}]},{"nom":"Cora","store":"Cora - Become Her","logo":"/media/simulateur/cora.jpg","comptes":3,"comptesFR":0,"videosSemaine":4,"meilleure":{"vues":"737","compte":"becomingherpru","video":"7711053380331883798"},"note":{"note":"4,4","avis":"34"},"prix":{"min":"6,99","max":"49,99"},"accroches":[],"quoi":"Become Her","reseau":[{"pseudo":"chloefitco","abonnes":"48","vuesMed":"1,6 k","pays":"US"},{"pseudo":"becomingherpru","abonnes":"777","vuesMed":"737","pays":"GB"},{"pseudo":"fitnesswithcorrin","abonnes":"34","vuesMed":"448","pays":"US"}]}]},{"nom":"Séduction IA","apps":17,"vuesParVideo":18550,"top":[{"nom":"Liggo","store":"Liggo: Phrases de Drague IA","logo":"/media/simulateur/liggo.jpg","comptes":17,"comptesFR":0,"videosSemaine":111,"meilleure":{"vues":"492 k","compte":"inspectordelrizz","video":"7710020762337365268"},"note":{"note":"5,0","avis":"2"},"prix":{"min":"3,99","max":"39,99"},"accroches":[{"texte":"quien me acompaña a un casamiento quien es la afortunada?","vuesTxt":"492 k","compte":"inspectordelrizz","comptes":2,"video":"7710020762337365268"},{"texte":"mi Sabés bien que nunca de cosas por vos, siempre fu JAJAJAJ QUE MANERA DE REÍRME que romántico que sos amigo!! mi wacha está durmiendo al l","vuesTxt":"58,1 k","compte":"santidigraziaa","comptes":1,"video":"7710072887532604693"},{"texte":"DIOSITO DESÉAME SUERTE","vuesTxt":"33,4 k","compte":"mrrizz49","comptes":1,"video":"7710027247943568662"}],"quoi":"Phrases de Drague IA","reseau":[{"pseudo":"elbegsito_","abonnes":"891 k","vuesMed":"190 k","pays":"PE"},{"pseudo":"santidigraziaa","abonnes":"85,9 k","vuesMed":"42,4 k","pays":"AR"},{"pseudo":"profesorliggo","abonnes":"29,8 k","vuesMed":"21 k","pays":"AR"},{"pseudo":"leony2x","abonnes":"103 k","vuesMed":"17,1 k","pays":"AR"},{"pseudo":"la_mvnc","abonnes":"36,3 k","vuesMed":"10,4 k","pays":"CO"},{"pseudo":"storiedichatfakee","abonnes":"28,2 k","vuesMed":"7,9 k","pays":"IT"}]},{"nom":"Trick AI","store":"Trick AI","logo":"/media/simulateur/trick-ai.jpg","comptes":2,"comptesFR":0,"videosSemaine":36,"meilleure":{"vues":"70,8 k","compte":"ustamanipulator","video":"7709913632540200199"},"note":{"note":"5,0","avis":"1"},"prix":{"min":"1,99","max":"69,99"},"accroches":[{"texte":"Beni arkadaş bölgesine attı. Sonra arkadaşlığımdan şikâyet etti.","vuesTxt":"1,2 k","compte":"manipulasyonustasi","comptes":1,"video":"7711809213969763591"},{"texte":"Partide başka biriyle öpüştü. Ertesi gün \"sarhoştum, sayılmaz\" dedi.","vuesTxt":"385","compte":"manipulasyonustasi","comptes":1,"video":"7711747195254410504"},{"texte":"Beni telefonuna \"Ayşe Hoca\" diye kaydetmiş. Meğer başka biriyle sevgiliymiş.","vuesTxt":"304","compte":"ustamanipulator","comptes":1,"video":"7711360663272099079"}],"quoi":"Application qui aide à décoder et écrire les messages dans une conversation amoureuse, avec des conseils de réponse","reseau":[{"pseudo":"manipulasyonustasi","abonnes":"2,5 k","vuesMed":"1,2 k","pays":"TR"},{"pseudo":"ustamanipulator","abonnes":"2,3 k","vuesMed":"870","pays":"TR"}]},{"nom":"Yazcam","store":"Yazcam : Assistant Chat IA","logo":"/media/simulateur/yazcam.jpg","comptes":2,"comptesFR":0,"videosSemaine":10,"meilleure":{"vues":"7,8 k","compte":"alfaflort","video":"7710996900811525383"},"note":null,"prix":{"min":"5,99","max":"79,99"},"accroches":[{"texte":"1 Haftadır konuştuğum Flört \"sevgilim var\" dedi","vuesTxt":"4,2 k","compte":"tavlarizz","comptes":1,"video":"7711472131514617106"},{"texte":"POV: Kız 'ben çok kıskancım, baştan söyleyeyim' dedi ve sen kıskançlık yarışması açtın","vuesTxt":"553","compte":"alfaflort","comptes":1,"video":"7711831768579493138"}],"quoi":"Assistant Chat IA","reseau":[{"pseudo":"tavlarizz","abonnes":"3 k","vuesMed":"5,2 k","pays":"TR"},{"pseudo":"alfaflort","abonnes":"238","vuesMed":"3,5 k","pays":"TR"}]}]},{"nom":"Rencontres","apps":17,"vuesParVideo":9647,"top":[{"nom":"Bump","store":"Bump - va voir tes amis IRL","logo":"/media/simulateur/bump.jpg","comptes":74,"comptesFR":7,"videosSemaine":302,"meilleure":{"vues":"621 k","compte":"brendon.bump","video":"7710034092078763286"},"note":{"note":"4,9","avis":"12 k"},"prix":{"min":"2,49","max":"34,99"},"accroches":[{"texte":"Azt mondja ne talizzunk ma, sokat dolgozott, inkább alszik... Most tényleg ennyire madárnak tűnök?","vuesTxt":"779 k","compte":"szaffi.bump","comptes":4,"video":"7708325383120178454"},{"texte":"Bumpon a kacsás játékba is lehetne ilyen funkció","vuesTxt":"621 k","compte":"brendon.bump","comptes":2,"video":"7710034092078763286"},{"texte":"Avisando al resto del grupo que encontramos EL sitio","vuesTxt":"345 k","compte":"gabyb2609","comptes":1,"video":"7709923930659704096"}],"quoi":"Va voir tes amis IRL","reseau":[{"pseudo":"sofi.bump","abonnes":"959","vuesMed":"233 k","pays":"BE"},{"pseudo":"riribump8","abonnes":"886","vuesMed":"138 k","pays":"FR"},{"pseudo":"radatedi.bump","abonnes":"1,6 k","vuesMed":"115 k","pays":"BG"},{"pseudo":"dany.bump","abonnes":"3,4 k","vuesMed":"110 k","pays":"CZ"},{"pseudo":"julioo.no","abonnes":"4,1 k","vuesMed":"74,9 k","pays":"FR"},{"pseudo":"eden.x.bump","abonnes":"1,7 k","vuesMed":"67,1 k","pays":"IL"}]},{"nom":"Milionegle","store":"Milionegle","logo":"/media/simulateur/milionegle.jpg","comptes":6,"comptesFR":0,"videosSemaine":65,"meilleure":{"vues":"5,1 k","compte":"rebecca.emprende","video":"7710313631069654294"},"note":null,"prix":{"min":"0,99","max":"49,99"},"accroches":[{"texte":"Hackearon la web de mi cliente y me llamó diciendo que fue mi culpa.","vuesTxt":"10,3 k","compte":"gonzles1258","comptes":1,"video":"7711506773764623636"},{"texte":"con una aplicación","vuesTxt":"1,3 k","compte":"hurtaldo","comptes":1,"video":"7711059996775173398"},{"texte":"Entregué la web, el cliente dijo «perfecto» y nunca pagó los últimos $700.","vuesTxt":"1,2 k","compte":"gonzles1258","comptes":1,"video":"7711433814211366165"}],"quoi":"App pour rencontrer d'autres entrepreneurs et développer une mentalité entrepreneuriale","reseau":[{"pseudo":"hurtaldo","abonnes":"4,2 k","vuesMed":"1,2 k","pays":"ES"},{"pseudo":"gonzles1258","abonnes":"55","vuesMed":"1,1 k","pays":"GT"},{"pseudo":"arnauinsights","abonnes":"63","vuesMed":"870","pays":"ES"},{"pseudo":"enzo.lascano10","abonnes":"17","vuesMed":"699","pays":"ES"},{"pseudo":"alvaro.mangrac","abonnes":"4","vuesMed":"493","pays":"GT"},{"pseudo":"milionegle.com","abonnes":"294","vuesMed":null,"pays":"ES"}]},{"nom":"Dion","store":"Dion","logo":"/media/simulateur/dion.jpg","comptes":17,"comptesFR":0,"videosSemaine":41,"meilleure":{"vues":"8,3 k","compte":"gabyandsips","video":"7711092471748398354"},"note":{"note":"4,9","avis":"53"},"prix":{"min":"24,99","max":"359,99"},"accroches":[],"quoi":"Application de mise en relation sur invitation pour rencontrer de nouvelles personnes et développer son réseau","reseau":[{"pseudo":"dxbytheglass","abonnes":"222","vuesMed":"7,5 k","pays":"AE"},{"pseudo":"revekkapal","abonnes":"475","vuesMed":"2,6 k","pays":"US"},{"pseudo":"dxbgirlsclub","abonnes":"204","vuesMed":"1,8 k","pays":"AE"},{"pseudo":"_littlelondonlife","abonnes":"70","vuesMed":"1,6 k","pays":"GB"},{"pseudo":"psmiamivibes","abonnes":"48","vuesMed":"744","pays":"ES"},{"pseudo":"genevainmiami","abonnes":"257","vuesMed":"708","pays":"US"}]}]},{"nom":"Finance","apps":17,"vuesParVideo":4049,"top":[{"nom":"Zoya","store":"Zoya: Halal Investing App","logo":"/media/simulateur/zoya.jpg","comptes":4,"comptesFR":0,"videosSemaine":31,"meilleure":{"vues":"96 k","compte":"malak.finance","video":"7710788908916788494"},"note":{"note":"4,8","avis":"83"},"prix":{"min":"4,99","max":"129,99"},"accroches":[{"texte":"realizing that islam gives you instructions on everything including your finances, wealth, and halal investing","vuesTxt":"3,2 k","compte":"keishaonwealth","comptes":1,"video":"7711143938639400223"},{"texte":"girls who invest >","vuesTxt":"868","compte":"keishaonwealth","comptes":1,"video":"7711144567369731342"}],"quoi":"Halal Investing App","reseau":[]},{"nom":"WeStash","store":"WeStash: Budget & Épargne","logo":"/media/simulateur/westash.jpg","comptes":3,"comptesFR":0,"videosSemaine":30,"meilleure":{"vues":"4,3 k","compte":"eliestash","video":"7712115282680089878"},"note":{"note":"4,4","avis":"28"},"prix":{"min":"3,99","max":"24,99"},"accroches":[],"quoi":"Budget & Épargne","reseau":[{"pseudo":"lilistash56","abonnes":"99","vuesMed":"2 k","pays":"EE"},{"pseudo":"eliestash","abonnes":"343","vuesMed":"716","pays":"EE"},{"pseudo":"aliciastash","abonnes":"20","vuesMed":"510","pays":"EE"}]},{"nom":"Finzee","store":"Finzee - Budget planner","logo":"/media/simulateur/finzee.jpg","comptes":13,"comptesFR":11,"videosSemaine":20,"meilleure":{"vues":"270 k","compte":"budget.forgirls","video":"7711038070874819872"},"note":{"note":"4,8","avis":"791"},"prix":{"min":"4,99","max":"99,99"},"accroches":[],"quoi":"Budget planner","reseau":[{"pseudo":"budget.forgirls","abonnes":"2,8 k","vuesMed":"9,9 k","pays":"FR"},{"pseudo":"hello.budget","abonnes":"269","vuesMed":"4,9 k","pays":"FR"},{"pseudo":"lartdubudget","abonnes":"10,7 k","vuesMed":"3 k","pays":"NL"},{"pseudo":"economiesmalines1","abonnes":"12 k","vuesMed":"2,8 k","pays":"FR"},{"pseudo":"budget.julian","abonnes":"260","vuesMed":"1,2 k","pays":"FR"},{"pseudo":"finzee.app.budget","abonnes":"403","vuesMed":"971","pays":"FR"}]}]},{"nom":"Couple","apps":9,"vuesParVideo":5149,"top":[{"nom":"Amorly","store":"Amorly: Jeux de Couple & Quiz","logo":"/media/simulateur/amorly.jpg","comptes":2,"comptesFR":0,"videosSemaine":50,"meilleure":{"vues":"258 k","compte":"mayanowak076","video":"7710313265775054112"},"note":{"note":"2,0","avis":"2"},"prix":{"min":"5,99","max":"79,99"},"accroches":[{"texte":"4 oznaki, że twoja dziewczyna naprawdę cię kocha >>>","vuesTxt":"182 k","compte":"majanowak074","comptes":2,"video":"7711359646866345248"},{"texte":"Oznaki, że bombarduje cię miłością","vuesTxt":"15,8 k","compte":"mayanowak076","comptes":1,"video":"7711374442089286945"},{"texte":"13 czerwonych flag w związku ; Przeczytaj to >","vuesTxt":"556","compte":"mayanowak076","comptes":1,"video":"7711993201426582823"}],"quoi":"Jeux de Couple & Quiz","reseau":[{"pseudo":"majanowak074","abonnes":"7 k","vuesMed":"18 k","pays":"PL"},{"pseudo":"mayanowak076","abonnes":"871","vuesMed":"3,8 k","pays":"PL"}]},{"nom":"Pukutan","store":"Pukutan: Journal & Élevage","logo":"/media/simulateur/pukutan.jpg","comptes":30,"comptesFR":0,"videosSemaine":37,"meilleure":{"vues":"4,5 k","compte":"kydropout","video":"7709343468132322580"},"note":{"note":"4,5","avis":"2"},"prix":{"min":"0,99","max":"69,99"},"accroches":[],"quoi":"Journal & Élevage","reseau":[{"pseudo":"pukutan_eileen","abonnes":"11","vuesMed":"1,7 k","pays":"JP"},{"pseudo":"zhangaxing99","abonnes":"96","vuesMed":"1,6 k","pays":"CN"},{"pseudo":"kawaiipukutan","abonnes":"47","vuesMed":"1,3 k","pays":"JP"},{"pseudo":"vivi._.desu","abonnes":"84","vuesMed":"1,1 k","pays":"CN"},{"pseudo":"pukutan_jp","abonnes":"175","vuesMed":"1 k","pays":"JP"},{"pseudo":"yukarin_coco","abonnes":"1,5 k","vuesMed":"1 k","pays":"JP"}]}]}]};
     const NICHES = DATA.niches;
     const NNBSP = " ", NBSP = " ";
     const AMOUNTS = [500, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 30000];
@@ -42,13 +42,36 @@ export default class SimulateurMobile extends DCLogic {
         .replace(/\s+/g, " ").replace(/\s+([,.;:…])/g, "$1").trim();
     }
     function bgOf(u) { return u ? "background-image: url(" + u + ");" : ""; }
+    // Le lecteur TikTok de la fiche vidéo de l'app (src/app/pages/MVideo.js), sans lecture automatique.
+    function embed(id) { return /^\d+$/.test(String(id || "")) ? "https://www.tiktok.com/player/v1/" + id + "?rel=0&description=0&music_info=0&native_context_menu=0" : ""; }
+    function profil(p) { return /^[A-Za-z0-9._]{1,64}$/.test(String(p || "")) ? "https://www.tiktok.com/@" + p : ""; }
+    // Le relevé coupe les accroches à 140 caractères : on coupe au dernier mot, avec « … ».
+    function cut(t) {
+      if (t.length < 140) return t;
+      const sp = t.lastIndexOf(" ", 139);
+      return t.slice(0, sp > 80 ? sp : 139).replace(/[\s,.;:·\-–—]+$/, "") + "…";
+    }
+    // « 15,8 k abonnés », « 6,2 M d’abonnés », « 1 abonné ».
+    function count(v, one, many, deMany) {
+      const s = String(v == null ? "" : v).trim();
+      if (!s) return "";
+      const n = s.replace(/\s/g, NBSP);
+      if (/M$/.test(n)) return n + NBSP + deMany.replace(/ /g, NBSP);
+      return n + NBSP + (parseV(s) <= 1 ? one : many).replace(/ /g, NBSP);
+    }
+    const REGIONS = (() => { try { return new Intl.DisplayNames(["fr"], { type: "region" }); } catch (e) { return null; } })();
+    function paysNom(c) {
+      const k = String(c || "").toUpperCase();
+      if (!/^[A-Z]{2}$/.test(k)) return "";
+      try { return (REGIONS && REGIONS.of(k)) || k; } catch (e) { return k; }
+    }
     function range(n) { return Array.from({ length: n }, (_, i) => i); }
     function plural(n, one, many) { return n + " " + (n > 1 ? many : one); }
 
     const ALL_TOP = NICHES.reduce((acc, n) => acc.concat(n.top), []).filter((a) => a.meilleure)
       .sort((a, b) => parseV(b.meilleure.vues) - parseV(a.meilleure.vues)).slice(0, 3);
     const ALL = { nom: "toutes les niches", apps: 653, vuesParVideo: 7400, top: ALL_TOP, all: true };
-    return { DATA, NICHES, NNBSP, NBSP, AMOUNTS, QUICK, TIMES, BUDGETS, CODES, MARKETS, RADAR_BIG, RADAR_SMALL, PARTICLES, grp, fr, fmtDur, parseV, vuesTxt, clean, bgOf, range, plural, ALL_TOP, ALL };
+    return { DATA, NICHES, NNBSP, NBSP, AMOUNTS, QUICK, TIMES, BUDGETS, CODES, MARKETS, RADAR_BIG, RADAR_SMALL, PARTICLES, grp, fr, fmtDur, parseV, vuesTxt, clean, bgOf, embed, profil, cut, count, paysNom, range, plural, ALL_TOP, ALL };
   })();
 
   constructor(p) {
@@ -56,7 +79,7 @@ export default class SimulateurMobile extends DCLogic {
     const { AMOUNTS } = this.constructor.K;
     this.state = {
       step: 1, prevStep: 1, amount: 3000, niche: "Santé et physique", time: 120, budget: "lt100", code: "non", market: "FR",
-      app: 0, showCalc: false, paywallOpen: false, pwOut: false, leaving: false, leaveY: 380,
+      app: 0, showCalc: false, paywallOpen: false, pwOut: false, sheet: false, shOut: false, leaving: false, leaveY: 380,
       armed: false, picked: false, touched: false, ripple: null, bump: 0, phase: 0, seen: {}, scrolled: false, hookHit: -1, hookN: 0,
     };
     this.timers = [];
@@ -86,6 +109,22 @@ export default class SimulateurMobile extends DCLogic {
       this.setState({ pwOut: true });
       this.later(() => this.setState({ paywallOpen: false, pwOut: false }), this.rm ? 0 : 220);
     };
+    // Résultat : la meilleure vidéo de l'app en clair, dans une feuille qui monte du bas (croix, fond ou Échap).
+    this.openSheet = () => {
+      try { this.sheetFrom = document.activeElement; } catch (e) { this.sheetFrom = null; }
+      this.setState({ sheet: true, shOut: false });
+    };
+    this.closeSheet = () => {
+      if (!this.state.sheet || this.state.shOut) return;
+      this.setState({ shOut: true });
+      this.later(() => {
+        this.setState({ sheet: false, shOut: false });
+        const el = this.sheetFrom; this.sheetFrom = null;
+        if (el && el.focus) { try { el.focus({ preventScroll: true }); } catch (e) { /* rien */ } }
+      }, this.rm ? 0 : 260);
+    };
+    this.onSheetKey = (e) => { if (e && e.key === "Escape") { e.preventDefault(); this.closeSheet(); } };
+    this.sheetX = (el) => { if (el && el.focus) { try { el.focus({ preventScroll: true }); } catch (e) { /* rien */ } } };
     this.nextApp = () => { const n = this.sortedApps(this.nicheData()).length || 1; this.go(9, { app: ((this.state.app || 0) + 1) % n }); };
     this.toPlan = () => this.go(8);
   }
@@ -132,7 +171,7 @@ export default class SimulateurMobile extends DCLogic {
     clearTimeout(this.pickT);
     const sc = this.scroller;
     const y = sc ? sc.scrollTop + 380 : 380;
-    this.setState({ leaving: true, leaveY: y, paywallOpen: false, pwOut: false });
+    this.setState({ leaving: true, leaveY: y, paywallOpen: false, pwOut: false, sheet: false, shOut: false });
     const swap = () => {
       if (this.io) this.io.disconnect();
       if (this.scroller) this.scroller.scrollTop = 0;
@@ -277,7 +316,7 @@ export default class SimulateurMobile extends DCLogic {
   rv(k, extra) { return "kpm-rv" + (extra ? " " + extra : "") + (this.state.seen[k] ? " is-seen" : ""); }
 
   renderVals() {
-    const { NICHES, NNBSP, NBSP, AMOUNTS, QUICK, TIMES, BUDGETS, CODES, MARKETS, RADAR_BIG, RADAR_SMALL, PARTICLES, grp, fmtDur, vuesTxt, clean, bgOf, range, plural } = this.constructor.K;
+    const { NICHES, NNBSP, NBSP, AMOUNTS, QUICK, TIMES, BUDGETS, CODES, MARKETS, RADAR_BIG, RADAR_SMALL, PARTICLES, grp, fmtDur, vuesTxt, clean, bgOf, embed, profil, cut, count, paysNom, range, plural } = this.constructor.K;
     const s = this.state;
     const pw = this.isPaywall();
     const step = s.step;
@@ -325,17 +364,18 @@ export default class SimulateurMobile extends DCLogic {
 
     // 2 — Niche
     v.nicheItems = NICHES.map((n, i) => {
-      const o = this.opt("niche", n.nom, i, 2);
+      const o = this.opt("niche", n.nom, i, 2, "kpm-opt kpm-tile");
       o.nom = n.nom;
       o.logos = n.top.slice(0, 3).map((a, j) => ({ bg: bgOf(a.logo), st: "--j: " + j + "; --r: " + [-10, 0, 10][j] + "deg; z-index: " + (3 - j) + ";" }));
-      if (i === NICHES.length - 1 && NICHES.length % 2 === 1) o.wrapStyle += " grid-column: 1 / -1;";
+      // 3 colonnes : une dernière tuile seule sur sa ligne prendrait toute la largeur.
+      if (i === NICHES.length - 1 && NICHES.length % 3 === 1) o.wrapStyle += " grid-column: 1 / -1;";
       return o;
     });
     v.nsp = this.opt("niche", "all", NICHES.length, 2, "kpm-nsp");
 
     // 3 — Temps
     v.timeItems = TIMES.map((t, i) => {
-      const o = this.opt("time", t.v, i, 2);
+      const o = this.opt("time", t.v, i, 2, "kpm-opt kpm-tcard");
       o.label = t.label;
       o.sub = plural(t.vids, "vidéo", "vidéos") + " par jour";
       o.sr = t.label + ", " + o.sub;
@@ -346,22 +386,22 @@ export default class SimulateurMobile extends DCLogic {
 
     // 4 — Budget
     v.budgetItems = BUDGETS.map((b, i) => {
-      const o = this.opt("budget", b.v, i, 2);
+      const o = this.opt("budget", b.v, i, 2, "kpm-opt kpm-bcard");
       o.label = b.label;
       o.coins = range(b.coins).map((j) => ({ cls: "kpm-coin" + (j === b.coins - 1 ? " is-top" : ""), st: "--j: " + j + "; z-index: " + (j + 1) + ";" }));
       return o;
     });
 
     // 5 — Code / 6 — Marché
-    CODES.forEach((c, i) => { v["cd" + i] = this.opt("code", c, i, 2); });
-    MARKETS.forEach((m, i) => { v["mk" + i] = this.opt("market", m, i, 2); });
+    CODES.forEach((c, i) => { v["cd" + i] = this.opt("code", c, i, 2, "kpm-opt kpm-crow"); });
+    MARKETS.forEach((m, i) => { v["mk" + i] = this.opt("market", m, i, 2, "kpm-opt kpm-mcard"); });
 
     // 7 — Calcul
     const ph = s.phase || 0;
     const cnt = ph >= 4 ? nTop : ph >= 1 ? nd.apps : 653;
     v.calcRollA = this.roller(String(cnt), "###", true, 0);
     v.calcRollB = this.roller(String(ph >= 4 ? nTop : nd.apps), "###", true, 0);
-    v.lineACls = "kpm-lineA" + (ph >= 3 ? " is-out" : "");
+    v.lineACls = "kpm-lineA kpm-c7f" + (ph >= 3 ? " is-out" : "");
     v.phase3 = ph >= 3;
     v.burst = ph >= 4;
     v.foundWord = nTop > 1 ? "apps trouvées" : "app trouvée";
@@ -413,9 +453,12 @@ export default class SimulateurMobile extends DCLogic {
     v.calc5 = "Créatrices : " + P.manque + " × 5" + NBSP + "€ × 30 = " + grp(P.cout) + NBSP + "€ par mois";
     v.nApps = nTop;
     const a0 = apps[0];
+    const best0 = a0.meilleure ? embed(a0.meilleure.video) : "";
     v.f = {
       bg: bgOf(a0.logo), nom: a0.nom, quoi: a0.quoi || "",
       hasBest: !!a0.meilleure,
+      // Avec sa vidéo, le chiffre l'ouvre (feuille du bas) ; sans, il reste un simple chiffre.
+      bestVid: !!best0, bestTxt: !!a0.meilleure && !best0, play: this.openSheet,
       bestSr: a0.meilleure ? String(a0.meilleure.vues) : "",
       best: a0.meilleure ? this.roller(String(a0.meilleure.vues).replace(/\s/g, NBSP), null, s.armed, 650) : [],
       comptesTxt: plural(a0.comptes, "compte", "comptes"),
@@ -440,35 +483,67 @@ export default class SimulateurMobile extends DCLogic {
     v.showPaywall = pw && s.paywallOpen;
     v.pwCls = "kpm-pw" + (s.pwOut ? " is-out" : "");
     v.closePaywall = this.closePaywall;
+    v.showSheet = !!(s.sheet && best0);
+    v.sheetCls = "kpm-sh" + (s.shOut ? " is-out" : "");
+    v.closeSheet = this.closeSheet; v.onSheetKey = this.onSheetKey; v.sheetX = this.sheetX;
+    const pc0 = a0.meilleure ? profil(a0.meilleure.compte) : "";
+    v.sh = {
+      titre: "Sa meilleure vidéo",
+      embed: best0,
+      title: a0.meilleure ? "Vidéo TikTok de @" + a0.meilleure.compte + ", la plus vue pour " + a0.nom : "",
+      vues: a0.meilleure ? vuesTxt(a0.meilleure.vues) : "",
+      compte: a0.meilleure ? "@" + a0.meilleure.compte : "",
+      profil: pc0, hasProfil: !!pc0,
+      profilAria: a0.meilleure ? "Profil TikTok de @" + a0.meilleure.compte : "",
+    };
 
     // 9 — Stratégie
-    const ix = Math.min(Math.max(0, s.app || 0), nTop - 1);
+    // Version normale : seule l'app en clair a sa stratégie ; les vidéos et les comptes des autres ne sont jamais chargés.
+    const ix = pw ? 0 : Math.min(Math.max(0, s.app || 0), nTop - 1);
     const a = apps[ix];
     const hooksRaw = (a.accroches || []).map((h) => Object.assign({}, h, { texte: clean(h.texte) })).filter((h) => h.texte);
     const hasHooks = hooksRaw.length > 0;
     const rots = [-2, 1, 2.5];
+    // Une carte du carrousel : la vraie vidéo (lecteur TikTok, droite, 224 px de large) ou, sans vidéo, la carte texte.
+    const card = (i, vid, rot) => ({
+      isVid: !!vid, isCard: !vid, embed: vid,
+      st: "--k: " + i + "; --rot: " + (vid ? 0 : rot) + "deg; --kx: " + (vid ? 236 : 162) + "px; z-index: " + (3 - i) + "; width: " + (vid ? 224 : 150) + "px;",
+      cls: "kpm-hook" + (s.hookHit === i ? (s.hookN % 2 ? " kpm-hA" : " kpm-hB") : ""),
+      tap: () => this.tapHook(i),
+    });
+    const who = (c) => { const u = profil(c); return { compte: "@" + c, profil: u, hasProfil: !!u, noProfil: !u, profilAria: "Profil TikTok de @" + c }; };
     let hooks = hooksRaw.slice(0, 3).map((h, i) => {
+      const vid = embed(h.video);
       const L = h.texte.length;
       const fs = L <= 30 ? 19 : L <= 55 ? 17 : L <= 80 ? 15 : 14;
-      return {
-        isHook: true, isBest: false, texte: h.texte, big: "",
+      return Object.assign(card(i, vid, rots[i]), who(h.compte), {
+        isHook: true, isBest: false, hasCap: true, texte: vid ? cut(h.texte) : h.texte, big: "",
+        title: "Vidéo TikTok de @" + h.compte + " : " + cut(h.texte),
         textSt: "font-size: " + fs + "px;",
-        vues: vuesTxt(h.vuesTxt), compte: "@" + h.compte,
-        st: "--k: " + i + "; --rot: " + rots[i] + "deg; z-index: " + (3 - i) + ";",
-        cls: "kpm-hook" + (s.hookHit === i ? (s.hookN % 2 ? " kpm-hA" : " kpm-hB") : ""),
-        tap: () => this.tapHook(i),
-      };
+        vues: vuesTxt(h.vuesTxt),
+      });
     });
     if (!hasHooks && a.meilleure) {
-      hooks = [{
-        isHook: false, isBest: true, texte: "", big: String(a.meilleure.vues).replace(/\s/g, NBSP), textSt: "",
-        vues: "", compte: "@" + a.meilleure.compte,
-        st: "--k: 0; --rot: -2deg; z-index: 1;",
-        cls: "kpm-hook" + (s.hookHit === 0 ? (s.hookN % 2 ? " kpm-hA" : " kpm-hB") : ""),
-        tap: () => this.tapHook(0),
-      }];
+      const vid = embed(a.meilleure.video);
+      hooks = [Object.assign(card(0, vid, -2), who(a.meilleure.compte), {
+        isHook: false, isBest: true, hasCap: false, texte: "", big: String(a.meilleure.vues).replace(/\s/g, NBSP), textSt: "",
+        title: "Vidéo TikTok de @" + a.meilleure.compte + ", la plus vue pour " + a.nom,
+        vues: vid ? vuesTxt(a.meilleure.vues) : "",
+      })];
     }
-    const avN = Math.min(6, P.comptes);
+    // Ses vrais comptes (6 au plus) : pseudo, abonnés, vues médianes par vidéo, pays.
+    const reseau = (a.reseau || []).filter((r) => r && profil(r.pseudo)).slice(0, 6).map((r, j) => {
+      const m = String(r.pseudo).match(/[A-Za-z0-9]/);
+      const abo = count(r.abonnes, "abonné", "abonnés", "d’abonnés");
+      const vues = count(r.vuesMed, "vue par vidéo", "vues par vidéo", "de vues par vidéo");
+      const pays = paysNom(r.pays);
+      const stats = [abo, vues].filter(Boolean).join(NBSP + "· ");
+      return {
+        handle: "@" + r.pseudo, href: profil(r.pseudo), ini: m ? m[0].toUpperCase() : "@", pays, stats,
+        aria: ["@" + r.pseudo, abo, vues, pays].filter(Boolean).join(", ") + " : ouvrir son profil TikTok",
+        st: "--j: " + j + ";",
+      };
+    });
     const codeTxt = s.code === "oui" ? "en code" : s.code === "outils" ? "avec des outils sans code" : "sans coder";
     const pub = Math.max(1, P.perAcc - 1);
     const pMinS = a.prix ? String(a.prix.min) : "", pMaxS = a.prix ? String(a.prix.max) : "";
@@ -481,9 +556,9 @@ export default class SimulateurMobile extends DCLogic {
       hasHooks: hooks.length > 0,
       hooksTitle: hasHooks ? "Les accroches qui marchent" : "Sa meilleure vidéo",
       hooks,
-      avatars: range(avN).map((j) => ({ st: "--j: " + j + "; margin-left: " + (j ? -12 : 0) + "px; z-index: " + (10 - j) + ";" })),
-      avMore: P.comptes > 6, avMoreTxt: "+" + (P.comptes - 6), avMoreSt: "--j: 6; margin-left: -12px; z-index: 1;",
-      perAccTxt: plural(P.perAcc, "vidéo", "vidéos") + " par jour" + (P.comptes > 1 ? " chacun" : ""),
+      hasRes: reseau.length > 0, reseau,
+      planA: "Ouvre " + plural(P.comptes, "compte", "comptes") + " comme eux",
+      planB: plural(P.perAcc, "vidéo", "vidéos") + " par jour" + (P.comptes > 1 ? " chacun" : ""),
       appComptes: grp(a.comptes),
       weeks: [
         { n: "1", k: "Construire", t: "Ta version de l’app, " + codeTxt },
@@ -514,7 +589,7 @@ export default class SimulateurMobile extends DCLogic {
   render() {
     const $v = this.renderVals();
     return [
-      $h("div", { "class": "sw kpm-root", "data-theme": "light", "style": "--kpm-rest: inset 0 0 0 1px #E6E7EC, 0 1px 2px rgba(16,24,40,0.04), 0 10px 28px rgba(16,24,40,0.06); --kpm-sel: inset 0 0 0 2px #0B6FE0, 0 1px 2px rgba(16,24,40,0.04), 0 16px 38px rgba(11,111,224,0.22); position: relative; width: 100%; height: 100vh; height: 100dvh; box-sizing: border-box; overflow: hidden; background: #F6F7F9; color: #0E0F12; font-family: var(--font-body);" },
+      $h("div", { "class": "sw kpm-root", "data-theme": "light", "style": "--kpm-rest: inset 0 0 0 1px #E6E7EC, 0 1px 2px rgba(16,24,40,0.04), 0 10px 28px rgba(16,24,40,0.06); --kpm-sel: inset 0 0 0 2px #0B6FE0, 0 1px 2px rgba(16,24,40,0.04), 0 16px 38px rgba(11,111,224,0.22); position: relative; width: 100%; height: 100vh; height: 100svh; box-sizing: border-box; overflow: hidden; background: #F6F7F9; color: #0E0F12; font-family: var(--font-body);" },
         $h("div", { "aria-hidden": "true", "style": "position: absolute; inset: 0; overflow: hidden; pointer-events: none;" },
           $h("span", { "class": "kpm-blob kpm-b1" }),
           $h("span", { "class": "kpm-blob kpm-b2" }),
@@ -524,8 +599,8 @@ export default class SimulateurMobile extends DCLogic {
         $h("div", { "class": "kpm-scroll", "ref": $v.scrollRef, "onscroll": $v.onScroll, "style": "position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto;" },
           $h("div", { "class": $v.stageCls, "style": $v.stageStyle },
             ($v.isStep1) ? [
-              $h("main", { "style": "position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;" },
-                $h("h1", { "style": "margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;" },
+              $h("main", { "class": "kpm-q" },
+                $h("h1", { "class": "kpm-qh" },
                   $h("span", { "class": "kpm-w" },
                     $h("span", { "style": "--w: 0;" },
                       "Combien"
@@ -562,10 +637,10 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "style": "flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;" },
+                $h("div", { "class": "kpm-qm" },
                   $h("div", { "style": "position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center;" },
                     $h("span", { "aria-hidden": "true", "class": "kpm-halo", "style": "position: absolute; z-index: -1; left: 50%; top: 44%; width: 440px; height: 440px; margin: -220px 0 0 -220px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.16), rgba(11,111,224,0.07) 52%, rgba(11,111,224,0) 100%); pointer-events: none;" }),
-                    $h("output", { "for": "montant", "class": "kpm-in", "style": "--i: 2; display: block; padding-left: 0.06em; font-family: var(--font-display); font-size: 92px; font-weight: 800; letter-spacing: -0.06em; color: #0E0F12;" },
+                    $h("output", { "for": "montant", "class": "kpm-in kpm-amt", "style": "--i: 2; display: block; padding-left: 0.06em; font-family: var(--font-display); font-weight: 800; letter-spacing: -0.06em; color: #0E0F12;" },
                       $h("span", { "class": "visually-hidden" },
                         $t($v.amtSr)
                       ),
@@ -626,7 +701,7 @@ export default class SimulateurMobile extends DCLogic {
                         )
                       )
                     ),
-                    $h("span", { "class": "kpm-in", "style": "--i: 3; margin-top: 16px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; box-shadow: var(--kpm-rest); font-size: 15px; color: #4A4F57; white-space: nowrap;" },
+                    $h("span", { "class": "kpm-in kpm-day", "style": "--i: 3; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; box-shadow: var(--kpm-rest); font-size: 15px; color: #4A4F57; white-space: nowrap;" },
                       $h("span", { "class": "visually-hidden" },
                         $t($v.daySr)
                       ),
@@ -690,16 +765,16 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     )
                   ),
-                  $h("div", { "class": "kpm-in", "style": "--i: 4; margin-top: 40px; width: 100%; padding: 0 4px; box-sizing: border-box;" },
+                  $h("div", { "class": "kpm-in kpm-slide", "style": "--i: 4; width: 100%; padding: 0 4px; box-sizing: border-box;" },
                     $h("label", { "for": "montant", "class": "visually-hidden" },
                       "Ton objectif par mois, de 500 € à 30 000 €"
                     ),
                     $h("input", { "id": "montant", "class": $v.rangeCls, "type": "range", "min": "0", "max": "10", "step": "1", "value": $v.amtIdx, "aria-valuetext": $v.amtText, "onInput": $v.onAmount, "onChange": $v.onAmount, "style": $v.rangeStyle })
                   ),
-                  $h("div", { "role": "radiogroup", "aria-label": "Montants rapides", "style": "margin-top: 24px; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;" },
+                  $h("div", { "role": "radiogroup", "aria-label": "Montants rapides", "class": "kpm-quick", "style": "width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));" },
                     ($l($v.quick)).map((o) => [
                       $h("div", { "class": "kpm-in", "style": o?.wrapStyle },
-                        $h("button", { "type": "button", "role": "radio", "aria-checked": o?.aria, "class": o?.cls, "onClick": o?.pick, "style": "display: flex; align-items: center; justify-content: center; gap: 10px; height: 56px; padding: 0 16px; border-radius: 999px; font-size: 17px; font-weight: 600; color: #0E0F12; font-variant-numeric: tabular-nums; white-space: nowrap;" },
+                        $h("button", { "type": "button", "role": "radio", "aria-checked": o?.aria, "class": o?.cls, "onClick": o?.pick, "style": "display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 16px; border-radius: 999px; font-size: 17px; font-weight: 600; color: #0E0F12; font-variant-numeric: tabular-nums; white-space: nowrap;" },
                           (o?.sel) ? [
                             $h("span", { "aria-hidden": "true", "class": "kpm-tick kpm-tick-in" },
                               $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -721,7 +796,7 @@ export default class SimulateurMobile extends DCLogic {
                     ])
                   )
                 ),
-                $h("div", { "class": "kpm-in", "style": "--i: 9; flex-shrink: 0;" },
+                $h("div", { "class": "kpm-in kpm-qb", "style": "--i: 9;" },
                   $h("span", { "class": "kpm-cta" },
                     $h("button", { "type": "button", "class": "sw-btn sw-btn-primary sw-btn-lg kpm-btn", "onClick": $v.toStep2 },
                       "Continuer",
@@ -736,8 +811,8 @@ export default class SimulateurMobile extends DCLogic {
               )
             ] : null,
             ($v.isStep2) ? [
-              $h("main", { "class": $v.groupCls, "style": "position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;" },
-                $h("h1", { "id": "q-niche", "style": "margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;" },
+              $h("main", { "class": `kpm-q ${$t($v.groupCls)}` },
+                $h("h1", { "id": "q-niche", "class": "kpm-qh" },
                   $h("span", { "class": "kpm-w" },
                     $h("span", { "style": "--w: 0;" },
                       "Quelle"
@@ -762,11 +837,11 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "style": "flex: 1 0 auto; width: 100%; padding: 32px 0 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;" },
-                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-niche", "style": "width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;" },
+                $h("div", { "class": "kpm-qm" },
+                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-niche", "class": "kpm-ngrid" },
                     ($l($v.nicheItems)).map((o) => [
                       $h("div", { "class": "kpm-in nb", "style": o?.wrapStyle },
-                        $h("button", { "type": "button", "role": "radio", "aria-checked": o?.aria, "class": o?.cls, "onClick": o?.pick, "style": "height: 120px; padding: 16px; border-radius: 20px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;" },
+                        $h("button", { "type": "button", "role": "radio", "aria-checked": o?.aria, "class": o?.cls, "onClick": o?.pick },
                           $h("span", { "aria-hidden": "true", "style": "position: relative; display: flex;" },
                             ($l(o?.logos)).map((l) => [
                               $h("span", { "class": "kpm-lg", "style": l?.st },
@@ -774,7 +849,7 @@ export default class SimulateurMobile extends DCLogic {
                               )
                             ])
                           ),
-                          $h("span", { "style": "position: relative; font-size: 16px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; color: #0E0F12;" },
+                          $h("span", { "class": "kpm-tname" },
                             $t(o?.nom)
                           ),
                           (o?.sel) ? [
@@ -794,7 +869,7 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     ])
                   ),
-                  $h("div", { "class": "kpm-in", "style": `${$t($v.nsp?.wrapStyle)} margin-top: 16px;` },
+                  $h("div", { "class": "kpm-in kpm-nspw", "style": $v.nsp?.wrapStyle },
                     $h("button", { "type": "button", "role": "radio", "aria-checked": $v.nsp?.aria, "class": $v.nsp?.cls, "onClick": $v.nsp?.pick },
                       ($v.nsp?.sel) ? [
                         $h("span", { "aria-hidden": "true", "class": "kpm-tick kpm-tick-in" },
@@ -815,7 +890,7 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "class": "kpm-in", "style": "--i: 19; flex-shrink: 0;" },
+                $h("div", { "class": "kpm-in kpm-qb", "style": "--i: 19;" },
                   $h("span", { "class": "kpm-cta" },
                     $h("button", { "type": "button", "class": "sw-btn sw-btn-primary sw-btn-lg kpm-btn", "onClick": $v.next },
                       "Continuer",
@@ -830,8 +905,8 @@ export default class SimulateurMobile extends DCLogic {
               )
             ] : null,
             ($v.isStep3) ? [
-              $h("main", { "class": $v.groupCls, "style": "position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;" },
-                $h("h1", { "id": "q-temps", "style": "margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;" },
+              $h("main", { "class": `kpm-q ${$t($v.groupCls)}` },
+                $h("h1", { "id": "q-temps", "class": "kpm-qh" },
                   $h("span", { "class": "kpm-w" },
                     $h("span", { "style": "--w: 0;" },
                       "Combien"
@@ -862,12 +937,12 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "style": "flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;" },
-                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-temps", "style": "width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;" },
+                $h("div", { "class": "kpm-qm" },
+                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-temps", "class": "kpm-g2" },
                     ($l($v.timeItems)).map((o) => [
                       $h("div", { "class": "kpm-in", "style": o?.wrapStyle },
-                        $h("button", { "type": "button", "role": "radio", "aria-checked": o?.aria, "aria-label": o?.sr, "class": o?.cls, "onClick": o?.pick, "style": "height: 168px; padding: 18px 18px 16px; border-radius: 22px; display: flex; flex-direction: column; align-items: flex-start; text-align: left;" },
-                          $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; white-space: nowrap;" },
+                        $h("button", { "type": "button", "role": "radio", "aria-checked": o?.aria, "aria-label": o?.sr, "class": o?.cls, "onClick": o?.pick },
+                          $h("span", { "class": "kpm-tlbl" },
                             $t(o?.label)
                           ),
                           $h("span", { "aria-hidden": "true", "style": "position: relative; margin-top: auto; display: flex; gap: 3px;" },
@@ -877,7 +952,7 @@ export default class SimulateurMobile extends DCLogic {
                               )
                             ])
                           ),
-                          $h("span", { "aria-hidden": "true", "style": "position: relative; display: block; margin-top: 10px; height: 18px;" },
+                          $h("span", { "aria-hidden": "true", "class": "kpm-tsub" },
                             (o?.sel) ? [
                               $h("span", { "class": "kpm-sub", "style": `${$t(o?.subStyle)} font-size: 15px; line-height: 18px; font-weight: 600; color: #0A63C9; white-space: nowrap;` },
                                 $t(o?.sub)
@@ -902,7 +977,7 @@ export default class SimulateurMobile extends DCLogic {
                     ])
                   )
                 ),
-                $h("div", { "class": "kpm-in", "style": "--i: 7; flex-shrink: 0;" },
+                $h("div", { "class": "kpm-in kpm-qb", "style": "--i: 7;" },
                   $h("span", { "class": "kpm-cta" },
                     $h("button", { "type": "button", "class": "sw-btn sw-btn-primary sw-btn-lg kpm-btn", "onClick": $v.next },
                       "Continuer",
@@ -917,8 +992,8 @@ export default class SimulateurMobile extends DCLogic {
               )
             ] : null,
             ($v.isStep4) ? [
-              $h("main", { "class": $v.groupCls, "style": "position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;" },
-                $h("h1", { "id": "q-budget", "style": "margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;" },
+              $h("main", { "class": `kpm-q ${$t($v.groupCls)}` },
+                $h("h1", { "id": "q-budget", "class": "kpm-qh" },
                   $h("span", { "class": "kpm-w" },
                     $h("span", { "style": "--w: 0;" },
                       "Ton"
@@ -943,11 +1018,11 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "style": "flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;" },
-                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-budget", "style": "width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;" },
+                $h("div", { "class": "kpm-qm" },
+                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-budget", "class": "kpm-g2" },
                     ($l($v.budgetItems)).map((o) => [
                       $h("div", { "class": "kpm-in", "style": o?.wrapStyle },
-                        $h("button", { "type": "button", "role": "radio", "aria-checked": o?.aria, "class": o?.cls, "onClick": o?.pick, "style": "height: 176px; padding: 18px 16px; border-radius: 22px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left;" },
+                        $h("button", { "type": "button", "role": "radio", "aria-checked": o?.aria, "class": o?.cls, "onClick": o?.pick },
                           $h("span", { "aria-hidden": "true", "class": "kpm-coins" },
                             ($l(o?.coins)).map((c) => [
                               $h("svg", { "class": c?.cls, "style": c?.st, "width": "88", "height": "88", "viewBox": "0 0 56 56", "aria-hidden": "true" },
@@ -959,7 +1034,7 @@ export default class SimulateurMobile extends DCLogic {
                               )
                             ])
                           ),
-                          $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 20px; line-height: 1.12; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;" },
+                          $h("span", { "class": "kpm-blbl" },
                             $t(o?.label)
                           ),
                           (o?.sel) ? [
@@ -980,7 +1055,7 @@ export default class SimulateurMobile extends DCLogic {
                     ])
                   )
                 ),
-                $h("div", { "class": "kpm-in", "style": "--i: 7; flex-shrink: 0;" },
+                $h("div", { "class": "kpm-in kpm-qb", "style": "--i: 7;" },
                   $h("span", { "class": "kpm-cta" },
                     $h("button", { "type": "button", "class": "sw-btn sw-btn-primary sw-btn-lg kpm-btn", "onClick": $v.next },
                       "Continuer",
@@ -995,8 +1070,8 @@ export default class SimulateurMobile extends DCLogic {
               )
             ] : null,
             ($v.isStep5) ? [
-              $h("main", { "class": $v.groupCls, "style": "position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;" },
-                $h("h1", { "id": "q-code", "style": "margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;" },
+              $h("main", { "class": `kpm-q ${$t($v.groupCls)}` },
+                $h("h1", { "id": "q-code", "class": "kpm-qh" },
                   $h("span", { "class": "kpm-w" },
                     $h("span", { "style": "--w: 0;" },
                       "Tu"
@@ -1015,10 +1090,10 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "style": "flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;" },
-                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-code", "style": "width: 100%; display: flex; flex-direction: column; gap: 14px;" },
+                $h("div", { "class": "kpm-qm" },
+                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-code", "class": "kpm-clist" },
                     $h("div", { "class": "kpm-in", "style": $v.cd0?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.cd0?.aria, "class": $v.cd0?.cls, "onClick": $v.cd0?.pick, "style": "min-height: 112px; padding: 16px 52px 16px 16px; border-radius: 24px; display: flex; align-items: center; gap: 18px; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.cd0?.aria, "class": $v.cd0?.cls, "onClick": $v.cd0?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-plate" },
                           $h("svg", { "width": "48", "height": "48", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                             $h("g", { "class": "kpm-draw", "fill": "none", "stroke": "currentColor", "stroke-width": "1.2", "stroke-linecap": "round", "stroke-linejoin": "round" },
@@ -1033,7 +1108,7 @@ export default class SimulateurMobile extends DCLogic {
                             )
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;" },
+                        $h("span", { "class": "kpm-clbl" },
                           "Pas du tout"
                         ),
                         ($v.cd0?.sel) ? [
@@ -1052,7 +1127,7 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     ),
                     $h("div", { "class": "kpm-in", "style": $v.cd1?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.cd1?.aria, "class": $v.cd1?.cls, "onClick": $v.cd1?.pick, "style": "min-height: 112px; padding: 16px 52px 16px 16px; border-radius: 24px; display: flex; align-items: center; gap: 18px; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.cd1?.aria, "class": $v.cd1?.cls, "onClick": $v.cd1?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-plate" },
                           $h("svg", { "width": "48", "height": "48", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                             $h("g", { "class": "kpm-draw", "fill": "none", "stroke": "currentColor", "stroke-width": "1.2", "stroke-linecap": "round", "stroke-linejoin": "round" },
@@ -1061,7 +1136,7 @@ export default class SimulateurMobile extends DCLogic {
                             )
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;" },
+                        $h("span", { "class": "kpm-clbl" },
                           "Avec des outils sans code"
                         ),
                         ($v.cd1?.sel) ? [
@@ -1080,7 +1155,7 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     ),
                     $h("div", { "class": "kpm-in", "style": $v.cd2?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.cd2?.aria, "class": $v.cd2?.cls, "onClick": $v.cd2?.pick, "style": "min-height: 112px; padding: 16px 52px 16px 16px; border-radius: 24px; display: flex; align-items: center; gap: 18px; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.cd2?.aria, "class": $v.cd2?.cls, "onClick": $v.cd2?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-plate" },
                           $h("svg", { "width": "48", "height": "48", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                             $h("g", { "class": "kpm-draw", "fill": "none", "stroke": "currentColor", "stroke-width": "1.2", "stroke-linecap": "round", "stroke-linejoin": "round" },
@@ -1090,7 +1165,7 @@ export default class SimulateurMobile extends DCLogic {
                             )
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;" },
+                        $h("span", { "class": "kpm-clbl" },
                           "Oui, je code"
                         ),
                         ($v.cd2?.sel) ? [
@@ -1110,7 +1185,7 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "class": "kpm-in", "style": "--i: 6; flex-shrink: 0;" },
+                $h("div", { "class": "kpm-in kpm-qb", "style": "--i: 6;" },
                   $h("span", { "class": "kpm-cta" },
                     $h("button", { "type": "button", "class": "sw-btn sw-btn-primary sw-btn-lg kpm-btn", "onClick": $v.next },
                       "Continuer",
@@ -1125,8 +1200,8 @@ export default class SimulateurMobile extends DCLogic {
               )
             ] : null,
             ($v.isStep6) ? [
-              $h("main", { "class": $v.groupCls, "style": "position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;" },
-                $h("h1", { "id": "q-marche", "style": "margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;" },
+              $h("main", { "class": `kpm-q ${$t($v.groupCls)}` },
+                $h("h1", { "id": "q-marche", "class": "kpm-qh" },
                   $h("span", { "class": "kpm-w" },
                     $h("span", { "style": "--w: 0;" },
                       "Où"
@@ -1151,10 +1226,10 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "style": "flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;" },
-                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-marche", "style": "width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;" },
+                $h("div", { "class": "kpm-qm" },
+                  $h("div", { "role": "radiogroup", "aria-labelledby": "q-marche", "class": "kpm-g2" },
                     $h("div", { "class": "kpm-in", "style": $v.mk0?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk0?.aria, "class": $v.mk0?.cls, "onClick": $v.mk0?.pick, "style": "height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk0?.aria, "class": $v.mk0?.cls, "onClick": $v.mk0?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-flag" },
                           $h("svg", { "viewBox": "0 0 40 40", "aria-hidden": "true" },
                             $h("rect", { "width": "40", "height": "40", "fill": "#FFFFFF" }),
@@ -1162,7 +1237,7 @@ export default class SimulateurMobile extends DCLogic {
                             $h("rect", { "x": "26.6", "width": "13.4", "height": "40", "fill": "#EF4135" })
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;" },
+                        $h("span", { "class": "kpm-mlbl" },
                           "France"
                         ),
                         ($v.mk0?.sel) ? [
@@ -1181,7 +1256,7 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     ),
                     $h("div", { "class": "kpm-in", "style": $v.mk1?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk1?.aria, "class": $v.mk1?.cls, "onClick": $v.mk1?.pick, "style": "height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk1?.aria, "class": $v.mk1?.cls, "onClick": $v.mk1?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-flag" },
                           $h("svg", { "viewBox": "0 0 40 40", "aria-hidden": "true" },
                             $h("rect", { "width": "40", "height": "40", "fill": "#FFFFFF" }),
@@ -1192,7 +1267,7 @@ export default class SimulateurMobile extends DCLogic {
                             $h("rect", { "width": "21", "height": "22.86", "fill": "#3C3B6E" })
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;" },
+                        $h("span", { "class": "kpm-mlbl" },
                           "États-Unis"
                         ),
                         ($v.mk1?.sel) ? [
@@ -1211,7 +1286,7 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     ),
                     $h("div", { "class": "kpm-in", "style": $v.mk2?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk2?.aria, "class": $v.mk2?.cls, "onClick": $v.mk2?.pick, "style": "height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk2?.aria, "class": $v.mk2?.cls, "onClick": $v.mk2?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-flag" },
                           $h("svg", { "viewBox": "0 0 40 40", "aria-hidden": "true" },
                             $h("rect", { "width": "40", "height": "40", "fill": "#012169" }),
@@ -1221,7 +1296,7 @@ export default class SimulateurMobile extends DCLogic {
                             $h("path", { "d": "M20 0V40M0 20H40", "stroke": "#C8102E", "stroke-width": "6" })
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;" },
+                        $h("span", { "class": "kpm-mlbl" },
                           "Royaume-Uni"
                         ),
                         ($v.mk2?.sel) ? [
@@ -1240,7 +1315,7 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     ),
                     $h("div", { "class": "kpm-in", "style": $v.mk3?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk3?.aria, "class": $v.mk3?.cls, "onClick": $v.mk3?.pick, "style": "height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk3?.aria, "class": $v.mk3?.cls, "onClick": $v.mk3?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-flag" },
                           $h("svg", { "viewBox": "0 0 40 40", "aria-hidden": "true" },
                             $h("rect", { "width": "40", "height": "40", "fill": "#F1BF00" }),
@@ -1248,7 +1323,7 @@ export default class SimulateurMobile extends DCLogic {
                             $h("rect", { "y": "30", "width": "40", "height": "10", "fill": "#AA151B" })
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;" },
+                        $h("span", { "class": "kpm-mlbl" },
                           "Espagne"
                         ),
                         ($v.mk3?.sel) ? [
@@ -1267,7 +1342,7 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     ),
                     $h("div", { "class": "kpm-in", "style": $v.mk4?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk4?.aria, "class": $v.mk4?.cls, "onClick": $v.mk4?.pick, "style": "height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk4?.aria, "class": $v.mk4?.cls, "onClick": $v.mk4?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-flag" },
                           $h("svg", { "viewBox": "0 0 40 40", "aria-hidden": "true" },
                             $h("rect", { "width": "40", "height": "40", "fill": "#009C3B" }),
@@ -1275,7 +1350,7 @@ export default class SimulateurMobile extends DCLogic {
                             $h("circle", { "cx": "20", "cy": "20", "r": "7.5", "fill": "#002776" })
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;" },
+                        $h("span", { "class": "kpm-mlbl" },
                           "Brésil"
                         ),
                         ($v.mk4?.sel) ? [
@@ -1294,7 +1369,7 @@ export default class SimulateurMobile extends DCLogic {
                       )
                     ),
                     $h("div", { "class": "kpm-in", "style": $v.mk5?.wrapStyle },
-                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk5?.aria, "class": $v.mk5?.cls, "onClick": $v.mk5?.pick, "style": "height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;" },
+                      $h("button", { "type": "button", "role": "radio", "aria-checked": $v.mk5?.aria, "class": $v.mk5?.cls, "onClick": $v.mk5?.pick },
                         $h("span", { "aria-hidden": "true", "class": "kpm-flag", "style": "background: #EAF2FF; display: grid; place-items: center;" },
                           $h("svg", { "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "width: 26px; height: 26px;" },
                             $h("g", { "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.6", "stroke-linecap": "round", "stroke-linejoin": "round" },
@@ -1304,7 +1379,7 @@ export default class SimulateurMobile extends DCLogic {
                             )
                           )
                         ),
-                        $h("span", { "style": "position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;" },
+                        $h("span", { "class": "kpm-mlbl" },
                           "Partout"
                         ),
                         ($v.mk5?.sel) ? [
@@ -1324,7 +1399,7 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "class": "kpm-in", "style": "--i: 9; flex-shrink: 0;" },
+                $h("div", { "class": "kpm-in kpm-qb", "style": "--i: 9;" },
                   $h("span", { "class": "kpm-cta" },
                     $h("button", { "type": "button", "class": "sw-btn sw-btn-primary sw-btn-lg kpm-btn", "onClick": $v.next },
                       "Voir mon plan",
@@ -1339,9 +1414,9 @@ export default class SimulateurMobile extends DCLogic {
               )
             ] : null,
             ($v.isStep7) ? [
-              $h("main", { "style": "position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 24px 20px 72px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;" },
-                $h("div", { "aria-hidden": "true", "class": "kpm-in", "style": "--i: 0; position: relative; width: 300px; height: 300px; flex-shrink: 0;" },
-                  $h("div", { "class": "kpm-halo", "style": "position: absolute; left: -110px; top: -110px; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.16), rgba(11,111,224,0.06) 55%, rgba(11,111,224,0) 100%);" }),
+              $h("main", { "class": "kpm-q kpm-q7" },
+                $h("div", { "aria-hidden": "true", "class": "kpm-in kpm-radar", "style": "--i: 0;" },
+                  $h("div", { "class": "kpm-halo", "style": "position: absolute; left: -36.7%; top: -36.7%; width: 173.4%; height: 173.4%; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.16), rgba(11,111,224,0.06) 55%, rgba(11,111,224,0) 100%);" }),
                   $h("div", { "style": "position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 50%, #FFFFFF 0%, #FBFCFE 62%, #F2F6FD 100%); box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 20px 50px rgba(16,24,40,0.10), inset 0 0 0 1px #E6E6EA;" },
                     $h("span", { "class": "kpm-sweep", "style": "position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(11,111,224,0) 0deg, rgba(11,111,224,0) 250deg, rgba(11,111,224,0.07) 310deg, rgba(11,111,224,0.22) 356deg, rgba(11,111,224,0.85) 359.4deg, rgba(11,111,224,0) 360deg);" }),
                     $h("span", { "style": "position: absolute; left: 12.5%; top: 12.5%; width: 75%; height: 75%; box-sizing: border-box; border-radius: 50%; border: 1px solid #E3E7EE;" }),
@@ -1394,8 +1469,8 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   ] : null
                 ),
-                $h("div", { "class": "kpm-in", "style": "--i: 2; position: relative; margin-top: 40px; width: 100%; min-height: 80px; display: grid; justify-items: center; align-items: center; text-align: center;" },
-                  $h("p", { "class": $v.lineACls, "aria-hidden": "true", "style": "grid-area: 1 / 1; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12;" },
+                $h("div", { "class": "kpm-in kpm-c7t", "style": "--i: 2; position: relative; width: 100%; display: grid; justify-items: center; align-items: center; text-align: center;" },
+                  $h("p", { "class": $v.lineACls, "aria-hidden": "true", "style": "grid-area: 1 / 1; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.04em; color: #0E0F12;" },
                     $h("span", { "style": "display: flex; align-items: flex-start; line-height: 1;" },
                       $h("span", null,
                         "On fouille "
@@ -1461,7 +1536,7 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   ),
                   ($v.phase3) ? [
-                    $h("h1", { "class": "kpm-found", "style": "grid-area: 1 / 1; margin: 0; display: flex; align-items: flex-start; line-height: 1; font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; white-space: nowrap;" },
+                    $h("h1", { "class": "kpm-found kpm-c7f", "style": "grid-area: 1 / 1; margin: 0; display: flex; align-items: flex-start; line-height: 1; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; white-space: nowrap;" },
                       $h("span", { "class": "visually-hidden" },
                         $t($v.foundSr)
                       ),
@@ -1523,7 +1598,7 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   ] : null
                 ),
-                $h("ul", { "class": "kpm-in", "style": "--i: 3; position: relative; list-style: none; margin: 20px 0 0; padding: 0; display: flex; align-items: center; gap: 16px;" },
+                $h("ul", { "class": "kpm-in kpm-c7l", "style": "--i: 3; position: relative; list-style: none; margin-bottom: 0; margin-left: 0; margin-right: 0; padding: 0; display: flex; align-items: center;" },
                   $h("li", { "class": $v.ck0, "style": "display: flex; align-items: center; gap: 7px;" },
                     $h("span", { "aria-hidden": "true", "class": "kpm-ck" },
                       $h("svg", { "width": "12", "height": "12", "viewBox": "0 0 24 24", "aria-hidden": "true" },
@@ -1555,7 +1630,7 @@ export default class SimulateurMobile extends DCLogic {
                     )
                   )
                 ),
-                $h("div", { "role": "progressbar", "aria-label": "Recherche", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": $v.calcPct, "class": "kpm-in", "style": "--i: 4; position: relative; margin-top: 24px; width: 220px; height: 4px; border-radius: 2px; overflow: hidden; background: #E3E5EA;" },
+                $h("div", { "role": "progressbar", "aria-label": "Recherche", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": $v.calcPct, "class": "kpm-in kpm-c7p", "style": "--i: 4; position: relative; width: 220px; height: 4px; border-radius: 2px; overflow: hidden; background: #E3E5EA;" },
                   $h("span", { "class": "kpm-bar" })
                 )
               )
@@ -1789,7 +1864,7 @@ export default class SimulateurMobile extends DCLogic {
                               )
                             )
                           ),
-                          ($v.f?.hasBest) ? [
+                          ($v.f?.bestTxt) ? [
                             $h("p", { "style": "margin: 32px 0 0; text-align: left;" },
                               $h("span", { "class": "visually-hidden" },
                                 $t($v.f?.bestSr)
@@ -1849,6 +1924,77 @@ export default class SimulateurMobile extends DCLogic {
                                 )
                               ),
                               $h("span", { "style": "display: block; margin-top: 10px; font-size: 15px; line-height: 1.4; color: var(--ink-soft);" },
+                                "de vues sur sa meilleure vidéo"
+                              )
+                            )
+                          ] : null,
+                          ($v.f?.bestVid) ? [
+                            $h("button", { "type": "button", "class": "kpm-best", "aria-haspopup": "dialog", "onClick": $v.f?.play },
+                              $h("span", { "class": "visually-hidden" },
+                                $t($v.f?.bestSr), " de vues sur sa meilleure vidéo : la regarder"
+                              ),
+                              $h("span", { "aria-hidden": "true", "style": "display: flex; align-items: center; gap: 16px;" },
+                                $h("span", { "style": "display: block; margin-left: -4px;" },
+                                  $h("span", { "class": "kpm-roll", "style": "font-family: var(--font-display); font-size: 72px; font-weight: 800; letter-spacing: -0.06em; color: var(--ink);" },
+                                    ($l($v.f?.best)).map((r) => [
+                                      $h("span", { "class": r?.cls },
+                                        (r?.isD) ? [
+                                          $h("span", { "class": "kpm-stack", "style": r?.st },
+                                            "0",
+                                            $h("br", null),
+                                            "1",
+                                            $h("br", null),
+                                            "2",
+                                            $h("br", null),
+                                            "3",
+                                            $h("br", null),
+                                            "4",
+                                            $h("br", null),
+                                            "5",
+                                            $h("br", null),
+                                            "6",
+                                            $h("br", null),
+                                            "7",
+                                            $h("br", null),
+                                            "8",
+                                            $h("br", null),
+                                            "9",
+                                            $h("br", null),
+                                            "0",
+                                            $h("br", null),
+                                            "1",
+                                            $h("br", null),
+                                            "2",
+                                            $h("br", null),
+                                            "3",
+                                            $h("br", null),
+                                            "4",
+                                            $h("br", null),
+                                            "5",
+                                            $h("br", null),
+                                            "6",
+                                            $h("br", null),
+                                            "7",
+                                            $h("br", null),
+                                            "8",
+                                            $h("br", null),
+                                            "9"
+                                          )
+                                        ] : null,
+                                        (r?.isS) ? [
+                                          $t(r?.ch)
+                                        ] : null
+                                      )
+                                    ])
+                                  )
+                                ),
+                                $h("span", { "class": "kpm-playb" },
+                                  $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "margin-left: 3px;" },
+                                    $h("path", { "d": "M7 4.5v15l12.5-7.5z", "fill": "#FFFFFF" })
+                                  )
+                                )
+                              ),
+                              $h("span", { "aria-hidden": "true", "style": "display: block; margin-top: 10px; font-size: 15px; line-height: 1.4; color: var(--ink-soft);" },
                                 "de vues sur sa meilleure vidéo"
                               )
                             )
@@ -1998,62 +2144,108 @@ export default class SimulateurMobile extends DCLogic {
                     ),
                     $h("ul", { "class": "kpm-rail", "aria-label": "Accroches", "style": "list-style: none; margin: 0 -20px; padding: 30px 20px 12px; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 20px;" },
                       ($l($v.s9?.hooks)).map((h) => [
-                        $h("li", { "class": "kpm-deal", "style": `${$t(h?.st)} width: 150px; flex-shrink: 0; scroll-snap-align: start;` },
-                          $h("button", { "type": "button", "class": h?.cls, "onClick": h?.tap, "style": "display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 150px; height: 267px; box-sizing: border-box; padding: 14px; border-radius: 18px; background: #0E0F12; box-shadow: 0 1px 2px rgba(16,24,40,0.10), 0 16px 32px rgba(16,24,40,0.18); text-align: center; color: #FFFFFF;" },
-                            (h?.isHook) ? [
-                              $h("span", { "dir": "auto", "style": `${$t(h?.textSt)} display: block; line-height: 1.25; font-weight: 700; color: #FFFFFF; overflow-wrap: anywhere;` },
+                        $h("li", { "class": "kpm-deal", "style": `${$t(h?.st)} flex-shrink: 0; scroll-snap-align: start;` },
+                          (h?.isVid) ? [
+                            (h?.hasCap) ? [
+                              $h("p", { "dir": "auto", "class": "kpm-hcap" },
                                 $t(h?.texte)
                               )
                             ] : null,
-                            (h?.isBest) ? [
-                              $h("span", { "style": "display: block; font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -0.05em; color: #FFFFFF; white-space: nowrap;" },
-                                $t(h?.big)
+                            $h("div", { "class": "kpm-vid" },
+                              $h("span", { "aria-hidden": "true", "class": "kpm-vidph" },
+                                $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "margin-left: 2px;" },
+                                  $h("path", { "d": "M7 4.5v15l12.5-7.5z", "fill": "currentColor" })
+                                )
                               ),
-                              $h("span", { "style": "display: block; font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.72);" },
-                                "vues"
-                              )
-                            ] : null
-                          ),
+                              $h("iframe", { "src": $u(h?.embed), "title": h?.title, "loading": "lazy", "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" })
+                            )
+                          ] : null,
+                          (h?.isCard) ? [
+                            $h("button", { "type": "button", "class": h?.cls, "onClick": h?.tap, "style": "display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 150px; height: 267px; box-sizing: border-box; padding: 14px; border-radius: 18px; background: #0E0F12; box-shadow: 0 1px 2px rgba(16,24,40,0.10), 0 16px 32px rgba(16,24,40,0.18); text-align: center; color: #FFFFFF;" },
+                              (h?.isHook) ? [
+                                $h("span", { "dir": "auto", "style": `${$t(h?.textSt)} display: block; line-height: 1.25; font-weight: 700; color: #FFFFFF; overflow-wrap: anywhere;` },
+                                  $t(h?.texte)
+                                )
+                              ] : null,
+                              (h?.isBest) ? [
+                                $h("span", { "style": "display: block; font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -0.05em; color: #FFFFFF; white-space: nowrap;" },
+                                  $t(h?.big)
+                                ),
+                                $h("span", { "style": "display: block; font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.72);" },
+                                  "vues"
+                                )
+                              ] : null
+                            )
+                          ] : null,
                           $h("span", { "style": "display: block; margin-top: 12px; font-family: var(--font-display); font-size: 19px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);" },
                             $t(h?.vues)
                           ),
-                          $h("span", { "style": "display: block; margin-top: 2px; font-size: 15px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
-                            $t(h?.compte)
-                          )
+                          (h?.hasProfil) ? [
+                            $h("a", { "class": "kpm-acct", "href": $u(h?.profil), "target": "_blank", "rel": "noopener", "aria-label": h?.profilAria },
+                              $h("span", null,
+                                $t(h?.compte)
+                              )
+                            )
+                          ] : null,
+                          (h?.noProfil) ? [
+                            $h("span", { "style": "display: block; margin-top: 2px; font-size: 15px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                              $t(h?.compte)
+                            )
+                          ] : null
                         )
                       ])
                     )
                   )
                 ] : null,
-                $h("section", { "class": $v.rvAcc, "data-rv": "s9-acc", "ref": $v.rvRef, "aria-labelledby": "comptes-titre", "style": "margin-top: 48px;" },
-                  $h("h2", { "id": "comptes-titre", "style": "margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);" },
-                    "Tes comptes"
-                  ),
-                  $h("div", { "aria-hidden": "true", "style": "margin-top: 20px; display: flex; align-items: center;" },
-                    ($l($v.s9?.avatars)).map((a) => [
-                      $h("span", { "class": "kpm-av", "style": `${$t(a?.st)} position: relative; display: grid; place-items: center; width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; background: #EAF2FF; box-shadow: 0 0 0 3px #F6F7F9, inset 0 0 0 1px rgba(11,111,224,0.14);` },
-                        $h("svg", { "width": "26", "height": "26", "viewBox": "0 0 24 24", "aria-hidden": "true" },
-                          $h("circle", { "cx": "12", "cy": "8.5", "r": "3.8", "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8" }),
-                          $h("path", { "d": "M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7", "fill": "none", "stroke": "#0B6FE0", "stroke-width": "1.8", "stroke-linecap": "round" })
+                ($v.s9?.hasRes) ? [
+                  $h("section", { "class": $v.rvAcc, "data-rv": "s9-acc", "ref": $v.rvRef, "aria-labelledby": "comptes-titre", "style": "margin-top: 48px;" },
+                    $h("h2", { "id": "comptes-titre", "style": "margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);" },
+                      "Les comptes qui la poussent"
+                    ),
+                    $h("ul", { "style": "list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px;" },
+                      ($l($v.s9?.reseau)).map((r) => [
+                        $h("li", null,
+                          $h("a", { "class": "kpm-arow", "href": $u(r?.href), "target": "_blank", "rel": "noopener", "aria-label": r?.aria },
+                            $h("span", { "aria-hidden": "true", "class": "kpm-av", "style": `${$t(r?.st)} display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: #EAF2FF; box-shadow: inset 0 0 0 1px rgba(11,111,224,0.14); font-family: var(--font-display); font-size: 17px; font-weight: 700; color: #0B6FE0;` },
+                              $t(r?.ini)
+                            ),
+                            $h("span", { "aria-hidden": "true", "style": "flex: 1 1 auto; min-width: 0;" },
+                              $h("span", { "style": "display: flex; align-items: baseline; gap: 8px;" },
+                                $h("span", { "style": "flex: 0 1 auto; min-width: 0; font-size: 16px; line-height: 1.3; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                                  $t(r?.handle)
+                                ),
+                                $h("span", { "style": "flex-shrink: 0; margin-left: auto; font-size: 13px; color: var(--ink-faint); white-space: nowrap;" },
+                                  $t(r?.pays)
+                                )
+                              ),
+                              $h("span", { "style": "display: block; margin-top: 2px; font-size: 14px; line-height: 1.35; color: var(--ink-muted);" },
+                                $t(r?.stats)
+                              )
+                            ),
+                            $h("svg", { "width": "16", "height": "16", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "flex-shrink: 0; color: #9AA1AB;" },
+                              $h("path", { "d": "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5", "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
+                            )
+                          )
                         )
+                      ])
+                    ),
+                    $h("p", { "style": "margin: 16px 0 0; font-size: 17px; line-height: 1.35; font-weight: 600; color: var(--ink);" },
+                      $h("span", { "style": "white-space: nowrap;" },
+                        $t($v.s9?.planA)
+                      ),
+                      " · ",
+                      $h("span", { "style": "white-space: nowrap;" },
+                        $t($v.s9?.planB)
                       )
-                    ]),
-                    ($v.s9?.avMore) ? [
-                      $h("span", { "class": "kpm-av", "style": `${$t($v.s9?.avMoreSt)} position: relative; display: grid; place-items: center; height: 56px; min-width: 56px; padding: 0 12px; box-sizing: border-box; border-radius: 999px; background: #0B6FE0; box-shadow: 0 0 0 3px #F6F7F9; font-size: 16px; font-weight: 700; color: #FFFFFF;` },
-                        $t($v.s9?.avMoreTxt)
+                    ),
+                    $h("p", { "style": "margin: 20px 0 0; padding-top: 16px; border-top: 1px solid #E3E5EA; font-size: 15px; color: var(--ink-faint);" },
+                      $t($v.s9?.nom), " en fait tourner ",
+                      $h("strong", { "style": "font-weight: 700; color: var(--ink-soft);" },
+                        $t($v.s9?.appComptes)
                       )
-                    ] : null
-                  ),
-                  $h("p", { "style": "margin: 16px 0 0; font-size: 17px; line-height: 1.35; font-weight: 600; color: var(--ink);" },
-                    $t($v.s9?.perAccTxt)
-                  ),
-                  $h("p", { "style": "margin: 20px 0 0; padding-top: 16px; border-top: 1px solid #E3E5EA; font-size: 15px; color: var(--ink-faint);" },
-                    $t($v.s9?.nom), " en fait tourner ",
-                    $h("strong", { "style": "font-weight: 700; color: var(--ink-soft);" },
-                      $t($v.s9?.appComptes)
                     )
                   )
-                ),
+                ] : null,
                 $h("section", { "class": $v.rvWeeks, "data-rv": "s9-weeks", "ref": $v.rvRef, "aria-labelledby": "semaines-titre", "style": "margin-top: 56px;" },
                   $h("h2", { "id": "semaines-titre", "style": "margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);" },
                     "Tes 4 semaines"
@@ -2312,6 +2504,47 @@ export default class SimulateurMobile extends DCLogic {
             ])
           )
         ),
+        ($v.showSheet) ? [
+          $h("div", { "class": $v.sheetCls, "role": "dialog", "aria-modal": "true", "aria-labelledby": "sh-titre", "onKeyDown": $v.onSheetKey, "style": "position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;" },
+            $h("div", { "class": "kpm-sh-bg", "onClick": $v.closeSheet, "style": "position: absolute; inset: 0; background: rgba(14,15,18,0.45); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);" }),
+            $h("div", { "class": "kpm-sh-card", "style": "position: relative; width: 100%; max-width: 560px; box-sizing: border-box; padding: 10px 20px calc(16px + env(safe-area-inset-bottom)); border-radius: 28px 28px 0 0; background: #FFFFFF; box-shadow: 0 -20px 60px rgba(14,15,18,0.22); display: flex; flex-direction: column; align-items: center;" },
+              $h("span", { "aria-hidden": "true", "style": "display: block; width: 40px; height: 5px; border-radius: 3px; background: #D5DAE1;" }),
+              $h("div", { "style": "align-self: stretch; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 12px;" },
+                $h("h2", { "id": "sh-titre", "style": "margin: 0; min-width: 0; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" },
+                  $t($v.sh?.titre)
+                ),
+                $h("button", { "type": "button", "class": "kpm-x", "ref": $v.sheetX, "aria-label": "Fermer", "onClick": $v.closeSheet, "style": "flex-shrink: 0; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: #F1F3F6; color: #0E0F12; display: grid; place-items: center;" },
+                  $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
+                    $h("path", { "d": "M6 6l12 12M18 6L6 18", "fill": "none", "stroke": "currentColor", "stroke-width": "2", "stroke-linecap": "round" })
+                  )
+                )
+              ),
+              $h("div", { "class": "kpm-shv" },
+                $h("span", { "aria-hidden": "true", "class": "kpm-vidph" },
+                  $h("svg", { "width": "20", "height": "20", "viewBox": "0 0 24 24", "aria-hidden": "true", "style": "margin-left: 2px;" },
+                    $h("path", { "d": "M7 4.5v15l12.5-7.5z", "fill": "currentColor" })
+                  )
+                ),
+                $h("iframe", { "src": $u($v.sh?.embed), "title": $v.sh?.title, "allow": "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write", "allowfullscreen": "true", "style": "position: absolute; inset: 0; width: 100%; height: 100%; border: 0;" })
+              ),
+              $h("p", { "style": "margin: 6px 0 0; max-width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; color: var(--ink-muted);" },
+                $h("strong", { "style": "flex-shrink: 0; font-weight: 700; color: #0E0F12; white-space: nowrap;" },
+                  $t($v.sh?.vues)
+                ),
+                ($v.sh?.hasProfil) ? [
+                  $h("span", { "aria-hidden": "true" },
+                    "·"
+                  ),
+                  $h("a", { "class": "kpm-acct", "href": $u($v.sh?.profil), "target": "_blank", "rel": "noopener", "aria-label": $v.sh?.profilAria, "style": "min-width: 0;" },
+                    $h("span", null,
+                      $t($v.sh?.compte)
+                    )
+                  )
+                ] : null
+              )
+            )
+          )
+        ] : null,
         ($v.showPaywall) ? [
           $h("div", { "class": $v.pwCls, "role": "dialog", "aria-modal": "true", "aria-labelledby": "pw-titre", "style": "position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" },
             $h("div", { "class": "kpm-pw-bg", "onClick": $v.closePaywall, "style": "position: absolute; inset: 0; background: rgba(14,15,18,0.4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);" }),
