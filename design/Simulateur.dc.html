@@ -1,0 +1,1170 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Simulateur · Kopycat (ordinateur)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:var(--accent)}a:hover{color:var(--ink)}
+.visually-hidden{position:absolute !important;width:1px !important;height:1px !important;padding:0 !important;margin:-1px !important;overflow:hidden !important;clip:rect(0 0 0 0) !important;white-space:nowrap !important;border:0 !important}
+.kp-root{--trk:-.06em;--ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);--soft:cubic-bezier(.2,1.12,.34,1);--kp-rest:inset 0 0 0 1px #E6E7EC,0 1px 2px rgba(16,24,40,.04),0 14px 36px rgba(16,24,40,.06)}
+.kp-root button{font-family:inherit;-webkit-tap-highlight-color:transparent}
+.kp-root .sw-btn-primary:hover{color:var(--on-blue)}
+
+.kp-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.kp-blob{position:absolute;border-radius:50%;will-change:transform}
+.kp-b1{left:-16%;top:-34%;width:64vw;height:64vw;background:radial-gradient(closest-side,rgba(76,154,255,.20),rgba(76,154,255,0));animation:kp-d1 22s ease-in-out infinite alternate}
+.kp-b2{right:-20%;top:14%;width:56vw;height:56vw;background:radial-gradient(closest-side,rgba(11,111,224,.12),rgba(11,111,224,0));animation:kp-d2 28s ease-in-out infinite alternate}
+.kp-b3{left:20%;bottom:-50%;width:66vw;height:66vw;background:radial-gradient(closest-side,rgba(124,196,255,.22),rgba(124,196,255,0));animation:kp-d3 18s ease-in-out infinite alternate}
+@keyframes kp-d1{to{transform:translate(9vw,8vh) scale(1.12)}}
+@keyframes kp-d2{to{transform:translate(-9vw,10vh) scale(.88)}}
+@keyframes kp-d3{to{transform:translate(-7vw,-12vh) scale(1.1)}}
+.kp-dots{position:absolute;inset:-180px;background-image:radial-gradient(circle,rgba(14,15,18,.10) 1.1px,transparent 1.7px);background-size:28px 28px;-webkit-mask-image:radial-gradient(ellipse 52% 50% at 50% 46%,#000 0%,transparent 80%);mask-image:radial-gradient(ellipse 52% 50% at 50% 46%,#000 0%,transparent 80%);transition:transform 1.6s var(--ease);will-change:transform}
+
+.kp-home{border:0;background:none;padding:0;cursor:pointer;border-radius:10px}
+.kp-home .sw-logo-mark{transition:transform .55s var(--spring)}
+.kp-home:hover .sw-logo-mark{transform:rotate(-16deg) scale(1.12)}
+.kp-home:active .sw-logo-mark{transform:scale(.86)}
+.kp-home:focus-visible,.kp-back:focus-visible,.kp-quiet:focus-visible,.kp-calcbtn:focus-visible,.kp-x:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.kp-back{width:40px;height:40px;padding:0;box-sizing:border-box;border-radius:50%;border:1px solid #E6E6EA;background:#FFFFFF;color:#0E0F12;display:grid;place-items:center;cursor:pointer;transition:transform .45s var(--spring),opacity .3s ease,background-color .2s ease}
+.kp-back svg{transition:transform .35s var(--spring)}
+.kp-back:hover{background-color:#F1F3F6}
+.kp-back:hover svg{transform:translateX(-3px)}
+.kp-back:active{transform:scale(.86)}
+.kp-back.is-hidden{opacity:0;transform:scale(.4) rotate(-50deg);pointer-events:none}
+.kp-seg{position:relative;display:block;width:32px;height:4px;border-radius:2px;background:#E3E5EA;overflow:hidden}
+.kp-seg>i{position:absolute;inset:0;border-radius:2px;background:#0B6FE0;transform:scaleX(0);transform-origin:left center;transition:transform .8s var(--ease)}
+.kp-seg.is-on>i{transform:scaleX(1)}
+.kp-seg.is-cur::after{content:"";position:absolute;top:0;bottom:0;left:0;width:70%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.9),rgba(255,255,255,0));transform:translateX(-120%);animation:kp-segshine 2.4s ease-in-out .8s infinite}
+@keyframes kp-segshine{0%{transform:translateX(-120%)}55%,100%{transform:translateX(160%)}}
+
+.kp-stage{position:relative;z-index:2;flex:1 0 auto;display:flex;flex-direction:column}
+.kp-stage.is-leaving{animation:kp-out .3s cubic-bezier(.5,0,.75,0) forwards;pointer-events:none}
+@keyframes kp-out{to{opacity:0;transform:translateY(-16px) scale(.96);filter:blur(10px)}}
+.kp-in{animation:kp-in .8s var(--soft) backwards}
+.kp-in-lite{animation:kp-in-lite .75s var(--soft) backwards}
+@keyframes kp-in{from{opacity:0;transform:translateY(28px);filter:blur(8px)}}
+@keyframes kp-in-lite{from{opacity:0;transform:translateY(28px) scale(.96)}}
+.kp-w{display:inline-block;overflow:hidden;vertical-align:top;padding:.12em .12em .24em;margin:-.12em -.12em -.24em}
+.kp-w>span{display:inline-block;animation:kp-word .95s cubic-bezier(.16,1,.3,1) backwards}
+@keyframes kp-word{from{transform:translateY(115%) rotate(7deg);opacity:0}}
+.kp-halo{position:absolute;z-index:-1;left:50%;border-radius:50%;background:radial-gradient(closest-side,rgba(11,111,224,.16),rgba(11,111,224,.07) 52%,rgba(11,111,224,0) 100%);pointer-events:none;transform:translate(-50%,-50%);animation:kp-breathe 8s ease-in-out infinite}
+@keyframes kp-breathe{0%,100%{transform:translate(-50%,-50%) scale(.94);opacity:.8}50%{transform:translate(-50%,-50%) scale(1.06);opacity:1}}
+
+.kp-ctaw{position:relative;display:inline-flex;isolation:isolate}
+.kp-ctaw::before{content:"";position:absolute;left:12%;right:12%;top:34%;bottom:-10px;z-index:-1;border-radius:999px;background:rgba(11,111,224,.55);filter:blur(16px);opacity:.4;animation:kp-glow 2.8s ease-in-out infinite}
+@keyframes kp-glow{50%{opacity:.85;transform:scale(1.08,1.2)}}
+.kp-cta{position:relative;overflow:hidden;isolation:isolate}
+.kp-cta::after{content:"";position:absolute;top:-20%;bottom:-20%;left:0;width:34%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.55),rgba(255,255,255,0));transform:translateX(-160%) skewX(-18deg);animation:kp-shine 3s ease-in-out 1.1s infinite;pointer-events:none}
+@keyframes kp-shine{0%{transform:translateX(-160%) skewX(-18deg)}42%,100%{transform:translateX(420%) skewX(-18deg)}}
+.kp-cta .sw-btn-tile svg{transition:transform .35s var(--spring)}
+.kp-cta:hover .sw-btn-tile svg{transform:translateX(3px)}
+.kp-root .kp-cta:active{transform:scale(.95);transition-duration:.1s}
+
+.kp-opt{position:relative;isolation:isolate;-webkit-appearance:none;appearance:none;margin:0;border:0;font:inherit;color:inherit;cursor:pointer;background-color:#FFFFFF;box-shadow:var(--kp-rest);transition:transform .55s var(--soft),opacity .35s ease,filter .35s ease,padding .35s var(--ease);will-change:transform}
+.kp-opt::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:#EEF5FF;box-shadow:inset 0 0 0 2px #0B6FE0;opacity:0;transition:opacity .3s ease}
+.kp-opt::after{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;box-shadow:0 18px 44px rgba(11,111,224,.22),0 0 0 6px rgba(11,111,224,.06);opacity:0;transition:opacity .35s ease}
+.kp-opt.is-on::before,.kp-opt.is-on::after{opacity:1}
+.kp-opt:hover{transform:perspective(800px) translateY(-6px) rotateX(5deg)}
+.kp-opt.is-on{transform:translateY(-4px) scale(1.02)}
+.kp-opt.is-off{opacity:.55;transform:scale(.97);filter:saturate(.5)}
+.kp-root .kp-opt:active{transform:scale(.96);transition-duration:.12s}
+.kp-opt:focus-visible{outline:none;box-shadow:var(--kp-rest),var(--focus-ring)}
+.kp-fx{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none}
+.kp-ripple{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(11,111,224,.42),rgba(76,154,255,.26) 58%,rgba(76,154,255,.10) 86%,rgba(76,154,255,0));opacity:0;transform:scale(0);animation:kp-ripple .95s cubic-bezier(.2,.7,.3,1)}
+@keyframes kp-ripple{0%{opacity:1;transform:scale(0)}55%{opacity:.85}100%{opacity:0;transform:scale(1)}}
+.kp-tick{position:absolute;display:grid;place-items:center;border-radius:50%;background:#0B6FE0;box-shadow:0 4px 12px rgba(11,111,224,.35);transform:scale(0);transition:transform .25s ease}
+.is-on .kp-tick{transform:scale(1);animation:kp-pop .55s var(--spring) .04s backwards}
+@keyframes kp-pop{0%{transform:scale(0)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.kp-chk{stroke-dasharray:1;stroke-dashoffset:0}
+.is-on .kp-chk{animation:kp-dash .42s cubic-bezier(.6,0,.3,1) .2s backwards}
+@keyframes kp-dash{from{stroke-dashoffset:1}}
+
+.kp-col{display:block;height:1em;overflow:hidden;margin:0 calc(var(--trk, 0em) / 2 - .16em);max-width:1.5em;transition:max-width .6s var(--ease),margin .6s var(--ease),opacity .45s ease;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 91%,transparent 100%)}
+.kp-col.is-gone,.kp-ch.is-gone{max-width:0;margin:0;opacity:0}
+.kp-ch.is-sep{width:.22em;margin:0}
+.kp-strip{display:block;padding:0 .16em;letter-spacing:0;transition:transform .7s cubic-bezier(.34,1.56,.64,1);will-change:transform}
+.kp-strip>span{display:block;height:1em;line-height:1em;text-align:center}
+.kp-ch{display:block;height:1em;line-height:1em;white-space:pre;letter-spacing:0;margin:0 calc(var(--trk, 0em) / 2);max-width:1.2em;transition:max-width .6s var(--ease),margin .6s var(--ease),opacity .45s ease}
+.kp-roll{display:inline-flex;flex-direction:row-reverse;align-items:flex-start;height:1em;line-height:1;font-variant-numeric:tabular-nums}
+.kp-inl{vertical-align:baseline}
+.kp-grad .kp-strip,.kp-grad .kp-ch{background:linear-gradient(180deg,#4C9AFF 12%,#0B6FE0 88%) 0 0/100% 1em repeat-y;-webkit-background-clip:text;background-clip:text;color:transparent}
+.kp-gtext{padding:0 .12em;background:linear-gradient(180deg,#4C9AFF 10%,#0B6FE0 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.kp-range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:40px;margin:0;background:transparent;cursor:pointer}
+.kp-range:focus{outline:none}
+.kp-range::-webkit-slider-runnable-track{height:10px;border-radius:999px;background:linear-gradient(90deg,#4C9AFF,#0B6FE0) 0 0/calc(16px + (100% - 32px) * var(--p)) 100% no-repeat,#E3E5EA}
+.kp-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;margin-top:-11px;border:0;border-radius:50%;background:#FFFFFF;box-shadow:inset 0 0 0 2px #0B6FE0,0 0 0 6px rgba(11,111,224,.10),0 8px 20px rgba(11,111,224,.30);transition:transform .3s var(--spring)}
+.kp-range:active::-webkit-slider-thumb{transform:scale(1.18)}
+.kp-range:focus-visible::-webkit-slider-thumb{box-shadow:inset 0 0 0 2px #0B6FE0,0 0 0 3px #FFFFFF,0 0 0 5px #0B6FE0}
+.kp-range::-moz-range-track{height:10px;border-radius:999px;background:#E3E5EA}
+.kp-range::-moz-range-progress{height:10px;border-radius:999px;background:linear-gradient(90deg,#4C9AFF,#0B6FE0)}
+.kp-range::-moz-range-thumb{width:32px;height:32px;border:0;border-radius:50%;background:#FFFFFF;box-shadow:inset 0 0 0 2px #0B6FE0,0 0 0 6px rgba(11,111,224,.10),0 8px 20px rgba(11,111,224,.30)}
+.kp-pill{display:inline-flex;align-items:center;height:56px;padding:0 26px;border-radius:999px;font-size:17px;font-weight:600;color:#0E0F12;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kp-pill.is-on{padding-left:16px}
+.kp-pill:hover{transform:translateY(-3px)}
+.kp-pill.is-on{transform:translateY(-2px) scale(1.04)}
+.kp-ptick{display:inline-grid;place-items:center;flex-shrink:0;width:0;height:22px;margin-right:0;border-radius:50%;background:#0B6FE0;overflow:hidden;transform:scale(0);transition:width .35s var(--ease),margin .35s var(--ease),transform .45s var(--spring)}
+.is-on .kp-ptick{width:22px;margin-right:10px;transform:scale(1)}
+.kp-ptick svg{flex-shrink:0}
+
+.kp-img{display:block;background-color:#FFFFFF;background-position:center;background-size:cover;background-repeat:no-repeat}
+.kp-logo{position:relative;display:block;width:40px;height:40px;box-sizing:border-box;border:2px solid #FFFFFF;border-radius:10px;box-shadow:0 2px 6px rgba(16,24,40,.10);transition:transform .5s var(--spring)}
+.kp-logo + .kp-logo{margin-left:-10px}
+.kp-opt:hover .kp-logo:nth-child(1){transform:translateX(-7px) rotate(-12deg)}
+.kp-opt:hover .kp-logo:nth-child(2){transform:translateY(-5px) scale(1.08)}
+.kp-opt:hover .kp-logo:nth-child(3){transform:translateX(7px) rotate(12deg)}
+.kp-opt.is-on .kp-logo{animation:kp-hop .75s var(--spring) backwards}
+.kp-opt.is-on .kp-logo:nth-child(2){animation-delay:.07s}
+.kp-opt.is-on .kp-logo:nth-child(3){animation-delay:.14s}
+@keyframes kp-hop{0%{transform:none}35%{transform:translateY(-16px) scale(1.1)}65%{transform:translateY(2px) scale(.97)}100%{transform:none}}
+.kp-link{-webkit-appearance:none;appearance:none;border:0;background:none;cursor:pointer;display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 18px;border-radius:999px;font-size:16px;font-weight:500;color:#4A4F57;text-decoration:underline;text-decoration-color:#C3C8D0;text-underline-offset:5px;transition:color .2s ease,transform .45s var(--spring)}
+.kp-link:hover{color:#0E0F12}
+.kp-link.is-on{color:#0B6FE0;text-decoration-color:rgba(11,111,224,.4)}
+.kp-link:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.kp-link .kp-tick{position:relative}
+
+.kp-v{position:relative;display:block;width:18px;height:32px;border-radius:4px;background:#CFE2FF;overflow:hidden}
+.kp-v>i{position:absolute;inset:0;background:#0B6FE0;transform:scaleY(0);transform-origin:center bottom;transition:transform .3s ease}
+.is-on .kp-v>i{transform:scaleY(1);animation:kp-vfill .5s var(--spring) backwards}
+@keyframes kp-vfill{from{transform:scaleY(0)}}
+.kp-tlab{opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .45s var(--soft)}
+.is-on .kp-tlab{opacity:1;transform:none;transition-delay:.45s}
+.kp-coins{stroke:#3A3F47;transition:stroke .3s ease}
+.is-on .kp-coins{stroke:#0B6FE0}
+.is-on .kp-coin{animation:kp-drop .62s cubic-bezier(.3,1.5,.6,1) backwards}
+@keyframes kp-drop{0%{transform:translateY(-20px);opacity:0}}
+.kp-plate{background-color:#F3F5F8;transition:background-color .3s ease}
+.is-on .kp-plate{background-color:#FFFFFF}
+.kp-draw{stroke:#3A3F47;transition:stroke .3s ease}
+.is-on .kp-draw{stroke:#0B6FE0}
+.kp-draw path,.kp-draw rect{stroke-dasharray:1;stroke-dashoffset:0;animation:kp-draw 1.2s cubic-bezier(.6,0,.2,1) backwards;animation-delay:inherit}
+.kp-draw{animation-delay:var(--dd,0s)}
+.is-on .kp-draw path,.is-on .kp-draw rect{animation-name:kp-draw2;animation-duration:.9s}
+@keyframes kp-draw{from{stroke-dashoffset:1}}
+@keyframes kp-draw2{from{stroke-dashoffset:1}}
+.kp-flag{display:block;width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 1px rgba(14,15,18,.08),0 4px 10px rgba(16,24,40,.10);animation:kp-flagin .9s var(--soft) backwards}
+.kp-flag svg{display:block;width:40px;height:40px}
+@keyframes kp-flagin{from{opacity:0;transform:perspective(300px) rotateY(-180deg) scale(.5)}}
+.is-on .kp-flag{animation:kp-flagspin .85s var(--soft) backwards}
+@keyframes kp-flagspin{from{transform:perspective(300px) rotateY(-360deg) scale(.7)}}
+
+.kp-radar-sweep{animation:kp-spin 3.2s linear infinite;will-change:transform}
+@keyframes kp-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.kp-blip{position:absolute;animation:kp-blip .6s var(--spring) backwards}
+@keyframes kp-blip{0%{opacity:0;transform:scale(.2)}60%{opacity:1;transform:scale(1.2)}100%{transform:scale(1)}}
+.kp-ping{position:absolute;inset:-4px;border-radius:19px;border:2px solid #0B6FE0;opacity:0;animation:kp-ping 2s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes kp-ping{0%{opacity:.8;transform:scale(1)}80%,100%{opacity:0;transform:scale(2)}}
+.kp-core{animation:kp-core 2.4s ease-in-out infinite}
+@keyframes kp-core{50%{transform:scale(1.06)}}
+.kp-core.is-burst{animation:kp-coreburst .7s var(--spring)}
+@keyframes kp-coreburst{0%{transform:scale(1)}35%{transform:scale(1.32)}100%{transform:scale(1)}}
+.kp-p{position:absolute;left:0;top:0;border-radius:50%;opacity:0;animation:kp-fly 1.25s cubic-bezier(.12,.75,.3,1)}
+@keyframes kp-fly{0%{opacity:1;transform:translate(0,0) scale(.3)}70%{opacity:.9}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1)}}
+.kp-flash{position:absolute;left:50%;top:50%;width:640px;height:640px;margin:-320px 0 0 -320px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(124,196,255,.45) 45%,rgba(124,196,255,0));opacity:0;pointer-events:none;animation:kp-flash 1.1s ease-out}
+@keyframes kp-flash{0%{opacity:0;transform:scale(.4)}18%{opacity:1}100%{opacity:0;transform:scale(1.35)}}
+.kp-lineA.is-out{opacity:0;animation:kp-lineout .45s ease forwards}
+@keyframes kp-lineout{from{opacity:1;transform:none;filter:none}to{opacity:0;transform:translateY(-22px) scale(.96);filter:blur(10px)}}
+.kp-found{animation:kp-found .8s var(--spring) backwards}
+@keyframes kp-found{from{opacity:0;transform:translateY(24px) scale(.82);filter:blur(10px)}}
+.kp-step-c{position:absolute;inset:-1.5px;border-radius:50%;background:#0B6FE0;display:grid;place-items:center;animation:kp-pop .5s var(--spring) backwards}
+.kp-step-c .kp-chk{animation:kp-dash .4s cubic-bezier(.6,0,.3,1) backwards;animation-delay:inherit}
+.kp-step-t{animation:kp-lit .4s ease backwards}
+@keyframes kp-lit{from{color:#8A93A3}}
+.kp-bar{transform-origin:left center;animation:kp-bar 3.9s cubic-bezier(.4,0,.2,1) .2s backwards}
+@keyframes kp-bar{from{transform:scaleX(0)}}
+
+.kp-slide-l{animation:kp-sl .85s var(--soft) backwards}
+.kp-slide-r{animation:kp-sr .85s var(--soft) backwards}
+@keyframes kp-sl{from{opacity:0;transform:translateX(-48px)}}
+@keyframes kp-sr{from{opacity:0;transform:translateX(48px)}}
+.kp-badge{position:relative;overflow:hidden;isolation:isolate;animation:kp-badgein .7s var(--spring) backwards}
+@keyframes kp-badgein{from{opacity:0;transform:scale(.6);filter:blur(6px)}}
+.kp-badge::after{content:"";position:absolute;top:0;bottom:0;left:0;width:36%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.95),rgba(255,255,255,0));transform:translateX(-170%) skewX(-20deg);animation:kp-shine2 3.6s ease-in-out 1.1s infinite;pointer-events:none}
+@keyframes kp-shine2{0%{transform:translateX(-170%) skewX(-20deg)}38%,100%{transform:translateX(420%) skewX(-20deg)}}
+.kp-calcbtn{-webkit-appearance:none;appearance:none;border:0;background:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 14px;border-radius:999px;font-size:15px;font-weight:600;color:#4A4F57;transition:color .2s ease,background-color .2s ease}
+.kp-calcbtn:hover{color:#0E0F12;background-color:rgba(255,255,255,.7)}
+.kp-chev{transition:transform .45s var(--spring)}
+.kp-calcbtn.is-open .kp-chev{transform:rotate(180deg)}
+.kp-calc{display:grid;grid-template-rows:0fr;transition:grid-template-rows .55s var(--ease)}
+.kp-calc.is-open{grid-template-rows:1fr}
+.kp-cl{margin:0;opacity:0;transform:translateY(10px);transition:opacity .35s ease,transform .5s var(--soft)}
+.is-open .kp-cl{opacity:1;transform:none}
+.kp-cl.is-key{margin-top:8px;color:#0E0F12;font-weight:500}
+.kp-cl.is-note{margin-top:12px;font-size:13px}
+
+.kp-rvs.is-in .kp-rv{animation:kp-in .8s var(--soft) backwards}
+.kp-rvs.is-in .kp-rv.kp-card3d{animation:kp-cardin .95s var(--soft) backwards}
+.kp-rvs.is-in .kp-rv.kp-feat{animation:kp-cardin .95s var(--soft) backwards,kp-float 6s ease-in-out infinite}
+.kp-rvs.is-in .kp-rv.kp-deal{animation:kp-deal 1.05s cubic-bezier(.2,.9,.25,1.04) backwards}
+.kp-rvs.is-in .kp-rv.kp-pop{animation:kp-popin .65s var(--spring) backwards}
+.kp-rvs.is-in .kp-rv.kp-line{animation:kp-line 1.25s cubic-bezier(.6,0,.2,1) backwards}
+.kp-rvs.is-in .kp-rv.kp-floaty{animation:kp-popin .65s var(--spring) backwards,kp-float 5s ease-in-out infinite}
+@keyframes kp-cardin{from{opacity:0;transform:perspective(1000px) translateY(56px) rotateX(18deg) scale(.95);filter:blur(6px)}}
+@keyframes kp-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes kp-deal{0%{opacity:0;transform:translate(var(--px),-70px) rotate(var(--pr)) scale(.86)}38%{opacity:1;transform:translate(var(--px),0) rotate(var(--pr)) scale(1)}100%{transform:var(--fan)}}
+@keyframes kp-popin{0%{opacity:0;transform:scale(0)}60%{opacity:1;transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes kp-line{from{transform:scaleX(0)}}
+.kp-feat{position:relative;border-radius:31px;padding:3px;overflow:hidden;isolation:isolate;box-shadow:0 26px 64px rgba(11,111,224,.20);will-change:transform}
+.kp-spin{position:absolute;left:50%;top:50%;z-index:-1;width:170%;aspect-ratio:1;background:conic-gradient(from 0deg,#0B6FE0,#7CC4FF 22%,#E3EEFF 38%,#4C9AFF 55%,#0B6FE0 72%,#CFE2FF 86%,#0B6FE0);transform:translate(-50%,-50%) rotate(0deg);animation:kp-rot 5s linear infinite;will-change:transform}
+@keyframes kp-rot{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.kp-mini{position:relative;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;width:100%;min-height:196px;box-sizing:border-box;padding:32px;border:0;border-radius:28px;background:#FFFFFF;box-shadow:var(--shadow-card);text-align:left;cursor:pointer;overflow:hidden;font:inherit;color:inherit;transition:transform .55s var(--soft),box-shadow .3s ease}
+.kp-mini:hover{transform:perspective(900px) translateY(-6px) rotateX(4deg);box-shadow:0 1px 2px rgba(16,24,40,.04),0 28px 60px rgba(16,24,40,.10)}
+.kp-root .kp-mini:active{transform:scale(.97);transition-duration:.12s}
+.kp-mini:focus-visible{outline:none;box-shadow:var(--shadow-card),var(--focus-ring)}
+.kp-blur{filter:blur(9px);-webkit-user-select:none;user-select:none}
+.kp-lock{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(16,24,40,.08),0 12px 28px rgba(16,24,40,.14);display:grid;place-items:center;transition:transform .45s var(--spring)}
+.kp-mini:hover .kp-lock{animation:kp-wiggle .6s ease}
+@keyframes kp-wiggle{20%{transform:rotate(-14deg) scale(1.1)}45%{transform:rotate(11deg) scale(1.1)}70%{transform:rotate(-6deg)}100%{transform:none}}
+.kp-go{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;margin-top:auto;padding-top:24px;font-size:16px;font-weight:600;color:#0B6FE0}
+.kp-go svg{transition:transform .35s var(--spring)}
+.kp-mini:hover .kp-go svg{transform:translateX(4px)}
+.kp-hook{width:200px;height:356px;box-sizing:border-box;padding:18px;border-radius:22px;background:#0E0F12;box-shadow:0 1px 2px rgba(16,24,40,.10),0 24px 48px rgba(16,24,40,.18);display:flex;align-items:center;justify-content:center;text-align:center;transform:var(--fan);transition:transform .5s var(--spring),box-shadow .35s ease;cursor:default}
+.kp-hook:hover{transform:translateY(-18px) rotate(0deg) scale(1.04);box-shadow:0 1px 2px rgba(16,24,40,.10),0 40px 70px rgba(16,24,40,.28)}
+.kp-av{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:#EAF2FF;box-shadow:inset 0 0 0 1px rgba(11,111,224,.14);font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:-.02em;color:#0B6FE0}
+.kp-dot{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:linear-gradient(180deg,#4C9AFF,#0B6FE0);box-shadow:0 0 0 4px #F6F7F9,0 6px 14px rgba(11,111,224,.30);font-size:15px;font-weight:700;color:#FFFFFF}
+.kp-quiet{-webkit-appearance:none;appearance:none;border:0;background:none;cursor:pointer;margin-top:16px;min-height:44px;padding:0 16px;border-radius:999px;font-size:16px;font-weight:500;color:#4A4F57;text-decoration:underline;text-decoration-color:#C3C8D0;text-underline-offset:5px;transition:color .2s ease}
+.kp-quiet:hover{color:#0E0F12}
+
+.kp-modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:24px}
+.kp-scrim{position:absolute;inset:0;background:rgba(14,15,18,.30);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:kp-fade .35s ease backwards}
+.kp-sheet{position:relative;width:440px;max-width:100%;box-sizing:border-box;padding:48px 40px 40px;border-radius:32px;background:#FFFFFF;box-shadow:0 40px 100px rgba(16,24,40,.30);text-align:center;animation:kp-sheet .65s var(--soft) backwards}
+.kp-modal.is-closing .kp-scrim{animation:kp-fadeout .24s ease forwards}
+.kp-modal.is-closing .kp-sheet{animation:kp-sheetout .24s ease forwards}
+@keyframes kp-fade{from{opacity:0}}
+@keyframes kp-fadeout{to{opacity:0}}
+@keyframes kp-sheet{from{opacity:0;transform:translateY(36px) scale(.88);filter:blur(8px)}}
+@keyframes kp-sheetout{to{opacity:0;transform:translateY(16px) scale(.94);filter:blur(6px)}}
+.kp-locktile{animation:kp-popin .7s var(--spring) .15s backwards}
+.kp-x{position:absolute;top:16px;right:16px;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:#F3F5F8;color:#0E0F12;display:grid;place-items:center;cursor:pointer;transition:transform .4s var(--spring),background-color .2s ease}
+.kp-x:hover{background-color:#E9ECF1;transform:rotate(90deg)}
+
+/* Stratégie : titre à gauche, contenu à droite ; sur un écran étroit, la colonne du titre se resserre (1 024 px : les
+   trois accroches tiennent), puis passe au-dessus (sous 1 024 px). */
+@media (max-width:1180px){.kp-split{grid-template-columns:200px minmax(0,1fr) !important;gap:40px !important}}
+@media (max-width:1023px){.kp-split{grid-template-columns:minmax(0,1fr) !important;gap:28px !important}}
+@media (prefers-reduced-motion: no-preference){.kp-rvs:not(.is-in) .kp-rv{opacity:0}}
+@media (prefers-reduced-motion: reduce){.kp-root *,.kp-root *::before,.kp-root *::after{animation:none !important;transition:none !important}}
+</style>
+</helmet>
+<div class="sw kp-root" data-theme="light" ref="{{rootRef}}" style="position: relative; width: 100%; min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; background: #F6F7F9; color: #0E0F12; font-family: var(--font-body);">
+
+<div class="kp-bg" aria-hidden="true"><span class="kp-blob kp-b1"></span><span class="kp-blob kp-b2"></span><span class="kp-blob kp-b3"></span><span class="kp-dots" style="{{dotsStyle}}"></span></div>
+
+<header style="position: relative; z-index: 3; flex-shrink: 0; height: 72px; padding: 0 48px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;">
+<a class="sw-logo kp-home" href="LP.dc.html" aria-label="kopycat, accueil"><svg class="sw-logo-mark" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#0B6FE0"></circle><circle cx="11" cy="5" r="2.3" fill="#0B6FE0"></circle><circle cx="17" cy="8" r="2.3" fill="#0B6FE0"></circle><circle cx="8" cy="14" r="2.3" fill="#0E0F12"></circle><circle cx="14" cy="13" r="2.3" fill="#0E0F12"></circle><circle cx="19" cy="17" r="2.3" fill="#0E0F12"></circle><circle cx="11" cy="20" r="2.3" fill="#0E0F12"></circle></svg><span class="sw-wordmark">kopycat</span></a>
+<button type="button" class="kp-back {{backCls}}" aria-label="{{backLabel}}" aria-hidden="{{backHidden}}" tabindex="{{backTab}}" onClick="{{back}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</header>
+
+<div role="progressbar" aria-label="Progression" aria-valuemin="1" aria-valuemax="6" aria-valuenow="{{progNow}}" style="position: relative; z-index: 3; flex-shrink: 0; display: flex; justify-content: center; gap: 6px; padding-top: 8px;">
+<sc-for list="{{segs}}" as="g" hint-placeholder-count="6"><span class="kp-seg {{g.cls}}"><i></i></span></sc-for>
+</div>
+
+<div class="kp-stage {{stageCls}}" style="{{stageStyle}}">
+
+<!-- 1 · MONTANT -->
+<sc-if value="{{isStep1}}" hint-placeholder-val="{{true}}">
+<main style="position: relative; flex: 1 0 auto; padding: 56px 48px 72px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q1" style="margin: 0; max-width: 1040px; text-align: center; font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kp-w"><span>Combien</span></span> <span class="kp-w"><span style="animation-delay: 55ms;">tu</span></span> <span class="kp-w"><span style="animation-delay: 110ms;">veux</span></span> <span class="kp-w"><span style="animation-delay: 165ms;">gagner</span></span> <span class="kp-w"><span style="animation-delay: 220ms;">par</span></span> <span class="kp-w"><span style="animation-delay: 275ms;">mois&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; max-width: 1040px; padding: 32px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div style="position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center;">
+<span aria-hidden="true" class="kp-halo" style="top: 46%; width: 720px; height: 720px;"></span>
+<p class="kp-in" aria-live="polite" style="--trk: 0em; margin: 0; display: flex; align-items: flex-start; height: 1em; font-family: var(--font-display); font-size: min(220px, 19vw); line-height: 1; font-weight: 800; letter-spacing: -0.06em; color: #0E0F12; white-space: nowrap; animation-delay: 110ms;"><span class="visually-hidden">{{amountTxt}} par mois</span><span class="kp-roll" aria-hidden="true"><sc-for list="{{rollAmount}}" as="c" hint-placeholder-count="5"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span><span aria-hidden="true" class="kp-gtext" style="display: block; height: 1em; line-height: 1; margin: 0 -0.12em 0 0.07em; letter-spacing: 0;">€</span></p>
+<p class="kp-in" style="margin: 16px 0 0; display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; background: #FFFFFF; box-shadow: var(--kp-rest); font-size: 16px; line-height: 1; color: #4A4F57; white-space: nowrap; animation-delay: 165ms;"><b style="margin-right: 6px; font-weight: 600; color: #0E0F12;"><span class="visually-hidden">{{perDayTxt}}</span><span class="kp-roll kp-inl" aria-hidden="true"><sc-for list="{{rollDay}}" as="c" hint-placeholder-count="3"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span>&nbsp;€</b>par jour</p>
+</div>
+<div class="kp-in" style="margin-top: 48px; width: 100%; max-width: 640px; animation-delay: 220ms;">
+<label for="kp-montant" class="visually-hidden">Ton objectif par mois, de 500 € à 30 000 €</label>
+<input id="kp-montant" class="kp-range" type="range" min="0" max="10" step="1" value="{{amountIdx}}" aria-valuetext="{{amountTxt}} par mois" onInput="{{onAmount}}" onChange="{{onAmount}}" style="{{rangeStyle}}">
+</div>
+<div role="radiogroup" aria-label="Montants rapides" style="margin-top: 32px; display: flex; justify-content: center; gap: 12px;">
+<sc-for list="{{quick}}" as="q" hint-placeholder-count="4"><button type="button" role="radio" aria-checked="{{q.checked}}" class="kp-opt kp-pill kp-in-lite {{q.cls}}" onClick="{{q.pick}}" style="{{q.d}}"><span class="kp-fx" aria-hidden="true"><sc-if value="{{q.rOn}}"><span class="kp-ripple" key="{{q.rKey}}" style="{{q.rSt}}"></span></sc-if></span><span class="kp-ptick" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{q.label}}</button></sc-for>
+</div>
+</div>
+<div class="kp-in" style="flex-shrink: 0; animation-delay: 440ms;"><span class="kp-ctaw"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kp-cta" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
+</main>
+</sc-if>
+
+<!-- 2 · NICHE -->
+<sc-if value="{{isStep2}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; flex: 1 0 auto; padding: 56px 48px 72px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q2" style="margin: 0; max-width: 1040px; text-align: center; font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kp-w"><span>Quelle</span></span> <span class="kp-w"><span style="animation-delay: 55ms;">niche</span></span> <span class="kp-w"><span style="animation-delay: 110ms;">te</span></span> <span class="kp-w"><span style="animation-delay: 165ms;">parle&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; max-width: 1040px; padding: 32px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div style="position: relative; isolation: isolate; width: 100%;">
+<span aria-hidden="true" class="kp-halo" style="top: 50%; width: 760px; height: 760px;"></span>
+<div role="radiogroup" aria-labelledby="q2" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px;">
+<sc-for list="{{niches}}" as="n" hint-placeholder-count="15"><button type="button" role="radio" aria-checked="{{n.checked}}" class="kp-opt kp-in-lite {{n.cls}}" onClick="{{n.pick}}" style="height: 128px; padding: 20px 12px 20px 20px; box-sizing: border-box; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; {{n.d}}"><span class="kp-fx" aria-hidden="true"><sc-if value="{{n.rOn}}"><span class="kp-ripple" key="{{n.rKey}}" style="{{n.rSt}}"></span></sc-if></span><span aria-hidden="true" style="display: flex;"><sc-for list="{{n.logos}}" as="lg" hint-placeholder-count="3"><span class="kp-logo kp-img" style="{{lg.st}}"></span></sc-for></span><span style="font-size: 16px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; color: #0E0F12;">{{n.nom}}</span><span aria-hidden="true" class="kp-tick" style="top: 16px; right: 16px; width: 22px; height: 22px;"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></sc-for>
+</div>
+</div>
+<button type="button" role="radio" aria-checked="{{nsp.checked}}" class="kp-link kp-in {{nsp.cls}}" onClick="{{nsp.pick}}" style="margin-top: 16px; animation-delay: 700ms;"><sc-if value="{{nsp.on}}"><span aria-hidden="true" class="kp-tick" style="width: 22px; height: 22px;"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if>Je ne sais pas encore</button>
+</div>
+<div class="kp-in" style="flex-shrink: 0; animation-delay: 760ms;"><span class="kp-ctaw"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kp-cta" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
+</main>
+</sc-if>
+
+<!-- 3 · TEMPS -->
+<sc-if value="{{isStep3}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; flex: 1 0 auto; padding: 56px 48px 72px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q3" style="margin: 0; max-width: 1040px; text-align: center; font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kp-w"><span>Combien</span></span> <span class="kp-w"><span style="animation-delay: 55ms;">de</span></span> <span class="kp-w"><span style="animation-delay: 110ms;">temps</span></span> <span class="kp-w"><span style="animation-delay: 165ms;">par</span></span> <span class="kp-w"><span style="animation-delay: 220ms;">jour&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; max-width: 1040px; padding: 32px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div style="position: relative; isolation: isolate; width: 100%;">
+<span aria-hidden="true" class="kp-halo" style="top: 50%; width: 720px; height: 720px;"></span>
+<div role="radiogroup" aria-labelledby="q3" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+<sc-for list="{{times}}" as="t" hint-placeholder-count="4"><button type="button" role="radio" aria-checked="{{t.checked}}" class="kp-opt kp-in-lite {{t.cls}}" onClick="{{t.pick}}" style="height: 240px; padding: 24px 24px 22px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; {{t.d}}"><span class="kp-fx" aria-hidden="true"><sc-if value="{{t.rOn}}"><span class="kp-ripple" key="{{t.rKey}}" style="{{t.rSt}}"></span></sc-if></span><span style="font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; white-space: nowrap;">{{t.l}}</span><span aria-hidden="true" style="margin-top: auto; display: flex; gap: 4px;"><sc-for list="{{t.vigs}}" as="v" hint-placeholder-count="3"><span class="kp-v"><i style="{{v.st}}"></i></span></sc-for></span><span class="kp-tlab" style="margin-top: 16px; height: 20px; font-size: 16px; line-height: 20px; font-weight: 600; color: #0A63C9; white-space: nowrap;">{{t.txt}}</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></sc-for>
+</div>
+</div>
+</div>
+<div class="kp-in" style="flex-shrink: 0; animation-delay: 330ms;"><span class="kp-ctaw"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kp-cta" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
+</main>
+</sc-if>
+
+<!-- 4 · BUDGET -->
+<sc-if value="{{isStep4}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; flex: 1 0 auto; padding: 56px 48px 72px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q4" style="margin: 0; max-width: 1040px; text-align: center; font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kp-w"><span>Ton</span></span> <span class="kp-w"><span style="animation-delay: 55ms;">budget</span></span> <span class="kp-w"><span style="animation-delay: 110ms;">par</span></span> <span class="kp-w"><span style="animation-delay: 165ms;">mois&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; max-width: 1040px; padding: 32px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div style="position: relative; isolation: isolate; width: 100%;">
+<span aria-hidden="true" class="kp-halo" style="top: 50%; width: 720px; height: 720px;"></span>
+<div role="radiogroup" aria-labelledby="q4" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+
+<button type="button" role="radio" aria-checked="{{b0.checked}}" class="kp-opt kp-in-lite {{b0.cls}}" onClick="{{b0.pick}}" style="height: 240px; padding: 24px 24px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left; animation-delay: 80ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{b0.rOn}}"><span class="kp-ripple" key="{{b0.rKey}}" style="{{b0.rSt}}"></span></sc-if></span><svg width="128" height="128" viewBox="0 0 56 56" aria-hidden="true" style="display: block; margin: 0 0 12px -23px; overflow: visible;"><g class="kp-coins" fill="#FFFFFF" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"><g class="kp-coin" style="animation-delay: 40ms;"><path d="M10 41V48A18 5.5 0 0 0 46 48V41"></path><ellipse cx="28" cy="41" rx="18" ry="5.5"></ellipse><ellipse cx="28" cy="41" rx="11" ry="3.2" stroke-opacity="0.45"></ellipse></g></g></svg><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">0&nbsp;€</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{b1.checked}}" class="kp-opt kp-in-lite {{b1.cls}}" onClick="{{b1.pick}}" style="height: 240px; padding: 24px 24px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left; animation-delay: 135ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{b1.rOn}}"><span class="kp-ripple" key="{{b1.rKey}}" style="{{b1.rSt}}"></span></sc-if></span><svg width="128" height="128" viewBox="0 0 56 56" aria-hidden="true" style="display: block; margin: 0 0 12px -23px; overflow: visible;"><g class="kp-coins" fill="#FFFFFF" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"><g class="kp-coin" style="animation-delay: 40ms;"><path d="M10 41V48A18 5.5 0 0 0 46 48V41"></path><ellipse cx="28" cy="41" rx="18" ry="5.5"></ellipse></g><g class="kp-coin" style="animation-delay: 130ms;"><path d="M10 34V41A18 5.5 0 0 0 46 41V34"></path><ellipse cx="28" cy="34" rx="18" ry="5.5"></ellipse><ellipse cx="28" cy="34" rx="11" ry="3.2" stroke-opacity="0.45"></ellipse></g></g></svg><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">Moins de 100&nbsp;€</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{b2.checked}}" class="kp-opt kp-in-lite {{b2.cls}}" onClick="{{b2.pick}}" style="height: 240px; padding: 24px 24px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left; animation-delay: 190ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{b2.rOn}}"><span class="kp-ripple" key="{{b2.rKey}}" style="{{b2.rSt}}"></span></sc-if></span><svg width="128" height="128" viewBox="0 0 56 56" aria-hidden="true" style="display: block; margin: 0 0 12px -23px; overflow: visible;"><g class="kp-coins" fill="#FFFFFF" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"><g class="kp-coin" style="animation-delay: 40ms;"><path d="M10 41V48A18 5.5 0 0 0 46 48V41"></path><ellipse cx="28" cy="41" rx="18" ry="5.5"></ellipse></g><g class="kp-coin" style="animation-delay: 130ms;"><path d="M10 34V41A18 5.5 0 0 0 46 41V34"></path><ellipse cx="28" cy="34" rx="18" ry="5.5"></ellipse></g><g class="kp-coin" style="animation-delay: 220ms;"><path d="M10 27V34A18 5.5 0 0 0 46 34V27"></path><ellipse cx="28" cy="27" rx="18" ry="5.5"></ellipse><ellipse cx="28" cy="27" rx="11" ry="3.2" stroke-opacity="0.45"></ellipse></g></g></svg><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">100 à 500&nbsp;€</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{b3.checked}}" class="kp-opt kp-in-lite {{b3.cls}}" onClick="{{b3.pick}}" style="height: 240px; padding: 24px 24px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left; animation-delay: 245ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{b3.rOn}}"><span class="kp-ripple" key="{{b3.rKey}}" style="{{b3.rSt}}"></span></sc-if></span><svg width="128" height="128" viewBox="0 0 56 56" aria-hidden="true" style="display: block; margin: 0 0 12px -23px; overflow: visible;"><g class="kp-coins" fill="#FFFFFF" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"><g class="kp-coin" style="animation-delay: 40ms;"><path d="M10 41V48A18 5.5 0 0 0 46 48V41"></path><ellipse cx="28" cy="41" rx="18" ry="5.5"></ellipse></g><g class="kp-coin" style="animation-delay: 130ms;"><path d="M10 34V41A18 5.5 0 0 0 46 41V34"></path><ellipse cx="28" cy="34" rx="18" ry="5.5"></ellipse></g><g class="kp-coin" style="animation-delay: 220ms;"><path d="M10 27V34A18 5.5 0 0 0 46 34V27"></path><ellipse cx="28" cy="27" rx="18" ry="5.5"></ellipse></g><g class="kp-coin" style="animation-delay: 310ms;"><path d="M10 20V27A18 5.5 0 0 0 46 27V20"></path><ellipse cx="28" cy="20" rx="18" ry="5.5"></ellipse><ellipse cx="28" cy="20" rx="11" ry="3.2" stroke-opacity="0.45"></ellipse></g></g></svg><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">Plus de 500&nbsp;€</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+</div>
+</div>
+</div>
+<div class="kp-in" style="flex-shrink: 0; animation-delay: 330ms;"><span class="kp-ctaw"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kp-cta" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
+</main>
+</sc-if>
+
+<!-- 5 · CODE -->
+<sc-if value="{{isStep5}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; flex: 1 0 auto; padding: 56px 48px 72px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q5" style="margin: 0; max-width: 1040px; text-align: center; font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kp-w"><span>Tu</span></span> <span class="kp-w"><span style="animation-delay: 55ms;">sais</span></span> <span class="kp-w"><span style="animation-delay: 110ms;">coder&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; max-width: 1040px; padding: 32px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div style="position: relative; isolation: isolate; width: 100%;">
+<span aria-hidden="true" class="kp-halo" style="top: 50%; width: 720px; height: 720px;"></span>
+<div role="radiogroup" aria-labelledby="q5" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+
+<button type="button" role="radio" aria-checked="{{c0.checked}}" class="kp-opt kp-in-lite {{c0.cls}}" onClick="{{c0.pick}}" style="height: 240px; padding: 24px 28px 28px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 80ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{c0.rOn}}"><span class="kp-ripple" key="{{c0.rKey}}" style="{{c0.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-plate" style="width: 88px; height: 88px; border-radius: 24px; display: grid; place-items: center;"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><g class="kp-draw" fill="none" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="--dd: 250ms;"><path pathLength="1" d="M5.4 3.6a4.2 4.2 0 0 1 6 0"></path><g transform="translate(1.2 2.6) scale(0.9)" stroke-width="1.33"><path pathLength="1" d="M22 14a8 8 0 0 1-8 8"></path><path pathLength="1" d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2"></path><path pathLength="1" d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1"></path><path pathLength="1" d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10"></path><path pathLength="1" d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></g></g></svg></span><span style="font-family: var(--font-display); font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;">Pas du tout</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{c1.checked}}" class="kp-opt kp-in-lite {{c1.cls}}" onClick="{{c1.pick}}" style="height: 240px; padding: 24px 28px 28px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 135ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{c1.rOn}}"><span class="kp-ripple" key="{{c1.rKey}}" style="{{c1.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-plate" style="width: 88px; height: 88px; border-radius: 24px; display: grid; place-items: center;"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><g class="kp-draw" fill="none" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="--dd: 330ms;"><rect pathLength="1" x="14" y="3" width="7" height="7" rx="1"></rect><path pathLength="1" d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"></path></g></svg></span><span style="font-family: var(--font-display); font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;">Avec des outils sans code</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{c2.checked}}" class="kp-opt kp-in-lite {{c2.cls}}" onClick="{{c2.pick}}" style="height: 240px; padding: 24px 28px 28px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 190ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{c2.rOn}}"><span class="kp-ripple" key="{{c2.rKey}}" style="{{c2.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-plate" style="width: 88px; height: 88px; border-radius: 24px; display: grid; place-items: center;"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><g class="kp-draw" fill="none" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="--dd: 410ms;"><path pathLength="1" d="M18 16l4-4-4-4"></path><path pathLength="1" d="M6 8l-4 4 4 4"></path><path pathLength="1" d="M14.5 4l-5 16"></path></g></svg></span><span style="font-family: var(--font-display); font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;">Oui, je code</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+</div>
+</div>
+</div>
+<div class="kp-in" style="flex-shrink: 0; animation-delay: 300ms;"><span class="kp-ctaw"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kp-cta" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
+</main>
+</sc-if>
+
+<!-- 6 · MARCHÉ -->
+<sc-if value="{{isStep6}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; flex: 1 0 auto; padding: 56px 48px 72px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q6" style="margin: 0; max-width: 1040px; text-align: center; font-family: var(--font-display); font-size: 56px; line-height: 1.04; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kp-w"><span>Où</span></span> <span class="kp-w"><span style="animation-delay: 55ms;">tu</span></span> <span class="kp-w"><span style="animation-delay: 110ms;">veux</span></span> <span class="kp-w"><span style="animation-delay: 165ms;">lancer&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; max-width: 1040px; padding: 32px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div style="position: relative; isolation: isolate; width: 100%;">
+<span aria-hidden="true" class="kp-halo" style="top: 50%; width: 720px; height: 720px;"></span>
+<div role="radiogroup" aria-labelledby="q6" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+
+<button type="button" role="radio" aria-checked="{{m0.checked}}" class="kp-opt kp-in-lite {{m0.cls}}" onClick="{{m0.pick}}" style="height: 144px; padding: 24px 28px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 80ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{m0.rOn}}"><span class="kp-ripple" key="{{m0.rKey}}" style="{{m0.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-flag" style="animation-delay: 260ms;"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#FFFFFF"></rect><rect width="13.4" height="40" fill="#0055A4"></rect><rect x="26.6" width="13.4" height="40" fill="#EF4135"></rect></svg></span><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12;">France</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{m1.checked}}" class="kp-opt kp-in-lite {{m1.cls}}" onClick="{{m1.pick}}" style="height: 144px; padding: 24px 28px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 135ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{m1.rOn}}"><span class="kp-ripple" key="{{m1.rKey}}" style="{{m1.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-flag" style="animation-delay: 340ms;"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#FFFFFF"></rect><rect y="0" width="40" height="5.72" fill="#B22234"></rect><rect y="11.43" width="40" height="5.72" fill="#B22234"></rect><rect y="22.86" width="40" height="5.72" fill="#B22234"></rect><rect y="34.29" width="40" height="5.72" fill="#B22234"></rect><rect width="21" height="22.86" fill="#3C3B6E"></rect></svg></span><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12;">États-Unis</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{m2.checked}}" class="kp-opt kp-in-lite {{m2.cls}}" onClick="{{m2.pick}}" style="height: 144px; padding: 24px 28px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 190ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{m2.rOn}}"><span class="kp-ripple" key="{{m2.rKey}}" style="{{m2.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-flag" style="animation-delay: 420ms;"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#012169"></rect><path d="M0 0L40 40M40 0L0 40" stroke="#FFFFFF" stroke-width="8"></path><path d="M0 0L40 40M40 0L0 40" stroke="#C8102E" stroke-width="2.6"></path><path d="M20 0V40M0 20H40" stroke="#FFFFFF" stroke-width="11"></path><path d="M20 0V40M0 20H40" stroke="#C8102E" stroke-width="6"></path></svg></span><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12;">Royaume-Uni</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{m3.checked}}" class="kp-opt kp-in-lite {{m3.cls}}" onClick="{{m3.pick}}" style="height: 144px; padding: 24px 28px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 245ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{m3.rOn}}"><span class="kp-ripple" key="{{m3.rKey}}" style="{{m3.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-flag" style="animation-delay: 500ms;"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#F1BF00"></rect><rect width="40" height="10" fill="#AA151B"></rect><rect y="30" width="40" height="10" fill="#AA151B"></rect></svg></span><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12;">Espagne</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{m4.checked}}" class="kp-opt kp-in-lite {{m4.cls}}" onClick="{{m4.pick}}" style="height: 144px; padding: 24px 28px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 300ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{m4.rOn}}"><span class="kp-ripple" key="{{m4.rKey}}" style="{{m4.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-flag" style="animation-delay: 580ms;"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#009C3B"></rect><path d="M20 6L36 20L20 34L4 20Z" fill="#FFDF00"></path><circle cx="20" cy="20" r="7.5" fill="#002776"></circle></svg></span><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12;">Brésil</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+<button type="button" role="radio" aria-checked="{{m5.checked}}" class="kp-opt kp-in-lite {{m5.cls}}" onClick="{{m5.pick}}" style="height: 144px; padding: 24px 28px 26px; box-sizing: border-box; border-radius: 24px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left; animation-delay: 355ms;"><span class="kp-fx" aria-hidden="true"><sc-if value="{{m5.rOn}}"><span class="kp-ripple" key="{{m5.rKey}}" style="{{m5.rSt}}"></span></sc-if></span><span aria-hidden="true" class="kp-flag" style="background: #EAF2FF; display: grid; place-items: center; animation-delay: 660ms;"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 26px; height: 26px;"><g fill="none" stroke="#0B6FE0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 2.5a13.5 13.5 0 0 0 0 19a13.5 13.5 0 0 0 0-19"></path><path d="M2.5 12h19"></path></g></svg></span><span style="font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12;">Partout</span><span aria-hidden="true" class="kp-tick" style="top: 20px; right: 20px; width: 24px; height: 24px;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+
+</div>
+</div>
+</div>
+<div class="kp-in" style="flex-shrink: 0; animation-delay: 420ms;"><span class="kp-ctaw"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kp-cta" onClick="{{next}}">Voir mon plan<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
+</main>
+</sc-if>
+
+<!-- 7 · CALCUL -->
+<sc-if value="{{isStep7}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 48px 56px; box-sizing: border-box;">
+<div aria-hidden="true" class="kp-in" style="position: relative; width: 520px; height: 520px; flex-shrink: 0;">
+<span class="kp-halo" style="top: 50%; width: 780px; height: 780px;"></span>
+<div style="position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 50%, #FFFFFF 0%, #FBFCFE 62%, #F2F6FD 100%); box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 30px 80px rgba(16,24,40,0.10), inset 0 0 0 1px #E6E6EA;">
+<span class="kp-radar-sweep" style="position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(11,111,224,0) 0deg, rgba(11,111,224,0) 250deg, rgba(11,111,224,0.07) 310deg, rgba(11,111,224,0.22) 356deg, rgba(11,111,224,0.85) 359.4deg, rgba(11,111,224,0) 360deg);"></span>
+<span style="position: absolute; left: 12.5%; top: 12.5%; width: 75%; height: 75%; box-sizing: border-box; border-radius: 50%; border: 1px solid #E3E7EE;"></span>
+<span style="position: absolute; left: 25%; top: 25%; width: 50%; height: 50%; box-sizing: border-box; border-radius: 50%; border: 1px solid #E3E7EE;"></span>
+<span style="position: absolute; left: 37.5%; top: 37.5%; width: 25%; height: 25%; box-sizing: border-box; border-radius: 50%; border: 1px solid #E3E7EE;"></span>
+<span style="position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #EEF0F4;"></span>
+<span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #EEF0F4;"></span>
+<span style="position: absolute; left: 20%; top: 45%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 55%; top: 12%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 78%; top: 66%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 48%; top: 72%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 30%; top: 18%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 84%; top: 80%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 60%; top: 92%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 10%; top: 62%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 72%; top: 42%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 38%; top: 60%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #C9CFD8;"></span>
+</div>
+<sc-if value="{{burst}}"><span class="kp-flash"></span></sc-if>
+<sc-for list="{{radarOthers}}" as="o" hint-placeholder-count="6"><span class="kp-blip" style="width: 32px; height: 32px; margin: -16px 0 0 -16px; {{o.st}}"><span class="kp-img" style="width: 32px; height: 32px; border-radius: 9px; opacity: 0.42; {{o.bg}}"></span></span></sc-for>
+<sc-for list="{{radarMain}}" as="o" hint-placeholder-count="3"><span class="kp-blip" style="width: 56px; height: 56px; margin: -28px 0 0 -28px; {{o.st}}"><span class="kp-ping" style="{{o.pst}}"></span><span class="kp-img" style="position: relative; width: 56px; height: 56px; border-radius: 15px; box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #0B6FE0, 0 12px 28px rgba(11,111,224,0.28); {{o.bg}}"></span></span></sc-for>
+<span class="kp-core {{coreCls}}" style="position: absolute; left: 50%; top: 50%; width: 72px; height: 72px; margin: -36px 0 0 -36px; border-radius: 50%; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: 0 0 0 10px rgba(11,111,224,0.08), 0 16px 40px rgba(11,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.45); display: grid; place-items: center;"><svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span>
+<sc-if value="{{burst}}"><span style="position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 4;"><sc-for list="{{parts}}" as="p" hint-placeholder-count="0"><span class="kp-p" style="{{p.st}}"></span></sc-for></span></sc-if>
+</div>
+<div style="position: relative; margin-top: 44px; display: grid; justify-items: center; text-align: center;">
+<p class="kp-in kp-lineA {{lineACls}}" aria-hidden="{{lineAHidden}}" style="grid-area: 1 / 1; margin: 0; font-family: var(--font-display); font-size: 56px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; white-space: nowrap; animation-delay: 120ms;">On fouille <span class="kp-roll kp-inl" style="font-weight: 800; letter-spacing: -0.05em;"><sc-for list="{{rollA}}" as="c" hint-placeholder-count="3"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span> apps pour toi</p>
+<sc-if value="{{showB}}"><h1 class="kp-found" aria-live="polite" style="grid-area: 1 / 1; margin: 0; font-family: var(--font-display); font-size: 56px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; white-space: nowrap;"><span class="visually-hidden">{{foundTxt}}</span><span aria-hidden="true"><span class="kp-roll kp-inl kp-grad" style="font-weight: 800; letter-spacing: -0.06em;"><sc-for list="{{rollB}}" as="c" hint-placeholder-count="2"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span> {{foundWord}}</span></h1></sc-if>
+</div>
+<ul class="kp-in" style="position: relative; list-style: none; margin: 32px 0 0; padding: 0; display: flex; align-items: center; gap: 32px; animation-delay: 200ms;">
+<li style="display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="position: relative; width: 22px; height: 22px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; border: 1.5px solid #D5DAE1;"><span class="kp-step-c" style="animation-delay: 1.05s;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></span><span class="kp-step-t" style="font-size: 17px; font-weight: 500; color: #0E0F12; animation-delay: 1.05s;">Ta niche</span></li>
+<li style="display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="position: relative; width: 22px; height: 22px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; border: 1.5px solid #D5DAE1;"><span class="kp-step-c" style="animation-delay: 1.95s;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></span><span class="kp-step-t" style="font-size: 17px; font-weight: 500; color: #0E0F12; animation-delay: 1.95s;">Ton marché</span></li>
+<li style="display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="position: relative; width: 22px; height: 22px; flex-shrink: 0; box-sizing: border-box; border-radius: 50%; border: 1.5px solid #D5DAE1;"><span class="kp-step-c" style="animation-delay: 2.8s;"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path class="kp-chk" pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></span><span class="kp-step-t" style="font-size: 17px; font-weight: 500; color: #0E0F12; animation-delay: 2.8s;">Ton temps</span></li>
+</ul>
+<div role="progressbar" aria-label="Recherche" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{barNow}}" class="kp-in" style="position: relative; margin-top: 24px; width: 320px; height: 4px; border-radius: 2px; overflow: hidden; background: #E3E5EA; animation-delay: 240ms;"><span class="kp-bar" style="display: block; width: 100%; height: 4px; border-radius: 2px; background: linear-gradient(90deg, #4C9AFF, #0B6FE0);"></span></div>
+</main>
+</sc-if>
+
+<!-- 8 · RÉSULTAT -->
+<sc-if value="{{isStep8}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; flex: 1 0 auto; padding: 0 48px 96px; box-sizing: border-box;">
+<section aria-labelledby="plan-titre" style="position: relative; isolation: isolate; padding-top: 64px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+<span aria-hidden="true" class="kp-halo" style="top: 240px; width: 760px; height: 560px;"></span>
+<span class="kp-in" style="position: relative; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 6px 16px rgba(16,24,40,0.05); font-size: 15px; font-weight: 600; color: var(--ink-soft);"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #0B6FE0;"></span>Ton plan</span>
+<h1 id="plan-titre" style="position: relative; margin: 24px 0 0; display: flex; flex-direction: column; align-items: center;">
+<span class="visually-hidden">{{bigTxt}}</span>
+<span class="kp-in" aria-hidden="true" style="display: flex; align-items: flex-start; height: 1em; font-family: var(--font-display); font-size: 160px; line-height: 1; font-weight: 800; letter-spacing: -0.06em; color: #0E0F12; white-space: nowrap; animation-delay: 80ms;"><span class="kp-roll"><sc-for list="{{rollMin}}" as="c" hint-placeholder-count="1"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span><sc-if value="{{twoNums}}"><span class="kp-gtext" style="display: block; margin: 46px 13px 0 5px; font-size: 72px; line-height: 1; font-weight: 700; letter-spacing: -0.03em;">à</span><span class="kp-roll"><sc-for list="{{rollMax}}" as="c" hint-placeholder-count="1"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span></sc-if></span>
+<span class="kp-in" aria-hidden="true" style="display: block; margin-top: 16px; font-family: var(--font-display); font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-soft); animation-delay: 160ms;">{{unitTxt}}</span>
+</h1>
+<ul style="position: relative; list-style: none; margin: 32px 0 0; padding: 0; display: flex; gap: 12px;">
+<li class="kp-slide-l" style="display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px 0 16px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 8px 20px rgba(16,24,40,0.06); font-size: 17px; font-weight: 600; color: var(--ink); animation-delay: 300ms;"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M4.5 20.5c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg>{{pillAccounts}}</li>
+<li class="kp-slide-r" style="display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px 0 16px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 8px 20px rgba(16,24,40,0.06); font-size: 17px; font-weight: 600; color: var(--ink); animation-delay: 360ms;"><sc-if value="{{pillClock}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M12 7v5l3.2 2" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if><sc-if value="{{pillCrea}}"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18.5 13.9c1.8 0.9 3 2.8 3 5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg></sc-if><sc-if value="{{pillEuro}}"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 7.2A6.6 6.6 0 1 0 17.8 16.8" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path><path d="M4.5 10.3h8.5M4.5 13.7h8.5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg></sc-if>{{pillTime}}</li>
+</ul>
+<p class="kp-badge" style="position: relative; margin: 24px 0 0; display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 20px 0 12px; border-radius: 999px; background: #EEF5FF; box-shadow: inset 0 0 0 1px rgba(11,111,224,0.22); font-size: 17px; font-weight: 600; color: #0B6FE0; animation-delay: 470ms;"><span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 50%; background: #0B6FE0; display: grid; place-items: center;"><sc-if value="{{verdictOk}}"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if><sc-if value="{{verdictAim}}"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="#FFFFFF" stroke-width="2.4"></circle><path d="M12 7.5v4.8l3 1.8" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span>{{verdict}}</p>
+<button type="button" class="kp-calcbtn kp-in {{calcCls}}" aria-expanded="{{calcExp}}" aria-controls="kp-calc" onClick="{{toggleCalc}}" style="margin-top: 16px; animation-delay: 540ms;">Voir le calcul<svg class="kp-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<div id="kp-calc" class="kp-calc {{calcCls}}" style="width: 100%;"><div style="min-height: 0; overflow: hidden;"><div style="padding: 8px 32px 40px;"><div style="margin: 0 auto; max-width: 640px; padding: 24px 28px; box-sizing: border-box; border-radius: 20px; background: #FFFFFF; box-shadow: var(--shadow-card); text-align: left; font-family: var(--font-mono); font-size: 15px; line-height: 1.7; color: var(--ink-faint);"><sc-for list="{{calcLines}}" as="l" hint-placeholder-count="6"><p class="kp-cl {{l.c}}" style="{{l.st}}">{{l.t}}</p></sc-for></div></div></div></div>
+</section>
+
+<section data-reveal="apps" class="kp-rvs {{rvApps}}" aria-labelledby="apps-titre" style="position: relative; max-width: 1040px; margin: 40px auto 0;">
+<h2 id="apps-titre" class="kp-rv" style="margin: 0; font-family: var(--font-display); font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">{{appsTitle}}</h2>
+<div style="margin-top: 32px; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px;">
+<article class="kp-rv kp-feat" aria-labelledby="feat-nom" style="{{featStyle}}">
+<span class="kp-spin" aria-hidden="true"></span>
+<div style="position: relative; height: 100%; box-sizing: border-box; padding: 40px; border-radius: 28px; background: #FFFFFF; display: flex; flex-direction: column;">
+<div style="display: flex; align-items: center; gap: 24px;"><span class="kp-img" style="width: 88px; height: 88px; border-radius: 22px; flex-shrink: 0; box-shadow: 0 0 0 1px #ECEEF2, 0 10px 24px rgba(16,24,40,0.10); {{feat.bg}}"></span><div style="min-width: 0;"><h3 id="feat-nom" style="margin: 0; font-family: var(--font-display); font-size: 36px; line-height: 1.05; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">{{feat.nom}}</h3><p style="margin: 8px 0 0; font-size: 17px; line-height: 1.4; color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{feat.quoi}}</p></div></div>
+<sc-if value="{{feat.hasBest}}"><p style="margin: 48px 0 0;"><span class="visually-hidden">{{feat.best}} {{feat.bestUnit}}</span><span aria-hidden="true" style="display: flex; align-items: flex-start; height: 1em; margin-left: -6px; font-family: var(--font-display); font-size: 96px; line-height: 1; font-weight: 800; letter-spacing: -0.06em; color: var(--ink); white-space: nowrap;"><span class="kp-roll"><sc-for list="{{rollBest}}" as="c" hint-placeholder-count="4"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span></span><span aria-hidden="true" style="display: block; margin-top: 12px; font-size: 17px; line-height: 1.4; color: var(--ink-soft);">{{feat.bestUnit}}</span></p></sc-if>
+<div style="margin-top: auto; padding-top: 40px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+<p style="margin: 0; display: inline-flex; align-items: center; gap: 10px; font-size: 17px; color: var(--ink-soft);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18.5 13.9c1.8 0.9 3 2.8 3 5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg><span><strong style="font-weight: 700; color: var(--ink);">{{feat.comptesTxt}}</strong> {{feat.pushTxt}}</span></p>
+<span class="kp-ctaw" style="flex-shrink: 0;"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kp-cta" onClick="{{openFeat}}">Voir sa stratégie<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+</div>
+</div>
+</article>
+<sc-for list="{{others}}" as="o" hint-placeholder-count="2">
+<sc-if value="{{paywall}}"><button type="button" class="kp-rv kp-card3d kp-mini" aria-label="{{o.lockLabel}}" onClick="{{openPaywall}}" style="{{o.d}}"><span aria-hidden="true" class="kp-blur" style="display: flex; align-items: center; gap: 20px;"><span class="kp-img" style="width: 64px; height: 64px; border-radius: 16px; flex-shrink: 0; box-shadow: 0 0 0 1px #ECEEF2; {{o.bg}}"></span><span style="display: block; min-width: 0;"><span style="display: block; font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{o.nom}}</span><span style="display: block; margin-top: 4px; font-size: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{o.quoi}}</span></span></span><sc-if value="{{o.hasBest}}"><span aria-hidden="true" class="kp-blur" style="display: block; margin-top: 24px; font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -0.05em; color: var(--ink);">{{o.best}}</span></sc-if><span aria-hidden="true" class="kp-lock"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="#0E0F12" stroke-width="1.8"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#0E0F12" stroke-width="1.8" stroke-linecap="round"></path></svg></span></button></sc-if>
+<sc-if value="{{film}}"><button type="button" class="kp-rv kp-card3d kp-mini" onClick="{{o.open}}" style="{{o.d}}"><span style="display: flex; align-items: center; gap: 20px;"><span class="kp-img" style="width: 64px; height: 64px; border-radius: 16px; flex-shrink: 0; box-shadow: 0 0 0 1px #ECEEF2; {{o.bg}}"></span><span style="display: block; min-width: 0;"><span style="display: block; font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{o.nom}}</span><span style="display: block; margin-top: 4px; font-size: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{o.quoi}}</span></span></span><sc-if value="{{o.hasBest}}"><span style="display: block; margin-top: 24px; font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -0.05em; color: var(--ink);">{{o.best}}</span></sc-if><span class="kp-go">Voir sa stratégie<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></sc-if>
+</sc-for>
+</div>
+<sc-if value="{{paywall}}"><div class="kp-rv" style="margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 12px; border-radius: 999px; background: #FFFFFF; box-shadow: var(--shadow-card); {{bandD}}">
+<div style="display: flex; align-items: center; gap: 20px; min-width: 0;"><span aria-hidden="true" style="display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; background: #EEF5FF;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="#0B6FE0" stroke-width="1.8"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg></span><p style="margin: 0; font-size: 17px; line-height: 1.4; color: var(--ink-muted);"><strong style="font-weight: 700; color: var(--ink);">{{moreTxt}}</strong>&nbsp;&nbsp;·&nbsp;&nbsp;29,99&nbsp;€ par mois, sans engagement</p></div>
+<span class="kp-ctaw" style="flex-shrink: 0;"><a class="sw-btn sw-btn-primary sw-btn-lg kp-cta" href="Inscription.dc.html">Tout débloquer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a></span>
+</div></sc-if>
+<sc-if value="{{film}}"><div class="kp-rv" style="margin-top: 24px; display: flex; align-items: center; gap: 20px; padding: 12px 28px 12px 12px; border-radius: 999px; background: #FFFFFF; box-shadow: var(--shadow-card); {{bandD}}"><span aria-hidden="true" style="display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; background: #EEF5FF;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.8" fill="none" stroke="#0B6FE0" stroke-width="1.8"></rect><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8" fill="none" stroke="#0B6FE0" stroke-width="1.8"></rect><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8" fill="none" stroke="#0B6FE0" stroke-width="1.8"></rect><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8" fill="none" stroke="#0B6FE0" stroke-width="1.8"></rect></svg></span><p style="margin: 0; font-size: 17px; line-height: 1.4; color: var(--ink-muted);"><strong style="font-weight: 700; color: var(--ink);">{{moreTxt}}</strong> {{moreIn}}</p></div></sc-if>
+</section>
+</main>
+</sc-if>
+
+<!-- 9 · STRATÉGIE -->
+<sc-if value="{{isStep9}}" hint-placeholder-val="{{false}}">
+<main key="{{s9Key}}" style="position: relative; flex: 1 0 auto; padding: 0 48px 120px; box-sizing: border-box;">
+<section aria-labelledby="strat-titre" style="position: relative; isolation: isolate; padding-top: 64px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+<span aria-hidden="true" class="kp-halo" style="top: 180px; width: 720px; height: 480px;"></span>
+<span class="kp-in kp-img" role="img" aria-label="{{app.logoAlt}}" style="position: relative; width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 0 0 1px #ECEEF2, 0 18px 40px rgba(16,24,40,0.12); animation-name: kp-popin; animation-duration: .8s; {{app.bg}}"></span>
+<h1 id="strat-titre" style="position: relative; margin: 32px 0 0; font-family: var(--font-display); font-size: 56px; line-height: 1.05; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);"><span class="kp-w"><span style="animation-delay: 120ms;">Copie</span></span> <span class="kp-w"><span style="animation-delay: 190ms;">{{app.nom}}</span></span></h1>
+<p class="kp-in" style="position: relative; margin: 12px 0 0; max-width: 760px; font-size: 19px; line-height: 1.4; color: var(--ink-muted); text-wrap: balance; animation-delay: 300ms;">{{app.sub}}</p>
+</section>
+
+<div style="max-width: 1040px; margin: 0 auto;">
+
+<sc-if value="{{hooksOn}}"><section data-reveal="hooks" class="kp-rvs kp-split {{rvHooks}}" aria-labelledby="accroches-titre" style="margin-top: 112px; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 64px; align-items: start;">
+<h2 id="accroches-titre" class="kp-rv" style="margin: 0; font-family: var(--font-display); font-size: 32px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Les accroches qui marchent</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; gap: 24px;">
+<sc-for list="{{hooks}}" as="h" hint-placeholder-count="3"><li style="width: 200px; flex-shrink: 0;"><div class="kp-rv kp-deal kp-hook" style="{{h.st}}"><p style="margin: 0; white-space: pre-line; font-weight: 700; letter-spacing: -0.01em; color: #FFFFFF; overflow-wrap: anywhere; {{h.fs}}">{{h.txt}}</p></div><p class="kp-rv" style="margin: 18px 0 0; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); {{h.d1}}">{{h.views}}</p><p class="kp-rv" style="margin: 4px 0 0; font-size: 15px; color: var(--ink-muted); overflow-wrap: anywhere; {{h.d2}}">{{h.who}}</p></li></sc-for>
+</ul>
+</section></sc-if>
+
+<section data-reveal="accts" class="kp-rvs kp-split {{rvAccts}}" aria-labelledby="comptes-titre" style="margin-top: 112px; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 64px; align-items: center;">
+<h2 id="comptes-titre" class="kp-rv" style="margin: 0; font-family: var(--font-display); font-size: 32px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Tes comptes</h2>
+<div style="display: flex; align-items: center; gap: 40px;">
+<div>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; gap: 12px;">
+<sc-for list="{{avatars}}" as="v" hint-placeholder-count="3"><li class="kp-rv kp-pop" style="{{v.st}}"><span class="kp-av" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M4.8 20.2c0-4 3.2-7 7.2-7s7.2 3 7.2 7" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg></span></li></sc-for>
+<sc-if value="{{avMoreOn}}"><li class="kp-rv kp-pop" style="{{avMoreSt}}"><span class="kp-av" style="background: #0B6FE0; color: #FFFFFF; box-shadow: none;">{{avMore}}</span></li></sc-if>
+</ul>
+<p class="kp-rv" style="margin: 18px 0 0; font-size: 17px; font-weight: 600; color: var(--ink); {{perAccD}}">{{perAccTxt}}</p>
+</div>
+<p class="kp-rv" style="margin: 0; padding: 8px 0 8px 32px; border-left: 1px solid #E3E5EA; font-size: 17px; line-height: 1.45; color: var(--ink-faint); white-space: nowrap; animation-delay: 500ms;">{{runA}}<br>tourner <strong style="font-weight: 700; color: var(--ink-soft);">{{runN}}</strong></p>
+</div>
+</section>
+
+<section data-reveal="weeks" class="kp-rvs kp-split {{rvWeeks}}" aria-labelledby="semaines-titre" style="margin-top: 112px; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 64px; align-items: start;">
+<h2 id="semaines-titre" class="kp-rv" style="margin: 0; font-family: var(--font-display); font-size: 32px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Tes 4 semaines</h2>
+<div style="position: relative;">
+<span aria-hidden="true" class="kp-rv kp-line" style="position: absolute; left: 16px; right: calc(25% - 2px); top: 15px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, #0B6FE0, #4C9AFF 55%, #CFE2FF); transform-origin: left center; animation-delay: 120ms;"></span>
+<ol style="position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px;">
+<sc-for list="{{weeks}}" as="w" hint-placeholder-count="4"><li style="position: relative;"><span aria-hidden="true" class="kp-rv kp-pop kp-dot" style="{{w.d0}}">{{w.n}}</span><p class="kp-rv" style="margin: 20px 0 0; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); {{w.d1}}">{{w.k}}</p><p class="kp-rv" style="margin: 6px 0 0; font-size: 15px; line-height: 1.45; color: var(--ink-muted); {{w.d2}}">{{w.t}}</p></li></sc-for>
+</ol>
+</div>
+</section>
+
+<sc-if value="{{prixOn}}"><section data-reveal="prix" class="kp-rvs kp-split {{rvPrix}}" aria-labelledby="prix-titre" style="margin-top: 112px; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 64px; align-items: center;">
+<h2 id="prix-titre" class="kp-rv" style="margin: 0; font-family: var(--font-display); font-size: 32px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Ce qu’elle facture</h2>
+<div>
+<p class="kp-rv kp-card3d" style="position: relative; display: inline-flex; align-items: center; margin: 0; padding: 28px 40px; border-radius: 28px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 24px 56px rgba(16,24,40,0.08); animation-delay: 80ms;"><span class="visually-hidden">{{prixTxt}}</span><span aria-hidden="true" style="display: flex; align-items: flex-start; height: 1em; font-family: var(--font-display); font-size: 72px; line-height: 1; font-weight: 800; letter-spacing: -0.06em; color: var(--ink); white-space: nowrap;"><span class="kp-roll"><sc-for list="{{rollPmin}}" as="c" hint-placeholder-count="4"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span><span class="kp-gtext" style="display: block; margin: 23px 10px 0 8px; font-size: 32px; line-height: 1; font-weight: 700; letter-spacing: -0.02em;">à</span><span class="kp-roll"><sc-for list="{{rollPmax}}" as="c" hint-placeholder-count="5"><sc-if value="{{c.dig}}" hint-placeholder-val="{{true}}"><span class="kp-col {{c.cls}}"><span class="kp-strip" style="{{c.st}}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{c.chr}}"><span class="kp-ch {{c.cls}}">{{c.ch}}</span></sc-if></sc-for></span><span style="display: block; margin-left: 0.24em; letter-spacing: 0;">€</span></span></p>
+<p class="kp-rv" style="margin: 20px 0 0; font-size: 17px; line-height: 1.5; color: var(--ink-muted); animation-delay: 200ms;">achats intégrés sur l’App Store</p>
+</div>
+</section></sc-if>
+
+<sc-if value="{{paywall}}"><section data-reveal="end" class="kp-rvs {{rvEnd}}" aria-labelledby="pro-titre" style="margin-top: 128px;"><div class="kp-rv kp-card3d" style="position: relative; height: 400px; border-radius: 32px; overflow: hidden; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 24px 60px rgba(16,24,40,0.08);">
+<div aria-hidden="true" class="kp-blur" style="position: absolute; inset: 40px 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 64px;">
+<sc-for list="{{preview}}" as="pv" hint-placeholder-count="2"><div><div style="display: flex; align-items: center; gap: 16px;"><span class="kp-img" style="width: 64px; height: 64px; border-radius: 16px; box-shadow: 0 0 0 1px #ECEEF2; {{pv.bg}}"></span><span style="font-family: var(--font-display); font-size: 32px; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Copie {{pv.nom}}</span></div><div style="margin-top: 32px; display: flex; gap: 16px;"><span style="width: 120px; height: 213px; border-radius: 16px; background: #0E0F12; display: grid; place-items: center;"><span style="width: 72px; height: 10px; border-radius: 5px; background: #FFFFFF;"></span></span><span style="width: 120px; height: 213px; border-radius: 16px; background: #0E0F12; display: grid; place-items: center;"><span style="width: 84px; height: 10px; border-radius: 5px; background: #FFFFFF;"></span></span><span style="width: 120px; height: 213px; border-radius: 16px; background: #0E0F12; display: grid; place-items: center;"><span style="width: 64px; height: 10px; border-radius: 5px; background: #FFFFFF;"></span></span></div></div></sc-for>
+</div>
+<div style="position: absolute; inset: 0; background: radial-gradient(52% 62% at 50% 54%, rgba(255,255,255,0.95), rgba(255,255,255,0.72) 60%, rgba(255,255,255,0.15)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+<span aria-hidden="true" class="kp-rv kp-pop" style="display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.08), 0 12px 28px rgba(16,24,40,0.14); animation-delay: 300ms;"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="#0E0F12" stroke-width="1.8"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#0E0F12" stroke-width="1.8" stroke-linecap="round"></path></svg></span>
+<h2 id="pro-titre" style="margin: 24px 0 0; font-family: var(--font-display); font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">{{lockTxt}}</h2>
+<span class="kp-ctaw" style="margin-top: 32px;"><a class="sw-btn sw-btn-primary sw-btn-lg kp-cta" href="Inscription.dc.html">Tout débloquer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a></span>
+<p style="margin: 16px 0 0; font-size: 15px; color: var(--ink-muted);">29,99&nbsp;€ par mois, sans engagement</p>
+</div>
+</div></section></sc-if>
+
+<sc-if value="{{film}}"><section data-reveal="end" class="kp-rvs {{rvEnd}}" aria-label="App suivante" style="margin-top: 128px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+<span class="kp-rv kp-floaty kp-img" style="width: 80px; height: 80px; border-radius: 22px; box-shadow: 0 0 0 1px #ECEEF2, 0 18px 40px rgba(16,24,40,0.14); animation-delay: 0ms, 900ms; {{nextBg}}"></span>
+<span class="kp-rv kp-ctaw" style="margin-top: 32px; animation-delay: 150ms;"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kp-cta" onClick="{{nextApp}}">App suivante<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+<button type="button" class="kp-rv kp-quiet" onClick="{{toPlan}}" style="animation-delay: 260ms;">Retour au plan</button>
+</section></sc-if>
+
+</div>
+</main>
+</sc-if>
+
+</div>
+
+<sc-if value="{{pwOpen}}" hint-placeholder-val="{{false}}">
+<div class="kp-modal {{pwCls}}" role="dialog" aria-modal="true" aria-labelledby="pw-titre">
+<div class="kp-scrim" onClick="{{closePaywall}}"></div>
+<div class="kp-sheet">
+<button type="button" class="kp-x" aria-label="Fermer" onClick="{{closePaywall}}" ref="{{pwRef}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+<span aria-hidden="true" class="kp-locktile" style="display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 14px 30px rgba(11,111,224,0.35);"><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="#FFFFFF" stroke-width="1.8"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"></path></svg></span>
+<h2 id="pw-titre" style="margin: 24px 0 0; font-family: var(--font-display); font-size: 32px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12;">Kopycat Pro</h2>
+<p style="margin: 20px 0 0; display: flex; align-items: baseline; justify-content: center; gap: 10px;"><span style="font-family: var(--font-display); font-size: 64px; line-height: 1; font-weight: 800; letter-spacing: -0.05em; color: #0E0F12; font-variant-numeric: tabular-nums;">29,99&nbsp;€</span><span style="font-size: 17px; font-weight: 600; color: var(--ink-soft);">par mois</span></p>
+<p style="margin: 12px 0 0; font-size: 16px; color: var(--ink-muted);">sans engagement</p>
+<span class="kp-ctaw" style="margin-top: 32px;"><a class="sw-btn sw-btn-primary sw-btn-lg kp-cta" href="Inscription.dc.html">Tout débloquer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a></span>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"paywall":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  // Données du simulateur (relevé du 26/11/2026), constantes et petites fonctions. Rangées dans la classe : la conversion
+  // du site (scripts/dc2preact.py) n'accepte aucun code hors de la classe. Chaque méthode reprend ce qu'elle lit.
+  static K = (() => {
+    const DATA = {"releve":"26/11/2026","niches":[{"nom":"Social et loisirs","apps":111,"vuesParVideo":10460,"top":[{"nom":"MoboReels","quoi":"Short Drama Series","logo":"/_blob/1577f99519c8134bda8228cdfd539747","comptes":98,"comptesFR":0,"videosSemaine":1252,"meilleure":{"vues":"12,7 k","compte":"austinobest1"},"note":{"note":"4,5","avis":"7,2 k"},"prix":{"min":"6,99","max":"59,99"},"accroches":[{"texte":"My Unborn Baby's Voice Made Me a Winner Mommy,look down,it's me!","vuesTxt":"1,3 k","compte":"austinobest1","comptes":1},{"texte":"I'm just a janitor's daughter","vuesTxt":"857","compte":"netflixtime_8","comptes":1},{"texte":"Puth and Rian","vuesTxt":"835","compte":"cat888818","comptes":1}]},{"nom":"SlowRead","quoi":"Bibliothèque & PAL","logo":"/_blob/02ffe8383566d3fdbf310afb00e2236d","comptes":70,"comptesFR":0,"videosSemaine":792,"meilleure":{"vues":"35,8 k","compte":"andrea.booktoker"},"note":{"note":"3,8","avis":"36"},"prix":{"min":"7,79","max":"129,99"},"accroches":[{"texte":"Okay I need to lock in no distractions","vuesTxt":"10,5 k","compte":"chelskait_other","comptes":1},{"texte":"i overheard a girl at the airport saying she used girl math to get her nails done with rewards from playing ga","vuesTxt":"6,8 k","compte":"living.better0","comptes":4},{"texte":"Keep Lucia. I have 57 fictional men who'd burn the world down for me.","vuesTxt":"4,3 k","compte":"totallybooked18","comptes":5}]},{"nom":"DramaBox","quoi":"Film et Drame Court","logo":"/_blob/3e6e2721e764b26873d08e795e32a043","comptes":88,"comptesFR":0,"videosSemaine":618,"meilleure":{"vues":"260 k","compte":"j3w3lz.rose"},"note":{"note":"4,6","avis":"57,2 k"},"prix":{"min":"0,99","max":"14,99"},"accroches":[{"texte":"¡HUMILLARON A MI ABUELA POR VENDER TACOS! A MI ABUELA POR VENDER TACOS!","vuesTxt":"260 k","compte":"j3w3lz.rose","comptes":1},{"texte":"DramaBox EP7-8 كل ما فعلته هوجني المال من الثري الذي يُنفق علي وفي النهاية حققت الحرية المالية حصريا DramaBox","vuesTxt":"199 k","compte":"dramabox_ar","comptes":1},{"texte":"DramaBox EP3-4 الندم المتأخر DramaBox حصريا","vuesTxt":"151 k","compte":"dramabox_ar","comptes":1}]}]},{"nom":"Santé et physique","apps":70,"vuesParVideo":4598,"top":[{"nom":"Mise","quoi":"Meal planner","logo":"/_blob/86a49246e64a2d69b27eaef09df462d9","comptes":130,"comptesFR":7,"videosSemaine":1353,"meilleure":{"vues":"1,3 M","compte":"paula.eatss"},"note":{"note":"4,5","avis":"98"},"prix":{"min":"9,99","max":"59,99"},"accroches":[{"texte":"Il avait rendez-vous avec Emma pour me tromper... il ignorait qui elle était Ouais Emma c'est","vuesTxt":"1,5 M","compte":"la.folleduvillage","comptes":1},{"texte":"My baby daddy gave me $150 to feed these kids","vuesTxt":"1,4 M","compte":"meme.atethat","comptes":32},{"texte":"J’ai empêché mon mari de me tromper ce soir en quittant la maison avant lui 🙅🏽‍♀️🙅🏽‍♀️ maquilles?","vuesTxt":"935 k","compte":"la.folleduvillage","comptes":1}]},{"nom":"Musa","quoi":"Period & Pregnancy","logo":"/_blob/3c73c43fc8c0f93e6911f19a18aa55e8","comptes":32,"comptesFR":2,"videosSemaine":526,"meilleure":{"vues":"289 k","compte":"marina.pragnancy"},"note":{"note":"4,7","avis":"181"},"prix":{"min":"6,99","max":"34,99"},"accroches":[{"texte":"I think November has delayed every girls period…🩸🩸🩸 · We must all be stressed😩","vuesTxt":"43,2 k","compte":"mariana.hormones","comptes":13},{"texte":"I searched \"my Disney baby\"","vuesTxt":"31,1 k","compte":"brooke.pregnancy","comptes":1},{"texte":"Girl to girl.. what’s the most obvious sign that your period is about to start?","vuesTxt":"16,3 k","compte":"fal.cycletips","comptes":6}]},{"nom":"Solaia","quoi":"Équilibre hormonal","logo":"/_blob/2d981e0c7d800e5d781240ec2f612596","comptes":64,"comptesFR":52,"videosSemaine":453,"meilleure":{"vues":"1,7 M","compte":"byelizen"},"note":{"note":"4,6","avis":"2,5 k"},"prix":{"min":"8,99","max":"79,99"},"accroches":[{"texte":"18:00-22:00 Post workout routine","vuesTxt":"1,5 M","compte":"byelizen","comptes":1},{"texte":"100% moi les premières semaines où j’ai pris ma pilule","vuesTxt":"96,6 k","compte":"justinendo","comptes":1},{"texte":"mon rêve niche c’est de guérir des tca","vuesTxt":"55,7 k","compte":"indoinsa","comptes":1}]}]},{"nom":"Side hustle","apps":50,"vuesParVideo":1405,"top":[{"nom":"SideShift","quoi":"Earn Money","logo":"/_blob/1a0aaffcea01b1ffda8aa18fd581819e","comptes":158,"comptesFR":19,"videosSemaine":1339,"meilleure":{"vues":"4,3 M","compte":"prankswithgenn_"},"note":{"note":"4,8","avis":"411"},"prix":{"min":"0,99","max":"89,99"},"accroches":[{"texte":"Mon objectif est de devenir financièrement indépendante avant mes 25 ans. Je suis ouverte à toutes les idées p","vuesTxt":"1 M","compte":"kelly.advice","comptes":1},{"texte":"Hoy contacté a 100 marcas. 70 nunca respondieron. 20 dijeron que NO. 10 dijeron que Sl. Y 5 de esas me pagaron","vuesTxt":"280 k","compte":"fernandaj_ugc","comptes":19},{"texte":"TRES TRABAJOS DE NOCHE QUE PUEDES HACER DESDE TU CASA","vuesTxt":"191 k","compte":"mafe.guzman29","comptes":4}]},{"nom":"Hub Capture","quoi":"Plateforme de revenus en ligne par parrainage, avec dropshipping et création de contenu UGC pour TikTok Shop","logo":"/_blob/0f9ee825849ee6aed98fd72a4cf282d2","comptes":54,"comptesFR":0,"videosSemaine":180,"meilleure":{"vues":"79,2 k","compte":"tamiresrrosati"},"note":null,"prix":null,"accroches":[{"texte":"Gente, eu sem óculos não exergo nada 😂😂 perdão na leitura 🥹 a informação foi nada kk","vuesTxt":"9,3 k","compte":"rennynooff","comptes":1},{"texte":"“MÃO DE ZUMBI”","vuesTxt":"8,5 k","compte":"yasmin.robo","comptes":1},{"texte":"Vou testar lataforma a novaaa","vuesTxt":"6,3 k","compte":"sthecareli","comptes":1}]},{"nom":"TikAlyzer","quoi":"Deviens Viral","logo":"/_blob/6cd8614ef022ef8a2c697fea0435d3d6","comptes":51,"comptesFR":0,"videosSemaine":87,"meilleure":{"vues":"1,1 k","compte":"viviana.tikalyzr"},"note":{"note":"4,2","avis":"5"},"prix":{"min":"6,99","max":"69,99"},"accroches":[]}]},{"nom":"Création de contenu","apps":41,"vuesParVideo":19873,"top":[{"nom":"Djay","quoi":"DJ App & AI Mixer","logo":"/_blob/72e67ce3d8d12ad2cbb067f4e6359c3d","comptes":163,"comptesFR":3,"videosSemaine":355,"meilleure":{"vues":"61,7 k","compte":"djayoverlaps"},"note":{"note":"4,6","avis":"6,7 k"},"prix":{"min":"0,00","max":"49,99"},"accroches":[{"texte":"گیانەکەم ، ئەتۆ نەبووی فێری گیانت کردم ؟ ئێستاش بێ گیانت کردم","vuesTxt":"135 k","compte":".avii1i","comptes":1},{"texte":"im tryna dumpppp","vuesTxt":"2,9 k","compte":"idontlikeyoufrbye","comptes":1},{"texte":"Don’t bring no stank ah chitterlings for thanksgiving that smell like cousin feet","vuesTxt":"2,4 k","compte":"dxmien_vt","comptes":1}]},{"nom":"Crsel","quoi":"Carrousel & Story Maker","logo":"/_blob/091a5528750d46f9604e2da5d551d8a9","comptes":14,"comptesFR":0,"videosSemaine":104,"meilleure":{"vues":"6,8 k","compte":"emilycreatescontent"},"note":{"note":"4,7","avis":"1,2 k"},"prix":{"min":"5,99","max":"29,99"},"accroches":[]},{"nom":"VanDraw","quoi":"App de dessin qui permet de dessiner des avatars et des personnages à partir des commentaires ou de photos","logo":"/_blob/507b0f3caca6c8110cc73e20ccd269ea","comptes":19,"comptesFR":0,"videosSemaine":73,"meilleure":{"vues":"73,1 k","compte":"inspovikk"},"note":{"note":"4,6","avis":"173"},"prix":{"min":"6,00","max":"60,00"},"accroches":[{"texte":"grand theft auto","vuesTxt":"57,1 k","compte":"inspovikk","comptes":1}]}]},{"nom":"Langues","apps":36,"vuesParVideo":6669,"top":[{"nom":"Vocabulary","quoi":"Apprenez mots","logo":"/_blob/18af473b721534d7e7f6eddc446edfed","comptes":71,"comptesFR":0,"videosSemaine":637,"meilleure":{"vues":"4,2 k","compte":"edforyou6"},"note":{"note":"4,7","avis":"4 k"},"prix":{"min":"5,99","max":"59,99"},"accroches":[{"texte":"My roommate told me about this sound which blocks your brain from overthinking. I’ve been listening for 4 hour","vuesTxt":"6,5 k","compte":"itskatiegirl8","comptes":11},{"texte":"when people are using klarna to make payments to play the new GTA but I'm only $19 away from getting it using ","vuesTxt":"3 k","compte":"lobotomized_fish101","comptes":9},{"texte":"Sous vide burger","vuesTxt":"977","compte":"hazaeyrw6ue","comptes":1}]},{"nom":"Pingo AI","quoi":"Application d'apprentissage des langues par IA qui corrige les phrases et répond aux questions de vocabulaire","logo":"/_blob/d2a8d5194f2818ce6fd059ea62aa7d63","comptes":147,"comptesFR":7,"videosSemaine":480,"meilleure":{"vues":"78,3 k","compte":"nadiaspeaksgerman"},"note":{"note":"4,6","avis":"1,8 k"},"prix":{"min":"14,99","max":"119,99"},"accroches":[{"texte":"🇬🇧 · 🇺🇸 · WHO ARE YOU? · I ASKED BETTER! · I’M A BRITISH AI!!! · WHAT?? · YOUR VOICE SOUNDS UGLY! · WHAAAA","vuesTxt":"246 k","compte":"englishgurukat","comptes":2},{"texte":"¿Quién dijo la frase? official Spanish nationality exam","vuesTxt":"198 k","compte":"camilopolyglot","comptes":3},{"texte":"How do you say \"green flag\" in Chinese 🇨🇳","vuesTxt":"173 k","compte":"howtosaynihao","comptes":4}]},{"nom":"Bunpo","quoi":"Apprendre les langues","logo":"/_blob/c2a6b4086f1b6c1cfbcf61fa15fa1491","comptes":86,"comptesFR":0,"videosSemaine":206,"meilleure":{"vues":"18,9 k","compte":"frenchwithlars"},"note":{"note":"4,8","avis":"1,1 k"},"prix":{"min":"9,99","max":"99,99"},"accroches":[{"texte":"🇬🇧 🇯🇵 🇯🇵😩 I don’t have money お金が ありません","vuesTxt":"344 k","compte":"bunpo_learnjapanese","comptes":1},{"texte":"you’re a villain but you’re still learning Japanese 日本語勉強中のラスボス この漢字が読めないんだけど I actually can't read that kanji","vuesTxt":"44,3 k","compte":"studytomodachi","comptes":1},{"texte":"Anzeige Learning Spanish while eating fruit 🍊🇪🇸","vuesTxt":"20,2 k","compte":"vittoria.aprende","comptes":1}]}]},{"nom":"Études","apps":35,"vuesParVideo":4542,"top":[{"nom":"Aistote","quoi":"QUIZ IA","logo":"/_blob/76e463359e90ef552efb34e5c7e3d6d3","comptes":46,"comptesFR":6,"videosSemaine":532,"meilleure":{"vues":"206 k","compte":"wow_its_clifford"},"note":{"note":"4,5","avis":"2,4 k"},"prix":{"min":"8,99","max":"49,99"},"accroches":[{"texte":"POV: you use a big word in your English essay and pray it means what you think it means","vuesTxt":"206 k","compte":"wow_its_clifford","comptes":1},{"texte":"POV: you finally find a question you actually know and it's only worth 1 point","vuesTxt":"174 k","compte":"wow_its_clifford","comptes":1},{"texte":"Le marché de Noël a ouvert à Nantes🎅🏻🎄","vuesTxt":"89,9 k","compte":"arkenyxe","comptes":1}]},{"nom":"NurseMind","quoi":"AI Nursing Guide","logo":"/_blob/d9cfb325abf5059006ea8a8469649df4","comptes":112,"comptesFR":0,"videosSemaine":435,"meilleure":{"vues":"2 k","compte":"learninghacks4u"},"note":null,"prix":{"min":"9,99","max":"34,99"},"accroches":[{"texte":"these are the BEST outside the box ways to bring in some extra money 🤑","vuesTxt":"1,7 k","compte":"anicaa275","comptes":7},{"texte":"3 things I bought this week just by playing cute mobile games on my phone","vuesTxt":"1,6 k","compte":"anicaa275","comptes":15},{"texte":"if i could redo my first shift as a nurse what i'd do differently, from the first five minutes to clocking out","vuesTxt":"1,5 k","compte":"doweknowhurrr","comptes":6}]},{"nom":"Diane AI","quoi":"Flashcards","logo":"/_blob/272b918280377e85e29e2aa5438d04e4","comptes":53,"comptesFR":49,"videosSemaine":403,"meilleure":{"vues":"51,8 k","compte":"el1ott_lapt"},"note":{"note":"4,6","avis":"385"},"prix":{"min":"19,99","max":"89,99"},"accroches":[{"texte":"« Votre motivation pour réviser les partiels » · « Parce que faut être motivé en plus ? »","vuesTxt":"109 k","compte":"jade_dianeai","comptes":1},{"texte":"On se retrouve à 8h pour aller à la bu mais on est ni du matin ni des partiels","vuesTxt":"87,3 k","compte":"jade_dianeai","comptes":2},{"texte":"Juillet 2025, j'obtiens mon bac, j'ai officiellement terminé le lycée 🏫...","vuesTxt":"71,8 k","compte":"el1ott_lapt","comptes":1}]}]},{"nom":"Productivité","apps":27,"vuesParVideo":4020,"top":[{"nom":"TapCook","quoi":"Budget Meal Plans","logo":"/_blob/51d167ad68f24b809fbc0e60588c30bf","comptes":184,"comptesFR":0,"videosSemaine":3342,"meilleure":{"vues":"31,7 k","compte":"mealprepsteve"},"note":{"note":"4,5","avis":"2"},"prix":{"min":"9,99","max":"34,99"},"accroches":[{"texte":"¿EN COSTCO CON UN PRESUPUESTO AL AZAR?","vuesTxt":"6,2 k","compte":"laurapresupuesto","comptes":2},{"texte":"No Frills Canada $45 to Feed 8 people Dinners for two days this weekend","vuesTxt":"4,6 k","compte":"grocevypwoq","comptes":31},{"texte":"$80 this week for a family of 4!","vuesTxt":"3,9 k","compte":"familytips44","comptes":49}]},{"nom":"FocusTown","quoi":"Minuteur Pomodoro","logo":"/_blob/1bc7d9ec760065dadb6286855c7c1711","comptes":50,"comptesFR":0,"videosSemaine":432,"meilleure":{"vues":"165 k","compte":"yellen_forellen"},"note":{"note":"4,7","avis":"2,1 k"},"prix":{"min":"0,99","max":"34,99"},"accroches":[{"texte":"why does this study room kinda looks like a horror movie 💀","vuesTxt":"5,7 k","compte":"amiesstudycorner","comptes":1},{"texte":"macbeth is so much more interesting when you realise it’s basically a fan fic","vuesTxt":"4,6 k","compte":"downtownacademic","comptes":1},{"texte":"WAIT THERE‘S A WINTER CAFE TO READ WITH FRIENDS ONLINE?!","vuesTxt":"3,9 k","compte":"amiesstudycorner","comptes":1}]},{"nom":"EcoGPT","quoi":"Application d'IA conversationnelle présentée par les créatrices comme un moyen d'agir pour la planète à travers ses usages quotidiens","logo":"/_blob/81f306cd79ba74f68266d56b15581bbb","comptes":130,"comptesFR":0,"videosSemaine":426,"meilleure":{"vues":"98,4 k","compte":"ecowithlourdes"},"note":{"note":"4,7","avis":"1,3 k"},"prix":{"min":"6,99","max":"79,99"},"accroches":[{"texte":"Coincidences that could happen only once in a lifetime 🎯","vuesTxt":"1,7 M","compte":"plainachos","comptes":1},{"texte":"Photos of times people forgot something and faced the consequences Pt.13 😂","vuesTxt":"1,5 M","compte":"plainachos","comptes":2},{"texte":"La vaquita marina está extinta🥺💔","vuesTxt":"901 k","compte":"ecologiacongaby","comptes":8}]}]},{"nom":"Foi","apps":23,"vuesParVideo":4871,"top":[{"nom":"Sacred Shorts","quoi":"Bible Videos","logo":"/_blob/8b7fde72589e291308290005bc0e9703","comptes":54,"comptesFR":0,"videosSemaine":715,"meilleure":{"vues":"392","compte":"guadalupedolores33"},"note":{"note":"5,0","avis":"2"},"prix":{"min":"14,99","max":"69,99"},"accroches":[{"texte":"le regalé esto a mi mamá en su cumpleaños y lloró","vuesTxt":"190","compte":"julianagarcia4007","comptes":2},{"texte":"pidió su herencia antes de tiempo y la perdió toda","vuesTxt":"183","compte":"alexandraquizano","comptes":3},{"texte":"mi hermano en el ejército me pidió que se la recomendara","vuesTxt":"181","compte":"melisagomez747","comptes":4}]},{"nom":"Tarteel","quoi":"Coran et Mémorisation","logo":"/_blob/e23d7cde5a695203aca8775e6c209d27","comptes":50,"comptesFR":4,"videosSemaine":217,"meilleure":{"vues":"10,4 k","compte":"tarteel.travel"},"note":{"note":"4,8","avis":"2,9 k"},"prix":{"min":"14,99","max":"249,99"},"accroches":[{"texte":"“Find peace in Quran after a long day”","vuesTxt":"34,8 k","compte":"muhammadibrahim007458","comptes":1},{"texte":"MK : Muroja'ah dengan irama \"jiharka\"","vuesTxt":"34,5 k","compte":"iqbalrajasaa","comptes":1},{"texte":"POV: Your friend gets put in charge of the Hifz class","vuesTxt":"16,7 k","compte":"zafrul18","comptes":1}]},{"nom":"Scroll The Bible","quoi":"App qui propose des sujets de prière quotidiens et des passages bibliques à partir de la Parole de Dieu","logo":"/_blob/c8f5cc37b0b5704e5d3c10eaa69450eb","comptes":29,"comptesFR":0,"videosSemaine":159,"meilleure":{"vues":"665 k","compte":"juless4jesus"},"note":{"note":"4,9","avis":"30"},"prix":{"min":"5,99","max":"44,99"},"accroches":[{"texte":"God wants you To pray against Anxiety & worry!","vuesTxt":"14,2 k","compte":"cirley.ruballo","comptes":2},{"texte":"God wants you to hear his voice this week","vuesTxt":"12,3 k","compte":"jodavscroll","comptes":1},{"texte":"A message from God for YOU❤️‍🔥","vuesTxt":"6,3 k","compte":"jodavscroll","comptes":1}]}]},{"nom":"Beauté IA","apps":23,"vuesParVideo":11777,"top":[{"nom":"Fits","quoi":"Closet & Outfit Maker","logo":"/_blob/fd3e43265fe47c1decfd0182c930f20a","comptes":11,"comptesFR":1,"videosSemaine":67,"meilleure":{"vues":"699","compte":".username._.com"},"note":{"note":"4,5","avis":"1,3 k"},"prix":{"min":"1,99","max":"79,99"},"accroches":[]},{"nom":"Tatship","quoi":"Simulateur Tatouage","logo":"/_blob/d0f7558d072c2b1a1c3442f254ce5c6f","comptes":3,"comptesFR":0,"videosSemaine":30,"meilleure":{"vues":"1,5 k","compte":"tatshiphq"},"note":{"note":"4,4","avis":"118"},"prix":{"min":"14,99","max":"39,99"},"accroches":[{"texte":"Tattoo request forms are HARD for clients","vuesTxt":"106","compte":"tatshiphq","comptes":1},{"texte":"my tattoo artist just sent me this app to use before my appointment","vuesTxt":"38","compte":"tatshiphq","comptes":1}]},{"nom":"Closfi","quoi":"Tu Clóset Virtual IA","logo":"/_blob/de6226863c70814f0221b74949c14eb4","comptes":21,"comptesFR":0,"videosSemaine":19,"meilleure":{"vues":"4,5 k","compte":"carolina_outfits"},"note":null,"prix":{"min":"3,99","max":"59,99"},"accroches":[]}]},{"nom":"Jalousie et ex","apps":22,"vuesParVideo":4219,"top":[{"nom":"The Cringe","quoi":"Chat Wrapped","logo":"/_blob/326f204effd9efd7786e7f1e6e9eb2e0","comptes":14,"comptesFR":2,"videosSemaine":95,"meilleure":{"vues":"144 k","compte":"ele_peivateaccoun"},"note":{"note":"4,0","avis":"849"},"prix":{"min":"9,99","max":"44,99"},"accroches":[]},{"nom":"Red Flag","quoi":"Track Recent Follows","logo":"/_blob/c10256d7cc19cda8fa0ccd849335fd21","comptes":21,"comptesFR":0,"videosSemaine":0,"meilleure":null,"note":{"note":"5,0","avis":"1"},"prix":{"min":"3,99","max":"89,99"},"accroches":[]},{"nom":"Lucen","quoi":"AI Text Dating Advice","logo":"/_blob/ab3d5d2b0f89acec0794e6435436e575","comptes":1,"comptesFR":0,"videosSemaine":0,"meilleure":null,"note":null,"prix":null,"accroches":[]}]},{"nom":"Bien-être mental","apps":18,"vuesParVideo":1580,"top":[{"nom":"Daimon","quoi":"Honest Advice","logo":"/_blob/3386216d6464bda58acde9f87262c9db","comptes":5,"comptesFR":0,"videosSemaine":26,"meilleure":{"vues":"304 k","compte":"evelyn.0935"},"note":{"note":"4,9","avis":"904"},"prix":{"min":"0,99","max":"9,99"},"accroches":[]},{"nom":"Gratitude Plus","quoi":"Journal","logo":"/_blob/4e9329f17dae35ca057b79f103619303","comptes":5,"comptesFR":0,"videosSemaine":24,"meilleure":{"vues":"10,2 k","compte":"chaos_butmakeitcute_ish"},"note":{"note":"4,9","avis":"41"},"prix":{"min":"6,99","max":"399,99"},"accroches":[{"texte":"I was tired of checking by bank account before every purchase So I started making videos of myself doing simpl","vuesTxt":"275","compte":"pis.taschio","comptes":1}]},{"nom":"Cora","quoi":"Become Her","logo":"/_blob/4b05703605396afb08ea212a8b92aabf","comptes":3,"comptesFR":0,"videosSemaine":4,"meilleure":{"vues":"737","compte":"becomingherpru"},"note":{"note":"4,4","avis":"34"},"prix":{"min":"6,99","max":"49,99"},"accroches":[]}]},{"nom":"Séduction IA","apps":17,"vuesParVideo":18550,"top":[{"nom":"Liggo","quoi":"Phrases de Drague IA","logo":"/_blob/352527d46f54e98038cc7ffef8fda244","comptes":17,"comptesFR":0,"videosSemaine":111,"meilleure":{"vues":"492 k","compte":"inspectordelrizz"},"note":{"note":"5,0","avis":"2"},"prix":{"min":"3,99","max":"39,99"},"accroches":[{"texte":"quien me acompaña a un casamiento quien es la afortunada?","vuesTxt":"492 k","compte":"inspectordelrizz","comptes":2},{"texte":"mi Sabés bien que nunca de cosas por vos, siempre fu JAJAJAJ QUE MANERA DE REÍRME que romántico que sos amigo!","vuesTxt":"58,1 k","compte":"santidigraziaa","comptes":1},{"texte":"DIOSITO DESÉAME SUERTE","vuesTxt":"33,4 k","compte":"mrrizz49","comptes":1}]},{"nom":"Trick AI","quoi":"Application qui aide à décoder et écrire les messages dans une conversation amoureuse, avec des conseils de réponse","logo":"/_blob/177196c913f5b1d9723da3da796e0233","comptes":2,"comptesFR":0,"videosSemaine":36,"meilleure":{"vues":"70,8 k","compte":"ustamanipulator"},"note":{"note":"5,0","avis":"1"},"prix":{"min":"1,99","max":"69,99"},"accroches":[{"texte":"Beni arkadaş bölgesine attı. Sonra arkadaşlığımdan şikâyet etti.","vuesTxt":"1,2 k","compte":"manipulasyonustasi","comptes":1},{"texte":"Partide başka biriyle öpüştü. Ertesi gün \"sarhoştum, sayılmaz\" dedi.","vuesTxt":"385","compte":"manipulasyonustasi","comptes":1},{"texte":"Beni telefonuna \"Ayşe Hoca\" diye kaydetmiş. Meğer başka biriyle sevgiliymiş.","vuesTxt":"304","compte":"ustamanipulator","comptes":1}]},{"nom":"Yazcam","quoi":"Assistant Chat IA","logo":"/_blob/0df314e6bafaa4ba8136c012293867cb","comptes":2,"comptesFR":0,"videosSemaine":10,"meilleure":{"vues":"7,8 k","compte":"alfaflort"},"note":null,"prix":{"min":"5,99","max":"79,99"},"accroches":[{"texte":"1 Haftadır konuştuğum Flört \"sevgilim var\" dedi","vuesTxt":"4,2 k","compte":"tavlarizz","comptes":1},{"texte":"POV: Kız 'ben çok kıskancım, baştan söyleyeyim' dedi ve sen kıskançlık yarışması açtın 👉","vuesTxt":"522","compte":"alfaflort","comptes":1}]}]},{"nom":"Rencontres","apps":17,"vuesParVideo":9647,"top":[{"nom":"Bump","quoi":"Va voir tes amis IRL","logo":"/_blob/3cbb37ff9b44132c4bbe01d8dba06070","comptes":74,"comptesFR":7,"videosSemaine":302,"meilleure":{"vues":"621 k","compte":"brendon.bump"},"note":{"note":"4,9","avis":"12 k"},"prix":{"min":"2,49","max":"34,99"},"accroches":[{"texte":"Siempre un: Voy llegando","vuesTxt":"965 k","compte":"jacqui.bump","comptes":3},{"texte":"Azt mondja ne talizzunk ma, sokat dolgozott, inkább alszik... Most tényleg ennyire madárnak tűnök? 😂","vuesTxt":"779 k","compte":"szaffi.bump","comptes":4},{"texte":"- mergee Dragoste la prima vedere Alex - ok","vuesTxt":"691 k","compte":"daduuu.bump","comptes":1}]},{"nom":"Milionegle","quoi":"App pour rencontrer d'autres entrepreneurs et développer une mentalité entrepreneuriale","logo":"/_blob/a579d0a65ac9e88518b42c1f93294ea5","comptes":6,"comptesFR":0,"videosSemaine":65,"meilleure":{"vues":"5,1 k","compte":"rebecca.emprende"},"note":null,"prix":{"min":"0,99","max":"49,99"},"accroches":[{"texte":"Hackearon la web de mi cliente y me llamó diciendo que fue mi culpa.","vuesTxt":"10,3 k","compte":"gonzles1258","comptes":1},{"texte":"con una aplicación","vuesTxt":"1,3 k","compte":"hurtaldo","comptes":1},{"texte":"Entregué la web, el cliente dijo «perfecto» y nunca pagó los últimos $700.","vuesTxt":"1,2 k","compte":"gonzles1258","comptes":1}]},{"nom":"Dion","quoi":"Application de mise en relation sur invitation pour rencontrer de nouvelles personnes et développer son réseau","logo":"/_blob/566a5de8ed094021a113b9dd0e0b72dc","comptes":17,"comptesFR":0,"videosSemaine":41,"meilleure":{"vues":"8,3 k","compte":"gabyandsips"},"note":{"note":"4,9","avis":"53"},"prix":{"min":"24,99","max":"359,99"},"accroches":[{"texte":"Not everyone gets into Dion. Here’s why:","vuesTxt":"3,1 k","compte":"revekkapal","comptes":1},{"texte":"POV: you try to take a break as the founder of Dion","vuesTxt":"2,5 k","compte":"revekkapal","comptes":1},{"texte":"Business owners thinking they’ll get a good night sleep · my business brain all night","vuesTxt":"1,2 k","compte":"revekkapal","comptes":1}]}]},{"nom":"Finance","apps":17,"vuesParVideo":4049,"top":[{"nom":"Zoya","quoi":"Halal Investing App","logo":"/_blob/4643f0caf89559e301b3f7fb9d08a746","comptes":4,"comptesFR":0,"videosSemaine":31,"meilleure":{"vues":"96 k","compte":"malak.finance"},"note":{"note":"4,8","avis":"83"},"prix":{"min":"4,99","max":"129,99"},"accroches":[{"texte":"realizing that islam gives you instructions on everything including your finances, wealth, and halal investing","vuesTxt":"3,2 k","compte":"keishaonwealth","comptes":1},{"texte":"girls who invest >","vuesTxt":"868","compte":"keishaonwealth","comptes":1}]},{"nom":"WeStash","quoi":"Budget & Épargne","logo":"/_blob/779c5807537880cdb1c1a785115ebf66","comptes":3,"comptesFR":0,"videosSemaine":30,"meilleure":{"vues":"4,3 k","compte":"eliestash"},"note":{"note":"4,4","avis":"28"},"prix":{"min":"3,99","max":"24,99"},"accroches":[]},{"nom":"Finzee","quoi":"Budget planner","logo":"/_blob/9b695f4117c13e1887f4946718bc23fe","comptes":13,"comptesFR":11,"videosSemaine":20,"meilleure":{"vues":"270 k","compte":"budget.forgirls"},"note":{"note":"4,8","avis":"791"},"prix":{"min":"4,99","max":"99,99"},"accroches":[]}]},{"nom":"Couple","apps":9,"vuesParVideo":5149,"top":[{"nom":"Amorly","quoi":"Jeux de Couple & Quiz","logo":"/_blob/ddf351f6e358f12f637f1bd8295697c5","comptes":2,"comptesFR":0,"videosSemaine":50,"meilleure":{"vues":"258 k","compte":"mayanowak076"},"note":{"note":"2,0","avis":"2"},"prix":{"min":"5,99","max":"79,99"},"accroches":[{"texte":"4 oznaki, że twoja dziewczyna naprawdę cię kocha >>>","vuesTxt":"182 k","compte":"majanowak074","comptes":2},{"texte":"Oznaki, że bombarduje cię miłością","vuesTxt":"15,8 k","compte":"mayanowak076","comptes":1},{"texte":"13 czerwonych flag 🚩 w związku ; Przeczytaj to >","vuesTxt":"556","compte":"mayanowak076","comptes":1}]},{"nom":"Pukutan","quoi":"Journal & Élevage","logo":"/_blob/76fcdcc098bf14cb1f45f6757f4d1c51","comptes":30,"comptesFR":0,"videosSemaine":37,"meilleure":{"vues":"4,5 k","compte":"kydropout"},"note":{"note":"4,5","avis":"2"},"prix":{"min":"0,99","max":"69,99"},"accroches":[]}]}]};
+
+    const RADAR = 653;
+    const NSP = "\u00A0";
+    const NB = " ";
+    const STEPS = [500, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 30000];
+    const QUICK = [1000, 3000, 5000, 10000];
+    const TIMES = [
+      { v: 30, l: "30 min", n: 1 },
+      { v: 60, l: "1 h", n: 3 },
+      { v: 120, l: "2 h", n: 6 },
+      { v: 180, l: "3 h +", n: 9 }
+    ];
+    const OTHER_ORDER = ["Social et loisirs", "Bien-être mental", "Finance", "Création de contenu", "Foi", "Rencontres", "Études", "Langues", "Productivité", "Side hustle", "Beauté IA", "Séduction IA", "Jalousie et ex", "Couple", "Santé et physique"];
+    const MAIN_POS = [[66.5, 26.3], [66.3, 78.3], [25.8, 56.5]];
+    const MAIN_DELAY = [0.9, 1.75, 2.55];
+    const OTHER_POS = [[16.7, 30.8], [43.1, 31], [85.8, 29.3], [90.8, 42.9], [35.9, 88.8], [16.9, 77.9]];
+    const OTHER_DELAY = [0.25, 0.5, 0.8, 1.2, 1.5, 2.1];
+    const EMO = /[\u{1F000}-\u{1FAFF}\u{2300}-\u{23FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0E}\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu;
+    const PARTS = (function () {
+      const out = [];
+      const n = 22;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + (i % 2 ? 0.13 : -0.07);
+        const d = 230 + (i % 4) * 40;
+        const sz = 6 + (i % 3) * 3;
+        const c = ["#0B6FE0", "#4C9AFF", "#7CC4FF"][i % 3];
+        out.push({ st: "--dx:" + Math.round(Math.cos(a) * d) + "px;--dy:" + Math.round(Math.sin(a) * d) + "px;width:" + sz + "px;height:" + sz + "px;margin:" + (-sz / 2) + "px 0 0 " + (-sz / 2) + "px;background:" + c + ";animation-delay:" + ((i % 5) * 20) + "ms" });
+      }
+      return out;
+    })();
+
+    function fmtInt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, NSP); }
+    function plural(n, one, many) { return n > 1 ? many : one; }
+    function parseVues(s) {
+      if (!s) return 0;
+      const m = String(s).replace(/\s/g, "").replace(",", ".").match(/^([\d.]+)([kM]?)$/);
+      if (!m) return 0;
+      return parseFloat(m[1]) * (m[2] === "M" ? 1e6 : m[2] === "k" ? 1e3 : 1);
+    }
+    function fmtDur(m) {
+      if (m < 60) return m + NB + "min";
+      const h = Math.floor(m / 60);
+      const r = m % 60;
+      return h + NB + "h" + (r ? NB + r : "");
+    }
+    function fmtVues(lo, hi) {
+      const big = hi >= 1e6;
+      const div = big ? 1e6 : 1e3;
+      const f = (v) => {
+        const x = v / div;
+        const r = x >= 100 ? Math.round(x) : x >= 10 ? Math.round(x * 10) / 10 : Math.round(x * 100) / 100;
+        return String(r).replace(".", ",");
+      };
+      return { txt: f(lo) + " à " + f(hi) + NB + (big ? "M" : "k"), de: big ? " de vues" : " vues" };
+    }
+    function bg(src) { return "background-image: url(" + src + ")"; }
+    function vuesLabel(v) { return v + (/M$/.test(v) ? " de vues" : " vues"); }
+    function clean(t) {
+      const raw = String(t || "");
+      let s = raw.replace(EMO, "");
+      s = s.split(/\s*·\s*/).map((x) => x.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n");
+      if (raw.length >= 110) s = s.replace(/[\s,.;:]+$/, "") + "…";
+      return s;
+    }
+    return { DATA, RADAR, NSP, NB, STEPS, QUICK, TIMES, OTHER_ORDER, MAIN_POS, MAIN_DELAY, OTHER_POS, OTHER_DELAY, EMO, PARTS, fmtInt, plural, parseVues, fmtDur, fmtVues, bg, vuesLabel, clean };
+  })();
+
+  constructor(props) {
+    super(props);
+    let rm = false;
+    try { rm = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) {}
+    this.rm = rm;
+    this.timers = new Set();
+    this.stepTimers = new Set();
+    this.rid = 0;
+    this.state = {
+      step: 1, amount: 3000, niche: "Santé et physique", time: 120, budget: "lt100", code: "non", market: "FR",
+      app: 0, showCalc: false, paywallOpen: false, pwClosing: false, leaving: false,
+      armed: rm, cp: 0, picked: null, ripple: null, seen: {}, originY: 450
+    };
+    this.rootRef = (el) => { this.rootEl = el; };
+    this.pwRef = (el) => {
+      if (el && !this.pwFocused) { this.pwFocused = true; try { el.focus({ preventScroll: true }); } catch (e) {} }
+    };
+  }
+
+  componentDidMount() {
+    if (!this.rm) this.later(() => this.setState({ armed: true }), 90, true);
+  }
+
+  componentWillUnmount() {
+    this.clearAll();
+    if (this.io) { this.io.disconnect(); this.io = null; }
+  }
+
+  later(fn, ms, scoped) {
+    const set = scoped ? this.stepTimers : this.timers;
+    const id = setTimeout(() => { set.delete(id); fn(); }, ms);
+    set.add(id);
+    return id;
+  }
+  clearStep() { this.stepTimers.forEach((id) => clearTimeout(id)); this.stepTimers.clear(); }
+  clearAll() { this.clearStep(); this.timers.forEach((id) => clearTimeout(id)); this.timers.clear(); }
+
+  go(target, extra) {
+    if (this.state.leaving) return;
+    this.clearStep();
+    let oy = 450;
+    try { oy = (window.scrollY || 0) + window.innerHeight * 0.4; } catch (e) {}
+    this.setState({ leaving: true, originY: Math.round(oy) });
+    this.later(() => this.swap(target, extra), this.rm ? 0 : 300, true);
+  }
+
+  swap(target, extra) {
+    if (this.io) { this.io.disconnect(); this.io = null; }
+    this.pwFocused = false;
+    this.setState(Object.assign({
+      step: target, leaving: false, armed: this.rm, showCalc: false, paywallOpen: false, pwClosing: false,
+      cp: 0, picked: null, ripple: null, seen: {}
+    }, extra || {}));
+    try { window.scrollTo(0, 0); } catch (e) {}
+    if (!this.rm) this.later(() => this.setState({ armed: true }), 90, true);
+    if (target === 7) this.runCalc();
+    if (target === 8 || target === 9) this.later(() => this.observe(), 40, true);
+  }
+
+  runCalc() {
+    if (this.rm) {
+      this.setState({ cp: 4 });
+      this.later(() => this.go(8), 1600, true);
+      return;
+    }
+    this.later(() => this.setState({ cp: 1 }), 750, true);
+    this.later(() => this.setState({ cp: 3 }), 3000, true);
+    this.later(() => this.setState({ cp: 4 }), 3090, true);
+    this.later(() => this.go(8), 4400, true);
+  }
+
+  observe() {
+    const root = this.rootEl;
+    if (!root) return;
+    const els = root.querySelectorAll("[data-reveal]");
+    if (typeof IntersectionObserver === "undefined") {
+      const all = {};
+      els.forEach((el) => { all[el.getAttribute("data-reveal")] = true; });
+      this.setState({ seen: all });
+      return;
+    }
+    if (this.io) this.io.disconnect();
+    this.io = new IntersectionObserver((entries) => {
+      const add = {};
+      let any = false;
+      entries.forEach((en) => {
+        if (en.isIntersecting) {
+          add[en.target.getAttribute("data-reveal")] = true;
+          any = true;
+          if (this.io) this.io.unobserve(en.target);
+        }
+      });
+      if (any) this.setState({ seen: Object.assign({}, this.state.seen, add) });
+    }, { threshold: 0.16 });
+    els.forEach((el) => this.io.observe(el));
+  }
+
+  ripple(e, k) {
+    let x = 0, y = 0, w = 0, h = 0;
+    try {
+      const r = e.currentTarget.getBoundingClientRect();
+      w = r.width; h = r.height;
+      if (e.clientX || e.clientY) { x = e.clientX - r.left; y = e.clientY - r.top; } else { x = w / 2; y = h / 2; }
+    } catch (err) {}
+    const s = Math.ceil(2 * Math.hypot(Math.max(x, w - x), Math.max(y, h - y)) + 8);
+    this.rid += 1;
+    return { k: k, id: this.rid, st: "left:" + Math.round(x - s / 2) + "px;top:" + Math.round(y - s / 2) + "px;width:" + s + "px;height:" + s + "px" };
+  }
+
+  choose(field, value, e) {
+    if (this.state.leaving) return;
+    const rip = this.ripple(e, field + ":" + value);
+    const step = this.state.step;
+    const patch = { picked: field, ripple: rip };
+    patch[field] = value;
+    this.setState(patch);
+    if (this.autoT) { clearTimeout(this.autoT); this.stepTimers.delete(this.autoT); }
+    this.autoT = this.later(() => {
+      if (this.state.step === step && !this.state.leaving) this.next();
+    }, this.rm ? 150 : 650, true);
+  }
+
+  pickAmount(v, e) {
+    const rip = this.ripple(e, "amount:" + v);
+    this.setState({ amount: v, ripple: rip, armed: true });
+  }
+
+  onAmount(e) {
+    const { STEPS } = this.constructor.K;
+    const i = Math.max(0, Math.min(10, parseInt(e.target.value, 10) || 0));
+    this.setState({ amount: STEPS[i], armed: true });
+  }
+
+  next() { const s = this.state.step; if (s < 7) this.go(s + 1); }
+  back() { const s = this.state.step; if (s === 9) this.go(8); else if (s > 1 && s <= 6) this.go(s - 1); }
+
+  openPaywall() { this.pwFocused = false; this.setState({ paywallOpen: true, pwClosing: false }); }
+  closePaywall() {
+    if (!this.state.paywallOpen || this.state.pwClosing) return;
+    this.setState({ pwClosing: true });
+    this.later(() => this.setState({ paywallOpen: false, pwClosing: false }), this.rm ? 0 : 240, false);
+  }
+
+  info() {
+    const { DATA, RADAR, OTHER_ORDER, parseVues } = this.constructor.K;
+    const key = this.state.niche + "|" + this.state.market;
+    if (this._ik === key) return this._iv;
+    let apps, vpv, total, label, nicheNames;
+    if (this.state.niche === "*") {
+      const all = [];
+      DATA.niches.forEach((n) => n.top.forEach((a) => all.push(Object.assign({ niche: n.nom }, a))));
+      all.sort((a, b) => parseVues(b.meilleure && b.meilleure.vues) - parseVues(a.meilleure && a.meilleure.vues));
+      apps = all.slice(0, 3);
+      vpv = 7400;
+      total = RADAR;
+      label = null;
+      nicheNames = apps.map((a) => a.niche);
+    } else {
+      const n = DATA.niches.find((x) => x.nom === this.state.niche) || DATA.niches[1];
+      apps = n.top.map((a) => Object.assign({ niche: n.nom }, a));
+      vpv = n.vuesParVideo;
+      total = n.apps;
+      label = n.nom;
+      nicheNames = [n.nom];
+    }
+    const k = this.state.market === "FR" ? "comptesFR" : "videosSemaine";
+    apps.sort((a, b) => (b[k] - a[k]) || (b.videosSemaine - a.videosSemaine));
+    const others = [];
+    OTHER_ORDER.forEach((nom) => {
+      if (others.length >= 6 || nicheNames.indexOf(nom) >= 0) return;
+      const n = DATA.niches.find((x) => x.nom === nom);
+      if (n && n.top[0]) others.push(n.top[0].logo);
+    });
+    this._ik = key;
+    this._iv = { apps: apps, vpv: vpv, total: total, label: label, others: others };
+    return this._iv;
+  }
+
+  plan(info) {
+    const { fmtInt, plural, fmtDur } = this.constructor.K;
+    const s = this.state;
+    const lo = s.amount / 3.5 * 1000;
+    const hi = s.amount / 2.5 * 1000;
+    const vmin = Math.max(1, Math.round(lo / info.vpv / 30));
+    const vmax = Math.max(vmin, Math.ceil(hi / info.vpv / 30));
+    const comptes = Math.max(1, Math.ceil(vmax / 3));
+    const advise = Math.max(30, Math.round(((vmin + vmax) / 2 * 20) / 30) * 30);
+    const cap = Math.floor(s.time / 20);
+    const manque = Math.max(0, vmin - cap);
+    const creas = Math.ceil(manque / 2);
+    const cout = manque * 5 * 30;
+    const creasTxt = creas + " " + plural(creas, "créatrice", "créatrices");
+    const adviseOk = advise <= 600;
+    let cas, verdict, pill2;
+    if (manque === 0) {
+      cas = "A"; verdict = "Faisable avec ton temps"; pill2 = fmtDur(advise) + " par jour";
+    } else if (s.budget === "gt500" || (s.budget === "100-500" && cout <= 500)) {
+      cas = "B"; verdict = creas === 1 ? "Faisable avec une créatrice" : "Faisable avec " + creasTxt; pill2 = fmtInt(cout) + "\u202F€ par mois";
+    } else {
+      cas = "C"; verdict = "Trop juste avec " + fmtDur(s.time); pill2 = adviseOk ? fmtDur(advise) + " par jour" : creasTxt;
+    }
+    const perAcc = Math.ceil(vmax / comptes);
+    return { lo: lo, hi: hi, vmin: vmin, vmax: vmax, comptes: comptes, advise: advise, adviseOk: adviseOk, cap: cap, manque: manque, creas: creas, cout: cout, cas: cas, verdict: verdict, pill2: pill2, ok: cas !== "C", perAcc: perAcc };
+  }
+
+  digit(d, gone, i) {
+    return { dig: true, chr: false, ch: "", cls: gone ? "is-gone" : "", st: "transform: translateY(-" + d + "em); transition-delay: " + (i * 40) + "ms" };
+  }
+  sep(ch, gone, wide) { return { dig: false, chr: true, ch: ch, cls: (wide ? "is-sep " : "") + (gone ? "is-gone" : ""), st: "" }; }
+
+  rollNum(n, minDigits) {
+    const { NB } = this.constructor.K;
+    const s = String(Math.max(0, Math.round(n)));
+    const L = Math.max(s.length, minDigits || 1);
+    const out = [];
+    for (let p = 0; p < L; p++) {
+      if (p > 0 && p % 3 === 0) out.push(this.sep(NB, p >= s.length, true));
+      const d = p < s.length ? +s[s.length - 1 - p] : 0;
+      out.push(this.digit(d, p > 0 && p >= s.length, p));
+    }
+    return out;
+  }
+
+  rollStr(str, zero) {
+    const { NB } = this.constructor.K;
+    const chars = String(str || "").split("");
+    const out = [];
+    let di = 0;
+    for (let i = chars.length - 1; i >= 0; i--) {
+      const c = chars[i];
+      if (/[0-9]/.test(c)) { out.push(this.digit(zero ? 0 : +c, false, di)); di += 1; }
+      else out.push(this.sep(c === " " ? NB : c, false));
+    }
+    return out;
+  }
+
+  opt(field, value) {
+    const s = this.state;
+    const on = s[field] === value;
+    const rp = s.ripple && s.ripple.k === field + ":" + value;
+    return {
+      on: on,
+      checked: on ? "true" : "false",
+      cls: on ? "is-on" : (s.picked === field ? "is-off" : ""),
+      pick: (e) => this.choose(field, value, e),
+      rOn: !!rp,
+      rKey: rp ? "r" + s.ripple.id : "r0",
+      rSt: rp ? s.ripple.st : ""
+    };
+  }
+
+  renderVals() {
+    const { DATA, RADAR, NSP, NB, STEPS, QUICK, TIMES, MAIN_POS, MAIN_DELAY, OTHER_POS, OTHER_DELAY, PARTS, fmtInt, plural, fmtDur, fmtVues, bg, vuesLabel, clean } = this.constructor.K;
+    const s = this.state;
+    const pw = this.props.paywall ?? true;
+    const film = !pw;
+    const info = this.info();
+    const P = this.plan(info);
+    const step = s.step;
+    const seen = this.rm ? { apps: true, hooks: true, accts: true, weeks: true, prix: true, end: true } : (s.seen || {});
+    const armed = s.armed;
+    const apps = info.apps;
+    const nApps = apps.length;
+
+    const segs = [1, 2, 3, 4, 5, 6].map((i) => ({ cls: (i < step || step >= 7) ? "is-on" : (i === step ? "is-on is-cur" : "") }));
+    const backOn = (step >= 2 && step <= 6) || step === 9;
+
+    const idx = Math.max(0, STEPS.indexOf(s.amount));
+    const perDay = Math.round(s.amount / 30);
+    const quick = QUICK.map((v, i) => {
+      const o = this.opt("amount", v);
+      o.cls = s.amount === v ? "is-on" : "";
+      o.pick = (e) => this.pickAmount(v, e);
+      o.label = fmtInt(v) + NB + "€";
+      o.d = "animation-delay: " + (280 + i * 55) + "ms";
+      return o;
+    });
+
+    const mk = s.market === "FR" ? "comptesFR" : "videosSemaine";
+    const niches = DATA.niches.map((n, i) => Object.assign(this.opt("niche", n.nom), {
+      nom: n.nom,
+      d: "animation-delay: " + (120 + i * 35) + "ms",
+      logos: n.top.slice().sort((a, b) => (b[mk] - a[mk]) || (b.videosSemaine - a.videosSemaine)).map((a, j) => ({ st: "z-index: " + (3 - j) + "; " + bg(a.logo) }))
+    }));
+    const nsp = this.opt("niche", "*");
+
+    const times = TIMES.map((t, i) => Object.assign(this.opt("time", t.v), {
+      l: t.l,
+      txt: t.n + " " + plural(t.n, "vidéo", "vidéos") + " par jour",
+      d: "animation-delay: " + (80 + i * 55) + "ms",
+      vigs: Array.from({ length: t.n }, (_, j) => ({ st: "animation-delay: " + (160 + j * 70) + "ms" }))
+    }));
+
+    const radarMain = apps.map((a, i) => ({
+      bg: bg(a.logo),
+      st: "left: " + MAIN_POS[i][0] + "%; top: " + MAIN_POS[i][1] + "%; animation-delay: " + MAIN_DELAY[i] + "s;",
+      pst: "animation-delay: " + (MAIN_DELAY[i] + 0.35) + "s"
+    }));
+    const radarOthers = info.others.map((src, i) => ({
+      bg: bg(src),
+      st: "left: " + OTHER_POS[i][0] + "%; top: " + OTHER_POS[i][1] + "%; animation-delay: " + OTHER_DELAY[i] + "s;"
+    }));
+
+    const two = P.vmin !== P.vmax;
+    const rangeTxt = two ? P.vmin + " à " + P.vmax : String(P.vmin);
+    const unitTxt = plural(P.vmax, "vidéo par jour", "vidéos par jour");
+    const comptesTxt = P.comptes + " " + plural(P.comptes, "compte", "comptes");
+    const V = fmtVues(P.lo, P.hi);
+    const lines = [
+      { t: fmtInt(s.amount) + NB + "€ ÷ 2,50 à 3,50" + NB + "€ pour 1" + NSP + "000 vues", c: "" },
+      { t: "= " + V.txt + V.de + " par mois", c: "" },
+      { t: "÷ " + fmtInt(info.vpv) + " vues par vidéo ÷ 30 jours", c: "" },
+      { t: "= " + rangeTxt + " " + unitTxt, c: "is-key" },
+      { t: P.vmax + " ÷ 3 vidéos par compte = " + comptesTxt, c: "" }
+    ];
+    if (P.adviseOk) lines.push({ t: "(" + P.vmin + " + " + P.vmax + ") ÷ 2 × 20" + NB + "min ≈ " + fmtDur(P.advise) + " par jour", c: "" });
+    lines.push({ t: "Ton temps : " + fmtDur(s.time) + " ÷ 20" + NB + "min = " + P.cap + " " + plural(P.cap, "vidéo", "vidéos") + " par jour", c: "" });
+    if (P.cas !== "A") lines.push({ t: "Créatrices : " + P.manque + " × 5" + NB + "€ × 30 = " + fmtInt(P.cout) + NB + "€ par mois", c: "" });
+    lines.push({ t: "hypothèse : 2,50 à 3,50" + NB + "€ pour 1" + NSP + "000 vues, pas une promesse de gain", c: "is-note" });
+    const calcLines = lines.map((l, i) => ({ t: l.t, c: l.c, st: "transition-delay: " + (s.showCalc ? 120 + i * 55 : 0) + "ms" }));
+
+    const appView = (a) => {
+      const best = a.meilleure ? a.meilleure.vues : "";
+      return {
+        bg: bg(a.logo), nom: a.nom, quoi: a.quoi,
+        hasBest: !!best, best: best,
+        bestUnit: best ? (/M$/.test(best) ? "de vues sur sa meilleure vidéo" : "vues sur sa meilleure vidéo") : "",
+        comptesTxt: fmtInt(a.comptes) + " " + plural(a.comptes, "compte", "comptes"),
+        pushTxt: a.comptes > 1 ? "la poussent" : "la pousse"
+      };
+    };
+    const feat = appView(apps[0]);
+    const others = apps.slice(1).map((a, i) => Object.assign(appView(a), {
+      open: () => this.go(9, { app: i + 1 }),
+      lockLabel: "App " + (i + 2) + " verrouillée, tout débloquer",
+      d: "animation-delay: " + (180 + i * 90) + "ms"
+    }));
+    const restApps = Math.max(0, info.total - nApps);
+
+    const ai = Math.min(s.app, nApps - 1);
+    const A = apps[ai];
+    const accro = (A.accroches || []).filter((h) => h && h.texte);
+    let hooks = [];
+    const pile = (i, n) => {
+      const w = 224;
+      const center = (n - 1) / 2;
+      const px = Math.round((center - i) * w);
+      const fanDeg = n > 1 ? (i - center) * (n > 2 ? 3 : 2) : 0;
+      const fanY = Math.abs(i - center) > 0.1 ? 6 : 0;
+      const pr = [-7, 5, -2][i % 3];
+      return "--px:" + px + "px;--pr:" + pr + "deg;--fan:translateY(" + fanY + "px) rotate(" + fanDeg + "deg);";
+    };
+    if (accro.length) {
+      hooks = accro.map((h, i, arr) => {
+        const txt = clean(h.texte);
+        const nl = txt.split("\n").length;
+        const len = txt.length;
+        const fs = (len > 95 || nl > 4) ? "font-size: 16px; line-height: 1.3;" : (len > 60 || nl > 2) ? "font-size: 18px; line-height: 1.28;" : "font-size: 20px; line-height: 1.25;";
+        return {
+          txt: txt, fs: fs,
+          views: vuesLabel(h.vuesTxt),
+          who: "@" + h.compte + (h.comptes > 1 ? " · " + h.comptes + " comptes" : ""),
+          st: pile(i, arr.length) + "animation-delay:" + (160 + i * 150) + "ms",
+          d1: "animation-delay: " + (620 + i * 150) + "ms",
+          d2: "animation-delay: " + (680 + i * 150) + "ms"
+        };
+      });
+    } else if (A.meilleure) {
+      hooks = [{
+        txt: "Sa meilleure vidéo", fs: "font-size: 22px; line-height: 1.2;",
+        views: vuesLabel(A.meilleure.vues),
+        who: "@" + A.meilleure.compte,
+        st: pile(0, 1) + "animation-delay:160ms",
+        d1: "animation-delay: 620ms", d2: "animation-delay: 680ms"
+      }];
+    }
+    const shown = Math.min(P.comptes, 6);
+    const avatars = Array.from({ length: shown }, (_, i) => ({ st: "animation-delay: " + (120 + i * 90) + "ms" }));
+    const codeTxt = s.code === "oui" ? "en code" : s.code === "outils" ? "avec des outils sans code" : "sans coder";
+    const p3 = Math.min(2, P.perAcc);
+    const wk = [
+      { k: "Construire", t: "Ta version de l’app, " + codeTxt },
+      { k: "Chauffer", t: comptesTxt + " : regarde et like la niche" },
+      { k: "Publier", t: p3 + " " + plural(p3, "vidéo", "vidéos") + " par jour et par compte" },
+      { k: "Doubler", t: "Ce qui marche, à " + P.perAcc + " " + plural(P.perAcc, "vidéo", "vidéos") + " par jour" }
+    ];
+    const weeks = wk.map((w, i) => ({
+      n: String(i + 1), k: w.k, t: w.t,
+      d0: "animation-delay: " + (200 + i * 330) + "ms",
+      d1: "animation-delay: " + (300 + i * 330) + "ms",
+      d2: "animation-delay: " + (360 + i * 330) + "ms"
+    }));
+    const prixOn = !!(A.prix && A.prix.min && A.prix.max);
+    const nextA = apps[(ai + 1) % nApps];
+    const preview = apps.filter((_, i) => i !== ai).slice(0, 2).map((a) => ({ bg: bg(a.logo), nom: a.nom }));
+
+    return {
+      paywall: pw,
+      film: film,
+      rootRef: this.rootRef,
+      pwRef: this.pwRef,
+      restart: () => this.go(1),
+      back: () => this.back(),
+      next: () => this.next(),
+      segs: segs,
+      progNow: String(Math.min(step, 6)),
+      backCls: backOn ? "" : "is-hidden",
+      backHidden: backOn ? "false" : "true",
+      backTab: backOn ? 0 : -1,
+      backLabel: step === 9 ? "Retour au plan" : "Question précédente",
+      dotsStyle: "transform: translate3d(" + (-step * 18) + "px, " + (-step * 11) + "px, 0)",
+      stageCls: s.leaving ? "is-leaving" : "",
+      stageStyle: "transform-origin: 50% " + s.originY + "px",
+      isStep1: step === 1, isStep2: step === 2, isStep3: step === 3, isStep4: step === 4, isStep5: step === 5,
+      isStep6: step === 6, isStep7: step === 7, isStep8: step === 8, isStep9: step === 9,
+
+      amountTxt: fmtInt(s.amount) + NB + "€",
+      perDayTxt: fmtInt(perDay) + NB + "€",
+      rollAmount: this.rollNum(armed ? s.amount : 0, 5),
+      rollDay: this.rollNum(armed ? perDay : 0, 4),
+      amountIdx: idx,
+      rangeStyle: "--p: " + (idx / 10),
+      onAmount: (e) => this.onAmount(e),
+      quick: quick,
+
+      niches: niches,
+      nsp: nsp,
+      times: times,
+      b0: this.opt("budget", "0"), b1: this.opt("budget", "lt100"), b2: this.opt("budget", "100-500"), b3: this.opt("budget", "gt500"),
+      c0: this.opt("code", "non"), c1: this.opt("code", "outils"), c2: this.opt("code", "oui"),
+      m0: this.opt("market", "FR"), m1: this.opt("market", "US"), m2: this.opt("market", "GB"),
+      m3: this.opt("market", "ES"), m4: this.opt("market", "BR"), m5: this.opt("market", "ALL"),
+
+      radarMain: radarMain,
+      radarOthers: radarOthers,
+      rollA: this.rollNum(s.cp >= 1 ? info.total : RADAR, 3),
+      lineACls: s.cp >= 3 ? "is-out" : "",
+      lineAHidden: s.cp >= 3 ? "true" : "false",
+      showB: s.cp >= 3,
+      rollB: this.rollNum(s.cp >= 4 ? nApps : info.total, String(info.total).length),
+      foundWord: plural(nApps, "app trouvée", "apps trouvées"),
+      foundTxt: nApps + " " + plural(nApps, "app trouvée", "apps trouvées"),
+      burst: s.cp >= 3,
+      coreCls: s.cp >= 3 ? "is-burst" : "",
+      parts: PARTS,
+      barNow: String(s.cp >= 3 ? 100 : s.cp >= 1 ? 50 : 10),
+
+      bigTxt: rangeTxt + " " + unitTxt,
+      twoNums: two,
+      rollMin: this.rollNum(armed ? P.vmin : 0, String(P.vmin).length),
+      rollMax: this.rollNum(armed ? P.vmax : 0, String(P.vmax).length),
+      unitTxt: unitTxt,
+      pillAccounts: comptesTxt,
+      pillTime: P.pill2,
+      pillClock: P.cas === "A" || (P.cas === "C" && P.adviseOk),
+      pillCrea: P.cas === "C" && !P.adviseOk,
+      pillEuro: P.cas === "B",
+      verdict: P.verdict,
+      verdictOk: P.ok,
+      verdictAim: !P.ok,
+      calcCls: s.showCalc ? "is-open" : "",
+      calcExp: s.showCalc ? "true" : "false",
+      toggleCalc: () => this.setState({ showCalc: !this.state.showCalc }),
+      calcLines: calcLines,
+      rvApps: seen.apps ? "is-in" : "",
+      appsTitle: "Tes " + nApps + " apps à copier",
+      feat: feat,
+      featStyle: "grid-row: 1 / span " + Math.max(1, nApps - 1) + "; animation-delay: 80ms, 1.6s",
+      rollBest: this.rollStr(feat.best, !seen.apps),
+      openFeat: () => this.go(9, { app: 0 }),
+      others: others,
+      openPaywall: () => this.openPaywall(),
+      bandD: "animation-delay: " + (260 + nApps * 90) + "ms",
+      moreTxt: "+ " + fmtInt(restApps) + " " + plural(restApps, "autre app", "autres apps"),
+      moreIn: "dans " + (info.label || "le Radar"),
+
+      s9Key: "s9-" + ai,
+      app: {
+        bg: bg(A.logo), nom: A.nom, logoAlt: "Logo de " + A.nom,
+        sub: A.quoi + (A.note && A.note.note ? "  ·  " + A.note.note + " sur l’App Store" : "")
+      },
+      hooksOn: hooks.length > 0,
+      hooks: hooks,
+      rvHooks: seen.hooks ? "is-in" : "",
+      avatars: avatars,
+      avMoreOn: P.comptes > 6,
+      avMore: "+" + (P.comptes - 6),
+      avMoreSt: "animation-delay: " + (120 + shown * 90) + "ms",
+      perAccTxt: P.perAcc + " " + plural(P.perAcc, "vidéo", "vidéos") + " par jour" + (P.comptes > 1 ? " chacun" : ""),
+      perAccD: "animation-delay: " + (200 + shown * 90) + "ms",
+      runA: A.nom + " en fait",
+      runN: fmtInt(A.comptes),
+      rvAccts: seen.accts ? "is-in" : "",
+      weeks: weeks,
+      rvWeeks: seen.weeks ? "is-in" : "",
+      prixOn: prixOn,
+      prixTxt: prixOn ? A.prix.min + " à " + A.prix.max + " €, achats intégrés sur l’App Store" : "",
+      rollPmin: this.rollStr(prixOn ? A.prix.min : "", !seen.prix),
+      rollPmax: this.rollStr(prixOn ? A.prix.max : "", !seen.prix),
+      rvPrix: seen.prix ? "is-in" : "",
+      rvEnd: seen.end ? "is-in" : "",
+      lockTxt: "La stratégie de " + fmtInt(Math.max(0, info.total - 1)) + " autres apps",
+      preview: preview,
+      nextBg: bg(nextA.logo),
+      nextApp: () => this.go(9, { app: (ai + 1) % nApps }),
+      toPlan: () => this.go(8),
+
+      pwOpen: s.paywallOpen,
+      pwCls: s.pwClosing ? "is-closing" : "",
+      closePaywall: () => this.closePaywall()
+    };
+  }
+}
+</script>
+</body>
+</html>

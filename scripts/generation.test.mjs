@@ -84,9 +84,12 @@ const appPages = pages('src/app/pages');
   const script = path.join(root, 'scripts/prerender.mjs');
   if (fs.existsSync(script)) execFileSync('node', [script, out], { cwd: root, stdio: 'ignore' });
   const text = (f) => { const html = fs.readFileSync(path.join(out, f), 'utf8'); const app = (html.match(/<div id="app">([\s\S]*)<\/div>\s*(?:<noscript>[\s\S]*?<\/noscript>\s*)?<\/body>/) || [, ''])[1]; return app.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '); };
-  const lp = text('index.html'), tf = text('tarifs.html');
+  const lp = text('index.html'), tf = text('tarifs.html'), sim = text('simulateur.html');
   ok(lp.length > 2000 && /Lance ton premier business/.test(lp), `F9 : index.html porte la landing rendue (${lp.length} car. de texte)`);
   ok(tf.length > 1000 && /29,99/.test(tf), `F9 : tarifs.html porte les tarifs rendus (${tf.length} car.)`);
+  ok(sim.length > 200 && /Combien tu veux gagner par mois/.test(sim), `F9 : simulateur.html porte sa première question rendue (${sim.length} car.)`);
+  ok(/animation-play-state:paused/.test(fs.readFileSync(path.join(out, 'simulateur.html'), 'utf8')) && !/animation-play-state/.test(fs.readFileSync(path.join(out, 'index.html'), 'utf8')),
+    'F9 : le pré-rendu du simulateur garde ses animations d\'entrée à leur premier instant (le JS les joue une fois), la landing non');
   const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
   ok(/prerender-d/.test(html) && /prerender-m/.test(html) && /max-width: 860px/.test(html), 'F9 : versions ordinateur et téléphone, basculées par la même largeur que l\'app (860 px)');
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -219,12 +222,12 @@ const topSelectors = (css) => {
   ok(!!q && /MOBILE_QUERY/.test(pre) && !/\(max-width: 860px\)\{#app/.test(pre) && !/'\(max-width: 860px\)'/.test(runtime), 'F25 : pré-rendu et pages publiques basculent sur cette condition, plus sur la seule largeur');
 }
 
-// ─── F23 : la landing et les tarifs ne chargent que la version qui s'affiche, préchargée dès la page HTML ───
+// ─── F23 : la landing, les tarifs et le simulateur ne chargent que la version qui s'affiche, préchargée dès la page HTML ───
 {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'kopycat-f23-'));
   execFileSync('npx', ['vite', 'build', '--outDir', out, '--emptyOutDir', 'true', '--logLevel', 'error'], { cwd: root, stdio: 'ignore' });
   const q = (fs.readFileSync(path.join(root, 'src/runtime.js'), 'utf8').match(/export const MOBILE_QUERY = '([^']+)'/) || [])[1];
-  for (const [page, desk, mob] of [['index.html', 'LP', 'LPMobile'], ['tarifs.html', 'Tarifs', 'TarifsMobile']]) {
+  for (const [page, desk, mob] of [['index.html', 'LP', 'LPMobile'], ['tarifs.html', 'Tarifs', 'TarifsMobile'], ['simulateur.html', 'Simulateur', 'SimulateurMobile']]) {
     const html = fs.readFileSync(path.join(out, page), 'utf8');
     const pre = [...html.matchAll(/<link rel="preload" as="script"[^>]*>/g)].map((m) => m[0]);
     const of = (name) => pre.find((t) => new RegExp(`href="/assets/${name}-[\\w-]+\\.js"`).test(t));
@@ -237,7 +240,7 @@ const topSelectors = (css) => {
     ok(always.length && !always.some((f) => new RegExp(`/(${desk}|${mob})-`).test(f)) && size < 30_000, `F23 : ${page} ne charge d'office aucune version (${always.length} fichiers, ${size} o)`);
   }
   fs.rmSync(out, { recursive: true, force: true });
-  const entries = ['src/main-lp.js', 'src/main-tarifs.js'].filter((f) => /^import \w+ from '\.\/pages\//m.test(fs.readFileSync(path.join(root, f), 'utf8')));
+  const entries = ['src/main-lp.js', 'src/main-tarifs.js', 'src/main-simulateur.js'].filter((f) => /^import \w+ from '\.\/pages\//m.test(fs.readFileSync(path.join(root, f), 'utf8')));
   ok(!entries.length, `F23 : les entrées n'importent plus les pages en statique (${entries.join(', ') || 'aucune'})`);
 }
 

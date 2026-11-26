@@ -9,6 +9,7 @@ const site = `https://${host.replace(/\/+$/, '')}`;
 const pages = [
   ['/', 'daily', '1.0'],
   ['/tarifs', 'weekly', '0.9'],
+  ['/simulateur', 'monthly', '0.8'],
   ['/inscription', 'monthly', '0.6'],
   ['/cgv', 'yearly', '0.2'],
   ['/confidentialite', 'yearly', '0.2'],
@@ -22,7 +23,7 @@ writeFileSync('dist/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urls
   .join('\n')}\n</urlset>\n`);
 // Les réseaux exigent une adresse absolue pour l'image d'aperçu : /og.png devient ${site}/og.png, et chaque page
 // publique reçoit son og:url.
-for (const [file, path] of [['index.html', '/'], ['tarifs.html', '/tarifs'], ['inscription.html', '/inscription']]) {
+for (const [file, path] of [['index.html', '/'], ['tarifs.html', '/tarifs'], ['simulateur.html', '/simulateur'], ['inscription.html', '/inscription']]) {
   const f = `dist/${file}`;
   if (!existsSync(f)) continue;
   const html = readFileSync(f, 'utf8').replaceAll('content="/og.png"', `content="${site}/og.png"`)

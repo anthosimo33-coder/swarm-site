@@ -12,7 +12,7 @@ for (const f of readdirSync(new URL('../design/app/samples/', import.meta.url)).
   globalThis.__dcSample[f.replace('.js', '')] = (await import(`../design/app/samples/${f}`)).default;
 }
 
-const pages = ['LP', 'LPMobile', 'Tarifs', 'TarifsMobile', 'Connexion', 'Inscription', 'MotDePasse', 'Adresse']
+const pages = ['LP', 'LPMobile', 'Tarifs', 'TarifsMobile', 'Simulateur', 'SimulateurMobile', 'Connexion', 'Inscription', 'MotDePasse', 'Adresse']
   .map((n) => [n, `../src/pages/${n}.js`])
   .concat(readdirSync(new URL('../src/app/pages/', import.meta.url)).map((f) => [`app/${f.replace('.js', '')}`, `../src/app/pages/${f}`]));
 let failed = false;

@@ -19,7 +19,7 @@ const headersOf = (p) => {
   for (const rule of conf.headers ?? []) if (pathToRegexp(rule.source).test(p)) for (const h of rule.headers) out[h.key.toLowerCase()] = h.value;
   return out;
 };
-const PATHS = ['/', '/app', '/app/apps', '/app/compte', '/tarifs', '/connexion', '/inscription', '/mot-de-passe-oublie', '/confirmer-adresse', '/admin', '/cgv', '/favicon.svg', '/assets/main-abc.js', '/media/film/swarm-film.mp4'];
+const PATHS = ['/', '/app', '/app/apps', '/app/compte', '/tarifs', '/simulateur', '/connexion', '/inscription', '/mot-de-passe-oublie', '/confirmer-adresse', '/admin', '/cgv', '/favicon.svg', '/assets/main-abc.js', '/media/film/swarm-film.mp4'];
 const csp = (p) => Object.fromEntries((headersOf(p)['content-security-policy'] ?? '').split(';').map((d) => d.trim().split(/\s+/)).filter((d) => d[0]).map(([k, ...v]) => [k, v]));
 for (const p of PATHS) {
   const h = headersOf(p), c = csp(p);
@@ -41,7 +41,7 @@ for (const p of PATHS) {
   const allows = (dir, origin) => (c[dir] ?? c['default-src'] ?? []).some((s) => s === origin || (s.startsWith('https://*.') && origin.startsWith('https://') && origin.endsWith(s.slice('https://*'.length))) || (s.startsWith('wss://*.') && origin.startsWith('wss://') && origin.endsWith(s.slice('wss://*'.length))));
   const convex = (readFileSync(path.join(root, '.env.production'), 'utf8').match(/VITE_CONVEX_URL=(\S+)/) ?? [])[1];
   const site = convex?.replace('.convex.cloud', '.convex.site');
-  const html = ['index.html', 'app.html', 'tarifs.html', 'connexion.html', 'inscription.html', 'mot-de-passe-oublie.html', 'confirmer-adresse.html', 'admin.html'].map((f) => readFileSync(path.join(root, f), 'utf8')).join('\n');
+  const html = ['index.html', 'app.html', 'tarifs.html', 'simulateur.html', 'connexion.html', 'inscription.html', 'mot-de-passe-oublie.html', 'confirmer-adresse.html', 'admin.html'].map((f) => readFileSync(path.join(root, f), 'utf8')).join('\n');
   const pages = ['design/app/VideoA.dc.html', 'design/app/MVideo.dc.html', 'src/app/main.js'].map((f) => readFileSync(path.join(root, f), 'utf8')).join('\n');
   const need = [
     ['style-src', 'https://fonts.googleapis.com', /fonts\.googleapis\.com/.test(html)],
@@ -54,7 +54,7 @@ for (const p of PATHS) {
   const refused = need.filter(([, , used]) => used).filter(([dir, o]) => !allows(dir, o)).map(([dir, o]) => `${dir} ${o}`);
   ok(!refused.length, `la CSP permet ce que les pages chargent (polices, backend Convex en https et wss, images, lecteurs TikTok et Instagram)${refused.length ? ` ; refusé : ${refused.join(', ')}` : ''}`);
   // Aucun script en ligne dans les pages HTML (script-src 'self' les refuserait).
-  const files = [...['index.html', 'app.html', 'tarifs.html', 'connexion.html', 'inscription.html', 'mot-de-passe-oublie.html', 'confirmer-adresse.html', 'admin.html'].map((f) => path.join(root, f)),
+  const files = [...['index.html', 'app.html', 'tarifs.html', 'simulateur.html', 'connexion.html', 'inscription.html', 'mot-de-passe-oublie.html', 'confirmer-adresse.html', 'admin.html'].map((f) => path.join(root, f)),
     ...readdirSync(path.join(root, 'public')).filter((f) => f.endsWith('.html')).map((f) => path.join(root, 'public', f))];
   const inline = files.filter((f) => /<script(?![^>]*\bsrc=)(?![^>]*type="application\/(ld\+)?json")[^>]*>/i.test(readFileSync(f, 'utf8')) || / on[a-z]+="/i.test(readFileSync(f, 'utf8')));
   ok(!inline.length, `aucun script en ligne ni gestionnaire on…= dans les pages HTML${inline.length ? ` : ${inline.map((f) => path.relative(root, f)).join(', ')}` : ''}`);
@@ -76,7 +76,7 @@ const route = (url) => {
 const CASES = [
   ['/app', { url: '/app.html' }], ['/app/apps', { url: '/app.html' }], ['/app/createurs/zinedine.gsbb', { url: '/app.html' }],
   ['/app/videos/7705929730054170541?x=1', { url: '/app.html?x=1' }], ['/app.html', { url: '/app.html' }],
-  ['/tarifs', { url: '/tarifs.html' }], ['/tarifs?ref=lp', { url: '/tarifs.html?ref=lp' }], ['/cgv', { url: '/cgv.html' }], ['/admin', { url: '/admin.html' }],
+  ['/tarifs', { url: '/tarifs.html' }], ['/tarifs?ref=lp', { url: '/tarifs.html?ref=lp' }], ['/simulateur?film=1', { url: '/simulateur.html?film=1' }], ['/cgv', { url: '/cgv.html' }], ['/admin', { url: '/admin.html' }],
   ['/compte', { redirect: '/app/compte', status: 307 }], ['/src/app/main.js', { url: '/src/app/main.js' }], ['/favicon.svg', { url: '/favicon.svg' }],
 ];
 const wrong = CASES.filter(([u, want]) => JSON.stringify(route(u)) !== JSON.stringify(want)).map(([u, want]) => `${u} → ${JSON.stringify(route(u))} au lieu de ${JSON.stringify(want)}`);

@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Simulateur · Kopycat (téléphone)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:var(--accent)}a:hover{color:var(--ink)}
+.visually-hidden{position:absolute !important;width:1px !important;height:1px !important;padding:0 !important;margin:-1px !important;overflow:hidden !important;clip:rect(0 0 0 0) !important;white-space:nowrap !important;border:0 !important}
+.kpm-root{-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.kpm-root button{-webkit-tap-highlight-color:transparent;font:inherit}
+.kpm-root a.sw-btn-primary,.kpm-root a.sw-btn-primary:hover{color:var(--on-blue)}
+.kpm-img{background-color:#FFFFFF;background-size:cover;background-position:center;background-repeat:no-repeat}
+.kpm-scroll{scrollbar-width:none;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.kpm-scroll::-webkit-scrollbar{display:none}
+
+/* Fond vivant */
+.kpm-blob{position:absolute;border-radius:50%;pointer-events:none;will-change:transform}
+.kpm-b1{left:-170px;top:-130px;width:480px;height:480px;background:radial-gradient(closest-side,rgba(76,154,255,0.22),rgba(76,154,255,0));animation:kpm-drift1 22s ease-in-out infinite}
+.kpm-b2{right:-240px;top:240px;width:560px;height:560px;background:radial-gradient(closest-side,rgba(11,111,224,0.13),rgba(11,111,224,0));animation:kpm-drift2 28s ease-in-out infinite}
+.kpm-b3{left:-140px;bottom:-220px;width:470px;height:470px;background:radial-gradient(closest-side,rgba(124,196,255,0.24),rgba(124,196,255,0));animation:kpm-drift3 19s ease-in-out infinite}
+@keyframes kpm-drift1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(90px,80px) scale(1.12)}66%{transform:translate(30px,160px) scale(0.92)}}
+@keyframes kpm-drift2{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(-120px,-90px) scale(1.1)}70%{transform:translate(-40px,100px) scale(0.94)}}
+@keyframes kpm-drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(150px,-120px) scale(1.16)}}
+.kpm-dots{position:absolute;inset:-84px;background-image:radial-gradient(rgba(14,15,18,0.075) 1px,transparent 1.6px);background-size:22px 22px;-webkit-mask-image:radial-gradient(110% 60% at 50% 18%,#000 15%,transparent 72%);mask-image:radial-gradient(110% 60% at 50% 18%,#000 15%,transparent 72%);transition:transform 1.4s cubic-bezier(0.2,0.8,0.2,1);will-change:transform}
+
+/* Barre du haut et progression */
+.kpm-head{position:absolute;left:0;right:0;top:0;z-index:6;pointer-events:none}
+.kpm-headbg{position:absolute;inset:0;background:rgba(246,247,249,0.8);-webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);box-shadow:0 1px 0 rgba(14,15,18,0.06);opacity:0;transition:opacity .3s ease}
+.kpm-head.is-scrolled .kpm-headbg{opacity:1}
+.kpm-head header{pointer-events:auto}
+.kpm-logo-btn{-webkit-appearance:none;appearance:none;border:0;background:none;margin:0 0 0 -6px;padding:9px 6px;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.kpm-logo-btn:active{transform:scale(.93)}
+.kpm-logo-btn:focus-visible,.kpm-back:focus-visible,.kpm-opt:focus-visible,.kpm-nsp:focus-visible,.kpm-calcbtn:focus-visible,.kpm-quiet:focus-visible,.kpm-row:focus-visible,.kpm-locked:focus-visible,.kpm-x:focus-visible,.kpm-hook:focus-visible{outline:none;box-shadow:var(--focus-ring) !important}
+.kpm-back{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1),background-color .2s ease;animation:kpm-backin .55s cubic-bezier(.34,1.56,.64,1) both}
+.kpm-back:active{transform:scale(.86)}
+@keyframes kpm-backin{from{opacity:0;transform:scale(.5) rotate(-40deg)}to{opacity:1;transform:none}}
+.kpm-seg{position:relative;display:block;width:24px;height:4px;border-radius:2px;background:#E3E5EA;overflow:hidden}
+.kpm-fill{position:absolute;inset:0;border-radius:2px;background:#0B6FE0;transform-origin:left center;transform:scaleX(0);transition:transform .55s cubic-bezier(0.2,0.8,0.2,1)}
+.kpm-seg.is-done .kpm-fill{transform:none}
+.kpm-seg.is-cur .kpm-fill{transform:none;animation:kpm-segin .8s cubic-bezier(0.2,0.8,0.2,1) .12s both}
+.kpm-seg.is-cur::after{content:"";position:absolute;top:0;bottom:0;left:0;width:70%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.9),rgba(255,255,255,0));transform:translateX(-110%);animation:kpm-segshine 2.4s ease-in-out 1s infinite}
+@keyframes kpm-segin{from{transform:scaleX(0)}to{transform:none}}
+@keyframes kpm-segshine{0%{transform:translateX(-110%)}45%,100%{transform:translateX(160%)}}
+
+/* Transition d'écran */
+.kpm-stage{position:relative;width:100%;max-width:560px;margin:0 auto;min-height:100%;padding-top:68px;box-sizing:border-box;display:flex;flex-direction:column}
+/* Plus large qu'un téléphone (tablette en portrait) : la colonne reste à 560 px, centrée, barre du haut comprise. */
+.kpm-head header,.kpm-head [role=progressbar]{max-width:560px;margin-left:auto;margin-right:auto}
+.kpm-stage.is-leaving{opacity:0;filter:blur(10px);transform:translateY(-16px) scale(.96);transition:opacity .3s ease,filter .3s ease,transform .3s cubic-bezier(.4,0,.6,1);pointer-events:none}
+.kpm-in{animation:kpm-in .78s cubic-bezier(.22,1.15,.36,1) both;animation-delay:calc(var(--i,0) * 55ms + 80ms)}
+.kpm-in.nb{animation-name:kpm-innb}
+@keyframes kpm-in{from{opacity:0;transform:translateY(28px);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes kpm-innb{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+.kpm-w{display:inline-block;overflow:hidden;vertical-align:top;padding:.08em .05em .17em;margin:-.08em -.05em -.17em}
+.kpm-w > span{display:inline-block;animation:kpm-word .85s cubic-bezier(.2,.9,.2,1) both;animation-delay:calc(var(--w) * 65ms + 30ms)}
+@keyframes kpm-word{from{opacity:0;transform:translateY(115%) rotate(7deg)}to{opacity:1;transform:none}}
+.kpm-in3{transform-origin:50% 0;animation:kpm-in3 1s cubic-bezier(.22,1.1,.36,1) both;animation-delay:calc(var(--i,0) * 55ms + 80ms)}
+@keyframes kpm-in3{from{opacity:0;transform:perspective(900px) translateY(48px) rotateX(26deg);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+.kpm-rv{transition:opacity .7s cubic-bezier(0.2,0.8,0.2,1),transform .9s cubic-bezier(.22,1.15,.36,1),filter .7s ease;transition-delay:var(--d,0ms)}
+.kpm-rv:not(.is-seen){opacity:0;transform:translateY(36px);filter:blur(8px)}
+.kpm-rv3:not(.is-seen){transform:perspective(900px) translateY(44px) rotateX(24deg)}
+.kpm-rv3{transform-origin:50% 0}
+.kpm-halo{animation:kpm-breathe 8s ease-in-out infinite}
+@keyframes kpm-breathe{0%,100%{transform:scale(.94);opacity:.8}50%{transform:scale(1.06);opacity:1}}
+
+/* Bouton d'action */
+.kpm-cta{position:relative;display:inline-flex;isolation:isolate}
+.kpm-cta::before{content:"";position:absolute;left:14%;right:14%;top:30%;bottom:-6px;border-radius:999px;background:#0B6FE0;filter:blur(16px);opacity:.3;z-index:-1;animation:kpm-glow 2.8s ease-in-out infinite;pointer-events:none}
+@keyframes kpm-glow{0%,100%{opacity:.26;transform:scale(.9)}50%{opacity:.6;transform:scale(1.06)}}
+.kpm-btn{position:relative;overflow:hidden;-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease}
+.kpm-btn::after{content:"";position:absolute;top:-30%;bottom:-30%;left:0;width:38%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,0.55),rgba(255,255,255,0));transform:translateX(-170%) skewX(-18deg);animation:kpm-btnshine 3s ease-in-out 1.2s infinite;pointer-events:none}
+@keyframes kpm-btnshine{0%{transform:translateX(-170%) skewX(-18deg)}32%,100%{transform:translateX(340%) skewX(-18deg)}}
+.kpm-btn:active{transform:scale(.95)}
+.kpm-btn .sw-btn-tile svg{animation:kpm-nudge 3s ease-in-out 1.2s infinite}
+@keyframes kpm-nudge{0%,16%,42%,100%{transform:none}28%{transform:translateX(3px)}}
+
+/* Cartes de choix */
+.kpm-opt{-webkit-appearance:none;appearance:none;margin:0;border:0;color:inherit;cursor:pointer;position:relative;overflow:hidden;width:100%;box-sizing:border-box;background-color:#FFFFFF;box-shadow:var(--kpm-rest);transition:transform .5s cubic-bezier(.34,1.56,.64,1),box-shadow .35s cubic-bezier(0.2,0.8,0.2,1),background-color .35s ease,opacity .35s ease;will-change:transform}
+.kpm-opt.is-sel{background-color:#EEF5FF;box-shadow:var(--kpm-sel);transform:translateY(-3px)}
+.kpm-opt.is-hit{animation:kpm-hit .55s cubic-bezier(.34,1.56,.64,1)}
+@keyframes kpm-hit{0%{transform:scale(.95)}55%{transform:translateY(-6px) scale(1.035)}100%{transform:translateY(-3px)}}
+.kpm-opt.is-hit::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,rgba(255,255,255,0) 30%,rgba(255,255,255,0.8) 50%,rgba(255,255,255,0) 70%);transform:translateX(-110%);animation:kpm-sweep .9s cubic-bezier(0.2,0.8,0.2,1) .05s both;pointer-events:none}
+@keyframes kpm-sweep{from{transform:translateX(-110%)}to{transform:translateX(110%)}}
+.kpm-opt:active{transform:scale(.97)}
+.has-picked .kpm-opt:not(.is-sel),.has-picked .kpm-nsp:not(.is-sel){opacity:.42;transform:scale(.96)}
+@media (hover:hover){
+.kpm-opt:not(.is-sel):hover{transform:perspective(800px) translateY(-4px) rotateX(6deg);box-shadow:inset 0 0 0 1px #E1E4EA,0 1px 2px rgba(16,24,40,0.04),0 18px 40px rgba(16,24,40,0.12)}
+.kpm-opt:hover .kpm-lg:nth-child(1) .kpm-logo{transform:translateX(-7px) rotate(-12deg)}
+.kpm-opt:hover .kpm-lg:nth-child(2) .kpm-logo{transform:translateY(-4px)}
+.kpm-opt:hover .kpm-lg:nth-child(3) .kpm-logo{transform:translateX(7px) rotate(12deg)}
+.kpm-back:hover{background-color:#F1F3F6 !important}
+.kpm-hook:hover{transform:translateY(-10px) rotate(0deg) !important}
+.kpm-row:hover{transform:translateY(-3px)}
+.kpm-locked:hover .kpm-lockb{transform:scale(1.1)}
+}
+.kpm-tick{position:absolute;top:14px;right:14px;width:22px;height:22px;border-radius:50%;background:#0B6FE0;display:grid;place-items:center;box-shadow:0 4px 12px rgba(11,111,224,0.35);animation:kpm-tick .55s cubic-bezier(.34,1.56,.64,1) both;animation-delay:var(--hd,0ms)}
+.kpm-tick.kpm-tick-in{position:relative;top:auto;right:auto;flex-shrink:0}
+@keyframes kpm-tick{0%{transform:scale(0) rotate(-45deg)}60%{transform:scale(1.25) rotate(0deg)}100%{transform:none}}
+.kpm-ripple{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(11,111,224,0.28),rgba(11,111,224,0.14) 70%,rgba(11,111,224,0));opacity:0;transform:scale(0);pointer-events:none;animation:kpm-ripple .8s cubic-bezier(0.2,0.8,0.2,1) both}
+@keyframes kpm-ripple{0%{opacity:1;transform:scale(0)}100%{opacity:0;transform:scale(1)}}
+.kpm-nsp{-webkit-appearance:none;appearance:none;border:0;margin:0;cursor:pointer;position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 18px;border-radius:999px;background-color:transparent;color:#4A4F57;font-size:16px;font-weight:500;transition:background-color .3s ease,box-shadow .3s ease,color .3s ease,opacity .35s ease,transform .45s cubic-bezier(.34,1.56,.64,1)}
+.kpm-nsp .kpm-ul{text-decoration:underline;text-decoration-color:#C3C8D0;text-underline-offset:5px}
+.kpm-nsp.is-sel{background-color:#EEF5FF;box-shadow:var(--kpm-sel);color:#0A63C9;font-weight:600}
+.kpm-nsp.is-sel .kpm-ul{text-decoration-color:transparent}
+.kpm-nsp:active{transform:scale(.95)}
+
+/* Montant */
+.kpm-range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:44px;margin:0;background:transparent;cursor:pointer}
+.kpm-range:focus{outline:none}
+.kpm-range::-webkit-slider-runnable-track{height:10px;border-radius:999px;background:linear-gradient(90deg,#4C9AFF,#0B6FE0) 0 0/calc(16px + (100% - 32px) * var(--p)) 100% no-repeat,#E3E5EA}
+.kpm-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;margin-top:-11px;border:0;border-radius:50%;background:#FFFFFF;box-shadow:inset 0 0 0 2px #0B6FE0,0 0 0 6px rgba(11,111,224,0.10),0 8px 20px rgba(11,111,224,0.30)}
+.kpm-range:focus-visible::-webkit-slider-thumb{box-shadow:inset 0 0 0 2px #0B6FE0,0 0 0 3px #FFFFFF,0 0 0 5px #0B6FE0}
+.kpm-range.kpm-tA::-webkit-slider-thumb{animation:kpm-thumbA .45s cubic-bezier(.34,1.56,.64,1)}
+.kpm-range.kpm-tB::-webkit-slider-thumb{animation:kpm-thumbB .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes kpm-thumbA{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+@keyframes kpm-thumbB{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+.kpm-range::-moz-range-track{height:10px;border-radius:999px;background:#E3E5EA}
+.kpm-range::-moz-range-progress{height:10px;border-radius:999px;background:linear-gradient(90deg,#4C9AFF,#0B6FE0)}
+.kpm-range::-moz-range-thumb{width:32px;height:32px;border:0;border-radius:50%;background:#FFFFFF;box-shadow:inset 0 0 0 2px #0B6FE0,0 0 0 6px rgba(11,111,224,0.10),0 8px 20px rgba(11,111,224,0.30)}
+/* 10 000 € et plus : le montant rétrécit (comme sur le canevas) ; un peu plus sous 367 px de large, pour garder au moins
+   20 px de marge. */
+.kpm-root{--kbig:.86}
+@media (max-width:366px){.kpm-root{--kbig:.8}}
+@media (max-width:339px){.kpm-root{--kbig:.72}}
+.kpm-num{transform-origin:50% 60%;transform:scale(var(--k,1));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.kpm-num.kpm-bA{animation:kpm-bumpA .5s cubic-bezier(.34,1.56,.64,1)}
+.kpm-num.kpm-bB{animation:kpm-bumpB .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes kpm-bumpA{0%{transform:scale(var(--k,1))}35%{transform:scale(calc(var(--k,1) * 1.06))}100%{transform:scale(var(--k,1))}}
+@keyframes kpm-bumpB{0%{transform:scale(var(--k,1))}35%{transform:scale(calc(var(--k,1) * 1.06))}100%{transform:scale(var(--k,1))}}
+
+/* Compteurs à rouleaux */
+.kpm-roll{display:inline-flex;align-items:flex-start;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
+.kpm-sl{display:block;flex-shrink:0;height:1em;line-height:1em;overflow:hidden;max-width:1em;padding:0 .14em;margin:0 -.14em;transition:max-width .55s cubic-bezier(0.2,0.8,0.2,1),opacity .4s ease}
+.kpm-sl.is-d{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 13%,#000 87%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 13%,#000 87%,transparent 100%)}
+.kpm-sl.kpm-sep{max-width:3em;white-space:pre}
+.kpm-sl.kpm-gap{padding:0;margin:0;width:.22em;max-width:.22em}
+.kpm-sl.is-off,.kpm-sl.kpm-gap.is-off{max-width:0;opacity:0}
+.kpm-gt{display:inline-block;padding:0 .14em;margin:0 -.14em;background:linear-gradient(180deg,#4C9AFF 10%,#0B6FE0 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.kpm-stack{display:block;padding:0 .14em;margin:0 -.14em;transition:transform .95s cubic-bezier(.3,1.35,.55,1);will-change:transform}
+.kpm-grad .kpm-stack,.kpm-grad .kpm-sep{background:linear-gradient(180deg,#4C9AFF 10%,#0B6FE0 90%) 0 0/100% 1em repeat-y;-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Temps */
+.kpm-v{position:relative;display:block;width:11px;height:20px;border-radius:3px;background:#CFE2FF;overflow:hidden}
+.kpm-vf{position:absolute;inset:0;background:#0B6FE0;transform-origin:50% 100%;transform:scaleY(0)}
+.is-sel .kpm-vf{transform:none;animation:kpm-vfill .42s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--j) * 70ms + var(--hd,0ms))}
+@keyframes kpm-vfill{from{transform:scaleY(0)}to{transform:none}}
+.kpm-sub{display:block;animation:kpm-subin .5s cubic-bezier(0.2,0.8,0.2,1) both;animation-delay:calc(var(--n) * 70ms + var(--hd,0ms))}
+@keyframes kpm-subin{from{opacity:0;transform:translateY(8px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+
+/* Budget */
+.kpm-coins{position:relative;display:block;width:88px;height:88px;margin:0 0 8px -16px;color:#3A3F47;transition:color .35s ease}
+.is-sel .kpm-coins{color:#0B6FE0}
+.kpm-coin{position:absolute;left:0;top:0;display:block;width:88px;height:88px;transform:translateY(calc(var(--j) * -11px))}
+.kpm-coin .kpm-face{opacity:0}
+.kpm-coin.is-top .kpm-face{opacity:.45}
+.is-sel .kpm-coin{animation:kpm-drop .62s cubic-bezier(.3,1.45,.6,1) both;animation-delay:calc(var(--j) * 110ms + var(--hd,0ms))}
+@keyframes kpm-drop{0%{opacity:0;transform:translateY(calc(var(--j) * -11px - 52px))}45%{opacity:1}100%{opacity:1;transform:translateY(calc(var(--j) * -11px))}}
+
+/* Code */
+.kpm-plate{flex-shrink:0;width:80px;height:80px;border-radius:20px;background-color:#F3F5F8;color:#3A3F47;display:grid;place-items:center;transition:background-color .35s ease,color .35s ease}
+.is-sel .kpm-plate{background-color:#FFFFFF;color:#0B6FE0}
+.kpm-draw path,.kpm-draw rect{stroke-dasharray:80;animation:kpm-draw 1.1s cubic-bezier(.6,0,.2,1) both;animation-delay:calc(var(--i) * 55ms + 260ms)}
+.is-sel .kpm-draw path,.is-sel .kpm-draw rect{animation-name:kpm-draw2;animation-delay:var(--hf,0ms)}
+.has-picked .kpm-opt:not(.is-sel) .kpm-draw path,.has-picked .kpm-opt:not(.is-sel) .kpm-draw rect{animation:none}
+@keyframes kpm-draw{from{stroke-dashoffset:80}to{stroke-dashoffset:0}}
+@keyframes kpm-draw2{from{stroke-dashoffset:80}to{stroke-dashoffset:0}}
+
+/* Marché */
+.kpm-flag{display:block;width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 1px rgba(14,15,18,0.08),0 4px 10px rgba(16,24,40,0.10);-webkit-backface-visibility:hidden;backface-visibility:hidden;animation:kpm-flip .9s cubic-bezier(.34,1.3,.64,1) both;animation-delay:calc(var(--i) * 55ms + 220ms)}
+.kpm-flag svg{display:block;width:40px;height:40px}
+.is-sel .kpm-flag{animation-name:kpm-flip2;animation-delay:var(--hf,0ms)}
+.has-picked .kpm-opt:not(.is-sel) .kpm-flag{animation:none}
+@keyframes kpm-flip{from{opacity:0;transform:perspective(300px) rotateY(-180deg)}45%{opacity:1}to{opacity:1;transform:perspective(300px) rotateY(0deg)}}
+@keyframes kpm-flip2{from{opacity:0;transform:perspective(300px) rotateY(-180deg)}45%{opacity:1}to{opacity:1;transform:perspective(300px) rotateY(0deg)}}
+
+/* Niche */
+.kpm-lg{position:relative;display:block}
+.kpm-lg + .kpm-lg{margin-left:-10px}
+.kpm-logo{display:block;width:40px;height:40px;box-sizing:border-box;border:2px solid #FFFFFF;border-radius:10px;background-color:#FFFFFF;box-shadow:0 2px 6px rgba(16,24,40,0.10);transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.kpm-opt.is-sel .kpm-lg{animation:kpm-hop .8s ease both;animation-delay:calc(var(--j) * 70ms + var(--hd,0ms))}
+@keyframes kpm-hop{0%{transform:none}28%{transform:translateY(-14px) rotate(var(--r))}52%{transform:none}70%{transform:translateY(-5px)}86%,100%{transform:none}}
+
+/* Calcul */
+.kpm-sweep{animation:kpm-spin 2.6s linear infinite;will-change:transform}
+@keyframes kpm-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.kpm-rpop{position:absolute;animation:kpm-rpop .6s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes kpm-rpop{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:none}}
+.kpm-ping{position:absolute;inset:-4px;border-radius:15px;border:2px solid #0B6FE0;opacity:0;animation:kpm-ping 1.4s cubic-bezier(0.2,0.8,0.2,1) both;pointer-events:none}
+.kpm-ping.kpm-ping2{animation:kpm-ping 2.4s cubic-bezier(0.2,0.8,0.2,1) infinite}
+@keyframes kpm-ping{0%{opacity:.85;transform:scale(1)}80%,100%{opacity:0;transform:scale(2.1)}}
+.kpm-rbig{position:relative;display:block;width:40px;height:40px;border-radius:11px;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #0B6FE0,0 10px 22px rgba(11,111,224,0.28)}
+.kpm-rbig.is-found{animation:kpm-found-pop .6s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes kpm-found-pop{0%{transform:none}40%{transform:scale(1.22)}100%{transform:none}}
+.kpm-core{animation:kpm-core 1.6s ease-in-out infinite}
+@keyframes kpm-core{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.kpm-bar{display:block;width:100%;height:4px;border-radius:2px;background:linear-gradient(90deg,#4C9AFF,#0B6FE0);transform-origin:left center;animation:kpm-bar 3s cubic-bezier(.45,0,.2,1) .2s both}
+@keyframes kpm-bar{from{transform:scaleX(0)}to{transform:none}}
+.kpm-lineA{transition:opacity .22s ease,transform .3s cubic-bezier(0.4,0,0.6,1),filter .22s ease}
+.kpm-lineA.is-out{opacity:0;transform:translateY(-18px) scale(.94);filter:blur(8px)}
+.kpm-found{animation:kpm-found .7s cubic-bezier(.34,1.56,.64,1) .14s both}
+@keyframes kpm-found{from{opacity:0;transform:scale(.82);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+.kpm-part{position:absolute;left:0;top:0;width:var(--s);height:var(--s);margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);border-radius:50%;background:var(--c);opacity:0;animation:kpm-part 1s cubic-bezier(.12,.75,.3,1) both}
+@keyframes kpm-part{0%{opacity:1;transform:rotate(var(--a)) translateX(0) scale(1)}70%{opacity:.9}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--r)) scale(.3)}}
+.kpm-flash{position:absolute;inset:-30px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,0.95),rgba(124,196,255,0.5) 50%,rgba(11,111,224,0) 100%);opacity:0;pointer-events:none;animation:kpm-flash .9s ease-out both}
+.kpm-wave{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:3px solid #4C9AFF;opacity:0;pointer-events:none;animation:kpm-wave .9s cubic-bezier(.15,.7,.3,1) both}
+.kpm-wave.kpm-wave2{border-width:2px;border-color:#7CC4FF;animation-delay:.14s}
+@keyframes kpm-wave{0%{opacity:.95;transform:scale(.3)}100%{opacity:0;transform:scale(3.1)}}
+@keyframes kpm-flash{0%{opacity:0;transform:scale(.6)}25%{opacity:1}100%{opacity:0;transform:scale(1.15)}}
+.kpm-ck{position:relative;width:20px;height:20px;flex-shrink:0;border-radius:50%;box-shadow:inset 0 0 0 1.5px #D5DAE1;display:grid;place-items:center}
+.kpm-ck::before{content:"";position:absolute;inset:0;border-radius:50%;background:#0B6FE0;transform:scale(0);transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.kpm-ck svg{position:relative}
+.kpm-ckp{stroke-dasharray:24;stroke-dashoffset:24;transition:stroke-dashoffset .35s ease .18s}
+.kpm-ckli .kpm-cklbl{color:#5F656E;transition:color .3s ease}
+.kpm-ckli.is-done .kpm-ck::before{transform:none}
+.kpm-ckli.is-done .kpm-ckp{stroke-dashoffset:0}
+.kpm-ckli.is-done .kpm-cklbl{color:#0E0F12}
+
+/* Résultat */
+.kpm-slL{animation:kpm-slL .85s cubic-bezier(.22,1.2,.36,1) .36s both}
+.kpm-slR{animation:kpm-slR .85s cubic-bezier(.22,1.2,.36,1) .44s both}
+@keyframes kpm-slL{from{opacity:0;transform:translateX(-48px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes kpm-slR{from{opacity:0;transform:translateX(48px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+.kpm-badge{position:relative;overflow:hidden}
+.kpm-badge::after{content:"";position:absolute;top:0;bottom:0;left:0;width:45%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,0.95),rgba(255,255,255,0));transform:translateX(-130%) skewX(-20deg);animation:kpm-badgeshine 3.6s ease-in-out .9s infinite;pointer-events:none}
+@keyframes kpm-badgeshine{0%{transform:translateX(-130%) skewX(-20deg)}30%,100%{transform:translateX(330%) skewX(-20deg)}}
+.kpm-calcbtn{-webkit-appearance:none;appearance:none;border:0;background:none;margin:0;cursor:pointer;border-radius:999px;transition:transform .25s cubic-bezier(.34,1.56,.64,1),color .2s ease}
+.kpm-calcbtn:active{transform:scale(.95)}
+.kpm-chev{transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.kpm-calcbtn[aria-expanded="true"] .kpm-chev{transform:rotate(180deg)}
+.kpm-acc{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s cubic-bezier(0.2,0.8,0.2,1)}
+.kpm-acc.is-open{grid-template-rows:1fr}
+.kpm-acc > div{min-height:0;overflow:hidden}
+.kpm-accin{opacity:0;transform:translateY(-10px) scale(.98);transition:opacity .35s ease,transform .5s cubic-bezier(.22,1.2,.36,1)}
+.kpm-acc.is-open .kpm-accin{opacity:1;transform:none;transition-delay:.08s}
+.kpm-float{animation:kpm-float 5s ease-in-out 1.4s infinite}
+@keyframes kpm-float{0%,100%{transform:none}50%{transform:translateY(-6px)}}
+.kpm-ring{position:relative;border-radius:26px;padding:3px;overflow:hidden;isolation:isolate;box-shadow:0 22px 50px rgba(11,111,224,0.20)}
+.kpm-conic{position:absolute;left:50%;top:50%;width:680px;height:680px;margin:-340px 0 0 -340px;background:conic-gradient(from 0deg,#0B6FE0,#4C9AFF,#B8D8FF,#4C9AFF,#0B6FE0 50%,#4C9AFF,#B8D8FF,#4C9AFF,#0B6FE0);animation:kpm-spin 4.5s linear infinite;will-change:transform}
+.kpm-blur{filter:blur(7px);-webkit-user-select:none;user-select:none}
+.kpm-locked{-webkit-appearance:none;appearance:none;border:0;margin:0;cursor:pointer;text-align:left;font:inherit;color:inherit;transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.kpm-locked:active{transform:scale(.96)}
+.kpm-lockb{transition:transform .4s cubic-bezier(.34,1.56,.64,1);animation:kpm-wiggle 4s ease-in-out 2s infinite}
+@keyframes kpm-wiggle{0%,86%,100%{transform:none}89%{transform:rotate(-12deg)}92%{transform:rotate(10deg)}95%{transform:rotate(-6deg)}}
+.kpm-row{-webkit-appearance:none;appearance:none;border:0;margin:0;cursor:pointer;text-align:left;font:inherit;color:inherit;transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .7s ease,filter .7s ease}
+.kpm-row:active{transform:scale(.97)}
+
+/* Stratégie */
+.kpm-rail{scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.kpm-rail::-webkit-scrollbar{display:none}
+.kpm-deal{transform:rotate(var(--rot))}
+.is-seen .kpm-deal{animation:kpm-deal 1s cubic-bezier(.2,.9,.25,1.08) both;animation-delay:calc(var(--k) * 170ms + 150ms)}
+@keyframes kpm-deal{0%{opacity:0;transform:translateX(calc(var(--k) * -162px)) translateY(40px) rotate(-18deg) scale(.86)}30%{opacity:1}100%{opacity:1;transform:rotate(var(--rot))}}
+.kpm-hook{-webkit-appearance:none;appearance:none;border:0;margin:0;cursor:pointer;font:inherit;transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.kpm-hook.kpm-hA{animation:kpm-hookA .6s cubic-bezier(.34,1.56,.64,1)}
+.kpm-hook.kpm-hB{animation:kpm-hookB .6s cubic-bezier(.34,1.56,.64,1)}
+@keyframes kpm-hookA{0%{transform:none}40%{transform:translateY(-14px) scale(1.06) rotate(-2deg)}100%{transform:none}}
+@keyframes kpm-hookB{0%{transform:none}40%{transform:translateY(-14px) scale(1.06) rotate(2deg)}100%{transform:none}}
+.is-seen .kpm-av{animation:kpm-avpop .6s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--j) * 95ms + 250ms)}
+@keyframes kpm-avpop{0%{opacity:0;transform:scale(0) translateY(10px)}100%{opacity:1;transform:none}}
+.kpm-line{transform-origin:50% 0}
+.is-seen .kpm-line{animation:kpm-linedraw 1.2s cubic-bezier(.6,0,.25,1) .2s both}
+@keyframes kpm-linedraw{from{transform:scaleY(0)}to{transform:none}}
+.is-seen .kpm-wdot{animation:kpm-avpop .55s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--j) * 300ms + 220ms)}
+.is-seen .kpm-wtxt{animation:kpm-wtxt .6s cubic-bezier(0.2,0.8,0.2,1) both;animation-delay:calc(var(--j) * 300ms + 300ms)}
+@keyframes kpm-wtxt{from{opacity:0;transform:translateX(-14px);filter:blur(5px)}to{opacity:1;transform:none;filter:none}}
+.kpm-quiet{-webkit-appearance:none;appearance:none;border:0;background:none;margin:0;cursor:pointer;border-radius:999px;transition:transform .25s cubic-bezier(.34,1.56,.64,1),color .2s ease}
+.kpm-quiet:active{transform:scale(.94)}
+
+/* Fenêtre Pro */
+.kpm-pw-bg{animation:kpm-fade .3s ease both}
+.kpm-pw-card{animation:kpm-pwin .6s cubic-bezier(.22,1.25,.36,1) both}
+.kpm-pw.is-out .kpm-pw-bg{animation:kpm-fadeout .22s ease both}
+.kpm-pw.is-out .kpm-pw-card{animation:kpm-pwout .22s ease both}
+@keyframes kpm-fade{from{opacity:0}to{opacity:1}}
+@keyframes kpm-fadeout{from{opacity:1}to{opacity:0}}
+@keyframes kpm-pwin{from{opacity:0;transform:translateY(40px) scale(.9);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes kpm-pwout{from{opacity:1;transform:none}to{opacity:0;transform:translateY(16px) scale(.95)}}
+.kpm-x{-webkit-appearance:none;appearance:none;margin:0;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1),background-color .2s ease}
+.kpm-x:active{transform:scale(.86) rotate(90deg)}
+.kpm-pw-logo{animation:kpm-avpop .7s cubic-bezier(.34,1.56,.64,1) .15s both}
+
+@media (prefers-reduced-motion: reduce){
+.kpm-rv,.kpm-rv:not(.is-seen),.kpm-rv3:not(.is-seen){opacity:1 !important;transform:none !important;filter:none !important}
+.kpm-stage.is-leaving{filter:none !important;transform:none !important}
+.kpm-accin{opacity:1 !important;transform:none !important}
+}
+</style>
+</helmet>
+<div class="sw kpm-root" data-theme="light" style="--kpm-rest: inset 0 0 0 1px #E6E7EC, 0 1px 2px rgba(16,24,40,0.04), 0 10px 28px rgba(16,24,40,0.06); --kpm-sel: inset 0 0 0 2px #0B6FE0, 0 1px 2px rgba(16,24,40,0.04), 0 16px 38px rgba(11,111,224,0.22); position: relative; width: 100%; height: 100vh; height: 100dvh; box-sizing: border-box; overflow: hidden; background: #F6F7F9; color: #0E0F12; font-family: var(--font-body);">
+
+<div aria-hidden="true" style="position: absolute; inset: 0; overflow: hidden; pointer-events: none;">
+<span class="kpm-blob kpm-b1"></span>
+<span class="kpm-blob kpm-b2"></span>
+<span class="kpm-blob kpm-b3"></span>
+<span class="kpm-dots" style="{{dotsStyle}}"></span>
+</div>
+
+<div class="kpm-scroll" ref="{{scrollRef}}" onScroll="{{onScroll}}" style="position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto;">
+<div class="{{stageCls}}" style="{{stageStyle}}">
+
+<sc-if value="{{isStep1}}" hint-placeholder-val="{{true}}">
+<main style="position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 style="margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kpm-w"><span style="--w: 0;">Combien</span></span> <span class="kpm-w"><span style="--w: 1;">tu</span></span> <span class="kpm-w"><span style="--w: 2;">veux</span></span> <span class="kpm-w"><span style="--w: 3;">gagner</span></span> <span class="kpm-w"><span style="--w: 4;">par</span></span> <span class="kpm-w"><span style="--w: 5;">mois&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div style="position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center;">
+<span aria-hidden="true" class="kpm-halo" style="position: absolute; z-index: -1; left: 50%; top: 44%; width: 440px; height: 440px; margin: -220px 0 0 -220px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.16), rgba(11,111,224,0.07) 52%, rgba(11,111,224,0) 100%); pointer-events: none;"></span>
+<output for="montant" class="kpm-in" style="--i: 2; display: block; padding-left: 0.06em; font-family: var(--font-display); font-size: 92px; font-weight: 800; letter-spacing: -0.06em; color: #0E0F12;"><span class="visually-hidden">{{amtSr}}</span><span aria-hidden="true" class="{{numCls}}" style="{{numStyle}}"><sc-for list="{{amtRoll}}" as="r" hint-placeholder-count="6"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for><span class="kpm-sl kpm-gap"></span><span style="display: block; background: linear-gradient(180deg, #4C9AFF 10%, #0B6FE0 90%); -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 .12em; margin: 0 -.12em;">€</span></span></output>
+<span class="kpm-in" style="--i: 3; margin-top: 16px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: #FFFFFF; box-shadow: var(--kpm-rest); font-size: 15px; color: #4A4F57; white-space: nowrap;"><span class="visually-hidden">{{daySr}}</span><span aria-hidden="true" class="kpm-roll" style="font-weight: 600; color: #0E0F12;"><sc-for list="{{dayRoll}}" as="r" hint-placeholder-count="5"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for><span class="kpm-sl kpm-sep">&nbsp;€</span></span><span style="margin-left: 5px; line-height: 1;">par jour</span></span>
+</div>
+<div class="kpm-in" style="--i: 4; margin-top: 40px; width: 100%; padding: 0 4px; box-sizing: border-box;">
+<label for="montant" class="visually-hidden">Ton objectif par mois, de 500 € à 30 000 €</label>
+<input id="montant" class="{{rangeCls}}" type="range" min="0" max="10" step="1" value="{{amtIdx}}" aria-valuetext="{{amtText}}" onInput="{{onAmount}}" onChange="{{onAmount}}" style="{{rangeStyle}}">
+</div>
+<div role="radiogroup" aria-label="Montants rapides" style="margin-top: 24px; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+<sc-for list="{{quick}}" as="o" hint-placeholder-count="4">
+<div class="kpm-in" style="{{o.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{o.aria}}" class="{{o.cls}}" onClick="{{o.pick}}" style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 56px; padding: 0 16px; border-radius: 999px; font-size: 17px; font-weight: 600; color: #0E0F12; font-variant-numeric: tabular-nums; white-space: nowrap;"><sc-if value="{{o.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick kpm-tick-in"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><span style="position: relative;">{{o.label}}</span><sc-if value="{{o.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{o.rStyle}}"></span></sc-if><sc-if value="{{o.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{o.rStyle}}"></span></sc-if></button>
+</div>
+</sc-for>
+</div>
+</div>
+<div class="kpm-in" style="--i: 9; flex-shrink: 0;">
+<span class="kpm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" onClick="{{toStep2}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+</div>
+</main>
+</sc-if>
+
+<sc-if value="{{isStep2}}" hint-placeholder-val="{{false}}">
+<main class="{{groupCls}}" style="position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q-niche" style="margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kpm-w"><span style="--w: 0;">Quelle</span></span> <span class="kpm-w"><span style="--w: 1;">niche</span></span> <span class="kpm-w"><span style="--w: 2;">te</span></span> <span class="kpm-w"><span style="--w: 3;">parle&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; padding: 32px 0 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div role="radiogroup" aria-labelledby="q-niche" style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+<sc-for list="{{nicheItems}}" as="o" hint-placeholder-count="15">
+<div class="kpm-in nb" style="{{o.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{o.aria}}" class="{{o.cls}}" onClick="{{o.pick}}" style="height: 120px; padding: 16px; border-radius: 20px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;"><span aria-hidden="true" style="position: relative; display: flex;"><sc-for list="{{o.logos}}" as="l" hint-placeholder-count="3"><span class="kpm-lg" style="{{l.st}}"><span class="kpm-logo kpm-img" style="{{l.bg}}"></span></span></sc-for></span><span style="position: relative; font-size: 16px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; color: #0E0F12;">{{o.nom}}</span><sc-if value="{{o.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{o.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{o.rStyle}}"></span></sc-if><sc-if value="{{o.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{o.rStyle}}"></span></sc-if></button>
+</div>
+</sc-for>
+</div>
+<div class="kpm-in" style="{{nsp.wrapStyle}} margin-top: 16px;">
+<button type="button" role="radio" aria-checked="{{nsp.aria}}" class="{{nsp.cls}}" onClick="{{nsp.pick}}"><sc-if value="{{nsp.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick kpm-tick-in"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><span class="kpm-ul" style="position: relative;">Je ne sais pas encore</span><sc-if value="{{nsp.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{nsp.rStyle}}"></span></sc-if><sc-if value="{{nsp.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{nsp.rStyle}}"></span></sc-if></button>
+</div>
+</div>
+<div class="kpm-in" style="--i: 19; flex-shrink: 0;">
+<span class="kpm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+</div>
+</main>
+</sc-if>
+
+<sc-if value="{{isStep3}}" hint-placeholder-val="{{false}}">
+<main class="{{groupCls}}" style="position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q-temps" style="margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kpm-w"><span style="--w: 0;">Combien</span></span> <span class="kpm-w"><span style="--w: 1;">de</span></span> <span class="kpm-w"><span style="--w: 2;">temps</span></span> <span class="kpm-w"><span style="--w: 3;">par</span></span> <span class="kpm-w"><span style="--w: 4;">jour&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div role="radiogroup" aria-labelledby="q-temps" style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+<sc-for list="{{timeItems}}" as="o" hint-placeholder-count="4">
+<div class="kpm-in" style="{{o.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{o.aria}}" aria-label="{{o.sr}}" class="{{o.cls}}" onClick="{{o.pick}}" style="height: 168px; padding: 18px 18px 16px; border-radius: 22px; display: flex; flex-direction: column; align-items: flex-start; text-align: left;"><span style="position: relative; font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; white-space: nowrap;">{{o.label}}</span><span aria-hidden="true" style="position: relative; margin-top: auto; display: flex; gap: 3px;"><sc-for list="{{o.thumbs}}" as="t" hint-placeholder-count="3"><span class="kpm-v"><span class="kpm-vf" style="{{t.st}}"></span></span></sc-for></span><span aria-hidden="true" style="position: relative; display: block; margin-top: 10px; height: 18px;"><sc-if value="{{o.sel}}" hint-placeholder-val="{{false}}"><span class="kpm-sub" style="{{o.subStyle}} font-size: 15px; line-height: 18px; font-weight: 600; color: #0A63C9; white-space: nowrap;">{{o.sub}}</span></sc-if></span><sc-if value="{{o.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{o.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{o.rStyle}}"></span></sc-if><sc-if value="{{o.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{o.rStyle}}"></span></sc-if></button>
+</div>
+</sc-for>
+</div>
+</div>
+<div class="kpm-in" style="--i: 7; flex-shrink: 0;">
+<span class="kpm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+</div>
+</main>
+</sc-if>
+
+<sc-if value="{{isStep4}}" hint-placeholder-val="{{false}}">
+<main class="{{groupCls}}" style="position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q-budget" style="margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kpm-w"><span style="--w: 0;">Ton</span></span> <span class="kpm-w"><span style="--w: 1;">budget</span></span> <span class="kpm-w"><span style="--w: 2;">par</span></span> <span class="kpm-w"><span style="--w: 3;">mois&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div role="radiogroup" aria-labelledby="q-budget" style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+<sc-for list="{{budgetItems}}" as="o" hint-placeholder-count="4">
+<div class="kpm-in" style="{{o.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{o.aria}}" class="{{o.cls}}" onClick="{{o.pick}}" style="height: 176px; padding: 18px 16px; border-radius: 22px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left;"><span aria-hidden="true" class="kpm-coins"><sc-for list="{{o.coins}}" as="c" hint-placeholder-count="2"><svg class="{{c.cls}}" style="{{c.st}}" width="88" height="88" viewBox="0 0 56 56" aria-hidden="true"><g fill="#FFFFFF" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"><path d="M10 41V48A18 5.5 0 0 0 46 48V41"></path><ellipse cx="28" cy="41" rx="18" ry="5.5"></ellipse><ellipse class="kpm-face" cx="28" cy="41" rx="11" ry="3.2"></ellipse></g></svg></sc-for></span><span style="position: relative; font-family: var(--font-display); font-size: 20px; line-height: 1.12; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">{{o.label}}</span><sc-if value="{{o.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{o.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{o.rStyle}}"></span></sc-if><sc-if value="{{o.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{o.rStyle}}"></span></sc-if></button>
+</div>
+</sc-for>
+</div>
+</div>
+<div class="kpm-in" style="--i: 7; flex-shrink: 0;">
+<span class="kpm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+</div>
+</main>
+</sc-if>
+
+<sc-if value="{{isStep5}}" hint-placeholder-val="{{false}}">
+<main class="{{groupCls}}" style="position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q-code" style="margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kpm-w"><span style="--w: 0;">Tu</span></span> <span class="kpm-w"><span style="--w: 1;">sais</span></span> <span class="kpm-w"><span style="--w: 2;">coder&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div role="radiogroup" aria-labelledby="q-code" style="width: 100%; display: flex; flex-direction: column; gap: 14px;">
+
+<div class="kpm-in" style="{{cd0.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{cd0.aria}}" class="{{cd0.cls}}" onClick="{{cd0.pick}}" style="min-height: 112px; padding: 16px 52px 16px 16px; border-radius: 24px; display: flex; align-items: center; gap: 18px; text-align: left;"><span aria-hidden="true" class="kpm-plate"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><g class="kpm-draw" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 3.6a4.2 4.2 0 0 1 6 0"></path><g transform="translate(1.2 2.6) scale(0.9)" stroke-width="1.33"><path d="M22 14a8 8 0 0 1-8 8"></path><path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2"></path><path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1"></path><path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10"></path><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></g></g></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;">Pas du tout</span><sc-if value="{{cd0.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick" style="top: 50%; right: 18px; margin-top: -11px;"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{cd0.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{cd0.rStyle}}"></span></sc-if><sc-if value="{{cd0.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{cd0.rStyle}}"></span></sc-if></button>
+</div>
+
+<div class="kpm-in" style="{{cd1.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{cd1.aria}}" class="{{cd1.cls}}" onClick="{{cd1.pick}}" style="min-height: 112px; padding: 16px 52px 16px 16px; border-radius: 24px; display: flex; align-items: center; gap: 18px; text-align: left;"><span aria-hidden="true" class="kpm-plate"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><g class="kpm-draw" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="7" height="7" rx="1"></rect><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"></path></g></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;">Avec des outils sans code</span><sc-if value="{{cd1.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick" style="top: 50%; right: 18px; margin-top: -11px;"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{cd1.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{cd1.rStyle}}"></span></sc-if><sc-if value="{{cd1.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{cd1.rStyle}}"></span></sc-if></button>
+</div>
+
+<div class="kpm-in" style="{{cd2.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{cd2.aria}}" class="{{cd2.cls}}" onClick="{{cd2.pick}}" style="min-height: 112px; padding: 16px 52px 16px 16px; border-radius: 24px; display: flex; align-items: center; gap: 18px; text-align: left;"><span aria-hidden="true" class="kpm-plate"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><g class="kpm-draw" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16l4-4-4-4"></path><path d="M6 8l-4 4 4 4"></path><path d="M14.5 4l-5 16"></path></g></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 22px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; text-wrap: balance;">Oui, je code</span><sc-if value="{{cd2.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick" style="top: 50%; right: 18px; margin-top: -11px;"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{cd2.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{cd2.rStyle}}"></span></sc-if><sc-if value="{{cd2.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{cd2.rStyle}}"></span></sc-if></button>
+</div>
+
+</div>
+</div>
+<div class="kpm-in" style="--i: 6; flex-shrink: 0;">
+<span class="kpm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+</div>
+</main>
+</sc-if>
+
+<sc-if value="{{isStep6}}" hint-placeholder-val="{{false}}">
+<main class="{{groupCls}}" style="position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 40px 20px 48px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+<h1 id="q-marche" style="margin: 0; max-width: 330px; text-align: center; font-family: var(--font-display); font-size: 34px; line-height: 1.08; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; text-wrap: balance;"><span class="kpm-w"><span style="--w: 0;">Où</span></span> <span class="kpm-w"><span style="--w: 1;">tu</span></span> <span class="kpm-w"><span style="--w: 2;">veux</span></span> <span class="kpm-w"><span style="--w: 3;">lancer&#8239;?</span></span></h1>
+<div style="flex: 1 0 auto; width: 100%; padding: 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div role="radiogroup" aria-labelledby="q-marche" style="width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+
+<div class="kpm-in" style="{{mk0.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{mk0.aria}}" class="{{mk0.cls}}" onClick="{{mk0.pick}}" style="height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;"><span aria-hidden="true" class="kpm-flag"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#FFFFFF"></rect><rect width="13.4" height="40" fill="#0055A4"></rect><rect x="26.6" width="13.4" height="40" fill="#EF4135"></rect></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">France</span><sc-if value="{{mk0.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{mk0.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk0.rStyle}}"></span></sc-if><sc-if value="{{mk0.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk0.rStyle}}"></span></sc-if></button>
+</div>
+
+<div class="kpm-in" style="{{mk1.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{mk1.aria}}" class="{{mk1.cls}}" onClick="{{mk1.pick}}" style="height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;"><span aria-hidden="true" class="kpm-flag"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#FFFFFF"></rect><rect y="0" width="40" height="5.72" fill="#B22234"></rect><rect y="11.43" width="40" height="5.72" fill="#B22234"></rect><rect y="22.86" width="40" height="5.72" fill="#B22234"></rect><rect y="34.29" width="40" height="5.72" fill="#B22234"></rect><rect width="21" height="22.86" fill="#3C3B6E"></rect></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">États-Unis</span><sc-if value="{{mk1.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{mk1.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk1.rStyle}}"></span></sc-if><sc-if value="{{mk1.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk1.rStyle}}"></span></sc-if></button>
+</div>
+
+<div class="kpm-in" style="{{mk2.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{mk2.aria}}" class="{{mk2.cls}}" onClick="{{mk2.pick}}" style="height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;"><span aria-hidden="true" class="kpm-flag"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#012169"></rect><path d="M0 0L40 40M40 0L0 40" stroke="#FFFFFF" stroke-width="8"></path><path d="M0 0L40 40M40 0L0 40" stroke="#C8102E" stroke-width="2.6"></path><path d="M20 0V40M0 20H40" stroke="#FFFFFF" stroke-width="11"></path><path d="M20 0V40M0 20H40" stroke="#C8102E" stroke-width="6"></path></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">Royaume-Uni</span><sc-if value="{{mk2.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{mk2.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk2.rStyle}}"></span></sc-if><sc-if value="{{mk2.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk2.rStyle}}"></span></sc-if></button>
+</div>
+
+<div class="kpm-in" style="{{mk3.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{mk3.aria}}" class="{{mk3.cls}}" onClick="{{mk3.pick}}" style="height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;"><span aria-hidden="true" class="kpm-flag"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#F1BF00"></rect><rect width="40" height="10" fill="#AA151B"></rect><rect y="30" width="40" height="10" fill="#AA151B"></rect></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">Espagne</span><sc-if value="{{mk3.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{mk3.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk3.rStyle}}"></span></sc-if><sc-if value="{{mk3.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk3.rStyle}}"></span></sc-if></button>
+</div>
+
+<div class="kpm-in" style="{{mk4.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{mk4.aria}}" class="{{mk4.cls}}" onClick="{{mk4.pick}}" style="height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;"><span aria-hidden="true" class="kpm-flag"><svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#009C3B"></rect><path d="M20 6L36 20L20 34L4 20Z" fill="#FFDF00"></path><circle cx="20" cy="20" r="7.5" fill="#002776"></circle></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">Brésil</span><sc-if value="{{mk4.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{mk4.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk4.rStyle}}"></span></sc-if><sc-if value="{{mk4.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk4.rStyle}}"></span></sc-if></button>
+</div>
+
+<div class="kpm-in" style="{{mk5.wrapStyle}}">
+<button type="button" role="radio" aria-checked="{{mk5.aria}}" class="{{mk5.cls}}" onClick="{{mk5.pick}}" style="height: 124px; padding: 18px; border-radius: 22px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; text-align: left;"><span aria-hidden="true" class="kpm-flag" style="background: #EAF2FF; display: grid; place-items: center;"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 26px; height: 26px;"><g fill="none" stroke="#0B6FE0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 2.5a13.5 13.5 0 0 0 0 19a13.5 13.5 0 0 0 0-19"></path><path d="M2.5 12h19"></path></g></svg></span><span style="position: relative; font-family: var(--font-display); font-size: 21px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: #0E0F12; white-space: nowrap;">Partout</span><sc-if value="{{mk5.sel}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="kpm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if><sc-if value="{{mk5.rA}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk5.rStyle}}"></span></sc-if><sc-if value="{{mk5.rB}}" hint-placeholder-val="{{false}}"><span class="kpm-ripple" style="{{mk5.rStyle}}"></span></sc-if></button>
+</div>
+
+</div>
+</div>
+<div class="kpm-in" style="--i: 9; flex-shrink: 0;">
+<span class="kpm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" onClick="{{next}}">Voir mon plan<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+</div>
+</main>
+</sc-if>
+
+<sc-if value="{{isStep7}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; overflow-x: clip; flex: 1 0 auto; min-height: 776px; padding: 24px 20px 72px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+<div aria-hidden="true" class="kpm-in" style="--i: 0; position: relative; width: 300px; height: 300px; flex-shrink: 0;">
+<div class="kpm-halo" style="position: absolute; left: -110px; top: -110px; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.16), rgba(11,111,224,0.06) 55%, rgba(11,111,224,0) 100%);"></div>
+<div style="position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 50%, #FFFFFF 0%, #FBFCFE 62%, #F2F6FD 100%); box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 20px 50px rgba(16,24,40,0.10), inset 0 0 0 1px #E6E6EA;">
+<span class="kpm-sweep" style="position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(11,111,224,0) 0deg, rgba(11,111,224,0) 250deg, rgba(11,111,224,0.07) 310deg, rgba(11,111,224,0.22) 356deg, rgba(11,111,224,0.85) 359.4deg, rgba(11,111,224,0) 360deg);"></span>
+<span style="position: absolute; left: 12.5%; top: 12.5%; width: 75%; height: 75%; box-sizing: border-box; border-radius: 50%; border: 1px solid #E3E7EE;"></span>
+<span style="position: absolute; left: 25%; top: 25%; width: 50%; height: 50%; box-sizing: border-box; border-radius: 50%; border: 1px solid #E3E7EE;"></span>
+<span style="position: absolute; left: 37.5%; top: 37.5%; width: 25%; height: 25%; box-sizing: border-box; border-radius: 50%; border: 1px solid #E3E7EE;"></span>
+<span style="position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #EEF0F4;"></span>
+<span style="position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #EEF0F4;"></span>
+<span style="position: absolute; left: 20%; top: 45%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 55%; top: 12%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 78%; top: 66%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 48%; top: 72%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 30%; top: 18%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 84%; top: 80%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 60%; top: 92%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #C9CFD8;"></span>
+<span style="position: absolute; left: 10%; top: 62%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #C9CFD8;"></span>
+</div>
+<sc-if value="{{burst}}" hint-placeholder-val="{{false}}"><span class="kpm-flash"></span><span class="kpm-wave"></span><span class="kpm-wave kpm-wave2"></span></sc-if>
+<sc-for list="{{radarSmall}}" as="r" hint-placeholder-count="6"><span class="kpm-rpop" style="{{r.st}}"><span class="kpm-img" style="{{r.bg}} display: block; width: 22px; height: 22px; border-radius: 6px; opacity: 0.42;"></span></span></sc-for>
+<sc-for list="{{radarBig}}" as="r" hint-placeholder-count="3"><span class="kpm-rpop" style="{{r.st}}"><span class="kpm-ping" style="{{r.pingSt}}"></span><span class="kpm-ping kpm-ping2" style="{{r.ping2St}}"></span><span class="{{r.imgCls}}" style="{{r.bg}}"></span></span></sc-for>
+<span class="kpm-core" style="position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: 0 0 0 7px rgba(11,111,224,0.08), 0 12px 28px rgba(11,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.45); display: grid; place-items: center;"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span>
+<sc-if value="{{burst}}" hint-placeholder-val="{{false}}"><span style="position: absolute; left: 50%; top: 50%; width: 0; height: 0;"><sc-for list="{{particles}}" as="p" hint-placeholder-count="22"><span class="kpm-part" style="{{p.st}}"></span></sc-for></span></sc-if>
+</div>
+
+<div class="kpm-in" style="--i: 2; position: relative; margin-top: 40px; width: 100%; min-height: 80px; display: grid; justify-items: center; align-items: center; text-align: center;">
+<p class="{{lineACls}}" aria-hidden="true" style="grid-area: 1 / 1; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12;"><span style="display: flex; align-items: flex-start; line-height: 1;"><span>On fouille&nbsp;</span><span class="kpm-roll kpm-grad" style="font-weight: 800;"><sc-for list="{{calcRollA}}" as="r" hint-placeholder-count="3"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for></span><span>&nbsp;apps</span></span><span style="display: block; line-height: 1.1;">pour toi</span></p>
+<sc-if value="{{phase3}}" hint-placeholder-val="{{false}}"><h1 class="kpm-found" style="grid-area: 1 / 1; margin: 0; display: flex; align-items: flex-start; line-height: 1; font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12; white-space: nowrap;"><span class="visually-hidden">{{foundSr}}</span><span aria-hidden="true" class="kpm-roll kpm-grad" style="font-weight: 800;"><sc-for list="{{calcRollB}}" as="r" hint-placeholder-count="3"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for></span><span>&nbsp;{{foundWord}}</span></h1></sc-if>
+</div>
+
+<ul class="kpm-in" style="--i: 3; position: relative; list-style: none; margin: 20px 0 0; padding: 0; display: flex; align-items: center; gap: 16px;">
+<li class="{{ck0}}" style="display: flex; align-items: center; gap: 7px;"><span aria-hidden="true" class="kpm-ck"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path class="kpm-ckp" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="kpm-cklbl" style="font-size: 15px; font-weight: 500;">Ta niche</span></li>
+<li class="{{ck1}}" style="display: flex; align-items: center; gap: 7px;"><span aria-hidden="true" class="kpm-ck"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path class="kpm-ckp" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="kpm-cklbl" style="font-size: 15px; font-weight: 500;">Ton marché</span></li>
+<li class="{{ck2}}" style="display: flex; align-items: center; gap: 7px;"><span aria-hidden="true" class="kpm-ck"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path class="kpm-ckp" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="kpm-cklbl" style="font-size: 15px; font-weight: 500;">Ton temps</span></li>
+</ul>
+
+<div role="progressbar" aria-label="Recherche" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{calcPct}}" class="kpm-in" style="--i: 4; position: relative; margin-top: 24px; width: 220px; height: 4px; border-radius: 2px; overflow: hidden; background: #E3E5EA;"><span class="kpm-bar"></span></div>
+</main>
+</sc-if>
+
+<sc-if value="{{isStep8}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; overflow-x: clip; flex: 1 0 auto; padding: 0 20px 64px; box-sizing: border-box;">
+<section aria-labelledby="plan-titre" style="position: relative; padding-top: 40px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+<div aria-hidden="true" class="kpm-halo" style="position: absolute; left: 50%; top: -20px; width: 520px; height: 420px; margin-left: -260px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.16), rgba(11,111,224,0.05) 60%, rgba(11,111,224,0) 100%); pointer-events: none;"></div>
+<span class="kpm-in" style="--i: 0; position: relative; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 6px 16px rgba(16,24,40,0.05); font-size: 15px; font-weight: 600; color: var(--ink-soft);"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #0B6FE0;"></span>Ton plan</span>
+<h1 id="plan-titre" style="position: relative; margin: 16px 0 0; display: flex; flex-direction: column; align-items: center;">
+<span class="visually-hidden">{{resSr}}</span><span aria-hidden="true" class="kpm-in" style="--i: 1; display: block;"><span class="kpm-roll" style="{{resNumStyle}} font-family: var(--font-display); font-weight: 800; letter-spacing: -0.06em; color: #0E0F12;"><sc-for list="{{resRollMin}}" as="r" hint-placeholder-count="3"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for><sc-if value="{{resRange}}" hint-placeholder-val="{{true}}"><span style="{{resAStyle}} display: block; line-height: 1; font-weight: 700; letter-spacing: -0.03em;"><span class="kpm-gt">à</span></span><sc-for list="{{resRollMax}}" as="r" hint-placeholder-count="3"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for></sc-if></span></span>
+<span class="kpm-in" style="--i: 2; display: block; margin-top: 8px; font-family: var(--font-display); font-size: 22px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-soft);">{{resUnit}}</span>
+</h1>
+<ul style="position: relative; list-style: none; margin: 24px 0 0; padding: 0; display: flex; gap: 8px;">
+<li class="kpm-slL" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 14px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 8px 20px rgba(16,24,40,0.06); font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M4.5 20.5c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg>{{comptesTxt}}</li>
+<li class="kpm-slR" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 14px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 8px 20px rgba(16,24,40,0.06); font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap;"><sc-if value="{{pill2Time}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M12 7v5l3.2 2" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if><sc-if value="{{pill2Crea}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18.5 13.9c1.8 0.9 3 2.8 3 5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg></sc-if><sc-if value="{{pill2Cost}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 6.2a7 7 0 1 0 0 11.6" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path><path d="M4.5 10.2h9M4.5 13.8h9" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg></sc-if>{{pill2Txt}}</li>
+</ul>
+<p class="kpm-in kpm-badge" style="--i: 5; position: relative; margin: 16px 0 0; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 10px; border-radius: 999px; background: #EEF5FF; box-shadow: inset 0 0 0 1px rgba(11,111,224,0.22); font-size: 15px; font-weight: 600; color: #0A63C9; white-space: nowrap;"><span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; background: #0B6FE0; display: grid; place-items: center;"><sc-if value="{{vOk}}" hint-placeholder-val="{{true}}"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if><sc-if value="{{vWarn}}" hint-placeholder-val="{{false}}"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="#FFFFFF" stroke-width="2.6"></circle><path d="M12 8v4.5l2.6 1.6" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if></span>{{verdict}}</p>
+<div class="kpm-in" style="--i: 6; position: relative; margin-top: 8px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+<button type="button" class="kpm-calcbtn" aria-expanded="{{calcAria}}" aria-controls="kpm-calc" onClick="{{toggleCalc}}" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 12px; font-size: 15px; font-weight: 600; color: var(--ink-muted);">Voir le calcul<svg class="kpm-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+<div id="kpm-calc" class="{{calcCls}}" style="width: 100%;"><div><div class="kpm-accin" style="margin-top: 8px; margin-bottom: 4px; padding: 20px; border-radius: 20px; background: #FFFFFF; box-shadow: var(--shadow-card); text-align: left; font-family: var(--font-mono); font-size: 15px; line-height: 1.6; color: var(--ink-faint);">
+<span style="display: block;">{{calc1}}</span>
+<span style="display: block; font-size: 13px;">(hypothèse, pas une promesse de gain)</span>
+<span style="display: block; margin-top: 8px;">{{calc2}}</span>
+<span style="display: block;">{{calc3}}</span>
+<span style="display: block; margin-top: 8px; color: var(--ink); font-weight: 500;">{{calc4}}</span>
+<sc-if value="{{calcCrea}}" hint-placeholder-val="{{false}}"><span style="display: block; margin-top: 8px;">{{calc5}}</span></sc-if>
+</div></div></div>
+</div>
+</section>
+
+<section aria-labelledby="apps-titre" style="position: relative; margin-top: 48px;">
+<h2 id="apps-titre" class="kpm-in" style="--i: 7; margin: 0; font-family: var(--font-display); font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Tes {{nApps}} apps à copier</h2>
+<div class="kpm-in3" style="--i: 8; margin-top: 24px;">
+<div class="kpm-float">
+<div class="kpm-ring">
+<span aria-hidden="true" class="kpm-conic"></span>
+<article aria-labelledby="f-nom" style="position: relative; padding: 24px; border-radius: 23px; background: #FFFFFF;">
+<div style="display: flex; align-items: center; gap: 16px;">
+<span aria-hidden="true" class="kpm-img" style="{{f.bg}} display: block; width: 72px; height: 72px; border-radius: 18px; flex-shrink: 0; box-shadow: 0 0 0 1px #ECEEF2, 0 8px 20px rgba(16,24,40,0.10);"></span>
+<div style="min-width: 0; text-align: left;">
+<h3 id="f-nom" style="margin: 0; font-family: var(--font-display); font-size: 28px; line-height: 1.05; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">{{f.nom}}</h3>
+<p style="margin: 6px 0 0; font-size: 15px; line-height: 1.4; color: var(--ink-muted);">{{f.quoi}}</p>
+</div>
+</div>
+<sc-if value="{{f.hasBest}}" hint-placeholder-val="{{true}}"><p style="margin: 32px 0 0; text-align: left;"><span class="visually-hidden">{{f.bestSr}}</span><span aria-hidden="true" style="display: block; margin-left: -4px;"><span class="kpm-roll" style="font-family: var(--font-display); font-size: 72px; font-weight: 800; letter-spacing: -0.06em; color: var(--ink);"><sc-for list="{{f.best}}" as="r" hint-placeholder-count="4"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for></span></span><span style="display: block; margin-top: 10px; font-size: 15px; line-height: 1.4; color: var(--ink-soft);">de vues sur sa meilleure vidéo</span></p></sc-if>
+<p style="margin: 24px 0 0; display: flex; align-items: center; gap: 8px; padding-top: 20px; border-top: 1px solid #EEF0F3; font-size: 15px; color: var(--ink-soft); text-align: left;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18.5 13.9c1.8 0.9 3 2.8 3 5" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg><span><strong style="font-weight: 700; color: var(--ink);">{{f.comptesTxt}}</strong> la poussent</span></p>
+<div style="margin-top: 24px; display: flex; justify-content: center;">
+<span class="kpm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" onClick="{{f.open}}">Voir sa stratégie<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+</div>
+</article>
+</div>
+</div>
+</div>
+
+<sc-if value="{{paywall}}" hint-placeholder-val="{{true}}">
+<div class="{{rvLocked}}" data-rv="s8-locked" ref="{{rvRef}}" style="{{lockedGrid}} margin-top: 20px; display: grid; gap: 16px;">
+<sc-for list="{{others}}" as="o" hint-placeholder-count="2">
+<button type="button" class="kpm-locked" onClick="{{openPaywall}}" aria-label="App verrouillée : tout débloquer" style="position: relative; display: block; width: 100%; height: 148px; padding: 20px; border-radius: 24px; background: #FFFFFF; box-shadow: var(--shadow-card); overflow: hidden;">
+<span aria-hidden="true" class="kpm-blur kpm-img" style="{{o.bg}} display: block; width: 48px; height: 48px; border-radius: 12px; box-shadow: 0 0 0 1px #ECEEF2;"></span>
+<span aria-hidden="true" class="kpm-blur" style="display: block; margin-top: 14px; font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{o.nom}}</span>
+<span aria-hidden="true" class="kpm-blur" style="display: block; margin-top: 2px; font-size: 15px; color: var(--ink-muted); white-space: nowrap; overflow: hidden;">{{o.quoi}}</span>
+<span aria-hidden="true" class="kpm-lockb" style="position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.08), 0 12px 28px rgba(16,24,40,0.14); display: grid; place-items: center;"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="#0E0F12" stroke-width="1.8"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#0E0F12" stroke-width="1.8" stroke-linecap="round"></path></svg></span>
+</button>
+</sc-for>
+</div>
+<div class="{{rvBand}}" data-rv="s8-band" ref="{{rvRef}}" style="margin-top: 16px; padding: 24px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: var(--shadow-card); display: flex; flex-direction: column; align-items: center; text-align: center;">
+<span aria-hidden="true" style="display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #EEF5FF;"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="#0B6FE0" stroke-width="1.8"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg></span>
+<p style="margin: 12px 0 0; font-size: 17px; font-weight: 700; color: var(--ink);">{{moreTxt}}</p>
+<p style="margin: 4px 0 0; font-size: 15px; color: var(--ink-muted);">29,99&nbsp;€ par mois, sans engagement</p>
+<span class="kpm-cta" style="margin-top: 20px;"><a class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" href="Inscription.dc.html">Tout débloquer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a></span>
+</div>
+</sc-if>
+
+<sc-if value="{{film}}" hint-placeholder-val="{{false}}">
+<div style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+<sc-for list="{{others}}" as="o" hint-placeholder-count="2">
+<button type="button" class="{{o.rowCls}}" data-rv="{{o.rvKey}}" ref="{{rvRef}}" onClick="{{o.open}}" aria-label="{{o.aria}}" style="{{o.rowStyle}} position: relative; display: flex; align-items: center; gap: 16px; width: 100%; padding: 18px 18px 18px 18px; border-radius: 24px; background: #FFFFFF; box-shadow: var(--shadow-card);">
+<span aria-hidden="true" class="kpm-img" style="{{o.bg}} display: block; width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0; box-shadow: 0 0 0 1px #ECEEF2, 0 6px 16px rgba(16,24,40,0.08);"></span>
+<span style="flex: 1 1 auto; min-width: 0;">
+<span style="display: block; font-family: var(--font-display); font-size: 22px; line-height: 1.1; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{o.nom}}</span>
+<span style="display: block; margin-top: 4px; font-size: 15px; line-height: 1.35; color: var(--ink-muted);">{{o.line}}</span>
+<span style="display: block; margin-top: 8px; font-size: 15px; font-weight: 600; color: #0A63C9;">Voir sa stratégie</span>
+</span>
+<span aria-hidden="true" style="flex-shrink: 0; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #EEF5FF; color: #0B6FE0;"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+</button>
+</sc-for>
+</div>
+<div class="{{rvBand}}" data-rv="s8-band" ref="{{rvRef}}" style="margin-top: 16px; padding: 20px; border-radius: 24px; background: rgba(255,255,255,0.7); box-shadow: inset 0 0 0 1px #E6E7EC; display: flex; align-items: center; gap: 14px;">
+<span aria-hidden="true" style="flex-shrink: 0; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #EEF5FF;"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><circle cx="12" cy="12" r="4.5" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><circle cx="12" cy="12" r="1.4" fill="#0B6FE0"></circle></svg></span>
+<p style="margin: 0; font-size: 16px; line-height: 1.35; font-weight: 600; color: var(--ink);">{{moreFilm}}</p>
+</div>
+</sc-if>
+</section>
+</main>
+</sc-if>
+
+<sc-if value="{{isStep9}}" hint-placeholder-val="{{false}}">
+<main style="position: relative; overflow-x: clip; flex: 1 0 auto; padding: 0 20px 64px; box-sizing: border-box;">
+<section aria-labelledby="strat-titre" style="position: relative; padding-top: 40px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+<div aria-hidden="true" class="kpm-halo" style="position: absolute; left: 50%; top: -40px; width: 480px; height: 380px; margin-left: -240px; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,111,224,0.16), rgba(11,111,224,0.05) 60%, rgba(11,111,224,0) 100%); pointer-events: none;"></div>
+<span class="kpm-in" style="--i: 0; position: relative; display: block;"><span role="img" aria-label="{{s9.alt}}" class="kpm-img" style="{{s9.bg}} display: block; width: 88px; height: 88px; border-radius: 22px; box-shadow: 0 0 0 1px #ECEEF2, 0 16px 36px rgba(16,24,40,0.12);"></span></span>
+<h1 id="strat-titre" style="position: relative; margin: 24px 0 0; max-width: 340px; font-family: var(--font-display); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: var(--ink); text-wrap: balance;"><span class="kpm-w"><span style="--w: 2;">Copie</span></span> <span class="kpm-w"><span style="--w: 3;">{{s9.nom}}</span></span></h1>
+<p class="kpm-in" style="--i: 3; position: relative; margin: 8px 0 0; max-width: 320px; font-size: 15px; line-height: 1.4; color: var(--ink-muted); text-wrap: balance;">{{s9.sub}}</p>
+</section>
+
+<sc-if value="{{s9.hasHooks}}" hint-placeholder-val="{{true}}">
+<section class="{{rvHooks}}" data-rv="s9-hooks" ref="{{rvRef}}" aria-labelledby="accroches-titre" style="margin-top: 56px;">
+<h2 id="accroches-titre" style="margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">{{s9.hooksTitle}}</h2>
+<ul class="kpm-rail" aria-label="Accroches" style="list-style: none; margin: 0 -20px; padding: 30px 20px 12px; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 20px;">
+<sc-for list="{{s9.hooks}}" as="h" hint-placeholder-count="3">
+<li class="kpm-deal" style="{{h.st}} width: 150px; flex-shrink: 0; scroll-snap-align: start;">
+<button type="button" class="{{h.cls}}" onClick="{{h.tap}}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 150px; height: 267px; box-sizing: border-box; padding: 14px; border-radius: 18px; background: #0E0F12; box-shadow: 0 1px 2px rgba(16,24,40,0.10), 0 16px 32px rgba(16,24,40,0.18); text-align: center; color: #FFFFFF;"><sc-if value="{{h.isHook}}" hint-placeholder-val="{{true}}"><span dir="auto" style="{{h.textSt}} display: block; line-height: 1.25; font-weight: 700; color: #FFFFFF; overflow-wrap: anywhere;">{{h.texte}}</span></sc-if><sc-if value="{{h.isBest}}" hint-placeholder-val="{{false}}"><span style="display: block; font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -0.05em; color: #FFFFFF; white-space: nowrap;">{{h.big}}</span><span style="display: block; font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.72);">vues</span></sc-if></button>
+<span style="display: block; margin-top: 12px; font-family: var(--font-display); font-size: 19px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{h.vues}}</span>
+<span style="display: block; margin-top: 2px; font-size: 15px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{h.compte}}</span>
+</li>
+</sc-for>
+</ul>
+</section>
+</sc-if>
+
+<section class="{{rvAcc}}" data-rv="s9-acc" ref="{{rvRef}}" aria-labelledby="comptes-titre" style="margin-top: 48px;">
+<h2 id="comptes-titre" style="margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Tes comptes</h2>
+<div aria-hidden="true" style="margin-top: 20px; display: flex; align-items: center;">
+<sc-for list="{{s9.avatars}}" as="a" hint-placeholder-count="3"><span class="kpm-av" style="{{a.st}} position: relative; display: grid; place-items: center; width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; background: #EAF2FF; box-shadow: 0 0 0 3px #F6F7F9, inset 0 0 0 1px rgba(11,111,224,0.14);"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8" fill="none" stroke="#0B6FE0" stroke-width="1.8"></circle><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7" fill="none" stroke="#0B6FE0" stroke-width="1.8" stroke-linecap="round"></path></svg></span></sc-for>
+<sc-if value="{{s9.avMore}}" hint-placeholder-val="{{false}}"><span class="kpm-av" style="{{s9.avMoreSt}} position: relative; display: grid; place-items: center; height: 56px; min-width: 56px; padding: 0 12px; box-sizing: border-box; border-radius: 999px; background: #0B6FE0; box-shadow: 0 0 0 3px #F6F7F9; font-size: 16px; font-weight: 700; color: #FFFFFF;">{{s9.avMoreTxt}}</span></sc-if>
+</div>
+<p style="margin: 16px 0 0; font-size: 17px; line-height: 1.35; font-weight: 600; color: var(--ink);">{{s9.perAccTxt}}</p>
+<p style="margin: 20px 0 0; padding-top: 16px; border-top: 1px solid #E3E5EA; font-size: 15px; color: var(--ink-faint);">{{s9.nom}} en fait tourner <strong style="font-weight: 700; color: var(--ink-soft);">{{s9.appComptes}}</strong></p>
+</section>
+
+<section class="{{rvWeeks}}" data-rv="s9-weeks" ref="{{rvRef}}" aria-labelledby="semaines-titre" style="margin-top: 56px;">
+<h2 id="semaines-titre" style="margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Tes 4 semaines</h2>
+<div style="position: relative; margin-top: 24px;">
+<span aria-hidden="true" class="kpm-line" style="position: absolute; left: 15px; top: 16px; bottom: 40px; width: 2px; border-radius: 1px; background: linear-gradient(180deg, #0B6FE0, #4C9AFF 55%, #CFE2FF);"></span>
+<ol style="position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 28px;">
+<sc-for list="{{s9.weeks}}" as="w" hint-placeholder-count="4"><li style="{{w.st}} display: flex; align-items: flex-start; gap: 16px;"><span aria-hidden="true" class="kpm-wdot" style="display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: 0 0 0 4px #F6F7F9, 0 6px 14px rgba(11,111,224,0.30); font-size: 15px; font-weight: 700; color: #FFFFFF;">{{w.n}}</span><span class="kpm-wtxt" style="display: block; padding-top: 3px;"><span style="display: block; font-family: var(--font-display); font-size: 20px; line-height: 1.15; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);">{{w.k}}</span><span style="display: block; margin-top: 4px; font-size: 15px; line-height: 1.45; color: var(--ink-muted);">{{w.t}}</span></span></li></sc-for>
+</ol>
+</div>
+</section>
+
+<sc-if value="{{s9.hasPrice}}" hint-placeholder-val="{{true}}">
+<section class="{{rvPrice}}" data-rv="s9-price" ref="{{rvRef}}" aria-labelledby="prix-titre" style="margin-top: 56px;">
+<h2 id="prix-titre" style="margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">Ce qu’elle facture</h2>
+<div style="margin-top: 20px; padding: 24px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 20px 48px rgba(16,24,40,0.08);">
+<span class="visually-hidden">{{s9.priceSr}}</span><span aria-hidden="true" class="kpm-roll" style="{{s9.priceStyle}} font-family: var(--font-display); font-weight: 800; letter-spacing: -0.06em; color: var(--ink);"><sc-for list="{{s9.pMin}}" as="r" hint-placeholder-count="4"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for><span style="{{s9.priceAStyle}} display: block; line-height: 1; font-weight: 700; letter-spacing: -0.02em;"><span class="kpm-gt">à</span></span><sc-for list="{{s9.pMax}}" as="r" hint-placeholder-count="5"><span class="{{r.cls}}"><sc-if value="{{r.isD}}" hint-placeholder-val="{{true}}"><span class="kpm-stack" style="{{r.st}}">0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9</span></sc-if><sc-if value="{{r.isS}}" hint-placeholder-val="{{false}}">{{r.ch}}</sc-if></span></sc-for><span class="kpm-sl kpm-gap"></span><span class="kpm-sl kpm-sep">€</span></span>
+<span style="display: block; margin-top: 10px; font-size: 17px; font-weight: 600; color: var(--ink-soft);">achats intégrés sur l’App Store</span>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{paywall}}" hint-placeholder-val="{{true}}">
+<section class="{{rvEnd}}" data-rv="s9-end" ref="{{rvRef}}" aria-labelledby="pro-titre" style="position: relative; margin-top: 64px; height: 380px; border-radius: 28px; overflow: hidden; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 20px 48px rgba(16,24,40,0.08);">
+<div aria-hidden="true" class="kpm-blur" style="position: absolute; inset: 28px 24px; filter: blur(9px);">
+<div style="display: flex; align-items: center; gap: 12px;"><span style="display: flex;"><sc-for list="{{s9.lockLogos}}" as="l" hint-placeholder-count="2"><span class="kpm-img" style="{{l.st}} display: block; width: 48px; height: 48px; border-radius: 12px; box-shadow: 0 0 0 2px #FFFFFF;"></span></sc-for></span><span style="font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">{{s9.lockTitle}}</span></div>
+<div style="margin-top: 20px; display: flex; gap: 12px;">
+<span style="width: 96px; height: 170px; flex-shrink: 0; border-radius: 14px; background: #0E0F12; display: grid; place-items: center;"><span style="width: 56px; height: 8px; border-radius: 4px; background: #FFFFFF;"></span></span>
+<span style="width: 96px; height: 170px; flex-shrink: 0; border-radius: 14px; background: #0E0F12; display: grid; place-items: center;"><span style="width: 64px; height: 8px; border-radius: 4px; background: #FFFFFF;"></span></span>
+<span style="width: 96px; height: 170px; flex-shrink: 0; border-radius: 14px; background: #0E0F12; display: grid; place-items: center;"><span style="width: 48px; height: 8px; border-radius: 4px; background: #FFFFFF;"></span></span>
+</div>
+</div>
+<div style="position: absolute; inset: 0; padding: 0 24px; background: radial-gradient(70% 58% at 50% 52%, rgba(255,255,255,0.95), rgba(255,255,255,0.72) 60%, rgba(255,255,255,0.2)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+<span aria-hidden="true" class="kpm-lockb" style="display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,0.08), 0 12px 28px rgba(16,24,40,0.14);"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="#0E0F12" stroke-width="1.8"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#0E0F12" stroke-width="1.8" stroke-linecap="round"></path></svg></span>
+<h2 id="pro-titre" style="margin: 20px 0 0; font-family: var(--font-display); font-size: 28px; line-height: 1.12; font-weight: 700; letter-spacing: -0.04em; color: var(--ink);">La stratégie de<br>{{s9.lockN}}</h2>
+<span class="kpm-cta" style="margin-top: 24px;"><a class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" href="Inscription.dc.html">Tout débloquer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a></span>
+<p style="margin: 14px 0 0; font-size: 15px; color: var(--ink-muted);">29,99&nbsp;€ par mois, sans engagement</p>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{film}}" hint-placeholder-val="{{false}}">
+<div class="{{rvEnd}}" data-rv="s9-end" ref="{{rvRef}}" style="margin-top: 64px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+<span class="kpm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" onClick="{{nextApp}}">App suivante<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+<button type="button" class="kpm-quiet" onClick="{{toPlan}}" style="min-height: 48px; padding: 0 18px; font-size: 16px; font-weight: 600; color: var(--ink-muted);">Retour au plan</button>
+</div>
+</sc-if>
+</main>
+</sc-if>
+
+</div>
+</div>
+
+<div class="{{headCls}}">
+<span aria-hidden="true" class="kpm-headbg"></span>
+<header style="position: relative; height: 56px; padding: 0 20px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;">
+<a class="sw-logo kpm-logo-btn" href="LP.dc.html" aria-label="kopycat, accueil"><svg class="sw-logo-mark" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#0B6FE0"></circle><circle cx="11" cy="5" r="2.3" fill="#0B6FE0"></circle><circle cx="17" cy="8" r="2.3" fill="#0B6FE0"></circle><circle cx="8" cy="14" r="2.3" fill="#0E0F12"></circle><circle cx="14" cy="13" r="2.3" fill="#0E0F12"></circle><circle cx="19" cy="17" r="2.3" fill="#0E0F12"></circle><circle cx="11" cy="20" r="2.3" fill="#0E0F12"></circle></svg><span class="sw-wordmark">kopycat</span></a>
+<sc-if value="{{hasBack}}" hint-placeholder-val="{{false}}"><button type="button" class="kpm-back" aria-label="{{backLabel}}" onClick="{{back}}" style="width: 44px; height: 44px; padding: 0; box-sizing: border-box; border-radius: 50%; border: 1px solid #E6E6EA; background: #FFFFFF; color: #0E0F12; display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></sc-if>
+</header>
+<div role="progressbar" aria-label="Progression" aria-valuemin="0" aria-valuemax="6" aria-valuenow="{{progNow}}" style="position: relative; display: flex; justify-content: center; gap: 6px; padding: 8px 0;">
+<sc-for list="{{segs}}" as="g" hint-placeholder-count="6"><span class="{{g.cls}}"><span class="kpm-fill"></span></span></sc-for>
+</div>
+</div>
+
+<sc-if value="{{showPaywall}}" hint-placeholder-val="{{false}}">
+<div class="{{pwCls}}" role="dialog" aria-modal="true" aria-labelledby="pw-titre" style="position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+<div class="kpm-pw-bg" onClick="{{closePaywall}}" style="position: absolute; inset: 0; background: rgba(14,15,18,0.4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);"></div>
+<div class="kpm-pw-card" style="position: relative; width: 100%; max-width: 350px; box-sizing: border-box; padding: 40px 24px 36px; border-radius: 28px; background: #FFFFFF; box-shadow: 0 30px 80px rgba(14,15,18,0.30); display: flex; flex-direction: column; align-items: center; text-align: center;">
+<button type="button" class="kpm-x" aria-label="Fermer" onClick="{{closePaywall}}" style="position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: #F1F3F6; color: #0E0F12; display: grid; place-items: center;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg></button>
+<span aria-hidden="true" class="kpm-pw-logo" style="display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(180deg, #4C9AFF, #0B6FE0); box-shadow: 0 14px 30px rgba(11,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.45);"><svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="5" r="2.3" fill="#FFFFFF"></circle><circle cx="17" cy="8" r="2.3" fill="#FFFFFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF" fill-opacity="0.6"></circle></svg></span>
+<h2 id="pw-titre" style="margin: 20px 0 0; font-family: var(--font-display); font-size: 28px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; color: #0E0F12;">Kopycat Pro</h2>
+<p style="margin: 16px 0 0; display: flex; align-items: baseline; gap: 8px; justify-content: center;"><span style="font-family: var(--font-display); font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -0.06em; color: #0E0F12; white-space: nowrap;">29,99&nbsp;<span class="kpm-gt">€</span></span><span style="font-size: 17px; font-weight: 600; color: #3A3F47;">par mois</span></p>
+<p style="margin: 8px 0 0; font-size: 15px; color: #4A4F57;">sans engagement</p>
+<span class="kpm-cta" style="margin-top: 28px;"><a class="sw-btn sw-btn-primary sw-btn-lg kpm-btn" href="Inscription.dc.html">Tout débloquer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a></span>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"paywall":{"editor":"boolean","default":true},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  // Données du simulateur (relevé du 26/11/2026), constantes et petites fonctions. Rangées dans la classe : la conversion
+  // du site (scripts/dc2preact.py) n'accepte aucun code hors de la classe. Chaque méthode reprend ce qu'elle lit.
+  static K = (() => {
+    const DATA = {"releve":"26/11/2026","niches":[{"nom":"Social et loisirs","apps":111,"vuesParVideo":10460,"top":[{"nom":"MoboReels","store":"MoboReels: Short Drama Series","logo":"/_blob/1577f99519c8134bda8228cdfd539747","comptes":98,"comptesFR":0,"videosSemaine":1252,"meilleure":{"vues":"12,7 k","compte":"austinobest1"},"note":{"note":"4,5","avis":"7,2 k"},"prix":{"min":"6,99","max":"59,99"},"accroches":[{"label":"Voix du bébé à naître porte chance","texte":"My Unborn Baby's Voice Made Me a Winner Mommy,look down,it's me!","vues":1322,"compte":"austinobest1","comptes":1,"vuesTxt":"1,3 k"},{"label":"Fille de concierge sans statut","texte":"I'm just a janitor's daughter","vues":857,"compte":"netflixtime_8","comptes":1,"vuesTxt":"857"},{"label":"Duo Puth et Rian","texte":"Puth and Rian","vues":835,"compte":"cat888818","comptes":1,"vuesTxt":"835"}],"quoi":"Short Drama Series"},{"nom":"SlowRead","store":"SlowRead : Bibliothèque & PAL","logo":"/_blob/02ffe8383566d3fdbf310afb00e2236d","comptes":70,"comptesFR":0,"videosSemaine":792,"meilleure":{"vues":"35,8 k","compte":"andrea.booktoker"},"note":{"note":"3,8","avis":"36"},"prix":{"min":"7,79","max":"129,99"},"accroches":[{"label":"Concentration sans distractions","texte":"Okay I need to lock in no distractions","vues":10500,"compte":"chelskait_other","comptes":1,"vuesTxt":"10,5 k"},{"label":"Gagner des récompenses en jouant à des jeux mobiles","texte":"i overheard a girl at the airport saying she used girl math to get her nails done with rewards from playing ga","vues":6801,"compte":"living.better0","comptes":4,"vuesTxt":"6,8 k"},{"label":"Lucia, mes personnages fictifs valent mieux","texte":"Keep Lucia. I have 57 fictional men who'd burn the world down for me.","vues":4321,"compte":"totallybooked18","comptes":5,"vuesTxt":"4,3 k"}],"quoi":"Bibliothèque & PAL"},{"nom":"DramaBox","store":"DramaBox - Film et Drame Court","logo":"/_blob/3e6e2721e764b26873d08e795e32a043","comptes":88,"comptesFR":0,"videosSemaine":618,"meilleure":{"vues":"260 k","compte":"j3w3lz.rose"},"note":{"note":"4,6","avis":"57,2 k"},"prix":{"min":"0,99","max":"14,99"},"accroches":[{"label":"Grand-mère humiliée pour vente de tacos","texte":"¡HUMILLARON A MI ABUELA POR VENDER TACOS! A MI ABUELA POR VENDER TACOS!","vues":259900,"compte":"j3w3lz.rose","comptes":1,"vuesTxt":"260 k"},{"label":"Gagner de l'argent grâce à un riche, en arabe","texte":"DramaBox EP7-8 كل ما فعلته هوجني المال من الثري الذي يُنفق علي وفي النهاية حققت الحرية المالية حصريا DramaBox","vues":199300,"compte":"dramabox_ar","comptes":1,"vuesTxt":"199 k"},{"label":"Le regret tardif, en arabe","texte":"DramaBox EP3-4 الندم المتأخر DramaBox حصريا","vues":151200,"compte":"dramabox_ar","comptes":1,"vuesTxt":"151 k"}],"quoi":"Film et Drame Court"}]},{"nom":"Santé et physique","apps":70,"vuesParVideo":4598,"top":[{"nom":"Mise","store":"mise - meal planner","logo":"/_blob/86a49246e64a2d69b27eaef09df462d9","comptes":130,"comptesFR":7,"videosSemaine":1353,"meilleure":{"vues":"1,3 M","compte":"paula.eatss"},"note":{"note":"4,5","avis":"98"},"prix":{"min":"9,99","max":"59,99"},"accroches":[{"label":"Trahison conjugale annoncée","texte":"Il avait rendez-vous avec Emma pour me tromper... il ignorait qui elle était Ouais Emma c'est","vues":1500000,"compte":"la.folleduvillage","comptes":1,"vuesTxt":"1,5 M"},{"label":"Ex ou conjoint donne peu d'argent pour nourrir les enfants","texte":"My baby daddy gave me $150 to feed these kids","vues":1400000,"compte":"meme.atethat","comptes":32,"vuesTxt":"1,4 M"},{"label":"Piège conjugal : partir avant son mari","texte":"J’ai empêché mon mari de me tromper ce soir en quittant la maison avant lui 🙅🏽‍♀️🙅🏽‍♀️ maquilles?","vues":935100,"compte":"la.folleduvillage","comptes":1,"vuesTxt":"935 k"}],"quoi":"Meal planner"},{"nom":"Musa","store":"Musa: Period & Pregnancy","logo":"/_blob/3c73c43fc8c0f93e6911f19a18aa55e8","comptes":32,"comptesFR":2,"videosSemaine":526,"meilleure":{"vues":"289 k","compte":"marina.pragnancy"},"note":{"note":"4,7","avis":"181"},"prix":{"min":"6,99","max":"34,99"},"accroches":[{"label":"Des centaines de filles attendent leurs règles","texte":"I think November has delayed every girls period…🩸🩸🩸 · We must all be stressed😩","vues":43200,"compte":"mariana.hormones","comptes":13,"vuesTxt":"43,2 k"},{"label":"Recherche de bébé Disney","texte":"I searched \"my Disney baby\"","vues":31100,"compte":"brooke.pregnancy","comptes":1,"vuesTxt":"31,1 k"},{"label":"Crampes annonçant les règles, surprise","texte":"Girl to girl.. what’s the most obvious sign that your period is about to start?","vues":16300,"compte":"fal.cycletips","comptes":6,"vuesTxt":"16,3 k"}],"quoi":"Period & Pregnancy"},{"nom":"Solaia","store":"Solaia: Équilibre hormonal","logo":"/_blob/2d981e0c7d800e5d781240ec2f612596","comptes":64,"comptesFR":52,"videosSemaine":453,"meilleure":{"vues":"1,7 M","compte":"byelizen"},"note":{"note":"4,6","avis":"2,5 k"},"prix":{"min":"8,99","max":"79,99"},"accroches":[{"label":"Horaire de routine post-entraînement","texte":"18:00-22:00 Post workout routine","vues":1500000,"compte":"byelizen","comptes":1,"vuesTxt":"1,5 M"},{"label":"Effets de la pilule les premières semaines","texte":"100% moi les premières semaines où j’ai pris ma pilule","vues":96600,"compte":"justinendo","comptes":1,"vuesTxt":"96,6 k"},{"label":"Rêve de guérir des TCA","texte":"mon rêve niche c’est de guérir des tca","vues":55700,"compte":"indoinsa","comptes":1,"vuesTxt":"55,7 k"}],"quoi":"Équilibre hormonal"}]},{"nom":"Side hustle","apps":50,"vuesParVideo":1405,"top":[{"nom":"SideShift","store":"SideShift - Earn Money","logo":"/_blob/1a0aaffcea01b1ffda8aa18fd581819e","comptes":158,"comptesFR":19,"videosSemaine":1339,"meilleure":{"vues":"4,3 M","compte":"prankswithgenn_"},"note":{"note":"4,8","avis":"411"},"prix":{"min":"0,99","max":"89,99"},"accroches":[{"label":"Indépendance financière avant 25 ans","texte":"Mon objectif est de devenir financièrement indépendante avant mes 25 ans. Je suis ouverte à toutes les idées p","vues":1000000,"compte":"kelly.advice","comptes":1,"vuesTxt":"1 M"},{"label":"Propositions de marques, plusieurs acceptations","texte":"Hoy contacté a 100 marcas. 70 nunca respondieron. 20 dijeron que NO. 10 dijeron que Sl. Y 5 de esas me pagaron","vues":280400,"compte":"fernandaj_ugc","comptes":19,"vuesTxt":"280 k"},{"label":"Cinq jobs remote à lancer","texte":"TRES TRABAJOS DE NOCHE QUE PUEDES HACER DESDE TU CASA","vues":190800,"compte":"mafe.guzman29","comptes":4,"vuesTxt":"191 k"}],"quoi":"Earn Money"},{"nom":"Hub Capture","store":"Hub Capture","logo":"/_blob/0f9ee825849ee6aed98fd72a4cf282d2","comptes":54,"comptesFR":0,"videosSemaine":180,"meilleure":{"vues":"79,2 k","compte":"tamiresrrosati"},"note":null,"prix":null,"accroches":[{"label":"Dificuldade para enxergar sem óculos","texte":"Gente, eu sem óculos não exergo nada 😂😂 perdão na leitura 🥹 a informação foi nada kk","vues":9343,"compte":"rennynooff","comptes":1,"vuesTxt":"9,3 k"},{"label":"Mão de zumbi","texte":"“MÃO DE ZUMBI”","vues":8453,"compte":"yasmin.robo","comptes":1,"vuesTxt":"8,5 k"},{"label":"Testando uma nova plataforma","texte":"Vou testar lataforma a novaaa","vues":6323,"compte":"sthecareli","comptes":1,"vuesTxt":"6,3 k"}],"quoi":"Plateforme de revenus en ligne par parrainage, avec dropshipping et création de contenu UGC pour TikTok Shop"},{"nom":"TikAlyzer","store":"TikAlyzer: Deviens Viral","logo":"/_blob/6cd8614ef022ef8a2c697fea0435d3d6","comptes":51,"comptesFR":0,"videosSemaine":87,"meilleure":{"vues":"1,1 k","compte":"viviana.tikalyzr"},"note":{"note":"4,2","avis":"5"},"prix":{"min":"6,99","max":"69,99"},"accroches":[],"quoi":"Deviens Viral"}]},{"nom":"Création de contenu","apps":41,"vuesParVideo":19873,"top":[{"nom":"Djay","store":"djay - DJ App & AI Mixer","logo":"/_blob/72e67ce3d8d12ad2cbb067f4e6359c3d","comptes":163,"comptesFR":3,"videosSemaine":355,"meilleure":{"vues":"61,7 k","compte":"djayoverlaps"},"note":{"note":"4,6","avis":"6,7 k"},"prix":{"min":"0,00","max":"49,99"},"accroches":[{"label":"Phrase kurde d'amour","texte":"گیانەکەم ، ئەتۆ نەبووی فێری گیانت کردم ؟ ئێستاش بێ گیانت کردم","vues":134800,"compte":".avii1i","comptes":1,"vuesTxt":"135 k"},{"label":"Envie de sortir un mix","texte":"im tryna dumpppp","vues":2929,"compte":"idontlikeyoufrbye","comptes":1,"vuesTxt":"2,9 k"},{"label":"Blague sur le repas de fête","texte":"Don’t bring no stank ah chitterlings for thanksgiving that smell like cousin feet","vues":2366,"compte":"dxmien_vt","comptes":1,"vuesTxt":"2,4 k"}],"quoi":"DJ App & AI Mixer"},{"nom":"Crsel","store":"Crsel: Carrousel & Story Maker","logo":"/_blob/091a5528750d46f9604e2da5d551d8a9","comptes":14,"comptesFR":0,"videosSemaine":104,"meilleure":{"vues":"6,8 k","compte":"emilycreatescontent"},"note":{"note":"4,7","avis":"1,2 k"},"prix":{"min":"5,99","max":"29,99"},"accroches":[],"quoi":"Carrousel & Story Maker"},{"nom":"VanDraw","store":"VanDraw","logo":"/_blob/507b0f3caca6c8110cc73e20ccd269ea","comptes":19,"comptesFR":0,"videosSemaine":73,"meilleure":{"vues":"73,1 k","compte":"inspovikk"},"note":{"note":"4,6","avis":"173"},"prix":{"min":"6,00","max":"60,00"},"accroches":[{"label":"Titre de jeu vidéo en texte","texte":"grand theft auto","vues":57100,"compte":"inspovikk","comptes":1,"vuesTxt":"57,1 k"}],"quoi":"App de dessin qui permet de dessiner des avatars et des personnages à partir des commentaires ou de photos"}]},{"nom":"Langues","apps":36,"vuesParVideo":6669,"top":[{"nom":"Vocabulary","store":"Vocabulary - Apprenez mots","logo":"/_blob/18af473b721534d7e7f6eddc446edfed","comptes":71,"comptesFR":0,"videosSemaine":637,"meilleure":{"vues":"4,2 k","compte":"edforyou6"},"note":{"note":"4,7","avis":"4 k"},"prix":{"min":"5,99","max":"59,99"},"accroches":[{"label":"Son qui empêche de trop penser","texte":"My roommate told me about this sound which blocks your brain from overthinking. I’ve been listening for 4 hour","vues":6517,"compte":"itskatiegirl8","comptes":11,"vuesTxt":"6,5 k"},{"label":"Gagner de l'argent avec des jeux mobiles","texte":"when people are using klarna to make payments to play the new GTA but I'm only $19 away from getting it using ","vues":2961,"compte":"lobotomized_fish101","comptes":9,"vuesTxt":"3 k"},{"label":"Burger sous vide","texte":"Sous vide burger","vues":977,"compte":"hazaeyrw6ue","comptes":1,"vuesTxt":"977"}],"quoi":"Apprenez mots"},{"nom":"Pingo AI","store":"Apprendre des langues Pingo AI","logo":"/_blob/d2a8d5194f2818ce6fd059ea62aa7d63","comptes":147,"comptesFR":7,"videosSemaine":480,"meilleure":{"vues":"78,3 k","compte":"nadiaspeaksgerman"},"note":{"note":"4,6","avis":"1,8 k"},"prix":{"min":"14,99","max":"119,99"},"accroches":[{"label":"IA britannique contre IA américaine","texte":"🇬🇧 · 🇺🇸 · WHO ARE YOU? · I ASKED BETTER! · I’M A BRITISH AI!!! · WHAT?? · YOUR VOICE SOUNDS UGLY! · WHAAAA","vues":245600,"compte":"englishgurukat","comptes":2,"vuesTxt":"246 k"},{"label":"Examen de nationalité française","texte":"¿Quién dijo la frase? official Spanish nationality exam","vues":198400,"compte":"camilopolyglot","comptes":3,"vuesTxt":"198 k"},{"label":"Demander comment dire un mot tendre","texte":"How do you say \"green flag\" in Chinese 🇨🇳","vues":173100,"compte":"howtosaynihao","comptes":4,"vuesTxt":"173 k"}],"quoi":"Application d'apprentissage des langues par IA qui corrige les phrases et répond aux questions de vocabulaire"},{"nom":"Bunpo","store":"Bunpo: Apprendre les langues","logo":"/_blob/c2a6b4086f1b6c1cfbcf61fa15fa1491","comptes":86,"comptesFR":0,"videosSemaine":206,"meilleure":{"vues":"18,9 k","compte":"frenchwithlars"},"note":{"note":"4,8","avis":"1,1 k"},"prix":{"min":"9,99","max":"99,99"},"accroches":[{"label":"Pas d'argent en japonais, humour","texte":"🇬🇧 🇯🇵 🇯🇵😩 I don’t have money お金が ありません","vues":344400,"compte":"bunpo_learnjapanese","comptes":1,"vuesTxt":"344 k"},{"label":"Méchant qui apprend le japonais","texte":"you’re a villain but you’re still learning Japanese 日本語勉強中のラスボス この漢字が読めないんだけど I actually can't read that kanji","vues":44300,"compte":"studytomodachi","comptes":1,"vuesTxt":"44,3 k"},{"label":"Apprendre l'espagnol, publicité","texte":"Anzeige Learning Spanish while eating fruit 🍊🇪🇸","vues":20200,"compte":"vittoria.aprende","comptes":1,"vuesTxt":"20,2 k"}],"quoi":"Apprendre les langues"}]},{"nom":"Études","apps":35,"vuesParVideo":4542,"top":[{"nom":"Aistote","store":"Aistote : QUIZ IA","logo":"/_blob/76e463359e90ef552efb34e5c7e3d6d3","comptes":46,"comptesFR":6,"videosSemaine":532,"meilleure":{"vues":"206 k","compte":"wow_its_clifford"},"note":{"note":"4,5","avis":"2,4 k"},"prix":{"min":"8,99","max":"49,99"},"accroches":[{"label":"Question d'examen prise au pied de la lettre","texte":"POV: you use a big word in your English essay and pray it means what you think it means","vues":205700,"compte":"wow_its_clifford","comptes":1,"vuesTxt":"206 k"},{"label":"Surprise de dernière page à l'examen","texte":"POV: you finally find a question you actually know and it's only worth 1 point","vues":174100,"compte":"wow_its_clifford","comptes":1,"vuesTxt":"174 k"},{"label":"Marché de Noël à Nantes","texte":"Le marché de Noël a ouvert à Nantes🎅🏻🎄","vues":89900,"compte":"arkenyxe","comptes":1,"vuesTxt":"89,9 k"}],"quoi":"QUIZ IA"},{"nom":"NurseMind","store":"NurseMind: AI Nursing Guide","logo":"/_blob/d9cfb325abf5059006ea8a8469649df4","comptes":112,"comptesFR":0,"videosSemaine":435,"meilleure":{"vues":"2 k","compte":"learninghacks4u"},"note":null,"prix":{"min":"9,99","max":"34,99"},"accroches":[{"label":"Meilleurs moyens de gagner de l'argent en plus","texte":"these are the BEST outside the box ways to bring in some extra money 🤑","vues":1661,"compte":"anicaa275","comptes":7,"vuesTxt":"1,7 k"},{"label":"Gagner des récompenses en jouant à des jeux mobiles","texte":"3 things I bought this week just by playing cute mobile games on my phone","vues":1634,"compte":"anicaa275","comptes":15,"vuesTxt":"1,6 k"},{"label":"Ce qu'on ferait différemment au premier jour","texte":"if i could redo my first shift as a nurse what i'd do differently, from the first five minutes to clocking out","vues":1531,"compte":"doweknowhurrr","comptes":6,"vuesTxt":"1,5 k"}],"quoi":"AI Nursing Guide"},{"nom":"Diane AI","store":"Diane AI - Flashcards","logo":"/_blob/272b918280377e85e29e2aa5438d04e4","comptes":53,"comptesFR":49,"videosSemaine":403,"meilleure":{"vues":"51,8 k","compte":"el1ott_lapt"},"note":{"note":"4,6","avis":"385"},"prix":{"min":"19,99","max":"89,99"},"accroches":[{"label":"Question sur la motivation pour les partiels","texte":"« Votre motivation pour réviser les partiels » · « Parce que faut être motivé en plus ? »","vues":109000,"compte":"jade_dianeai","comptes":1,"vuesTxt":"109 k"},{"label":"Rendez-vous à la BU à 8h non tenu","texte":"On se retrouve à 8h pour aller à la bu mais on est ni du matin ni des partiels","vues":87300,"compte":"jade_dianeai","comptes":2,"vuesTxt":"87,3 k"},{"label":"Fin du lycée après le bac","texte":"Juillet 2025, j'obtiens mon bac, j'ai officiellement terminé le lycée 🏫...","vues":71800,"compte":"el1ott_lapt","comptes":1,"vuesTxt":"71,8 k"}],"quoi":"Flashcards"}]},{"nom":"Productivité","apps":27,"vuesParVideo":4020,"top":[{"nom":"TapCook","store":"TapCook: Budget Meal Plans","logo":"/_blob/51d167ad68f24b809fbc0e60588c30bf","comptes":184,"comptesFR":0,"videosSemaine":3342,"meilleure":{"vues":"31,7 k","compte":"mealprepsteve"},"note":{"note":"4,5","avis":"2"},"prix":{"min":"9,99","max":"34,99"},"accroches":[{"label":"Budget courses choisi au hasard","texte":"¿EN COSTCO CON UN PRESUPUESTO AL AZAR?","vues":6156,"compte":"laurapresupuesto","comptes":2,"vuesTxt":"6,2 k"},{"label":"Nourrir une grande tablée à petit prix","texte":"No Frills Canada $45 to Feed 8 people Dinners for two days this weekend","vues":4646,"compte":"grocevypwoq","comptes":31,"vuesTxt":"4,6 k"},{"label":"Doute sur un petit budget courses","texte":"$80 this week for a family of 4!","vues":3862,"compte":"familytips44","comptes":49,"vuesTxt":"3,9 k"}],"quoi":"Budget Meal Plans"},{"nom":"FocusTown","store":"FocusTown : Minuteur Pomodoro","logo":"/_blob/1bc7d9ec760065dadb6286855c7c1711","comptes":50,"comptesFR":0,"videosSemaine":432,"meilleure":{"vues":"165 k","compte":"yellen_forellen"},"note":{"note":"4,7","avis":"2,1 k"},"prix":{"min":"0,99","max":"34,99"},"accroches":[{"label":"Salle d'étude qui fait peur","texte":"why does this study room kinda looks like a horror movie 💀","vues":5720,"compte":"amiesstudycorner","comptes":1,"vuesTxt":"5,7 k"},{"label":"Macbeth comme fan fiction","texte":"macbeth is so much more interesting when you realise it’s basically a fan fic","vues":4564,"compte":"downtownacademic","comptes":1,"vuesTxt":"4,6 k"},{"label":"Café d'hiver pour lire ensemble","texte":"WAIT THERE‘S A WINTER CAFE TO READ WITH FRIENDS ONLINE?!","vues":3865,"compte":"amiesstudycorner","comptes":1,"vuesTxt":"3,9 k"}],"quoi":"Minuteur Pomodoro"},{"nom":"EcoGPT","store":"EcoGPT","logo":"/_blob/81f306cd79ba74f68266d56b15581bbb","comptes":130,"comptesFR":0,"videosSemaine":426,"meilleure":{"vues":"98,4 k","compte":"ecowithlourdes"},"note":{"note":"4,7","avis":"1,3 k"},"prix":{"min":"6,99","max":"79,99"},"accroches":[{"label":"Coïncidences qui n'arrivent qu'une fois","texte":"Coincidences that could happen only once in a lifetime 🎯","vues":1700000,"compte":"plainachos","comptes":1,"vuesTxt":"1,7 M"},{"label":"Photos d'oublis aux conséquences","texte":"Photos of times people forgot something and faced the consequences Pt.13 😂","vues":1500000,"compte":"plainachos","comptes":2,"vuesTxt":"1,5 M"},{"label":"La vaquita marina","texte":"La vaquita marina está extinta🥺💔","vues":901100,"compte":"ecologiacongaby","comptes":8,"vuesTxt":"901 k"}],"quoi":"Application d'IA conversationnelle présentée par les créatrices comme un moyen d'agir pour la planète à travers ses usages quotidiens"}]},{"nom":"Foi","apps":23,"vuesParVideo":4871,"top":[{"nom":"Sacred Shorts","store":"Sacred Shorts: Bible Videos","logo":"/_blob/8b7fde72589e291308290005bc0e9703","comptes":54,"comptesFR":0,"videosSemaine":715,"meilleure":{"vues":"392","compte":"guadalupedolores33"},"note":{"note":"5,0","avis":"2"},"prix":{"min":"14,99","max":"69,99"},"accroches":[{"label":"Regalo para mamá con vista cansada","texte":"le regalé esto a mi mamá en su cumpleaños y lloró","vues":190,"compte":"julianagarcia4007","comptes":2,"vuesTxt":"190"},{"label":"Hijo pide herencia y la pierde","texte":"pidió su herencia antes de tiempo y la perdió toda","vues":183,"compte":"alexandraquizano","comptes":3,"vuesTxt":"183"},{"label":"Militar pide recomendar la app","texte":"mi hermano en el ejército me pidió que se la recomendara","vues":181,"compte":"melisagomez747","comptes":4,"vuesTxt":"181"}],"quoi":"Bible Videos"},{"nom":"Tarteel","store":"Tarteel: Coran et Mémorisation","logo":"/_blob/e23d7cde5a695203aca8775e6c209d27","comptes":50,"comptesFR":4,"videosSemaine":217,"meilleure":{"vues":"10,4 k","compte":"tarteel.travel"},"note":{"note":"4,8","avis":"2,9 k"},"prix":{"min":"14,99","max":"249,99"},"accroches":[{"label":"Trouver la paix dans le Coran","texte":"“Find peace in Quran after a long day”","vues":34800,"compte":"muhammadibrahim007458","comptes":1,"vuesTxt":"34,8 k"},{"label":"Muraja'ah sur un air mélodieux","texte":"MK : Muroja'ah dengan irama \"jiharka\"","vues":34500,"compte":"iqbalrajasaa","comptes":1,"vuesTxt":"34,5 k"},{"label":"Ami responsable de la classe de hifz","texte":"POV: Your friend gets put in charge of the Hifz class","vues":16700,"compte":"zafrul18","comptes":1,"vuesTxt":"16,7 k"}],"quoi":"Coran et Mémorisation"},{"nom":"Scroll The Bible","store":"Scroll The Bible","logo":"/_blob/c8f5cc37b0b5704e5d3c10eaa69450eb","comptes":29,"comptesFR":0,"videosSemaine":159,"meilleure":{"vues":"665 k","compte":"juless4jesus"},"note":{"note":"4,9","avis":"30"},"prix":{"min":"5,99","max":"44,99"},"accroches":[{"label":"Prière contre l'anxiété","texte":"God wants you To pray against Anxiety & worry!","vues":14200,"compte":"cirley.ruballo","comptes":2,"vuesTxt":"14,2 k"},{"label":"Dieu veut que tu entendes sa voix","texte":"God wants you to hear his voice this week","vues":12300,"compte":"jodavscroll","comptes":1,"vuesTxt":"12,3 k"},{"label":"Message de Dieu pour toi","texte":"A message from God for YOU❤️‍🔥","vues":6311,"compte":"jodavscroll","comptes":1,"vuesTxt":"6,3 k"}],"quoi":"App qui propose des sujets de prière quotidiens et des passages bibliques à partir de la Parole de Dieu"}]},{"nom":"Beauté IA","apps":23,"vuesParVideo":11777,"top":[{"nom":"Fits","store":"Fits – Closet & Outfit Maker","logo":"/_blob/fd3e43265fe47c1decfd0182c930f20a","comptes":11,"comptesFR":1,"videosSemaine":67,"meilleure":{"vues":"699","compte":".username._.com"},"note":{"note":"4,5","avis":"1,3 k"},"prix":{"min":"1,99","max":"79,99"},"accroches":[],"quoi":"Closet & Outfit Maker"},{"nom":"Tatship","store":"Tatship: Simulateur Tatouage","logo":"/_blob/d0f7558d072c2b1a1c3442f254ce5c6f","comptes":3,"comptesFR":0,"videosSemaine":30,"meilleure":{"vues":"1,5 k","compte":"tatshiphq"},"note":{"note":"4,4","avis":"118"},"prix":{"min":"14,99","max":"39,99"},"accroches":[{"label":"Formulaires de demande de tatouage difficiles à remplir","texte":"Tattoo request forms are HARD for clients","vues":106,"compte":"tatshiphq","comptes":1,"vuesTxt":"106"},{"label":"Tatoueur recommande l'app avant le rendez-vous","texte":"my tattoo artist just sent me this app to use before my appointment","vues":38,"compte":"tatshiphq","comptes":1,"vuesTxt":"38"}],"quoi":"Simulateur Tatouage"},{"nom":"Closfi","store":"Closfi: Tu Clóset Virtual IA","logo":"/_blob/de6226863c70814f0221b74949c14eb4","comptes":21,"comptesFR":0,"videosSemaine":19,"meilleure":{"vues":"4,5 k","compte":"carolina_outfits"},"note":null,"prix":{"min":"3,99","max":"59,99"},"accroches":[],"quoi":"Tu Clóset Virtual IA"}]},{"nom":"Jalousie et ex","apps":22,"vuesParVideo":4219,"top":[{"nom":"The Cringe","store":"The Cringe: Chat Wrapped","logo":"/_blob/326f204effd9efd7786e7f1e6e9eb2e0","comptes":14,"comptesFR":2,"videosSemaine":95,"meilleure":{"vues":"144 k","compte":"ele_peivateaccoun"},"note":{"note":"4,0","avis":"849"},"prix":{"min":"9,99","max":"44,99"},"accroches":[],"quoi":"Chat Wrapped"},{"nom":"Red Flag","store":"Red Flag: Track Recent Follows","logo":"/_blob/c10256d7cc19cda8fa0ccd849335fd21","comptes":21,"comptesFR":0,"videosSemaine":0,"meilleure":null,"note":{"note":"5,0","avis":"1"},"prix":{"min":"3,99","max":"89,99"},"accroches":[],"quoi":"Track Recent Follows"},{"nom":"Lucen","store":"Lucen: AI Text Dating Advice","logo":"/_blob/ab3d5d2b0f89acec0794e6435436e575","comptes":1,"comptesFR":0,"videosSemaine":0,"meilleure":null,"note":null,"prix":null,"accroches":[],"quoi":"AI Text Dating Advice"}]},{"nom":"Bien-être mental","apps":18,"vuesParVideo":1580,"top":[{"nom":"Daimon","store":"Daimon: Honest Advice","logo":"/_blob/3386216d6464bda58acde9f87262c9db","comptes":5,"comptesFR":0,"videosSemaine":26,"meilleure":{"vues":"304 k","compte":"evelyn.0935"},"note":{"note":"4,9","avis":"904"},"prix":{"min":"0,99","max":"9,99"},"accroches":[],"quoi":"Honest Advice"},{"nom":"Gratitude Plus","store":"Gratitude Plus – Journal","logo":"/_blob/4e9329f17dae35ca057b79f103619303","comptes":5,"comptesFR":0,"videosSemaine":24,"meilleure":{"vues":"10,2 k","compte":"chaos_butmakeitcute_ish"},"note":{"note":"4,9","avis":"41"},"prix":{"min":"6,99","max":"399,99"},"accroches":[{"label":"Gagner de l'argent en postant des vidéos simples","texte":"I was tired of checking by bank account before every purchase So I started making videos of myself doing simpl","vues":275,"compte":"pis.taschio","comptes":1,"vuesTxt":"275"}],"quoi":"Journal"},{"nom":"Cora","store":"Cora - Become Her","logo":"/_blob/4b05703605396afb08ea212a8b92aabf","comptes":3,"comptesFR":0,"videosSemaine":4,"meilleure":{"vues":"737","compte":"becomingherpru"},"note":{"note":"4,4","avis":"34"},"prix":{"min":"6,99","max":"49,99"},"accroches":[],"quoi":"Become Her"}]},{"nom":"Séduction IA","apps":17,"vuesParVideo":18550,"top":[{"nom":"Liggo","store":"Liggo: Phrases de Drague IA","logo":"/_blob/352527d46f54e98038cc7ffef8fda244","comptes":17,"comptesFR":0,"videosSemaine":111,"meilleure":{"vues":"492 k","compte":"inspectordelrizz"},"note":{"note":"5,0","avis":"2"},"prix":{"min":"3,99","max":"39,99"},"accroches":[{"label":"Qui m'accompagne à un mariage ou sortie","texte":"quien me acompaña a un casamiento quien es la afortunada?","vues":491700,"compte":"inspectordelrizz","comptes":2,"vuesTxt":"492 k"},{"label":"Amour caché, partenaire qui dort à côté","texte":"mi Sabés bien que nunca de cosas por vos, siempre fu JAJAJAJ QUE MANERA DE REÍRME que romántico que sos amigo!","vues":58087,"compte":"santidigraziaa","comptes":1,"vuesTxt":"58,1 k"},{"label":"Demander de la chance à Dieu","texte":"DIOSITO DESÉAME SUERTE","vues":33400,"compte":"mrrizz49","comptes":1,"vuesTxt":"33,4 k"}],"quoi":"Phrases de Drague IA"},{"nom":"Trick AI","store":"Trick AI","logo":"/_blob/177196c913f5b1d9723da3da796e0233","comptes":2,"comptesFR":0,"videosSemaine":36,"meilleure":{"vues":"70,8 k","compte":"ustamanipulator"},"note":{"note":"5,0","avis":"1"},"prix":{"min":"1,99","max":"69,99"},"accroches":[{"label":"Relégué en ami, puis plainte sur l'amitié","texte":"Beni arkadaş bölgesine attı. Sonra arkadaşlığımdan şikâyet etti.","vues":1164,"compte":"manipulasyonustasi","comptes":1,"vuesTxt":"1,2 k"},{"label":"Baiser en soirée, excusé par l'ivresse","texte":"Partide başka biriyle öpüştü. Ertesi gün \"sarhoştum, sayılmaz\" dedi.","vues":385,"compte":"manipulasyonustasi","comptes":1,"vuesTxt":"385"},{"label":"Faux nom de contact cachant une autre relation","texte":"Beni telefonuna \"Ayşe Hoca\" diye kaydetmiş. Meğer başka biriyle sevgiliymiş.","vues":304,"compte":"ustamanipulator","comptes":1,"vuesTxt":"304"}],"quoi":"Application qui aide à décoder et écrire les messages dans une conversation amoureuse, avec des conseils de réponse"},{"nom":"Yazcam","store":"Yazcam : Assistant Chat IA","logo":"/_blob/0df314e6bafaa4ba8136c012293867cb","comptes":2,"comptesFR":0,"videosSemaine":10,"meilleure":{"vues":"7,8 k","compte":"alfaflort"},"note":null,"prix":{"min":"5,99","max":"79,99"},"accroches":[{"label":"Flörtün sevgilisi olduğunu öğrenmek","texte":"1 Haftadır konuştuğum Flört \"sevgilim var\" dedi","vues":4154,"compte":"tavlarizz","comptes":1,"vuesTxt":"4,2 k"},{"label":"Kıskançlık baştan itiraf, kıskançlık yarışması","texte":"POV: Kız 'ben çok kıskancım, baştan söyleyeyim' dedi ve sen kıskançlık yarışması açtın 👉","vues":522,"compte":"alfaflort","comptes":1,"vuesTxt":"522"}],"quoi":"Assistant Chat IA"}]},{"nom":"Rencontres","apps":17,"vuesParVideo":9647,"top":[{"nom":"Bump","store":"Bump - va voir tes amis IRL","logo":"/_blob/3cbb37ff9b44132c4bbe01d8dba06070","comptes":74,"comptesFR":7,"videosSemaine":302,"meilleure":{"vues":"621 k","compte":"brendon.bump"},"note":{"note":"4,9","avis":"12 k"},"prix":{"min":"2,49","max":"34,99"},"accroches":[{"label":"Ami en retard qu'on attend en discutant","texte":"Siempre un: Voy llegando","vues":965400,"compte":"jacqui.bump","comptes":3,"vuesTxt":"965 k"},{"label":"Ami qui préfère dormir au lieu de sortir","texte":"Azt mondja ne talizzunk ma, sokat dolgozott, inkább alszik... Most tényleg ennyire madárnak tűnök? 😂","vues":779100,"compte":"szaffi.bump","comptes":4,"vuesTxt":"779 k"},{"label":"Amour au premier regard avec Alex","texte":"- mergee Dragoste la prima vedere Alex - ok","vues":690500,"compte":"daduuu.bump","comptes":1,"vuesTxt":"691 k"}],"quoi":"Va voir tes amis IRL"},{"nom":"Milionegle","store":"Milionegle","logo":"/_blob/a579d0a65ac9e88518b42c1f93294ea5","comptes":6,"comptesFR":0,"videosSemaine":65,"meilleure":{"vues":"5,1 k","compte":"rebecca.emprende"},"note":null,"prix":{"min":"0,99","max":"49,99"},"accroches":[{"label":"Client qui accuse le freelance d'un piratage","texte":"Hackearon la web de mi cliente y me llamó diciendo que fue mi culpa.","vues":10300,"compte":"gonzles1258","comptes":1,"vuesTxt":"10,3 k"},{"label":"Mention vague d'une application sans contexte","texte":"con una aplicación","vues":1301,"compte":"hurtaldo","comptes":1,"vuesTxt":"1,3 k"},{"label":"Client qui ne paie pas après livraison","texte":"Entregué la web, el cliente dijo «perfecto» y nunca pagó los últimos $700.","vues":1193,"compte":"gonzles1258","comptes":1,"vuesTxt":"1,2 k"}],"quoi":"App pour rencontrer d'autres entrepreneurs et développer une mentalité entrepreneuriale"},{"nom":"Dion","store":"Dion","logo":"/_blob/566a5de8ed094021a113b9dd0e0b72dc","comptes":17,"comptesFR":0,"videosSemaine":41,"meilleure":{"vues":"8,3 k","compte":"gabyandsips"},"note":{"note":"4,9","avis":"53"},"prix":{"min":"24,99","max":"359,99"},"accroches":[{"label":"Sélection exclusive pour rejoindre Dion","texte":"Not everyone gets into Dion. Here’s why:","vues":3081,"compte":"revekkapal","comptes":1,"vuesTxt":"3,1 k"},{"label":"Fondateur de Dion qui tente une pause","texte":"POV: you try to take a break as the founder of Dion","vues":2540,"compte":"revekkapal","comptes":1,"vuesTxt":"2,5 k"},{"label":"Patron d'entreprise qui pense au travail la nuit","texte":"Business owners thinking they’ll get a good night sleep · my business brain all night","vues":1198,"compte":"revekkapal","comptes":1,"vuesTxt":"1,2 k"}],"quoi":"Application de mise en relation sur invitation pour rencontrer de nouvelles personnes et développer son réseau"}]},{"nom":"Finance","apps":17,"vuesParVideo":4049,"top":[{"nom":"Zoya","store":"Zoya: Halal Investing App","logo":"/_blob/4643f0caf89559e301b3f7fb9d08a746","comptes":4,"comptesFR":0,"videosSemaine":31,"meilleure":{"vues":"96 k","compte":"malak.finance"},"note":{"note":"4,8","avis":"83"},"prix":{"min":"4,99","max":"129,99"},"accroches":[{"label":"L'islam guide aussi les finances et l'investissement","texte":"realizing that islam gives you instructions on everything including your finances, wealth, and halal investing","vues":3246,"compte":"keishaonwealth","comptes":1,"vuesTxt":"3,2 k"},{"label":"Filles qui investissent, accroche « girls who invest »","texte":"girls who invest >","vues":868,"compte":"keishaonwealth","comptes":1,"vuesTxt":"868"}],"quoi":"Halal Investing App"},{"nom":"WeStash","store":"WeStash: Budget & Épargne","logo":"/_blob/779c5807537880cdb1c1a785115ebf66","comptes":3,"comptesFR":0,"videosSemaine":30,"meilleure":{"vues":"4,3 k","compte":"eliestash"},"note":{"note":"4,4","avis":"28"},"prix":{"min":"3,99","max":"24,99"},"accroches":[],"quoi":"Budget & Épargne"},{"nom":"Finzee","store":"Finzee - Budget planner","logo":"/_blob/9b695f4117c13e1887f4946718bc23fe","comptes":13,"comptesFR":11,"videosSemaine":20,"meilleure":{"vues":"270 k","compte":"budget.forgirls"},"note":{"note":"4,8","avis":"791"},"prix":{"min":"4,99","max":"99,99"},"accroches":[],"quoi":"Budget planner"}]},{"nom":"Couple","apps":9,"vuesParVideo":5149,"top":[{"nom":"Amorly","store":"Amorly: Jeux de Couple & Quiz","logo":"/_blob/ddf351f6e358f12f637f1bd8295697c5","comptes":2,"comptesFR":0,"videosSemaine":50,"meilleure":{"vues":"258 k","compte":"mayanowak076"},"note":{"note":"2,0","avis":"2"},"prix":{"min":"5,99","max":"79,99"},"accroches":[{"label":"Signes qu'il ou elle t'aime vraiment","texte":"4 oznaki, że twoja dziewczyna naprawdę cię kocha >>>","vues":182100,"compte":"majanowak074","comptes":2,"vuesTxt":"182 k"},{"label":"Signes de love bombing","texte":"Oznaki, że bombarduje cię miłością","vues":15800,"compte":"mayanowak076","comptes":1,"vuesTxt":"15,8 k"},{"label":"Red flags dans une relation","texte":"13 czerwonych flag 🚩 w związku ; Przeczytaj to >","vues":556,"compte":"mayanowak076","comptes":1,"vuesTxt":"556"}],"quoi":"Jeux de Couple & Quiz"},{"nom":"Pukutan","store":"Pukutan: Journal & Élevage","logo":"/_blob/76fcdcc098bf14cb1f45f6757f4d1c51","comptes":30,"comptesFR":0,"videosSemaine":37,"meilleure":{"vues":"4,5 k","compte":"kydropout"},"note":{"note":"4,5","avis":"2"},"prix":{"min":"0,99","max":"69,99"},"accroches":[],"quoi":"Journal & Élevage"}]}]};
+    const NICHES = DATA.niches;
+    const NNBSP = " ", NBSP = " ";
+    const AMOUNTS = [500, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 30000];
+    const QUICK = [1000, 3000, 5000, 10000];
+    const TIMES = [{ v: 30, label: "30" + NBSP + "min", vids: 1 }, { v: 60, label: "1" + NBSP + "h", vids: 3 }, { v: 120, label: "2" + NBSP + "h", vids: 6 }, { v: 180, label: "3" + NBSP + "h" + NBSP + "+", vids: 9 }];
+    const BUDGETS = [{ v: "0", label: "0" + NBSP + "€", coins: 1 }, { v: "lt100", label: "Moins de 100" + NBSP + "€", coins: 2 }, { v: "100-500", label: "100 à 500" + NBSP + "€", coins: 3 }, { v: "gt500", label: "Plus de 500" + NBSP + "€", coins: 4 }];
+    const CODES = ["non", "outils", "oui"];
+    const MARKETS = ["FR", "US", "GB", "ES", "BR", "ALL"];
+    const RADAR_BIG = [{ l: 66.5, t: 26.3, d: 0.5 }, { l: 66.3, t: 78.3, d: 1.2 }, { l: 25.8, t: 56.5, d: 1.9 }];
+    const RADAR_SMALL = [{ l: 16.7, t: 30.8, d: 0.25 }, { l: 43.1, t: 31, d: 0.6 }, { l: 85.8, t: 29.3, d: 0.9 }, { l: 90.8, t: 42.9, d: 1.4 }, { l: 35.9, t: 88.8, d: 2.1 }, { l: 16.9, t: 77.9, d: 2.5 }];
+    const PARTICLES = Array.from({ length: 24 }, (_, i) => {
+      const a = i * (360 / 24) + ((i * 37) % 11) - 5;
+      const r = 140 + ((i * 53) % 90);
+      const sz = 6 + ((i * 7) % 6);
+      const c = ["#4C9AFF", "#0B6FE0", "#7CC4FF"][i % 3];
+      return { st: "--a: " + a.toFixed(1) + "deg; --r: " + r + "px; --s: " + sz + "px; --c: " + c + "; animation-delay: " + ((i % 4) * 30) + "ms;" };
+    });
+
+    function grp(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, NNBSP); }
+    function fr(x, d) { let s = x.toFixed(d); if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, ""); return s.replace(".", ","); }
+    function fmtDur(m) { const h = Math.floor(m / 60), r = m % 60; if (!h) return r + NBSP + "min"; return h + NBSP + "h" + (r ? NBSP + String(r).padStart(2, "0") : ""); }
+    function parseV(t) {
+      if (!t) return 0;
+      const m = String(t).replace(/\s/g, "").match(/^([\d,]+)([kM]?)$/);
+      if (!m) return 0;
+      const x = parseFloat(m[1].replace(",", "."));
+      return m[2] === "M" ? x * 1e6 : m[2] === "k" ? x * 1e3 : x;
+    }
+    function vuesTxt(t) { const s = String(t).replace(/\s/g, NBSP); return /M$/.test(s) ? s + " de vues" : s + " vues"; }
+    function clean(t) {
+      return String(t || "")
+        .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{FE0E}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, "")
+        .replace(/\s+/g, " ").replace(/\s+([,.;:…])/g, "$1").trim();
+    }
+    function bgOf(u) { return u ? "background-image: url(" + u + ");" : ""; }
+    function range(n) { return Array.from({ length: n }, (_, i) => i); }
+    function plural(n, one, many) { return n + " " + (n > 1 ? many : one); }
+
+    const ALL_TOP = NICHES.reduce((acc, n) => acc.concat(n.top), []).filter((a) => a.meilleure)
+      .sort((a, b) => parseV(b.meilleure.vues) - parseV(a.meilleure.vues)).slice(0, 3);
+    const ALL = { nom: "toutes les niches", apps: 653, vuesParVideo: 7400, top: ALL_TOP, all: true };
+    return { DATA, NICHES, NNBSP, NBSP, AMOUNTS, QUICK, TIMES, BUDGETS, CODES, MARKETS, RADAR_BIG, RADAR_SMALL, PARTICLES, grp, fr, fmtDur, parseV, vuesTxt, clean, bgOf, range, plural, ALL_TOP, ALL };
+  })();
+
+  constructor(p) {
+    super(p);
+    const { AMOUNTS } = this.constructor.K;
+    this.state = {
+      step: 1, prevStep: 1, amount: 3000, niche: "Santé et physique", time: 120, budget: "lt100", code: "non", market: "FR",
+      app: 0, showCalc: false, paywallOpen: false, pwOut: false, leaving: false, leaveY: 380,
+      armed: false, picked: false, touched: false, ripple: null, bump: 0, phase: 0, seen: {}, scrolled: false, hookHit: -1, hookN: 0,
+    };
+    this.timers = [];
+    this.pending = [];
+    this.rip = 0;
+    this.scrollRef = (el) => {
+      this.scroller = el || null;
+      if (el) { this.ensureIO(); const p = this.pending; this.pending = []; p.forEach((x) => this.observe(x)); }
+    };
+    this.rvRef = (el) => { if (el) this.observe(el); };
+    this.onScroll = (e) => {
+      const sc = !!(e && e.currentTarget && e.currentTarget.scrollTop > 6);
+      if (sc !== this.state.scrolled) this.setState({ scrolled: sc });
+    };
+    this.onAmount = (e) => {
+      const i = Math.max(0, Math.min(10, Number(e.target.value) || 0));
+      if (AMOUNTS[i] === this.state.amount) return;
+      this.setState({ amount: AMOUNTS[i], bump: this.state.bump + 1, ripple: null, touched: true });
+    };
+    this.back = () => { const s = this.state.step; if (s === 9) this.go(8); else if (s > 1 && s <= 6) this.go(s - 1); };
+    this.restart = () => this.go(1);
+    this.next = () => { const s = this.state.step; if (s >= 1 && s <= 6) this.go(s + 1); };
+    this.toggleCalc = () => this.setState({ showCalc: !this.state.showCalc });
+    this.openPaywall = () => { if (this.isPaywall()) this.setState({ paywallOpen: true, pwOut: false }); };
+    this.closePaywall = () => {
+      if (!this.state.paywallOpen || this.state.pwOut) return;
+      this.setState({ pwOut: true });
+      this.later(() => this.setState({ paywallOpen: false, pwOut: false }), this.rm ? 0 : 220);
+    };
+    this.nextApp = () => { const n = this.sortedApps(this.nicheData()).length || 1; this.go(9, { app: ((this.state.app || 0) + 1) % n }); };
+    this.toPlan = () => this.go(8);
+  }
+
+  componentDidMount() {
+    try { this.rm = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { this.rm = false; }
+    this.onEnter(this.state.step);
+  }
+  componentWillUnmount() {
+    this.clearTimers();
+    clearTimeout(this.pickT);
+    if (this.io) this.io.disconnect();
+  }
+
+  later(fn, ms) { const t = setTimeout(() => { this.timers = this.timers.filter((x) => x !== t); fn(); }, ms); this.timers.push(t); return t; }
+  clearTimers() { this.timers.forEach(clearTimeout); this.timers = []; }
+  isPaywall() { return this.props.paywall ?? true; }
+
+  ensureIO() {
+    if (this.io || this.noIO) return;
+    if (typeof IntersectionObserver === "undefined") { this.noIO = true; return; }
+    this.io = new IntersectionObserver((entries) => {
+      const add = {}; let any = false;
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        const k = en.target.getAttribute("data-rv");
+        if (k && !this.state.seen[k]) { add[k] = true; any = true; }
+        this.io.unobserve(en.target);
+      });
+      if (any) this.setState({ seen: Object.assign({}, this.state.seen, add) });
+    }, { root: this.scroller || null, rootMargin: "0px 0px -8% 0px", threshold: 0 });
+  }
+  observe(el) {
+    if (this.noIO) { const k = el.getAttribute("data-rv"); if (k && !this.state.seen[k]) this.setState({ seen: Object.assign({}, this.state.seen, { [k]: true }) }); return; }
+    if (!this.scroller) { this.pending.push(el); return; }
+    this.ensureIO();
+    if (this.io) this.io.observe(el);
+    else { const k = el.getAttribute("data-rv"); if (k) this.setState({ seen: Object.assign({}, this.state.seen, { [k]: true }) }); }
+  }
+
+  go(n, patch) {
+    if (this.state.leaving) return;
+    this.clearTimers();
+    clearTimeout(this.pickT);
+    const sc = this.scroller;
+    const y = sc ? sc.scrollTop + 380 : 380;
+    this.setState({ leaving: true, leaveY: y, paywallOpen: false, pwOut: false });
+    const swap = () => {
+      if (this.io) this.io.disconnect();
+      if (this.scroller) this.scroller.scrollTop = 0;
+      const base = Object.assign({ leaving: false, picked: false, touched: false, ripple: null, showCalc: false, scrolled: false, phase: 0, seen: {}, armed: false, hookHit: -1 }, patch || {});
+      if (n === this.state.step) {
+        this.setState(Object.assign(base, { step: 0, prevStep: n }));
+        this.later(() => { this.setState({ step: n }); this.onEnter(n); }, 40);
+      } else {
+        this.setState(Object.assign(base, { step: n, prevStep: n }));
+        this.onEnter(n);
+      }
+    };
+    this.later(swap, this.rm ? 0 : 300);
+  }
+
+  onEnter(n) {
+    const at = n === 1 ? 420 : n === 8 ? 320 : 260;
+    this.later(() => this.setState({ armed: true }), this.rm ? 0 : at);
+    if (n === 7) this.runCalc();
+  }
+
+  runCalc() {
+    const f = this.rm ? 0 : 1;
+    this.later(() => this.setState({ phase: 1 }), 1100 * f);
+    this.later(() => this.setState({ phase: 2 }), 2000 * f);
+    this.later(() => this.setState({ phase: 3 }), 2800 * f);
+    this.later(() => this.setState({ phase: 4 }), 2960 * f);
+    this.later(() => this.go(8), this.rm ? 1200 : 4500);
+  }
+
+  rippleFrom(e, key) {
+    const el = e && e.currentTarget;
+    if (!el || !el.getBoundingClientRect) return null;
+    const r = el.getBoundingClientRect();
+    const w = el.offsetWidth || r.width || 1, h = el.offsetHeight || r.height || 1;
+    const k = r.width ? r.width / w : 1;
+    let x = w / 2, y = h / 2;
+    if (e.detail !== 0 && (e.clientX || e.clientY)) { x = (e.clientX - r.left) / k; y = (e.clientY - r.top) / k; }
+    x = Math.max(0, Math.min(w, x)); y = Math.max(0, Math.min(h, y));
+    const size = 2 * Math.hypot(Math.max(x, w - x), Math.max(y, h - y));
+    this.rip += 1;
+    return { key, n: this.rip, x, y, size };
+  }
+
+  choose(group, val, e) {
+    if (this.state.leaving) return;
+    const rp = this.rippleFrom(e, group + ":" + val);
+    if (group === "amount") {
+      this.setState({ amount: val, ripple: rp, touched: true, bump: val === this.state.amount ? this.state.bump : this.state.bump + 1 });
+      return;
+    }
+    this.setState({ [group]: val, ripple: rp, picked: true, touched: true });
+    clearTimeout(this.pickT);
+    const from = this.state.step;
+    this.pickT = setTimeout(() => { this.pickT = null; if (this.state.step === from) this.go(from + 1); }, this.rm ? 200 : 650);
+  }
+
+  tapHook(i) { this.setState({ hookHit: i, hookN: this.state.hookN + 1 }); }
+
+  nicheData() {
+    const { NICHES, ALL } = this.constructor.K;
+    const s = this.state;
+    if (s.niche === "all") return ALL;
+    return NICHES.find((n) => n.nom === s.niche) || NICHES[1];
+  }
+  sortedApps(nd) {
+    const fr0 = this.state.market === "FR";
+    return nd.top.slice().sort((a, b) => fr0
+      ? ((b.comptesFR || 0) - (a.comptesFR || 0)) || ((b.videosSemaine || 0) - (a.videosSemaine || 0))
+      : ((b.videosSemaine || 0) - (a.videosSemaine || 0)));
+  }
+  plan(nd) {
+    const { fmtDur } = this.constructor.K;
+    const s = this.state, A = s.amount, vpv = nd.vuesParVideo;
+    const vMin = A / 3.5 * 1000, vMax = A / 2.5 * 1000;
+    const mn = Math.max(1, Math.round(vMin / vpv / 30));
+    const mx = Math.max(mn, Math.ceil(vMax / vpv / 30), 1);
+    const comptes = Math.max(1, Math.ceil(mx / 3));
+    // tConseil = moyenne(mini, maxi) × 20 min, arrondi à la demi-heure.
+    const tmin = Math.max(30, Math.round(((mn + mx) / 2) * 20 / 30) * 30);
+    const cap = Math.floor(s.time / 20);
+    const manque = Math.max(0, mn - cap);
+    const crea = Math.ceil(manque / 2); // hypothèse : une créatrice fait 2 vidéos par jour
+    const cout = manque * 5 * 30;
+    let kind;
+    if (manque === 0) kind = "A";
+    // « Plus de 500 € » : sans plafond ; « 100 à 500 € » : les créatrices doivent tenir dans 500 €.
+    else if (s.budget === "gt500" || (s.budget === "100-500" && cout <= 500)) kind = "B";
+    else kind = "C";
+    const creaTxt = crea === 1 ? "une créatrice" : crea + " créatrices";
+    const verdict = kind === "A" ? "Faisable avec ton temps" : kind === "B" ? "Faisable avec " + creaTxt : "Trop juste avec " + fmtDur(s.time);
+    // 2e pastille : jamais plus de 10 h affichées.
+    const pillTime = kind === "A" || (kind === "C" && tmin <= 600);
+    return { A, vpv, vMin, vMax, mn, mx, comptes, tmin, cap, manque, crea, cout, kind, verdict, ok: kind !== "C", pillTime, perAcc: Math.max(1, Math.ceil(mx / comptes)) };
+  }
+  viewsTxt(a, b) {
+    const { NBSP, fr } = this.constructor.K;
+    if (b >= 1e6) { const f = (v) => { const m = v / 1e6; return m < 1 ? fr(m, 2) : fr(m, 1); }; return f(a) + " à " + f(b) + NBSP + "M de vues"; }
+    return Math.round(a / 1000) + " à " + Math.round(b / 1000) + NBSP + "k vues";
+  }
+
+  roller(str, tpl, armed, delay) {
+    const chars = Array.from(str);
+    const T = Array.from(tpl || str.replace(/\d/g, "#"));
+    const flat = [{ isD: false, isS: true, ch: str, cls: "kpm-sl kpm-sep", st: "" }];
+    if (chars.length > T.length) return flat;
+    const pad = T.length - chars.length;
+    for (let i = 0; i < chars.length; i++) { if (/\d/.test(chars[i]) !== (T[pad + i] === "#")) return flat; }
+    return T.map((t, i) => {
+      const on = i >= pad;
+      const ch = on ? chars[i - pad] : "";
+      const isD = t === "#";
+      const k = T.length - 1 - i;
+      // Avant armement, la colonne montre déjà le bon chiffre un tour plus haut : à l'armement elle fait un tour complet.
+      const d = isD && on ? Number(ch) + (armed ? 0 : 10) : 0;
+      return {
+        isD, isS: !isD,
+        ch: isD || t === "_" ? "" : (on ? ch : t),
+        cls: "kpm-sl" + (isD ? " is-d" : t === "_" ? " kpm-gap" : " kpm-sep") + (on ? "" : " is-off"),
+        st: "transform: translateY(" + (-d) + "em); transition-delay: " + ((delay || 0) + k * 45) + "ms;",
+      };
+    });
+  }
+
+  opt(group, val, i, iBase, base) {
+    const s = this.state;
+    const sel = s[group] === val;
+    const key = group + ":" + val;
+    const rp = s.ripple && s.ripple.key === key ? s.ripple : null;
+    const ii = iBase + i;
+    const hd = s.touched ? 0 : ii * 55 + 80 + 560;
+    return {
+      sel, aria: sel ? "true" : "false",
+      cls: (base || "kpm-opt") + (sel ? " is-sel" : "") + (sel && rp ? " is-hit" : ""),
+      wrapStyle: "--i: " + ii + "; --hd: " + hd + "ms; --hf: " + (s.touched ? 0 : ii * 55 + 240) + "ms;",
+      rA: !!rp && rp.n % 2 === 0, rB: !!rp && rp.n % 2 === 1,
+      rStyle: rp ? "left: " + (rp.x - rp.size / 2).toFixed(1) + "px; top: " + (rp.y - rp.size / 2).toFixed(1) + "px; width: " + rp.size.toFixed(1) + "px; height: " + rp.size.toFixed(1) + "px;" : "",
+      pick: (e) => this.choose(group, val, e),
+    };
+  }
+
+  rv(k, extra) { return "kpm-rv" + (extra ? " " + extra : "") + (this.state.seen[k] ? " is-seen" : ""); }
+
+  renderVals() {
+    const { NICHES, NNBSP, NBSP, AMOUNTS, QUICK, TIMES, BUDGETS, CODES, MARKETS, RADAR_BIG, RADAR_SMALL, PARTICLES, grp, fmtDur, vuesTxt, clean, bgOf, range, plural } = this.constructor.K;
+    const s = this.state;
+    const pw = this.isPaywall();
+    const step = s.step;
+    const shown = step || s.prevStep || 1;
+    const nd = this.nicheData();
+    const apps = this.sortedApps(nd);
+    const nTop = apps.length;
+    const P = this.plan(nd);
+    const v = {};
+    for (let i = 1; i <= 9; i++) v["isStep" + i] = step === i;
+    v.paywall = pw; v.film = !pw;
+    v.scrollRef = this.scrollRef; v.rvRef = this.rvRef; v.onScroll = this.onScroll;
+    v.stageCls = "kpm-stage" + (s.leaving ? " is-leaving" : "");
+    v.stageStyle = "transform-origin: 50% " + Math.round(s.leaveY || 380) + "px;";
+    v.headCls = "kpm-head" + (s.scrolled ? " is-scrolled" : "");
+    v.dotsStyle = "transform: translate(" + (-shown * 5) + "px, " + (-shown * 8) + "px);";
+    v.segs = range(6).map((i) => {
+      const q = i + 1;
+      let c = "kpm-seg";
+      if (shown >= 7 || q < shown) c += " is-done";
+      else if (q === shown) c += " is-cur";
+      return { cls: c };
+    });
+    v.progNow = String(Math.min(6, shown));
+    v.hasBack = (shown >= 2 && shown <= 6) || shown === 9;
+    v.backLabel = shown === 9 ? "Retour au plan" : "Question précédente";
+    v.back = this.back; v.restart = this.restart; v.next = this.next;
+    v.groupCls = s.picked ? "has-picked" : "";
+
+    // 1 — Montant
+    const ai = Math.max(0, AMOUNTS.indexOf(s.amount));
+    v.amtIdx = ai;
+    v.rangeStyle = "--p: " + (ai / 10) + ";";
+    v.rangeCls = "kpm-range" + (s.bump ? (s.bump % 2 ? " kpm-tA" : " kpm-tB") : "");
+    v.numCls = "kpm-roll kpm-num" + (s.bump ? (s.bump % 2 ? " kpm-bA" : " kpm-bB") : "");
+    v.numStyle = "--k: " + (s.amount >= 10000 ? "var(--kbig)" : 1) + ";";
+    v.amtRoll = this.roller(grp(s.amount), "##_###", s.armed, 0);
+    v.dayRoll = this.roller(grp(Math.round(s.amount / 30)), "#_###", s.armed, 160);
+    v.amtText = grp(s.amount) + " € par mois";
+    v.amtSr = grp(s.amount) + " €";
+    v.daySr = grp(Math.round(s.amount / 30)) + " €";
+    v.onAmount = this.onAmount;
+    v.quick = QUICK.map((a, i) => Object.assign(this.opt("amount", a, i, 5), { label: grp(a) + NBSP + "€" }));
+    v.toStep2 = () => this.go(2);
+
+    // 2 — Niche
+    v.nicheItems = NICHES.map((n, i) => {
+      const o = this.opt("niche", n.nom, i, 2);
+      o.nom = n.nom;
+      o.logos = n.top.slice(0, 3).map((a, j) => ({ bg: bgOf(a.logo), st: "--j: " + j + "; --r: " + [-10, 0, 10][j] + "deg; z-index: " + (3 - j) + ";" }));
+      if (i === NICHES.length - 1 && NICHES.length % 2 === 1) o.wrapStyle += " grid-column: 1 / -1;";
+      return o;
+    });
+    v.nsp = this.opt("niche", "all", NICHES.length, 2, "kpm-nsp");
+
+    // 3 — Temps
+    v.timeItems = TIMES.map((t, i) => {
+      const o = this.opt("time", t.v, i, 2);
+      o.label = t.label;
+      o.sub = plural(t.vids, "vidéo", "vidéos") + " par jour";
+      o.sr = t.label + ", " + o.sub;
+      o.subStyle = "--n: " + t.vids + ";";
+      o.thumbs = range(t.vids).map((j) => ({ st: "--j: " + j + ";" }));
+      return o;
+    });
+
+    // 4 — Budget
+    v.budgetItems = BUDGETS.map((b, i) => {
+      const o = this.opt("budget", b.v, i, 2);
+      o.label = b.label;
+      o.coins = range(b.coins).map((j) => ({ cls: "kpm-coin" + (j === b.coins - 1 ? " is-top" : ""), st: "--j: " + j + "; z-index: " + (j + 1) + ";" }));
+      return o;
+    });
+
+    // 5 — Code / 6 — Marché
+    CODES.forEach((c, i) => { v["cd" + i] = this.opt("code", c, i, 2); });
+    MARKETS.forEach((m, i) => { v["mk" + i] = this.opt("market", m, i, 2); });
+
+    // 7 — Calcul
+    const ph = s.phase || 0;
+    const cnt = ph >= 4 ? nTop : ph >= 1 ? nd.apps : 653;
+    v.calcRollA = this.roller(String(cnt), "###", true, 0);
+    v.calcRollB = this.roller(String(ph >= 4 ? nTop : nd.apps), "###", true, 0);
+    v.lineACls = "kpm-lineA" + (ph >= 3 ? " is-out" : "");
+    v.phase3 = ph >= 3;
+    v.burst = ph >= 4;
+    v.foundWord = nTop > 1 ? "apps trouvées" : "app trouvée";
+    v.foundSr = String(nTop);
+    v.ck0 = "kpm-ckli" + (ph >= 1 ? " is-done" : "");
+    v.ck1 = "kpm-ckli" + (ph >= 2 ? " is-done" : "");
+    v.ck2 = "kpm-ckli" + (ph >= 3 ? " is-done" : "");
+    v.calcPct = String(Math.min(100, ph * 25));
+    v.radarBig = apps.slice(0, 3).map((a, i) => {
+      const b = RADAR_BIG[i];
+      return {
+        bg: bgOf(a.logo),
+        st: "left: " + b.l + "%; top: " + b.t + "%; width: 40px; height: 40px; margin: -20px 0 0 -20px; animation-delay: " + b.d + "s;",
+        pingSt: "animation-delay: " + (b.d + 0.2) + "s;",
+        ping2St: "animation-delay: " + (b.d + 1.2) + "s;",
+        imgCls: "kpm-rbig kpm-img" + (ph >= 4 ? " is-found" : ""),
+      };
+    });
+    const bigSet = {};
+    apps.forEach((a) => { bigSet[a.logo] = 1; });
+    v.radarSmall = NICHES.filter((n) => nd.all || n.nom !== nd.nom).map((n) => n.top[0] && n.top[0].logo).filter((l) => l && !bigSet[l]).slice(0, 6)
+      .map((l, i) => { const b = RADAR_SMALL[i]; return { bg: bgOf(l), st: "left: " + b.l + "%; top: " + b.t + "%; width: 22px; height: 22px; margin: -11px 0 0 -11px; animation-delay: " + b.d + "s;" }; });
+    v.particles = PARTICLES;
+
+    // 8 — Résultat
+    v.resRollMin = this.roller(String(P.mn), "###", s.armed, 0);
+    v.resRollMax = this.roller(String(P.mx), "###", s.armed, 90);
+    v.resRange = P.mn !== P.mx;
+    v.resSr = v.resRange ? P.mn + " à " + P.mx : String(P.mn);
+    v.resUnit = (P.mx > 1 ? "vidéos" : "vidéo") + " par jour";
+    const nd8 = String(P.mn).length + (v.resRange ? String(P.mx).length : 0);
+    const fs8 = nd8 <= 2 ? 80 : nd8 === 3 ? 76 : nd8 === 4 ? 66 : nd8 === 5 ? 56 : 50;
+    v.resNumStyle = "font-size: " + fs8 + "px;";
+    v.resAStyle = "font-size: " + Math.round(fs8 * 0.45) + "px; margin: " + Math.round(fs8 * 0.26) + "px " + Math.round(fs8 * 0.15) + "px 0 " + Math.round(fs8 * 0.1) + "px;";
+    v.comptesTxt = plural(P.comptes, "compte", "comptes");
+    // 2e pastille : A -> temps conseillé ; B -> coût des créatrices ; C -> temps conseillé (≤ 10 h) sinon nombre de créatrices.
+    v.pill2Cost = P.kind === "B";
+    v.pill2Time = P.pillTime; v.pill2Crea = !P.pillTime && !v.pill2Cost;
+    v.pill2Txt = v.pill2Cost ? grp(P.cout) + NNBSP + "€ par mois" : P.pillTime ? fmtDur(P.tmin) + " par jour" : plural(P.crea, "créatrice", "créatrices");
+    v.verdict = P.verdict; v.vOk = P.ok; v.vWarn = !P.ok;
+    v.calcCls = "kpm-acc" + (s.showCalc ? " is-open" : "");
+    v.calcAria = s.showCalc ? "true" : "false";
+    v.toggleCalc = this.toggleCalc;
+    v.calc1 = grp(P.A) + NBSP + "€ ÷ 2,50 à 3,50" + NBSP + "€ pour 1" + NNBSP + "000" + NBSP + "vues";
+    v.calc2 = "= " + this.viewsTxt(P.vMin, P.vMax) + " par mois";
+    v.calc3 = "÷ " + grp(P.vpv) + " vues par vidéo ÷ 30 jours";
+    v.calc4 = "= " + (v.resRange ? P.mn + " à " + P.mx : String(P.mn)) + " " + v.resUnit;
+    v.calcCrea = P.kind !== "A";
+    v.calc5 = "Créatrices : " + P.manque + " × 5" + NBSP + "€ × 30 = " + grp(P.cout) + NBSP + "€ par mois";
+    v.nApps = nTop;
+    const a0 = apps[0];
+    v.f = {
+      bg: bgOf(a0.logo), nom: a0.nom, quoi: a0.quoi || "",
+      hasBest: !!a0.meilleure,
+      bestSr: a0.meilleure ? String(a0.meilleure.vues) : "",
+      best: a0.meilleure ? this.roller(String(a0.meilleure.vues).replace(/\s/g, NBSP), null, s.armed, 650) : [],
+      comptesTxt: plural(a0.comptes, "compte", "comptes"),
+      open: () => this.go(9, { app: 0 }),
+    };
+    v.others = apps.slice(1).map((a, i) => ({
+      bg: bgOf(a.logo), nom: a.nom, quoi: a.quoi || "",
+      line: a.meilleure ? vuesTxt(a.meilleure.vues) + " sur sa meilleure vidéo" : (a.quoi || ""),
+      aria: "Voir la stratégie de " + a.nom,
+      open: () => this.go(9, { app: i + 1 }),
+      rvKey: "s8-row" + i,
+      rowCls: "kpm-row " + this.rv("s8-row" + i, "kpm-rv3"),
+      rowStyle: "--d: " + (i * 90) + "ms;",
+    }));
+    v.lockedGrid = "grid-template-columns: repeat(" + Math.max(1, Math.min(2, nTop - 1)) + ", minmax(0, 1fr));";
+    v.rvLocked = this.rv("s8-locked", "kpm-rv3");
+    v.rvBand = this.rv("s8-band");
+    const moreN = Math.max(0, nd.apps - nTop);
+    v.moreTxt = "+ " + grp(moreN) + " autres apps";
+    v.moreFilm = v.moreTxt + (nd.all ? " sur le Radar" : " dans " + nd.nom);
+    v.openPaywall = this.openPaywall;
+    v.showPaywall = pw && s.paywallOpen;
+    v.pwCls = "kpm-pw" + (s.pwOut ? " is-out" : "");
+    v.closePaywall = this.closePaywall;
+
+    // 9 — Stratégie
+    const ix = Math.min(Math.max(0, s.app || 0), nTop - 1);
+    const a = apps[ix];
+    const hooksRaw = (a.accroches || []).map((h) => Object.assign({}, h, { texte: clean(h.texte) })).filter((h) => h.texte);
+    const hasHooks = hooksRaw.length > 0;
+    const rots = [-2, 1, 2.5];
+    let hooks = hooksRaw.slice(0, 3).map((h, i) => {
+      const L = h.texte.length;
+      const fs = L <= 30 ? 19 : L <= 55 ? 17 : L <= 80 ? 15 : 14;
+      return {
+        isHook: true, isBest: false, texte: h.texte, big: "",
+        textSt: "font-size: " + fs + "px;",
+        vues: vuesTxt(h.vuesTxt), compte: "@" + h.compte,
+        st: "--k: " + i + "; --rot: " + rots[i] + "deg; z-index: " + (3 - i) + ";",
+        cls: "kpm-hook" + (s.hookHit === i ? (s.hookN % 2 ? " kpm-hA" : " kpm-hB") : ""),
+        tap: () => this.tapHook(i),
+      };
+    });
+    if (!hasHooks && a.meilleure) {
+      hooks = [{
+        isHook: false, isBest: true, texte: "", big: String(a.meilleure.vues).replace(/\s/g, NBSP), textSt: "",
+        vues: "", compte: "@" + a.meilleure.compte,
+        st: "--k: 0; --rot: -2deg; z-index: 1;",
+        cls: "kpm-hook" + (s.hookHit === 0 ? (s.hookN % 2 ? " kpm-hA" : " kpm-hB") : ""),
+        tap: () => this.tapHook(0),
+      }];
+    }
+    const avN = Math.min(6, P.comptes);
+    const codeTxt = s.code === "oui" ? "en code" : s.code === "outils" ? "avec des outils sans code" : "sans coder";
+    const pub = Math.max(1, P.perAcc - 1);
+    const pMinS = a.prix ? String(a.prix.min) : "", pMaxS = a.prix ? String(a.prix.max) : "";
+    const pLen = pMinS.length + pMaxS.length;
+    const pfs = pLen <= 9 ? 44 : pLen <= 10 ? 40 : 36;
+    const priceSeen = !!s.seen["s9-price"];
+    v.s9 = {
+      bg: bgOf(a.logo), nom: a.nom, alt: "Logo de " + a.nom,
+      sub: [a.quoi, a.note && a.note.note ? a.note.note + " sur l’App Store" : ""].filter(Boolean).join(NBSP + "·" + NBSP),
+      hasHooks: hooks.length > 0,
+      hooksTitle: hasHooks ? "Les accroches qui marchent" : "Sa meilleure vidéo",
+      hooks,
+      avatars: range(avN).map((j) => ({ st: "--j: " + j + "; margin-left: " + (j ? -12 : 0) + "px; z-index: " + (10 - j) + ";" })),
+      avMore: P.comptes > 6, avMoreTxt: "+" + (P.comptes - 6), avMoreSt: "--j: 6; margin-left: -12px; z-index: 1;",
+      perAccTxt: plural(P.perAcc, "vidéo", "vidéos") + " par jour" + (P.comptes > 1 ? " chacun" : ""),
+      appComptes: grp(a.comptes),
+      weeks: [
+        { n: "1", k: "Construire", t: "Ta version de l’app, " + codeTxt },
+        { n: "2", k: "Chauffer", t: plural(P.comptes, "compte", "comptes") + " : regarde et like la niche" },
+        { n: "3", k: "Publier", t: plural(pub, "vidéo", "vidéos") + " par jour et par compte" },
+        { n: "4", k: "Doubler", t: "Ce qui marche, à " + plural(P.perAcc, "vidéo", "vidéos") + " par jour" },
+      ].map((w, j) => Object.assign(w, { st: "--j: " + j + ";" })),
+      hasPrice: !!a.prix,
+      priceSr: a.prix ? pMinS + " à " + pMaxS + " €" : "",
+      priceStyle: "font-size: " + pfs + "px;",
+      priceAStyle: "font-size: " + Math.round(pfs * 0.5) + "px; margin: " + Math.round(pfs * 0.28) + "px " + Math.round(pfs * 0.2) + "px 0 " + Math.round(pfs * 0.16) + "px;",
+      pMin: a.prix ? this.roller(pMinS, null, priceSeen, 250) : [],
+      pMax: a.prix ? this.roller(pMaxS, null, priceSeen, 420) : [],
+      lockN: grp(Math.max(0, nd.apps - 1)) + " autres apps",
+      lockTitle: apps.length > 1 ? "Copie " + apps[ix === 0 ? 1 : 0].nom : "Copie",
+      lockLogos: apps.filter((x, j) => j !== ix).slice(0, 2).map((x, j) => ({ st: bgOf(x.logo) + " margin-left: " + (j ? -12 : 0) + "px;" })),
+    };
+    v.rvHooks = this.rv("s9-hooks");
+    v.rvAcc = this.rv("s9-acc");
+    v.rvWeeks = this.rv("s9-weeks");
+    v.rvPrice = this.rv("s9-price");
+    v.rvEnd = this.rv("s9-end");
+    v.nextApp = this.nextApp;
+    v.toPlan = this.toPlan;
+    return v;
+  }
+}
+</script>
+</body>
+</html>

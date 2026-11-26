@@ -4,6 +4,7 @@ Kopycat (ex-Swarm) : les apps et les formats qui explosent en ce moment sur TikT
 
 - `/` : la landing page
 - `/tarifs` : la page tarifs (un seul plan, Pro)
+- `/simulateur` : le simulateur (9 étapes : objectif, niche, temps, budget, code, marché, puis le plan et la stratégie d'une app), sur un relevé du Radar embarqué dans la page ; `/simulateur?film=1` montre la version « film » (toutes les apps en clair, ni verrou ni prix) aux seules adresses d'`ADMIN_EMAILS`, la version normale à tout autre visiteur (`src/simulateur-film.js`, lien dans `/admin`)
 - `/connexion` et `/inscription` : les écrans retenus sur le canevas de l'app (Connexion A, Inscription A), rendus responsives, branchés sur un vrai backend (voir « Comptes »)
 - `/confirmer-adresse` : la page du lien qui confirme une nouvelle adresse (maquettes AdrA2-A4 ; voir « Comptes »)
 - `/mot-de-passe-oublie` : le mot de passe oublié (parcours B du canevas « Swarm sans abonnement » : un code à 6 chiffres par e-mail, voir « Comptes »)
@@ -21,6 +22,8 @@ Les pages sont dessinées sur le canevas de design (artboards `LP`, `LPMobile`, 
 | `design/LPMobile.dc.html` | `src/pages/LPMobile.js` | `src/styles/lpm.css` |
 | `design/Tarifs.dc.html` | `src/pages/Tarifs.js` | `src/styles/tf.css` |
 | `design/TarifsMobile.dc.html` | `src/pages/TarifsMobile.js` | `src/styles/tfm.css` |
+| `design/Simulateur.dc.html` | `src/pages/Simulateur.js` | `src/styles/sim.css` + design system |
+| `design/SimulateurMobile.dc.html` | `src/pages/SimulateurMobile.js` | `src/styles/simm.css` + design system |
 | `design/Connexion.dc.html` | `src/pages/Connexion.js` | `src/styles/cx.css` + design system |
 | `design/Inscription.dc.html` | `src/pages/Inscription.js` | `src/styles/ins.css` + design system |
 | `design/MotDePasse.dc.html` | `src/pages/MotDePasse.js` | `src/styles/mdp.css` + design system |
