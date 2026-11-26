@@ -14,17 +14,20 @@ import { renderToString } from 'preact-render-to-string';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.resolve(process.argv[2] ?? path.join(root, 'dist'));
-const PAGES = [['index.html', 'LP', 'LPMobile'], ['tarifs.html', 'Tarifs', 'TarifsMobile']];
+// Le simulateur (26/11) : son premier écran entre par des animations. Le JS redessine la page en prenant la main, et
+// elles repartiraient de zéro (le titre entrerait deux fois) : dans le pré-rendu, elles restent à leur premier instant.
+const PAGES = [['index.html', 'LP', 'LPMobile'], ['tarifs.html', 'Tarifs', 'TarifsMobile'], ['simulateur.html', 'Simulateur', 'SimulateurMobile', { still: true }]];
 const { MOBILE_QUERY } = await import(path.join(root, 'src/runtime.js'));
 const SWITCH = `<style>#app>.prerender-m{display:none}@media ${MOBILE_QUERY}{#app>.prerender-d{display:none}#app>.prerender-m{display:block}}</style>`;
+const STILL = '<style>#app>.prerender-d *,#app>.prerender-m *{animation-play-state:paused!important}</style>';
 
-for (const [file, desktop, mobile] of PAGES) {
+for (const [file, desktop, mobile, { still = false } = {}] of PAGES) {
   const target = path.join(dist, file);
   let html = fs.readFileSync(target, 'utf8');
   if (!html.includes('<div id="app"></div>')) throw new Error(`${file} : <div id="app"></div> introuvable (déjà pré-rendu ?)`);
   const page = async (name) => renderToString(h((await import(path.join(root, 'src/pages', `${name}.js`))).default, { stats: null }));
   const inner = `<div class="prerender-d">${await page(desktop)}</div><div class="prerender-m">${await page(mobile)}</div>`;
-  html = html.replace('<div id="app"></div>', `<div id="app">${inner}</div>`).replace('</head>', `    ${SWITCH}\n  </head>`);
+  html = html.replace('<div id="app"></div>', `<div id="app">${inner}</div>`).replace('</head>', `    ${SWITCH}${still ? STILL : ''}\n  </head>`);
   fs.writeFileSync(target, html);
   console.log(`pré-rendu : ${file} (${desktop} + ${mobile}, ${Math.round(inner.length / 1024)} Ko)`);
 }

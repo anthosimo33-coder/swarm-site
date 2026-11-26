@@ -72,12 +72,16 @@ const local = {
 };
 
 /**
- * Landing et tarifs : chaque version (ordinateur, téléphone) est un morceau à part, chargé à la demande (src/runtime.js,
- * mountResponsive ; audit F23). Pour qu'il n'y ait pas d'aller-retour en plus, la page HTML le précharge dès le <head>,
+ * Landing, tarifs et simulateur : chaque version (ordinateur, téléphone) est un morceau à part, chargé à la demande
+ * (src/runtime.js, mountResponsive ; audit F23). Pour qu'il n'y ait pas d'aller-retour en plus, la page HTML le précharge dès le <head>,
  * celui de la version qui s'affichera seulement : <link rel="preload" as="script" media="…">, la condition de
  * MOBILE_QUERY ou son contraire. Pas de script en ligne (la CSP de vercel.json n'en permet aucun).
  */
-const VARIANTS = { 'index.html': ['src/pages/LP.js', 'src/pages/LPMobile.js'], 'tarifs.html': ['src/pages/Tarifs.js', 'src/pages/TarifsMobile.js'] };
+const VARIANTS = {
+  'index.html': ['src/pages/LP.js', 'src/pages/LPMobile.js'],
+  'tarifs.html': ['src/pages/Tarifs.js', 'src/pages/TarifsMobile.js'],
+  'simulateur.html': ['src/pages/Simulateur.js', 'src/pages/SimulateurMobile.js'],
+};
 const variantPreload = {
   name: 'variant-preload',
   apply: 'build',
@@ -133,6 +137,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         tarifs: resolve(import.meta.dirname, 'tarifs.html'),
+        simulateur: resolve(import.meta.dirname, 'simulateur.html'),
         connexion: resolve(import.meta.dirname, 'connexion.html'),
         inscription: resolve(import.meta.dirname, 'inscription.html'),
         motDePasse: resolve(import.meta.dirname, 'mot-de-passe-oublie.html'),

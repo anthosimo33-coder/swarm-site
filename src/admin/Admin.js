@@ -281,6 +281,9 @@ export default function Admin() {
       h('div', { class: 'ad-seg', role: 'tablist', 'aria-label': 'Section' }, [['mesure', 'Mesure'], ['radar', 'Radar']].map(([k, label]) =>
         h('button', { type: 'button', role: 'tab', class: tab === k ? 'on' : '', 'aria-selected': tab === k, onClick: () => setTab(k) }, label))),
       h('span', { class: 'ad-grow' }),
+      // Le simulateur public en version « film » (toutes les apps en clair, ni verrou ni prix) : /simulateur?film=1 ne
+      // l'ouvre qu'aux adresses d'ADMIN_EMAILS (src/simulateur-film.js), les autres voient la version normale.
+      h('a', { class: 'ad-link', href: '/simulateur?film=1', style: { whiteSpace: 'nowrap', textDecoration: 'none' } }, narrow ? 'Film' : 'Simulateur, version film'),
       tab === 'radar' ? null : h('button', { type: 'button', class: 'ad-tests', 'aria-pressed': hideTests, onClick: () => setHideTests(!hideTests) },
         h('span', { class: 'ad-box' + (hideTests ? ' on' : '') }, hideTests ? icon(ICONS.check, 11) : null),
         narrow ? `Sans tests (${k.tests})` : `Sans les ${k.tests} comptes de test`),
