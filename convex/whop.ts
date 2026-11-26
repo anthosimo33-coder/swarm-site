@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { liveUserId, liveUserIdInAction } from "./session";
 import { backgroundOff } from "./background";
 import { internal } from "./_generated/api";
+import { testProps } from "./abMath";
 import type { Id } from "./_generated/dataModel";
 import {
   action,
@@ -461,6 +462,16 @@ export const savePayment = internalMutation({
     const row = { paymentId: a.paymentId, userId: userId ?? old?.userId ?? null, membershipId: a.membershipId ?? old?.membershipId ?? null, total: a.total ?? old?.total ?? null, currency: a.currency ?? old?.currency ?? null, status: nextPaymentStatus(old?.status, a.status), createdAt: old?.createdAt ?? a.createdAt };
     if (old) await ctx.db.patch(old._id, row);
     else await ctx.db.insert("whopPayments", row);
+    // Test A/B de l'onboarding (convex/ab.ts) : le premier passage d'un paiement à « payé » part à PostHog, avec le bras
+    // du compte. Un compte hors du test (bras absent) n'envoie rien.
+    if (row.status === "paid" && old?.status !== "paid" && row.userId) {
+      const user = await ctx.db.get(row.userId);
+      if (user?.abOnboarding) {
+        await ctx.scheduler.runAfter(0, internal.ab.capture, {
+          events: [{ event: "paiement", distinctId: row.userId, properties: { ...testProps(user.abOnboarding, user.abForce === true), montant: row.total, devise: row.currency } }],
+        });
+      }
+    }
   },
 });
 

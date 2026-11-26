@@ -9,6 +9,8 @@ import { FALLBACK, fetchStats } from './stats.js';
 import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { ConvexError } from 'convex/values';
 import { AUTH_ERRORS } from '../convex/authErrors.ts';
+import { api } from '../convex/_generated/api.js';
+import { currentArm, isForced, visitorId } from './ab.js';
 
 // Audit F27 (19/11) : au chargement, le client renvoyait tout de suite un jeton neuf après le jeton gardé, et le serveur
 // ré-exécutait une seconde fois toutes les requêtes de l'onglet (une relecture complète de chaque page ouverte). Le
@@ -45,17 +47,47 @@ function failure(error, fallback = UNKNOWN) {
 
 export const mount = (child) => render(h(ConvexAuthProvider, { client }, child), document.getElementById('app'));
 
+/**
+ * Test A/B de l'onboarding (src/ab.js, convex/ab.ts) : à l'inscription, le bras tiré dans ce navigateur s'écrit sur le
+ * compte. Le serveur ne le garde que pour un compte qui vient d'être créé : l'appeler après une connexion ne change rien.
+ * N'attend pas plus d'1,5 s (la page change d'adresse juste après).
+ */
+export async function enrollAb() {
+  const bras = currentArm();
+  if (!bras) return;
+  await Promise.race([
+    client.mutation(api.ab.enroll, { bras, visiteur: visitorId(), ...(isForced() ? { force: true } : {}) }).catch(() => {}),
+    new Promise((r) => setTimeout(r, 1500)),
+  ]);
+}
+
 /** Connexion et inscription : une fois connectée (ou déjà connectée), la personne entre dans l'app. */
 function AuthPage({ Page }) {
-  const { signIn } = useAuthActions();
   const { isLoading, isAuthenticated } = useConvexAuth();
+  const auth = useAuthBridge();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) window.location.replace(APP_HOME);
+    if (!isLoading && isAuthenticated) enrollAb().then(() => window.location.replace(APP_HOME));
   }, [isLoading, isAuthenticated]);
 
-  // Chaque action rend null si elle a réussi, sinon { code, message } à afficher.
-  const auth = useMemo(() => ({
+  // Les chiffres du Radar affichés à côté du formulaire (convex/stats.ts), arrondis comme sur l'accueil. Lus à part :
+  // une réponse en échec laisse les chiffres connus, jamais une page de connexion cassée.
+  const [stats, setStats] = useState(FALLBACK);
+  useEffect(() => {
+    let live = true;
+    fetchStats().then((s) => live && setStats(s));
+    return () => { live = false; };
+  }, []);
+  return h(Page, { auth, stats });
+}
+
+/**
+ * Les actions de connexion et d'inscription passées aux pages (Connexion, Inscription, l'onboarding /plan). Chaque action
+ * rend null si elle a réussi, sinon { code, message } à afficher.
+ */
+export function useAuthBridge() {
+  const { signIn } = useAuthActions();
+  return useMemo(() => ({
     async password(flow, email, password) {
       try {
         await signIn('password', { flow, email, password });
@@ -101,16 +133,6 @@ function AuthPage({ Page }) {
       }
     },
   }), [signIn]);
-
-  // Les chiffres du Radar affichés à côté du formulaire (convex/stats.ts), arrondis comme sur l'accueil. Lus à part :
-  // une réponse en échec laisse les chiffres connus, jamais une page de connexion cassée.
-  const [stats, setStats] = useState(FALLBACK);
-  useEffect(() => {
-    let live = true;
-    fetchStats().then((s) => live && setStats(s));
-    return () => { live = false; };
-  }, []);
-  return h(Page, { auth, stats });
 }
 
 export const mountAuthPage = (Page) => mount(h(AuthPage, { Page }));

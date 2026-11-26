@@ -41,6 +41,7 @@ import { useAuthActions } from '@convex-dev/auth/react';
 import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api.js';
 import { client, mount } from '../auth.js';
+import { track } from '../ab.js';
 import { MOBILE_QUERY } from '../runtime.js';
 import { ROUTES } from './routes.js';
 import { createWatcher } from './watcher.js';
@@ -237,6 +238,11 @@ function App() {
   // et, au retour de Whop, l'attente de l'accès.
   const [pay, setPay] = useState(null);
   const [paying, setPaying] = useState(null);
+  // Test A/B de l'onboarding (26/11, src/ab.js) : la fenêtre des formules ouverte, et le départ vers le paiement, avec le
+  // bras écrit sur le compte. Un compte hors du test (bras absent) n'envoie rien.
+  const bras = viewer ? viewer.bras : null;
+  useEffect(() => { if (plans && bras) track('paywall_vu', { ecran: 'formules' }, { arm: bras, user: viewer.id, forced: viewer.force }); }, [plans, bras]);
+  useEffect(() => { if (pay && bras) track('paiement_commence', { formule: pay }, { arm: bras, user: viewer.id, forced: viewer.force }); }, [pay, bras]);
   // Un compte déjà Pro qui suit un lien de paiement : Réglages › Formule à la place (compteur : chaque lien rouvre).
   const [toPlan, setToPlan] = useState(0);
   const [planMobile, setPlanMobile] = useState(false);
@@ -253,6 +259,9 @@ function App() {
   who.pro = proRef.current;
   // Sans abonnement, l'aperçu remplace Apps : son code part dès qu'on sait qui est là (audit F4).
   const free = !!user && !user.pro;
+  // Bras A du test : l'aperçu porte la carte « Tout débloquer », c'est son paywall.
+  const onApercu = free && clean(path.split('?')[0]) === APERCU;
+  useEffect(() => { if (onApercu && bras) track('paywall_vu', { ecran: 'apercu' }, { arm: bras, user: viewer.id, forced: viewer.force }); }, [onApercu, bras]);
   useEffect(() => { if (free) (MOBILE.matches ? MApercuApps : Apercu).preload(); }, [free]);
 
   // Liens internes, ⌘K, largeur de l'écran.

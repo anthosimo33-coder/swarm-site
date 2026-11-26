@@ -81,6 +81,7 @@ const VARIANTS = {
   'index.html': ['src/pages/LP.js', 'src/pages/LPMobile.js'],
   'tarifs.html': ['src/pages/Tarifs.js', 'src/pages/TarifsMobile.js'],
   'simulateur.html': ['src/pages/Simulateur.js', 'src/pages/SimulateurMobile.js'],
+  'plan.html': ['src/pages/Plan.js', 'src/pages/PlanMobile.js'],
 };
 const variantPreload = {
   name: 'variant-preload',
@@ -140,6 +141,7 @@ export default defineConfig({
         simulateur: resolve(import.meta.dirname, 'simulateur.html'),
         connexion: resolve(import.meta.dirname, 'connexion.html'),
         inscription: resolve(import.meta.dirname, 'inscription.html'),
+        plan: resolve(import.meta.dirname, 'plan.html'),
         motDePasse: resolve(import.meta.dirname, 'mot-de-passe-oublie.html'),
         adresse: resolve(import.meta.dirname, 'confirmer-adresse.html'),
         app: resolve(import.meta.dirname, 'app.html'),

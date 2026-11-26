@@ -27,6 +27,12 @@ export default defineSchema({
     // Le prénom choisi dans Réglages › Profil (audit Q36, 19/11). À part de `name`, que Convex Auth réécrit avec le nom
     // Google à chaque connexion Google : le prénom choisi revenait au nom Google.
     displayName: v.optional(v.string()),
+    // Le test A/B de l'onboarding avant le paywall (26/11/2026, convex/ab.ts) : le bras du compte, écrit à l'inscription
+    // (« A » : parcours d'avant ; « B » : /plan), l'identifiant anonyme du navigateur qui l'a tiré, et `abForce` si le bras
+    // a été imposé par ?bras= (essai, hors analyse). Absent : compte d'avant le test, ou de test.
+    abOnboarding: v.optional(v.union(v.literal("A"), v.literal("B"))),
+    abVisiteur: v.optional(v.string()),
+    abForce: v.optional(v.boolean()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
