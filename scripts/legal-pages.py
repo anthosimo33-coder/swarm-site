@@ -7,7 +7,7 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else 'public'
 MAJ = "24 novembre 2026"
 SOC = "JARVIA STUDIO, société par actions simplifiée au capital de 50 €, immatriculée au RCS de Paris sous le numéro 132 937 848, dont le siège social est situé 47 rue Vivienne, 75002 Paris"
 
-def page(slug, title, intro, body):
+def page(slug, title, intro, body, maj=MAJ):
     return f"""<!doctype html>
 <html lang="fr">
 <head>
@@ -51,7 +51,7 @@ def page(slug, title, intro, body):
 </header>
 <main>
 <h1>{title}</h1>
-<p class="maj">Dernière mise à jour : {MAJ}</p>
+<p class="maj">Dernière mise à jour : {maj}</p>
 <p class="intro">{intro}</p>
 {body}
 </main>
@@ -158,17 +158,19 @@ conf = page("confidentialite", "Politique de confidentialité",
 <li>Anthropic PBC (États-Unis) : lecture automatique des miniatures de vidéos publiques ;</li>
 <li>Resend, Inc. (États-Unis) : envoi des e-mails du service, comme le code qui permet de changer un mot de passe oublié ;</li>
 <li>Google (si vous choisissez la connexion avec Google) ;</li>
-<li>Whop, Inc. (États-Unis) : paiement et gestion de l’abonnement, quand vous vous abonnez.</li>
+<li>Whop, Inc. (États-Unis) : paiement et gestion de l’abonnement, quand vous vous abonnez ;</li>
+<li>PostHog, Inc. (États-Unis) : mesure de l’usage du parcours d’inscription, sur des serveurs situés dans l’Union européenne.</li>
 </ul>
 <p>Quand des données sont transférées hors de l’Union européenne, ce transfert est encadré par les garanties prévues par le RGPD, comme les clauses contractuelles types de la Commission européenne.</p>
 
 <h2>Cookies et stockage</h2>
 <p>Kopycat garde votre connexion dans le stockage de votre navigateur, ce qui est indispensable au fonctionnement du service. Kopycat ne dépose aucun cookie publicitaire.</p>
 <p>Pour compter ses visites, le site ajoute 1 à un compteur par heure quand vous ouvrez l’accueil ou les tarifs. Ce compteur ne contient ni cookie, ni identifiant, ni adresse IP : il ne permet pas de vous reconnaître. Un simple repère, effacé à la fermeture de l’onglet, évite de compter deux fois la même visite.</p>
+<p>Nous mesurons l’usage du parcours d’inscription (écrans vus, réponses, paiements) avec PostHog, hébergé dans l’Union européenne, sous un identifiant aléatoire gardé dans votre navigateur, sans cookie publicitaire.</p>
 
 <h2>Vos droits</h2>
 <p>Vous pouvez à tout moment accéder à vos données, les faire rectifier ou supprimer, en limiter le traitement, vous y opposer et en demander la portabilité, en écrivant à l’adresse de contact. Vous pouvez aussi adresser une réclamation à la CNIL (<a href="https://www.cnil.fr">cnil.fr</a>).</p>
-""")
+""", maj="27 novembre 2026")
 
 for name, html in [("mentions-legales.html", mentions), ("cgv.html", cgv), ("confidentialite.html", conf)]:
     open(f"{OUT}/{name}", "w").write(html)
