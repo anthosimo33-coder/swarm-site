@@ -13,6 +13,7 @@
  * abonnés pour des comptes neufs à 0 abonné.
  */
 import { freeVideoUrl, parseFreeVideo } from "./radarFreeMath";
+import { networkSearchPhase, type NetworkSearchState } from "./radarNetworkSearch";
 import type { SignalInput } from "./radarSignalsMath";
 import { STORE_BREAKER, parseTagList, tagEmbedUrl, type PageFetch, type TagItem, type TagList } from "./radarStoreMath";
 
@@ -1434,4 +1435,61 @@ export function shadowingApp<T extends Pick<AppRule, "strong">>(pattern: string,
   const p = pattern.replace(/^[@#]/, "");
   const cites = (s: string) => s.includes(p) && (!not?.length || citesNormalized(normalize(s), { strong: [p], not }));
   return apps.find((a) => a.strong.some((s) => cites(s.replace(/^[@#]/, ""))));
+}
+
+// ─── Le rattrapage en parallèle (27/11/2026) ─────────────────────────────────
+
+/**
+ * Le 27/11/2026, la tâche de l'heure cherchait les apps jamais cherchées une à la fois (~13 par heure, 948 en
+ * attente : 2 à 3 jours). `RADAR_CATCHUP_PARALLEL` = n : jusqu'à n recherches d'apps jamais cherchées tournent en même
+ * temps, chacune seule (radarNetworks.runNetworkSearch avec son app). Même coût : les mêmes recherches, plus tôt, et
+ * chacune garde ses portes (budget, paliers du solde, plafond TikHub du jour). Absente, 0 ou illisible : rien ne
+ * change. Bornée à CATCHUP_MAX.
+ */
+export const CATCHUP_MAX = 12;
+export function catchUpParallel(env: Readonly<Record<string, string | undefined>> = process.env): number {
+  const raw = env.RADAR_CATCHUP_PARALLEL?.trim();
+  if (!raw) return 0;
+  const n = Math.floor(Number(raw));
+  return Number.isFinite(n) && n > 0 ? Math.min(n, CATCHUP_MAX) : 0;
+}
+
+/**
+ * Le rattrapage s'arrête de lui-même pendant CATCHUP_BACKOFF_MS après une recherche d'app jamais cherchée reportée
+ * faute de budget (solde à la réserve, palier, plafond TikHub du jour), ou après CATCHUP_ERROR_STOP recherches finies
+ * en erreur ou sans crédits : sans cette pause, il relancerait les mêmes apps à chaque fin de recherche.
+ */
+export const CATCHUP_BACKOFF_MS = 30 * 60_000;
+export const CATCHUP_ERROR_STOP = 3;
+
+export type CatchUpApp = {
+  status: "active" | "paused";
+  rivalOf: readonly string[];
+  source: "seed" | "manual";
+  mergedInto?: string;
+  networkSearchedAt?: number;
+  networkSearch?: NetworkSearchState;
+};
+export type CatchUpWhy = "off" | "budget" | "errors" | "busy" | "empty" | "ok";
+
+/**
+ * Les apps que le rattrapage lance maintenant : les apps actives jamais cherchées, dans l'ordre de la file
+ * (networkQueueOrder, puis l'ordre reçu : celui de création), sans celles dont une recherche tourne, au plus
+ * `parallel` moins les recherches qui tournent déjà (toutes, celles de la tâche de l'heure et de l'écran comprises).
+ */
+export function catchUpPicks<A extends CatchUpApp>(apps: readonly A[], parallel: number, now: number): { picks: A[]; why: CatchUpWhy } {
+  if (parallel <= 0) return { picks: [], why: "off" };
+  const live = apps.filter((a) => a.status === "active" && a.mergedInto === undefined);
+  const recent = live.filter((a) => a.networkSearchedAt === undefined && a.networkSearch?.finishedAt !== undefined && now - a.networkSearch.finishedAt < CATCHUP_BACKOFF_MS);
+  if (recent.some((a) => a.networkSearch?.outcome === "budget")) return { picks: [], why: "budget" };
+  if (recent.filter((a) => a.networkSearch?.outcome === "error" || a.networkSearch?.outcome === "no-credits").length >= CATCHUP_ERROR_STOP) return { picks: [], why: "errors" };
+  const running = live.filter((a) => networkSearchPhase(a.networkSearch, now) === "running").length;
+  const room = parallel - running;
+  if (room <= 0) return { picks: [], why: "busy" };
+  const due = live
+    .filter((a) => a.networkSearchedAt === undefined && networkSearchPhase(a.networkSearch, now) !== "running")
+    .map((a, i) => ({ a, i }))
+    .sort((x, y) => networkQueueOrder({ ...x.a, rival: x.a.rivalOf.length > 0 }, { ...y.a, rival: y.a.rivalOf.length > 0 }) || x.i - y.i)
+    .map((x) => x.a);
+  return due.length ? { picks: due.slice(0, room), why: "ok" } : { picks: [], why: "empty" };
 }
