@@ -37,6 +37,7 @@ import {
   FORMAT_MAX_MEMBERS,
   FORMAT_WINDOW_MS,
   MAX_READ_ERRORS,
+  MAX_OTHER_TOTAL,
   MAX_TRACKED,
   pooled,
   FRESH_VIDEO_MS,
@@ -162,6 +163,7 @@ import {
   noteCandidates,
   signalInput,
   todayCredits,
+  trackedCounts,
   writeSignal,
   type AppLite,
   type JobState,
@@ -1190,7 +1192,7 @@ export const runNetworkSearch = internalAction({
  * Le rattrapage en parallèle (27/11/2026, radarNetworkMath.catchUpPicks) : lance la recherche des apps jamais
  * cherchées qui ont une place, chacune seule, au plus RADAR_CATCHUP_PARALLEL en même temps. Appelé à la fin de chacune
  * de ses recherches et toutes les 5 minutes. Sans le réglage, il ne lit rien. Une app lancée est notée « demandée »
- * dans la même transaction : deux appels qui se suivent ne la lancent pas deux fois.
+ * dans la même transaction : deux appels qui se suivent ne la lancent pas deux fois. Rien ne part plafond presque plein.
  */
 export const catchUpKeeper = internalMutation({
   args: {},
@@ -1202,7 +1204,9 @@ export const catchUpKeeper = internalMutation({
       .query("radarApps")
       .withIndex("by_status", (q) => q.eq("status", "active"))
       .collect();
-    const { picks, why } = catchUpPicks(apps, parallel, now);
+    const counts = await trackedCounts(ctx);
+    const room = Math.min(MAX_TRACKED - counts.total, MAX_OTHER_TOTAL - counts.others);
+    const { picks, why } = catchUpPicks(apps, parallel, now, room);
     for (const a of picks) {
       await ctx.db.patch(a._id, { networkSearch: { requestedAt: now, step: 0, steps: a.searches.length, attached: 0, signals: 0 } });
       await ctx.scheduler.runAfter(0, internal.radar.radarNetworks.runNetworkSearch, { appId: a._id, auto: true, catchUp: true });

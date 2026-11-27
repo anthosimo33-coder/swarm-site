@@ -1,7 +1,7 @@
 import { getFunctionName } from "convex/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { catchUpKeeper, runNetworkSearch } from "../../convex/radar/radarNetworks";
-import { CATCHUP_BACKOFF_MS, CATCHUP_MAX, catchUpParallel, catchUpPicks, type CatchUpApp } from "../../convex/radar/radarNetworkMath";
+import { CATCHUP_BACKOFF_MS, CATCHUP_CAP_MARGIN, CATCHUP_MAX, MAX_TRACKED, catchUpParallel, catchUpPicks, type CatchUpApp } from "../../convex/radar/radarNetworkMath";
 import { PAUSABLE_POSTES, pausedPostes } from "../../convex/radar/radarProviders";
 import type { JobState } from "../../convex/radar/radarSignals";
 import { DEFAULT_BUDGET, allowance, budgetState, catchUpAllowance } from "../../convex/radar/radarSignalsMath";
@@ -89,6 +89,11 @@ describe("Rattrapage en parallèle — quelles apps partent (27/11/2026)", () =>
     expect(catchUpPicks([...two, finished("e3", "error", 3 * MIN)], 6, NOW)).toEqual({ picks: [], why: "errors" });
   });
 
+  it("moins de places sous le plafond des comptes qu'une app peut en prendre : rien ne part", () => {
+    expect(catchUpPicks([app("a")], 4, NOW, CATCHUP_CAP_MARGIN - 1)).toEqual({ picks: [], why: "full" });
+    expect(ids(catchUpPicks([app("a")], 4, NOW, CATCHUP_CAP_MARGIN))).toEqual(["a"]);
+  });
+
   it("plus rien à chercher : vide", () => {
     expect(catchUpPicks([app("x", { networkSearchedAt: NOW - MIN })], 4, NOW)).toEqual({ picks: [], why: "empty" });
   });
@@ -146,6 +151,23 @@ describe("Rattrapage en parallèle — sur la base (27/11/2026)", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("plafond des comptes presque plein (les comptes hors sujet ne comptent pas) : rien ne part", async () => {
+    vi.stubEnv("RADAR_CATCHUP_PARALLEL", "3");
+    const w = world();
+    // 300 apps suivies × (comptes − hors sujet) : il reste CATCHUP_CAP_MARGIN − 1 places.
+    const per = Math.floor((MAX_TRACKED - CATCHUP_CAP_MARGIN + 1) / 300);
+    const rest = MAX_TRACKED - CATCHUP_CAP_MARGIN + 1 - per * 300;
+    w.tables.radarApps.forEach((a, i) => {
+      if (i < 300) Object.assign(a, { trackedCount: per + (i === 0 ? rest : 0) + 5, net: { accounts: per, active: per, offTopic: 5, posts7d: 0, at: NOW } });
+    });
+    const c = ctxOf(w.tables);
+    expect(await run(catchUpKeeper, c.ctx, {})).toEqual({ launched: 0, why: "full" });
+    expect(c.scheduled).toEqual([]);
+    // Une place de plus : la marge est atteinte, les recherches partent.
+    Object.assign(w.tables.radarApps[0], { trackedCount: (w.tables.radarApps[0].trackedCount as number) - 1 });
+    expect(await run(catchUpKeeper, ctxOf(w.tables).ctx, {})).toEqual({ launched: 3, why: "ok" });
   });
 });
 

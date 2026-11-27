@@ -1473,15 +1473,24 @@ export type CatchUpApp = {
   networkSearchedAt?: number;
   networkSearch?: NetworkSearchState;
 };
-export type CatchUpWhy = "off" | "budget" | "errors" | "busy" | "empty" | "ok";
+export type CatchUpWhy = "off" | "budget" | "errors" | "full" | "busy" | "empty" | "ok";
+
+/**
+ * Le rattrapage ne lance plus de recherche quand il reste moins de places sous le plafond des comptes suivis que ce
+ * qu'une app peut en prendre (MAX_PER_OTHER_APP) : une app cherchée plafond plein paie sa recherche sans garder un seul
+ * compte, et une app à l'essai la repaierait à sa relance (27/11/2026 : ~43 comptes par app, 13 686 places pour 887 apps).
+ */
+export const CATCHUP_CAP_MARGIN = MAX_PER_OTHER_APP;
 
 /**
  * Les apps que le rattrapage lance maintenant : les apps actives jamais cherchées, dans l'ordre de la file
  * (networkQueueOrder, puis l'ordre reçu : celui de création), sans celles dont une recherche tourne, au plus
  * `parallel` moins les recherches qui tournent déjà (toutes, celles de la tâche de l'heure et de l'écran comprises).
+ * `places` : les places laissées sous le plafond des comptes suivis (cf CATCHUP_CAP_MARGIN).
  */
-export function catchUpPicks<A extends CatchUpApp>(apps: readonly A[], parallel: number, now: number): { picks: A[]; why: CatchUpWhy } {
+export function catchUpPicks<A extends CatchUpApp>(apps: readonly A[], parallel: number, now: number, places = Infinity): { picks: A[]; why: CatchUpWhy } {
   if (parallel <= 0) return { picks: [], why: "off" };
+  if (places < CATCHUP_CAP_MARGIN) return { picks: [], why: "full" };
   const live = apps.filter((a) => a.status === "active" && a.mergedInto === undefined);
   const recent = live.filter((a) => a.networkSearchedAt === undefined && a.networkSearch?.finishedAt !== undefined && now - a.networkSearch.finishedAt < CATCHUP_BACKOFF_MS);
   if (recent.some((a) => a.networkSearch?.outcome === "budget" && a.networkSearch.step === 0)) return { picks: [], why: "budget" };
