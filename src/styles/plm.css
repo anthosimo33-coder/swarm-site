@@ -1,7 +1,7 @@
 /* Généré par scripts/dc2preact.py depuis design/PlanMobile.dc.html */
 body{margin:0;background:#05070C}
 a{color:#4C9AFF}a:hover{color:#FFFFFF}
-.pm{position:relative;width:100%;height:100vh;height:100svh;min-height:520px;overflow:hidden;font-family:var(--font-body);color:#FFFFFF;background:#05070C;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.pm{position:relative;width:100%;height:100vh;height:100svh;min-height:520px;overflow:hidden;overflow:clip;font-family:var(--font-body);color:#FFFFFF;background:#05070C;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 .pm button{font:inherit;-webkit-tap-highlight-color:transparent}
 .pm.pm-nu{background:transparent}
 .pm.pm-nu > .pm-bg,.pm.pm-nu > .pm-dots,.pm.pm-nu > .pm-blob{display:none}
@@ -232,6 +232,21 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 @keyframes plm-pm-sheetup{from{transform:translateY(100%)}to{transform:none}}
 .pm-grab{align-self:center;width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,0.18);margin-bottom:4px}
 .pm-form{display:flex;flex-direction:column;gap:12px}
+.pm-vcov{position:relative;height:150px;border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.12)}
+@media (max-height: 700px){.pm-vcov{height:124px}}
+@media (max-height: 600px){
+.pm-journey-gap{display:none !important}
+.pm-vcov{height:96px}
+.pm-react{padding:14px}
+.pm-rtxt{font-size:17px;margin-top:8px}
+.pm-plancard{padding:14px}
+.pm-big{font-size:32px}
+.pm-accts{margin-top:10px}
+.pm-vid{height:22px}
+.pm-row{padding:8px 0}
+.pm-mid{gap:10px !important}
+.pm-scr .pm-h1{font-size:25px !important}
+}
 .pm-err{margin:0;font-size:14px;line-height:1.4;color:#FF7A7A}
 .pm-head{max-width:560px;margin:0 auto}
 @media (max-height: 760px){
@@ -283,4 +298,5 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 .pm-card{width:128px;height:226px}
 .pm-views{font-size:20px}
 }
+.pm-calme .pm-in,.pm-calme .pm-pop-in{animation:none}
 @media (prefers-reduced-motion: reduce){.pm *{animation-duration:.01ms !important;animation-delay:0ms !important;transition-duration:.01ms !important}}

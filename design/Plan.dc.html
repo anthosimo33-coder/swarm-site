@@ -13,7 +13,7 @@
 <style>
 body{margin:0;background:#05070C}
 a{color:#4C9AFF}a:hover{color:#FFFFFF}
-.pd{position:relative;width:100%;height:100vh;min-height:660px;overflow:hidden;font-family:var(--font-body);color:#FFFFFF;background:#05070C;-webkit-font-smoothing:antialiased}
+.pd{position:relative;width:100%;height:100vh;min-height:660px;overflow:hidden;overflow:clip;font-family:var(--font-body);color:#FFFFFF;background:#05070C;-webkit-font-smoothing:antialiased}
 .pd button{font:inherit}
 .pd-bg{position:absolute;inset:0;background:radial-gradient(75% 70% at 30% -10%,#17336f 0%,#0b1636 38%,#05070C 72%)}
 .pd-dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,0.09) 1px,transparent 1.5px);background-size:24px 24px;-webkit-mask-image:radial-gradient(70% 60% at 35% 15%,#000 20%,transparent 78%);mask-image:radial-gradient(70% 60% at 35% 15%,#000 20%,transparent 78%)}
@@ -239,6 +239,31 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 .pd-modal{position:absolute;left:50%;top:calc(50% + 32px);z-index:9;width:520px;max-height:calc(100% - 120px);overflow-y:auto;box-sizing:border-box;margin:0;translate:-50% -50%;padding:40px;border-radius:34px;background:linear-gradient(180deg,#151c2c,#0D111A);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12),0 60px 120px rgba(0,0,0,0.65);display:flex;flex-direction:column;gap:16px;animation:pd-modal .6s cubic-bezier(.22,1.15,.36,1) both}
 .pd-modal h2{margin:0;font-family:var(--font-display);font-size:36px;line-height:1.08;font-weight:700;letter-spacing:-0.04em;text-wrap:balance}
 .pd-form{display:flex;flex-direction:column;gap:16px}
+.pd-napps{position:relative;margin-top:24px;font-family:var(--font-display);font-size:104px;line-height:1;font-weight:700;letter-spacing:-0.055em}
+@media (max-height: 700px){.pd-napps{font-size:76px;margin-top:14px}}
+.pd-vcov{position:relative;height:270px;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.12)}
+@media (max-height: 840px){.pd-vcov{height:220px}}
+@media (max-height: 700px){
+.pd-scr{padding-top:4px;padding-bottom:24px}
+.pd-h1{font-size:46px}
+.pd-react{padding:22px}
+.pd-rtxt{font-size:22px;margin-top:12px}
+.pd-react .pd-logo-s{width:48px !important;height:48px !important}
+.pd-vcov{height:170px}
+.pd-sep{margin:16px 0}
+.pd-modal{padding:26px 30px;gap:10px;top:calc(50% + 44px);max-height:calc(100% - 104px)}
+.pd-modal h2{font-size:30px}
+.pd-input{height:48px}
+.pd-google{height:50px}
+.pd-tile{height:132px}
+.pd-tcard{height:150px}
+.pd-fan{height:400px}
+.pd-card{width:180px;height:320px}
+.pd-c1{width:196px;height:348px;margin-left:-98px}
+.pd-gauge,.pd-gauge svg{width:260px;height:260px}
+.pd-mini{width:170px;height:300px}
+.pd-appb{grid-template-columns:170px minmax(0,1fr)}
+}
 .pd-err{margin:0;font-size:15px;line-height:1.4;color:#FF7A7A}
 @media (max-height: 840px){
 .pd-h1{font-size:54px}
@@ -271,6 +296,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
 }
 .pd.pd-nu{background:transparent}
 .pd.pd-nu > .pd-bg,.pd.pd-nu > .pd-dots,.pd.pd-nu > .pd-blob{display:none}
+.pd-calme .pd-in,.pd-calme .pd-pop-in{animation:none}
 @media (prefers-reduced-motion: reduce){.pd *{animation-duration:.01ms !important;animation-delay:0ms !important;transition-duration:.01ms !important}}
 </style>
 </helmet>
@@ -293,7 +319,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.accueil}}" hint-placeholder-val="{{ true }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> BIENVENUE <b>]</b></div>
+        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> BIENVENUE <b>]</b></div>
         <h1 class="pd-h1 pd-in" style="--i: 1; font-size: 76px">Trouve l'app à copier dans ta niche.</h1>
         <p class="pd-lead pd-in" style="--i: 2">Cinq questions, et le Radar te sort ton plan : l'app qui marche, ses formats et ton rythme.</p>
         <div class="pd-foot pd-in" style="--i: 3"><span class="pd-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pd-btn" onClick="{{next}}">Construire mon plan<span class="sw-btn-tile"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
@@ -321,7 +347,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.objectif}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <h1 class="pd-h1 pd-in" style="--i: 0">Combien tu veux gagner par mois ?</h1>
+        <h1 class="pd-h1 pd-in" style="--i: 0">Combien tu veux gagner par mois ?</h1>
         <div class="pd-badge pd-in" style="--i: 1">{{v.tier.badge}}</div>
         <p class="pd-lead pd-in" style="--i: 2">{{v.tier.text}}</p>
       </div>
@@ -338,7 +364,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.niche}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <h1 class="pd-h1 pd-in" style="--i: 0">Quelle niche te parle ?</h1>
+        <h1 class="pd-h1 pd-in" style="--i: 0">Quelle niche te parle ?</h1>
         <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}"><button type="button" class="pd-quiet pd-in" style="--i: 1" onClick="{{pickNicheAll}}">Je ne sais pas encore</button></sc-if>
         <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}"><div class="pd-chip pd-pop-in" style="--i: 1"><span class="pd-tick"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span>{{v.nicheD.nom}}</span></div></sc-if>
       </div>
@@ -346,7 +372,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
         <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}">
           <div class="pd-ngrid">
             <sc-for list="{{v.niches}}" as="n" hint-placeholder-count="6">
-              <button type="button" class="{{n.cls}}" style="--i: {{n.i}}" onClick="{{n.pick}}" aria-pressed="{{n.sel}}">
+              <button type="button" class="{{n.cls}}" style="--i: {{n.i}}" onClick="{{n.pick}}" aria-pressed="{{n.sel}}" aria-label="{{n.aria}}">
                 <div class="pd-stack"><sc-for list="{{n.logos}}" as="lg" hint-placeholder-count="3"><img class="pd-logo-s" src="{{lg}}" alt=""></sc-for></div>
                 <div><div class="pd-tn">{{n.nom}}</div><div class="pd-ts">{{n.apps}} apps suivies</div></div>
               </button>
@@ -356,10 +382,10 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
         <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}">
           <div class="pd-react pd-in" style="--i: 1">
             <div class="pd-stack" style="position: relative"><sc-for list="{{v.nicheD.logos}}" as="lg" hint-placeholder-count="3"><img class="pd-logo-s" src="{{lg}}" alt="" style="width: 60px; height: 60px; border-radius: 16px"></sc-for></div>
-            <div style="position: relative; margin-top: 24px; font-family: var(--font-display); font-size: 104px; line-height: 1; font-weight: 700; letter-spacing: -0.055em">{{v.nicheD.apps}}<span style="font-size: 38px; letter-spacing: -0.02em; color: #9AA3B2"> apps</span></div>
+            <div class="pd-napps">{{v.nicheD.apps}}<span style="font-size: 38px; letter-spacing: -0.02em; color: #9AA3B2"> apps</span></div>
             <p class="pd-rtxt" style="margin-top: 12px">poussées par des comptes en ce moment, dans ta niche.</p>
             <div class="pd-sep"></div>
-            <div style="position: relative; display: flex; align-items: center; gap: 16px"><img src="{{v.nicheD.top.logo}}" alt="" style="width: 48px; height: 48px; border-radius: 13px; background: #FFFFFF"><div style="font-size: 17px; line-height: 1.45; color: #C7CDD8">La plus copiée : <b style="color: #FFFFFF">{{v.nicheD.top.nom}}</b><br>{{v.nicheD.top.vid}} vidéos cette semaine</div></div>
+            <div style="position: relative; display: flex; align-items: center; gap: 16px"><img src="{{v.nicheD.top.logo}}" alt="" style="width: 48px; height: 48px; border-radius: 13px; background: #FFFFFF"><div style="font-size: 17px; line-height: 1.45; color: #C7CDD8">La plus copiée : <b style="color: #FFFFFF">{{v.nicheD.top.nom}}</b><br>{{v.nicheD.top.vid}} vidéos cette semaine</div></div>
           </div>
           <div class="pd-foot pd-in" style="--i: 2"><span class="pd-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pd-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
         </sc-if>
@@ -371,14 +397,14 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.temps}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <h1 class="pd-h1 pd-in" style="--i: 0">Combien de temps par jour ?</h1>
+        <h1 class="pd-h1 pd-in" style="--i: 0">Combien de temps par jour ?</h1>
         <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}"><div class="pd-chip pd-pop-in" style="--i: 1"><span class="pd-tick"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span>{{v.timeD.l}} par jour</span></div></sc-if>
       </div>
       <div class="pd-r">
         <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}">
           <div class="pd-tgrid">
             <sc-for list="{{v.times}}" as="t" hint-placeholder-count="4">
-              <button type="button" class="{{t.cls}}" style="--i: {{t.i}}" onClick="{{t.pick}}" aria-pressed="{{t.sel}}">
+              <button type="button" class="{{t.cls}}" style="--i: {{t.i}}" onClick="{{t.pick}}" aria-pressed="{{t.sel}}" aria-label="{{t.aria}}">
                 <div class="pd-bars" aria-hidden="true"><sc-for list="{{t.bars}}" as="b" hint-placeholder-count="4"><span class="{{b}}"></span></sc-for></div>
                 <div><div class="pd-tl">{{t.l}}</div><div class="pd-ts" style="font-size: 15px; margin-top: 8px">{{t.sub}}</div></div>
               </button>
@@ -397,14 +423,14 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.visage}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <h1 class="pd-h1 pd-in" style="--i: 0">Tu es prêt à te montrer en vidéo ?</h1>
+        <h1 class="pd-h1 pd-in" style="--i: 0">Tu es prêt à te montrer en vidéo ?</h1>
         <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}"><div class="pd-chip pd-pop-in" style="--i: 1"><span class="pd-tick"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span>{{v.visageD.l}}</span></div></sc-if>
       </div>
       <div class="pd-r">
         <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}">
           <div class="pd-list">
             <sc-for list="{{v.visages}}" as="o" hint-placeholder-count="3">
-              <button type="button" class="{{o.cls}}" style="--i: {{o.i}}" onClick="{{o.pick}}" aria-pressed="{{o.sel}}"><span class="pd-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{o.icon}}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span>{{o.l}}</span></button>
+              <button type="button" class="{{o.cls}}" style="--i: {{o.i}}" onClick="{{o.pick}}" aria-pressed="{{o.sel}}" aria-label="{{o.l}}"><span class="pd-ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="{{o.icon}}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span>{{o.l}}</span></button>
             </sc-for>
           </div>
         </sc-if>
@@ -412,7 +438,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
           <div class="pd-react pd-in" style="--i: 1; padding: 32px"><p class="pd-rtxt" style="margin-top: 0; font-size: 26px">{{v.visageD.r}}</p>
             <div style="position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 24px">
               <sc-for list="{{v.visageD.covers}}" as="c" hint-placeholder-count="3">
-                <div style="position: relative; height: 270px; border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,0.12)"><img src="{{c.src}}" alt="" style="display: block; width: 100%; height: 100%; object-fit: cover"><div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,7,12,0) 45%, rgba(5,7,12,0.9))"></div><div style="position: absolute; left: 14px; right: 14px; bottom: 14px; font-size: 14px; line-height: 1.3; color: #C7CDD8"><b style="display: block; font-family: var(--font-display); font-size: 22px; color: #FFFFFF">{{c.v}}</b><span>{{c.app}}</span></div></div>
+                <div class="pd-vcov"><img src="{{c.src}}" alt="" style="display: block; width: 100%; height: 100%; object-fit: cover"><div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,7,12,0) 45%, rgba(5,7,12,0.9))"></div><div style="position: absolute; left: 14px; right: 14px; bottom: 14px; font-size: 14px; line-height: 1.3; color: #C7CDD8"><b style="display: block; font-family: var(--font-display); font-size: 22px; color: #FFFFFF">{{c.v}}</b><span>{{c.app}}</span></div></div>
               </sc-for>
             </div>
           </div>
@@ -426,14 +452,14 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.blocage}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <h1 class="pd-h1 pd-in" style="--i: 0">Qu'est-ce qui t'a bloqué jusqu'ici ?</h1>
+        <h1 class="pd-h1 pd-in" style="--i: 0">Qu'est-ce qui t'a bloqué jusqu'ici ?</h1>
         <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}"><div class="pd-chip pd-pop-in" style="--i: 1"><span class="pd-tick"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span>{{v.blocD.l}}</span></div></sc-if>
       </div>
       <div class="pd-r">
         <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}">
           <div class="pd-list">
             <sc-for list="{{v.blocages}}" as="o" hint-placeholder-count="4">
-              <button type="button" class="{{o.cls}}" style="--i: {{o.i}}" onClick="{{o.pick}}" aria-pressed="{{o.sel}}"><span>{{o.l}}</span></button>
+              <button type="button" class="{{o.cls}}" style="--i: {{o.i}}" onClick="{{o.pick}}" aria-pressed="{{o.sel}}" aria-label="{{o.l}}"><span>{{o.l}}</span></button>
             </sc-for>
           </div>
         </sc-if>
@@ -449,7 +475,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.preuve}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> CETTE SEMAINE DANS TA NICHE <b>]</b></div>
+        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> CETTE SEMAINE DANS TA NICHE <b>]</b></div>
         <h1 class="pd-h1 pd-in" style="--i: 1">Ça poste déjà. Et ça fait des vues.</h1>
         <p class="pd-lead pd-in" style="--i: 2">Des petits comptes, une app derrière chaque vidéo. Le Radar les suit tous.</p>
         <div class="pd-foot pd-in" style="--i: 3"><span class="pd-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pd-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></div>
@@ -468,7 +494,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.calcul}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> RADAR <b>]</b></div>
+        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> RADAR <b>]</b></div>
         <h1 class="pd-h1 pd-in" style="--i: 1">On fouille ta niche.</h1>
         <div class="pd-checks pd-in" style="--i: 2">
           <sc-for list="{{v.checks}}" as="c" hint-placeholder-count="3">
@@ -486,7 +512,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
       <sc-if value="{{v.popOpen}}" hint-placeholder-val="{{ false }}">
         <div class="pd-veil" aria-hidden="true"></div>
         <div class="pd-pop" role="dialog" aria-modal="true" aria-label="{{v.pop.q}}">
-          <div class="pd-eb"><b>[</b> PENDANT QUE ÇA TOURNE <b>]</b></div>
+          <div class="pd-eb"><b>[</b> PENDANT QUE ÇA TOURNE <b>]</b></div>
           <h2>{{v.pop.q}}</h2>
           <p>{{v.pop.t}}</p>
           <div class="pd-two"><button type="button" onClick="{{popNo}}">{{v.pop.no}}</button><button type="button" class="yes" onClick="{{popYes}}">{{v.pop.yes}}</button></div>
@@ -499,7 +525,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.plan}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l" style="gap: 18px">
-        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> TON PLAN · CALCULÉ SUR TES RÉPONSES <b>]</b></div>
+        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> TON PLAN · CALCULÉ SUR TES RÉPONSES <b>]</b></div>
         <div class="pd-lbl pd-in" style="--i: 1; margin-top: 10px">POUR VISER {{v.amountTxt}} € PAR MOIS</div>
         <div class="pd-big pd-in" style="--i: 2">{{v.vidTxt}} {{v.vidUnit}}</div>
         <div class="pd-sub pd-in" style="--i: 3">par jour, sur {{v.comptesTxt}}</div>
@@ -556,7 +582,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <!-- 11 · Inscription : l'app floutée derrière, une carte au milieu -->
   <sc-if value="{{v.s.inscription}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr" aria-hidden="true" style="filter: blur(12px); opacity: .6; pointer-events: none">
-      <div class="pd-l"><div class="pd-eb"><b>[</b> L'APP À COPIER <b>]</b></div><h1 class="pd-h1">{{v.app.titre}}</h1></div>
+      <div class="pd-l"><div class="pd-eb"><b>[</b> L'APP À COPIER <b>]</b></div><h1 class="pd-h1">{{v.app.titre}}</h1></div>
       <div class="pd-r"><div class="pd-app"><div class="pd-apph"><img src="{{v.app.logo}}" alt=""><div><div class="pd-appn">{{v.app.nom}}</div><div class="pd-appq">{{v.app.quoi}}</div></div></div><div class="pd-appb"><div class="pd-mini"><img src="{{v.app.cover}}" alt=""></div><div class="pd-stats"><div class="pd-stat"><b>{{v.app.comptes}}</b></div><div class="pd-stat"><b>{{v.app.videos}}</b></div></div></div></div></div>
     </section>
     <div class="pd-veil" style="background: rgba(5,7,12,0.35); top: 96px" aria-hidden="true"></div>
@@ -573,7 +599,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.app}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> L'APP À COPIER <b>]</b></div>
+        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> L'APP À COPIER <b>]</b></div>
         <h1 class="pd-h1 pd-in" style="--i: 1">{{v.app.titre}}</h1>
         <div class="pd-in" style="--i: 2; display: flex; flex-direction: column; gap: 12px">
           <div class="pd-lbl">ET 2 AUTRES APPS POUR TOI</div>
@@ -601,7 +627,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.engagement}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l">
-        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> DERNIÈRE ÉTAPE <b>]</b></div>
+        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> DERNIÈRE ÉTAPE <b>]</b></div>
         <h1 class="pd-h1 pd-in" style="--i: 1">Avant ton plan, engage-toi.</h1>
         <div class="pd-quote pd-in" style="--i: 2">« Je poste chaque jour pendant 30 jours. Même quand une vidéo fait 200 vues. »</div>
       </div>
@@ -621,7 +647,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   <sc-if value="{{v.s.paywall}}" hint-placeholder-val="{{ false }}">
     <section class="pd-scr">
       <div class="pd-l" style="gap: 22px">
-        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> TON PLAN EST PRÊT <b>]</b></div>
+        <div class="pd-eb pd-in" style="--i: 0"><b>[</b> TON PLAN EST PRÊT <b>]</b></div>
         <h1 class="pd-h1 pd-in" style="--i: 1">{{v.payTitle}}</h1>
         <div class="pd-recap pd-in" style="--i: 2"><span class="pd-pill">{{v.nicheD.nom}}</span><span class="pd-pill"><span>{{v.amountTxt}} € / mois</span></span><span class="pd-pill"><span>{{v.timeD.l}} / jour</span></span><span class="pd-pill">{{v.visageD.short}}</span></div>
         <div class="pd-inside pd-in" style="--i: 3">
@@ -642,7 +668,7 @@ a{color:#4C9AFF}a:hover{color:#FFFFFF}
   </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"ecran":{"editor":null},"etat":{"editor":null},"montant":{"editor":null},"prenom":{"editor":null},"nu":{"editor":null},"auth":{"editor":null},"authed":{"editor":null},"user":{"editor":null},"saved":{"editor":null},"save":{"editor":null},"track":{"editor":null},"onPay":{"editor":null},"onLater":{"editor":null},"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"ecran":{"editor":null},"etat":{"editor":null},"montant":{"editor":null},"prenom":{"editor":null},"nu":{"editor":null},"calme":{"editor":null},"auth":{"editor":null},"authed":{"editor":null},"user":{"editor":null},"saved":{"editor":null},"save":{"editor":null},"track":{"editor":null},"onPay":{"editor":null},"onLater":{"editor":null},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
   // L'onboarding B du test A/B (26/11/2026), parcours B1 retenu par le fondateur : 5 questions, le calcul, le plan, puis
   // l'inscription (version C, feuille sur l'app floutée), l'app à copier, la signature et le paywall. Les données sont
@@ -688,8 +714,8 @@ class Component extends DCLogic {
       { id: "lache", l: "J'abandonne vite", r: "Un plan court, une vidéo à la fois : tu sais toujours quoi poster demain.", manque: "Il te manque un plan simple, jour après jour." }
     ];
     const POPS = [
-      { at: 30, key: "engage", q: "Prêt à poster chaque jour pendant 30 jours ?", t: "On règle ton plan sur ta réponse.", no: "Pas encore", yes: "Oui" },
-      { at: 70, key: "marche", q: "Tu vises la France ou partout ?", t: "Le Radar suit les comptes de chaque marché.", no: "Partout", yes: "La France" }
+      { at: 30, key: "engage", q: "Prêt à poster chaque jour pendant 30 jours ?", t: "On règle ton plan sur ta réponse.", no: "Pas encore", yes: "Oui" },
+      { at: 70, key: "marche", q: "Tu vises la France ou partout ?", t: "Le Radar suit les comptes de chaque marché.", no: "Partout", yes: "La France" }
     ];
     const ORDER = ["accueil", "objectif", "niche", "temps", "visage", "blocage", "preuve", "calcul", "plan", "manque", "inscription", "app", "engagement", "paywall"];
     const QUESTIONS = { niche: 1, temps: 1, visage: 1, blocage: 1 };
@@ -721,7 +747,9 @@ class Component extends DCLogic {
       pct: etat === "popup" ? 30 : etat === "popup2" ? 70 : etat === "encours" ? 52 : 0, popup: etat === "popup" ? 1 : etat === "popup2" ? 2 : 0,
       popDone: etat === "popup2" ? { 0: true } : {},
       hold: etat === "appui" ? 62 : etat === "signe" ? 100 : 0, holding: false, signed: etat === "signe" || !!(s && s.signed),
-      plan: "mensuel", calcOpen: false, busy: false, error: "", exists: false
+      plan: "mensuel", calcOpen: false, busy: false, error: "", exists: false,
+      // Premier écran déjà dessiné par le pré-rendu (plan.html) : il ne rejoue pas son entrée. Faux dès qu'on avance.
+      calme: !!p.calme
     };
     if (!s && ecran === "temps" && etat === "question") this.state.time = 0;
     if (!s && ecran === "blocage" && etat === "question") this.state.blocage = "";
@@ -733,7 +761,7 @@ class Component extends DCLogic {
       this.auto = true;
       this.clear();
       const step = to === "inscription" && this.props.authed ? "app" : to;
-      this.setState({ step, picked: null, popup: 0, pct: step === "calcul" ? 0 : this.state.pct, hold: step === "engagement" && this.state.signed ? 100 : 0, holding: false, error: "", busy: false }, () => { if (step === "calcul") this.runCalc(); });
+      this.setState({ step, calme: false, picked: null, popup: 0, pct: step === "calcul" ? 0 : this.state.pct, hold: step === "engagement" && this.state.signed ? 100 : 0, holding: false, error: "", busy: false }, () => { if (step === "calcul") this.runCalc(); });
     };
     this.next = () => { const i = K.ORDER.indexOf(this.state.step); if (i < K.ORDER.length - 1) this.go(K.ORDER[i + 1]); };
     this.back = () => {
@@ -745,7 +773,7 @@ class Component extends DCLogic {
     };
     this.answer = (key, val) => {
       const st = this.state; const a = Object.assign({}, st.answered); a[st.step] = true;
-      const patch = { picked: val }; patch[key] = val; this.setState(patch);
+      const patch = { picked: val, calme: false }; patch[key] = val; this.setState(patch);
       this.track("onboarding_reponse", { question: st.step, reponse: String(val) });
       this.later(() => this.setState({ answered: a, picked: null }), 380);
     };
@@ -870,8 +898,8 @@ class Component extends DCLogic {
     const answered = !!st.answered[st.step];
     const isQ = !!K.QUESTIONS[st.step];
     const optCls = (base, sel) => base + (sel ? " is-sel" : "") + " pd-in";
-    const niches = K.DATA.niches.map((n, i) => ({ id: n.id, nom: n.nom, apps: n.apps, logos: n.liste.map((a) => a.logo), i: i + 1, sel: st.niche === n.id && answered, cls: optCls("pd-tile", st.picked === n.id), pick: () => this.answer("niche", n.id) }));
-    const times = K.TIMES.map((t, i) => ({ l: t.l, i: i + 1, sel: st.time === t.v, cls: optCls("pd-tcard", st.picked === t.v), sub: t.vids + " vidéo" + (t.vids > 1 ? "s" : "") + " par jour", bars: [1, 2, 3, 4].map((b) => "pd-bar" + (b <= i + 1 ? " on" : "")), pick: () => this.answer("time", t.v) }));
+    const niches = K.DATA.niches.map((n, i) => ({ id: n.id, nom: n.nom, apps: n.apps, aria: n.nom + ", " + n.apps + " apps suivies", logos: n.liste.map((a) => a.logo), i: i + 1, sel: st.niche === n.id && answered, cls: optCls("pd-tile", st.picked === n.id), pick: () => this.answer("niche", n.id) }));
+    const times = K.TIMES.map((t, i) => ({ l: t.l, aria: t.l.replace(/\u00A0/g, " ") + ", " + t.vids + " vidéo" + (t.vids > 1 ? "s" : "") + " par jour", i: i + 1, sel: st.time === t.v, cls: optCls("pd-tcard", st.picked === t.v), sub: t.vids + " vidéo" + (t.vids > 1 ? "s" : "") + " par jour", bars: [1, 2, 3, 4].map((b) => "pd-bar" + (b <= i + 1 ? " on" : "")), pick: () => this.answer("time", t.v) }));
     const visages = K.VISAGES.map((o, i) => ({ l: o.l, icon: o.icon, i: i + 1, sel: st.visage === o.id && answered, cls: optCls("pd-opt", st.picked === o.id), pick: () => this.answer("visage", o.id) }));
     const blocages = K.BLOCAGES.map((o, i) => ({ l: o.l, i: i + 1, sel: st.blocage === o.id, cls: optCls("pd-opt", st.picked === o.id), pick: () => this.answer("blocage", o.id) }));
     const visageD = K.VISAGES.find((o) => o.id === st.visage) || K.VISAGES[1];
@@ -926,7 +954,7 @@ class Component extends DCLogic {
         payTitle: prenom ? "Débloque ton plan, " + prenom + "." : "Débloque ton plan.",
         busy: st.busy, error: st.error, hasError: !!st.error, exists: st.exists
       },
-      rootCls: this.props.nu ? "pd pd-nu" : "pd",
+      rootCls: (this.props.nu ? "pd pd-nu" : "pd") + (st.calme ? " pd-calme" : ""),
       next: this.next, back: this.back, onAmount: this.onAmount, pickNicheAll: this.pickNicheAll,
       popYes: this.popYes, popNo: this.popNo, toggleCalc: this.toggleCalc,
       holdStart: this.holdStart, holdEnd: this.holdEnd, holdKey: this.holdKey, pickAnnuel: this.pickAnnuel, pickMensuel: this.pickMensuel,
