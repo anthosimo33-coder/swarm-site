@@ -47,8 +47,8 @@ export default class PlanMobile extends DCLogic {
       { id: "lache", l: "J'abandonne vite", r: "Un plan court, une vidéo à la fois : tu sais toujours quoi poster demain.", manque: "Il te manque un plan simple, jour après jour." }
     ];
     const POPS = [
-      { at: 30, key: "engage", q: "Prêt à poster chaque jour pendant 30 jours ?", t: "On règle ton plan sur ta réponse.", no: "Pas encore", yes: "Oui" },
-      { at: 70, key: "marche", q: "Tu vises la France ou partout ?", t: "Le Radar suit les comptes de chaque marché.", no: "Partout", yes: "La France" }
+      { at: 30, key: "engage", q: "Prêt à poster chaque jour pendant 30 jours ?", t: "On règle ton plan sur ta réponse.", no: "Pas encore", yes: "Oui" },
+      { at: 70, key: "marche", q: "Tu vises la France ou partout ?", t: "Le Radar suit les comptes de chaque marché.", no: "Partout", yes: "La France" }
     ];
     const ORDER = ["accueil", "objectif", "niche", "temps", "visage", "blocage", "preuve", "calcul", "plan", "manque", "inscription", "app", "engagement", "paywall"];
     const QUESTIONS = { niche: 1, temps: 1, visage: 1, blocage: 1 };
@@ -80,7 +80,9 @@ export default class PlanMobile extends DCLogic {
       pct: etat === "popup" ? 30 : etat === "popup2" ? 70 : etat === "encours" ? 52 : 0, popup: etat === "popup" ? 1 : etat === "popup2" ? 2 : 0,
       popDone: etat === "popup2" ? { 0: true } : {},
       hold: etat === "appui" ? 62 : etat === "signe" ? 100 : 0, holding: false, signed: etat === "signe" || !!(s && s.signed),
-      plan: "mensuel", calcOpen: false, busy: false, error: "", exists: false
+      plan: "mensuel", calcOpen: false, busy: false, error: "", exists: false,
+      // Premier écran déjà dessiné par le pré-rendu (plan.html) : il ne rejoue pas son entrée. Faux dès qu'on avance.
+      calme: !!p.calme
     };
     if (!s && ecran === "temps" && etat === "question") this.state.time = 0;
     if (!s && ecran === "blocage" && etat === "question") this.state.blocage = "";
@@ -92,7 +94,7 @@ export default class PlanMobile extends DCLogic {
       this.auto = true;
       this.clear();
       const step = to === "inscription" && this.props.authed ? "app" : to;
-      this.setState({ step, picked: null, popup: 0, pct: step === "calcul" ? 0 : this.state.pct, hold: step === "engagement" && this.state.signed ? 100 : 0, holding: false, error: "", busy: false }, () => { if (step === "calcul") this.runCalc(); });
+      this.setState({ step, calme: false, picked: null, popup: 0, pct: step === "calcul" ? 0 : this.state.pct, hold: step === "engagement" && this.state.signed ? 100 : 0, holding: false, error: "", busy: false }, () => { if (step === "calcul") this.runCalc(); });
     };
     this.next = () => { const i = K.ORDER.indexOf(this.state.step); if (i < K.ORDER.length - 1) this.go(K.ORDER[i + 1]); };
     this.back = () => {
@@ -104,7 +106,7 @@ export default class PlanMobile extends DCLogic {
     };
     this.answer = (key, val) => {
       const st = this.state; const a = Object.assign({}, st.answered); a[st.step] = true;
-      const patch = { picked: val }; patch[key] = val; this.setState(patch);
+      const patch = { picked: val, calme: false }; patch[key] = val; this.setState(patch);
       this.track("onboarding_reponse", { question: st.step, reponse: String(val) });
       this.later(() => this.setState({ answered: a, picked: null }), 380);
     };
@@ -229,8 +231,8 @@ export default class PlanMobile extends DCLogic {
     const answered = !!st.answered[st.step];
     const isQ = !!K.QUESTIONS[st.step];
     const optCls = (base, sel) => base + (sel ? " is-sel" : "") + " pm-in";
-    const niches = K.DATA.niches.map((n, i) => ({ id: n.id, nom: n.nom, apps: n.apps, logos: n.liste.map((a) => a.logo), i: i + 1, sel: st.niche === n.id && answered, cls: optCls("pm-tile", st.picked === n.id), pick: () => this.answer("niche", n.id) }));
-    const times = K.TIMES.map((t, i) => ({ l: t.l, i: i + 1, sel: st.time === t.v, cls: optCls("pm-tcard", st.picked === t.v), sub: t.vids + " vidéo" + (t.vids > 1 ? "s" : "") + " par jour", bars: [1, 2, 3, 4].map((b) => "pm-bar" + (b <= i + 1 ? " on" : "")), pick: () => this.answer("time", t.v) }));
+    const niches = K.DATA.niches.map((n, i) => ({ id: n.id, nom: n.nom, apps: n.apps, aria: n.nom + ", " + n.apps + " apps suivies", logos: n.liste.map((a) => a.logo), i: i + 1, sel: st.niche === n.id && answered, cls: optCls("pm-tile", st.picked === n.id), pick: () => this.answer("niche", n.id) }));
+    const times = K.TIMES.map((t, i) => ({ l: t.l, aria: t.l.replace(/\u00A0/g, " ") + ", " + t.vids + " vidéo" + (t.vids > 1 ? "s" : "") + " par jour", i: i + 1, sel: st.time === t.v, cls: optCls("pm-tcard", st.picked === t.v), sub: t.vids + " vidéo" + (t.vids > 1 ? "s" : "") + " par jour", bars: [1, 2, 3, 4].map((b) => "pm-bar" + (b <= i + 1 ? " on" : "")), pick: () => this.answer("time", t.v) }));
     const visages = K.VISAGES.map((o, i) => ({ l: o.l, icon: o.icon, i: i + 1, sel: st.visage === o.id && answered, cls: optCls("pm-opt", st.picked === o.id), pick: () => this.answer("visage", o.id) }));
     const blocages = K.BLOCAGES.map((o, i) => ({ l: o.l, i: i + 1, sel: st.blocage === o.id, cls: optCls("pm-opt", st.picked === o.id), pick: () => this.answer("blocage", o.id) }));
     const visageD = K.VISAGES.find((o) => o.id === st.visage) || K.VISAGES[1];
@@ -285,7 +287,7 @@ export default class PlanMobile extends DCLogic {
         payTitle: prenom ? "Débloque ton plan, " + prenom + "." : "Débloque ton plan.",
         busy: st.busy, error: st.error, hasError: !!st.error, exists: st.exists
       },
-      rootCls: this.props.nu ? "pm pm-nu" : "pm",
+      rootCls: (this.props.nu ? "pm pm-nu" : "pm") + (st.calme ? " pm-calme" : ""),
       next: this.next, back: this.back, onAmount: this.onAmount, pickNicheAll: this.pickNicheAll,
       popYes: this.popYes, popNo: this.popNo, toggleCalc: this.toggleCalc,
       holdStart: this.holdStart, holdEnd: this.holdEnd, holdKey: this.holdKey, pickAnnuel: this.pickAnnuel, pickMensuel: this.pickMensuel,
@@ -332,7 +334,7 @@ export default class PlanMobile extends DCLogic {
                 $h("b", null,
                   "["
                 ),
-                " BIENVENUE ",
+                " BIENVENUE ",
                 $h("b", null,
                   "]"
                 )
@@ -423,7 +425,7 @@ export default class PlanMobile extends DCLogic {
         ($v.v?.s?.objectif) ? [
           $h("section", { "class": "pm-scr" },
             $h("h1", { "class": "pm-h1 pm-in", "style": "--i: 0" },
-              "Combien tu veux gagner par mois ?"
+              "Combien tu veux gagner par mois ?"
             ),
             $h("div", { "class": "pm-mid", "style": "gap: 18px" },
               $h("div", { "class": $v.v?.amtCls, "style": "--i: 1" },
@@ -472,13 +474,13 @@ export default class PlanMobile extends DCLogic {
         ($v.v?.s?.niche) ? [
           $h("section", { "class": "pm-scr" },
             $h("h1", { "class": "pm-h1 pm-in", "style": "--i: 0" },
-              "Quelle niche te parle ?"
+              "Quelle niche te parle ?"
             ),
             ($v.v?.asking) ? [
               $h("div", { "class": "pm-mid pm-top", "style": "gap: 12px" },
                 $h("div", { "class": "pm-ngrid" },
                   ($l($v.v?.niches)).map((n) => [
-                    $h("button", { "type": "button", "class": n?.cls, "style": `--i: ${$t(n?.i)}`, "onClick": n?.pick, "aria-pressed": n?.sel },
+                    $h("button", { "type": "button", "class": n?.cls, "style": `--i: ${$t(n?.i)}`, "onClick": n?.pick, "aria-pressed": n?.sel, "aria-label": n?.aria },
                       $h("div", { "class": "pm-stack" },
                         ($l(n?.logos)).map((lg) => [
                           $h("img", { "loading": "lazy", "decoding": "async", "class": "pm-logo-s", "src": $u(lg), "alt": "" })
@@ -529,7 +531,7 @@ export default class PlanMobile extends DCLogic {
                   $h("div", { "style": "position: relative; display: flex; align-items: center; gap: 12px" },
                     $h("img", { "loading": "lazy", "decoding": "async", "src": $u($v.v?.nicheD?.top?.logo), "alt": "", "style": "width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF" }),
                     $h("div", { "style": "font-size: 14px; line-height: 1.4; color: #C7CDD8" },
-                      "La plus copiée : ",
+                      "La plus copiée : ",
                       $h("b", { "style": "color: #FFFFFF" },
                         $t($v.v?.nicheD?.top?.nom)
                       ),
@@ -557,13 +559,13 @@ export default class PlanMobile extends DCLogic {
         ($v.v?.s?.temps) ? [
           $h("section", { "class": "pm-scr" },
             $h("h1", { "class": "pm-h1 pm-in", "style": "--i: 0" },
-              "Combien de temps par jour ?"
+              "Combien de temps par jour ?"
             ),
             ($v.v?.asking) ? [
               $h("div", { "class": "pm-mid pm-top" },
                 $h("div", { "class": "pm-tgrid" },
                   ($l($v.v?.times)).map((t) => [
-                    $h("button", { "type": "button", "class": t?.cls, "style": `--i: ${$t(t?.i)}`, "onClick": t?.pick, "aria-pressed": t?.sel },
+                    $h("button", { "type": "button", "class": t?.cls, "style": `--i: ${$t(t?.i)}`, "onClick": t?.pick, "aria-pressed": t?.sel, "aria-label": t?.aria },
                       $h("div", { "class": "pm-bars", "aria-hidden": "true" },
                         ($l(t?.bars)).map((b) => [
                           $h("span", { "class": b })
@@ -621,13 +623,13 @@ export default class PlanMobile extends DCLogic {
         ($v.v?.s?.visage) ? [
           $h("section", { "class": "pm-scr" },
             $h("h1", { "class": "pm-h1 pm-in", "style": "--i: 0" },
-              "Tu es prêt à te montrer en vidéo ?"
+              "Tu es prêt à te montrer en vidéo ?"
             ),
             ($v.v?.asking) ? [
               $h("div", { "class": "pm-mid pm-top" },
                 $h("div", { "class": "pm-list" },
                   ($l($v.v?.visages)).map((o) => [
-                    $h("button", { "type": "button", "class": o?.cls, "style": `--i: ${$t(o?.i)}`, "onClick": o?.pick, "aria-pressed": o?.sel },
+                    $h("button", { "type": "button", "class": o?.cls, "style": `--i: ${$t(o?.i)}`, "onClick": o?.pick, "aria-pressed": o?.sel, "aria-label": o?.l },
                       $h("span", { "class": "pm-ico" },
                         $h("svg", { "width": "18", "height": "18", "viewBox": "0 0 24 24", "aria-hidden": "true" },
                           $h("path", { "d": o?.icon, "fill": "none", "stroke": "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" })
@@ -658,7 +660,7 @@ export default class PlanMobile extends DCLogic {
                   ),
                   $h("div", { "style": "position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 18px" },
                     ($l($v.v?.visageD?.covers)).map((c) => [
-                      $h("div", { "style": "position: relative; height: 150px; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,0.12)" },
+                      $h("div", { "class": "pm-vcov" },
                         $h("img", { "loading": "lazy", "decoding": "async", "src": $u(c?.src), "alt": "", "style": "display: block; width: 100%; height: 100%; object-fit: cover" }),
                         $h("div", { "style": "position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,7,12,0) 45%, rgba(5,7,12,0.9))" }),
                         $h("div", { "style": "position: absolute; left: 8px; right: 8px; bottom: 8px; font-size: 11px; line-height: 1.3; color: #C7CDD8" },
@@ -690,13 +692,13 @@ export default class PlanMobile extends DCLogic {
         ($v.v?.s?.blocage) ? [
           $h("section", { "class": "pm-scr" },
             $h("h1", { "class": "pm-h1 pm-in", "style": "--i: 0" },
-              "Qu'est-ce qui t'a bloqué jusqu'ici ?"
+              "Qu'est-ce qui t'a bloqué jusqu'ici ?"
             ),
             ($v.v?.asking) ? [
               $h("div", { "class": "pm-mid pm-top" },
                 $h("div", { "class": "pm-list" },
                   ($l($v.v?.blocages)).map((o) => [
-                    $h("button", { "type": "button", "class": o?.cls, "style": `--i: ${$t(o?.i)}`, "onClick": o?.pick, "aria-pressed": o?.sel },
+                    $h("button", { "type": "button", "class": o?.cls, "style": `--i: ${$t(o?.i)}`, "onClick": o?.pick, "aria-pressed": o?.sel, "aria-label": o?.l },
                       $t(o?.l)
                     )
                   ])
@@ -743,7 +745,7 @@ export default class PlanMobile extends DCLogic {
               $h("b", null,
                 "["
               ),
-              " CETTE SEMAINE DANS TA NICHE ",
+              " CETTE SEMAINE DANS TA NICHE ",
               $h("b", null,
                 "]"
               )
@@ -800,7 +802,7 @@ export default class PlanMobile extends DCLogic {
               $h("b", null,
                 "["
               ),
-              " RADAR ",
+              " RADAR ",
               $h("b", null,
                 "]"
               )
@@ -850,7 +852,7 @@ export default class PlanMobile extends DCLogic {
                   $h("b", null,
                     "["
                   ),
-                  " PENDANT QUE ÇA TOURNE ",
+                  " PENDANT QUE ÇA TOURNE ",
                   $h("b", null,
                     "]"
                   )
@@ -879,7 +881,7 @@ export default class PlanMobile extends DCLogic {
               $h("b", null,
                 "["
               ),
-              " TON PLAN · CALCULÉ SUR TES RÉPONSES ",
+              " TON PLAN · CALCULÉ SUR TES RÉPONSES ",
               $h("b", null,
                 "]"
               )
@@ -1054,7 +1056,7 @@ export default class PlanMobile extends DCLogic {
               $h("b", null,
                 "["
               ),
-              " L'APP À COPIER ",
+              " L'APP À COPIER ",
               $h("b", null,
                 "]"
               )
@@ -1177,7 +1179,7 @@ export default class PlanMobile extends DCLogic {
               $h("b", null,
                 "["
               ),
-              " L'APP À COPIER ",
+              " L'APP À COPIER ",
               $h("b", null,
                 "]"
               )
@@ -1280,7 +1282,7 @@ export default class PlanMobile extends DCLogic {
               $h("b", null,
                 "["
               ),
-              " DERNIÈRE ÉTAPE ",
+              " DERNIÈRE ÉTAPE ",
               $h("b", null,
                 "]"
               )
@@ -1317,7 +1319,7 @@ export default class PlanMobile extends DCLogic {
               $h("b", null,
                 "["
               ),
-              " TON PLAN EST PRÊT ",
+              " TON PLAN EST PRÊT ",
               $h("b", null,
                 "]"
               )

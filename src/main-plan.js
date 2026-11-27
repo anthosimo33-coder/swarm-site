@@ -22,23 +22,27 @@ import './styles/plm.css';
 const AFTER_SIGNUP = ['inscription', 'app', 'engagement', 'paywall'];
 const firstName = (name) => (typeof name === 'string' && name.trim() ? name.trim().split(/\s+/)[0].slice(0, 24) : '');
 
-function PlanHost() {
+// La version de l'écran (téléphone sous 860 px, sinon ordinateur). Chargée AVANT de monter la page : jusque-là, le
+// pré-rendu de plan.html (scripts/prerender.mjs) reste à l'écran ; puis il est remplacé dans la même tâche, sans écran vide.
+const MQ = window.matchMedia(MOBILE_QUERY);
+const loadPage = () => (MQ.matches ? import('./pages/PlanMobile.js') : import('./pages/Plan.js')).then((m) => m.default);
+
+function PlanHost({ first, calme }) {
   const auth = useAuthBridge();
   const { isLoading, isAuthenticated } = useConvexAuth();
   const viewer = useQuery(api.users.viewer, isAuthenticated ? {} : 'skip');
-  const [Page, setPage] = useState(null);
+  const [Page, setPage] = useState(() => first);
   const enrolled = useRef(false);
 
-  // La version de l'écran (téléphone sous 860 px, sinon ordinateur), chargée seule ; l'autre si l'écran bascule.
+  // L'écran bascule (rotation, fenêtre) : l'autre version, qui reprend la progression gardée.
   useEffect(() => {
-    const mq = window.matchMedia(MOBILE_QUERY);
-    const load = () => (mq.matches ? import('./pages/PlanMobile.js') : import('./pages/Plan.js')).then((m) => setPage(() => m.default));
-    load();
-    mq.addEventListener('change', load);
-    return () => mq.removeEventListener('change', load);
+    const swap = () => loadPage().then((P) => setPage(() => P));
+    MQ.addEventListener('change', swap);
+    return () => MQ.removeEventListener('change', swap);
   }, []);
 
-  // Compte d'avant : dans l'app. Compte tout juste créé : le bras s'écrit dessus (une fois).
+  // Compte d'avant : dans l'app. Compte tout juste créé : le bras s'écrit dessus (une fois). La page n'attend pas
+  // cette vérification pour s'afficher (audit du 27/11 : 2 à 3 s d'écran noir).
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
     const saved = readPlan();
@@ -50,8 +54,8 @@ function PlanHost() {
     }
   }, [isLoading, isAuthenticated]);
 
-  if (!Page || isLoading) return null;
   return h(Page, {
+    calme,
     auth,
     authed: isAuthenticated,
     user: viewer ? { prenom: firstName(viewer.name) } : null,
@@ -68,5 +72,12 @@ if (signedIn() && !(readPlan() && AFTER_SIGNUP.includes(readPlan().step))) {
 } else if (!signedIn() && armFor() === 'A') {
   window.location.replace('/inscription' + window.location.search);
 } else {
-  mount(h(PlanHost));
+  loadPage().then((first) => {
+    const el = document.getElementById('app');
+    // Le pré-rendu montre l'accueil : si la page reprend à l'accueil, elle le garde sans rejouer son entrée.
+    const saved = readPlan();
+    const calme = !!el.querySelector('.prerender-d, .prerender-m') && (!saved || !saved.step || saved.step === 'accueil');
+    el.replaceChildren();
+    mount(h(PlanHost, { first, calme }));
+  });
 }
