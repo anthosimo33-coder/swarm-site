@@ -1456,8 +1456,11 @@ export function catchUpParallel(env: Readonly<Record<string, string | undefined>
 
 /**
  * Le rattrapage s'arrête de lui-même pendant CATCHUP_BACKOFF_MS après une recherche d'app jamais cherchée reportée
- * faute de budget (solde à la réserve, palier, plafond TikHub du jour), ou après CATCHUP_ERROR_STOP recherches finies
- * en erreur ou sans crédits : sans cette pause, il relancerait les mêmes apps à chaque fin de recherche.
+ * faute de budget AVANT tout appel (solde à la réserve, palier, plafond TikHub du jour : issue « budget » au pas 0), ou
+ * après CATCHUP_ERROR_STOP recherches finies en erreur ou sans crédits : sans cette pause, il relancerait les mêmes apps
+ * à chaque fin de recherche. Une recherche coupée par le temps en cours de route finit aussi en « budget », mais après
+ * un premier pas : elle ne dit rien du budget (27/11/2026, 13 h 19 : Scopely coupée au pas 3 sur 6 par la fin du
+ * passage de l'heure avait arrêté le rattrapage 30 minutes).
  */
 export const CATCHUP_BACKOFF_MS = 30 * 60_000;
 export const CATCHUP_ERROR_STOP = 3;
@@ -1481,7 +1484,7 @@ export function catchUpPicks<A extends CatchUpApp>(apps: readonly A[], parallel:
   if (parallel <= 0) return { picks: [], why: "off" };
   const live = apps.filter((a) => a.status === "active" && a.mergedInto === undefined);
   const recent = live.filter((a) => a.networkSearchedAt === undefined && a.networkSearch?.finishedAt !== undefined && now - a.networkSearch.finishedAt < CATCHUP_BACKOFF_MS);
-  if (recent.some((a) => a.networkSearch?.outcome === "budget")) return { picks: [], why: "budget" };
+  if (recent.some((a) => a.networkSearch?.outcome === "budget" && a.networkSearch.step === 0)) return { picks: [], why: "budget" };
   if (recent.filter((a) => a.networkSearch?.outcome === "error" || a.networkSearch?.outcome === "no-credits").length >= CATCHUP_ERROR_STOP) return { picks: [], why: "errors" };
   const running = live.filter((a) => networkSearchPhase(a.networkSearch, now) === "running").length;
   const room = parallel - running;

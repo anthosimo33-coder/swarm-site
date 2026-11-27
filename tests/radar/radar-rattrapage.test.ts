@@ -41,10 +41,10 @@ describe("Rattrapage en parallèle — quelles apps partent (27/11/2026)", () =>
   type A = CatchUpApp & { id: string };
   const app = (id: string, over: Partial<A> = {}): A => ({ id, status: "active", rivalOf: [], source: "manual", ...over });
   const running = (id: string): A => app(id, { networkSearch: { requestedAt: NOW - 2 * MIN, startedAt: NOW - MIN, step: 1, steps: 4, attached: 0, signals: 0 } });
-  const finished = (id: string, outcome: "done" | "budget" | "error" | "no-credits", agoMs: number, searched = false): A =>
+  const finished = (id: string, outcome: "done" | "budget" | "error" | "no-credits", agoMs: number, searched = false, step = 4): A =>
     app(id, {
       ...(searched ? { networkSearchedAt: NOW - agoMs } : {}),
-      networkSearch: { requestedAt: NOW - agoMs - MIN, startedAt: NOW - agoMs - MIN, finishedAt: NOW - agoMs, step: 4, steps: 4, attached: 0, signals: 0, outcome },
+      networkSearch: { requestedAt: NOW - agoMs - MIN, startedAt: NOW - agoMs - MIN, finishedAt: NOW - agoMs, step, steps: 4, attached: 0, signals: 0, outcome },
     });
   const ids = (r: { picks: A[] }) => r.picks.map((a) => a.id);
 
@@ -74,9 +74,11 @@ describe("Rattrapage en parallèle — quelles apps partent (27/11/2026)", () =>
     expect(ids(catchUpPicks([stale], 1, NOW))).toEqual(["s"]);
   });
 
-  it("une recherche reportée faute de budget il y a moins de 30 minutes arrête tout ; plus vieille, non", () => {
-    expect(catchUpPicks([finished("b", "budget", 5 * MIN), app("a")], 4, NOW)).toEqual({ picks: [], why: "budget" });
-    expect(ids(catchUpPicks([finished("b", "budget", CATCHUP_BACKOFF_MS + MIN), app("a")], 4, NOW))).toEqual(["b", "a"]);
+  it("une recherche reportée faute de budget avant tout appel il y a moins de 30 minutes arrête tout ; plus vieille, non", () => {
+    expect(catchUpPicks([finished("b", "budget", 5 * MIN, false, 0), app("a")], 4, NOW)).toEqual({ picks: [], why: "budget" });
+    expect(ids(catchUpPicks([finished("b", "budget", CATCHUP_BACKOFF_MS + MIN, false, 0), app("a")], 4, NOW))).toEqual(["b", "a"]);
+    // Coupée par le temps en cours de route (« budget » au pas 3) : rien ne s'arrête, et elle repart.
+    expect(ids(catchUpPicks([finished("coupee", "budget", MIN, false, 3), app("a")], 4, NOW))).toEqual(["coupee", "a"]);
     // Une app cherchée jusqu'au bout ne compte pas, même finie à l'instant.
     expect(ids(catchUpPicks([finished("ok", "done", MIN, true), app("a")], 4, NOW))).toEqual(["a"]);
   });
