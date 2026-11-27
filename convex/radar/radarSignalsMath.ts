@@ -580,6 +580,8 @@ export type BudgetState = {
   daysLeft: number | null;
   /** Les coupures du plafond seules (80 % puis 100 %), sans celles des paliers de solde (`cut` les réunit). */
   capCut: PosteKey[];
+  /** Les postes mis en pause à la main (RADAR_PAUSE_POSTES, radarProviders.pausedPostes) : comptés dans `cut`. */
+  paused?: readonly PosteKey[];
   /** Le fournisseur qui sert chaque poste (ScrapeCreators sans bascule) : son palier et son solde jugent le poste. */
   providers: Record<PosteKey, Provider>;
   /**
@@ -662,7 +664,13 @@ export type ThBalance = { paidUsd: number; freeUsd: number; seenAt: number; spen
  * Les options d'un budget à deux fournisseurs : qui sert chaque poste, le solde TikHub, et son plafond du jour (`thDay` :
  * le jour de Paris et le plafond en dollars, cf TH_DAY_CAP_USD). Sans elles : ScrapeCreators seul.
  */
-export type BudgetOpts = { providers?: Partial<Record<PosteKey, Provider>>; th?: ThBalance | null; thDay?: { today: string; capUsd: number } };
+export type BudgetOpts = {
+  providers?: Partial<Record<PosteKey, Provider>>;
+  th?: ThBalance | null;
+  thDay?: { today: string; capUsd: number };
+  /** Postes mis en pause à la main (radarProviders.pausedPostes) : rien n'y est dépensé, chez aucun fournisseur. */
+  paused?: readonly PosteKey[];
+};
 
 /** Le solde TikHub est relu (gratuitement) en tête de passage quand la dernière lecture a plus d'une minute. */
 export const TH_BALANCE_STALE_MS = 60_000;
@@ -759,6 +767,8 @@ export function budgetState(s: BudgetSettings, monthUsage: readonly UsageRow[], 
   for (const p of PROVIDERS) {
     for (const k of TIER_CUT[tierOfProvider[p]]) if (providers[k] === p && open.includes(k) && !cut.includes(k)) cut.push(k);
   }
+  const paused = (opts?.paused ?? []).filter((k) => open.includes(k));
+  for (const k of paused) if (!cut.includes(k)) cut.push(k);
   return {
     spentCredits,
     spentUsd,
@@ -773,6 +783,7 @@ export function budgetState(s: BudgetSettings, monthUsage: readonly UsageRow[], 
     tier,
     daysLeft,
     capCut,
+    ...(paused.length ? { paused } : {}),
     providers,
     th,
   };
@@ -929,7 +940,7 @@ export type AllowanceParts = { units: number; capUsd: number; open: Record<Provi
 export function allowanceParts(s: BudgetSettings, state: BudgetState, k: PosteKey, todayUnits: number, runsPerDay: number): AllowanceParts {
   const def = posteDef(k);
   const p = posteOf(s, k);
-  const alive = def.live && p.on && !state.capReached && !state.capCut.includes(k);
+  const alive = def.live && p.on && !state.capReached && !state.capCut.includes(k) && !(state.paused ?? []).includes(k);
   const perDay = def.monthlyCredits(p.qty) / DAYS_PER_MONTH;
   const leftToday = Math.max(0, Math.floor(perDay - todayUnits));
   const leftMonth = Math.max(0, Math.floor(def.monthlyCredits(p.qty) - state.byPoste[k].units));

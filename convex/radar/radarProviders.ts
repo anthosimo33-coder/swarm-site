@@ -68,6 +68,24 @@ export function thDayCapUsd(env: Readonly<Record<string, string | undefined>> = 
   return Number.isFinite(usd) && usd >= 0 ? usd : TH_DAY_CAP_USD;
 }
 
+/**
+ * Les postes que le rattrapage du 27/11/2026 met en pause, pour que le pack ScrapeCreators aille aux recherches de
+ * réseau : `RADAR_PAUSE_POSTES` (jetons séparés par des virgules, insensible à la casse). Seuls PAUSABLE_POSTES
+ * peuvent l'être : ni les relevés des comptes, ni la recherche des réseaux, ni l'analyse IA. Lu à chaque passage :
+ * se retire sans redéployer, et chaque poste reprend où il en était.
+ */
+export const PAUSABLE_POSTES: readonly PosteKey[] = ["insta", "transcript", "search", "ads", "curve"];
+export function pausedPostes(env: Readonly<Record<string, string | undefined>> = process.env): PosteKey[] {
+  const raw = env.RADAR_PAUSE_POSTES;
+  if (!raw) return [];
+  const out: PosteKey[] = [];
+  for (const t of raw.split(",").map((x) => x.trim().toLowerCase())) {
+    const k = PAUSABLE_POSTES.find((p) => p === t);
+    if (k && !out.includes(k)) out.push(k);
+  }
+  return out;
+}
+
 /** Le fournisseur réglé de chaque poste TikTok (le réseau est mixte : cf `passProvider`). */
 export function posteProviders(jobs: ReadonlySet<ThJob>): Partial<Record<PosteKey, Provider>> {
   const out: Partial<Record<PosteKey, Provider>> = {};
@@ -290,11 +308,13 @@ function thBalanceFor(st: JobState, jobs: ReadonlySet<ThJob>, book: PassBook | u
  * ouvert.
  */
 export function jobBudget(st: JobState, jobs: ReadonlySet<ThJob> = tikhubJobs(), book?: PassBook, now = st.balance?.now ?? Date.now()): BudgetState {
-  if (jobs.size === 0) return budgetState(st.budget, st.usage, st.balance);
+  const paused = pausedPostes();
+  if (jobs.size === 0) return budgetState(st.budget, st.usage, st.balance, paused.length ? { paused } : undefined);
   return budgetState(st.budget, st.usage, st.balance, {
     providers: posteProviders(jobs),
     th: thBalanceFor(st, jobs, book, now),
     thDay: { today: st.day, capUsd: thDayCapUsd() },
+    ...(paused.length ? { paused } : {}),
   });
 }
 

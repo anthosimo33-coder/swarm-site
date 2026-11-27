@@ -29,6 +29,9 @@ crons.hourly("radar courbe des signaux", { minuteUTC: 40 }, ...radar("radarSigna
 crons.daily("radar purge des signaux", { hourUTC: 3, minuteUTC: 50 }, ...radar("radarSignals:purgeOldSignals"));
 // Réseaux : recherche du réseau des apps dues chaque heure, relevé des comptes suivis toutes les 10 minutes.
 crons.interval("radar recherche des reseaux", { hours: 1 }, ...radar("radarNetworks:runNetworkSearch"));
+// Le rattrapage en parallèle des apps jamais cherchées (27/11/2026) : rien sans RADAR_CATCHUP_PARALLEL ; relancé aussi à la
+// fin de chacune de ses recherches.
+crons.interval("radar rattrapage en parallele", { minutes: 5 }, ...radar("radarNetworks:catchUpKeeper"));
 crons.interval("radar releve des comptes", { minutes: 10 }, ...radar("radarNetworks:runAccountReads"));
 crons.hourly("radar resume des reseaux", { minuteUTC: 35 }, ...radar("radarNetworks:refreshAppNets"));
 crons.daily("radar purge des reseaux", { hourUTC: 3, minuteUTC: 55 }, ...radar("radarNetworks:purgeNetworks"));
