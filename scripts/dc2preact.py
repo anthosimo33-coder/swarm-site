@@ -41,6 +41,8 @@ PAGES = [
     ('Adresse.dc.html', 'Adresse', 'adr'),  # le lien qui confirme une nouvelle adresse (24/11)
     ('Simulateur.dc.html', 'Simulateur', 'sim'),  # le simulateur (26/11), version ordinateur
     ('SimulateurMobile.dc.html', 'SimulateurMobile', 'simm'),  # et téléphone (sous 860 px)
+    ('Plan.dc.html', 'Plan', 'pl'),  # l'onboarding B du test A/B (26/11, maquette B1), version ordinateur
+    ('PlanMobile.dc.html', 'PlanMobile', 'plm'),  # et téléphone
 ]
 # Liens entre artboards du canevas -> routes du site
 LINKS = {
@@ -54,6 +56,8 @@ LINKS = {
     'Adresse.dc.html': '/confirmer-adresse',
     'Simulateur.dc.html': '/simulateur',
     'SimulateurMobile.dc.html': '/simulateur',
+    'Plan.dc.html': '/plan',
+    'PlanMobile.dc.html': '/plan',
     '#quiz': '/inscription',      # « Trouver mon app » : création du compte
     '#connexion': '/connexion',   # « Se connecter »
     '#paiement': '/inscription',  # « Passer Pro » : on crée d'abord le compte
@@ -651,7 +655,8 @@ console.log(JSON.stringify(bad));
 PAGE_HTML = {'app': 'app.html', 'LP': 'index.html', 'LPMobile': 'index.html', 'Tarifs': 'tarifs.html',
              'TarifsMobile': 'tarifs.html', 'Connexion': 'connexion.html', 'Inscription': 'inscription.html',
              'MotDePasse': 'mot-de-passe-oublie.html', 'Adresse': 'confirmer-adresse.html',
-             'Simulateur': 'simulateur.html', 'SimulateurMobile': 'simulateur.html'}
+             'Simulateur': 'simulateur.html', 'SimulateurMobile': 'simulateur.html',
+             'Plan': 'plan.html', 'PlanMobile': 'plan.html'}
 FONT_LINK = re.compile(r'<link\b[^>]*>', re.S)
 
 

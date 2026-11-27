@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ton plan · Kopycat</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/swarm/tokens.css">
+<link rel="stylesheet" href="ds/swarm/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#05070C}
+a{color:#4C9AFF}a:hover{color:#FFFFFF}
+.pm{position:relative;width:100%;height:100vh;height:100svh;min-height:520px;overflow:hidden;font-family:var(--font-body);color:#FFFFFF;background:#05070C;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.pm button{font:inherit;-webkit-tap-highlight-color:transparent}
+.pm.pm-nu{background:transparent}
+.pm.pm-nu > .pm-bg,.pm.pm-nu > .pm-dots,.pm.pm-nu > .pm-blob{display:none}
+.pm.pm-nu .pm-veil{display:none}
+.pm.pm-nu .pm-sheet{top:150px;bottom:auto;border-radius:30px;padding-top:24px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12),0 40px 90px rgba(0,0,0,0.6)}
+.pm.pm-nu .pm-grab{display:none}
+.pm-bg{position:absolute;inset:0;background:radial-gradient(140% 58% at 50% -8%,#17336f 0%,#0b1636 36%,#05070C 70%)}
+.pm-dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,0.10) 1px,transparent 1.5px);background-size:22px 22px;-webkit-mask-image:radial-gradient(95% 42% at 50% 8%,#000 18%,transparent 76%);mask-image:radial-gradient(95% 42% at 50% 8%,#000 18%,transparent 76%)}
+.pm-blob{position:absolute;border-radius:50%;pointer-events:none}
+.pm-b1{left:-150px;top:-130px;width:430px;height:430px;background:radial-gradient(closest-side,rgba(76,154,255,0.28),rgba(76,154,255,0));animation:pm-d1 18s ease-in-out infinite}
+.pm-b2{right:-220px;top:300px;width:480px;height:480px;background:radial-gradient(closest-side,rgba(11,111,224,0.16),rgba(11,111,224,0));animation:pm-d2 24s ease-in-out infinite}
+@keyframes pm-d1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,60px) scale(1.12)}}
+@keyframes pm-d2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-90px,-70px) scale(1.1)}}
+
+.pm-head{position:absolute;left:0;right:0;top:0;height:64px;padding:0 16px;box-sizing:border-box;display:flex;align-items:center;gap:12px;z-index:5}
+.pm-back{-webkit-appearance:none;appearance:none;margin:0;width:44px;height:44px;flex-shrink:0;border:0;border-radius:50%;background:rgba(255,255,255,0.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10);color:#FFFFFF;display:grid;place-items:center;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1),background-color .2s ease}
+.pm-back:active{transform:scale(.88)}
+.pm-back:focus-visible,.pm-opt:focus-visible,.pm-tile:focus-visible,.pm-tcard:focus-visible,.pm-pop button:focus-visible,.pm-plan:focus-visible,.pm-quiet:focus-visible,.pm-fp:focus-visible,.pm-calcbtn:focus-visible{outline:none;box-shadow:0 0 0 2px #05070C,0 0 0 4px #4C9AFF !important}
+.pm-logo{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.pm-word{font-family:var(--font-display);font-weight:800;font-size:18px;line-height:1;letter-spacing:-0.03em}
+.pm-prog{position:relative;flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.10);overflow:hidden}
+.pm-progf{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:linear-gradient(90deg,#4C9AFF,#0B6FE0);transition:width .7s cubic-bezier(0.2,0.8,0.2,1)}
+.pm-progf::after{content:"";position:absolute;top:0;bottom:0;width:40px;right:0;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.75));opacity:.7;animation:pm-shine 2.4s ease-in-out infinite}
+@keyframes pm-shine{0%,100%{opacity:.15}50%{opacity:.8}}
+
+.pm-scr{position:absolute;left:0;right:0;top:64px;bottom:0;box-sizing:border-box;padding:12px 24px calc(30px + env(safe-area-inset-bottom));display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;max-width:560px;margin:0 auto}
+.pm-in{animation:pm-in .75s cubic-bezier(.22,1.1,.36,1) both;animation-delay:calc(var(--i,0) * 70ms + 60ms)}
+@keyframes pm-in{from{opacity:0;transform:translateY(22px);filter:blur(7px)}to{opacity:1;transform:none;filter:none}}
+.pm-pop-in{animation:pm-pop .6s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--i,0) * 70ms + 80ms)}
+@keyframes pm-pop{from{opacity:0;transform:scale(.86) translateY(14px)}to{opacity:1;transform:none}}
+.pm-eb{font-family:var(--font-mono);font-size:13px;line-height:1.4;letter-spacing:.06em;color:#8A93A3;text-transform:uppercase}
+.pm-eb b{color:#4C9AFF;font-weight:400}
+.pm-h1{margin:0;font-family:var(--font-display);font-size:32px;line-height:1.07;font-weight:700;letter-spacing:-0.045em;text-wrap:balance}
+.pm-h1 em{font-style:normal;color:#4C9AFF}
+.pm-lead{margin:0;font-size:16px;line-height:1.5;color:#9AA3B2}
+.pm-mid{flex:1 0 auto;min-height:0;display:flex;flex-direction:column;justify-content:center}
+.pm-mid.pm-top{justify-content:flex-start;padding-top:28px}
+.pm-foot{display:flex;flex-direction:column;align-items:center;gap:14px;flex-shrink:0}
+.pm-meta{font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;color:#8A93A3}
+
+.pm-cta{position:relative;display:inline-flex;isolation:isolate}
+.pm-cta::before{content:"";position:absolute;left:12%;right:12%;top:30%;bottom:-6px;border-radius:999px;background:#0B6FE0;filter:blur(16px);opacity:.4;z-index:-1;animation:pm-glow 2.8s ease-in-out infinite;pointer-events:none}
+@keyframes pm-glow{0%,100%{opacity:.3;transform:scale(.9)}50%{opacity:.7;transform:scale(1.05)}}
+.pm-btn{position:relative;overflow:hidden;cursor:pointer}
+.pm-btn::after{content:"";position:absolute;top:-30%;bottom:-30%;left:0;width:38%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,0.5),rgba(255,255,255,0));transform:translateX(-170%) skewX(-18deg);animation:pm-bshine 3s ease-in-out 1.2s infinite;pointer-events:none}
+@keyframes pm-bshine{0%{transform:translateX(-170%) skewX(-18deg)}32%,100%{transform:translateX(340%) skewX(-18deg)}}
+.pm-btn:active{transform:scale(.96)}
+.pm-btn[disabled]{opacity:.35;cursor:default}
+.pm-btn[disabled]::after{display:none}
+
+.pm-list{display:flex;flex-direction:column;gap:10px}
+.pm-opt{-webkit-appearance:none;appearance:none;margin:0;width:100%;min-height:58px;padding:12px 18px;box-sizing:border-box;border:0;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10);color:#FFFFFF;font-size:16px;font-weight:600;line-height:1.3;text-align:left;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform .45s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease,background-color .3s ease,opacity .3s ease}
+.pm-opt:active{transform:scale(.97)}
+.pm-opt.is-sel{background:rgba(76,154,255,0.16);box-shadow:inset 0 0 0 1.5px #4C9AFF,0 14px 34px rgba(11,111,224,0.28);transform:translateY(-2px)}
+.pm-ico{width:36px;height:36px;flex-shrink:0;border-radius:12px;background:rgba(255,255,255,0.07);display:grid;place-items:center;color:#9AC4FF}
+.pm-chip{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 6px;border-radius:999px;background:rgba(76,154,255,0.14);box-shadow:inset 0 0 0 1px rgba(76,154,255,0.45);font-size:14px;font-weight:600;color:#FFFFFF}
+.pm-tick{width:24px;height:24px;border-radius:50%;background:#0B6FE0;display:grid;place-items:center;box-shadow:0 4px 12px rgba(11,111,224,0.45);animation:pm-tick .55s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes pm-tick{0%{transform:scale(0) rotate(-45deg)}60%{transform:scale(1.2)}100%{transform:none}}
+.pm-react{position:relative;padding:22px;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10),0 30px 60px rgba(0,0,0,0.35);overflow:hidden}
+.pm-react::before{content:"";position:absolute;left:-30%;top:-60%;width:90%;height:120%;background:radial-gradient(closest-side,rgba(76,154,255,0.22),rgba(76,154,255,0));pointer-events:none}
+.pm-rtxt{position:relative;margin:14px 0 0;font-family:var(--font-display);font-size:21px;line-height:1.25;font-weight:600;letter-spacing:-0.02em;color:#FFFFFF}
+.pm-spark{position:relative;color:#7DB5FF}
+.pm-sep{height:1px;background:rgba(255,255,255,0.09);margin:18px 0}
+.pm-logo-s{width:28px;height:28px;border-radius:8px;object-fit:cover;box-shadow:0 0 0 2px #0b1636;background:#FFFFFF}
+.pm-stack{display:flex}
+.pm-stack img + img{margin-left:-8px}
+
+.pm-amt{font-family:var(--font-display);font-size:76px;line-height:1;font-weight:700;letter-spacing:-0.05em;text-align:center;white-space:nowrap;color:#4C9AFF;text-shadow:0 10px 40px rgba(11,111,224,0.45)}
+.pm-amt.is-long{font-size:60px}
+.pm-badge{align-self:center;display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:rgba(76,154,255,0.14);box-shadow:inset 0 0 0 1px rgba(76,154,255,0.45);font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;color:#9AC4FF}
+.pm-range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:44px;margin:0;background:transparent;cursor:pointer}
+.pm-range:focus{outline:none}
+.pm-range::-webkit-slider-runnable-track{height:8px;border-radius:999px;background:linear-gradient(90deg,#4C9AFF,#0B6FE0) 0 0/calc(14px + (100% - 28px) * var(--p)) 100% no-repeat,rgba(255,255,255,0.12)}
+.pm-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;margin-top:-10px;border:0;border-radius:50%;background:#FFFFFF;box-shadow:0 0 0 6px rgba(76,154,255,0.20),0 8px 22px rgba(11,111,224,0.55)}
+.pm-range::-moz-range-track{height:8px;border-radius:999px;background:rgba(255,255,255,0.12)}
+.pm-range::-moz-range-progress{height:8px;border-radius:999px;background:linear-gradient(90deg,#4C9AFF,#0B6FE0)}
+.pm-range::-moz-range-thumb{width:28px;height:28px;border:0;border-radius:50%;background:#FFFFFF;box-shadow:0 0 0 6px rgba(76,154,255,0.20),0 8px 22px rgba(11,111,224,0.55)}
+.pm-scale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:12px;color:#8A93A3}
+.pm-live{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:18px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)}
+.pm-live b{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:-0.03em}
+
+.pm-ngrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pm-tile{-webkit-appearance:none;appearance:none;margin:0;height:112px;padding:14px;box-sizing:border-box;border:0;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10);color:#FFFFFF;text-align:left;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;transition:transform .45s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease,background-color .3s ease}
+.pm-tile:active{transform:scale(.96)}
+.pm-tile.is-sel{background:rgba(76,154,255,0.16);box-shadow:inset 0 0 0 1.5px #4C9AFF,0 14px 34px rgba(11,111,224,0.28)}
+.pm-tile .pm-logo-s{width:32px;height:32px;border-radius:9px}
+.pm-tn{font-family:var(--font-display);font-size:17px;line-height:1.1;font-weight:700;letter-spacing:-0.02em}
+.pm-ts{font-size:12px;color:#8A93A3;margin-top:3px}
+.pm-quiet{-webkit-appearance:none;appearance:none;margin:0;align-self:center;height:44px;padding:0 16px;border:0;border-radius:999px;background:transparent;color:#9AA3B2;font-size:15px;font-weight:500;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(255,255,255,0.25);text-underline-offset:5px}
+
+.pm-tgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pm-tcard{-webkit-appearance:none;appearance:none;margin:0;height:150px;padding:18px;box-sizing:border-box;border:0;border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10);color:#FFFFFF;text-align:left;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;transition:transform .45s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease}
+.pm-tcard.is-sel{background:rgba(76,154,255,0.16);box-shadow:inset 0 0 0 1.5px #4C9AFF,0 14px 34px rgba(11,111,224,0.28)}
+.pm-tl{font-family:var(--font-display);font-size:38px;line-height:1;font-weight:700;letter-spacing:-0.045em;white-space:nowrap}
+.pm-bars{display:flex;gap:4px;align-items:flex-end;height:20px}
+.pm-bar{width:9px;height:20px;border-radius:3px;background:rgba(255,255,255,0.14)}
+.pm-bar.on{background:#4C9AFF}
+
+.pm-fan{position:relative;height:330px}
+.pm-card{position:absolute;top:0;width:168px;height:298px;border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.14),0 30px 60px rgba(0,0,0,0.55);background:#0D111A}
+.pm-card img.pm-cv{display:block;width:100%;height:100%;object-fit:cover}
+.pm-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,12,0) 45%,rgba(5,7,12,0.85) 100%)}
+.pm-cardm{position:absolute;left:12px;right:12px;bottom:12px;z-index:1;display:flex;flex-direction:column;gap:6px}
+.pm-views{font-family:var(--font-display);font-size:24px;line-height:1;font-weight:700;letter-spacing:-0.03em}
+.pm-handle{font-size:12px;color:#C7CDD8}
+.pm-applbl{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.pm-applbl img{width:18px;height:18px;border-radius:5px;background:#FFFFFF}
+.pm-play{position:absolute;left:50%;top:42%;z-index:1;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(255,255,255,0.18);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.35);display:grid;place-items:center}
+.pm-c1{left:50%;margin-left:-84px;z-index:3;animation:pm-c1 .9s cubic-bezier(.22,1.1,.36,1) .2s both}
+.pm-c2{left:2px;top:26px;z-index:2;transform:rotate(-9deg);animation:pm-c2 .9s cubic-bezier(.22,1.1,.36,1) .35s both}
+.pm-c3{right:2px;top:26px;z-index:2;transform:rotate(9deg);animation:pm-c3 .9s cubic-bezier(.22,1.1,.36,1) .5s both}
+@keyframes pm-c1{from{opacity:0;transform:translateY(60px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes pm-c2{from{opacity:0;transform:translate(60px,40px) rotate(0deg)}to{opacity:1;transform:rotate(-9deg)}}
+@keyframes pm-c3{from{opacity:0;transform:translate(-60px,40px) rotate(0deg)}to{opacity:1;transform:rotate(9deg)}}
+
+.pm-gauge{position:relative;width:200px;height:200px;align-self:center}
+.pm-gauge svg{display:block;transform:rotate(-90deg)}
+.pm-gnum{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-display);font-size:48px;font-weight:700;letter-spacing:-0.04em}
+.pm-gnum small{font-size:22px;color:#9AA3B2;margin-left:2px}
+.pm-sweep{position:absolute;inset:14px;border-radius:50%;background:conic-gradient(from 0deg,rgba(76,154,255,0) 0deg,rgba(76,154,255,0.22) 50deg,rgba(76,154,255,0) 52deg);animation:pm-spin 2.2s linear infinite}
+@keyframes pm-spin{to{transform:rotate(360deg)}}
+.pm-checks{display:flex;flex-direction:column;gap:14px}
+.pm-ck{display:flex;align-items:center;gap:12px;font-size:15px;line-height:1.35;color:#8A93A3;transition:color .3s ease}
+.pm-ck.done{color:#FFFFFF}
+.pm-ckd{width:22px;height:22px;flex-shrink:0;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,0.25);display:grid;place-items:center}
+.pm-ck.done .pm-ckd{background:#0B6FE0;box-shadow:none}
+.pm-ck.run .pm-ckd{box-shadow:inset 0 0 0 1.5px #4C9AFF;animation:pm-pulse 1.2s ease-in-out infinite}
+@keyframes pm-pulse{0%,100%{box-shadow:inset 0 0 0 1.5px #4C9AFF,0 0 0 0 rgba(76,154,255,0.5)}50%{box-shadow:inset 0 0 0 1.5px #4C9AFF,0 0 0 6px rgba(76,154,255,0)}}
+.pm-veil{position:absolute;inset:0;z-index:8;background:rgba(5,7,12,0.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:pm-fade .3s ease both}
+@keyframes pm-fade{from{opacity:0}to{opacity:1}}
+.pm-pop{position:absolute;left:16px;right:16px;bottom:28px;z-index:9;padding:24px;border-radius:28px;background:linear-gradient(180deg,#141b2b,#0D111A);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12),0 40px 80px rgba(0,0,0,0.6);animation:pm-sheet .55s cubic-bezier(.22,1.15,.36,1) both}
+@keyframes pm-sheet{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:none}}
+.pm-pop h2{margin:0;font-family:var(--font-display);font-size:24px;line-height:1.15;font-weight:700;letter-spacing:-0.03em}
+.pm-pop p{margin:10px 0 0;font-size:15px;line-height:1.5;color:#9AA3B2}
+.pm-pop .pm-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px}
+.pm-pop button{-webkit-appearance:none;appearance:none;margin:0;height:54px;border:0;border-radius:16px;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);color:#FFFFFF;font-size:16px;font-weight:600;cursor:pointer}
+.pm-pop button.yes{background:rgba(76,154,255,0.18);box-shadow:inset 0 0 0 1.5px #4C9AFF}
+
+.pm-plancard{position:relative;padding:22px;border-radius:26px;background:linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10),0 30px 60px rgba(0,0,0,0.35);overflow:hidden}
+.pm-plancard::before{content:"";position:absolute;right:-40%;top:-50%;width:100%;height:120%;background:radial-gradient(closest-side,rgba(76,154,255,0.20),rgba(76,154,255,0));pointer-events:none}
+.pm-lbl{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:#8A93A3}
+.pm-big{margin-top:8px;font-family:var(--font-display);font-size:44px;line-height:1;font-weight:700;letter-spacing:-0.045em;white-space:nowrap;color:#4C9AFF}
+.pm-sub{margin-top:8px;font-size:15px;color:#C7CDD8}
+.pm-accts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}
+.pm-acct{padding:10px;border-radius:14px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)}
+.pm-acctl{display:block;font-size:11px;color:#8A93A3;margin-bottom:8px;white-space:nowrap}
+.pm-vids{display:flex;gap:4px}
+.pm-vid{flex:1;height:30px;border-radius:5px;background:linear-gradient(180deg,#4C9AFF,#0B6FE0);transform-origin:50% 100%;animation:pm-grow .6s cubic-bezier(.34,1.56,.64,1) both;animation-delay:var(--d,0ms)}
+.pm-vid.opt{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(76,154,255,0.6)}
+@keyframes pm-grow{from{transform:scaleY(0)}to{transform:none}}
+.pm-rows{display:flex;flex-direction:column}
+.pm-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,0.08);font-size:14px;color:#C7CDD8}
+.pm-row b{font-family:var(--font-display);font-size:16px;font-weight:700;color:#FFFFFF;white-space:nowrap}
+.pm-ok{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border-radius:999px;background:rgba(76,154,255,0.14);font-size:13px;font-weight:600;color:#9AC4FF}
+.pm-calcbtn{-webkit-appearance:none;appearance:none;margin:0;padding:0;border:0;background:none;color:#9AA3B2;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(255,255,255,0.25)}
+.pm-calc{margin-top:10px;font-family:var(--font-mono);font-size:12px;line-height:1.7;color:#8A93A3}
+
+.pm-cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pm-col{padding:16px;border-radius:20px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)}
+.pm-col.win{background:rgba(76,154,255,0.10);box-shadow:inset 0 0 0 1.5px rgba(76,154,255,0.55),0 20px 40px rgba(11,111,224,0.2)}
+.pm-colh{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:-0.02em;margin-bottom:12px}
+.pm-li{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.35;color:#C7CDD8;padding:7px 0}
+.pm-li svg{flex-shrink:0;margin-top:1px}
+.pm-note{display:flex;gap:12px;align-items:center;padding:16px 18px;border-radius:18px;background:rgba(76,154,255,0.10);box-shadow:inset 0 0 0 1px rgba(76,154,255,0.35);font-size:15px;font-weight:600;line-height:1.4}
+
+.pm-app{padding:18px;border-radius:26px;background:linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10),0 30px 60px rgba(0,0,0,0.35)}
+.pm-apph{display:flex;align-items:center;gap:12px}
+.pm-apph img{width:52px;height:52px;border-radius:14px;background:#FFFFFF}
+.pm-appn{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:-0.03em}
+.pm-appq{font-size:13px;color:#8A93A3;margin-top:2px}
+.pm-appb{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px;margin-top:16px}
+.pm-mini{position:relative;width:120px;height:213px;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.14)}
+.pm-mini img{display:block;width:100%;height:100%;object-fit:cover}
+.pm-mini::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,12,0) 50%,rgba(5,7,12,0.85))}
+.pm-mini .pm-views{position:absolute;left:10px;bottom:10px;z-index:1;font-size:19px}
+.pm-stats{display:flex;flex-direction:column}
+.pm-stat{padding:10px 0;border-top:1px solid rgba(255,255,255,0.08)}
+.pm-stat:first-child{border-top:0;padding-top:0}
+.pm-stat b{display:block;font-family:var(--font-display);font-size:22px;line-height:1.1;font-weight:700;letter-spacing:-0.03em}
+.pm-statl{display:block;font-size:12px;color:#8A93A3}
+.pm-locked{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08)}
+.pm-locked img{width:36px;height:36px;border-radius:10px;filter:blur(5px);background:#FFFFFF}
+.pm-blur{flex:1;display:flex;flex-direction:column;gap:6px}
+.pm-blur i{display:block;height:9px;border-radius:5px;background:rgba(255,255,255,0.16)}
+.pm-lock{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.07);display:grid;place-items:center;color:#9AA3B2}
+
+.pm-quote{padding:22px;border-radius:24px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10);font-family:var(--font-display);font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-0.02em}
+.pm-fp{-webkit-appearance:none;appearance:none;margin:0;position:relative;width:148px;height:148px;align-self:center;border:0;border-radius:50%;background:radial-gradient(closest-side,rgba(76,154,255,0.14),rgba(76,154,255,0));color:#FFFFFF;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.pm-fp.is-down{transform:scale(.94)}
+.pm-fp svg.pm-ring{position:absolute;inset:0;transform:rotate(-90deg)}
+.pm-fpi{position:absolute;inset:0;display:grid;place-items:center}
+.pm-fp.is-signed .pm-fpi{color:#4C9AFF}
+
+.pm-recap{display:flex;flex-wrap:wrap;gap:8px}
+.pm-pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,0.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10);font-size:13px;font-weight:500;color:#E6E9EF}
+.pm-inside{display:flex;flex-direction:column;border-radius:22px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);padding:4px 16px}
+.pm-irow{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,0.07);font-size:14px;color:#E6E9EF}
+.pm-irow:first-child{border-top:0}
+.pm-irow b{font-family:var(--font-display);font-size:16px;font-weight:700;color:#FFFFFF;min-width:26px}
+.pm-irow .pm-stack img{width:24px;height:24px;border-radius:7px}
+.pm-irow .pm-stack img.bl{filter:blur(3px)}
+.pm-strip{display:flex;gap:4px;margin-left:auto}
+.pm-strip img{width:22px;height:34px;border-radius:5px;object-fit:cover;filter:blur(2.5px)}
+.pm-plans{display:flex;flex-direction:column;gap:8px}
+.pm-plan{-webkit-appearance:none;appearance:none;margin:0;position:relative;display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;box-sizing:border-box;border:0;border-radius:18px;background:rgba(255,255,255,0.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10);color:#FFFFFF;text-align:left;cursor:pointer;transition:box-shadow .3s ease,background-color .3s ease}
+.pm-plan.is-sel{background:rgba(76,154,255,0.12);box-shadow:inset 0 0 0 1.5px #4C9AFF}
+.pm-radio{width:22px;height:22px;flex-shrink:0;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,0.3);display:grid;place-items:center}
+.pm-plan.is-sel .pm-radio{box-shadow:inset 0 0 0 1.5px #4C9AFF}
+.pm-plan.is-sel .pm-radio::after{content:"";width:12px;height:12px;border-radius:50%;background:#4C9AFF}
+.pm-pn{font-weight:700;font-size:16px}
+.pm-ps{font-size:12px;color:#8A93A3;margin-top:2px}
+.pm-pp{margin-left:auto;text-align:right;font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:-0.03em;white-space:nowrap}
+.pm-pp small{display:block;font-family:var(--font-body);font-size:12px;font-weight:500;color:#8A93A3;letter-spacing:0}
+.pm-save{position:absolute;top:-9px;right:16px;height:18px;padding:0 8px;border-radius:999px;background:#0B6FE0;font-family:var(--font-mono);font-size:10px;line-height:18px;letter-spacing:.06em}
+.pm-toprow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pm-link{-webkit-appearance:none;appearance:none;margin:0;padding:8px 0;border:0;background:none;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(255,255,255,0.35);text-underline-offset:5px}
+.pm-google{-webkit-appearance:none;appearance:none;margin:0;width:100%;height:54px;border:0;border-radius:16px;background:rgba(255,255,255,0.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16);color:#FFFFFF;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer}
+.pm-or{display:flex;align-items:center;gap:12px;font-size:13px;color:#8A93A3}
+.pm-or::before,.pm-or::after{content:"";flex:1;height:1px;background:rgba(255,255,255,0.10)}
+.pm-field{display:flex;flex-direction:column;gap:6px}
+.pm-flbl{font-size:13px;font-weight:500;color:#C7CDD8}
+.pm-input{-webkit-appearance:none;appearance:none;width:100%;height:52px;box-sizing:border-box;padding:0 16px;border:0;border-radius:16px;background:rgba(255,255,255,0.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16);color:#FFFFFF;font:inherit;font-size:16px;outline:none}
+.pm-input::placeholder{color:#6B7380}
+.pm-input:focus{box-shadow:inset 0 0 0 1.5px #4C9AFF,0 0 0 4px rgba(76,154,255,0.15)}
+.pm-legal{margin:0;font-size:12px;line-height:1.5;color:#8A93A3;text-align:center}
+.pm-legal a{color:#C7CDD8}
+.pm-sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;padding:10px 22px 30px;border-radius:30px 30px 0 0;background:linear-gradient(180deg,#151c2c,#0D111A);box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 -30px 70px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:12px;animation:pm-sheetup .6s cubic-bezier(.22,1.15,.36,1) both}
+@keyframes pm-sheetup{from{transform:translateY(100%)}to{transform:none}}
+.pm-grab{align-self:center;width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,0.18);margin-bottom:4px}
+.pm-form{display:flex;flex-direction:column;gap:12px}
+.pm-err{margin:0;font-size:14px;line-height:1.4;color:#FF7A7A}
+.pm-head{max-width:560px;margin:0 auto}
+@media (max-height: 760px){
+.pm-scr{padding-top:4px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.pm-h1{font-size:28px}
+.pm-tile{height:98px;padding:12px}
+.pm-tcard{height:128px;padding:14px}
+.pm-tl{font-size:32px}
+.pm-opt{min-height:52px}
+.pm-amt{font-size:64px}
+.pm-fan{height:280px}
+.pm-card{width:148px;height:262px}
+.pm-gauge{width:170px;height:170px}
+.pm-gauge svg{width:170px;height:170px}
+.pm-gnum{font-size:40px}
+.pm-mini{width:104px;height:185px}
+.pm-appb{grid-template-columns:104px minmax(0,1fr)}
+.pm-react{padding:18px}
+.pm-rtxt{font-size:19px}
+.pm-plancard{padding:18px}
+.pm-big{font-size:38px}
+.pm-fp{width:128px;height:128px}
+.pm-fp svg.pm-ring{width:128px;height:128px}
+.pm-quote{font-size:20px;padding:18px}
+}
+@media (max-height: 700px){
+.pm-scr .pm-h1{font-size:27px !important}
+.pm-tile{height:100px;padding:10px 12px}
+.pm-tile .pm-logo-s{width:26px;height:26px;border-radius:7px}
+.pm-tn{font-size:15px}
+.pm-irow{padding:8px 0}
+.pm-recap{margin-top:8px !important}
+.pm-plan{padding:10px 14px}
+.pm-journey-gap{margin-top:8px !important}
+.pm-acclist{margin-top:10px !important}
+.pm-acclist > div{padding:9px 0 !important}
+.pm-mid{gap:14px !important}
+.pm-mini{width:92px;height:164px}
+.pm-appb{grid-template-columns:92px minmax(0,1fr);margin-top:12px}
+.pm-app{padding:14px}
+.pm-stat{padding:6px 0}
+.pm-stat b{font-size:19px}
+.pm-locked{padding:8px 12px}
+}
+@media (max-height: 640px){
+.pm-tcard{height:112px}
+.pm-amt{font-size:56px}
+.pm-fan{height:240px}
+.pm-card{width:128px;height:226px}
+.pm-views{font-size:20px}
+}
+@media (prefers-reduced-motion: reduce){.pm *{animation-duration:.01ms !important;animation-delay:0ms !important;transition-duration:.01ms !important}}
+</style>
+</helmet>
+<div class="{{rootCls}}" role="main">
+  <div class="pm-bg" aria-hidden="true"></div>
+  <div class="pm-dots" aria-hidden="true"></div>
+  <div class="pm-blob pm-b1" aria-hidden="true"></div>
+  <div class="pm-blob pm-b2" aria-hidden="true"></div>
+
+  <header class="pm-head">
+    <button type="button" class="pm-back" aria-label="Retour" onClick="{{back}}"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    <div class="pm-logo"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="11" cy="5" r="2.3" fill="#4C9AFF"></circle><circle cx="17" cy="8" r="2.3" fill="#4C9AFF"></circle><circle cx="8" cy="14" r="2.3" fill="#FFFFFF"></circle><circle cx="14" cy="13" r="2.3" fill="#FFFFFF"></circle><circle cx="19" cy="17" r="2.3" fill="#FFFFFF"></circle><circle cx="11" cy="20" r="2.3" fill="#FFFFFF"></circle></svg><span class="pm-word">kopycat</span></div>
+    <div class="pm-prog" role="progressbar" aria-label="Avancement" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{v.pct}}"><div class="pm-progf" style="width: {{v.progW}}"></div></div>
+  </header>
+
+  <!-- 1 · Bienvenue -->
+  <sc-if value="{{v.s.accueil}}" hint-placeholder-val="{{ true }}">
+    <section class="pm-scr">
+      <div class="pm-mid" style="gap: 20px; justify-content: flex-start; padding-top: 28px">
+        <div class="pm-eb pm-in" style="--i: 0"><b>[</b> BIENVENUE <b>]</b></div>
+        <h1 class="pm-h1 pm-in" style="--i: 1; font-size: 38px">Trouve l'app à copier dans ta niche.</h1>
+        <p class="pm-lead pm-in" style="--i: 2">Cinq questions, et le Radar te sort ton plan : l'app qui marche, ses formats et ton rythme.</p>
+        <div class="pm-in pm-journey-gap" style="--i: 3; display: flex; align-items: flex-start; justify-content: space-between; margin-top: 18px; position: relative">
+          <div style="position: absolute; left: 34px; right: 34px; top: 27px; height: 2px; background: rgba(255,255,255,0.10)"></div>
+          <div style="position: absolute; left: 34px; top: 27px; height: 2px; width: 26%; background: linear-gradient(90deg,#4C9AFF,#0B6FE0); box-shadow: 0 0 12px rgba(76,154,255,0.7)"></div>
+          <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 92px">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #FFFFFF; color: #05070C; display: grid; place-items: center; box-shadow: 0 0 0 6px rgba(255,255,255,0.08), 0 12px 30px rgba(76,154,255,0.45)"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <span style="font-size: 14px; font-weight: 600">Toi</span>
+          </div>
+          <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 92px">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #0D111A; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); color: #9AA3B2; display: grid; place-items: center"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8M12 8a4 4 0 1 0 4 4M12 12l6-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <span style="font-size: 14px; color: #8A93A3">Ta niche</span>
+          </div>
+          <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 92px">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #0D111A; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); color: #9AA3B2; display: grid; place-items: center"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <span style="font-size: 14px; color: #8A93A3">Ton plan</span>
+          </div>
+        </div>
+        <div class="pm-in pm-acclist" style="--i: 4; display: flex; flex-direction: column; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08)">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08)"><img class="pm-logo-s" src="/media/simulateur/solaia.jpg" alt=""><span style="font-size: 15px; color: #E6E9EF">L'app qui marche déjà dans ta niche</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08)"><span class="pm-ico" style="width: 28px; height: 28px; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM10 9l5 3-5 3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="font-size: 15px; color: #E6E9EF">Ses formats, à refaire tels quels</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08)"><span class="pm-ico" style="width: 28px; height: 28px; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5.5-5.5 3.5 3.5L20 7M14 7h6v6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span style="font-size: 15px; color: #E6E9EF">Combien de vidéos par jour pour ton objectif</span></div>
+        </div>
+      </div>
+      <div class="pm-foot pm-in" style="--i: 5">
+        <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Construire mon plan<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- 2 · Objectif -->
+  <sc-if value="{{v.s.objectif}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <h1 class="pm-h1 pm-in" style="--i: 0">Combien tu veux gagner par mois ?</h1>
+      <div class="pm-mid" style="gap: 18px">
+        <div class="{{v.amtCls}}" style="--i: 1">{{v.amountTxt}} €</div>
+        <div class="pm-badge pm-in" style="--i: 2">{{v.tier.badge}}</div>
+        <div class="pm-in" style="--i: 3; margin-top: 10px">
+          <input class="pm-range" type="range" min="0" max="10" step="1" value="{{v.amountIdx}}" onInput="{{onAmount}}" aria-label="Montant visé par mois" style="--p: {{v.amountP}}">
+          <div class="pm-scale"><span>500 €</span><span>30 000 €</span></div>
+        </div>
+        <div class="pm-live pm-in" style="--i: 4"><span style="font-size: 13px; color: #9AA3B2">Il te faut</span><b>{{v.vuesTxt}} de vues par mois</b></div>
+        <p class="pm-in" style="--i: 5; margin: 0; font-size: 15px; line-height: 1.5; color: #C7CDD8">{{v.tier.text}}</p>
+      </div>
+      <div class="pm-foot pm-in" style="--i: 6">
+        <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- 3 · Niche -->
+  <sc-if value="{{v.s.niche}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <h1 class="pm-h1 pm-in" style="--i: 0">Quelle niche te parle ?</h1>
+      <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}">
+        <div class="pm-mid pm-top" style="gap: 12px">
+          <div class="pm-ngrid">
+            <sc-for list="{{v.niches}}" as="n" hint-placeholder-count="6">
+              <button type="button" class="{{n.cls}}" style="--i: {{n.i}}" onClick="{{n.pick}}" aria-pressed="{{n.sel}}">
+                <div class="pm-stack"><sc-for list="{{n.logos}}" as="lg" hint-placeholder-count="3"><img class="pm-logo-s" src="{{lg}}" alt=""></sc-for></div>
+                <div><div class="pm-tn">{{n.nom}}</div><div class="pm-ts">{{n.apps}} apps suivies</div></div>
+              </button>
+            </sc-for>
+          </div>
+          <button type="button" class="pm-quiet pm-in" style="--i: 8" onClick="{{pickNicheAll}}">Je ne sais pas encore</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}">
+        <div class="pm-mid" style="gap: 16px; justify-content: flex-start; padding-top: 18px">
+          <div class="pm-chip pm-pop-in" style="--i: 0"><span class="pm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{v.nicheD.nom}}</div>
+          <div class="pm-react pm-in" style="--i: 1">
+            <div class="pm-stack" style="position: relative"><sc-for list="{{v.nicheD.logos}}" as="lg" hint-placeholder-count="3"><img class="pm-logo-s" src="{{lg}}" alt="" style="width: 44px; height: 44px; border-radius: 12px"></sc-for></div>
+            <div style="position: relative; margin-top: 18px; font-family: var(--font-display); font-size: 64px; line-height: 1; font-weight: 700; letter-spacing: -0.05em">{{v.nicheD.apps}}<span style="font-size: 26px; letter-spacing: -0.02em; color: #9AA3B2"> apps</span></div>
+            <p class="pm-rtxt" style="margin-top: 10px">poussées par des comptes en ce moment, dans ta niche.</p>
+            <div class="pm-sep"></div>
+            <div style="position: relative; display: flex; align-items: center; gap: 12px"><img src="{{v.nicheD.top.logo}}" alt="" style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF"><div style="font-size: 14px; line-height: 1.4; color: #C7CDD8">La plus copiée : <b style="color: #FFFFFF">{{v.nicheD.top.nom}}</b><br>{{v.nicheD.top.vid}} vidéos cette semaine</div></div>
+          </div>
+        </div>
+        <div class="pm-foot pm-in" style="--i: 3">
+          <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+        </div>
+      </sc-if>
+    </section>
+  </sc-if>
+
+  <!-- 4 · Temps -->
+  <sc-if value="{{v.s.temps}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <h1 class="pm-h1 pm-in" style="--i: 0">Combien de temps par jour ?</h1>
+      <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}">
+        <div class="pm-mid pm-top">
+          <div class="pm-tgrid">
+            <sc-for list="{{v.times}}" as="t" hint-placeholder-count="4">
+              <button type="button" class="{{t.cls}}" style="--i: {{t.i}}" onClick="{{t.pick}}" aria-pressed="{{t.sel}}">
+                <div class="pm-bars" aria-hidden="true"><sc-for list="{{t.bars}}" as="b" hint-placeholder-count="4"><span class="{{b}}"></span></sc-for></div>
+                <div><div class="pm-tl">{{t.l}}</div><div class="pm-ts" style="font-size: 13px; margin-top: 6px">{{t.sub}}</div></div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}">
+        <div class="pm-mid" style="gap: 16px; justify-content: flex-start; padding-top: 18px">
+          <div class="pm-chip pm-pop-in" style="--i: 0"><span class="pm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span>{{v.timeD.l}} par jour</span></div>
+          <div class="pm-react pm-in" style="--i: 1"><svg class="pm-spark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg><p class="pm-rtxt">{{v.timeReact}}</p></div>
+        </div>
+        <div class="pm-foot pm-in" style="--i: 2">
+          <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+        </div>
+      </sc-if>
+    </section>
+  </sc-if>
+
+  <!-- 5 · Visage -->
+  <sc-if value="{{v.s.visage}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <h1 class="pm-h1 pm-in" style="--i: 0">Tu es prêt à te montrer en vidéo ?</h1>
+      <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}">
+        <div class="pm-mid pm-top">
+          <div class="pm-list">
+            <sc-for list="{{v.visages}}" as="o" hint-placeholder-count="3">
+              <button type="button" class="{{o.cls}}" style="--i: {{o.i}}" onClick="{{o.pick}}" aria-pressed="{{o.sel}}"><span class="pm-ico"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="{{o.icon}}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{o.l}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}">
+        <div class="pm-mid" style="gap: 16px; justify-content: flex-start; padding-top: 18px">
+          <div class="pm-chip pm-pop-in" style="--i: 0"><span class="pm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{v.visageD.l}}</div>
+          <div class="pm-react pm-in" style="--i: 1"><svg class="pm-spark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg><p class="pm-rtxt">{{v.visageD.r}}</p>
+            <div style="position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 18px">
+              <sc-for list="{{v.visageD.covers}}" as="c" hint-placeholder-count="3">
+                <div style="position: relative; height: 150px; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,0.12)"><img src="{{c.src}}" alt="" style="display: block; width: 100%; height: 100%; object-fit: cover"><div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,7,12,0) 45%, rgba(5,7,12,0.9))"></div><div style="position: absolute; left: 8px; right: 8px; bottom: 8px; font-size: 11px; line-height: 1.3; color: #C7CDD8"><b style="display: block; font-family: var(--font-display); font-size: 15px; color: #FFFFFF">{{c.v}}</b>{{c.app}}</div></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div class="pm-foot pm-in" style="--i: 2">
+          <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+        </div>
+      </sc-if>
+    </section>
+  </sc-if>
+
+  <!-- 6 · Blocage -->
+  <sc-if value="{{v.s.blocage}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <h1 class="pm-h1 pm-in" style="--i: 0">Qu'est-ce qui t'a bloqué jusqu'ici ?</h1>
+      <sc-if value="{{v.asking}}" hint-placeholder-val="{{ true }}">
+        <div class="pm-mid pm-top">
+          <div class="pm-list">
+            <sc-for list="{{v.blocages}}" as="o" hint-placeholder-count="4">
+              <button type="button" class="{{o.cls}}" style="--i: {{o.i}}" onClick="{{o.pick}}" aria-pressed="{{o.sel}}">{{o.l}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{v.answered}}" hint-placeholder-val="{{ false }}">
+        <div class="pm-mid" style="gap: 16px; justify-content: flex-start; padding-top: 18px">
+          <div class="pm-chip pm-pop-in" style="--i: 0"><span class="pm-tick"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{v.blocD.l}}</div>
+          <div class="pm-react pm-in" style="--i: 1"><svg class="pm-spark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg><p class="pm-rtxt">{{v.blocD.r}}</p></div>
+        </div>
+        <div class="pm-foot pm-in" style="--i: 2">
+          <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+        </div>
+      </sc-if>
+    </section>
+  </sc-if>
+
+  <!-- 7 · Preuve du Radar -->
+  <sc-if value="{{v.s.preuve}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <div class="pm-eb pm-in" style="--i: 0"><b>[</b> CETTE SEMAINE DANS TA NICHE <b>]</b></div>
+      <h1 class="pm-h1 pm-in" style="--i: 1; margin-top: 10px">Ça poste déjà. Et ça fait des vues.</h1>
+      <div class="pm-mid">
+        <div class="pm-fan">
+          <sc-for list="{{v.fan}}" as="c" hint-placeholder-count="3">
+            <div class="{{c.cls}}"><img class="pm-cv" src="{{c.src}}" alt=""><span class="pm-play" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="#FFFFFF"></path></svg></span><div class="pm-cardm"><span class="pm-applbl"><img src="{{c.logo}}" alt="">{{c.app}}</span><span class="pm-views">{{c.v}}</span><span class="pm-handle">@{{c.h}}</span></div></div>
+          </sc-for>
+        </div>
+        <p class="pm-lead pm-in" style="--i: 5; margin-top: 8px; text-align: center">Des petits comptes, une app derrière chaque vidéo. Le Radar les suit tous.</p>
+      </div>
+      <div class="pm-foot pm-in" style="--i: 6">
+        <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- 8 · Calcul -->
+  <sc-if value="{{v.s.calcul}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <div class="pm-eb pm-in" style="--i: 0"><b>[</b> RADAR <b>]</b></div>
+      <h1 class="pm-h1 pm-in" style="--i: 1; margin-top: 10px">On fouille ta niche.</h1>
+      <div class="pm-mid" style="gap: 34px">
+        <div class="pm-gauge pm-pop-in" style="--i: 2">
+          <div class="pm-sweep" aria-hidden="true"></div>
+          <svg width="200" height="200" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="86" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="10"></circle><circle cx="100" cy="100" r="86" fill="none" stroke="url(#kg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="540.4" style="stroke-dashoffset: {{v.gaugeOff}}; transition: stroke-dashoffset .2s linear"></circle><defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4C9AFF"></stop><stop offset="1" stop-color="#0B6FE0"></stop></linearGradient></defs></svg>
+          <div class="pm-gnum"><span>{{v.pct}}<small>%</small></span></div>
+        </div>
+        <div class="pm-checks pm-in" style="--i: 3">
+          <sc-for list="{{v.checks}}" as="c" hint-placeholder-count="3">
+            <div class="{{c.cls}}"><span class="pm-ckd"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{c.t}}</div>
+          </sc-for>
+        </div>
+      </div>
+      <sc-if value="{{v.popOpen}}" hint-placeholder-val="{{ false }}">
+        <div class="pm-veil" aria-hidden="true"></div>
+        <div class="pm-pop" role="dialog" aria-modal="true" aria-label="{{v.pop.q}}">
+          <div class="pm-eb"><b>[</b> PENDANT QUE ÇA TOURNE <b>]</b></div>
+          <h2 style="margin-top: 12px">{{v.pop.q}}</h2>
+          <p>{{v.pop.t}}</p>
+          <div class="pm-two"><button type="button" onClick="{{popNo}}">{{v.pop.no}}</button><button type="button" class="yes" onClick="{{popYes}}">{{v.pop.yes}}</button></div>
+        </div>
+      </sc-if>
+    </section>
+  </sc-if>
+
+  <!-- 9 · Plan chiffré -->
+  <sc-if value="{{v.s.plan}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <div class="pm-eb pm-in" style="--i: 0"><b>[</b> TON PLAN · CALCULÉ SUR TES RÉPONSES <b>]</b></div>
+      <div class="pm-mid" style="gap: 14px">
+        <div class="pm-plancard pm-in" style="--i: 1">
+          <div class="pm-lbl" style="position: relative">POUR VISER {{v.amountTxt}} € PAR MOIS</div>
+          <div class="pm-big" style="position: relative">{{v.vidTxt}} {{v.vidUnit}}</div>
+          <div class="pm-sub" style="position: relative">par jour, sur {{v.comptesTxt}}</div>
+          <div class="pm-accts" style="position: relative">
+            <sc-for list="{{v.accts}}" as="a" hint-placeholder-count="3">
+              <div class="pm-acct"><div class="pm-acctl">{{a.lbl}}</div><div class="pm-vids"><sc-for list="{{a.vids}}" as="vd" hint-placeholder-count="3"><i class="{{vd.cls}}" style="--d: {{vd.d}}"></i></sc-for></div></div>
+            </sc-for>
+          </div>
+          <sc-if value="{{v.moreAccts}}" hint-placeholder-val="{{ false }}"><div class="pm-sub" style="position: relative; margin-top: 10px; font-size: 13px; color: #9AA3B2">et {{v.moreN}} autres comptes au même rythme</div></sc-if>
+        </div>
+        <div class="pm-rows pm-in" style="--i: 2">
+          <div class="pm-row"><span>Vues à faire par mois</span><b>{{v.vuesTxt}}</b></div>
+          <div class="pm-row"><span>Vues par vidéo dans ta niche</span><b>{{v.vpvTxt}}</b></div>
+          <div class="pm-row" style="align-items: center"><span>Avec {{v.timeD.l}} par jour</span><span class="pm-ok"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{v.verdict}}</span></div>
+        </div>
+        <div class="pm-in" style="--i: 3">
+          <button type="button" class="pm-calcbtn" onClick="{{toggleCalc}}" aria-expanded="{{v.calcOpen}}">Voir le calcul</button>
+          <sc-if value="{{v.calcOpen}}" hint-placeholder-val="{{ false }}"><div class="pm-calc">{{v.amountTxt}} € ÷ 2,50 à 3,50 € les 1 000 vues = {{v.vuesTxt}} de vues<br>÷ {{v.vpvTxt}} vues par vidéo ÷ 30 jours = {{v.vidTxt}} {{v.vidUnit}} par jour<br>÷ 3 vidéos par compte = {{v.comptesTxt}}</div></sc-if>
+        </div>
+      </div>
+      <div class="pm-foot pm-in" style="--i: 4">
+        <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- 10 · Ce qui te manque -->
+  <sc-if value="{{v.s.manque}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <h1 class="pm-h1 pm-in" style="--i: 0">{{v.blocD.manque}}</h1>
+      <div class="pm-mid" style="gap: 16px">
+        <div class="pm-cmp">
+          <div class="pm-col pm-in" style="--i: 1"><div class="pm-colh" style="color: #9AA3B2">Seul</div>
+            <div class="pm-li"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#8A93A3" stroke-width="2.2" stroke-linecap="round"></path></svg>Tu postes au hasard</div>
+            <div class="pm-li"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#8A93A3" stroke-width="2.2" stroke-linecap="round"></path></svg>200 vues, tu lâches</div>
+            <div class="pm-li"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#8A93A3" stroke-width="2.2" stroke-linecap="round"></path></svg>Tu ne sais pas quoi copier</div>
+          </div>
+          <div class="pm-col win pm-in" style="--i: 2"><div class="pm-colh">Avec Kopycat</div>
+            <div class="pm-li" style="color: #FFFFFF"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#4C9AFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>L'app qui marche dans ta niche</div>
+            <div class="pm-li" style="color: #FFFFFF"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#4C9AFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>Ses formats, à refaire</div>
+            <div class="pm-li" style="color: #FFFFFF"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#4C9AFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>Les comptes derrière, à suivre</div>
+          </div>
+        </div>
+        <div class="pm-note pm-in" style="--i: 3"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex-shrink: 0; color: #7DB5FF"><path d="M12 4a8 8 0 1 0 8 8M12 8a4 4 0 1 0 4 4M12 12l6-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>C'est exactement ce que le Radar te donne.</div>
+      </div>
+      <div class="pm-foot pm-in" style="--i: 4">
+        <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Continuer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+      </div>
+    </section>
+  </sc-if>
+
+
+  <!-- 11 · Inscription : la feuille sur l'app floutée (version C) -->
+  <sc-if value="{{v.s.inscription}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr" aria-hidden="true" style="filter: blur(9px); opacity: .7; pointer-events: none">
+      <div class="pm-eb"><b>[</b> L'APP À COPIER <b>]</b></div>
+      <h1 class="pm-h1" style="margin-top: 10px">{{v.app.titre}}</h1>
+      <div class="pm-app" style="margin-top: 18px"><div class="pm-apph"><img src="{{v.app.logo}}" alt=""><div><div class="pm-appn">{{v.app.nom}}</div><div class="pm-appq">{{v.app.quoi}}</div></div></div><div class="pm-appb"><div class="pm-mini"><img src="{{v.app.cover}}" alt=""></div><div class="pm-stats"><div class="pm-stat"><b>{{v.app.comptes}}</b><span class="pm-statl">comptes</span></div><div class="pm-stat"><b>{{v.app.videos}}</b><span class="pm-statl">vidéos</span></div></div></div></div>
+    </section>
+    <div class="pm-veil" style="background: rgba(5,7,12,0.35)" aria-hidden="true"></div>
+    <div class="pm-sheet" role="dialog" aria-modal="true" aria-label="Créer ton compte">
+      <span class="pm-grab" aria-hidden="true"></span>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><h2 style="margin: 0; font-family: var(--font-display); font-size: 26px; line-height: 1.1; font-weight: 700; letter-spacing: -0.03em; text-wrap: balance">Dernière étape avant ton app.</h2><span class="pm-lock" style="width: 40px; height: 40px; flex-shrink: 0; color: #9AC4FF"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></div>
+      <button type="button" class="pm-google" onClick="{{google}}" disabled="{{v.busy}}"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z" fill="#4285F4"></path><path d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" fill="#34A853"></path><path d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2z" fill="#FBBC05"></path><path d="M12 6c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 6 12 6z" fill="#EA4335"></path></svg>Continuer avec Google</button>
+      <div class="pm-or"><span>ou</span></div>
+      <form class="pm-form" onSubmit="{{submit}}" novalidate="novalidate"><label class="pm-field"><span class="pm-flbl">E-mail</span><input class="pm-input" name="email" type="email" placeholder="toi@exemple.fr" autocomplete="email"></label><label class="pm-field"><span class="pm-flbl">Mot de passe</span><input class="pm-input" name="password" type="password" placeholder="8 caractères minimum" autocomplete="new-password"></label><sc-if value="{{v.hasError}}" hint-placeholder-val="{{ false }}"><p class="pm-err" role="alert">{{v.error}}</p></sc-if><p class="pm-legal">En continuant, tu acceptes nos <a href="/cgv">CGV</a> et notre <a href="/confidentialite">politique de confidentialité</a>.</p><span class="pm-cta" style="align-self: center"><button type="submit" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" disabled="{{v.busy}}">Débloquer mon app<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span></form>
+      <a href="#connexion" class="pm-link" style="align-self: center">J'ai déjà un compte</a>
+    </div>
+  </sc-if>
+
+  <!-- 12 · L'app à copier -->
+  <sc-if value="{{v.s.app}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <div class="pm-eb pm-in" style="--i: 0"><b>[</b> L'APP À COPIER <b>]</b></div>
+      <h1 class="pm-h1 pm-in" style="--i: 1; margin-top: 10px">{{v.app.titre}}</h1>
+      <div class="pm-mid" style="gap: 12px">
+        <div class="pm-app pm-in" style="--i: 2">
+          <div class="pm-apph"><img src="{{v.app.logo}}" alt=""><div><div class="pm-appn">{{v.app.nom}}</div><div class="pm-appq">{{v.app.quoi}}</div></div></div>
+          <div class="pm-appb">
+            <div class="pm-mini"><img src="{{v.app.cover}}" alt="Sa meilleure vidéo"><span class="pm-play" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="#FFFFFF"></path></svg></span><span class="pm-views">{{v.app.vues}}</span></div>
+            <div class="pm-stats">
+              <div class="pm-stat"><b>{{v.app.comptes}}</b><span class="pm-statl">{{v.app.comptesL}}</span></div>
+              <div class="pm-stat"><b>{{v.app.videos}}</b><span class="pm-statl">vidéos cette semaine</span></div>
+              <sc-if value="{{v.app.hasPrix}}" hint-placeholder-val="{{ true }}"><div class="pm-stat"><b>{{v.app.prix}}</b><span class="pm-statl">dans l'app</span></div></sc-if>
+            </div>
+          </div>
+        </div>
+        <div class="pm-in" style="--i: 3; display: flex; flex-direction: column; gap: 8px">
+          <div class="pm-lbl">ET 2 AUTRES APPS POUR TOI</div>
+          <sc-for list="{{v.others}}" as="o" hint-placeholder-count="2"><div class="pm-locked"><img src="{{o.logo}}" alt=""><div class="pm-blur"><i style="width: {{o.w1}}"></i><i style="width: {{o.w2}}"></i></div><span class="pm-lock"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></div></sc-for>
+        </div>
+      </div>
+      <div class="pm-foot pm-in" style="--i: 4">
+        <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{next}}">Voir mon plan<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- 12 · Engagement -->
+  <sc-if value="{{v.s.engagement}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr">
+      <div class="pm-eb pm-in" style="--i: 0"><b>[</b> DERNIÈRE ÉTAPE <b>]</b></div>
+      <h1 class="pm-h1 pm-in" style="--i: 1; margin-top: 10px">Avant ton plan, engage-toi.</h1>
+      <div class="pm-mid" style="gap: 36px">
+        <div class="pm-quote pm-in" style="--i: 2">« Je poste chaque jour pendant 30 jours. Même quand une vidéo fait 200 vues. »</div>
+        <button type="button" class="{{v.fpCls}}" onPointerDown="{{holdStart}}" onPointerUp="{{holdEnd}}" onPointerLeave="{{holdEnd}}" onPointerCancel="{{holdEnd}}" onKeyDown="{{holdKey}}" aria-label="Maintenir appuyé pour signer">
+          <svg class="pm-ring" width="148" height="148" viewBox="0 0 148 148" aria-hidden="true"><circle cx="74" cy="74" r="68" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4"></circle><circle cx="74" cy="74" r="68" fill="none" stroke="#4C9AFF" stroke-width="4" stroke-linecap="round" stroke-dasharray="427.3" style="stroke-dashoffset: {{v.holdOff}}"></circle></svg>
+          <span class="pm-fpi"><svg width="64" height="64" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 19.5c1.2-2 1.8-4.3 1.8-6.8a2.7 2.7 0 0 1 5.4 0c0 1.3-.1 2.6-.4 3.8M12 12.7c0 3.2-.9 6.1-2.4 8.3M16.6 18.6c.4-1.8.6-3.8.6-5.9a5.2 5.2 0 0 0-8.9-3.7M4.9 15.6c.4-.9.6-1.9.6-2.9a6.5 6.5 0 0 1 11.5-4.1M19.4 15.2c.1-.8.1-1.6.1-2.5a7.5 7.5 0 0 0-.6-2.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        </button>
+      </div>
+      <div class="pm-foot pm-in" style="--i: 3">
+        <span style="font-size: 15px; font-weight: 600; color: #E6E9EF">{{v.holdLbl}}</span>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- 13 · Paywall -->
+  <sc-if value="{{v.s.paywall}}" hint-placeholder-val="{{ false }}">
+    <section class="pm-scr" style="padding-bottom: 24px">
+      <div class="pm-eb pm-in" style="--i: 0"><b>[</b> TON PLAN EST PRÊT <b>]</b></div>
+      <h1 class="pm-h1 pm-in" style="--i: 1; margin-top: 8px; font-size: 30px">{{v.payTitle}}</h1>
+      <div class="pm-recap pm-in" style="--i: 2; margin-top: 14px"><span class="pm-pill">{{v.nicheD.nom}}</span><span class="pm-pill"><span>{{v.amountTxt}} € / mois</span></span><span class="pm-pill"><span>{{v.timeD.l}} / jour</span></span><span class="pm-pill">{{v.visageD.short}}</span></div>
+      <div class="pm-mid" style="gap: 12px; justify-content: flex-start; padding-top: 14px">
+        <div class="pm-inside pm-in" style="--i: 3">
+          <div class="pm-irow"><b>{{v.counts.apps}}</b><span>apps à copier</span><span class="pm-stack" style="margin-left: auto"><img src="{{v.app.logo}}" alt=""><sc-for list="{{v.others}}" as="o" hint-placeholder-count="2"><img class="bl" src="{{o.logo}}" alt=""></sc-for></span></div>
+          <div class="pm-irow"><b>{{v.counts.formats}}</b><span>formats qui font des vues</span><span class="pm-strip"><sc-for list="{{v.strip}}" as="c" hint-placeholder-count="3"><img src="{{c}}" alt=""></sc-for></span></div>
+          <div class="pm-irow"><b>{{v.counts.comptes}}</b><span>comptes à suivre</span><span class="pm-lock" style="margin-left: auto; width: 26px; height: 26px"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></div>
+          <div class="pm-irow"><b>4</b><span>semaines de plan, jour par jour</span><span class="pm-lock" style="margin-left: auto; width: 26px; height: 26px"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></div>
+        </div>
+        <div class="pm-plans pm-in" style="--i: 4">
+          <button type="button" class="{{v.planA.cls}}" onClick="{{pickAnnuel}}" aria-pressed="{{v.planA.sel}}"><span class="pm-save">−50 %</span><span class="pm-radio"></span><div><div class="pm-pn">Annuel</div><div class="pm-ps">179,88 € par an</div></div><div class="pm-pp">14,99 €<small>par mois</small></div></button>
+          <button type="button" class="{{v.planM.cls}}" onClick="{{pickMensuel}}" aria-pressed="{{v.planM.sel}}"><span class="pm-radio"></span><div><div class="pm-pn">Mensuel</div><div class="pm-ps">Sans engagement</div></div><div class="pm-pp">29,99 €<small>par mois</small></div></button>
+        </div>
+      </div>
+      <div class="pm-foot pm-in" style="--i: 5; gap: 8px">
+        <span class="pm-cta"><button type="button" class="sw-btn sw-btn-primary sw-btn-lg pm-btn" onClick="{{pay}}">Tout débloquer<span class="sw-btn-tile"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button></span>
+        <button type="button" class="pm-quiet" style="height: 36px; font-size: 14px" onClick="{{later}}">Plus tard</button>
+      </div>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"ecran":{"editor":null},"etat":{"editor":null},"montant":{"editor":null},"prenom":{"editor":null},"nu":{"editor":null},"auth":{"editor":null},"authed":{"editor":null},"user":{"editor":null},"saved":{"editor":null},"save":{"editor":null},"track":{"editor":null},"onPay":{"editor":null},"onLater":{"editor":null},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  // L'onboarding B du test A/B (26/11/2026), parcours B1 retenu par le fondateur : 5 questions, le calcul, le plan, puis
+  // l'inscription (version C, feuille sur l'app floutée), l'app à copier, la signature et le paywall. Les données sont
+  // dans la page (relevé du Radar du 26/11, les 6 niches de la maquette) : aucun appel au backend avant l'inscription.
+  // Sur le site (src/main-plan.js), la page reçoit :
+  //   auth        { password(flow, email, mdp), google() } : rend null si réussi, sinon { code, message }
+  //   authed      vrai une fois le compte créé (la suite du parcours s'ouvre)
+  //   user        { prenom } quand on le connaît (Google)
+  //   saved       l'état gardé dans le navigateur (reprise après un rechargement ou le retour de Google)
+  //   save(état)  le garde ; track(événement, propriétés) l'envoie à la mesure ; onPay(formule) ; onLater()
+  // Sur le canevas : ecran, etat, montant, prenom (écrans figés).
+  static K = (() => {
+    const DATA = {"releve":"26/11/2026","niches":[{"id":"sante","nom":"Santé et physique","apps":70,"vpv":4598,"liste":[{"nom":"Mise","logo":"/media/simulateur/mise.jpg","quoi":"Meal planner","comptes":130,"fr":7,"videos":1353,"note":"4,5","prix":{"min":"9,99","max":"59,99"},"cover":"/media/plan/v-7710492306742283528.jpg","vues":"1,3 M","compte":"paula.eatss","formats":3,"reseau":6},{"nom":"Musa","logo":"/media/simulateur/musa.jpg","quoi":"Period & Pregnancy","comptes":32,"fr":2,"videos":526,"note":"4,7","prix":{"min":"6,99","max":"34,99"},"cover":"/media/plan/v-7710412757409041694.jpg","vues":"289 k","compte":"marina.pragnancy","formats":3,"reseau":6},{"nom":"Solaia","logo":"/media/simulateur/solaia.jpg","quoi":"Équilibre hormonal","comptes":64,"fr":52,"videos":453,"note":"4,6","prix":{"min":"8,99","max":"79,99"},"cover":"/media/plan/v-7709915874399964448.jpg","vues":"1,7 M","compte":"byelizen","formats":3,"reseau":6}]},{"id":"social","nom":"Social et loisirs","apps":111,"vpv":10460,"liste":[{"nom":"MoboReels","logo":"/media/simulateur/moboreels.jpg","quoi":"Short Drama Series","comptes":98,"fr":0,"videos":1252,"note":"4,5","prix":{"min":"6,99","max":"59,99"},"cover":"/media/plan/v-7710617508012756231.jpg","vues":"12,7 k","compte":"austinobest1","formats":3,"reseau":6},{"nom":"SlowRead","logo":"/media/simulateur/slowread.jpg","quoi":"Bibliothèque & PAL","comptes":70,"fr":0,"videos":792,"note":"3,8","prix":{"min":"7,79","max":"129,99"},"cover":"/media/plan/v-7706174306748845334.jpg","vues":"35,8 k","compte":"andrea.booktoker","formats":3,"reseau":6},{"nom":"DramaBox","logo":"/media/simulateur/dramabox.jpg","quoi":"Film et Drame Court","comptes":88,"fr":0,"videos":618,"note":"4,6","prix":{"min":"0,99","max":"14,99"},"cover":"/media/plan/v-7709357476939877646.jpg","vues":"260 k","compte":"j3w3lz.rose","formats":3,"reseau":6}]},{"id":"etudes","nom":"Études","apps":35,"vpv":4542,"liste":[{"nom":"Aistote","logo":"/media/simulateur/aistote.jpg","quoi":"QUIZ IA","comptes":46,"fr":6,"videos":532,"note":"4,5","prix":{"min":"8,99","max":"49,99"},"cover":"/media/plan/v-7711615369651277087.jpg","vues":"206 k","compte":"wow_its_clifford","formats":3,"reseau":6},{"nom":"NurseMind","logo":"/media/simulateur/nursemind.jpg","quoi":"AI Nursing Guide","comptes":112,"fr":0,"videos":435,"note":null,"prix":{"min":"9,99","max":"34,99"},"cover":"/media/plan/v-7711442404619881742.jpg","vues":"2 k","compte":"learninghacks4u","formats":3,"reseau":6},{"nom":"Diane AI","logo":"/media/simulateur/diane-ai.jpg","quoi":"Flashcards","comptes":53,"fr":49,"videos":403,"note":"4,6","prix":{"min":"19,99","max":"89,99"},"cover":"/media/plan/v-7710371564923014432.jpg","vues":"51,8 k","compte":"el1ott_lapt","formats":3,"reseau":6}]},{"id":"langues","nom":"Langues","apps":36,"vpv":6669,"liste":[{"nom":"Vocabulary","logo":"/media/simulateur/vocabulary.jpg","quoi":"Apprenez mots","comptes":71,"fr":0,"videos":637,"note":"4,7","prix":{"min":"5,99","max":"59,99"},"cover":"/media/plan/v-7710309824344460566.jpg","vues":"4,2 k","compte":"edforyou6","formats":3,"reseau":6},{"nom":"Pingo AI","logo":"/media/simulateur/pingo-ai.jpg","quoi":"Application d'apprentissage des langues par IA qui corrige les phrases et répond aux questions de vocabulaire","comptes":147,"fr":7,"videos":480,"note":"4,6","prix":{"min":"14,99","max":"119,99"},"cover":"/media/plan/v-7711006014425795861.jpg","vues":"78,3 k","compte":"nadiaspeaksgerman","formats":3,"reseau":6},{"nom":"Bunpo","logo":"/media/simulateur/bunpo.jpg","quoi":"Apprendre les langues","comptes":86,"fr":0,"videos":206,"note":"4,8","prix":{"min":"9,99","max":"99,99"},"cover":"/media/plan/v-7709922289172647201.jpg","vues":"18,9 k","compte":"frenchwithlars","formats":3,"reseau":6}]},{"id":"prod","nom":"Productivité","apps":27,"vpv":4020,"liste":[{"nom":"TapCook","logo":"/media/simulateur/tapcook.jpg","quoi":"Budget Meal Plans","comptes":184,"fr":0,"videos":3342,"note":"4,5","prix":{"min":"9,99","max":"34,99"},"cover":"/media/plan/v-7711485707772054792.jpg","vues":"31,7 k","compte":"mealprepsteve","formats":3,"reseau":6},{"nom":"FocusTown","logo":"/media/simulateur/focustown.jpg","quoi":"Minuteur Pomodoro","comptes":50,"fr":0,"videos":432,"note":"4,7","prix":{"min":"0,99","max":"34,99"},"cover":"/media/plan/v-7707246180899573025.jpg","vues":"165 k","compte":"yellen_forellen","formats":3,"reseau":6},{"nom":"EcoGPT","logo":"/media/simulateur/ecogpt.jpg","quoi":"Application d'IA conversationnelle présentée par les créatrices comme un moyen d'agir pour la planète à travers ses usages quotidiens","comptes":130,"fr":0,"videos":426,"note":"4,7","prix":{"min":"6,99","max":"79,99"},"cover":"/media/plan/v-7710416614897880340.jpg","vues":"901 k","compte":"ecologiacongaby","formats":3,"reseau":6}]},{"id":"side","nom":"Side hustle","apps":50,"vpv":1405,"liste":[{"nom":"SideShift","logo":"/media/simulateur/sideshift.jpg","quoi":"Earn Money","comptes":158,"fr":19,"videos":1339,"note":"4,8","prix":{"min":"0,99","max":"89,99"},"cover":"/media/plan/v-7710695480325311765.jpg","vues":"4,3 M","compte":"prankswithgenn_","formats":3,"reseau":6},{"nom":"Hub Capture","logo":"/media/simulateur/hub-capture.jpg","quoi":"Plateforme de revenus en ligne par parrainage, avec dropshipping et création de contenu UGC pour TikTok Shop","comptes":54,"fr":0,"videos":180,"note":null,"prix":null,"cover":"/media/plan/v-7711010891512171784.jpg","vues":"79,2 k","compte":"tamiresrrosati","formats":3,"reseau":6},{"nom":"TikAlyzer","logo":"/media/simulateur/tikalyzer.jpg","quoi":"Deviens Viral","comptes":51,"fr":0,"videos":87,"note":"4,2","prix":{"min":"6,99","max":"69,99"},"cover":"/media/plan/v-7711334652664974622.jpg","vues":"1,1 k","compte":"viviana.tikalyzr","formats":0,"reseau":6}]}],"tout":{"id":"tout","nom":"Toutes les niches","apps":653,"vpv":7400,"liste":[{"nom":"SideShift","logo":"/media/simulateur/sideshift.jpg","quoi":"Earn Money","comptes":158,"fr":19,"videos":1339,"note":"4,8","prix":{"min":"0,99","max":"89,99"},"cover":"/media/plan/v-7710695480325311765.jpg","vues":"4,3 M","compte":"prankswithgenn_","formats":3,"reseau":6},{"nom":"Solaia","logo":"/media/simulateur/solaia.jpg","quoi":"Équilibre hormonal","comptes":64,"fr":52,"videos":453,"note":"4,6","prix":{"min":"8,99","max":"79,99"},"cover":"/media/plan/v-7709915874399964448.jpg","vues":"1,7 M","compte":"byelizen","formats":3,"reseau":6},{"nom":"Mise","logo":"/media/simulateur/mise.jpg","quoi":"Meal planner","comptes":130,"fr":7,"videos":1353,"note":"4,5","prix":{"min":"9,99","max":"59,99"},"cover":"/media/plan/v-7710492306742283528.jpg","vues":"1,3 M","compte":"paula.eatss","formats":3,"reseau":6}]}};
+    const NN = " ", NB = " ";
+    const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, NN);
+    const fr = (x, d) => { let s = x.toFixed(d); if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, ""); return s.replace(".", ","); };
+    const big = (n) => n >= 1e6 ? fr(n / 1e6, n >= 1e7 ? 0 : 2).replace(/,(\d)0$/, ",$1") + NN + "M" : n >= 1e3 ? fr(n / 1e3, 0) + NN + "k" : String(Math.round(n));
+    const parseV = (t) => {
+      const m = String(t || "").replace(/\s/g, "").match(/^([\d,]+)([kM]?)$/);
+      if (!m) return 0;
+      const x = parseFloat(m[1].replace(",", "."));
+      return m[2] === "M" ? x * 1e6 : m[2] === "k" ? x * 1e3 : x;
+    };
+    const sp = (t) => String(t || "").replace(/\s/g, NN);
+    const AMOUNTS = [500, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 30000];
+    const TIMES = [{ v: 30, l: "30" + NB + "min", vids: 1 }, { v: 60, l: "1" + NB + "h", vids: 3 }, { v: 120, l: "2" + NB + "h", vids: 6 }, { v: 180, l: "3" + NB + "h et +", vids: 9 }];
+    const M = "/media/plan/v-";
+    const VISAGES = [
+      { id: "face", l: "Oui, face caméra", short: "Face caméra", icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6",
+        r: "Face caméra, c'est ce qui crée le plus de lien. Voici des accroches parlées qui tournent en ce moment.",
+        covers: [{ src: M + "7707745824872156448.jpg", v: "1" + NN + "M", app: "SideShift" }, { src: M + "7708363079444155681.jpg", v: "96,6" + NN + "k", app: "Solaia" }, { src: M + "7710994709463715105.jpg", v: "109" + NN + "k", app: "Diane AI" }] },
+      { id: "sans", l: "Sans montrer mon visage", short: "Sans visage", icon: "M4 5h16v14H4zM8 10h8M8 14h5",
+        r: "Aucun souci. Beaucoup de formats se tournent sans visage : texte à l'écran, voix off, captures. En voici trois qui tournent.",
+        covers: [{ src: M + "7710020762337365268.jpg", v: "492" + NN + "k", app: "Liggo" }, { src: M + "7710313265775054112.jpg", v: "258" + NN + "k", app: "Amorly" }, { src: M + "7708731515743604001.jpg", v: "71,8" + NN + "k", app: "Diane AI" }] },
+      { id: "crea", l: "Je préfère payer des créatrices", short: "Avec des créatrices", icon: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c1-3 3.3-4.5 6-4.5s5 1.5 6 4.5M16 11a3 3 0 1 0 0-6M18 15.5c1.5.6 2.5 2 3 4.5",
+        r: "Ton plan comptera des créatrices payées à la vidéo, autour de 5 € chacune. Voici ce qu'elles tournent pour ces apps.",
+        covers: [{ src: M + "7709915874399964448.jpg", v: "1,7" + NN + "M", app: "Solaia" }, { src: M + "7710412757409041694.jpg", v: "289" + NN + "k", app: "Musa" }, { src: M + "7711038070874819872.jpg", v: "270" + NN + "k", app: "Finzee" }] }
+    ];
+    const BLOCAGES = [
+      { id: "idee", l: "Je n'ai pas trouvé d'idée", r: "C'est la première chose que le Radar te donne : une app qui marche déjà dans ta niche.", manque: "Il te manque une idée qui a déjà fait ses preuves." },
+      { id: "poster", l: "Je ne sais pas quoi poster", r: "Tu n'as rien à inventer : les formats qui font déjà des vues, à refaire tels quels.", manque: "Il te manque des formats qui marchent déjà." },
+      { id: "vues", l: "Mes vidéos ne font pas de vues", r: "Souvent, ce n'est pas toi, c'est le format. On part de ceux qui font déjà des vues.", manque: "Il te manque les formats qui font des vues." },
+      { id: "lache", l: "J'abandonne vite", r: "Un plan court, une vidéo à la fois : tu sais toujours quoi poster demain.", manque: "Il te manque un plan simple, jour après jour." }
+    ];
+    const POPS = [
+      { at: 30, key: "engage", q: "Prêt à poster chaque jour pendant 30 jours ?", t: "On règle ton plan sur ta réponse.", no: "Pas encore", yes: "Oui" },
+      { at: 70, key: "marche", q: "Tu vises la France ou partout ?", t: "Le Radar suit les comptes de chaque marché.", no: "Partout", yes: "La France" }
+    ];
+    const ORDER = ["accueil", "objectif", "niche", "temps", "visage", "blocage", "preuve", "calcul", "plan", "manque", "inscription", "app", "engagement", "paywall"];
+    const QUESTIONS = { niche: 1, temps: 1, visage: 1, blocage: 1 };
+    // Le top de la niche, l'app à copier selon le marché (France : la plus poussée par des comptes français), les autres.
+    const niche = (id) => (id === "tout" ? DATA.tout : DATA.niches.find((n) => n.id === id) || DATA.niches[0]);
+    const pick = (n, marche) => {
+      const L = n.liste.slice();
+      if (marche !== "tout" && L.some((a) => a.fr > 0)) L.sort((a, b) => b.fr - a.fr || b.comptes - a.comptes);
+      else L.sort((a, b) => b.comptes - a.comptes);
+      return { app: L[0], others: L.slice(1) };
+    };
+    return { DATA, NN, NB, grp, fr, big, parseV, sp, AMOUNTS, TIMES, VISAGES, BLOCAGES, POPS, ORDER, QUESTIONS, niche, pick };
+  })();
+
+  constructor(p) {
+    super(p);
+    const K = this.constructor.K;
+    const s = p.saved && typeof p.saved === "object" ? p.saved : null;
+    const ecran = K.ORDER.indexOf(p.ecran) >= 0 ? p.ecran : s && K.ORDER.indexOf(s.step) >= 0 ? s.step : "accueil";
+    const etat = p.etat || "question";
+    const answered = s && s.answered ? Object.assign({}, s.answered) : {};
+    if (etat === "reponse") answered[ecran] = true;
+    const amt = K.AMOUNTS.indexOf(Number(p.montant) || 0);
+    this.state = {
+      step: ecran === "calcul" && s ? "calcul" : ecran, answered, picked: null,
+      amountIdx: s && s.amountIdx >= 0 && s.amountIdx <= 10 ? s.amountIdx : amt >= 0 ? amt : 4,
+      niche: s && s.niche ? s.niche : "sante", time: s && s.time ? s.time : 120, visage: s && s.visage ? s.visage : "sans",
+      blocage: s && s.blocage ? s.blocage : "poster", marche: s && s.marche ? s.marche : "fr", engage: s ? s.engage : null,
+      pct: etat === "popup" ? 30 : etat === "popup2" ? 70 : etat === "encours" ? 52 : 0, popup: etat === "popup" ? 1 : etat === "popup2" ? 2 : 0,
+      popDone: etat === "popup2" ? { 0: true } : {},
+      hold: etat === "appui" ? 62 : etat === "signe" ? 100 : 0, holding: false, signed: etat === "signe" || !!(s && s.signed),
+      plan: "mensuel", calcOpen: false, busy: false, error: "", exists: false
+    };
+    if (!s && ecran === "temps" && etat === "question") this.state.time = 0;
+    if (!s && ecran === "blocage" && etat === "question") this.state.blocage = "";
+    this.auto = !p.ecran;
+    this.timers = [];
+    this.later = (fn, ms) => { const id = setTimeout(fn, ms); this.timers.push({ t: id }); };
+    this.clear = () => { this.timers.forEach((x) => { if (x.i) clearInterval(x.i); if (x.t) clearTimeout(x.t); }); this.timers = []; };
+    this.go = (to) => {
+      this.auto = true;
+      this.clear();
+      const step = to === "inscription" && this.props.authed ? "app" : to;
+      this.setState({ step, picked: null, popup: 0, pct: step === "calcul" ? 0 : this.state.pct, hold: step === "engagement" && this.state.signed ? 100 : 0, holding: false, error: "", busy: false }, () => { if (step === "calcul") this.runCalc(); });
+    };
+    this.next = () => { const i = K.ORDER.indexOf(this.state.step); if (i < K.ORDER.length - 1) this.go(K.ORDER[i + 1]); };
+    this.back = () => {
+      const st = this.state;
+      if (K.QUESTIONS[st.step] && st.answered[st.step]) { const a = Object.assign({}, st.answered); delete a[st.step]; this.setState({ answered: a }); return; }
+      let j = K.ORDER.indexOf(st.step) - 1;
+      while (j >= 0 && (K.ORDER[j] === "calcul" || (K.ORDER[j] === "inscription" && this.props.authed))) j -= 1;
+      if (j >= 0) this.go(K.ORDER[j]);
+    };
+    this.answer = (key, val) => {
+      const st = this.state; const a = Object.assign({}, st.answered); a[st.step] = true;
+      const patch = { picked: val }; patch[key] = val; this.setState(patch);
+      this.track("onboarding_reponse", { question: st.step, reponse: String(val) });
+      this.later(() => this.setState({ answered: a, picked: null }), 380);
+    };
+    this.onAmount = (e) => { const i = Math.max(0, Math.min(10, Number(e.target.value) || 0)); this.setState({ amountIdx: i }); };
+    this.pickNicheAll = () => this.answer("niche", "tout");
+    this.popAnswer = (yes) => {
+      const st = this.state; const pop = K.POPS[st.popup - 1]; const d = Object.assign({}, st.popDone); d[st.popup - 1] = true;
+      const patch = { popup: 0, popDone: d };
+      if (pop.key === "engage") patch.engage = yes;
+      else patch.marche = yes ? "fr" : "tout";
+      this.track("onboarding_reponse", { question: pop.key, reponse: pop.key === "engage" ? (yes ? "oui" : "pas encore") : patch.marche });
+      this.auto = true; this.setState(patch, () => this.runCalc());
+    };
+    this.popYes = () => this.popAnswer(true);
+    this.popNo = () => this.popAnswer(false);
+    this.toggleCalc = () => this.setState({ calcOpen: !this.state.calcOpen });
+    this.holdStart = (e) => {
+      if (this.state.signed) return;
+      try { if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* rien */ }
+      this.clear(); this.setState({ holding: true });
+      const t0 = Date.now(), from = this.state.hold;
+      const id = setInterval(() => {
+        const h = Math.min(100, from + (Date.now() - t0) / 14);
+        this.setState({ hold: h });
+        if (h >= 100) { clearInterval(id); this.setState({ signed: true, holding: false }); this.later(() => this.next(), 900); }
+      }, 30);
+      this.timers.push({ i: id });
+    };
+    this.holdEnd = () => {
+      if (!this.state.holding || this.state.signed) return;
+      this.clear();
+      const id = setInterval(() => { const h = Math.max(0, this.state.hold - 6); this.setState({ hold: h, holding: false }); if (h <= 0) clearInterval(id); }, 30);
+      this.timers.push({ i: id });
+    };
+    // Au clavier : Entrée ou Espace signe d'un coup (l'appui long ne se fait qu'au doigt ou à la souris).
+    this.holdKey = (e) => {
+      if (this.state.signed || (e.key !== "Enter" && e.key !== " ")) return;
+      e.preventDefault(); this.setState({ hold: 100, signed: true }); this.later(() => this.next(), 900);
+    };
+    this.pickAnnuel = () => this.setState({ plan: "annuel" });
+    this.pickMensuel = () => this.setState({ plan: "mensuel" });
+    this.pay = () => {
+      // « paiement_commence » part de l'app, à l'arrivée sur /app/payer/<formule> (une seule source pour les deux bras).
+      if (this.props.onPay) this.props.onPay(this.state.plan);
+    };
+    this.laterFn = () => { if (this.props.onLater) this.props.onLater(); else this.go("accueil"); };
+    // Inscription : sans le site (canevas), on passe à la suite.
+    this.submit = (e) => {
+      e.preventDefault();
+      const auth = this.props.auth;
+      if (!auth) { this.next(); return; }
+      const f = new FormData(e.currentTarget);
+      this.setState({ busy: true, error: "", exists: false });
+      auth.password("signUp", String(f.get("email") || ""), String(f.get("password") || "")).then((failed) => {
+        if (failed) this.setState({ busy: false, error: failed.message, exists: failed.code === "COMPTE_EXISTANT" });
+      });
+    };
+    this.google = () => {
+      const auth = this.props.auth;
+      if (!auth) { this.next(); return; }
+      this.setState({ busy: true, error: "" });
+      auth.google().then((failed) => { if (failed) this.setState({ busy: false, error: failed.message }); });
+    };
+    this.track = (event, props) => { if (this.props.track) this.props.track(event, props); };
+    this.runCalc = () => {
+      if (!this.auto || this.state.step !== "calcul") return;
+      const id = setInterval(() => {
+        const st = this.state;
+        if (st.step !== "calcul" || st.popup) { clearInterval(id); return; }
+        const pct = Math.min(100, st.pct + 1);
+        const k = K.POPS.findIndex((pp, j) => pp.at === pct && !st.popDone[j]);
+        if (k >= 0) { clearInterval(id); this.setState({ pct, popup: k + 1 }); return; }
+        this.setState({ pct });
+        if (pct >= 100) { clearInterval(id); this.later(() => this.go("plan"), 500); }
+      }, 75);
+      this.timers.push({ i: id });
+    };
+    this.seen = (step) => {
+      const i = K.ORDER.indexOf(step);
+      this.track("onboarding_vu", { etape: i + 1, ecran: step });
+      if (step === "paywall") this.track("paywall_vu", { ecran: "plan" });
+    };
+  }
+  componentDidMount() {
+    if (this.state.step === "calcul" && this.auto) this.runCalc();
+    if (this.state.step === "inscription" && this.props.authed) this.go("app");
+    else if (this.props.track) this.seen(this.state.step);
+  }
+  componentDidUpdate(prevProps, prevState) {
+    const st = this.state;
+    if (st.step === "inscription" && this.props.authed && !prevProps.authed) this.go("app");
+    if (st.step !== prevState.step) this.seen(st.step);
+    if (this.props.save) {
+      const keep = { step: st.step, answered: st.answered, amountIdx: st.amountIdx, niche: st.niche, time: st.time, visage: st.visage, blocage: st.blocage, marche: st.marche, engage: st.engage, signed: st.signed };
+      const was = { step: prevState.step, answered: prevState.answered, amountIdx: prevState.amountIdx, niche: prevState.niche, time: prevState.time, visage: prevState.visage, blocage: prevState.blocage, marche: prevState.marche, engage: prevState.engage, signed: prevState.signed };
+      if (JSON.stringify(keep) !== JSON.stringify(was)) this.props.save(keep);
+    }
+  }
+  componentWillUnmount() { this.clear(); }
+
+  renderVals() {
+    const K = this.constructor.K, st = this.state;
+    const s = {}; K.ORDER.forEach((k) => { s[k] = st.step === k; });
+    const idx = K.ORDER.indexOf(st.step);
+    const pct = Math.round(((idx + 1) / K.ORDER.length) * 100);
+    const amount = K.AMOUNTS[st.amountIdx];
+    const N = K.niche(st.niche);
+    const vMin = amount / 3.5 * 1000, vMax = amount / 2.5 * 1000;
+    const vidMin = Math.max(1, Math.round(vMin / N.vpv / 30)), vidMax = Math.max(1, Math.round(vMax / N.vpv / 30));
+    const comptes = Math.max(1, Math.ceil(vidMax / 3));
+    const vidTxt = vidMin === vidMax ? String(vidMin) : vidMin + " à " + vidMax;
+    const vidUnit = vidMax > 1 ? "vidéos" : "vidéo";
+    const comptesTxt = comptes > 1 ? comptes + " comptes" : "1 compte";
+    const timeD = K.TIMES.find((t) => t.v === st.time) || K.TIMES[2];
+    const cap = timeD.vids;
+    const crea = Math.max(0, Math.ceil((vidMin - cap) / 2));
+    const verdict = cap >= vidMin ? "Faisable avec ton temps" : "Avec " + crea + " créatrice" + (crea > 1 ? "s" : "") + " en plus";
+    const tier = amount <= 1500 ? { badge: "RÉALISTE", text: "Un compte bien tenu, une app qui marche déjà : c'est un bon premier objectif." }
+      : amount <= 5000 ? { badge: "ACCESSIBLE", text: "Deux ou trois comptes qui copient une app qui marche déjà dans ta niche." }
+      : amount <= 15000 ? { badge: "AMBITIEUX", text: "Plusieurs comptes et des créatrices dès le premier mois." }
+      : { badge: "TRÈS AMBITIEUX", text: "Une équipe de comptes. Vise une première marche, puis monte." };
+    const answered = !!st.answered[st.step];
+    const isQ = !!K.QUESTIONS[st.step];
+    const optCls = (base, sel) => base + (sel ? " is-sel" : "") + " pm-in";
+    const niches = K.DATA.niches.map((n, i) => ({ id: n.id, nom: n.nom, apps: n.apps, logos: n.liste.map((a) => a.logo), i: i + 1, sel: st.niche === n.id && answered, cls: optCls("pm-tile", st.picked === n.id), pick: () => this.answer("niche", n.id) }));
+    const times = K.TIMES.map((t, i) => ({ l: t.l, i: i + 1, sel: st.time === t.v, cls: optCls("pm-tcard", st.picked === t.v), sub: t.vids + " vidéo" + (t.vids > 1 ? "s" : "") + " par jour", bars: [1, 2, 3, 4].map((b) => "pm-bar" + (b <= i + 1 ? " on" : "")), pick: () => this.answer("time", t.v) }));
+    const visages = K.VISAGES.map((o, i) => ({ l: o.l, icon: o.icon, i: i + 1, sel: st.visage === o.id && answered, cls: optCls("pm-opt", st.picked === o.id), pick: () => this.answer("visage", o.id) }));
+    const blocages = K.BLOCAGES.map((o, i) => ({ l: o.l, i: i + 1, sel: st.blocage === o.id, cls: optCls("pm-opt", st.picked === o.id), pick: () => this.answer("blocage", o.id) }));
+    const visageD = K.VISAGES.find((o) => o.id === st.visage) || K.VISAGES[1];
+    const blocD = K.BLOCAGES.find((o) => o.id === st.blocage) || K.BLOCAGES[1];
+    const timeReact = timeD.vids + " vidéo" + (timeD.vids > 1 ? "s" : "") + " par jour, à 20 minutes chacune. Pour " + K.grp(amount) + " €, il en faut " + vidTxt + (cap >= vidMin ? " : ça passe." : " : on comblera avec des créatrices.");
+    const top = N.liste.slice().sort((a, b) => b.videos - a.videos)[0];
+    const nicheD = { nom: N.id === "tout" ? "Toutes les niches" : N.nom, apps: N.apps, logos: N.liste.map((a) => a.logo), top: { nom: top.nom, logo: top.logo, vid: K.grp(top.videos) } };
+    const byViews = N.liste.filter((a) => a.cover).sort((a, b) => K.parseV(b.vues) - K.parseV(a.vues));
+    const fanOf = (a, cls) => ({ cls, src: a.cover, logo: a.logo, app: a.nom, v: K.sp(a.vues), h: a.compte });
+    const fan = [byViews[1] && fanOf(byViews[1], "pm-card pm-c2"), byViews[2] && fanOf(byViews[2], "pm-card pm-c3"), byViews[0] && fanOf(byViews[0], "pm-card pm-c1")].filter(Boolean);
+    const pctC = Math.min(100, st.pct);
+    const checks = [
+      { t: "Tes réponses lues", at: 15 },
+      { t: K.grp(N.apps) + " apps de " + (N.id === "tout" ? "toutes les niches" : N.nom) + " passées au crible", at: 60 },
+      { t: "Les comptes qui marchent sur ton marché", at: 95 }
+    ].map((c, i, arr) => ({ t: c.t, cls: "pm-ck" + (pctC >= c.at ? " done" : (i === 0 || pctC >= arr[i - 1].at) ? " run" : "") }));
+    const shown = Math.min(comptes, 3);
+    const accts = Array.from({ length: shown }, (_, i) => {
+      const per = Math.min(3, Math.ceil(vidMax / comptes));
+      const minPer = Math.min(per, Math.max(1, Math.floor(vidMin / comptes)));
+      return { n: i + 1, lbl: "Compte" + K.NB + (i + 1), vids: Array.from({ length: per }, (_, j) => ({ cls: "pm-vid" + (j < minPer ? "" : " opt"), d: (300 + i * 120 + j * 70) + "ms" })) };
+    });
+    const pop = st.popup ? K.POPS[st.popup - 1] : K.POPS[0];
+    const chosen = K.pick(N, st.marche);
+    const A = chosen.app;
+    const prix = A.prix && A.prix.min && A.prix.max ? A.prix.min + " à " + A.prix.max + " €" : "";
+    const app = {
+      nom: A.nom, logo: A.logo, cover: A.cover, vues: K.sp(A.vues), quoi: A.note ? A.quoi + " · App Store " + A.note : A.quoi,
+      titre: A.nom + (N.id === "tout" ? " cartonne en ce moment." : " cartonne dans ta niche."),
+      comptes: K.grp(A.comptes), comptesL: "comptes la poussent" + (A.fr > 0 ? ", dont " + K.grp(A.fr) + " en France" : ""),
+      videos: K.grp(A.videos), prix, hasPrix: !!prix
+    };
+    const others = chosen.others.map((a, i) => ({ logo: a.logo, w1: (42 - i * 6) + "%", w2: (70 - i * 8) + "%" }));
+    const counts = { apps: N.liste.length, formats: N.liste.reduce((t, a) => t + a.formats, 0), comptes: N.liste.reduce((t, a) => t + a.reseau, 0) };
+    const strip = byViews.slice(0, 3).map((a) => a.cover);
+    const planA = { sel: st.plan === "annuel", cls: "pm-plan" + (st.plan === "annuel" ? " is-sel" : "") };
+    const planM = { sel: st.plan === "mensuel", cls: "pm-plan" + (st.plan === "mensuel" ? " is-sel" : "") };
+    const prenom = (this.props.user && this.props.user.prenom) || this.props.prenom || "";
+    return {
+      v: {
+        s, pct, progW: pct + "%",
+        asking: isQ ? !answered : false, answered: isQ ? answered : false,
+        amountIdx: st.amountIdx, amountP: (st.amountIdx / 10).toFixed(3), amountTxt: K.grp(amount), tier,
+        amtCls: "pm-amt pm-pop-in" + (amount >= 10000 ? " is-long" : ""),
+        vuesTxt: K.big(vMin).replace(/ M$/, "") + " à " + K.big(vMax), vpvTxt: K.grp(N.vpv),
+        vidMin, vidMax, vidTxt, vidUnit, comptes, comptesTxt, verdict, accts, moreAccts: comptes > 3, moreN: comptes - 3,
+        niches, nicheD, times, timeD, timeReact, visages, visageD, blocages, blocD,
+        fan, checks, gaugeOff: (540.4 * (1 - pctC / 100)).toFixed(1), popOpen: !!st.popup, pop, calcOpen: st.calcOpen,
+        fpCls: "pm-fp pm-in" + (st.holding ? " is-down" : "") + (st.signed ? " is-signed" : ""), holdOff: (427.3 * (1 - st.hold / 100)).toFixed(1),
+        holdLbl: st.signed ? "Signé. On prépare ton plan." : "Maintiens appuyé pour signer",
+        app, others, counts, strip, planA, planM,
+        payTitle: prenom ? "Débloque ton plan, " + prenom + "." : "Débloque ton plan.",
+        busy: st.busy, error: st.error, hasError: !!st.error, exists: st.exists
+      },
+      rootCls: this.props.nu ? "pm pm-nu" : "pm",
+      next: this.next, back: this.back, onAmount: this.onAmount, pickNicheAll: this.pickNicheAll,
+      popYes: this.popYes, popNo: this.popNo, toggleCalc: this.toggleCalc,
+      holdStart: this.holdStart, holdEnd: this.holdEnd, holdKey: this.holdKey, pickAnnuel: this.pickAnnuel, pickMensuel: this.pickMensuel,
+      pay: this.pay, later: this.laterFn, submit: this.submit, google: this.google
+    };
+  }
+}
+</script>
+</body>
+</html>

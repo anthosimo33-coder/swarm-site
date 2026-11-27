@@ -24,8 +24,9 @@ export const viewer = query({
     // `name` : le prénom choisi (displayName, audit Q36), sinon le nom Google. `password` : le compte a un identifiant « mot
     // de passe » (Réglages le demande pour fermer le compte, audit S27).
     const login = await ctx.db.query("authAccounts").withIndex("userIdAndProvider", (q) => q.eq("userId", userId).eq("provider", PASSWORD)).first();
+    // `id` et `bras` : la mesure du test A/B de l'onboarding (convex/ab.ts) ; `bras` null hors du test.
     return { email: user.email ?? null, name: user.displayName ?? user.name ?? null, pro: user.pro === true, emailVerified: !!user.emailVerificationTime,
-      password: !!login };
+      password: !!login, id: userId, bras: user.abOnboarding ?? null, force: user.abForce === true };
   },
 });
 
