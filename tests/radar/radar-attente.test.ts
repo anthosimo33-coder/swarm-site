@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { holdListTail } from "../../convex/radar/radarAuto";
 import { HOLD_KEEP_RANK, holdsForNow, listRanks } from "../../convex/radar/radarAutoMath";
-import { dueApps } from "../../convex/radar/radarNetworks";
+import { dueApps, seedApps } from "../../convex/radar/radarNetworks";
 import { memoryDb, type MemoryDoc } from "./convex-memory-db";
 
 /**
@@ -135,4 +135,33 @@ describe("Radar — la mise de côté, une fois, sur la base (25/11/2026)", () =
     for (const kept of [s.real, s.top, s.edge]) expect(ids.has(kept._id)).toBe(true);
     for (const held of [s.over, s.outside]) expect(ids.has(held._id)).toBe(false);
   });
+});
+
+describe("Radar — TrendSaaS et GetSaaS cherchés en premier (25/11/2026)", () => {
+  it("leurs recherches changent : leur réseau repart à fond et passe devant les apps jamais cherchées de la liste", async () => {
+    const w = world();
+    // L'état de la prod au 25/11 : TrendSaaS (de départ) cherchée le 12/11 sans recherche complète, GetSaaS (à la main)
+    // cherchée à fond le 15/11, et une app de la liste jamais cherchée, créée avant elles.
+    const listee = w.app("listee", { trialSince: 1 });
+    const trend = w.app("trendsaas", { name: "TrendSaaS", source: "seed", strong: ["trendsaas"], searches: ["trendsaas", "trendsaas.ai"], networkSearchedAt: NOW - 13 * 86_400_000 });
+    const get = w.app("getsaas", { name: "Getsaas", strong: ["getsaas"], searches: ["getsaas", "#getsaas"], networkSearchedAt: NOW - 10 * 86_400_000, deepSearchedAt: NOW - 10 * 86_400_000 });
+    const mem = memoryDb(w.tables, { limit: null });
+    await run(seedApps, { db: mem.db }, { force: true });
+    const after = (id: string) => w.tables.radarApps.find((a) => a._id === id)!;
+    expect(after(trend._id)).toMatchObject({ searches: ["trendsaas", "trendsaas.ai", "#trendsaas"], source: "seed" });
+    expect(after(get._id)).toMatchObject({ name: "GetSaaS", searches: ["getsaas", "#getsaas", "getsaas.fr"], source: "seed" });
+    for (const id of [trend._id, get._id]) {
+      expect(after(id).networkSearchedAt).toBeUndefined();
+      expect(after(id).deepSearchedAt).toBeUndefined();
+    }
+    const due = (await run(dueApps, { db: memoryDb(w.tables, { limit: null }).db }, { now: NOW })) as { id: string; deep: boolean }[];
+    const at = (id: string) => due.findIndex((a) => a.id === id);
+    expect(at(trend._id)).toBeGreaterThanOrEqual(0);
+    expect(at(get._id)).toBeGreaterThanOrEqual(0);
+    expect(at(trend._id)).toBeLessThan(at(listee._id));
+    expect(at(get._id)).toBeLessThan(at(listee._id));
+    expect(due[at(trend._id)].deep && due[at(get._id)].deep).toBe(true);
+    // L'alignement crée toutes les apps de départ dans la base en mémoire (une lecture par slug, servie par
+    // setImmediate) : ~1,5 s sur le poste, plus de 5 s sur la CI le 27/11/2026.
+  }, 30_000);
 });

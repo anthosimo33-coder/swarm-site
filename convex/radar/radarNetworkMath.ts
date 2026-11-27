@@ -172,7 +172,13 @@ export const SEED_APPS: readonly SeedApp[] = [
   // 12/11 sous #shortfy. TrendSaaS (idées de SaaS + prompt) : 3 vidéos en 3 mois sur TikTok, 9 177 vues au plus
   // — sous le seuil de la découverte ; sa croissance passe par la pub, que le Radar cherche ici sous son nom.
   { slug: "shortfy", name: "Shortfy", rivalOf: [], strong: ["shortfy"], searches: ["shortfy", "#shortfy", "shortfy.io"] },
-  { slug: "trendsaas", name: "TrendSaaS", rivalOf: [], strong: ["trendsaas"], searches: ["trendsaas", "trendsaas.ai"] },
+  // 25/11/2026 (fondateur) : les réseaux de TrendSaaS et de GetSaaS passent en premier. Une recherche de plus change
+  // leurs recherches (seedRulesChanged) : leur réseau se recherche à fond, en tête de file (networkQueueOrder : app de
+  // départ jamais cherchée), avant les apps de la liste importée. TrendSaaS : ses créatrices écrivent #trendsaas dans
+  // leurs accroches (12/11/2026). GetSaaS (getsaas.fr, la même promesse), suivie à la main le 15/11/2026 avec 6 comptes,
+  // est adoptée ici sous son nom, son hashtag et son domaine.
+  { slug: "trendsaas", name: "TrendSaaS", rivalOf: [], strong: ["trendsaas"], searches: ["trendsaas", "trendsaas.ai", "#trendsaas"] },
+  { slug: "getsaas", name: "GetSaaS", rivalOf: [], strong: ["getsaas"], searches: ["getsaas", "#getsaas", "getsaas.fr"] },
   // Deux produits web suivis à la main le 14/11/2026 sous leur domaine (« jobstep.io », « pimzi.app ») : leurs créateurs
   // écrivent surtout #jobstep et #pimzi, que ces motifs ne prenaient pas (1 légende sur 3 pour JobStep, 0 sur 3 pour
   // Pimzi). Adoptées par la liste de départ sous leur nom nu. « job step(s) » est une tournure courante, pas JobStep.
