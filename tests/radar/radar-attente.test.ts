@@ -161,5 +161,7 @@ describe("Radar — TrendSaaS et GetSaaS cherchés en premier (25/11/2026)", () 
     expect(at(trend._id)).toBeLessThan(at(listee._id));
     expect(at(get._id)).toBeLessThan(at(listee._id));
     expect(due[at(trend._id)].deep && due[at(get._id)].deep).toBe(true);
-  });
+    // L'alignement crée toutes les apps de départ dans la base en mémoire (une lecture par slug, servie par
+    // setImmediate) : ~1,5 s sur le poste, plus de 5 s sur la CI le 27/11/2026.
+  }, 30_000);
 });
