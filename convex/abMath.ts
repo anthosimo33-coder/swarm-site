@@ -55,15 +55,22 @@ export function parsePageEvent(body: string): PageEvent | null {
   return { event: o.e, visitor: o.v, user, bras: o.b, props, forced: o.f === true };
 }
 
-/** Les propriétés communes de tout événement du test. `force` : le bras a été imposé par ?bras= (à exclure de l'analyse). */
-export const testProps = (bras: Bras, forced: boolean) => ({ test: TEST, bras, $set: { bras_onboarding: bras }, ...(forced ? { force: true } : {}) });
+/**
+ * Les propriétés communes de tout événement du test. `force` : le bras a été imposé par ?bras= (à exclure de l'analyse).
+ * Aucun nom en « $ » ici : ces propriétés passent par le planificateur de Convex, qui refuse un champ commençant par « $ »
+ * (le 27/11, /e répondait 500 pour cette raison). Le « $set » de PostHog est ajouté au dernier moment, dans batchBody.
+ */
+export const testProps = (bras: Bras, forced: boolean) => ({ test: TEST, bras, ...(forced ? { force: true } : {}) });
 
 /** Le corps d'un envoi groupé à PostHog (POST {hôte}/batch/). `alias` : l'identifiant anonyme à rattacher au compte. */
 export function batchBody(apiKey: string, events: { event: string; distinctId: string; properties: Record<string, unknown>; alias?: string }[], now = new Date()) {
   const batch: Record<string, unknown>[] = [];
   for (const e of events) {
     if (e.alias) batch.push({ event: "$identify", distinct_id: e.distinctId, properties: { $anon_distinct_id: e.alias }, timestamp: now.toISOString() });
-    batch.push({ event: e.event, distinct_id: e.distinctId, properties: e.properties, timestamp: now.toISOString() });
+    // Le bras posé aussi sur la personne (propriété « bras_onboarding »), pour découper n'importe quelle analyse par bras.
+    const bras = (e.properties as { bras?: unknown }).bras;
+    const properties = bras === "A" || bras === "B" ? { ...e.properties, $set: { bras_onboarding: bras } } : e.properties;
+    batch.push({ event: e.event, distinct_id: e.distinctId, properties, timestamp: now.toISOString() });
   }
   return { api_key: apiKey, batch };
 }

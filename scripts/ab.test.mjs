@@ -74,6 +74,8 @@ async function world({ email = 'lea@gmail.com', ageMs = 60_000 } = {}) {
   const ctx = { db: m.db, __userId: userId, __sessionId: sessionId, scheduler: { runAfter: async (ms, ref, a) => { scheduled.push([ms, ref.__path, a]); } } };
   return { m, ctx, userId, scheduled };
 }
+// Convex refuse, dans les arguments d'une fonction (planificateur compris), tout nom de champ en « $ » ou « _ ».
+const convexSafe = (x) => (Array.isArray(x) ? x.every(convexSafe) : x && typeof x === 'object' ? Object.entries(x).every(([k, v]) => !/^[$_]/.test(k) && convexSafe(v)) : true);
 const V = '3f2a8c1e-9b4d-4e7a-8f1c-2d3e4f5a6b7c';
 {
   const w = await world();
@@ -82,6 +84,7 @@ const V = '3f2a8c1e-9b4d-4e7a-8f1c-2d3e4f5a6b7c';
   ok(r === 'B' && u.abOnboarding === 'B' && u.abVisiteur === V && !u.abForce, 'compte créé il y a 1 min : le bras B est écrit sur le compte');
   ok(w.scheduled.length === 1 && w.scheduled[0][1] === 'ab.capture' && w.scheduled[0][2].events[0].event === 'inscription' && w.scheduled[0][2].events[0].alias === V,
     '« inscription » part à PostHog, avec le navigateur à rattacher');
+  ok(convexSafe(w.scheduled[0][2]), 'les arguments planifiés passent la règle de Convex (aucun champ en « $ » ou « _ »)');
   const again = await mods.ab.enroll.handler(w.ctx, { bras: 'A', visiteur: V });
   ok(again === 'B' && w.m.rows('users')[0].abOnboarding === 'B' && w.scheduled.length === 1, 'un second appel ne change pas le bras et n\'envoie rien');
 }
@@ -115,6 +118,7 @@ const V = '3f2a8c1e-9b4d-4e7a-8f1c-2d3e4f5a6b7c';
   const r2 = await send(JSON.stringify({ e: 'paiement', v: V, b: 'B' }));
   ok(r1.status === 204 && r2.status === 204 && r1.headers.get('Access-Control-Allow-Origin') === '*', '/e répond 204 dans tous les cas');
   ok(scheduled.length === 1 && scheduled[0].events[0].distinctId === V && scheduled[0].events[0].properties.ecran === 'plan', '/e ne relaie que l\'événement valide, au nom du navigateur');
+  ok(convexSafe(scheduled[0]), '/e : arguments planifiés conformes à Convex');
 }
 
 // ─── PostHog : rien sans clé ; un envoi groupé avec la clé ───
@@ -140,6 +144,7 @@ const V = '3f2a8c1e-9b4d-4e7a-8f1c-2d3e4f5a6b7c';
   await pay('pay_1', inTest, 'paid');
   ok(scheduled.length === 1 && scheduled[0][0] === 'ab.capture' && scheduled[0][1].events[0].event === 'paiement' && scheduled[0][1].events[0].distinctId === inTest && scheduled[0][1].events[0].properties.bras === 'B' && scheduled[0][1].events[0].properties.montant === '29.99',
     'paiement payé d\'un compte du test : « paiement » part, avec le bras et le montant');
+  ok(convexSafe(scheduled[0][1]), 'paiement : arguments planifiés conformes à Convex');
   await pay('pay_1', inTest, 'paid');
   ok(scheduled.length === 1, 'le même paiement rejoué ne repart pas');
   await pay('pay_2', outTest, 'paid');
