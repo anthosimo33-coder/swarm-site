@@ -296,6 +296,35 @@ export function trialDecision(
   return "pause";
 }
 
+/**
+ * L'ordre dans lequel le tri des apps à l'essai (radarAuto.settleTrials, TRIAL_SETTLE_BATCH apps par passage, chacune
+ * relit ses comptes) les regarde. Le 28/11/2026, il prenait les plus anciennement cherchées d'abord : les 60 en tête
+ * avaient moins de 3 comptes actifs et des comptes encore en contrôle — « attendre », à chaque passage, jusqu'à 7 jours —
+ * et 269 apps prêtes à être gardées (3 comptes actifs ou plus) n'étaient jamais regardées. Désormais :
+ *  1. celles que leur résumé de réseau dit prêtes (`net.active` ≥ TRIAL_KEEP_MIN : gardées, la décision relit les comptes) ;
+ *  2. celles qui peuvent être tranchées : relancées (plafond plein à leur recherche), ou au bout de leur attente
+ *     (TRIAL_SETTLE_MS sans compte en contrôle, TRIAL_MAX_WAIT_MS sinon) ;
+ *  3. les autres, qui attendraient.
+ * Dans chaque groupe, les plus anciennement cherchées d'abord.
+ */
+export function settleOrder<A extends { networkSearchedAt?: number; networkSearch?: { attached: number; full?: number }; net?: { accounts: number; active: number; offTopic?: number } }>(
+  searched: readonly A[],
+  now: number,
+): A[] {
+  const group = (a: A): number => {
+    const net = a.net;
+    if ((net?.active ?? 0) >= TRIAL_KEEP_MIN) return 0;
+    if (searchBlockedByCap(a.networkSearch)) return 1;
+    const since = now - (a.networkSearchedAt ?? now);
+    const vetting = net ? net.accounts - net.active - (net.offTopic ?? 0) : 0;
+    return since >= (vetting > 0 ? TRIAL_MAX_WAIT_MS : TRIAL_SETTLE_MS) ? 1 : 2;
+  };
+  return searched
+    .map((a, i) => ({ a, i, g: group(a) }))
+    .sort((x, y) => x.g - y.g || (x.a.networkSearchedAt ?? 0) - (y.a.networkSearchedAt ?? 0) || x.i - y.i)
+    .map((x) => x.a);
+}
+
 /** La dernière recherche n'a rien rattaché, et le plafond des comptes suivis en a refusé (15/11/2026, 22 h 27). */
 export const searchBlockedByCap = (ns: { attached: number; full?: number } | undefined): boolean => (ns?.full ?? 0) > 0 && (ns?.attached ?? 0) === 0;
 

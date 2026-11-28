@@ -56,6 +56,7 @@ import {
   withNot,
   holdsForNow,
   listRanks,
+  settleOrder,
 } from "./radarAutoMath";
 import { ficheApp } from "./radarFicheMath";
 import { ensureSettings, mergeApp, refreshAppNet, trackedCounts, type TrackedCounter } from "./radarSignals";
@@ -650,9 +651,13 @@ async function settleTrialsCore(ctx: MutationCtx, now: number, only?: (slug: str
   const out = { kept: 0, paused: 0, waiting: 0, relaunched: 0 };
   let room: boolean | undefined;
   const trials = (await ctx.db.query("radarApps").collect()).filter((a) => a.trialSince !== undefined && a.status === "active" && (!only || only(a.slug)));
-  // Pas encore cherchée : elle attend sa recherche, sans relire ses comptes. Les autres, les plus anciennement
-  // cherchées d'abord, `TRIAL_SETTLE_BATCH` au plus par passage (chacune relit ses comptes).
-  const searched = trials.filter((a) => a.networkSearchedAt !== undefined).sort((x, y) => x.networkSearchedAt! - y.networkSearchedAt!);
+  // Pas encore cherchée : elle attend sa recherche, sans relire ses comptes. Les autres dans l'ordre de settleOrder (les
+  // prêtes, puis celles qu'on peut trancher, puis celles qui attendraient), `TRIAL_SETTLE_BATCH` au plus par passage
+  // (chacune relit ses comptes).
+  const searched = settleOrder(
+    trials.filter((a) => a.networkSearchedAt !== undefined),
+    now,
+  );
   out.waiting += trials.length - searched.length;
   for (const a of searched.slice(0, TRIAL_SETTLE_BATCH)) {
     const rows = await ctx.db.query("radarTracked").withIndex("by_app", (q) => q.eq("appId", a._id as Id<"radarApps">)).collect();
